@@ -1,0 +1,18 @@
+[% META title="Add rule"
+   default_template = 'list.tt'
+   next_action = 'rule_add'
+   menu="/admin/rule/list.tt"
+   level=20
+%]
+
+<p>( 1 --A--> 2 ) and ( 2 --B--> 3 ) ==> ( 1 --C--> 3 )</p>
+
+<table class='admin'>
+<tr><td>A <td>[% input('a') %]
+<tr><td>B <td>[% input('b') %]
+<tr><td>C <td>[% input('c') %]
+</table>
+
+<p><strong>OBS! Tryck INTE på den här knappen!</strong></p>
+
+<p>[% step('Add rule') %]

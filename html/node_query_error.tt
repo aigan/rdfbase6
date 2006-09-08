@@ -1,0 +1,48 @@
+[% META
+	otitle = 'Node Query Error'
+%]
+[%
+	result = req.result;
+	a = result.info.alternatives;
+%]
+
+
+<h1>[% result.type %]:
+[% IF result.errcnt %]
+   [% IF result.errcnt == 1 %]
+      [% result.errcnt %] error
+   [% ELSE %]
+      [% result.errcnt %] errors
+   [% END %]
+[% ELSE %]
+   No errors
+[% END %]
+</h1>
+
+<ol>
+[% FOREACH part = result.part %]
+   <li>
+      <code>[% part.type %]</code>
+      <strong>--&gt;</strong>
+      <code>[% part.message %]</code>
+   </li>
+[% END %]
+</ol>
+       
+
+[% IF a.alts %]
+   <h2>Alternatives</h2>
+   <ol>
+   [% FOREACH part = a.alts %]
+      <li>[% jump(part.sysdesig, "$home/admin/node_display.tt", id=part.id) %]</li>
+   [% END %]
+   </ol>
+[% END %]
+
+<h2>Query</h2>
+<pre>[% dump(a.query) %]</pre>
+
+<h2>Stacktrace</h2>
+<pre>[% a.trace %]</pre>
+
+<hr>

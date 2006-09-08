@@ -1,0 +1,35 @@
+[% META title="Add arcs"
+   default_template = 'node_display.tt'
+   next_action = 'arc_add'
+   focus = 'query_row'
+   level=20
+%]
+
+[% id = q.param('id') %]
+[% node = get(id) %]
+[% IF node %]
+   <h2>About [% jump(node.sysdesig, '../update.tt', id=id) %]</h2>
+[% ELSE %]
+   <p>About a new node</p>
+[% END %]
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+[% IF node %]
+   [% input('query_row','', size=60) %]<br>
+[% END %]
+[% textarea('query') %]
+
+[% hidden("id", node.id) %]
+
+<p>[% step('Add arcs') %]
+
+
+<p>Examples:
+<pre>
+name Sverige -> language sv (code)
+name Sweden  -> language en (code)
+is country
+</pre>
+</p>
+

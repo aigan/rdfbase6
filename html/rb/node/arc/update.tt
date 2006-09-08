@@ -1,0 +1,135 @@
+[% META otitle="Arc edit"
+   	next_action = 'arc_edit'
+	default_template = 'arc_edit.tt'
+        level = 20
+%]
+
+
+[% arc_id = q.param('arc_id') %]
+[% DEFAULT arc_id = q.param('id') %]
+[% id = arc_id %]
+[% arc = get(arc_id) %]
+[% hidden('id', arc.subj.id) %]
+[% hidden('arc_id', arc.id)  %]
+
+<h1>Arc [% arc.sysdesig | html %]</h1>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<table class='admin'>
+<tr>
+   <td>[% jump('Subj', '../update.tt', id=arc.subj.id) %]</td>
+[%# warn(dump(arc.subj)) %]
+   <td><code>[% arc.subj.sysdesig | html %]</code></td>
+</tr>
+
+[% IF arc.indirect %]
+
+<tr>
+   <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
+   <td>[% arc.pred.name %]</td>
+</tr>
+
+[% IF arc.realy_objtype %]
+<tr>
+   <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
+   <td>[% arc.obj.sysdesig | html %]</td>
+</tr>
+[% ELSE %]
+<tr>
+   [% IF arc.valtype == 'textbox' %]
+      <td colspan="2">Literal:<br>
+         [% arc.value | html | html_br %]
+      </td>
+   [% ELSE %]
+      <td>Lit</td>
+      <td>[% arc.value | html %]</td>
+   [% END %]
+</tr>
+<tr>
+   <td colspan="2">
+      Add arcs to the literal:<br>
+      [% textarea('literal_arcs','', cols=35, rows=3 ) %]
+   </td>
+</tr>
+[% END %]
+
+<tr>
+   <td>Explicit</td>
+   <td>[% checkbox("explicit", 1, arc.explicit)%]</td>
+   [% hidden("check_explicit", 1) %]
+</tr>
+
+[% ELSE %]
+
+<tr>
+   <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
+   <td>[% input('pred', arc.pred.name) %]</td>
+</tr>
+
+[% IF arc.realy_objtype %]
+<tr>
+   <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
+   <td>[% input('val', arc.obj.sysdesig) %]</td>
+</tr>
+[% ELSE %]
+<tr>
+   [% IF arc.valtype == 'textbox' %]
+      <td colspan="2">Literal:<br>
+         [% textarea('val', arc.value) %]
+      </td>
+   [% ELSE %]
+      <td>Lit</td>
+      <td>[% input('val', arc.value) %]</td>
+   [% END %]
+</tr>
+<tr>
+   <td colspan="2">
+      Add arcs to the literal:<br>
+      [% textarea('literal_arcs','', cols=35, rows=3 ) %]
+   </td>
+</tr>
+[% END %]
+[% END %]
+
+<tr><td>Uppdaterad</td><td>[% arc.updated %]</td></tr>
+<tr><td>Av        </td><td>[% jump(arc.updated_by.name.loc, "$home/admin/person_modify.tt", id=arc.updated_by.id) %]</td></tr>
+<tr><td>Flaggor   </td><td>[% INCLUDE flags %]
+
+</table>
+
+<p>[% step %]</p>
+
+[% IF arc.indirect %]
+  <h2>This arc is infered</h2>
+  <dl>
+  [% FOREACH exp = arc.explain %]  
+     <dt>Using rule [% exp.rule.sysdesig %]</dt>
+     <dd>
+        [% jump( exp.a.desig, "update.tt", id=exp.a.id ) %]<br>
+        [% jump( exp.b.desig, "update.tt", id=exp.b.id ) %]<br>
+     </dd>
+  [% END %]
+  </dl>
+[% END %]
+
+<h2>Notes</h2>
+
+<p>Remove predicate to remove the arc</p>
+
+[%
+BLOCK flags;
+   IF arc.indirect;
+      GET 'Indirekt';
+   ELSE;
+      GET 'Direkt';
+   END;
+   GET ' och ';
+   IF arc.implicit;
+      GET 'implicit';
+   ELSE;
+      GET 'explicit';
+   END;
+END;
+%]
+

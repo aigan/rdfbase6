@@ -1,0 +1,9 @@
+[% BLOCK updated %]
+   [%## Displays who and when arc was updated %]
+   [%## var arc must be defined %]
+   <span class="small_note">
+   [%- IF arc.updated_by %]
+      av [% arc.updated_by.name.loc %]
+   [% END %]
+   [%+ arc.updated IF arc.updated %]</span>
+[% END %]

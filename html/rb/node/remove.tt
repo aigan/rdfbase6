@@ -1,0 +1,50 @@
+[% META title="Radera nod"
+   next_template = 'update.tt'
+   next_action = 'arc_delete'
+   level = 20
+%]
+
+[% id = q.param('id') %]
+[% UNLESS id; THROW 'validate' 'Id missing'; END %]
+[% hidden('id', id) %]
+
+[% node = get(id) %]
+<h2>Delete [% node.sysdesig | html %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<p align="center">[ [% jump('View rels', 'node_display.tt', id=id) %] ]</p>
+
+<table class='admin'>
+<tr><th>Del</th><th>Property</th> <th>Value</th></tr>
+
+[% FOREACH pred = node.list.sorted %]
+   [% FOREACH arc = node.arc_list(pred).explicit %]
+      <tr>
+      <td>[% checkbox('arc_delete', arc.id, 1) %]</td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>[% arc.value_sysdesig %]
+      </td>
+      </tr>
+   [% END %]
+[% END %]
+</table>
+
+
+<table border>
+<tr><th>Del</th><th>Value</th> <th>Property</th></tr>
+
+[% FOREACH pred = node.revlist.sorted %]
+   [% FOREACH arc = node.revarc_list(pred.name).explicit %]
+      <tr>
+      <td>[% checkbox('arc_delete', arc.id, 1) %]</td>
+      <td>[% arc.subj.sysdesig %]
+      <td valign="top">[% pred.name.loc %]</td>
+      </td>
+      </tr>
+   [% END %]
+[% END %]
+</table>
+
+<p>[% step('Delete') %]
+

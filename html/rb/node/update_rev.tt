@@ -1,0 +1,31 @@
+[% META
+   title="Visa nod - omvänd (direkt)"
+   level = 20
+%]
+[%
+   PROCESS prop_fields.tt;
+%]
+
+
+[% id = q.param('id') || 1115 %]
+[% node = get(id) %]
+<h2>[% node.sysdesig | html %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<table class='admin'>
+<tr><th>Value</th> <th>Property</th> <th>Flags</th> <th>Updated</th> </tr>
+
+[% FOREACH pred = node.revlist.sorted %]
+   [% FOREACH arc = node.revarc_list(pred).direct.sorted %]
+      <tr>
+      <td>
+      [% jump(arc.subj.sysdesig, 'update_rev.tt', id=arc.subj.id) %]
+      </td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>[% arc.view_flags %]</td>
+      <td>[% PROCESS updated %]</td>
+      </tr>
+   [% END %]
+[% END %]
+</table>

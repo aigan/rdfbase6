@@ -1,0 +1,60 @@
+[% crits = searchobj.criterions %]
+[% IF crits %]
+<div id="search_box_small">
+   <span class="menu_item_expanded">
+      <a class="menu" href="$home/search/modify.tt">[% loc('menusearch') %] »</a>
+   </span>
+
+   [% FOREACH pred = crits.keys %]
+      [% NEXT IF pred == 'inactive' %]
+      [% crit = crits.$pred %]
+      [% IF crit.group %]
+         <span class="search_box_small_item">
+         [% FOREACH groupname = crit.group.keys %]
+            [% FOREACH val = crit.group.$groupname %]
+               [% val.name.loc %]<br>
+               [% UNLESS loop.last %]
+                  [* loc('or') *]
+               [% END %]
+            [% END %]
+         [% END %]
+         </span>
+      [% END %]
+      [% IF crit.prop %]
+         <span class="search_box_small_item">
+         [% FOREACH foo = crit.prop %]
+            [% firstpred = foo.pred; # could be a list %]
+	    [% UNLESS firstpred.is_pred %]
+               [% firstpred = firstpred.first %]
+            [% END %]
+            [% FOREACH val = foo.values %]
+               [% IF firstpred.objtype %]
+                  [% get(val).name.loc %]<br>
+               [% ELSIF firstpred.plain == 'id' %]
+                  [% get(val).name.loc %]<br>
+               [% ELSE %]
+                  [% val %]<br>
+               [% END %]
+               [% UNLESS loop.last %]
+                  [* loc('or') *]
+               [% END %]
+            [% END %]
+         [% END %]
+         </span>
+      [% END %]
+   [% END %]
+
+   <span class="menu_item_expanded">
+      <a class="submenu" href="[* uri("$home/search/result.tt", run='search_organization_execute', search_result="$home/search_result.tt", search_form="$home/search_modify.tt") *]">» [* loc('Show result') *]</a>
+   </span>
+
+   <span class="menu_item_expanded">
+      <a class="submenu" href="[* uri("$home/search/modify.tt") *]">» [* loc('Modify search') *]</a>
+   </span>
+
+   <span class="menu_item_expanded">
+      <a class="submenu" href="[* uri("$home/search/modify.tt", run='search_clear') *]">» [* loc('New search') *]</a>
+   </span>
+
+</div>
+[% END %]

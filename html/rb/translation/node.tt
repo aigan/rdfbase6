@@ -1,0 +1,52 @@
+[% META
+   otitle = "Redigera översättning"
+   next_action = "translate_node"
+   level = 20
+%]
+
+
+[% id = q.param('id') %]
+[% node = get(id) %]
+[% pred = 'name' %]
+
+[% hidden('pred', pred) %]
+[% hidden('id', id) %]
+
+
+<h1>Redigera översättning [% id %]: [% node.${pred}.loc %]</h1>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+[% langlist = {''='-',sv='sv',en='en',de='de',no='no',da='da',fi='fi',is='is'} %]
+
+<table>
+<tr><th>Språk <th>Arc <th>Text <th>Prio
+[% FOREACH arc IN node.arc_list(pred).sorted(['obj.language.code',{on='obj.weight' dir='desc'}]) %]
+   [% aid = arc.id %]
+   [% tr2%]
+   [% l = arc.obj.language %]
+   <td>
+   [% IF arc.obj %]
+      [% l.code %] [% hidden("arc_${aid}_language", l.id) %]
+   [% ELSE %]
+      [% select("arc_${aid}_language", '', langlist)%]
+   [% END %]
+   <td>[% jump(aid, "$home/admin/arc_edit.tt", id=aid) %]
+   <td>
+   [% IF arc.obj %]
+      [% input("arc_${aid}_val", arc.obj.desig) %]
+   [% ELSE %]
+      [% input("arc_${aid}_val", arc.value) %]
+   [% END %]
+   <td align="right">[% select("arc_${aid}_weight", arc.obj.weight, {''='-','1'=1,'2'=2}, undef,undef,'-') %]
+[% END %]
+<tr>
+<td>[% select('new_language', '', langlist)%]
+<td><td>[% input('new_val') %] <td>[% select('new_weight', '', {''='-','1'=1,'2'=2}, undef,undef,'-') %]
+</table>
+
+
+<p>[% step("Spara") %]</p>
+
+<p>Efter att du sparat behöver de ändrade sidorna kompileras om på
+respektive server.

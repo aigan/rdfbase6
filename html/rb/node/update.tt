@@ -1,0 +1,84 @@
+[% META
+   title="Visa nod"
+   level = 20
+%]
+
+[%
+   PROCESS prop_fields.tt;
+%]
+
+[% id = q.param('id') || 1115 %]
+[% node = get(id) %]
+[% hidden('id', id) %]
+
+<h2>[% node.sysdesig | html %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<table class="admin">
+<tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
+
+[% IF node.is_arc.sorted %]
+   <tr>
+      <td>-</td>
+      <td>subj</td>
+      <td>[% jump(node.subj.desig, me, id=node.subj.id) %]</td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>pred</td>
+      <td>[% node.pred.name %]</td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   [% IF node.obj %]
+      <tr>
+         <td>-</td>
+         <td>obj</td>
+         <td>[% jump(node.obj.desig, me, id=node.obj.id) %]</td>
+         <td>hard</td>
+         <td>-</td>
+      </tr>
+   [% ELSE %]
+      <tr>
+         <td>-</td>
+         <td>literal</td>
+         <td>[% node.value | html %]</td>
+         <td>hard</td>
+         <td>-</td>
+      </tr>
+   [% END %]
+[% END %]
+
+[% FOREACH pred IN node.list.sorted %]
+   [% FOREACH arc IN node.arc_list(pred).sorted('value.plain') %]
+      <tr>
+      <td>
+      [% IF arc.direct %]
+         [% jump('E', 'arc/update.tt', id=arc.id ) %]
+      [% ELSE %]
+         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+      [% END %]
+      </td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>
+      [% IF arc.obj %]
+         [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+      [% ELSE %]
+         [% arc.value | html %]
+      [% END %]
+      </td>
+      <td>[% arc.view_flags %]</td>
+      <td>[% PROCESS updated %]</td>
+      </tr>
+   [% END %]
+[% END %]
+</table>
+
+[% IF debug %]
+<table class="admin">
+<tr><td><pre>[% dump(node,2) %]</pre></td></tr>
+</table>
+[% END %]

@@ -1,0 +1,22 @@
+[% META title="Sök nod"
+   next_template = 'list.tt'
+   next_action = 'node_search'
+   focus = 'query_row'
+   level = 20
+%]
+
+[% CALL search.query_setup %]
+
+<p>
+[ [% jump('List preds', 'pred_/ist.tt') %]
+| [% jump('New search', me, run='search_clear') %]
+]</p>
+
+[% input('query_row','', size=60) %]<br>
+
+[% textarea('query') %]
+
+[% hidden("search_form", "$home/admin/node_search.tt") %]
+[% hidden("search_result", "$home/admin/node_search_result.tt") %]
+
+<p>[% submit('Sök') %]

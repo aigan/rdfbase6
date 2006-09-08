@@ -1,0 +1,78 @@
+[% META title="Slå samman noder"
+	next_action = 'node_merge'
+	default_template = 'update.tt'
+	focus = 'node2'
+        level = 20
+%]
+
+[%
+	hidden("id", q.param('id'));
+	node1 = get(q.param('id'));
+%]
+
+[% BLOCK merge_alternatives %]
+
+   <p>Slå samman <code>[% node1.desig | html %]</code> med:</p>
+
+   <table class='admin'>
+   [% FOR n = result.info.alternatives.alts %]
+      <tr>
+        <td>[% radio('id2', n.id, 0) %]</td>
+	<td><strong><code>[% jump(n.desig, 'node_display.tt', id=n.id) %]</code></strong></td>
+        <td>
+        [% FOREACH is = n.is_direct;
+           'is (' IF loop.first;
+           jump(is.desig, 'node_display.tt', id=is.id);
+           ', ' UNLESS loop.last;
+           ') ' IF loop.last;
+           END;
+	%]
+        [% FOREACH scof = n.scof_direct;
+           'scof (' IF loop.first;
+           jump(scof.desig, 'node_display.tt', id=scof.id);
+           ', ' UNLESS loop.last;
+           ') ' IF loop.last;
+           END;
+	%]
+        [% FOREACH in = n.in_region_direct;
+           'in (' IF loop.first;
+           jump(in.desig, 'node_display.tt', in=scof.id);
+           ', ' UNLESS loop.last;
+           ') ' IF loop.last;
+           END;
+	%]
+        </td>
+	<td><em>[% arc.updated_by.name %] [% arc.updated %]</em></td>
+        <td><small>nod [% n.id %]</small></td>
+      </tr>
+      [% hidden('alternatives',1) %]
+   [% END %]
+   </table>
+
+<p>[% checkbox('move_literals',1) %] Flytta även literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
+
+   [% hidden('node2_desig', q.param('node2_desig')) %]
+   <p>[% submit(' Slå samman ') %]</p>
+[% END %]
+
+[% IF result.type == 'alternatives';
+   alts = result.info.alternatives;
+   PROCESS merge_alternatives;
+   RETURN;
+END;
+%]
+
+
+<p>Slå samman <code>[% node1.desig %]</code> med en annan nod.
+
+<o>Kopplingar till denna nod flyttas till den andra noden.  Literal
+properties från denna nod tags bort för att undvika dubletter i den
+nya noden.</p>
+
+<p>[% checkbox('move_literals',1,1) %] Flytta även literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
+
+<p>Den <strong>rätta</strong> benämningen för <code>[% node1.desig %]</code> är: [% input('node2_desig') %]</p>
+
+<p>[% step(' Slå samman ') %]</p>
+
+<p>Alternativlista visas ifall flera träffar erhålles.</p>

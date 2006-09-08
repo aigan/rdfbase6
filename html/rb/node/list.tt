@@ -1,0 +1,45 @@
+[% META
+   title="Lista noder"
+   level = 20
+%]
+
+[% USE Sorted_table %]
+[% search_result = searchobj.result %]
+
+   <p>
+   [ [% jump('Modifiera sökning', searchobj.form_url ) %]
+   ]</p>
+
+<p>[% search_result.size %] [% loc("hits") %].</p>
+
+<p align="center">[% search_result.pagelist %]</p>
+
+<table class='admin'>
+
+<tr>
+  <td bgcolor="#EFEFEF" colspan="5">&nbsp;</td>      
+</tr>
+
+[% FOREACH item IN search_result.from_page %]
+   <tr>
+      <td>[% jump(item.id, "update.tt", id=item.id) %]</td>
+      <td>
+[% IF item.is(C.organization) %]
+   [% jump(item.desig, "org_update.tt", id=item.id) %]
+[% ELSIF item.is(C.location) %]
+   [% jump(item.desig, "loc_modify.tt", id=item.id) %]
+[% ELSIF item.is(C.person) %]
+   [% jump(item.desig, "person_modify.tt", id=item.id) %]
+[% ELSE %]
+   [% item.desig %]
+[% END %]
+   </td>
+      <td>[% item.arc_list('is').direct.obj.desig %]</td>
+</tr>
+
+[% END %]
+</table>
+
+<p align="center">[% search_result.pagelist %]</p>
+
+

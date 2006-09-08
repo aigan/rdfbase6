@@ -1,0 +1,167 @@
+[% IF admin_mode %]
+<h2>Översättningar
+<table class="admin">
+
+<tr><td>[* aloc('Results/page') *]
+<tr><td>[* aloc('Show results that') *]
+<tr><td>[* aloc('Find everything that') *]
+<tr><td>[* aloc('or') *]
+<tr><td>[* aloc('remove') *]
+<tr><td>[* aloc('New search') *]
+<tr><td>[* aloc('Modify search') *]
+<tr><td>[* aloc('more...') *]
+<tr><td>[* aloc('Show result') *]
+
+</table>
+[% END %]
+
+
+[* BLOCK results_per_page *]
+<select name="limit">
+<option value="5">5</option>
+<option value="10" selected>10</option>
+<option value="20">20</option>
+</select>
+[* loc('Results/page') *]
+[* END *]
+
+[% crits = searchobj.criterions %]
+[% IF crits %]
+
+[* IF redo *]
+   <h2>[* loc('Show results that') *]:</h2>
+[* ELSE *]
+   <h2>[* loc('Find everything that') *]:</h2>
+[* END *]
+
+<table width="100%">
+[% FOREACH ckey = crits.keys %]
+   [% NEXT IF ckey == 'inactive' %]
+   [% crit = crits.$ckey %]
+   [% IF crit.group %]
+<tr bgcolor="#EFEFEF"><td valign="top"><i>[% loc(ckey) %]</i></td>
+<td valign="top">
+      [% FOREACH groupname = crit.group.keys %]
+         [% UNLESS loop.first %]
+            <tr bgcolor="#EFEFEF"><td valign="top"></td><td valign="top">
+         [% END %]
+
+         [% group = get(groupname) %]
+
+         [% loc(group.desig) %]</td><td valign="top">
+
+         [% FOREACH val = crit.group.$groupname %]
+            <b>[% val.name.loc %]</b>
+            [% UNLESS loop.last %]
+               [% loc('or') %]
+            [% END %]
+         [% END %]
+
+         [*# UNLESS redo *]
+            </td><td align="right" valign="top"><nobr>[% jump(loc('remove'), "$home/search/modify.tt",
+                        remove="group_$groupname",
+                        run='search_modify') %]</nobr>
+         [*# END *]
+
+         [% UNLESS loop.last %]
+            </td></tr>
+         [% END %]
+      [% END %]
+</td>
+</tr>
+   [% END %]
+   [% IF crit.prop %]
+   <tr bgcolor="#EFEFEF"><td valign="top"><i>
+   [% IF crit.prop.0.pred.is_pred %]
+      [% IF ckey != 'id' %]
+         [% loc(ckey) %]
+      [% END %]
+   [% ELSE %]
+      [% FOREACH pred = crit.prop.0.pred %]
+         [%+ loc(pred.plain) %]
+         [% UNLESS loop.last %]
+            [%+ loc('or') %]
+         [% END %]
+      [% END %]
+   [% END %]
+   </i></td>
+   <td valign="top">
+      [% FOREACH foo = crit.prop %]
+         [% UNLESS loop.first %]
+            <tr bgcolor="#EFEFEF"><td valign="top"></td><td valign="top">
+         [% END %]
+         [% IF foo.pred.is_pred %]
+            [% firstpred = foo.pred %]
+         [% ELSE %]
+            [% firstpred = foo.pred.first %]
+         [% END %]
+         [% IF foo.match != 'eq' %]
+            <em>[% loc(foo.match) %]</em>
+         [% ELSE %]
+            [% IF firstpred.objtype %]
+               [% val1 = get(foo.values.0) %]
+               [% val1.arc_list('scof').direct.obj.find(private_ne = 1).name.loc %]
+               [% val1.arc_list('is').direct.obj.find(private_ne = 1).name.loc %]
+            [% ELSE %]
+               <em>[% loc(foo.match) %]</em>
+            [% END %]
+         [% END %]
+         </td><td valign="top">
+         [% FOREACH val = foo.values %]
+            [% IF firstpred.objtype %]
+               <b>[% get(val).name.loc %]</b>
+            [% ELSIF firstpred.plain == 'id' %]
+               <b>[% get(val).name.loc %]</b>
+            [% ELSE %]
+               <b>[% val %]</b>
+            [% END %]
+            [% UNLESS loop.last %]
+               [% loc('or') %]
+            [% END %]
+         [% END %]
+
+         [*# UNLESS redo *]
+            </td><td align="right" valign="top">[% jump(loc('remove'), "$home/search/modify.tt",
+                        remove="prop_${foo.key}",
+                        run='search_modify') %]
+         [*# END *]
+         [% UNLESS loop.last %]
+            </td></tr>
+         [% END %]
+      [% END %]
+</td>
+</tr>
+   [% END %]
+[% END %]
+</table>
+
+[* IF redo *]
+
+   [* go(loc('New search'), "$home/search/modify.tt", 'search_clear') *]
+
+   [* go(loc('Modify search'), "$home/search/modify.tt") *]
+
+[* ELSE *]
+
+   [* go(loc('New search'), "$home/search/modify.tt", 'search_clear') *]
+   
+   [* submit(loc('more...')) IF modify *]
+   
+   [* PROCESS results_per_page *]
+
+   [* IF modify *]
+      [* go(loc('Show result'), "$home/search/result.tt", 'search_modify&search_organization_execute') *]
+   [* ELSE *]
+      [* go(loc('Show result'), "$home/search/result.tt", 'search_organization_execute') *]
+   [* END *]
+   
+[* END *]
+
+[% ELSE %]
+
+[* IF modify *]
+   [* submit(loc('more...')) *]
+   [* go(loc('Show result'), "$home/search/result.tt", 'search_modify&search_organization_execute') *]
+[* END *]
+
+[% END %]

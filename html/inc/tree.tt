@@ -1,0 +1,108 @@
+[*
+	scrollbars = 1;
+	width      = 200;
+	height     = 0;
+*]
+
+<style type="text/css"><!--
+
+  /* style for the box around the widget */
+  .hpts-outer {
+     filter:           progid:DXImageTransform.Microsoft.dropShadow( Color=bababa,offx=3,offy=3,positive=true);
+  }
+
+  /* style for the box that contains the tree */
+  .hpts-inner {
+     width:            100%;
+     height:           100%;
+  }
+
+  /* title bar style.  The width here will define a minimum width for
+     the widget. */
+  .hpts-title {
+     visibility:       hidden;
+  }
+
+  /* style of a block of child nodes - indents them under their parent
+     and starts them hidden */
+  .hpts-block {
+     margin-left:      24px;
+     display:          none;
+  }
+
+  /* style for the button bar at the bottom of the widget */
+  .hpts-bbar {
+     visibility:       hidden;
+     padding:          3px;
+     text-align:       right;
+     margin-top:       10px;
+     background-color: #666666;
+     width:            [* width *]px;
+  }
+
+  /* style for the buttons at the bottom of the widget */
+  .hpts-button {
+     margin-left:      15px;
+     background-color: #ffffff;
+     color:            #000000;
+  }
+
+  /* style for selected labels */
+  .hpts-label-selected {
+     background:       #98ccfe;
+  }
+
+  /* style for labels after being unselected */
+  .hpts-label-unselected {
+     background:       #ffffff;
+  }
+
+--></style>
+
+<script language="javascript">
+  [* tsw = 'Ritbase_tsw' +*]
+  function ritbase_selected_item()
+  {
+        if ([* tsw *]_selected_id == -1) {
+           alert("Välj en rad");
+           return;
+        }
+
+        /* trigger onselect */
+        win = window.open(
+            '[* home *]/admin/node_display.tt?id='+[* tsw *]_selected_val,
+            'node_display');
+        win.focus();
+        return(false);
+  }
+
+
+  function ritbase_toggle_expand_all()
+  {
+	var node = document.getElementById("Ritbase_tsw-node-" + 1);
+	for(var i = 1; node != undefined; i++ )
+	{
+	    var obj = document.getElementById("Ritbase_tsw-desc-" + i);
+	    if( obj != undefined )
+	    {
+	        if( obj.style.display != 'block')
+		{
+		    Ritbase_tsw_toggle_expand( i );
+		}
+	    }
+
+	    var elemname = "Ritbase_tsw-node-" + (i+1);
+	    node = document.getElementById(elemname);
+	}
+  }
+
+</script>
+
+<input type=button value=" Visa " onclick="ritbase_selected_item()">
+<input type=button value=" Expandera " onclick="ritbase_toggle_expand_all()">
+<br>
+[* node.tree_select_widget *]
+
+<p>p = privat
+<p>i = inaktiv
+<p>Siffra inom parantes anger summan av antalet noder med relationen <em>är</em> till objektet.  Både direkta och indirekta.
