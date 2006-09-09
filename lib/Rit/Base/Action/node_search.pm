@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::node_search;
+package Rit::Base::Action::node_search;
 use strict;
 
 use Para::Frame::Utils qw( throw trim );

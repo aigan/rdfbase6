@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::arc_edit;
+package Rit::Base::Action::arc_edit;
 
 use strict;
 use Data::Dumper;

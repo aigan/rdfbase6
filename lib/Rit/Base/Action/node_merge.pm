@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::node_merge;
+package Rit::Base::Action::node_merge;
 
 use strict;
 use Data::Dumper;

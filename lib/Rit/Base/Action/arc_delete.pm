@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::arc_delete;
+package Rit::Base::Action::arc_delete;
 
 use strict;
 use Data::Dumper;

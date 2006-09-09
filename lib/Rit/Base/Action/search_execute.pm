@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::search_execute;
+package Rit::Base::Action::search_execute;
 
 use strict;
 use Time::HiRes qw( time );

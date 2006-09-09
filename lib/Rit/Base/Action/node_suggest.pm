@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::node_suggest;
+package Rit::Base::Action::node_suggest;
 
 use strict;
 use Data::Dumper;

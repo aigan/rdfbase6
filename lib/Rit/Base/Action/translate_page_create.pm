@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::translate_page_create;
+package Rit::Base::Action::translate_page_create;
 
 use strict;
 

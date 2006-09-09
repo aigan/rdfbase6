@@ -3294,7 +3294,9 @@ sub tree_select_widget
 {
     my( $node ) = @_;
 
-    use Template::PopupTreeSelect 0.2;
+    # Subclass the HTML::PopupTreeSelect
+    die "not implemented";
+#    use Template::PopupTreeSelect 0.2;
 
     my $data = $node->tree_select_data;
 

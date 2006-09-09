@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::rule_add;
+package Rit::Base::Action::rule_add;
 
 use strict;
 use Data::Dumper;

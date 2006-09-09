@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::translate_node;
+package Rit::Base::Action::translate_node;
 
 use strict;
 

@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::node_update;
+package Rit::Base::Action::node_update;
 
 use strict;
 use Data::Dumper;

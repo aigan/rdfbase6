@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::vacuum;
+package Rit::Base::Action::vacuum;
 
 use strict;
 use Data::Dumper;

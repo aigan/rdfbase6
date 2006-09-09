@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::search_clear;
+package Rit::Base::Action::search_clear;
 use strict;
 
 use Rit::Base::Search;

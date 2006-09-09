@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Action::translation_update;
+package Rit::Base::Action::translation_update;
 
 use strict;
 
