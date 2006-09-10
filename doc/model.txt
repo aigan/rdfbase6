@@ -1,0 +1,200 @@
+RELS
+
+id            int
+verid         int
+subj          int
+pred          int
+obj           int
+active        bool
+indirect      bool
+implicit      bool
+
+valdate
+valtext
+valclean
+valint
+valfloat
+
+activated     timestamp
+activated_by  int
+deactivated   timestamp
+created       timestamp
+created_by    int
+updated       timestamp
+submitted     timestamp
+unsubmitted   timestamp
+replaces      timestamp
+rev_vote      smallint
+rev_vote_by   int
+rev_vote_date timestamp
+rel_vote      smallint
+rel_vote_by   int
+rel_vote_date timestamp
+
+read_access   int
+write_access  int
+
+
+---
+
+predicates with arc as domain:
+
+valid_from
+valid_to
+
+comment_admin
+comment
+replaces
+strength ?
+status ?
+rel ?
+
+dynamic predicats with arc as domain:
+
+owned_by
+
+---
+
+default owned_by is sysadmin_group
+
+a node can have a owned_by property
+
+all rels will inherit the owned_by property. It's always infered.
+
+A rel must be accepted by the owner before it's active.
+
+if a rel goes between two nodes of diffrent ownership, it must be
+accepted by both owners before it becomes active.
+
+A new node can be given to any owner by anyone.
+
+Nodes created for a new arc will get the owner of the other end of the
+arc, unless otherwise stated.
+
+if a node gets a new owner, diffrent from the rel, the rel will be up
+for a check, but will not be automaticly deactivated.
+
+The owner can change the read_access and write_access property of
+rels.
+
+The access properties can point to persons or groups that will have
+persons or groups as members.
+
+Nodes can have read_access and write_access properties.
+
+Access properties can only be changed by owner.
+
+Created arcs will inherit the access properties from nodes with
+defined access properties. If both ends of a new arc has diffrent
+read_access or diffred write_access, it will default to
+sysadmin_group.
+
+The arc will not change the access properties even if the nodes
+change. Except by the owner.
+
+write_access for a node gives the right to create new arcs to or from
+the node. But those arcs must be acceppted by the owner before they
+become active.
+
+write_access for an arc gives the right to change the literal
+value. But the change will be inactive before it's accepted by the
+owner.
+
+write_access for an arc gives the right to remove the arc. But the
+removal must be accepted by the owner.
+
+Nodes created for a new arc will get the access properties of the
+other end of the arc, unless otherwise stated.
+
+read_access for a node may or may not be used...
+
+read_access for an arc makes the literal content and other metadata
+readable.
+
+There should be room for using access configurations as patterns for
+the default acces settings for diffrent object types.
+
+For example, has_interest arcs between member and topic should set the
+read_access to a specific common for all interests of that
+person. That can then be modified for modifying the read access to all
+interests. The node will by default have the property part_of
+Paranormal_member, so that all members can see the interests of the
+person.
+
+---
+
+Version handling:
+
+The arc can have properties
+
+An arc can have diffrent versions
+
+Only one version of an arc can be active
+
+A deactivated arc can't be activated. The actication of a previous
+version is done by creating a new version.
+
+An arc can only be deactivated by the activation of a new version. The
+activation and deactivation date must be identical.
+
+An arc is removed by the activation of a new version with the pred set
+to null. That arc will have the activation and deactivation date
+identical. This will keep history about who requested the removal and
+who authorized it.
+
+A new version of an arc must have the same pred as the previous
+version, and must have either the same subj or obj. The only exception
+is for marking the removal of the arc.
+
+Diffrent languages and other types of variants are handled by separate
+simultaneous active arcs.
+
+Changes in read_access, write_access, rev, rel and pred are done by
+creating a new version.
+
+The acceptance of a new arc will set rel_vote, rev_vote and
+activated. (And deactivate any previously active version.)
+
+Either rel_vote or rev_vote may have been set by another person that
+not by himslef had the access right to accept the arc.
+
+The vote may be negative, positive or neutral.
+
+An arc that hasen't been activated may at any time have the votes
+changed by any authorized party. The arc will hold information only
+about the last of the votes. Additional data may be given to the arc
+in the form of an admin_comment creating an additional arc for the
+arc.
+
+An arc can't be voted on before it has been submitted.
+
+The submitted date may be deleted by the creating user as long as the
+arc hasn't been accepted. Removing the submission also removes the
+votes. It will also update the updated timestamp.
+
+An unsubmitted arc can be changed by the creator.
+
+The replaces date must be equal to the activation date of the current
+active version. It may be changes if the arc isn't submitted.
+
+Then a new version is activated, any submitted versions will be
+unsubmitted.
+
+An arc can be completely removed by the creator if it isn't submitted.
+
+---
+
+Metadata:
+
+Arcs can have properties in the form of other arcs.
+
+The arcs can either have the arc as the subject or the arc version.
+
+Statements about the arc version should be things that are dependant
+on the specific version of the arc.
+
+Metadata that isn't dependant on the specific version can be given to
+the arc node rhater than the arc version node.
+
+---
+
