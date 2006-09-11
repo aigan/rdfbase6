@@ -13,6 +13,8 @@ use strict;
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use LWP::Simple (); # Do not import get
+use Template::PopupTreeSelect 0.9;
+
 
 BEGIN
 {
@@ -3292,16 +3294,12 @@ Returns: a HTML widget that draws the C<scof> tree.
 
 sub tree_select_widget
 {
-    my( $node ) = @_;
+    my( $node, $pred_in ) = @_;
 
-    # Subclass the HTML::PopupTreeSelect
-    die "not implemented";
-#    use Template::PopupTreeSelect 0.2;
+    my $pred = Rit::Base::Pred->get($pred_in)
+      or die "no pred ($pred_in)";
 
-    my $data = $node->tree_select_data;
-
-    # Reset row id
-    Template::PopupTreeSelect->reset_id();
+    my $data = $node->tree_select_data($pred);
 
     my $select = Template::PopupTreeSelect->new(
 						name => 'Ritbase_tsw',
@@ -3327,14 +3325,18 @@ Used by L</tree_select_widget>
 
 sub tree_select_data
 {
-    my( $node ) = @_;
+    my( $node, $pred ) = @_;
+
+    $pred or confess "param pred missing";
 
     my $id = $node->id;
+    my $pred_id = $pred->id;
+
     my $name = $node->name->loc;
-    debug "Processing treepart $id: $name";
-    my $rec = $Rit::dbix->select_record("select count(id) as cnt from rel where pred=1 and obj=?", $id);
+    debug 2, "Processing treepart $id: $name";
+    my $rec = $Rit::dbix->select_record("select count(id) as cnt from rel where pred=? and obj=?", $pred_id, $id);
     my $cnt = $rec->{'cnt'};
-    debug 2, "                    $id: $cnt nodes";
+    debug 3, "                    $id: $cnt nodes";
     my $flags = " ";
     $flags .= 'p' if $node->private;
     $flags .= 'i' if $node->inactive;
@@ -3356,7 +3358,7 @@ sub tree_select_data
 
 	foreach my $subnode ( $childs->nodes )
 	{
-	    push @{ $data->{children} }, $subnode->tree_select_data;
+	    push @{ $data->{children} }, $subnode->tree_select_data($pred);
 	}
     }
 
