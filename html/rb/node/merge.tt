@@ -12,10 +12,10 @@
 
 [% BLOCK merge_alternatives %]
 
-   <p>Slå samman <code>[% node1.desig | html %]</code> med:</p>
+   <p>Slå samman <code>[% node1.sysdesig | html %]</code> med:</p>
 
    <table class='admin'>
-   [% FOR n = result.info.alternatives.alts %]
+   [% FOR n = req.result.info.alternatives.alts %]
       <tr>
         <td>[% radio('id2', n.id, 0) %]</td>
 	<td><strong><code>[% jump(n.desig, 'node_display.tt', id=n.id) %]</code></strong></td>
@@ -42,8 +42,7 @@
            END;
 	%]
         </td>
-	<td><em>[% arc.updated_by.name %] [% arc.updated %]</em></td>
-        <td><small>nod [% n.id %]</small></td>
+        <td><small>node [% n.id %]</small></td>
       </tr>
       [% hidden('alternatives',1) %]
    [% END %]
@@ -55,11 +54,10 @@
    <p>[% submit(' Slå samman ') %]</p>
 [% END %]
 
-[% IF result.type == 'alternatives';
-   alts = result.info.alternatives;
+[%
+ IF req.result.find('alternatives');
    PROCESS merge_alternatives;
-   RETURN;
-END;
+ELSE;
 %]
 
 
@@ -76,3 +74,5 @@ nya noden.</p>
 <p>[% step(' Slå samman ') %]</p>
 
 <p>Alternativlista visas ifall flera träffar erhålles.</p>
+
+[% END %]
