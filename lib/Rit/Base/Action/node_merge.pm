@@ -40,6 +40,7 @@ sub handler
 	if( @node_list_out )
 	{
 	    $result->{'info'}{'alternatives'}{'alts'} = \@node_list_out;
+	    $req->page->set_template($req->referer);
 	    throw('alternatives', "välj nod att slå samman med");
 	}
 	else
