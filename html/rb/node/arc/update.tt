@@ -1,6 +1,6 @@
 [% META otitle="Arc edit"
    	next_action = 'arc_edit'
-	default_template = 'arc_edit.tt'
+	default_template = 'update.tt'
         level = 20
 %]
 

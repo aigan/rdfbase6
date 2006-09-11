@@ -1,5 +1,5 @@
 [% META title="Add arcs"
-   default_template = 'node_display.tt'
+   default_template = '../update.tt'
    next_action = 'arc_add'
    focus = 'query_row'
    level=20
