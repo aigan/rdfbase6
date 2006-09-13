@@ -207,7 +207,7 @@ sub get_by_id
 
   3. $n->find_by_label( "$any_name ($props)", $datatype )
 
-  4. $n->find_by_label( "$called ($redname)", $datatype )
+  4. $n->find_by_label( "$called ($predname)", $datatype )
 
   5. $n->find_by_label( "$id: $name", $datatype )
 
@@ -358,7 +358,7 @@ sub find_by_label
 	else
 	{
 	    my $props = parse_query_props( $spec );
-	    $props->{'predor_name_-_code_-_name_short'} = $name;
+	    $props->{'predor_name_-_code_-_name_short_clean'} = $name;
 	    debug "    Constructing props for find: ".datadump($props,4)
 	      if debug > 3;
 	    $objs = $this->find($props);
@@ -428,7 +428,7 @@ sub find_by_label
 	# Used to use find_simple.  But this is a general find
 	# function and can not assume the simple case
 
-	@new = @{ $this->find({ name => $val }) };
+	@new = @{ $this->find({ name_clean => $val }) };
     }
     #
     # obj as obj id
@@ -1271,7 +1271,7 @@ sub list
 	    }
 	    else
 	    {
-		confess "not implemented: $arclim";
+		confess "not implemented: ".datadump($arclim);
 	    }
 	}
         my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
@@ -3824,7 +3824,7 @@ sub get_by_label
     my $class = shift;
 
     # Look in lable cache
-    unless( ref($_[0]) or $_[1] ) # Do lookup complex searches from cache
+    unless( ref($_[0]) or $_[1] ) # Do not lookup complex searches from cache
     {
 	if( my $id = $Rit::Base::Cache::Label{$class}{ $_[0] } )
 	{
