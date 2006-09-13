@@ -3426,14 +3426,13 @@ sub find_class
 	    }
 	    $Rit::Base::Cache::Class{ $key } = $package;
 	}
-	debug "Class Multi $key -> ".$node->desig;
-	cluck if $node->desig =~ /Scandic Elmia$/; ##### DEBUG
+#	debug "Class Multi $key -> ".$node->desig;
 	return $Rit::Base::Cache::Class{ $key };
     }
     elsif( $classes->[0] )
     {
 	my $classname = $classes->[0]->first_prop('code')->plain;
-	debug "Class $classname -> ".$node->desig;
+#	debug "Class $classname -> ".$node->desig;
 	require(package_to_module($classname));
 	return $classname;
     }
