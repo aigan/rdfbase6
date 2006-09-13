@@ -745,6 +745,10 @@ sub modify
 		# Assume no type mismatch between alternative preds
 		$type = $preds[0]->coltype($props); # FIXME: invalid parameter $props
 	    }
+	    elsif( $pred =~ /^count_pred_(.*)/ )
+	    {
+		confess "not implemented: $pred";
+	    }
 	    else
 	    {
 		$pred = Rit::Base::Pred->get( $pred );
