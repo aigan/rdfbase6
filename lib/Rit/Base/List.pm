@@ -350,7 +350,7 @@ sub find
 	    }
 
 
-	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(eq|exact|like|begins|gt|lt|ne)(?:_(\d+))?)?$/x )
+	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x )
 	    {
 		$Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 		unless( $pred_part )
@@ -362,20 +362,30 @@ sub find
 		die "wrong format in find: $pred_part\n";
 	    }
 
-	    my $rev = $1;
-	    my $pred = $2;
-	    my $match = $3 || 'eq';
-	    my $prio = $4; #not used
+	    my $rev    = $1;
+	    my $pred   = $2;
+	    my $arclim = $3;
+	    my $clean  = $4 || 0;
+	    my $match  = $5 || 'eq';
+	    my $prio   = $6; #not used
 
 	    if( $pred =~ s/^predor_// )
 	    {
-		my( @preds ) = split /_-_/, $pred;
+		my( @prednames ) = split /_-_/, $pred;
+		my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
 		$pred = \@preds;
 	    }
+
+	    # match '*' handled below (but not matchtype 'exist')
 
 	    if( ref $node eq 'Rit::Base::Arc' )
 	    {
 		## TODO: Handle preds in the form 'obj.scof'
+
+		if( $match ne 'eq' or $arclim or $clean )
+		{
+		    confess "Not implemented: $pred_part";
+		}
 
 		debug 3,"node is an arc";
 		if( $pred =~ /^(obj|value)$/ )
@@ -404,9 +414,19 @@ sub find
 		}
 	    }
 
+	    if( $arclim )
+	    {
+		confess "arclim not implemented: $pred_part";
+	    }
+
 	    if( $pred =~ /^count_pred_(.*)/ )
 	    {
 		$pred = $1;
+
+		if( $clean )
+		{
+		    confess "clean for count_pred not implemented";
+		}
 
 		if( $target_value eq '*' )
 		{
@@ -431,7 +451,6 @@ sub find
 		my $matchtype =
 		{
 		 eq    => '==',
-		 exact => '==',
 		 ne    => '!=',
 		 gt    => '>',
 		 lt    => '<',
@@ -467,6 +486,11 @@ sub find
 		}
 		else
 		{
+		    if( $clean )
+		    {
+			$target_value = valclean(\$target_value);
+		    }
+
 		    next PRED # Check next if this test pass
 			if $node->has_value( $pred, $target_value );
 		}
@@ -482,6 +506,11 @@ sub find
 		}
 		else
 		{
+		    if( $clean )
+		    {
+			$target_value = valclean(\$target_value);
+		    }
+
 		    next PRED # Check next if this test pass
 			unless $node->has_value( $pred, $target_value );
 		}
