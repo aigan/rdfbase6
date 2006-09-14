@@ -23,7 +23,7 @@ created_by    int
 updated       timestamp
 submitted     timestamp
 unsubmitted   timestamp
-replaces      timestamp
+replaces      int
 rev_vote      smallint
 rev_vote_by   int
 rev_vote_date timestamp
@@ -44,10 +44,8 @@ valid_to
 
 comment_admin
 comment
-replaces
 strength ?
-status ?
-rel ?
+
 
 dynamic predicats with arc as domain:
 
@@ -174,8 +172,8 @@ votes. It will also update the updated timestamp.
 
 An unsubmitted arc can be changed by the creator.
 
-The replaces date must be equal to the activation date of the current
-active version. It may be changes if the arc isn't submitted.
+The replaces must be the verid of an active version of the same arc.
+It may be changes if the arc isn't submitted.
 
 Then a new version is activated, any submitted versions will be
 unsubmitted.
@@ -198,3 +196,23 @@ the arc node rhater than the arc version node.
 
 ---
 
+Inference:
+
+Infered arcs will be created without any data about voting, submission
+or the other things.
+
+The infered arc will have the infered bool set.
+
+We may use some of the other fields for keeping some inference
+information.
+
+All noninfered created arcs are marked as explicit. If that arc can be
+infered, it will be marked as infered.
+
+The arc can be removed completely then it's not explicit and can no
+longer be infered.
+
+Existing active arcs are used as infered arcs regardless of their
+metadata.
+
+---
