@@ -816,7 +816,9 @@ L<Rit::Base::Undef>.
 sub updated_by
 {
     my( $arc ) = @_;
-    return $arc->{'updated_by'} || is_undef;
+    return $arc->{'updated_by_obj'} ||=
+	Rit::Base::User->get( $arc->{'updated_by'} ) ||
+		is_undef;
 }
 
 #######################################################################
@@ -2134,9 +2136,7 @@ sub init
     my $indirect = $rec->{'indirect'}  || 0; # default
     my $updated = Rit::Base::Time->get($rec->{'updated'} );
 
-    my $updated_by = $rec->{'updated_by'} ?
-      Rit::Base::User->get( $rec->{'updated_by'} ) :
-	  undef;
+    my $updated_by = $rec->{'updated_by'};
 
     # Setup data
     $arc->{'id'} = $id;
