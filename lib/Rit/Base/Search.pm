@@ -375,7 +375,7 @@ sub modify_from_query
 
 
 	#filter out other params
-	next unless $key =~ /^(revprop_|prop_|isgroup_|order_by|path_)/;
+	next unless $key =~ /^(revprop_|prop_|order_by|path_)/;
 
 	my( @vals ) =  $q->param($key);
 
@@ -483,16 +483,6 @@ sub broaden # removes targets from searchy type
 	    $search->add_prop( $crit );
 	}
     }
-    elsif( $type eq 'group' )
-    {
-	unless( $target =~ /^\d+$/ )
-	{
-	    debug( 2, "--2> Finding id for node with name $target");
-	    $target = getnode($target)->id unless ref $target;
-	}
-
-	delete $search->{'query'}{'group'}{$target};
-    }
     elsif( $type eq 'path' )
     {
 	delete $search->{'query'}{'path'}{$target};
@@ -536,12 +526,6 @@ The keys are built up of parts used to describe the type of search
 part (search criterion).
 
 The search format should be compatible with L<Rit::Base::List/find>.
-
-=head3 isgroup
-
-currently only used in one place in admin/org_search
-
-This type of search may be removed removed in the future
 
 =head3 path
 
@@ -648,51 +632,7 @@ sub modify
 
 	# The filtering out of empty values is now in modify_by_query
 
-
-	# TODO: Support private for is_group and path
-
-	if( $key =~ /^isgroup_(\d+)_(\d+)(?:_(\d+))?/ )
-	{
-	    my $group   = $1;
-	    my $node_id = $2;
-	    my $weight  = $3 || 1;
-
-	    # Find nodes that has a is relation to at least one node
-	    # in each group
-
-	    debug "Set group $group node $node_id with weight $weight";
-
-	    $search->replace('group', $group);
-
-	    # Keep it simple, stupid!!!
-	    #
-	    $search->{'query'}{'group'}{$group}{$node_id} = $weight;
-	    debug "Setting query group $group $node_id to $weight";
-	}
-	elsif( $key =~ /^isgroup_(.+?)__(.+?)(?:__(\d+))?$/ )
-	{
-	    my $group_name   = $1;
-	    my $node_name = $2;
-	    my $weight  = $3 || 1;
-
-	    debug "---> Finding id for node with name $node_name";
-
-	    my $group_id = getnode($group_name)->id;
-	    my $node_id = getnode($node_name)->id;
-
-	    # Find nodes that has a is relation to at least one node
-	    # in each group
-
-	    debug "Set group $group_name node $node_id with weight $weight";
-
-	    $search->replace('group', $group_name);
-
-	    # Keep it simple, stupid!!!
-	    #
-	    $search->{'query'}{'group'}{$group_id}{$node_id} = $weight;
-	    debug "Setting query group $group_id $node_id to $weight";
-	}
-	elsif( $key =~ m/^path_(.+?)(?:_(clean))?(?:_Prio(\d+))?$/ )
+	if( $key =~ m/^path_(.+?)(?:_(clean))?(?:_Prio(\d+))?$/ )
 	{
 	    # We split the steps in execute stage
 
@@ -968,12 +908,6 @@ sub build_sql
     {
 #	debug datadump($props); ### DEBUG
 	push @elements, @{ $search->elements_props( $props ) };
-    }
-
-    # groups
-    if( my $groups = $search->{'query'}{'group'} )
-    {
-	push @elements, @{ $search->elements_groups( $groups ) };
     }
 
     unless( @elements ) # Handle empty searches
@@ -1315,31 +1249,7 @@ sub rev_query
 
     foreach my $cc ( keys %{$search->{'query'}} ) # cc = criterion class
     {
-	if( $cc eq 'group' )
-	{
-	    foreach my $group_id ( keys %{$search->{'query'}{'group'}} )
-	    {
-		my $group = getnode($group_id);
-		my $group_name = $group ? $group->name->loc : '';
-		### Changed to $group_id from $group
-		foreach my $node_id ( keys %{$search->{'query'}{'group'}{$group_id}} )
-		{
-		    my $node = getnode($node_id);
-		    my $node_name = $node ? $node->name->loc : '';
-		    my $weight = $search->{'query'}{'group'}{$group_id}{$node_id};
-		    $props->{"isgroup_${group_id}_${node_id}_${weight}"} = 1;
-		    if( $full )
-		    {
-			$props->{"isgroup_${group_name}__${node_name}__${weight}"} = 1;
-			$props->{"isgroup_${group_name}__${node_id}__${weight}"} = 1;
-			$props->{"isgroup_${group_name}__${node_name}"} = 1;
-			$props->{"isgroup_${group_name}__${node_id}"} = 1;
-			$props->{"isgroup_${group_id}_${node_id}"} = 1;
-		    }
-		}
-	    }
-	}
-	elsif( $cc eq 'path' )
+	if( $cc eq 'path' )
 	{
 	    foreach my $path ( keys %{$search->{'query'}{'path'}} )
 	    {
@@ -1485,8 +1395,6 @@ sub rev_query
 
 Transform search to set of PUBLIC explained criterions.
 
-groups: $ecrits->{'is'}{'group'}{$group} = new Rit::Base::List \@list;
-
 props:	push( @{$ecrits->{$pred_name}{'prop'}}, $prop );
 
 $pred_name is in a form equal to the one used in html forms
@@ -1505,19 +1413,7 @@ sub criterions
 
     foreach my $cc ( keys %{$search->{'query'}} ) # cc = criterion class
     {
-	if( $cc eq 'group' )
-	{
-	    foreach my $group ( keys %{$search->{'query'}{'group'}} )
-	    {
-		my @list = ();
-		foreach my $node_id ( keys %{$search->{'query'}{'group'}{$group}} )
-		{
-		    push @list, getnode($node_id);
-		}
-		$ecrits->{'is'}{'group'}{$group} = Rit::Base::List->new(\@list);
-	    }
-	}
-	elsif( $cc eq 'path' )
+	if( $cc eq 'path' )
 	{
 	    foreach my $path ( keys %{$search->{'query'}{'path'}} )
 	    {
@@ -2013,79 +1909,6 @@ sub elements_path
     return( \@element );
 }
 
-sub elements_groups
-{
-    my( $search, $groups ) = @_;
-
-    my @element;
-    foreach my $group_id ( keys %$groups )
-    {
-	my @alts = keys %{$groups->{$group_id}};
-
-	# Only add to score if group has more than one alternative
-
-	# alternative with score higher than one is high priority
-
-	if( @alts > 1 )
-	{
-	    my @or_value = ();
-	    my @or_part = ();
-	    my @score_part = ();
-
-	    foreach my $node_id ( @alts )
-	    {
-		my $name = "part_".$node_id;
-		my $weight = $groups->{$group_id}{$node_id};
-
-		push @or_part, "$name is not null";
-		push @score_part,
-		{
-		    select => $weight,
-		    where => "pred=1 and obj=?",
-		    values => [$node_id],
-		    name => $name,
-		};
-	    }
-
-	    my $sql = join " or ", @or_part;
-	    $sql = "($sql)";
-
-	    push @element,
-	    {
-		score => \@score_part,
-		where => $sql,
-		values => \@or_value,
-		prio  => 99,
-	    };
-	}
-	elsif( @alts )
-	{
-	    my $node_id = $alts[0];
-	    my $weight = $groups->{$group_id}{$node_id};
-	    my $prio = ( $weight > 1 ? 3 : 4 );
-
-	    push @element,
-	    {
-		select => 'sub',
-		where => "pred=1 and obj=?",
-		values => [$node_id],
-		prio => $prio,
-	    };
-	}
-
-	if( $search->add_stats )
-	{
-#	    debug("--> add stats for group search?\n");
-	    foreach my $node_id ( @alts )
-	    {
-		getnode($node_id)->log_search;
-	    }
-	}
-    }
-
-    return( \@element );
-}
-
 sub elements_props
 {
     my( $search, $props ) = @_;
@@ -2555,20 +2378,6 @@ sub sysdesig
 	    foreach my $val ( @{$path->{$part}} )
 	    {
 		$txt .= sprintf("      %s\n", ref $val ? $val->sysdesig : $val );
-	    }
-	}
-    }
-
-    if( my $groups = $query->{'group'} )
-    {
-	$txt .= "  Group:\n";
-	foreach my $group_id ( keys %$groups )
-	{
-	    $txt .= "    $group_id:\n";
-	    my @alts = keys %{$groups->{$group_id}};
-	    foreach my $node_id ( @alts )
-	    {
-		$txt .= "      $node_id\n";
 	    }
 	}
     }
