@@ -1,9 +1,14 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Utils;
 
+=head1 NAME
+
+Rit::Base::Utils - Utility functions for RitBase
+
+=cut
+
 use strict;
 use Carp qw( cluck confess carp croak );
-use Data::Dumper;
 use UNIVERSAL;
 
 BEGIN
@@ -12,7 +17,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw trim chmod_file debug );
+use Para::Frame::Utils qw( throw trim chmod_file debug datadump );
 use Para::Frame::Reload;
 
 use base qw( Exporter );
@@ -23,7 +28,7 @@ BEGIN
 	      format_phone format_zip getnode getarc getpred
 	      parse_query_props parse_form_field_prop
 	      parse_arc_add_box is_undef arc_lock arc_unlock
-	      log_stats_commit truncstring string );
+	      log_stats_commit truncstring string parse_query_pred parse_query_prop convert_query_prop_for_creation );
 
 }
 
@@ -31,70 +36,89 @@ use Rit::Base::Undef;
 use Rit::Base::Time qw( now );
 use Rit::Base::String;
 
-#use POSIX qw(locale_h strftime);
-#use locale;
 
-sub translate
-{
-    confess "deprecated";
 
-    my $req = $Para::Frame::REQ;
+=head1 FUNCTIONS
 
-    # The object to be translated could be one or more value nodes.
-    # choose the right value node
+Exportable.
 
-    if( ref $_[0] )
-    {
-	if( ref $_[0] eq 'Rit::Base::List' )
-	{
-	    return $_[0]->loc;
-	}
-	elsif( ref $_[0] eq 'Rit::Base::Literal' )
-	{
-	    $_[0] = $_[0]->literal;
-	}
-	elsif( ref $_[0] eq 'Rit::Base::Resource' )
-	{
-	    if( my $val = $_[0]->value )
-	    {
-		return $val;
-	    }
-	    croak "Can't translate value: ". Dumper($_[0]);
-	}
-	elsif( ref $_[0] eq 'Rit::Base::Undef' )
-	{
-	    return '';
-	}
-	else
-	{
-	    croak "Can't translate value: ". Dumper($_[0]);
-	}
-    }
+TODO: Move most if not all of these functions to another place...
 
-    my $rec = $Rit::dbix->select_possible_record('from tr where c=?',$_[0]);
-    foreach my $lang ( $req->language->alternatives )
-    {
-	return $rec->{$lang} if defined $rec->{$lang} and length $rec->{$lang};
-    }
+Please think about _not_ using these...
 
-    return $_[0];
-}
+=cut
 
+
+#######################################################################
+
+=head2 getnode
+
+  getnode( $arg )
+
+Calls L<Rit::Base::Resource/get> with C<$arg>.
+
+Returns: See L<Rit::Base::Resource/get>
+
+=cut
 
 sub getnode
 {
     return Rit::Base::Resource->get(@_);
 }
 
+#######################################################################
+
+=head2 getarc
+
+  getarc( $arg )
+
+Calls L<Rit::Base::Arc/get> with C<$arg>.
+
+Returns: See L<Rit::Base::Resource/get>
+
+=cut
+
 sub getarc
 {
     return Rit::Base::Arc->get(@_);
 }
 
+
+#######################################################################
+
+=head2 getpred
+
+  getpred( $arg )
+
+Calls L<Rit::Base::Pred/get> with C<$arg>.
+
+Returns: See L<Rit::Base::Resource/get>
+
+=cut
+
 sub getpred
 {
     return Rit::Base::Pred->get(@_);
 }
+
+
+#######################################################################
+
+=head2 cache_clear
+
+  cache_clear()
+
+  cache_clear( $time )
+
+Sats the time of the cache clearing to $time that defaults to now().
+
+Clears caches with nodes.
+
+TODO: Broken. FIXME
+
+Returns:
+
+=cut
 
 sub cache_clear
 {
@@ -103,13 +127,22 @@ sub cache_clear
     debug "<<< Expunge cache\n";
 
     $Rit::Base::Cache::Created = $time || time;
+
+    %Rit::Base::Cache::Label = ();
     %Rit::Base::Cache::Resource = ();
-    %Rit::Base::Cache::Id = ();
-    %Rit::Base::Cache::User = ();
     %Rit::Base::Cache::find_simple = ();
     %Rit::Base::Cache::stats_change = ();
     Rit::Base::Arc->clear_queue;
 }
+
+
+#######################################################################
+
+=head2 cache_update
+
+TODO: Broken. FIXME
+
+=cut
 
 sub cache_update
 {
@@ -120,6 +153,15 @@ sub cache_update
 
     %Rit::Base::Cache::find_simple = ();
 }
+
+
+#######################################################################
+
+=head2 cache_sync
+
+TODO: Broken. FIXME
+
+=cut
 
 sub cache_sync
 {
@@ -171,6 +213,30 @@ sub cache_sync
     debug "--- Cache size: $cache_size\n";
 }
 
+
+#######################################################################
+
+=head2 valclean
+
+  valclean( $value )
+
+Returns: The new value after a lot of transformation
+
+    $value = lc($value);
+    $value =~ s/(aa)/å/g;
+    $value =~ s/(æ|ae)/ä/g;
+    $value =~ s/(ø|oe)/ö/g;
+    $value =~ tr/àáâäãåéèêëíìïîóòöôõúùüûýÿðþ/aaaaaaeeeeiiiiooooouuuuyydp/;
+    $value =~ tr/`'/'/;
+    $value =~ tr/qwz/kvs/;
+    $value =~ s/\b(och|and|o|o\.|og)\b/&/g;
+    $value =~ s/\s\'n\b/&/g;
+    $value =~ s/hote(ls|ller|lli|llin|llit|ll|l)/hotel/g;
+
+    $value =~ s/[^\w&]//g;
+
+=cut
+
 sub valclean
 {
     my( $origvalue ) = @_;
@@ -213,6 +279,15 @@ sub valclean
     return $value
 }
 
+
+#######################################################################
+
+=head2 format_phone
+
+Deprecated
+
+=cut
+
 sub format_phone
 {
     my( $text ) = @_;
@@ -222,6 +297,15 @@ sub format_phone
     return $text;
 }
 
+
+#######################################################################
+
+=head2 format_zip
+
+Deprecated
+
+=cut
+
 sub format_zip
 {
     my( $text ) = @_;
@@ -230,11 +314,42 @@ sub format_zip
 }
 
 
+#######################################################################
+
+=head2 parse_query_props
+
+  parse_query_props( $string )
+
+Splits the string to a list of values if separated by ','.
+
+The first part of each element should be a predicate and the rest,
+after the first space, should be the value.
+
+Returns:
+
+a props hash with pred/value pairs.
+
+Example:
+
+  name Jonas Liljegren, age 33
+
+  becomes:
+
+  {
+    name => 'Jonas Liljegren',
+    age  => '33',
+  }
+
+
+TODO: Handle things like: val (p1 val1, p2 val2 (ps1 vals1, ps2,
+vals2), p3 val3)
+
+=cut
+
+
 sub parse_query_props
 {
     my( $prop_text ) = @_;
-
-    # TODO: Handle things like:  val (p1 val1, p2 val2 (ps1 vals1, ps2, vals2), p3 val3)
 
 #    warn "Parsing props '$prop_text'\n";
     my $props = {};
@@ -250,6 +365,41 @@ sub parse_query_props
     return $props;
 }
 
+
+#######################################################################
+
+=head2 parse_form_field_prop
+
+  parse_form_field_prop( $string )
+
+Splits the string into an arg list.
+
+The format is name1_val1__name2_val2__name3_val3...
+
+Vals can be empty: name1___name2_val2...
+
+Vals can contain underscore: pred_in_region...
+
+The string can begin with C<check_>.
+
+Returns:
+
+a props hash with pred/value pairs.
+
+Example:
+
+  arc___revpred_has_member__type_marketing_group
+
+  becomes:
+
+  {
+    arc     => undef,
+    revpred => 'has_member',
+    type    => 'marketing_group',
+  }
+
+=cut
+
 sub parse_form_field_prop
 {
     my( $string ) = @_;
@@ -257,9 +407,6 @@ sub parse_form_field_prop
     $string =~ s/^check_//;
 
     my %arg;
-    ## The format is name1_val1__name2_val2__name3_val3...
-    ## Vals can be empty: name1___name2_val2...
-    ## Vals can contain underscore: pred_in_region...
     foreach my $part ( split /___?/, $string )
     {
 	my( $key, $val ) = $part =~ /^([^_]+)_?(.*)/
@@ -269,6 +416,57 @@ sub parse_form_field_prop
     }
     return \%arg;
 }
+
+
+#######################################################################
+
+=head2 parse_arc_add_box
+
+  parse_arc_add_box( $string )
+
+Splits the string up with one property for each row.
+
+The first part of each element should be a predicate and the rest,
+after the first space, should be the value.
+
+Value nodes can be created by giving adding the value props after an
+C<-E<gt>>. Those props are parsed using L</parse_query_props>.
+
+NB! This function ads value arcs so that the returning props list can
+be used for creating arcs.
+
+Returns:
+
+a props hash with pred/value pairs.
+
+Example:
+
+  name Sverige -> language sv (code)
+  is country
+
+This would create a node with the properties
+
+  $valnode1 =
+  {
+    language => 'sv (code)',
+    value    => 'Sverige',
+    datatype => $text,
+  }
+
+And then return the hashref
+
+  {
+    name => $valnode1,
+    is   => 'country',
+  }
+
+Note that the value node is created even if you don't use the returned
+hashref for creating the arcs using that value node.
+
+The C<sv (code)> part will be parsed by
+L<Rit::Base::Resource/find_by_label>, as will all the values.
+
+=cut
 
 sub parse_arc_add_box
 {
@@ -312,6 +510,269 @@ sub parse_arc_add_box
 }
 
 
+#######################################################################
+
+=head2 parse_query_pred
+
+  parse_query_pred( $predstring )
+
+  parse_query_pred( $predstring, \%args )
+
+Internal use...
+
+=cut
+
+sub parse_query_pred
+{
+    my( $val, $args ) = @_;
+
+    $args ||= {};
+
+    my $private = $args->{'private'} || 0;
+    my $subj = $args->{'subj'};
+
+    if( $val =~ m/^(rev_)?(.*?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x )
+    {
+	my $rev    = $1;
+	my $pred   = $2;
+	my $type;
+	my $arclim = $3;
+	my $clean  = $4 || $args->{'clean'} || 0;
+	my $match  = $5 || 'eq';
+	my $prio   = $6; #Low prio first (default later)
+	my $find   = undef;
+
+	if( $pred =~ s/^predor_// )
+	{
+	    my( @prednames ) = split /_-_/, $pred;
+	    my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
+	    $pred = \@preds;
+
+	    # Assume no type mismatch between alternative preds
+	    $type = $preds[0]->coltype($subj); # FIXME: invalid parameter $props
+	}
+	else
+	{
+	    if( $pred =~ /^count_pred_(.*)/ )
+	    {
+		$find = 'count_pred';
+		$pred = $1;
+	    }
+
+	    $pred = Rit::Base::Pred->get( $pred );
+	    $type = $pred->coltype($subj);
+	}
+
+	if( $type eq 'valtext' )
+	{
+	    if( $clean )
+	    {
+		$type = 'valclean';
+	    }
+	}
+	elsif( $type eq 'obj' )
+	{
+	    if( $rev )
+	    {
+		$type = 'sub';
+	    }
+	}
+
+	return
+	{
+	 rev => $rev,
+	 pred => $pred,
+	 type => $type,
+	 arclim => $arclim,
+	 clean => $clean,
+	 match => $match,
+	 prio => $prio,
+	 find => $find,
+	 private => $private,
+	};
+    }
+    return undef;
+}
+
+#######################################################################
+
+=head2 parse_query_prop
+
+  parse_query_preds( \%props )
+
+  parse_query_preds( \%props, \%args )
+
+Internal use...
+
+=cut
+
+sub parse_query_prop
+{
+    my( $props, $args ) = @_;
+
+    my %res;
+    foreach my $predpart ( keys %$props )
+    {
+	my $valref = $props->{$predpart};
+	my @values;
+	if( ref $valref eq 'ARRAY' )
+	{
+	    @values = @$valref;
+	}
+	elsif( ref $valref eq 'Rit::Base::List' )
+	{
+	    @values = $valref->nodes;
+	}
+	else
+	{
+	    @values = ($valref);
+	}
+
+	foreach( @values )
+	{
+	    if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource::Compatible') )
+	    {
+		# Getting node id
+		$_ = $_->id;
+	    }
+	    elsif( ref $_ eq 'HASH' )
+	    {
+		if( $_->{'id'} )
+		{
+		    $_ = $_->{'id'};
+		}
+		else
+		{
+		    # Sub-request
+		    $_ = Rit::Base::Resource->get_id( $_ );
+		}
+	    }
+	}
+
+
+	my $rec =  parse_query_pred( $predpart, $args );
+
+	if( $values[0] eq '*' )
+	{
+	    $rec->{'match'} = 'exist';
+	}
+	elsif( $rec->{'type'} eq 'obj' )
+	{
+	    # The obj part can be specified in several ways
+	    #
+	    my @new;
+	    foreach my $val ( @values )
+	    {
+		if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Object::Compatible' ) )
+		{
+		    unless( $val->defined )
+		    {
+			$val = undef;
+		    }
+		}
+
+		if( defined $val and length $val )
+		{
+		    push @new, Rit::Base::Resource->resolve_obj_id( $val );
+		}
+		else
+		{
+		    push @new, undef;
+		}
+	    }
+	    @values = @new;
+	}
+
+	if( $rec->{'match'} eq 'exist' )
+	{
+	    @values = ();
+	}
+	elsif( not @values )
+	{
+	    throw('incomplete', longmess("Values missing: ".datadump $rec->{'value'}));
+	}
+
+	$rec->{'values'} = \@values;
+
+	$res{$predpart} = $rec;
+    }
+
+    return \%res;
+}
+
+
+#######################################################################
+
+=head2 convert_query_prop_for_creation
+
+  convert_query_prop_for_creation( \%props )
+
+  convert_query_prop_for_creation( \%props, \%args )
+
+Accepts C<_clean> part.
+
+Internal use...
+
+=cut
+
+sub convert_query_prop_for_creation
+{
+    my( $props_in, $args ) = @_;
+
+    my $proprec = parse_query_prop( $props_in, $args );
+
+    my %props;
+
+    foreach my $predpart (keys %$proprec)
+    {
+	my $rec = $proprec->{$predpart};
+
+	if( $rec->{'arclim'} )
+	{
+	    confess "arclim not valid here";
+	}
+
+	if( $rec->{'match'} ne 'eq' )
+	{
+	    confess "Only matchtype eq valid here";
+	}
+
+	my $pred_name;
+	my $pred = $rec->{'pred'};
+	unless( UNIVERSAL::isa($pred, 'Rit::Base::Pred') )
+	{
+	    confess "No predor valid here: ".datadump($pred);
+	}
+
+	if( $rec->{'rev'} )
+	{
+	    $pred_name = 'rev_' . $pred->plain;
+	}
+	else
+	{
+	    $pred_name = $pred->plain;
+	}
+
+	$props{$pred_name} = $rec->{'values'};
+    }
+
+    return \%props;
+}
+
+
+#######################################################################
+
+=head2 is_undef
+
+  is_undef()
+
+Returns:
+
+An L<Rit::Base::Undef> object.
+
+=cut
+
+
 sub is_undef ()
 {
 #    carp "got <UNDEF> value";
@@ -319,15 +780,54 @@ sub is_undef ()
     return Rit::Base::Undef->new();
 }
 
+
+#######################################################################
+
+=head2 arc_lock
+
+  arc_lock()
+
+Calls L<Rit::Base::Arc/lock>
+
+=cut
+
 sub arc_lock
 {
     Rit::Base::Arc->lock;
 }
 
+
+#######################################################################
+
+=head2 arc_unlock
+
+  arc_unlock()
+
+Calls L<Rit::Base::Arc/unlock>
+
+=cut
+
 sub arc_unlock
 {
     Rit::Base::Arc->unlock;
 }
+
+
+#######################################################################
+
+=head2 truncstring
+
+  truncstring( $string, $length )
+
+The string may be a string ref or an L<Rit::Base::Object>. It doesnt
+touch the string, but returns a string with a maximum of C<$length>
+chars. If shortened, ends with '...'.
+
+Returns:
+
+The shortened string.
+
+=cut
 
 sub truncstring
 {
@@ -376,7 +876,13 @@ sub truncstring
 
 =head2 log_stats_commit
 
+  log_stats_commit()
+
 Comit all the stats changes
+
+Returns:
+
+An empty string
 
 =cut
 
@@ -439,6 +945,17 @@ sub log_stats_commit
 
     return '';
 }
+
+
+#######################################################################
+
+=head2 string
+
+  string($string)
+
+Calls L<Rit::Base::String/new> with C<$string>.
+
+=cut
 
 sub string
 {
