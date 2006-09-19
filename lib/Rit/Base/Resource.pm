@@ -92,6 +92,16 @@ You should call get() through the right class.  If not, it will look
 up the right class and bless itself into that class, and call thats
 class L</init>.
 
+The global variable C<%Rit::Base::LOOKUP_CLASS_FOR> can be modified
+(during startup) for setting which classes it should lookup the class
+for. This is initiated to:
+
+  Rit::Base::Resource => 1,
+  Rit::Base::User     => 1,
+
+NB! If you call get() from a class other than these, you must make
+sure that the object will never also be of another class.
+
 Returns:
 
 a node object
@@ -110,11 +120,18 @@ sub get
     return undef unless $id;
     my $node;
 
+#    debug "Getting $id ($class)";
+
     # Get the resource id
     #
     if( $id !~ /^\d+$/ )
     {
-	return $id if ref $id and UNIVERSAL::isa($id, 'Rit::Base::Resource::Compatible'); # This already is a (node?) obj
+	if( ref $id and UNIVERSAL::isa($id, 'Rit::Base::Resource::Compatible') )
+	{
+	    # This already is a (node?) obj
+#	    debug "Got     $id";
+	    return $id;
+	}
 
 	my $resolved_id;
 	# $id could be a hashref, but those are not chached
@@ -132,7 +149,7 @@ sub get
 
 	    # Cache id lookups
 	    #
-#	    debug "Caching node $resolved_id: $node";
+#	    debug "Got    $id: Caching node $resolved_id: $node";
 	    $Rit::Base::Cache::Resource{ $resolved_id } = $node;
 
 	    return $node;
@@ -145,14 +162,18 @@ sub get
     #
     if( $node = $Rit::Base::Cache::Resource{ $id } )
     {
-#	debug "Got node $id from Resource cache: $node";
+#	debug "Got     $id from Resource cache: $node";
 	return $node;
     }
 
     $node = $class->new( $id );
     # The node will be cached by the new()
 
-    return $node->first_bless;
+    $node->first_bless;
+
+#    debug "Got     $id ($node)";
+
+    return $node;
 }
 
 
@@ -3399,6 +3420,7 @@ sub find_class
 
     # I guess this is sufficiently efficient
     my $classes = $node->list('is',undef,'not_disregarded')->list('class_handled_by_perl_module');
+#    debug "Finding the class for ".$node->id;
 #    debug " The islist is ".$node->list('is')->sysdesig;
 #    debug "The modlist is ".$node->list('is')->list('class_handled_by_perl_module')->sysdesig;
 
@@ -3410,7 +3432,7 @@ sub find_class
 	    no strict "refs";
 	    my @classnames =  map $_->first_prop('code')->plain, @{$classes};
 	    my $package = "Rit::Base::Metaclass::$key";
-	    debug "Creating package $package";
+#	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass", @classnames);
 	    foreach my $classname ( @classnames )
 	    {
@@ -3443,6 +3465,8 @@ sub find_class
 
 Used by L</get> and L<Rit::Base::Lazy::AUTOLOAD>.
 
+Uses C<%Rit::Base::LOOKUP_CLASS_FOR>
+
 =cut
 
 sub first_bless
@@ -3451,7 +3475,7 @@ sub first_bless
 
     # get the right class
     my( $class ) = ref $node;
-    if( $class eq 'Rit::Base::Resource' )
+    if( $Rit::Base::LOOKUP_CLASS_FOR{ $class } )
     {
 	# We assume that Arcs et all are retrieved directly. Thus,
 	# only look for 'is' arcs. Pred and Rule nodes should have an
@@ -3481,6 +3505,8 @@ sub first_bless
     confess $node unless ref $node;
 
     $node->init;
+
+#    debug sprintf "Node %d initiated as $node", $node->id;
 
     return $node;
 }
