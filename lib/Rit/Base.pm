@@ -30,6 +30,14 @@ use Rit::Base::Pred;
 
 use Rit::Base::Utils qw( log_stats_commit );
 
+# Used in Rit::Base::Resource->first_bless()
+our %LOOKUP_CLASS_FOR =
+    (
+     Rit::Base::Resource => 1,
+     Rit::Base::User     => 1,
+    );
+
+
 #########################################################################
 ################################  Constructors  #########################
 
