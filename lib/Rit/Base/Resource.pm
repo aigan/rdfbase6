@@ -39,7 +39,8 @@ use Rit::Base::Metaclass;
 use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
 			 getpred parse_query_props cache_update
 			 parse_form_field_prop is_undef arc_lock
-			 arc_unlock truncstring );
+			 arc_unlock truncstring
+			 convert_query_prop_for_creation );
 
 ### Inherit
 #
@@ -800,11 +801,12 @@ sub find_set  # Find the one matching node or create one
     unless( $node )
     {
 	$default ||= {};
+	my $props_new = convert_query_prop_for_creation($props);
 	foreach my $pred ( keys %$default )
 	{
-	    $props->{$pred} ||= $default->{$pred};
+	    $props_new->{$pred} ||= $default->{$pred};
 	}
-	return $this->create($props);
+	return $this->create($props_new);
     }
 
     return $node;
@@ -841,36 +843,24 @@ See also L</find_set> and L</find_one>
 
 sub set_one  # get/set the one node matching. Merge if necessery
 {
-    my( $this, $props, $default ) = @_;
+    my( $this, $props_in, $default ) = @_;
 
 
-    my $nodes = $this->find( $props );
+    my $nodes = $this->find( $props_in );
     my $node = shift @$nodes;
 
     if( $nodes->[0] )
     {
-	debug 3, "Found more than one match. MERGING!!!";
-
 	foreach my $enode ( @$nodes )
 	{
-	    debug 3, "Merging node $enode->{id} into $node->{id}";
-	    foreach my $arc ( @{ $enode->arc_list->explicit->as_list } )
-	    {
-		my $pred_name = $arc->pred->name->plain;
-		$node->add( $pred_name => $arc->value );
-		$arc->remove;
-	    }
-	    foreach my $arc ( @{ $enode->revarc_list->explicit->as_list } )
-	    {
-		my $pred_name = $arc->pred->name->plain;
-		$arc->subj->add( $pred_name => $node );
-		$arc->remove;
-	    }
+	    $enode->merge($node,1); # also move literals
 	}
     }
 
     unless( $node )
     {
+	my $props = convert_query_prop_for_creation($props_in);
+
 	$default ||= {};
 	foreach my $pred ( keys %$default )
 	{
@@ -969,6 +959,7 @@ sub create
 	}
 	elsif( $pred_name =~ /^adr_(.*)$/ and @$vals )
 	{
+	    # TODO: generalize this!
 	    $adr ||= {};
 	    $adr->{ $1 } = $vals;
 	    debug 3, "Defining address data $1";
@@ -990,6 +981,7 @@ sub create
 
     if( $adr ) # Set the address data of the node
     {
+	# TODO: generalize this!
 	$node->update_adr( $adr );
     }
 
