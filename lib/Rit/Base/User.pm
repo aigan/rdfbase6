@@ -24,27 +24,12 @@ use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
 use base qw(Para::Frame::User Rit::Base::Resource);
 
 
-# Getting the real node instead...
 sub get
 {
 #    debug "Getting user $_[1]";
-
-#    if( $_[1] eq 'guest' )
-#    {
-#	# Special case
-#	my $rec =
-#	{
-#	 name => 'Gäst',
-#	 username => 'guest',
-#	 uid      => 0,
-#	 level    => 0,
-#	};
-#
-#	my $class = ref($_[0]) || $_[0];
-#	return bless $rec, $class;
-#    }
-
-    return $_[0]->Rit::Base::Resource::get($_[1]);
+    my $u = $_[0]->Rit::Base::Resource::get($_[1]);
+#    debug "Got $u";
+    return $u;
 }
 
 =head2 init
@@ -111,10 +96,6 @@ sub level
 
     return $_[0]->{'level'};
 }
-
-
-
-
 
 
 sub find_by_label
