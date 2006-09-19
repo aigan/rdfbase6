@@ -1,38 +1,36 @@
 RELS
 
 id            int
-verid         int
+ver           int
+replaces      int
 subj          int
 pred          int
-obj           int
+source        int
 active        bool
 indirect      bool
 implicit      bool
+submitted     bool
+read_access   int
+write_access  int
 
-valdate
-valtext
-valclean
-valint
-valfloat
-
-activated     timestamp
-activated_by  int
-deactivated   timestamp
 created       timestamp
 created_by    int
 updated       timestamp
-submitted     timestamp
+activated     timestamp
+activated_by  int
+deactivated   timestamp
 unsubmitted   timestamp
-replaces      int
-rev_vote      smallint
-rev_vote_by   int
-rev_vote_date timestamp
-rel_vote      smallint
-rel_vote_by   int
-rel_vote_date timestamp
 
-read_access   int
-write_access  int
+valtype       int
+
+obj           int
+valfloat      double precision
+valdate	      timestamp with time zone
+valblob	      oid
+valtext	      text
+
+valclean      text
+
 
 
 ---
@@ -41,6 +39,13 @@ predicates with arc as domain:
 
 valid_from
 valid_to
+
+rev_vote      smallint
+rev_vote_by   int
+rev_vote_date timestamp
+rel_vote      smallint
+rel_vote_by   int
+rel_vote_date timestamp
 
 comment_admin
 comment
@@ -129,7 +134,7 @@ An arc can have diffrent versions
 
 Only one version of an arc can be active
 
-A deactivated arc can't be activated. The actication of a previous
+An deactivated arc can't be activated. The actication of a previous
 version is done by creating a new version.
 
 An arc can only be deactivated by the activation of a new version. The
