@@ -22,9 +22,10 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use Para::Frame::Reload;
+use Para::Frame::Code::Class;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 			   package_to_module );
-use Para::Frame::Reload;
 
 use Rit::Base::Node;
 use Rit::Base::Search;
@@ -3509,6 +3510,24 @@ sub first_bless
 #    debug sprintf "Node %d initiated as $node", $node->id;
 
     return $node;
+}
+
+
+#########################################################################
+
+=head2 code_class
+
+  $node->code_class()
+
+List the class of the node
+
+=cut
+
+sub code_class
+{
+    my( $node ) = @_;
+
+    return Para::Frame::Code::Class->get($node);
 }
 
 
