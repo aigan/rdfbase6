@@ -15,7 +15,38 @@
 
 <p>[% PROCESS node_menu.tt %]</p>
 
-<table class="admin">
+[% BLOCK superclass %]
+[% FOREACH sc IN class.parents %]
+[% sc_nodes = find(code=sc.name, is='class_perl_module') %]
+[% IF sc_nodes %]
+<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.id) %]
+[% ELSE %]
+<li>$sc.name
+[% END %]
+[% IF sc.parents.size %]
+<ol>
+   [% INCLUDE superclass class=sc %]
+</ol>
+[% END %]
+</li>
+[% END %]
+[% END %]
+
+
+[% WRAPPER imgexpand label="Class $node.code_class.name" %]
+<h2>Parents</h2>
+<ol>[% INCLUDE superclass class=node.code_class %]</ol>
+[% END %]
+
+[% IF debug %]
+[% WRAPPER imgexpand label='Perl hashdump' %]
+<table>
+<tr><td><pre>[% dump(node,2) %]</pre></td></tr>
+</table>
+[% END %]
+[% END %]
+
+<table class="admin" style="margin-top:2em">
 <tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
 [% IF node.is_arc.sorted %]
@@ -76,9 +107,3 @@
    [% END %]
 [% END %]
 </table>
-
-[% IF debug %]
-<table class="admin">
-<tr><td><pre>[% dump(node,2) %]</pre></td></tr>
-</table>
-[% END %]
