@@ -1,0 +1,25 @@
+[% META title="List constants"
+        level = 20
+%]
+
+[% order = q.param('order') || 'id' %]
+[% direction = q.param('direction') %]
+
+<table>
+<tr><th>[% sort('ID','id') %]
+    <th>[% sort('Label', 'label') %]
+    <th>[% sort('Name', 'node.name.loc') %]
+    <th>[% sort('is', 'node.is.desig') %]
+    <th>[% sort('scof', 'node.scof.desig') %]
+
+[% FOREACH c = find_constants.sorted(order, direction) %]
+   [% tr2 %]
+      <td>[% c.id %]</td>
+      <td>[% jump(c.label, "$home/rb/node/update.tt", id=c.id) %]</td>
+      <td>[% jump(c.node.name.loc, c.node.form_url) %]</td>
+      <td>[% c.node.is.desig %]</td>
+      <td>[% c.node.scof.desig %]</td>
+   </td></tr>
+[% END %]
+</table>
+

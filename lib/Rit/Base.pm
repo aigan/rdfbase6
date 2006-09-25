@@ -100,6 +100,19 @@ sub Pred ()
 
 ######################################################################
 
+=head2 Constants
+
+Returns class boject for Rit::Base::Constants
+
+=cut
+
+sub Constants ()
+{
+    return 'Rit::Base::Constants';
+}
+
+######################################################################
+
 =head2 on_done
 
   Runs after each request

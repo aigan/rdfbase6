@@ -8,7 +8,7 @@ Rit::Base::Constants
 =cut
 
 use strict;
-use Carp qw( croak cluck );
+use Carp qw( croak cluck confess );
 
 BEGIN
 {
@@ -20,8 +20,11 @@ BEGIN
 use Para::Frame::Utils qw( debug datadump );
 
 use Rit::Base;
+use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Constant;
 
 our %Constant; # The initiated constants
+our %Constobj; # The initiated constant objects
 our $AUTOLOAD;
 our @Initlist; # Constants to export then the DB is online
 
@@ -59,6 +62,127 @@ sub new ()
     return bless {};
 }
 
+
+sub new_by_rec
+{
+    my( $this, $rec, $node ) = @_;
+
+    $node ||= Rit::Base::Resource->get_by_id( $rec->{'sub'} );
+
+    my $const = bless $rec, "Rit::Base::Constant";
+    $const->{'node'} = $node;
+
+    return $const;
+}
+
+
+######################################################################
+
+=head2 find
+
+  Rit::Base::Constants->find()
+
+Currently doesn't take any params.
+
+Returns all constants.
+
+Returns:
+
+a L<Rit::Base::List> of L<Rit::Base::Constant> elements
+
+=cut
+
+sub find
+{
+    my( $this ) = @_;
+
+#    debug "Looking up all constants";
+
+    my @list;
+    my $sth = $Rit::dbix->dbh->prepare(
+	      "select * from constant");
+    $sth->execute();
+    while( my $rec = $sth->fetchrow_hashref )
+    {
+	my $label = $rec->{'label'};
+	my $id    = $rec->{'sub'};
+
+#	debug "Found $id: $label";
+	unless( $Constant{$label} )
+	{
+	    my $node = Rit::Base::Resource->get( $id );
+	    $Constant{$label} = $node;
+	}
+
+	unless( $Constobj{ $id } )
+	{
+	    $Constobj{ $id } = $this->new_by_rec( $rec, $Constant{$label} );
+	}
+
+	push @list, $Constobj{ $id };
+    }
+    $sth->finish;
+
+    return Rit::Base::List->new(\@list);
+}
+
+
+
+######################################################################
+
+=head2 get_by_id
+
+  Rit::Base::Constants->get_by_id( $id )
+
+Returns:
+
+a L<Rit::Base::Constant> object or L<Rit::Base::Undef>
+
+=cut
+
+sub get_by_id
+{
+    my( $this, $id ) = @_;
+
+    unless( $Constobj{$id} )
+    {
+	my $sth = $Rit::dbix->dbh->prepare(
+		  "select * from constant where sub=?");
+	$sth->execute( $id );
+	my( $rec ) = $sth->fetchrow_hashref;
+	$sth->finish;
+
+	unless( $rec )
+	{
+	    return is_undef;
+	}
+
+	$Constobj{$id} = $this->new_by_rec($rec, $Constant{$rec->{'label'}});
+    }
+
+    # TODO: Handle resetting of the given nodes
+
+    return $Constobj{$id};
+}
+
+
+
+######################################################################
+
+=head2 get
+
+  Rit::Base::Constants->get( $label )
+
+Returns:
+
+a L<Rit::Base::Resource>
+
+Exceptions:
+
+croaks if constant doesn't exist
+
+=cut
+
 sub get
 {
     my( $this, $label ) = @_;
@@ -84,6 +208,69 @@ sub get
 
     return $Constant{$label};
 }
+
+
+
+######################################################################
+
+=head2 get_set
+
+  Rit::Base::Constants->get_set( $label, $node )
+
+Creates the constant if it doesn't exist
+
+Returns:
+
+The C<$node>
+
+Exceptions:
+
+Node mismatch - If existing constant doesn't match given node
+
+=cut
+
+sub get_set
+{
+    my( $this, $label, $node_in_in ) = @_;
+
+    my $node_in = Rit::Base::Resource->get( $node_in_in );
+
+    unless( $Constant{$label} )
+    {
+	my $sth = $Rit::dbix->dbh->prepare(
+		  "select sub from constant where label=?");
+	$sth->execute( $label );
+	my( $id ) = $sth->fetchrow_array;
+	$sth->finish;
+
+	if( $id )
+	{
+	    $Constant{$label} = Rit::Base::Resource->get( $id );
+	}
+	else
+	{
+	    $this->add( $label, $node_in );
+	    $Constant{$label} = $node_in;
+	}
+
+    }
+
+    my $node_out = $Constant{$label};
+
+    unless( $node_in->equals( $node_out ) )
+    {
+	my $in_id = $node_in->id;
+	my $out_id = $node_out->id;
+	confess "Node mismatch: $in_id != $out_id";
+    }
+
+    # TODO: Handle resetting of the given nodes
+
+    return $node_out;
+}
+
+
+######################################################################
 
 sub init
 {
