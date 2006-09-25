@@ -116,12 +116,21 @@ sub find
 	if( my $label = $props->{'label'} )
 	{
 	    my $pred = $Rit::Base::Cache::PredId{ $label };
-	    unless( $pred )
+	    my $preds;
+	    if( $pred )
 	    {
-		$pred = $class->get_by_label( $label );
+		$preds = Rit::Base::List->new([$pred]);
+	    }
+	    else
+	    {
+		$preds = $class->find_by_label( $label );
+		$pred = $preds->[0];
+		unless( $pred )
+		{
+		    return $preds;
+		}
 		$Rit::Base::Cache::PredId{ $label } = $pred->id;
 	    }
-	    my $preds = Rit::Base::List->new([$pred]);
 
 
 	    # Narrow the serach for the rest of the props
@@ -654,7 +663,7 @@ Example:
 
 =cut
 
-sub find_set  # Fins the one matching pred or create one
+sub find_set  # Find the one matching pred or create one
 {
     my( $this, $props, $default, $changes_ref ) = @_;
 
@@ -704,9 +713,9 @@ sub is_pred { 1 };
 
 
 
-sub get_by_label
+sub find_by_label
 {
-    my( $this, $label ) = @_;
+    my( $this, $label, $no_list ) = @_;
     my $class = ref($this) || $this;
 
 #    warn "New pred $label\n"; ### DEBUG
@@ -750,19 +759,42 @@ sub get_by_label
     my $rec = $sth->fetchrow_hashref;
     $sth->finish;
 
-    if( $rec )
+    if( $no_list )
     {
-	return $class->get_by_rec( $rec );
+	if( $rec )
+	{
+	    return $class->get_by_rec( $rec );
+	}
+	else
+	{
+	    return is_undef;
+	}
     }
-    else # Take a spin at the wheel of fortune
+    else
     {
-	# This could be a dynamic property, that will not be found
-	# here. The List class tries to look up the predicate in order
-	# to find out if it's numeric, during a sort.  That will fail
-	# for dynamic properties such as 'desig'
+	if( $rec )
+	{
+	    return Rit::Base::List->new([$class->get_by_rec( $rec )]);
+	}
+	else
+	{
+	    return Rit::Base::List->new([]);
+	}
+    }
+}
 
-	confess "No such predicate: $label\n";
-	return is_undef;
+
+sub get_by_label
+{
+    my( $node ) = shift->find_by_label($_[0], 1);
+
+    if( $node )
+    {
+	return $node;
+    }
+    else
+    {
+	confess "No such predicate: @_\n";
     }
 }
 

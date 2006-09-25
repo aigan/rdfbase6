@@ -13,7 +13,7 @@
 
 <p>[% PROCESS node_menu.tt %]</p>
 
-<p align="center">[ [% jump('View rels', 'node_display.tt', id=id) %] ]</p>
+<p align="center">[ [% jump('View rels', node.form_url) %] ]</p>
 
 <table class='admin'>
 <tr><th>Del</th><th>Property</th> <th>Value</th></tr>

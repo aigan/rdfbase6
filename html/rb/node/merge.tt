@@ -18,25 +18,25 @@
    [% FOR n = req.result.info.alternatives.alts %]
       <tr>
         <td>[% radio('id2', n.id, 0) %]</td>
-	<td><strong><code>[% jump(n.desig, 'node_display.tt', id=n.id) %]</code></strong></td>
+	<td><strong><code>[% jump(n.desig, n.form_url) %]</code></strong></td>
         <td>
         [% FOREACH is = n.is_direct;
            'is (' IF loop.first;
-           jump(is.desig, 'node_display.tt', id=is.id);
+           jump(is.desig, is.form_url);
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;
 	%]
         [% FOREACH scof = n.scof_direct;
            'scof (' IF loop.first;
-           jump(scof.desig, 'node_display.tt', id=scof.id);
+           jump(scof.desig, scof.form_url);
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;
 	%]
         [% FOREACH in = n.in_region_direct;
            'in (' IF loop.first;
-           jump(in.desig, 'node_display.tt', in=scof.id);
+           jump(in.desig, in.form_url);
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;

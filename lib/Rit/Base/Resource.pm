@@ -1073,6 +1073,58 @@ sub create_if_unique
 
 #######################################################################
 
+=head2 form_url
+
+  $n->form_url
+
+Returns the URL of the page for viewing/updating this node.
+
+Returns:
+
+A L<URI> object.
+
+=cut
+
+sub form_url
+{
+    my( $n ) = @_;
+
+    my $base = $Para::Frame::REQ->site->home->url;
+    my $path;
+
+#    warn "$n\n";
+
+    if( $n->is_arc )
+    {
+#	warn "  is an ARC\n";
+	$path = 'rb/node/arc/update.tt';
+    }
+    elsif( $n->is_value_node )
+    {
+	$path = "rb/node/translation/node.tt";
+    }
+    else
+    {
+	if( my $path_node = $n->is->class_form_url->get_first )
+	{
+	    $path = $path_node->plain;
+	}
+	else
+	{
+	    $path = 'rb/node/update.tt';
+	}
+    }
+
+    my $url = URI->new($path)->abs($base);
+
+    $url->query_form([id=>$n->id]);
+
+    return $url;
+}
+
+
+#######################################################################
+
 =head2 plain
 
   $n->plain
@@ -1921,6 +1973,28 @@ sub revcount
     my( $cnt ) =  $sth->fetchrow_array;
     $sth->finish;
     return $cnt;
+}
+
+
+#######################################################################
+
+=head2 label
+
+  $n->label()
+
+The constant label, if there is one for this resource.
+
+Returns:
+
+  A plain string or plain undef.
+
+=cut
+
+sub label
+{
+    my( $node ) = @_;
+
+    return Rit::Base::Constants->get_by_id($node->id)->label;
 }
 
 
@@ -4738,8 +4812,7 @@ sub handle_query_arc_value
 			     my $link = Para::Frame::Widget::forward( $label, $uri, $args );
 			     my $tstr = $item->list('is', '', 'direct')->name->loc;
 			     my $view = Para::Frame::Widget::jump('visa',
-								  "$home/admin/node_display.tt",
-								  {id => $item->id},
+								  $item->form_url->as_string,
 								 );
 			     return "$tstr $link - ($view)";
 			 },
@@ -4905,8 +4978,7 @@ sub handle_query_prop_value
 		 };
 		 my $link = Para::Frame::Widget::forward( $label, $uri, $args );
 		 my $view = Para::Frame::Widget::jump('visa',
-						      "$home/admin/node_display.tt",
-						      {id => $node->id},
+						      $node->form_url->as_string,
 						     );
 		 $link .= " - ($view)";
 		 return $link;

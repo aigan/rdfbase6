@@ -70,7 +70,7 @@
 
         /* trigger onselect */
         win = window.open(
-            '[* home *]/admin/node_display.tt?id='+[* tsw *]_selected_val,
+            '[* home *]/rb/node/update.tt?id='+[* tsw *]_selected_val,
             'node_display');
         win.focus();
         return(false);

@@ -23,10 +23,9 @@
 [% FOREACH item IN search_result.from_page %]
    <tr>
       <td>[% jump(item.id, "update.tt", id=item.id) %]</td>
-      <td>
-   [% item.desig %] (Link to form)
-   </td>
+      <td>[% jump(item.desig, item.form_url) %]</td>
       <td>[% item.arc_list('is').direct.obj.desig %]</td>
+      <td>[% item.arc_list('scof').direct.obj.desig %]</td>
 </tr>
 
 [% END %]

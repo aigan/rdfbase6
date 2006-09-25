@@ -2180,7 +2180,7 @@ sub set_prio
 
     my( $key, $prio, $cnt, $coltype );
 
-    if( ($match ne 'eq') and ($match ne 'exact') and ($match ne 'exist') )
+    if( ($match ne 'eq') and ($match ne 'exact') )
     {
 	if( $match eq 'ne' )
 	{

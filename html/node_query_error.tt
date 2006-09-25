@@ -34,7 +34,7 @@
    <h2>Alternatives</h2>
    <ol>
    [% FOREACH part = a.alts %]
-      <li>[% jump(part.sysdesig, "$home/admin/node_display.tt", id=part.id) %]</li>
+      <li>[% jump(part.sysdesig, part.form_url) %]</li>
    [% END %]
    </ol>
 [% END %]

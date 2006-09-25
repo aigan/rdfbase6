@@ -776,7 +776,9 @@ sub sorted
 	$on =~ /([^\.]+)$/; #match last part
 	my $pred_str = $1;
 	my $cmp = 'cmp';
-	if( my $pred = Rit::Base::Pred->get_by_label( $pred_str ) )
+
+	# Silently ignore dynamic props (that isn't preds)
+	if( my $pred = Rit::Base::Pred->find_by_label( $pred_str, 1 ) )
 	{
 	    if( $pred->coltype eq 'valint' )
 	    {
