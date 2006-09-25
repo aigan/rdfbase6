@@ -1,7 +1,13 @@
 [% base = "$home/rb/node" %]
 [
-  FORM
-| [%+ jump('Node', "$base/update.tt", id=id) +%]
+[% IF node.is(C.business_role) %]
+   [%+ jump('FORM', "[*base*]/contact_update.tt", id=node.first_revprop('has_contact').id) %] |
+[% ELSIF node.is(C.business_persona) %]
+   [%+ jump('FORM', "[*base*]/person_modify.tt", id=node.is_persona_of.id) %] |
+[% ELSE %]
+   [%+ jump('FORM', node.form_url) %] |
+[% END %]
+  [%+ jump('Node', "$base/update.tt", id=id) +%]
 | [% jump('Translate', "$base/translation/node.tt", id=id ) +%]
 | [% jump('Add arcs', "$base/arc/add.tt", id=id ) +%]
 | [% jump('Merge', "$base/merge.tt", id=id) +%]
