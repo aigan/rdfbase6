@@ -3508,7 +3508,9 @@ sub find_class
 	    my @classnames =  map $_->first_prop('code')->plain, @{$classes};
 	    my $package = "Rit::Base::Metaclass::$key";
 #	    debug "Creating package $package";
-	    @{"${package}::ISA"} = ("Rit::Base::Metaclass", @classnames);
+	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
+				    @classnames,
+				    "Rit::Base::Resource");
 	    foreach my $classname ( @classnames )
 	    {
 		require(package_to_module($classname));
@@ -3520,10 +3522,16 @@ sub find_class
     }
     elsif( $classes->[0] )
     {
+	no strict "refs";
 	my $classname = $classes->[0]->first_prop('code')->plain;
-#	debug "Class $classname -> ".$node->desig;
 	require(package_to_module($classname));
-	return $classname;
+
+	my $metaclass = "Rit::Base::Metaclass::$classname";
+#	    debug "Creating package $package";
+	@{"${metaclass}::ISA"} = ($classname, "Rit::Base::Resource");
+
+#	debug "Class $classname -> ".$node->desig;
+	return $metaclass;
     }
     else
     {
