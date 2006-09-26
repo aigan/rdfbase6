@@ -812,7 +812,7 @@ sub execute
 	my $fork = $req->create_fork;
 	if( $fork->in_child )
 	{
-	    $fork->return( $search->get_result($sql, $values, 60) ); # 60
+	    $fork->return( $search->get_result($sql, $values, 240) ); # 60
 	}
 	my $fres = $fork->yield;
 #	debug "GOT BACK <<<<<<<<<<<<-----------------";
@@ -823,7 +823,7 @@ sub execute
     else
     {
 #	debug "MIN PRIO = $min_prio";
-	$result = $search->get_result($sql, $values, 10); # 10
+	$result = $search->get_result($sql, $values, 15); # 10
     }
 
     $search->{'result'} = Rit::Base::List->new($result);
