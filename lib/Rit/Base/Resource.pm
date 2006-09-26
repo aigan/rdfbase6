@@ -8,7 +8,6 @@ Rit::Base::Resource
 =cut
 
 use Carp qw( cluck confess croak carp shortmess );
-use Data::Dumper;
 use strict;
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
@@ -1423,9 +1422,6 @@ sub revlist
 	{
 	    debug 3, "  No values for revprop $name found!";
 	}
-
-	debug "RETURNED: ".datadump($node->{'relarc'}{$name},4)
-	  if debug > 3;
 
 	if( $arclim )
 	{
@@ -4266,11 +4262,13 @@ sub initiate_prop
 			 scalar( @$stmts ), time - $ts, $pred_id, $nid);
 
 	    debug "Before populating:\n";
-	    foreach my $arc (@{$node->{'relarc'}{ $name }})
+	    if( $node->{'relarc'}{ $name } )
 	    {
-		debug "  ".$arc->sysdesig_nosubj;
+		foreach my $arc (@{$node->{'relarc'}{ $name }})
+		{
+		    debug "  ".$arc->sysdesig_nosubj;
+		}
 	    }
-
 	}
 
 	my @extra_nodes_initiated;
