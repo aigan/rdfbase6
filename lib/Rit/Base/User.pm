@@ -21,7 +21,7 @@ use Para::Frame::Reload;
 use Rit::Base::Utils qw( is_undef );
 use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
 
-use base qw(Para::Frame::User Rit::Base::Resource);
+use base qw(Para::Frame::User);
 
 
 sub get
