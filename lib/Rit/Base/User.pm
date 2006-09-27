@@ -144,7 +144,7 @@ sub find_by_label
 	@new = @{ $class->find
 	    ({
 	      'customer_id' => $val,
-	      is_eq_5   => $C_login_account,
+	      is            => $C_login_account,
 	     })};
     }
     elsif( $val !~ /^\d+$/ )
@@ -156,7 +156,7 @@ sub find_by_label
 	@new = @{ $class->find
 	    ({
 	      'name_short' => $val,
-	      is_eq_5   => $C_login_account,
+	      is           => $C_login_account,
 	     })};
 
 	unless(@new)
@@ -165,7 +165,7 @@ sub find_by_label
 	    @new = @{ $class->find
 		({
 		  'name' => $val,
-		  is_eq_5   => $C_login_account,
+		  is     => $C_login_account,
 		 })};
 	}
     }
