@@ -123,7 +123,11 @@ sub create
 
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
-    my $DEBUG = debug(); $DEBUG and $DEBUG --; # Start at level 2...
+
+    # Start at level 3...
+    my $DEBUG = debug();
+    $DEBUG and $DEBUG --;
+    $DEBUG and $DEBUG --;
 
     debug "About to create arc with props ".datadump($props,2) if $DEBUG;
 
@@ -817,7 +821,7 @@ sub updated_by
 {
     my( $arc ) = @_;
     return $arc->{'updated_by_obj'} ||=
-	Rit::Base::User->get( $arc->{'updated_by'} ) ||
+	Rit::Base::User::Meta->get( $arc->{'updated_by'} ) ||
 		is_undef;
 }
 
@@ -1712,7 +1716,7 @@ sub set_value
 	    my $sth = $dbh->prepare
 		("update rel set valclean=? where id=?");
 	    my $clean = $value_new->clean->plain;
-	    die if $clean =~ /^ritbase/;
+#	    die if $clean =~ /^ritbase/;
 	    $sth->execute($clean, $arc_id);
 
 	    $arc->{'clean'} = $clean;

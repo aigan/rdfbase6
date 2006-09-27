@@ -96,8 +96,8 @@ The global variable C<%Rit::Base::LOOKUP_CLASS_FOR> can be modified
 (during startup) for setting which classes it should lookup the class
 for. This is initiated to:
 
-  Rit::Base::Resource => 1,
-  Rit::Base::User     => 1,
+  Rit::Base::Resource   => 1,
+  Rit::Base::User::Meta => 1,
 
 NB! If you call get() from a class other than these, you must make
 sure that the object will never also be of another class.
