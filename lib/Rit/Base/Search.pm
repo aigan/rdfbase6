@@ -14,6 +14,7 @@ use Time::HiRes qw( time );
 use List::Util qw( min );
 #use Sys::SigAction qw( set_sig_handler );
 
+use constant TOPLIMIT   => 100000;
 use constant MAXLIMIT   => 80;
 use constant PAGELIMIT  =>  20;
 
@@ -103,7 +104,44 @@ sub count
 
 #######################################################################
 
+=head2 result_as_rblist
+
+Returns a L<Rit::Base::List>
+
+=cut
+
+sub result_as_rblist
+{
+    my( $search, $args ) = @_;
+
+    $args ||= {}; # not implemented
+
+    my $res = $search->{'result'} or return Rit::Base::List->new([]);
+    confess(Dumper($res)) if ref $res eq 'ARRAY';
+
+    my $limit = 10;
+    my $req = $Para::Frame::REQ;
+    my $user = $req->user;
+    if( $user and $req->is_from_client )
+    {
+	my $q = $req->q;
+	$limit = $q->param('limit') || 10;
+	$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+    }
+
+    if( $res->can('materialize') )
+    {
+	$res->materialize("Rit::Base::Lazy", $limit);
+    }
+
+    return Rit::Base::List->new($res);
+}
+
+#######################################################################
+
 =head2 result
+
+Returns a L<Para::Frame::List>
 
 =cut
 
@@ -119,11 +157,11 @@ sub result
     my $limit = 10;
     my $req = $Para::Frame::REQ;
     my $user = $req->user;
-    if( $req->is_from_client )
+    if( $user and $req->is_from_client )
     {
-	my $q = $Para::Frame::REQ->q;
+	my $q = $req->q;
 	$limit = $q->param('limit') || 10;
-	$limit = min( $limit, PAGELIMIT ) if $user->level < 20;
+	$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
     }
 
     if( $res->can('materialize') )
@@ -267,7 +305,7 @@ sub reset  # Keep this hash thingy but clear it's contents
 	# searching will be done before we have a user obj
 	if( my $user = $Para::Frame::REQ->user )
 	{
-	    $search->{'maxlimit'} = $user->level >= 20 ? 100_000 : MAXLIMIT;
+	    $search->{'maxlimit'} = $user->level >= 20 ? TOPLIMIT : MAXLIMIT;
 	}
     }
 
@@ -766,7 +804,7 @@ sub modify
 	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') and $pred->name->plain eq 'is' and getnode('city')->equals($values[0]) )
 	    {
 		debug "*** Maxlimit changed!";
-		$search->{'maxlimit'} = 100_000;
+		$search->{'maxlimit'} = TOPLIMIT;
 	    }
 
 
