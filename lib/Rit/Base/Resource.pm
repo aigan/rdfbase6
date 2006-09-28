@@ -603,10 +603,16 @@ sub find
     }
     my $class = ref($this) || $this;
 
-    my $search = Rit::Base::Search->new({maxlimit => 100_000});
+    my $search = Rit::Base::Search->new({maxlimit =>
+					 Rit::Base::Search::TOPLIMIT});
     $search->modify($tmpl);
     $search->execute();
-    return $search->{'result'}->materialize($class);
+
+#    debug "Materializing search result with $class <----------------";
+#    return $search->{'result'}->materialize($class);
+
+    # TODO: Take care of class argument to result_as_rblist
+    return $search->result_as_rblist({class=>$class});
 }
 
 
