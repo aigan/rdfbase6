@@ -2926,11 +2926,52 @@ sub equals
 
 Overall plan:
 
+update_by_query maps through all parameters in the current request.
+It sorts into 4 groups, depending on what the parameter begins with:
+
  1. Add / update properties  (arc/prop)
  2. Complemnt those props with second order atributes (row)
  3. Check if some props should be removed (check)
+ 4. Add new resources (newsubj)
 
 Returns: the number of changes
+
+4. Add new resources
+
+To create a new resource and add arcs to it, the parameters should be
+in the format "newsubj_$key__pred_$pred", where $key is used to group
+parameters together.  $key can be prefixed with "main_".  At least one
+$key should have the main-prefix set for the new resource to be
+created.  $pred can be prefixed with "rev_".
+
+Example1: Adding a new node if certain values are set
+
+ Params
+ newsubj_main_contact__pred_contact_next => 2006-10-05
+ newsubj_contact__pred_is => C.contact_info.id
+ newsubj_contact__pred_rev_contact_info => org.id
+
+...where 'contact' is the key for the newsubj, regarding all with the
+same key as the same node.  A new resource is created IF at least one
+main-parameter is supplied (no 1 above).  There can be several
+main-parameters.  If no main-parameter is set, the other
+newsubj-parameters with that number are ignored.
+
+
+=comment
+
+  Document all field props:
+
+pred
+revpred
+arc
+desig
+type
+scof
+rowno
+subj
+newsubj
+is
 
 =cut
 
@@ -2949,6 +2990,7 @@ sub update_by_query
     my @arc_params;
     my @row_params;
     my @check_params;
+    my @newsubj_params;
 
     foreach my $param ($q->param)
     {
@@ -2964,6 +3006,10 @@ sub update_by_query
 	elsif( $param =~ /^check_(.*)/)
 	{
 	    push @check_params, $param;
+	}
+	elsif( $param =~ /^newsubj_.*$/ )
+	{
+	    push @newsubj_params, $param;
 	}
     }
 
@@ -3016,7 +3062,14 @@ sub update_by_query
 	    my $pred_name = $1;
 	    $changes += $node->handle_query_check_revprop( $param, $pred_name );
         }
+	elsif($param =~ /^check_node_(.*)/)
+	{
+	    my $node_id = $1 or next;
+	    $changes += $node->handle_query_check_node( $param, $node_id );
+	}
     }
+
+    $changes += handle_query_newsubjs( $q, \@newsubj_params );
 
     # Remove arcs on deathrow
     #
@@ -5264,6 +5317,28 @@ sub handle_query_check_arc
 
 #########################################################################
 
+=head2 handle_query_check_node
+
+Return number of changes
+
+=cut
+
+sub handle_query_check_node
+{
+    my( $this, $param, $node_id ) = @_;
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+
+    if( grep( /^node_${node_id}/, $q->param ) )
+    {
+	my $node = Rit::Base::Resource->get( $node_id );
+	return $node->remove;
+    }
+}
+
+#########################################################################
+
 =head2 handle_query_check_prop
 
 =cut
@@ -5335,6 +5410,42 @@ sub handle_query_check_prop
 	    }, \$changes );
 	}
     }
+    return $changes;
+}
+
+
+sub handle_query_newsubjs
+{
+    my( $q, $newsubj_params ) = @_;
+
+    my %newsubj;
+    my %keysubjs;
+    my $changes = 0;
+
+    foreach my $param (@$newsubj_params)
+    {
+	my $arg = parse_form_field_prop($param);
+
+	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)/ )
+	{
+	    next unless $q->param( $param );
+	    my $main = $1;
+	    my $no = $2;
+
+	    $keysubjs{$no} = 'True'
+	      if( $main );
+
+	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
+	}
+    }
+
+    foreach my $ns (keys %keysubjs)
+    {
+	debug "Newsubj creating a node: ". datadump $newsubj{$ns};
+	Rit::Base::Resource->create( $newsubj{$ns} );
+	$changes += keys %{$newsubj{$ns}};
+    }
+
     return $changes;
 }
 
