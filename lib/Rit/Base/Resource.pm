@@ -5330,11 +5330,13 @@ sub handle_query_check_node
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
 
-    if( grep( /^node_${node_id}/, $q->param ) )
+    unless( grep( /^node_${node_id}/, $q->param ) )
     {
 	my $node = Rit::Base::Resource->get( $node_id );
+	debug "Removing node: ${node_id}";
 	return $node->remove;
     }
+    debug "Saving node: ${node_id}. grep: ". grep( /^node_${node_id}/, $q->param );
 }
 
 #########################################################################
@@ -5435,6 +5437,7 @@ sub handle_query_newsubjs
 	    $keysubjs{$no} = 'True'
 	      if( $main );
 
+	    $newsubj{$no} = {} unless $newsubj{$no};
 	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
 	}
     }
