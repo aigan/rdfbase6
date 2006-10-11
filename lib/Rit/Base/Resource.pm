@@ -1632,6 +1632,7 @@ sub first_prop    # Just get first value
     my( $node, $name ) = @_;
     $node->initiate_prop( $name );
     return is_undef unless defined $node->{'relarc'}{$name};
+    $node->{'relarc'}{$name}[0] or confess "Empty list ".datadump($node);
     return $node->{'relarc'}{$name}[0]->value;
 }
 
@@ -3549,18 +3550,27 @@ sub find_class
     my( $node ) = @_;
 
     # I guess this is sufficiently efficient
-    my $classes = $node->list('is',undef,'not_disregarded')->list('class_handled_by_perl_module');
-#    debug "Finding the class for ".$node->id;
-#    debug " The islist is ".$node->list('is')->sysdesig;
-#    debug "The modlist is ".$node->list('is')->list('class_handled_by_perl_module')->sysdesig;
 
-    if( $classes->[1] ) # Multiple inheritance
+    # This is an optimization for:
+    # my $classes = $islist->list('class_handled_by_perl_module');
+    #
+    my $islist = $node->list('is',undef,'not_disregarded');
+    my @classes;
+    foreach my $elem (@$islist)
     {
-	my $key = join '_', map $_->id, @{$classes};
+	if( my $class = $elem->first_prop('class_handled_by_perl_module') )
+	{
+	    push @classes, $class;
+	}
+    }
+
+    if( $classes[1] ) # Multiple inheritance
+    {
+	my $key = join '_', map $_->id, @classes;
 	unless( $Rit::Base::Cache::Class{ $key } )
 	{
 	    no strict "refs";
-	    my @classnames =  map $_->first_prop('code')->plain, @{$classes};
+	    my @classnames =  map $_->first_prop('code')->plain, @classes;
 	    my $package = "Rit::Base::Metaclass::$key";
 #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
@@ -3575,10 +3585,10 @@ sub find_class
 #	debug "Class Multi $key -> ".$node->desig;
 	return $Rit::Base::Cache::Class{ $key };
     }
-    elsif( $classes->[0] )
+    elsif( $classes[0] )
     {
 	no strict "refs";
-	my $classname = $classes->[0]->first_prop('code')->plain;
+	my $classname = $classes[0]->first_prop('code')->plain;
 	require(package_to_module($classname));
 
 	my $metaclass = "Rit::Base::Metaclass::$classname";
