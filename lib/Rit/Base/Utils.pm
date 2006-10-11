@@ -17,7 +17,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw trim chmod_file debug datadump );
+use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
 use Para::Frame::Reload;
 
 use base qw( Exporter );
@@ -28,7 +28,9 @@ BEGIN
 	      format_phone format_zip getnode getarc getpred
 	      parse_query_props parse_form_field_prop
 	      parse_arc_add_box is_undef arc_lock arc_unlock
-	      log_stats_commit truncstring string parse_query_pred parse_query_prop convert_query_prop_for_creation );
+	      log_stats_commit truncstring string parse_query_pred
+	      parse_query_prop convert_query_prop_for_creation
+	      name2url );
 
 }
 
@@ -226,7 +228,8 @@ Returns: The new value after a lot of transformation
     $value =~ s/(aa)/ו/g;
     $value =~ s/(ז|ae)/ה/g;
     $value =~ s/(ר|oe)/צ/g;
-    $value =~ tr/אבגהדויטךכםלןמףעצפץתשüû‎ÿנ‏/aaaaaaeeeeiiiiooooouuuuyydp/;
+    $value =~ tr[אבגהדויטךכםלןמףעצפץתשüû‎ÿנ‏‗]
+                [aaaaaaeeeeiiiiooooouuuuyydps];
     $value =~ tr/`'/'/;
     $value =~ tr/qwz/kvs/;
     $value =~ s/\b(och|and|o|o\.|og)\b/&/g;
@@ -264,7 +267,9 @@ sub valclean
     $value =~ s/(aa)/ו/g;
     $value =~ s/(ז|ae)/ה/g;
     $value =~ s/(ר|oe)/צ/g;
-    $value =~ tr/אבגהדויטךכםלןמףעצפץתשüû‎ÿנ‏/aaaaaaeeeeiiiiooooouuuuyydp/;
+#    $value =~ s/_/ /g;  ############### FIXME
+    $value =~ tr[אבגהדויטךכםלןמףעצפץתשüû‎ÿנ‏‗]
+                [aaaaaaeeeeiiiiooooouuuuyydps];
     $value =~ tr/`'/'/;
     $value =~ tr/qwz/kvs/;
     $value =~ s/\b(och|and|o|o\.|og)\b/&/g;
@@ -277,6 +282,33 @@ sub valclean
 
     $$origvalue = $value if ref $origvalue eq 'SCALAR';
     return $value
+}
+
+
+#######################################################################
+
+=head2 name2url
+
+  name2url( $name )
+
+Converts a name to a reasonable string to use in an url
+
+=cut
+
+sub name2url
+{
+    my( $name ) = @_;
+
+    deunicode( $name );
+
+    my $url = lc($name);
+
+    $url =~ tr[אבגהדוזיטךכםלןמףעצפץרתשüû‎ÿנ‏‗]
+	      [aaaaaaaeeeeiiiioooooouuuuyydps];
+    $url =~ s/[^\w\s-]//g;
+    $url =~ s/\s+/_/g;
+    $url =~ s/( ^_+ | _+$ )//gx;
+    return $url;
 }
 
 
