@@ -120,13 +120,16 @@ sub result_as_rblist
     confess(Dumper($res)) if ref $res eq 'ARRAY';
 
     my $limit = 10;
-    my $req = $Para::Frame::REQ;
-    my $user = $req->user;
-    if( $user and $req->is_from_client )
+    my $req = $Para::Frame::REQ or cluck "No REQ";
+    if( $req ) # Don't know when it's undefined (during reload)
     {
-	my $q = $req->q;
-	$limit = $q->param('limit') || 10;
-	$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+	my $user = $req->user;
+	if( $user and $req->is_from_client )
+	{
+	    my $q = $req->q;
+	    $limit = $q->param('limit') || 10;
+	    $limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+	}
     }
 
     if( $res->can('materialize') )
@@ -843,7 +846,7 @@ sub execute
     {
 	debug "Search is to heavy! Runs in background";
 	debug $search->sysdesig;
-	debug $search->sql_sysdesig;
+#	debug $search->sql_sysdesig;
 
 	my $req = $Para::Frame::REQ;
 	$req->note("This search may take a some time!");
@@ -861,6 +864,11 @@ sub execute
     else
     {
 #	debug "MIN PRIO = $min_prio";
+	if( debug > 2 )
+	{
+#	    debug $search->sysdesig;
+	    debug 4, $search->sql_sysdesig;
+	}
 	$result = $search->get_result($sql, $values, 15); # 10
     }
 
