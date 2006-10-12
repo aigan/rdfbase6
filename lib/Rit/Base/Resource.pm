@@ -3558,7 +3558,7 @@ sub find_class
     my @classes;
     foreach my $elem (@$islist)
     {
-	if( my $class = $elem->first_prop('class_handled_by_perl_module') )
+	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
 	    push @classes, $class;
 	}
