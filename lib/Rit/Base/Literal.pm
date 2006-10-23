@@ -17,6 +17,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef valclean truncstring );
@@ -185,7 +186,8 @@ sub equals
 {
     my( $lit, $val ) = @_;
 
-    $val ||= Rit::Base::String->new($val);
+    $val = Rit::Base::String->new($val)
+      unless( ref $val );
 
     if( ref $val and UNIVERSAL::isa($val, 'Rit::Base::Literal') )
     {
