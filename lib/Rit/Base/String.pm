@@ -19,6 +19,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
+use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring);
 
@@ -104,6 +105,13 @@ sub new_if_length
     }
 }
 
+
+#########################################################################
+################################  Accessors  ############################
+
+=head1 Accessors
+
+=cut
 
 #######################################################################
 
@@ -319,6 +327,21 @@ sub clean
     return $_[0]->new( valclean( $_[0]->{'value'} ) );
 }
 
+
+#######################################################################
+
+=head3 begins
+
+  $string->begins( $substr )
+
+Returns true if the string begins with $substr.
+
+=cut
+
+sub begins
+{
+    return $_[0]->{'value'} =~ /^$_[1]/;
+}
 
 #######################################################################
 
