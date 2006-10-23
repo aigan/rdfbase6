@@ -382,7 +382,8 @@ sub find
 	    {
 		## TODO: Handle preds in the form 'obj.scof'
 
-		if( $match ne 'eq' or $arclim or $clean )
+		if( ($match ne 'eq' and $match ne 'begins') or
+		    $arclim or $clean )
 		{
 		    confess "Not implemented: $pred_part";
 		}
@@ -395,7 +396,29 @@ sub find
 		    next PRED if $target_value eq '*'; # match all
 		    if( ref $value )
 		    {
-			next PRED if $value->equals( $target_value );
+			if( $match eq 'eq' )
+			{
+			    next PRED # Passed test
+			      if $value->equals( $target_value );
+			}
+			elsif( $match eq 'begins' )
+			{
+			    confess "Matchtype 'begins' only allowed for strings, not ". ref $value
+			      unless( ref $value eq 'Rit::Base::String' );
+
+			    if( $value->begins( $target_value ) )
+			    {
+				next PRED; # Passed test
+			    }
+			    else
+			    {
+				next NODE; # Failed test
+			    }
+			}
+			else
+			{
+			    confess "Matchtype not implemented: $match";
+			}
 		    }
 		    else
 		    {
@@ -471,7 +494,7 @@ sub find
 		}
 		else
 		{
-		    throw('action', "Matchtype '$match' not implemented");
+		    confess "Matchtype '$match' not implemented";
 		}
 
 	    }
@@ -517,7 +540,7 @@ sub find
 	    }
 	    else
 	    {
-		throw('action', "Matchtype '$match' not implemented");
+		confess "Matchtype '$match' not implemented";
 	    }
 
 	    # This node failed the test.  Check next node
