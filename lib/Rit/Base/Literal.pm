@@ -20,6 +20,7 @@ BEGIN
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef valclean truncstring );
+use Rit::Base::String;
 
 ### Inherit
 #
@@ -166,11 +167,25 @@ sub is_true
 
 =head2 equals
 
+  $literal->equals( $val )
+
+If C<$val> is a scalar, converts it to a L<Rit::Base::String>
+object. (Undefs will become a L<Rit::Base::Undef> via
+L<Rit::Base::String>.)
+
+Returns true if both are L<Rit::Base::Literal> and has the same
+L<Rit::Base::Object/syskey>.
+
+C<syskey> is implemented in the subclasses to this class. For example,
+L<Rit::Base::String>, L<Rit::Base::Time> and L<Rit::Base::Undef>.
+
 =cut
 
 sub equals
 {
     my( $lit, $val ) = @_;
+
+    $val ||= Rit::Base::String->new($val);
 
     if( ref $val and UNIVERSAL::isa($val, 'Rit::Base::Literal') )
     {
