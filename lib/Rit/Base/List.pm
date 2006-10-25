@@ -1169,6 +1169,7 @@ sub as_list
     foreach my $id ( @{$_[0]} )
     {
 	push @list, Rit::Base::Resource->get( $id );
+	$Para::Frame::REQ->may_yield;
     }
 #    warn "Returning list: @list\n";
     return \@list;
