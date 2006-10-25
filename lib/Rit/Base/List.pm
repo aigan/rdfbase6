@@ -1537,7 +1537,7 @@ sub materialize
 	debug "Materializing with class $class: ".datadump($list);
     }
 
-    debug "Materializing list of ". $#$list ." items.  Prefetching $prefetch of type $class";
+#    debug "Materializing list of ". $#$list ." items.  Prefetching $prefetch of type $class";
 
     my $req = $Para::Frame::REQ;
     my $i = 0;
