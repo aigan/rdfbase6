@@ -1537,14 +1537,26 @@ sub materialize
 	debug "Materializing with class $class: ".datadump($list);
     }
 
+    debug "Materializing list of ". $#$list ." items.  Prefetching $prefetch of type $class";
+
+    my $req = $Para::Frame::REQ;
     my $i = 0;
     if( $prefetch )
     {
 	$prefetch = min($prefetch, scalar @$list );
 
+	$req->note("Materializing a list of $prefetch items.")
+	  if( $prefetch > 100 );
+
 	for( $i=0; $i<$prefetch; $i++ )
 	{
 	    $list->[$i] = Rit::Base::Resource->get($list->[$i]);
+
+	    unless( $i < 100 or $i % 100 )
+	    {
+		$req->yield;
+		$req->note("$i of $prefetch");
+	    }
 	}
     }
 
