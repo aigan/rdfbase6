@@ -40,7 +40,7 @@ sub import
     foreach my $const ( @_ )
     {
 	$const =~ /^\$C_(\w+)/ or croak "malformed constant: $const";
-	debug "Package $callpkg imports $1";
+	debug 2, "Package $callpkg imports $1";
 
 	if( $Rit::dbix )
 	{
