@@ -4019,7 +4019,6 @@ sub get_by_label
 
     my $req = $Para::Frame::REQ;
     confess "No REQ" unless $req;
-    my $page = $req->page;
 
     unless( defined $list->[0] )
     {
@@ -4029,6 +4028,7 @@ sub get_by_label
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $_[0];
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+	    my $page = $req->page;
 	    $page->set_error_template("/node_query_error.tt");
 	}
 	else
@@ -4060,6 +4060,7 @@ sub get_by_label
 	# Ask for which alternative; redo
 
 	$req->session->route->bookmark;
+	my $page = $req->page;
 	$page->set_template("$home/alternatives.tt");
 	my $uri = $page->url_path_tmpl;
 	my $result = $req->result;

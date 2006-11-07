@@ -866,7 +866,7 @@ sub execute
 #	debug "MIN PRIO = $min_prio";
 	if( debug > 2 )
 	{
-#	    debug $search->sysdesig;
+	    debug $search->sysdesig;
 	    debug 4, $search->sql_sysdesig;
 	}
 	$result = $search->get_result($sql, $values, 15); # 10

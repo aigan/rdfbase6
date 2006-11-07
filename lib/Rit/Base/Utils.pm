@@ -301,13 +301,17 @@ sub name2url
 
     deunicode( $name );
 
+    use locale;
+    use POSIX qw(locale_h);
+    setlocale(LC_ALL, "sv_SE");
     my $url = lc($name);
 
     $url =~ tr[אבגהדוזיטךכםלןמףעצפץרתשüû‎ÿנ‏‗]
 	      [aaaaaaaeeeeiiiioooooouuuuyydps];
-    $url =~ s/[^\w\s-]//g;
+    $url =~ s/[^\w\s\-~]//g;
     $url =~ s/\s+/_/g;
     $url =~ s/( ^_+ | _+$ )//gx;
+
     return $url;
 }
 

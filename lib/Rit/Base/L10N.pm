@@ -77,7 +77,7 @@ sub get_handle
 sub maketext
 {
     my $lh = shift;
-    my $phrase = shift;
+    my $phrase = shift || "";
 
     my $req = $Para::Frame::REQ;
 
