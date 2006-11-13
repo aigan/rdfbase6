@@ -48,6 +48,11 @@ sub now
     return bless(DateTime->now,'Rit::Base::Time')->init;
 }
 
+sub date
+{
+    return bless(Para::Frame::Time->get(@_),'Rit::Base::Time');
+}
+
 1;
 
 =head1 SEE ALSO
