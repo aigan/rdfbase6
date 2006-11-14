@@ -1632,7 +1632,7 @@ sub first_prop    # Just get first value
     my( $node, $name ) = @_;
     $node->initiate_prop( $name );
     return is_undef unless defined $node->{'relarc'}{$name};
-    $node->{'relarc'}{$name}[0] or confess "Empty list ".datadump($node);
+    $node->{'relarc'}{$name}[0] or confess "Empty list for $name in ".$node->id;
     return $node->{'relarc'}{$name}[0]->value;
 }
 
