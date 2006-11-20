@@ -4060,8 +4060,8 @@ sub get_by_label
 	# Ask for which alternative; redo
 
 	$req->session->route->bookmark;
+	$req->set_page_path("/alternatives.tt");
 	my $page = $req->page;
-	$page->set_template("$home/alternatives.tt");
 	my $uri = $page->url_path_tmpl;
 	my $result = $req->result;
 	$result->{'info'}{'alternatives'} =
@@ -4858,7 +4858,7 @@ sub handle_query_arc_value
 			$req->session->route->bookmark;
 			my $home = $req->site->home_url_path;
 			my $uri = $page->url_path_tmpl;
-			$page->set_template("$home/alternatives.tt");
+			$req->set_page_path("/alternatives.tt");
 			my $result = $req->result;
 
 			$result->{'info'}{'alternatives'} =
@@ -4904,7 +4904,7 @@ sub handle_query_arc_value
 		    {
 			$req->session->route->bookmark;
 			my $home = $site->home_url_path;
-			$page->set_template('confirm.tt');
+			$req->set_page_path('/confirm.tt');
 			my $result = $req->result;
 			$result->{'info'}{'confirm'} =
 			{
@@ -5034,7 +5034,7 @@ sub handle_query_prop_value
 	    my $home = $site->home_url_path;
 	    $req->session->route->bookmark;
 	    my $uri = $page->url_path_tmpl;
-	    $page->set_template("$home/alternatives.tt");
+	    $req->set_page_path("/alternatives.tt");
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'} =
 	    {

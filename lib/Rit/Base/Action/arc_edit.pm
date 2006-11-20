@@ -59,7 +59,7 @@ sub handler
 	{
 	    $q->param('id', $subj->id);
 	    my $home = $req->site->home_url_path;
-	    $req->page->set_template("$home/rb/node/update.tt");
+	    $req->set_page_path("/rb/node/update.tt");
 	    return "Arc $arc_id removed";
 	}
     }
