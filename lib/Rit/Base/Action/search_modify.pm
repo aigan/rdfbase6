@@ -10,7 +10,7 @@ sub handler
 
     my $search = $req->session->search or die "No search obj";
 
-    $search->modify_from_query;
+    $search->first_rb_part->modify_from_query;
 
     return "";
 }
