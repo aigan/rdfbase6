@@ -33,7 +33,7 @@ use Rit::Base::Pred;
 use Rit::Base::List;
 use Rit::Base::Lazy;
 
-use base 'Clone';
+use base 'Clone'; # gives method clone()
 
 
 =head1 DESCRIPTION
@@ -83,61 +83,21 @@ sub new
 
 =head2 size
 
+Shortcut for C<$search-E<gt>result-E<gt>size> but returns undef if no
+search result exist.
+
 =cut
 
 sub size
 {
-    if( $_[0]->{'result'} )
+    if( my $res = $_[0]->{'result'} )
     {
-	return scalar @{$_[0]->{'result'}};
+	return $res->size;
     }
     else
     {
 	return undef;
     }
-}
-
-sub count
-{
-    return $_[0]->size;
-}
-
-#######################################################################
-
-=head2 result_as_rblist
-
-Returns a L<Rit::Base::List>
-
-=cut
-
-sub result_as_rblist
-{
-    my( $search, $args ) = @_;
-
-    $args ||= {}; # not implemented
-
-    my $res = $search->{'result'} or return Rit::Base::List->new([]);
-    confess(Dumper($res)) if ref $res eq 'ARRAY';
-
-    my $limit = 10;
-    my $req = $Para::Frame::REQ or cluck "No REQ";
-    if( $req ) # Don't know when it's undefined (during reload)
-    {
-	my $user = $req->user;
-	if( $user and $req->is_from_client )
-	{
-	    my $q = $req->q;
-	    $limit = $q->param('limit') || 10;
-	    $limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
-	}
-    }
-
-    if( $res->can('materialize') )
-    {
-	$res->materialize("Rit::Base::Lazy", $limit);
-    }
-
-    return Rit::Base::List->new($res);
 }
 
 #######################################################################
@@ -152,9 +112,7 @@ sub result
 {
     my( $search ) = @_;
 
-    # The result may be a Rit::Base::List or a Para::Frame::List
-
-    my $res = $search->{'result'} or return Para::Frame::List->new([]);
+    my $res = $search->{'result'};# or return Rit::Base::List->new_empty();
     confess(Dumper($res)) if ref $res eq 'ARRAY';
 
     my $limit = 10;
@@ -167,12 +125,9 @@ sub result
 	$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
     }
 
-    if( $res->can('materialize') )
-    {
-	$res->materialize("Rit::Base::Lazy", $limit);
-    }
+    $res->set_page_size( $limit );
 
-    return Para::Frame::List->new($res, {page_size => $limit});
+    return $res;
 }
 
 #######################################################################
@@ -193,7 +148,7 @@ sub set_result
 	die "Malformed list: $list";
     }
 
-    return $search->{'result'} = Para::Frame::List->new($list);
+    return $search->{'result'} = Rit::Base::List->new($list);
 }
 
 #######################################################################
@@ -206,7 +161,7 @@ sub result_url
 {
     $_[0]->{'result_url'} = $_[1] if defined $_[1];
     return $_[0]->{'result_url'} ||
-      $Para::Frame::REQ->site->home_url_path.'/';
+      $Para::Frame::REQ->site->home->url_path_slash;
 }
 
 #######################################################################
@@ -219,7 +174,7 @@ sub form_url
 {
     $_[0]->{'form_url'} = $_[1] if defined $_[1];
     return $_[0]->{'form_url'} ||
-      $Para::Frame::REQ->site->home_url_path.'/';
+      $Para::Frame::REQ->site->home->url_path_slash;
 }
 
 #######################################################################
@@ -874,7 +829,7 @@ sub execute
 
     $search->{'result'} = Rit::Base::List->new($result);
 
-#    debug(3, "Got result ".datadump($search->{'result'}));
+    debug(3, "Got result ".datadump($search->{'result'}));
 
     return '';
 }
@@ -911,6 +866,8 @@ sub get_result
     {
 	my $took = time - $time;
 	debug(sprintf("Execute: %2.2f", $took));
+	debug $search->sysdesig;
+	debug $search->sql_sysdesig;
     }
 
     my( @result, %found );
@@ -927,6 +884,9 @@ sub get_result
 	last if $#result >= $search->{'maxlimit'} -1;
     }
     $sth->finish;
+
+#    debug sprintf "Got %d hit", scalar(@result);
+#    debug datadump(\@result); ### DEBUG
 
     return \@result;
 }
@@ -960,7 +920,7 @@ sub build_sql
     {
 	debug( 2, "*** Empty search");
 #	confess Dumper(\@elements, $search );
-	$search->{'result'} = Rit::Base::List->new([]);
+	$search->{'result'} = Rit::Base::List->new_empty();
 	return '';
     }
 
@@ -1079,7 +1039,7 @@ sub merge
 
     my $search = $s1->clone();
 
-    $search->{'result'} ||= Rit::Base::List->new([]);
+    $search->{'result'} ||= Rit::Base::List->new_empty();
 
     # Build id list
     my %items;
@@ -1123,7 +1083,7 @@ sub merge_first
 
     my $search = $s1->clone();
 
-    $search->{'result'} ||= Rit::Base::List->new([]);
+    $search->{'result'} ||= Rit::Base::List->new_empty();
 
     # Build id list
     my %items;
