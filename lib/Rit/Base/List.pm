@@ -10,7 +10,7 @@ Rit::Base::List
 use Carp qw(carp croak cluck confess);
 use strict;
 use vars qw($AUTOLOAD);
-use List::Util qw( max min );
+use List::Util;
 
 
 BEGIN
@@ -19,23 +19,22 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
+use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::List;
 
 use Rit::Base::Utils qw( is_undef );
 
 ### Inherit
 #
-use base qw( Rit::Base::Object );
+use base qw( Para::Frame::List Rit::Base::Object );
 
 # Can't overload stringification. It's called in some stage of the
 # process before it should.
-#
 # use overload '""'   => 'desig'; # Too much trouble...
-use overload 'cmp'  => 'cmp';
-use overload 'bool' => sub{ scalar @{$_[0]} };
 
-# MABY: Let the type of list be defined by the ...
+#use overload 'cmp'  => 'cmp';
+#use overload 'bool' => sub{ scalar @{$_[0]} };
 
 =head1 DESCRIPTION
 
@@ -88,7 +87,7 @@ sub new
 
     if( ref $listref eq "ARRAY" )
     {
-	return bless $listref, $class;
+	return $class->SUPER::new($listref);
     }
     elsif( ref $listref eq "Rit::Base::List" )
     {
@@ -96,12 +95,21 @@ sub new
     }
     elsif( ref $listref eq "Para::Frame::List" )
     {
-	return bless [@$listref], $class;
+	return $class->SUPER::new([@$listref]);
     }
     else
     {
 	die "Malformed listref: $listref";
     }
+}
+
+#######################################################################
+
+sub init
+{
+    my( $l, $args ) = @_;
+    # Add the materializer to the args
+    $args->{'materializer'} = \&materialize;
 }
 
 
@@ -294,7 +302,7 @@ sub find
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.
 
-    my $newlist = bless [], $class;
+    my @newlist;
 
   NODE:
     foreach my $node ( $self->nodes )
@@ -302,7 +310,7 @@ sub find
 	debug 3, "Resource ".$node->id;
 
 	# Check each prop in the template.  All must match.  One
-	# failed match and this $node in not placed in $newlist
+	# failed match and this $node in not placed in @newlist
 
       PRED:
 	foreach my $pred_part ( keys %$tmpl )
@@ -547,10 +555,11 @@ sub find
 	    next NODE;
 	}
 	debug 3, "  Add node to list";
-	push @$newlist, $node;
+	push @newlist, $node;
     }
-    debug 3,"Return ".(scalar @$newlist)." results";
-    return $newlist;
+    debug 3,"Return ".(scalar @newlist)." results";
+
+    return Rit::Base::List->new(\@newlist);
 }
 
 
@@ -772,7 +781,7 @@ sub sorted
 	}
     }
 
-    $list->materialize; # for sorting on props
+    $list->materialize_all; # for sorting on props
 
     my @sort;
     for( my $i = 0; $i < @$args; $i++ )
@@ -1037,7 +1046,7 @@ sub loc
 	    else
 	    {
 		push @{$alts{'c'}}, $item;
-		debug 4,"Lang c: $item->{'id'} ($langs)";
+#		debug 4,"Lang c: $item->{'id'} ($langs)";
 	    }
 	}
 	else
@@ -1070,7 +1079,7 @@ sub loc
 
 	debug 3,"Returning (one) literal with highest weight";
 	# Not using ->value, since this may be a Literal
-	return $list{ max( keys %list ) }->loc(@_);
+	return $list{ List::Util::max( keys %list ) }->loc(@_);
     }
 
     ## Set default.  (*any* default)
@@ -1116,63 +1125,6 @@ sub loc
 
 	die "No default found";
     }
-}
-
-#######################################################################
-
-=head2 size
-
-  $l->size
-
-Returns: The number of elements in the list
-
-=cut
-
-sub size
-{
-#    my $size = scalar @{$_[0]};
-#    warn "Size is $size\n";
-#    return $size;
-
-    return scalar @{$_[0]};
-}
-
-#######################################################################
-
-=head2 as_list
-
-  $l->as_list
-
-This method is used for compatibility with L<Template::Iterator>.
-
-Materializes the list by calling L<Rit::Base::Resource/get> for each
-element.
-
-Returns: an array ref
-
-=cut
-
-sub as_list
-{
-#    confess $_[0] unless ref $_[0] eq 'Rit::Base::List';
-
-    my @list;
-
-    # Object can contain nodes or id's of nodes
-    if( ref $_[0]->[0] )
-    {
-	@list = @{$_[0]};
-	return \@list;
-    }
-
-    # Materialize
-    foreach my $id ( @{$_[0]} )
-    {
-	push @list, Rit::Base::Resource->get( $id );
-	$Para::Frame::REQ->may_yield;
-    }
-#    warn "Returning list: @list\n";
-    return \@list;
 }
 
 #######################################################################
@@ -1256,37 +1208,7 @@ sub nodes
 
 #######################################################################
 
-=head2 first
-
-  $l->first
-
-Returns: the first element
-
-NOTE: L<Template::Iterator> uses C<get_first> but other things uses
-C<first>.
-
-=cut
-
-sub first
-{
-    return $_[0][0];
-}
-
-
-#######################################################################
-
-=head2 get_first
-
-  $l->first
-
-Returns: the first element
-
-=cut
-
-sub get_first
-{
-    return $_[0][0];
-}
+# FIXME: Ar other places using $l->first() ?
 
 #######################################################################
 
@@ -1502,70 +1424,21 @@ sub has_value
 
 =head2 materialize
 
-  $list->materialize
-
-  $list->materialize($class)
-
-  $list->materialize($class, $prefetch)
-
-Default C<$class> is L<Rit::Base::Resource>. Used for optimization if
-the class is knowm. L<Rit::Base::Resource/get> will place each node in
-its right class if C<$class> is not given. You can also use
-L<Rit::Base::Unknown> for lazy evaluation.
-
-If the list consists of other things than resources, this method
-should not be used.
-
-If C<$prefetch> is used in conjunction with the class
-L<Rit::Base::Lazy>, the first C<$prefetch> elements will be fetched in
-L<Rit::Base::Resource> instead, as an optimization.
-
-Returns: The same list with each element converted to C<$class>.
-
 =cut
 
 sub materialize
 {
-    my( $list, $class, $prefetch ) = @_;
+    my( $l, $i ) = @_;
 
-    return $list if ref $list->[0]; # already materialized
-
-    $class ||= 'Rit::Base::Resource';
-
-    if( debug > 2 )
+    my $elem = $l->{'_DATA'}[$i];
+    if( ref $elem )
     {
-	debug "Materializing with class $class: ".datadump($list);
+	return $elem;
     }
-
-#    debug "Materializing list of ". $#$list ." items.  Prefetching $prefetch of type $class";
-
-    my $req = $Para::Frame::REQ;
-    my $i = 0;
-    if( $prefetch )
+    else
     {
-	$prefetch = min($prefetch, scalar @$list );
-
-	$req->note("Materializing a list of $prefetch items.")
-	  if( $prefetch > 100 );
-
-	for( $i=0; $i<$prefetch; $i++ )
-	{
-	    $list->[$i] = Rit::Base::Resource->get($list->[$i]);
-
-	    unless( $i < 100 or $i % 100 )
-	    {
-		$req->yield;
-		$req->note("$i of $prefetch");
-	    }
-	}
+	return Rit::Base::Resource->get( $elem );
     }
-
-    for( 1; $i<= $#$list; $i++ )
-    {
-	$list->[$i] = $class->get($list->[$i]);
-    }
-
-    return $list;
 }
 
 #######################################################################

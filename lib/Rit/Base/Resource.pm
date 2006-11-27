@@ -608,11 +608,9 @@ sub find
     $search->modify($tmpl);
     $search->execute();
 
-#    debug "Materializing search result with $class <----------------";
-#    return $search->{'result'}->materialize($class);
-
-    # TODO: Take care of class argument to result_as_rblist
-    return $search->result_as_rblist({class=>$class});
+    my $result = $search->result;
+    $result->set_type($class);
+    return $result;
 }
 
 
