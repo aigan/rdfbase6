@@ -2255,8 +2255,10 @@ sub register_with_nodes
 	    }
 	    else
 	    {
-		$value->{'revarc'}{ $pred_name } =
-		    new Rit::Base::List( [$arc] );
+	    # Is realy the List class needed?
+#		$value->{'revarc'}{ $pred_name } =
+#		    new Rit::Base::List( [$arc] );
+		$value->{'revarc'}{ $pred_name } = [$arc];
 	    }
 	    $value->{'arc_id'}{$id} = $arc;
 	}
