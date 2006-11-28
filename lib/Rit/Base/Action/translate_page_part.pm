@@ -31,7 +31,7 @@ sub handler
 
     my $arcs = $n->find_arcs( 'description' => {language=>$l});
 
-    if( my $arc = $arcs->first )
+    if( my $arc = $arcs->get_first_nos )
     {
 	$arc->obj->update('value'=>$trt);
     }

@@ -25,7 +25,7 @@
          [% FOREACH foo = crit.prop %]
             [% firstpred = foo.pred; # could be a list %]
 	    [% UNLESS firstpred.is_pred %]
-               [% firstpred = firstpred.first %]
+               [% firstpred = firstpred.get_first_nos %]
             [% END %]
             [% FOREACH val = foo.values %]
                [% IF firstpred.objtype %]

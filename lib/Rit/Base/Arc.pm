@@ -2689,7 +2689,7 @@ sub check_value
 	}
 	else
 	{
-	    $$valref = $val->get_first;
+	    $$valref = $val->get_first_nos;
 	}
     }
     elsif( UNIVERSAL::isa($val, "Rit::Base::Resource::Compatible" ) )
