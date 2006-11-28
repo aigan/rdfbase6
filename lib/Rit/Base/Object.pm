@@ -347,7 +347,7 @@ list. Does not return a status code (get first with no status).
 
 =cut
 
-sub get_first
+sub get_first_nos
 {
     return $_[0];
 }
