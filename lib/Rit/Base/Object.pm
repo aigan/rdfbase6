@@ -323,10 +323,27 @@ sub size
 
   $literal->get_first()
 
-TODO: Doesn't work as it should. TT jumps in and messes it up...
-
 Gets the first value from a list, or the value itselft if it's not a
 list.
+
+May return a second value with a error status code if the list is
+empty. See L</get_first_nos>.
+
+=cut
+
+sub get_first
+{
+    return $_[0];
+}
+
+#######################################################################
+
+=head2 get_first_nos
+
+  $literal->get_first_nos()
+
+Gets the first value from a list, or the value itselft if it's not a
+list. Does not return a status code (get first with no status).
 
 =cut
 
