@@ -2149,8 +2149,8 @@ sub arc_list
     {
 	$name = $name->name if ref $name eq 'Rit::Base::Pred';
 	$node->initiate_prop( $name );
- 	my $lr = $node->{'relarc'}{$name} ||= new Rit::Base::List;
-	return $lr;
+ 	my $lr = $node->{'relarc'}{$name} || [];
+	return Rit::Base::List->new($lr);
     }
     else
     {
@@ -2188,8 +2188,8 @@ sub revarc_list
     {
 	$name = $name->plain if ref $name;
 	$node->initiate_revprop( $name );
-	my $lr = $node->{'revarc'}{$name} ||= new Rit::Base::List;
-	return $lr;
+	my $lr = $node->{'revarc'}{$name} || [];
+	return Rit::Base::List->new($lr);
     }
     else
     {
@@ -2263,11 +2263,11 @@ sub arc
 
     $node->initiate_prop( $name );
 
-    my $arcs = $node->{'relarc'}{$name};
+    my $arcs = $node->{'relarc'}{$name} || [];
 
     if( defined $arcs->[1] ) # More than one element
     {
-	return $arcs;  # Returns array ref
+	return Rit::Base::List->new($arcs);
     }
     else
     {
@@ -2304,11 +2304,11 @@ sub revarc
 
     $node->initiate_revprop( $name );
 
-    my $arcs = $node->{'revarc'}{$name} ||= new Rit::Base::List;
+    my $arcs = $node->{'revarc'}{$name} || [];
 
     if( defined $arcs->[1] ) # More than one element
     {
-	return $arcs;  # Returns array ref
+	return Rit::Base::List->new($arcs);
     }
     else
     {
