@@ -836,7 +836,7 @@ sub sorted
 #    debug 3, "--- SORTING: $sort_str";
 
     my @props;
-    foreach my $item ( @$list )
+    foreach my $item ( $list->as_array )
     {
 	debug 2, sprintf("  add item %s", $item->sysdesig);
 	for( my $i=0; $i<@$args; $i++ )
@@ -1425,6 +1425,8 @@ sub has_value
 sub materialize
 {
     my( $l, $i ) = @_;
+
+    confess "FIXME" unless defined $i;
 
     my $elem = $l->{'_DATA'}[$i];
     if( ref $elem )
