@@ -1660,7 +1660,11 @@ sub set_value
 	    throw('alternatives', "Flera noder matchar kriterierna");
     }
 
-    my $value_new = $value_new_list->[0] || is_undef; # Is object
+    my $value_new = $value_new_list->get_first_nos;
+    unless( defined $value_new ) # Avoids using list overload
+    {
+	$value_new = is_undef;
+    }
 
     my $value_old = $arc->value          || is_undef; # Is object
 
