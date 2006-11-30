@@ -285,7 +285,7 @@ sub find_by_label
     my( @new );
     $coltype ||= 'obj';
 
-    debug 3, "find_by_label: $val ($coltype)";
+#    debug 3, "find_by_label: $val ($coltype)";
 
     # obj as object
     #
@@ -450,7 +450,7 @@ sub find_by_label
 	# Used to use find_simple.  But this is a general find
 	# function and can not assume the simple case
 
-	@new = @{ $this->find({ name_clean => $val }) };
+	@new = $this->find({ name_clean => $val })->as_array;
     }
     #
     # obj as obj id
@@ -657,8 +657,8 @@ sub find_simple
     my $pred_id = $pred->id;
 
     my $value = valclean($value_in);
-    my $list;
-    unless( $list = $Rit::Base::Cache::find_simple{$pred_id}{$value} )
+    my $list = $Rit::Base::Cache::find_simple{$pred_id}{$value};
+    unless( defined $list ) # Avoid using list overload
     {
 	my @nodes;
 	my $st = "select sub from rel where pred=? and valclean=?";
@@ -710,7 +710,7 @@ sub find_one
 {
     my( $this, $props ) = @_;
 
-    my $nodes = $this->find( $props );
+    my $nodes = $this->find( $props )->as_arrayref;
 
     if( $nodes->[1] )
     {
@@ -746,7 +746,7 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'alts'} = undef;
 	$result->{'info'}{'alternatives'}{'query'} = $props;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	$req->page->set_error_template('/node_query_error.tt');
+	$req->set_error_response_path('/node_query_error.tt');
 	throw('notfound', "No nodes matches query (1)");
     }
 
@@ -803,7 +803,7 @@ sub find_set  # Find the one matching node or create one
 	$default = undef;
     }
 
-    my $nodes = $this->find( $props );
+    my $nodes = $this->find( $props )->as_arrayref;
 
     if( $nodes->[1] )
     {
@@ -871,7 +871,7 @@ sub set_one  # get/set the one node matching. Merge if necessery
     my( $this, $props_in, $default ) = @_;
 
 
-    my $nodes = $this->find( $props_in );
+    my $nodes = $this->find( $props_in )->as_arrayref;
     my $node = shift @$nodes;
 
     if( $nodes->[0] )
@@ -946,21 +946,10 @@ sub create
 
     foreach my $pred_name ( @props_list )
     {
-	my $vals = $props->{$pred_name};
-	if( ref $vals and UNIVERSAL::isa( $vals, 'Rit::Base::List' ) )
-	{
-	    $vals = $vals->nodes;
-	}
-
-	unless( ref $vals and (ref $vals eq 'ARRAY' or
-			       ref $vals eq 'Rit::Base::List' )
-	      )
-	{
-	    $vals = [$vals];
-	}
+	my $vals = Rit::Base::List->new_any( $props->{$pred_name} );
 
 	# Check for definedness
-	foreach my $val ( @$vals )
+	foreach my $val ( $vals->as_array )
 	{
 	    debug 2, "Checking $pred_name = $val";
 	    if( ($val and ((ref $val and not $val->defined) or not length $val)) or not $val )
@@ -973,7 +962,7 @@ sub create
 	{
 	    $pred_name = $1;
 
-	    foreach my $val ( @$vals )
+	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
 		    subj    => $val,
@@ -982,7 +971,7 @@ sub create
 		});
 	    }
 	}
-	elsif( $pred_name =~ /^adr_(.*)$/ and @$vals )
+	elsif( $pred_name =~ /^adr_(.*)$/ and $vals->size )
 	{
 	    # TODO: generalize this!
 	    $adr ||= {};
@@ -991,7 +980,7 @@ sub create
 	}
 	else
 	{
-	    foreach my $val ( @$vals )
+	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
 		    subj_id => $subj_id,
@@ -1054,7 +1043,7 @@ sub create_if_unique
 		    # A duplicate was found. But ignore that if ...
 
 
-		    my $val_other = $list->[0]->sysdesig;
+		    my $val_other = $list->get_first_nos->sysdesig;
 		    throw('validation', "\u$pred_name are the same as $val_other");
 		}
 	    }
@@ -1343,6 +1332,7 @@ sub list
 		confess "not implemented: ".datadump($arclim);
 	    }
 	}
+
         my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
 
 	if( $proplim )
@@ -1529,9 +1519,9 @@ sub prop
     $node->initiate_prop( $name );
     my $values = $node->list($name, $proplim, $arclim);
 
-    if( defined $values->[1] ) # More than one element
+    if( $values->size > 1 ) # More than one element
     {
-	debug 3, "=== Ret ".$node->id."-> $name: (List with ".(scalar @$values)." nodes)";
+#	debug 3, "=== Ret ".$node->id."-> $name: (List with ".(scalar @$values)." nodes)";
 	return $values;  # Returns list
     }
     else
@@ -1549,9 +1539,9 @@ sub prop
 	    }
 	}
 
-	if( defined $values->[0] )
+	if( $values->size )
 	{
-	    return $values->[0];
+	    return $values->get_first_nos;
 	}
 	else
 	{
@@ -1593,16 +1583,16 @@ sub revprop     # Get first value or the list.
 
     my $values = $node->revlist($name, $proplim, $arclim);
 
-    if( defined $values->[1] ) # More than one element
+    if( $values->size > 1 ) # More than one element
     {
 	return $values;  # Returns list
     }
     else
     {
 	# Return Resource, or undef if no such element
-	if( defined $values->[0] )
+	if( $values->size )
 	{
-	    return $values->[0];
+	    return $values->get_first_nos;
 	}
 	else
 	{
@@ -1831,7 +1821,7 @@ sub has_value
 		datadump($value,4);
 	}
 
-	foreach my $arc ( @{ $node->arc_list($pred_name) } )
+	foreach my $arc ( $node->arc_list($pred_name)->as_array )
 	{
 	    if( $arc->obj->find($value)->size )
 	    {
@@ -1860,7 +1850,7 @@ sub has_value
 	return -1 if $node->$pred_name eq $value;
     }
 
-    foreach my $arc ( @{ $node->arc_list($pred_name) } )
+    foreach my $arc ( $node->arc_list($pred_name)->as_array )
     {
 	debug 3, "  check arc ".$arc->id;
 	return $arc if $arc->value_equals( $value );
@@ -1898,7 +1888,7 @@ sub has_revprop
 {
     my ($node, $pred_name, $subj) = @_;
 
-    foreach my $arc ( @{ $node->revarc_list($pred_name) } )
+    foreach my $arc ( $node->revarc_list($pred_name)->as_array )
     {
 	return 1 if $arc->subj->equals( $subj );
     }
@@ -2092,7 +2082,7 @@ sub literal
 {
     my( $node ) = @_;
 
-    if( ref $node eq 'Rit::Base::List' )
+    if( UNIVERSAL::isa($node,'Para::Frame::List') )
     {
 	croak "deprecated";
 
@@ -2381,15 +2371,9 @@ sub add
     {
 	# Must be pred_name, not pred
 
-	my $vals = $props->{$pred_name};
-	unless( ref $vals and (ref $vals eq 'ARRAY' or
-			       ref $vals eq 'Rit::Base::List' )
-	      )
-	{
-	    $vals = [$vals];
-	}
+	my $vals = Rit::Base::List->new_any( $props->{$pred_name} );
 
-	foreach my $val ( @$vals )
+	foreach my $val ( $vals->as_array )
 	{
 	    Rit::Base::Arc->create({
 		subj => $node,
@@ -2468,7 +2452,7 @@ sub update
     foreach my $pred_name ( keys %$props )
     {
 	my $old = $node->arc_list( $pred_name );
-	push @arcs_old, @$old;
+	push @arcs_old, $old->as_array;
     }
 
     $changes += $node->replace(\@arcs_old, $props);
@@ -2527,7 +2511,7 @@ sub replace
 
     my $changes = 0;
 
-    foreach my $arc ( @$oldarcs )
+    foreach my $arc ( $oldarcs->as_array )
     {
 	my $val_str = valclean( $arc->value->syskey );
 
@@ -2703,7 +2687,7 @@ sub find_arcs
 	    {
 		my $val = $crit->{$pred};
 		my $found = $node->arc_list($pred)->find(value=>$val);
-		push @$arcs, @$found if $found;
+		push @$arcs, $found->as_array if $found->size;
 	    }
 	}
 	elsif( $crit =~ /^\d+$/ )
@@ -2768,17 +2752,12 @@ sub construct_proplist
 
     foreach my $pred ( keys %$props_in )
     {
-	my $vals = $props_in->{$pred};
+	# Not only objs
+	my $vals = Para::Frame::List->new_any( $props_in->{$pred} );
 
 	# Only those alternatives. Not other objects based on ARRAY,
-	unless( (ref $vals eq 'ARRAY') or
-	        ( ref $vals eq 'Rit::Base::List' )
-	      )
-	{
-	    $vals = [$vals];
-	}
 
-	foreach my $val ( @$vals )
+	foreach my $val ( $vals->as_array )
 	{
 	    if( ref $val )
 	    {
@@ -2877,7 +2856,7 @@ sub equals
 	}
 	elsif( ref $node2 eq 'Rit::Base::List' )
 	{
-	    foreach my $val (@{$node2->as_list})
+	    foreach my $val ( $node2->as_array )
 	    {
 		return 1 if $node->equals($val);
 	    }
@@ -3246,7 +3225,7 @@ sub vacuum
     }
 
     my $pred_name_list = $node->list;
-    foreach my $pred_name ( @$pred_name_list )
+    foreach my $pred_name ( $pred_name_list->as_array )
     {
 	my $pred = getpred( $pred_name );
 	debug( sprintf "vacuum --> Check %s\n", $pred->name->plain);
@@ -3254,7 +3233,7 @@ sub vacuum
 
 	if( $coltype eq 'obj' )
 	{
-	    foreach my $arc (@{ $node->arc_list( $pred_name ) })
+	    foreach my $arc ( $node->arc_list( $pred_name )->as_array )
 	    {
 		$Para::Frame::REQ->may_yield;
 		$arc->vacuum;
@@ -3554,7 +3533,7 @@ sub find_class
     #
     my $islist = $node->list('is',undef,'not_disregarded');
     my @classes;
-    foreach my $elem (@$islist)
+    foreach my $elem ($islist->as_array)
     {
 	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
@@ -4018,7 +3997,7 @@ sub get_by_label
     my $req = $Para::Frame::REQ;
     confess "No REQ" unless $req;
 
-    unless( defined $list->[0] )
+    unless( $list->size )
     {
 	my $msg = "";
 	if( $req->is_from_client )
@@ -4026,8 +4005,7 @@ sub get_by_label
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $_[0];
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    my $page = $req->page;
-	    $page->set_error_template("/node_query_error.tt");
+	    $req->set_error_response_path("/node_query_error.tt");
 	}
 	else
 	{
@@ -4095,15 +4073,17 @@ sub get_by_label
 	throw('alternatives', 'Specificera alternativ');
     }
 
+    my $first = $list->get_first_nos;
+
     # Cache name lookups
     unless( ref($_[0]) or $_[1] ) # Do not cache complex searches
     {
-	my $id = $list->[0]->id;
+	my $id = $first->id;
 	$Rit::Base::Cache::Label{$class}{ $_[0] } = $id;
-	$list->[0]->{'lables'}{$class}{ $_[0] } ++;
+	$first->{'lables'}{$class}{ $_[0] } ++;
     }
 
-    return $list->[0];
+    return $first;
 }
 
 
@@ -4618,7 +4598,7 @@ sub handle_query_arc_value
 	    $arcs = $node->arc_list($pred_name);
 	}
 
-	if( $type and  $arcs->[0] )
+	if( $type and  $arcs->size )
 	{
 	    if( $rev )
 	    {
@@ -4630,7 +4610,7 @@ sub handle_query_arc_value
 	    }
 	}
 
-	if( $scof and  $arcs->[0] )
+	if( $scof and  $arcs->size )
 	{
 	    if( $rev )
 	    {
@@ -4642,23 +4622,24 @@ sub handle_query_arc_value
 	    }
 	}
 
-	if( $arcs->[1] ) # more than one
+	if( $arcs->size > 1 ) # more than one
 	{
 	    debug 3, "prop $pred_name had more than one value";
 
 	    # Keep the first arc found
-	    my $arc = shift @$arcs;
+	    my @arclist = $arcs->as_array;
+	    my $arc = shift @arclist;
 	    $arc_id = $arc->id;
 
 	    # TODO: Should remove extra arcs
-	    foreach my $arc ( @$arcs )
+	    foreach my $arc ( @arclist )
 	    {
 		$changes += $arc->remove;
 	    }
 	}
-	elsif( $arcs->[0] ) # Replace this
+	elsif( $arcs->size ) # Replace this
 	{
-	    $arc_id = $arcs->[0]->id;
+	    $arc_id = $arcs->get_first_nos->id;
 	    debug 3, "Updating existing arc $arc_id";
 	}
 	else
@@ -4686,7 +4667,7 @@ sub handle_query_arc_value
 	    {
 		$subjs = $subjs->find( scof => $scof );
 	    }
-	    $subjs->materialize;
+	    $subjs->materialize_all;
 
 
 	    $value = $node;
@@ -4847,11 +4828,11 @@ sub handle_query_arc_value
 			}
 		    }
 
-		    $objs->materialize;
+		    $objs->materialize_all;
 
 
 
-		    if( $objs->[1] )
+		    if( $objs->size > 1 )
 		    {
 			$req->session->route->bookmark;
 			my $home = $req->site->home_url_path;
@@ -4898,7 +4879,7 @@ sub handle_query_arc_value
 			$q->delete_all();
 			throw('alternatives', 'Specificera alternativ');
 		    }
-		    elsif( not $objs->[0] )
+		    elsif( not $objs->size )
 		    {
 			$req->session->route->bookmark;
 			my $home = $site->home_url_path;
@@ -5027,7 +5008,7 @@ sub handle_query_prop_value
 	    $objs = Rit::Base::Resource->find_by_label($value);
 	}
 
-	if( $objs->[1] )
+	if( $objs->size > 1 )
 	{
 	    my $home = $site->home_url_path;
 	    $req->session->route->bookmark;
@@ -5065,7 +5046,7 @@ sub handle_query_prop_value
 	    $q->delete_all();
 	    throw('alternatives', "Flera noder har namnet '$value'");
 	}
-	elsif( not $objs->[0] )
+	elsif( not $objs->size )
 	{
 	    throw('validation', "$value not found");
 	}
@@ -5073,7 +5054,7 @@ sub handle_query_prop_value
 	my $arc = Rit::Base::Arc->create({
 	    subj_id => $id,
 	    pred_id => $pred_id,
-	    value   => $objs->[0],
+	    value   => $objs->get_first_nos,
 	}, \$changes);
 
 	$q->delete( $param ); # We will not add the same value twice
@@ -5299,7 +5280,7 @@ sub handle_query_check_row
 
     my $arcs = Rit::Base::Arc->find({subj_id => $subj_id, pred_id => $pred_id});
     # Remove found arcs
-    foreach my $arc ( @$arcs )
+    foreach my $arc ( $arcs->as_array )
     {
 	$changes += $arc->remove;
     }
@@ -5376,7 +5357,7 @@ sub handle_query_check_prop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( @{$node->list($pred_name)} )
+    foreach my $val ( $node->list($pred_name)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -5406,7 +5387,7 @@ sub handle_query_check_prop
 		value   => $value,
 	    });
 
-	    foreach my $arc ( @$arcs )
+	    foreach my $arc ( $arcs->as_array )
 	    {
 		$changes += $arc->remove;
 	    }
@@ -5491,7 +5472,7 @@ sub handle_query_check_revprop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( @{$node->revlist($pred_name)} )
+    foreach my $val ( $node->revlist($pred_name)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -5520,7 +5501,7 @@ sub handle_query_check_revprop
 		obj_id  => $id,
 	    });
 
-	    foreach my $arc ( @$arcs )
+	    foreach my $arc ( $arcs->as_array )
 	    {
 		$changes += $arc->remove;
 	    }
