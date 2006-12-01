@@ -946,7 +946,8 @@ sub create
 
     foreach my $pred_name ( @props_list )
     {
-	my $vals = Rit::Base::List->new_any( $props->{$pred_name} );
+	# May not be only Resources
+	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
 
 	# Check for definedness
 	foreach my $val ( $vals->as_array )
@@ -2371,7 +2372,8 @@ sub add
     {
 	# Must be pred_name, not pred
 
-	my $vals = Rit::Base::List->new_any( $props->{$pred_name} );
+	# Values may be other than Resources
+	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
 
 	foreach my $val ( $vals->as_array )
 	{
