@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Action::setup_db;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Action setting up an Ritbase DB
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 

@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Action::translate_page_part;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Action for updating a page part resource
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 

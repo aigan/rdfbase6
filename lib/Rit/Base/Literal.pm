@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Literal;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase node Literal class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 

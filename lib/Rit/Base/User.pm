@@ -1,5 +1,23 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::User;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource User class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
+
+=head1 NAME
+
+Rit::Base::User
+
+=cut
 
 use strict;
 
@@ -24,6 +42,39 @@ use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
 use base qw(Para::Frame::User);
 
 
+=head1 DESCRIPTION
+
+Inherits from L<Para::Frame::User>
+
+This class doesn't inherit from L<Rit::Base::Resoure>. But see
+L<Rit::Base::User::Meta>.
+
+Resources, then initiated, will be placed in the right class based on
+the C<class_handled_by_perl_module> property. Since a resource can
+have multiple classes, the class in itself can not inherit from
+L<Rit::Base::Resource>. The resource will be placed in a metaclass
+that inherits from this class and from L<Rit::Base::Resource>.
+
+The L<Rit::Base::User::Meta> is used during startup. It is listed in
+C<%Rit::Base::LOOKUP_CLASS_FOR> to make it be reblessd in the right
+metaclass based on the nodes other possible classes.  See
+L<Rit::Base::Resource/get>.
+
+Forsubclassing, create both the subclass (L<Rit::Guides::User>) and
+also a sub metaclass that inherits from it and from
+L<Rit::Base::Resource> (L<Rit::Guides::User::Meta>). Set
+L<Para::Frame/user_class> to the meta class but point to the subclass
+in Ritbase with the property C<class_handled_by_perl_module> for the
+resource representing the user class.
+
+=cut
+
+#######################################################################
+
+=head2 get
+
+=cut
+
 sub get
 {
 #    debug "Getting user $_[1]";
@@ -31,6 +82,8 @@ sub get
 #    debug "Got $u";
     return $u;
 }
+
+#######################################################################
 
 =head2 init
 
@@ -48,6 +101,12 @@ sub init
     return $node;
 }
 
+#######################################################################
+
+=head2 username
+
+=cut
+
 sub username
 {
 #    warn "in User username: ".datadump($_[0],3);
@@ -55,22 +114,46 @@ sub username
     return $_[0]->{username} ||= $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id;
 }
 
+#######################################################################
+
+=head2 id
+
+=cut
+
 sub id ($)
 {
     confess( $_[0]||'<undef>' ) unless ref $_[0];
     return $_[0]->Rit::Base::Resource::id();
 }
 
+#######################################################################
+
+=head2 name
+
+=cut
+
 sub name
 {
     return $_[0]->Rit::Base::Resource::name;
 }
+
+#######################################################################
+
+=head2 node
+
+=cut
 
 sub node
 {
     carp "----------- TEMPORARY! FIXME";
     return $_[0];
 }
+
+#######################################################################
+
+=head2 level
+
+=cut
 
 sub level
 {
@@ -97,6 +180,12 @@ sub level
     return $_[0]->{'level'};
 }
 
+
+#######################################################################
+
+=head2 find_by_level
+
+=cut
 
 sub find_by_label
 {
@@ -186,6 +275,12 @@ sub find_by_label
 
 }
 
+#######################################################################
+
+=head2 verify_password
+
+=cut
+
 sub verify_password
 {
     my( $u, $password_encrypted ) = @_;
@@ -207,6 +302,12 @@ sub verify_password
     }
 }
 
+#######################################################################
+
+=head2 has_root_access
+
+=cut
+
 sub has_root_access
 {
     if( $_[0]->has_access_right->equals($C_full_access) )
@@ -218,5 +319,7 @@ sub has_root_access
 	return 0;
     }
 }
+
+#######################################################################
 
 1;

@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Action::node_update;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Action for editing nodes
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 use Data::Dumper;

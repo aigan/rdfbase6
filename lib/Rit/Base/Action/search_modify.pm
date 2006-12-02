@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Action::search_modify;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Action for modifying sessionobj search
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 use strict;
 
 use Rit::Base::Search;

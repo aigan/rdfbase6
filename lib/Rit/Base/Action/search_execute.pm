@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Action::search_execute;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Action for running sessionobj search
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 use Time::HiRes qw( time );

@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase package main class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -125,6 +137,8 @@ sub on_done ()
     Rit::Base::Arc->unlock_all();
     log_stats_commit();
 }
+
+######################################################################
 
 1;
 

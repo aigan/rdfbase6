@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::List;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource List class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -104,6 +116,10 @@ sub new
 }
 
 #######################################################################
+
+=head2 init
+
+=cut
 
 sub init
 {
@@ -1714,6 +1730,8 @@ sub flatten_list
     }
     return \@list_out;
 }
+
+#######################################################################
 
 1;
 

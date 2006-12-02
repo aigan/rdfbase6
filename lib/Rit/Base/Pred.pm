@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Pred;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource Pred class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -711,7 +723,9 @@ sub is_pred { 1 };
 #########################################################################
 ################################  Private methods  ######################
 
+=head2 find_by_label
 
+=cut
 
 sub find_by_label
 {
@@ -784,6 +798,12 @@ sub find_by_label
 }
 
 
+#######################################################################
+
+=head2 get_by_label
+
+=cut
+
 sub get_by_label
 {
     my( $node ) = shift->find_by_label($_[0], 1);
@@ -797,6 +817,13 @@ sub get_by_label
 	confess "No such predicate: @_\n";
     }
 }
+
+
+#######################################################################
+
+=head2 init
+
+=cut
 
 sub init
 {
@@ -837,7 +864,7 @@ sub init
     return $pred;
 }
 
-
+#######################################################################
 
 1;
 

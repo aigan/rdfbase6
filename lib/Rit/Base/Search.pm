@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Search;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Search class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -834,6 +846,9 @@ sub execute
     return '';
 }
 
+
+#######################################################################
+
 sub get_result
 {
     my( $search, $sql, $values, $timeout ) = @_;
@@ -890,6 +905,9 @@ sub get_result
 
     return \@result;
 }
+
+
+#######################################################################
 
 sub build_sql
 {
@@ -1171,6 +1189,9 @@ sub remove_node
 }
 
 
+
+#######################################################################
+
 sub add_prop
 {
     my( $search, $rec ) = @_;
@@ -1212,6 +1233,9 @@ sub add_prop
 #    debug Dumper( $search->{'query'}{'prop'} ); ###
 }
 
+
+#######################################################################
+
 sub replace
 {
     my( $search, $type, $target ) = @_;
@@ -1242,6 +1266,9 @@ sub replace
 
     $search->reset_sql;
 }
+
+
+#######################################################################
 
 sub rev_query
 {
@@ -1493,6 +1520,9 @@ sub criterions
     }
 }
 
+
+#######################################################################
+
 sub criterion_to_key
 {
     my( $search, $cond ) = @_;
@@ -1540,6 +1570,9 @@ sub criterion_to_key
 }
 
 
+
+#######################################################################
+
 sub build_outer_order
 {
     my( $search, $sortkeys ) = @_;
@@ -1549,6 +1582,9 @@ sub build_outer_order
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_outer_where
 {
@@ -1567,6 +1603,9 @@ sub build_outer_where
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_outer_select
 {
@@ -1606,6 +1645,9 @@ sub build_outer_select
     return( $sql, \@values, \@sortkeys );
 }
 
+
+#######################################################################
+
 sub build_outer_select_score
 {
     my( $scores ) = @_;
@@ -1623,6 +1665,9 @@ sub build_outer_select_score
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_main
 {
@@ -1655,6 +1700,9 @@ sub build_main
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_main_where
 {
@@ -1690,6 +1738,9 @@ sub build_main_where
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_main_from
 {
@@ -1733,6 +1784,9 @@ sub build_main_from
     return( $sql, \@values );
 }
 
+
+#######################################################################
+
 sub build_main_select
 {
     my( $search, $elems_select ) = @_;
@@ -1756,6 +1810,9 @@ sub build_main_select
 
     return( $sql, \@values );
 }
+
+
+#######################################################################
 
 sub build_outer_select_field
 {
@@ -1845,6 +1902,9 @@ sub build_outer_select_field
     return( $sql, \@values, "$sortkey $dir" );
 }
 
+
+#######################################################################
+
 sub build_main_select_group
 {
     my( $elems ) = @_;
@@ -1867,6 +1927,9 @@ sub build_main_select_group
 
     return( \@parts, \@values );
 }
+
+
+#######################################################################
 
 sub build_main_select_price
 {
@@ -1892,6 +1955,9 @@ sub build_main_select_price
     return $sql;
 }
 
+
+#######################################################################
+
 sub elements_path
 {
     my( $search, $paths ) = @_;
@@ -1914,6 +1980,9 @@ sub elements_path
 
     return( \@element );
 }
+
+
+#######################################################################
 
 sub elements_props
 {
@@ -2047,6 +2116,9 @@ sub elements_props
     return \@element;
 }
 
+
+#######################################################################
+
 sub build_path_part
 {
     my( $search, $path_rec ) = @_;
@@ -2176,6 +2248,9 @@ sub build_path_part
     }
 }
 
+
+#######################################################################
+
 sub set_prio
 {
     my( $cond ) = @_;
@@ -2286,6 +2361,9 @@ sub set_prio
     return $DBSTAT{$key} = $prio;
 }
 
+
+#######################################################################
+
 sub order_add
 {
 
@@ -2307,6 +2385,9 @@ sub order_add
     $search->reset_sql;
 }
 
+
+#######################################################################
+
 sub order_default
 {
     my( $search, $new_order ) = @_;
@@ -2321,6 +2402,9 @@ sub order_default
     $search->reset_sql;
     return 1;
 }
+
+
+#######################################################################
 
 sub searchvals
 {
@@ -2353,6 +2437,9 @@ sub searchvals
     return \@searchvals;
 }
 
+
+#######################################################################
+
 sub matchpart
 {
     my( $match ) = @_;
@@ -2368,6 +2455,9 @@ sub matchpart
 
     return $matchpart;
 }
+
+
+#######################################################################
 
 sub sysdesig
 {
@@ -2419,15 +2509,24 @@ sub sysdesig
     return $txt;
 }
 
+
+#######################################################################
+
 sub sql_sysdesig
 {
     return $_[0]->sql_string .sprintf "; (%s)", join(", ", map{defined $_ ? "'$_'" : '<undef>'} @{$_[0]->sql_values} );
 }
 
+
+#######################################################################
+
 sub sql_explain
 {
     return;
 }
+
+
+#######################################################################
 
 sub DESTROY
 {
@@ -2435,6 +2534,9 @@ sub DESTROY
 
     $search->remove_node;
 }
+
+#######################################################################
+
 
 1;
 

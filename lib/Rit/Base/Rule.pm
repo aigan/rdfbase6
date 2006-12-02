@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Rule;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource Rule class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -46,6 +58,10 @@ Inherits from L<Rit::Base::Resource>.
 #########################################################################
 ################################ Initialize package #####################
 
+=head2 on_configure
+
+=cut
+
 sub on_configure
 {
     my $dbix = $Rit::dbix;
@@ -72,6 +88,10 @@ sub on_configure
 
     return 1;
 }
+
+=head2 build_lists
+
+=cut
 
 sub build_lists
 {

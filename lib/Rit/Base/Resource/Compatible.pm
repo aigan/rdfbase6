@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Resource::Compatible;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource metaclass
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -28,6 +40,8 @@ L<Rit::Base::Lazy>.
 
 =cut
 
+
+#######################################################################
 
 1;
 

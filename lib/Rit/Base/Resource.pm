@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Resource;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -3604,7 +3616,7 @@ sub first_bless
     my( $class ) = ref $node;
     if( $Rit::Base::LOOKUP_CLASS_FOR{ $class } )
     {
-	# We assume that Arcs et all are retrieved directly. Thus,
+	# We assume that Arcs et al are retrieved directly. Thus,
 	# only look for 'is' arcs. Pred and Rule nodes should have an
 	# is arc. Lastly, look if it's an arc if it's nothing else.
 

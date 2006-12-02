@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::L10N;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase L10N class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -28,6 +40,8 @@ use base qw(Para::Frame::L10N);
 
 our %TRANSLATION;
 
+
+#######################################################################
 
 =head2 alocpp
 
@@ -58,6 +72,8 @@ sub alocpp
 }
 
 
+#######################################################################
+
 =head2 get_handle
 
 Replaces Locale::Metatext get_handle
@@ -73,6 +89,13 @@ sub get_handle
     $lh->fail_with( 'fallback_maketext' );
     return $lh;
 }
+
+
+#######################################################################
+
+=head2 maketext
+
+=cut
 
 sub maketext
 {
@@ -134,6 +157,8 @@ sub maketext
     return $lh->compute($value, \$phrase, @_);
 }
 
+
+#######################################################################
 
 1;
 

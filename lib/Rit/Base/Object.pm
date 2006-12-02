@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Object;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Objects base class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -471,9 +483,6 @@ sub contains_any_of
     debug 2,"    failed";
     return undef;
 }
-
-
-
 
 ######################################################################
 

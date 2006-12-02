@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Undef;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Literal Undef class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -358,6 +370,10 @@ sub as_array
 #########################################################################
 ################################  Private methods  ######################
 
+=head1 AUTOLOAD
+
+=cut
+
 AUTOLOAD
 {
     $AUTOLOAD =~ s/.*:://;
@@ -368,6 +384,8 @@ AUTOLOAD
     return $self;
 }
 
+
+#######################################################################
 
 1;
 

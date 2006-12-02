@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::String;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Literal String class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 

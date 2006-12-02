@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Arc;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Resource Arc class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -821,8 +833,8 @@ sub updated_by
 {
     my( $arc ) = @_;
     return $arc->{'updated_by_obj'} ||=
-	Rit::Base::User::Meta->get( $arc->{'updated_by'} ) ||
-		is_undef;
+      $Para::Frame::CFG->{'user_class'}->get( $arc->{'updated_by'} ) ||
+	  is_undef;
 }
 
 #######################################################################
@@ -2711,6 +2723,8 @@ sub check_value
 	confess "Strange value: ".datadump($val,2);
     }
 }
+
+#######################################################################
 
 1;
 

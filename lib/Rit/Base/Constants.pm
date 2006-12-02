@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Constants;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase constants class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -27,6 +39,13 @@ our %Constant; # The initiated constants
 our %Constobj; # The initiated constant objects
 our $AUTOLOAD;
 our @Initlist; # Constants to export then the DB is online
+
+
+#######################################################################
+
+=head2 import
+
+=cut
 
 sub import
 {
@@ -57,11 +76,24 @@ sub import
     }
 }
 
+
+#######################################################################
+
+=head2 new
+
+=cut
+
 sub new ()
 {
     return bless {};
 }
 
+
+#######################################################################
+
+=head2 new_by_rec
+
+=cut
 
 sub new_by_rec
 {
@@ -272,6 +304,10 @@ sub get_set
 
 ######################################################################
 
+=head2 init
+
+=cut
+
 sub init
 {
     my( $class ) = @_;
@@ -324,6 +360,10 @@ sub add
 
 ######################################################################
 
+=head2 AUTOLOAD
+
+=cut
+
 AUTOLOAD
 {
     $AUTOLOAD =~ s/.*:://;
@@ -332,4 +372,13 @@ AUTOLOAD
     return  $Constant{$AUTOLOAD} || Rit::Base::Constants->get($AUTOLOAD);
 }
 
+#######################################################################
+
 1;
+
+=head1 SEE ALSO
+
+L<Para::Frame>,
+L<Rit::Base>
+
+=cut

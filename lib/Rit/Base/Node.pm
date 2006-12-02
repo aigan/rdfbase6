@@ -1,5 +1,17 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Node;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Node class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -63,6 +75,8 @@ object and call init($rec)
 =cut
 
 
+#######################################################################
+
 =head2 is_node
 
 Returns true.
@@ -70,6 +84,8 @@ Returns true.
 =cut
 
 sub is_node { 1 };
+
+#######################################################################
 
 
 1;
