@@ -185,6 +185,9 @@ sub level
 
 =head2 find_by_level
 
+Called by L<Rit::Base::Resource/get> that gets called by
+L<Para::Frame::User/identify_user>.
+
 =cut
 
 sub find_by_label
