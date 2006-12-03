@@ -17,6 +17,12 @@ package Rit::Base::Constants;
 
 Rit::Base::Constants
 
+=head1 SYNOPSIS
+
+  use Rit::Base::Constants qw( $C_business_persona );
+
+  $label = $C_business_persona->loc;
+
 =cut
 
 use strict;
