@@ -314,14 +314,12 @@ sub find_by_label
 	debug 3, "  obj as subquery";
 	debug "    query: ".datadump($val,4) if debug > 3;
 	my $objs = $this->find($val);
-	unless( @$objs )
+	unless( $objs->size )
 	{
 	    return is_undef;
 	}
-	foreach my $obj ( @$objs )
-	{
-	    push @new, $obj;
-	}
+
+	push @new, $objs->as_array;
     }
     #
     # obj is not an obj.  Looking at coltype
@@ -398,15 +396,13 @@ sub find_by_label
 	    $objs = $this->find($props);
 	}
 
-	unless( @$objs )
+	unless( $objs->size )
 	{
 	    croak "No obj with name '$val' found\n";
 	    return is_undef;
 	}
-	foreach my $obj ( @$objs )
-	{
-	    push @new, $obj;
-	}
+
+	push @new, $objs->as_array;
     }
     #
     # obj as obj id and name
@@ -883,15 +879,12 @@ sub set_one  # get/set the one node matching. Merge if necessery
     my( $this, $props_in, $default ) = @_;
 
 
-    my $nodes = $this->find( $props_in )->as_arrayref;
-    my $node = shift @$nodes;
+    my $nodes = $this->find( $props_in );
+    my $node = $nodes->get_first_nos;
 
-    if( $nodes->[0] )
+    while( my $enode = $nodes->get_next_nos )
     {
-	foreach my $enode ( @$nodes )
-	{
-	    $enode->merge($node,1); # also move literals
-	}
+	$enode->merge($node,1); # also move literals
     }
 
     unless( $node )
@@ -4052,7 +4045,7 @@ sub get_by_label
 	$req->session->route->bookmark;
 	$req->set_page_path("/alternatives.tt");
 	my $page = $req->page;
-	my $uri = $page->url_path_tmpl;
+	my $uri = $page->url_path_slash;
 	my $result = $req->result;
 	$result->{'info'}{'alternatives'} =
 	{
@@ -4850,7 +4843,7 @@ sub handle_query_arc_value
 		    {
 			$req->session->route->bookmark;
 			my $home = $req->site->home_url_path;
-			my $uri = $page->url_path_tmpl;
+			my $uri = $page->url_path_slash;
 			$req->set_page_path("/alternatives.tt");
 			my $result = $req->result;
 
@@ -5026,7 +5019,7 @@ sub handle_query_prop_value
 	{
 	    my $home = $site->home_url_path;
 	    $req->session->route->bookmark;
-	    my $uri = $page->url_path_tmpl;
+	    my $uri = $page->url_path_slash;
 	    $req->set_page_path("/alternatives.tt");
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'} =
