@@ -40,8 +40,6 @@ use Rit::Base::Resource;
 use Rit::Base::Arc;
 use Rit::Base::Pred;
 
-use Rit::Base::Utils qw( log_stats_commit );
-
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
     (
@@ -135,7 +133,6 @@ sub on_done ()
 {
     # Releas arc locks
     Rit::Base::Arc->unlock_all();
-    log_stats_commit();
 }
 
 ######################################################################

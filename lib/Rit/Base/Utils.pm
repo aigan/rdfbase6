@@ -40,7 +40,7 @@ BEGIN
 	      format_phone format_zip getnode getarc getpred
 	      parse_query_props parse_form_field_prop
 	      parse_arc_add_box is_undef arc_lock arc_unlock
-	      log_stats_commit truncstring string parse_query_pred
+	      truncstring string parse_query_pred
 	      parse_query_prop convert_query_prop_for_creation
 	      name2url );
 
@@ -145,7 +145,9 @@ sub cache_clear
     %Rit::Base::Cache::Label = ();
     %Rit::Base::Cache::Resource = ();
     %Rit::Base::Cache::find_simple = ();
-    %Rit::Base::Cache::stats_change = ();
+
+    # TODO: Clear %Rit::Guides::Organization::STATS_CHANGE
+
     Rit::Base::Arc->clear_queue;
 }
 
@@ -919,81 +921,6 @@ sub truncstring
     }
     return $str;
 }
-
-#######################################################################
-
-=head2 log_stats_commit
-
-  log_stats_commit()
-
-Comit all the stats changes
-
-Returns:
-
-An empty string
-
-=cut
-
-sub log_stats_commit
-{
-    my $req = $Para::Frame::REQ;
-    my $dbix = $Rit::dbix;
-    my $dbh = $dbix->dbh;
-    my $now = now();
-    my $now_db = $dbix->format_datetime($now);
-
-    my $sth_find = $dbh->prepare
-      ("select node from stats where node=? and day=? for update");
-
-    $dbh->commit; # this function should be calld last
-
-    foreach my $type ( keys %Rit::Base::Cache::stats_change )
-    {
-	my $sth_update = $dbh->prepare
-	  ("update stats set $type = $type + ? where node=? and day=?");
-	my $sth_create = $dbh->prepare
-	  ("insert into stats (node, $type) values (?, ?)");
-
-	my %stats;
-	foreach my $node (@{$Rit::Base::Cache::stats_change{$type}})
-	{
-	    $stats{$node->id} ++;
-	}
-
-	foreach my $nid ( keys %stats )
-	{
-	    my $success = 0;
-	    my $fail = 0;
-	    do
-	    {
-		eval
-		{
-		    $sth_find->execute($nid, $now_db);
-		    if( $sth_find->rows )
-		    {
-			$sth_update->execute($stats{$nid}, $nid, $now_db);
-		    }
-		    else
-		    {
-			$sth_create->execute($nid, $stats{$nid});
-		    }
-		    $sth_find->finish;
-		    $success = 1;
-		} or do
-		{
-		    $fail ++;
-		    $dbh->rollback;
-		};
-	    } until( $success or $fail > 10 );
-	    $dbh->commit;
-	}
-    }
-
-    %Rit::Base::Cache::stats_change = ();
-
-    return '';
-}
-
 
 #######################################################################
 
