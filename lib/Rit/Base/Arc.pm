@@ -20,10 +20,8 @@ Rit::Base::Arc
 =cut
 
 use Carp qw( cluck confess carp croak );
-use Data::Dumper;
 use strict;
 use Time::HiRes qw( time );
-#use Date::Parse;
 
 BEGIN
 {

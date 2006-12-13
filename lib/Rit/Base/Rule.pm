@@ -20,7 +20,6 @@ Rit::Base::Rule
 =cut
 
 use Carp qw( cluck confess );
-use Data::Dumper;
 use strict;
 use vars qw( $INITIALIZED );
 

@@ -20,7 +20,6 @@ Rit::Base::Node
 =cut
 
 use Carp qw( cluck confess croak carp );
-use Data::Dumper;
 use strict;
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );

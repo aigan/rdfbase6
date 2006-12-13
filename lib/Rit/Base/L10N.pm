@@ -25,7 +25,6 @@ Using Locale::Maketext
 
 use strict;
 use Carp qw(cluck croak carp confess );
-use Data::Dumper;
 
 BEGIN
 {

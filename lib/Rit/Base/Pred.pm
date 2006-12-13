@@ -20,7 +20,6 @@ Rit::Base::Pred
 =cut
 
 use Carp qw( cluck confess carp croak );
-use Data::Dumper;
 use strict;
 use Time::HiRes qw( time );
 
@@ -30,7 +29,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw debug );
+use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::List;
@@ -465,7 +464,7 @@ sub valtype
 		my $dv = $subj->{'datatype'};
 		unless( $dv )
 		{
-		    confess "Called coltype with strange subj: ".Dumper($subj);
+		    confess "Called coltype with strange subj: ".datadump($subj);
 		}
 #		debug "  from $dv name\n";
 		$valtype = $dv->name->literal;
@@ -480,7 +479,7 @@ sub valtype
 	    else
 	    {
 #		croak "No datatype found";
-		confess "No datatype found for subj $subj->{'id'}: ".Dumper($subj->first_prop('datatype'))." with pred ".$pred->name;
+		confess "No datatype found for subj $subj->{'id'}: ".datadump($subj->first_prop('datatype'))." with pred ".$pred->name;
 	    }
 	}
 	else
@@ -697,7 +696,7 @@ sub find_set  # Find the one matching pred or create one
 	{
 	    $props->{$pred} ||= $default->{$pred};
 	}
-	warn "Will now create pred with: ".Dumper($props) if $DEBUG;
+	warn "Will now create pred with: ".datadump($props) if $DEBUG;
 	$$changes_ref ++ if $changes_ref; # increment changes
 	return $this->create($props);
     }

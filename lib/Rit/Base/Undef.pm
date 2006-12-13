@@ -20,7 +20,6 @@ Rit::Base::Undef
 =cut
 
 use Carp qw( cluck );
-use Data::Dumper;
 use strict;
 use vars qw($AUTOLOAD);
 

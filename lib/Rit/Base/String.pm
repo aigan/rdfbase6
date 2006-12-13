@@ -21,7 +21,6 @@ Rit::Base::String
 
 use strict;
 use Carp qw( cluck confess );
-use Data::Dumper;
 use Digest::MD5 qw( md5_base64 );
 
 BEGIN
@@ -92,7 +91,6 @@ sub new
     {
 	$value->{'value'} = $in_value;
     }
-#    confess "Setting value to ".Dumper($value); ### DEBUG
     return bless $value, $class;
 }
 

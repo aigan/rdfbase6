@@ -21,7 +21,6 @@ Rit::Base::Literal
 
 use strict;
 use Carp qw( cluck confess carp );
-use Data::Dumper;
 
 BEGIN
 {
