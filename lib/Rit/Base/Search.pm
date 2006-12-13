@@ -21,7 +21,6 @@ Rit::Base::Search - Search directly in DB
 
 use strict;
 use Carp qw( cluck confess croak carp shortmess longmess );
-use Data::Dumper;
 use Time::HiRes qw( time );
 use List::Util qw( min );
 #use Sys::SigAction qw( set_sig_handler );
@@ -125,7 +124,7 @@ sub result
     my( $search ) = @_;
 
     my $res = $search->{'result'};# or return Rit::Base::List->new_empty();
-    confess(Dumper($res)) if ref $res eq 'ARRAY';
+    confess(datadump($res)) if ref $res eq 'ARRAY';
 
     my $limit = 10;
     my $req = $Para::Frame::REQ;
@@ -262,7 +261,6 @@ sub reset  # Keep this hash thingy but clear it's contents
     # Set MAXLIMIT.
     # Start limited. Set it wider if search is restricted to something
 
-#    debug Dumper $args;
     if( $args->{'maxlimit'} )
     {
 	$search->{'maxlimit'} = $args->{'maxlimit'};
@@ -351,8 +349,6 @@ sub form_setup
 	$q->param( -name=>$prop, -values=> \@values );
     }
 
-#    debug Dumper $search->{query};
-
     # Return true if search is non-empty
     return scalar %$props;
 }
@@ -406,7 +402,6 @@ sub modify_from_query
 
 
 	    ## Do not add empty fields from the form (but ad '0')
-#	    die Dumper $props, $key, \@invals;
 
 #	    debug "Handling search key $key";
 
@@ -587,7 +582,7 @@ sub modify
     debug 3, shortmess "modify search ".datadump( $props, 3); ### DEBUG
     unless( ref $props eq 'HASH' )
     {
-	confess "modify called with faulty props: ".Dumper($props);
+	confess "modify called with faulty props: ".datadump($props);
     }
 
     $args ||= {};
@@ -635,7 +630,7 @@ sub modify
 	    }
 	}
 
-	confess Dumper $props if $key =~ /^0x/; ### DEBUG
+	confess datadump $props if $key =~ /^0x/; ### DEBUG
 
 
 	# The filtering out of empty values is now in modify_by_query
@@ -937,7 +932,6 @@ sub build_sql
     unless( @elements ) # Handle empty searches
     {
 	debug( 2, "*** Empty search");
-#	confess Dumper(\@elements, $search );
 	$search->{'result'} = Rit::Base::List->new_empty();
 	return '';
     }
@@ -947,8 +941,6 @@ sub build_sql
     my @main_where = ();
     my @outer_where = ();
     my @outer_order = ();
-
-#    die Dumper \@elements; ### DEBUG
 
     foreach my $element ( sort { $a->{'prio'} <=> $b->{'prio'} } @elements )
     {
@@ -973,10 +965,10 @@ sub build_sql
     if( debug > 2 )
     {
 	my $report = "";
-	$report .= "MAIN WHERE  ".Dumper(\@main_where);
-	$report .= "MAIN SELECT ".Dumper(\@main_select);
-	$report .= "OUTER WHERE ".Dumper(\@outer_where);
-	$report .= "OUTER SCORE ".Dumper(\@outer_score);
+	$report .= "MAIN WHERE  ".datadump(\@main_where);
+	$report .= "MAIN SELECT ".datadump(\@main_select);
+	$report .= "OUTER WHERE ".datadump(\@outer_where);
+	$report .= "OUTER SCORE ".datadump(\@outer_score);
 	debug $report;
     }
 
@@ -1162,8 +1154,6 @@ sub node
 	}
     }
 
-#    debug Dumper $node;
-
     return $search->{'node'} = $node;
 }
 
@@ -1217,7 +1207,6 @@ sub add_prop
     my $pred_name = "";
     if( UNIVERSAL::isa($rec->{'pred'}, 'Rit::Base::Pred' ) )
     {
-#	die Dumper $rec->{'pred'};
 	$pred_name = $rec->{'pred'}->name->plain;
 	$search->replace( 'prop', $pred_name  );
 	$search->replace( 'props', $pred_name );
@@ -1230,7 +1219,6 @@ sub add_prop
     $search->{'query'}{'prop'}{$key} = $rec;
 
     $search->reset_sql;
-#    debug Dumper( $search->{'query'}{'prop'} ); ###
 }
 
 
@@ -1345,7 +1333,7 @@ sub rev_query
 		else
 		{
 		    # TODO: FIXME
-		    debug "Faulty pred in prop: ".Dumper($prop);
+		    debug "Faulty pred in prop: ".datadump($prop);
 		    next;
 		}
 
@@ -1478,7 +1466,7 @@ sub criterions
 		    {
 			if( ! $pred->[0] )
 			{
-			    cluck Dumper $prop;
+			    cluck datadump $prop;
 			    return undef; # Safe fallback
 			}
 			### CHECK ME
@@ -1762,7 +1750,7 @@ sub build_main_from
 	    ### DEBUG
 	    unless($part->{'select'})
 	    {
-		confess Dumper( $part );
+		confess datadump( $part );
 	    }
 
 	    # TODO:
@@ -1962,8 +1950,6 @@ sub elements_path
 {
     my( $search, $paths ) = @_;
 
-#    die Dumper $paths; ### DEBUG
-
     my @element;
     foreach my $path ( keys %$paths )
     {
@@ -1988,8 +1974,6 @@ sub elements_props
 {
     my( $search, $props ) = @_;
 
-#    debug Dumper $props; ### DEBUG
-
     my @element;
     foreach my $cond ( values %$props )
     {
@@ -2010,8 +1994,6 @@ sub elements_props
 	my $select = ($rev ? 'obj' : 'sub');
 	my $where;
 	my @outvalues;
-
-#	die Dumper $cond; ### DEBUG
 
 	my $pred_part;
 	my @pred_ids;
@@ -2062,7 +2044,7 @@ sub elements_props
 	}
 	else
 	{
-	    confess "In elements_props: ".Dumper $cond unless $type; ### DEBUG
+	    confess "In elements_props: ".datadump $cond unless $type; ### DEBUG
 
 	    my $matchpart = matchpart( $match );
 	    $matchpart = join(" or ", map "$type $matchpart ?", @$invalues);
@@ -2112,7 +2094,6 @@ sub elements_props
 	};
     }
 
-#    debug Dumper \@element; ### DEBUG
     return \@element;
 }
 
