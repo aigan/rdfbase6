@@ -20,16 +20,16 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search = $req->session->search;
-    $search->reset;
+    my $search_col = $req->session->search_collection;
+    $search_col->reset;
 
     if( my $form_url = $req->q->param('search_form') )
     {
-	$search->form_url( $form_url );
+	$search_col->form_url( $form_url );
     }
     else
     {
-	$search->form_url( $req->referer );
+	$search_col->form_url( $req->referer );
     }
 
     return "";

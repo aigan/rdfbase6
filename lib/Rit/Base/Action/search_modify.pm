@@ -20,9 +20,10 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search = $req->session->search or die "No search obj";
+    my $search_col = $req->session->search_collection
+      or die "No search obj";
 
-    $search->first_rb_part->modify_from_query;
+    $search_col->first_rb_part->modify_from_query;
 
     return "";
 }
