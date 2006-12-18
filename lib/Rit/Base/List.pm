@@ -1452,7 +1452,7 @@ sub materialize
     else
     {
 	my $obj = Rit::Base::Resource->get( $elem );
-	if( debug )
+	if( debug > 1 )
 	{
 	    debug "Materializing element $i -> ".$obj->sysdesig;
 	}
