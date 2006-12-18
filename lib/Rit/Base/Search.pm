@@ -164,6 +164,17 @@ sub set_result
 
 #######################################################################
 
+=head2 reset_result
+
+=cut
+
+sub reset_result
+{
+    $_[0]->{'result'} = undef;
+}
+
+#######################################################################
+
 =head2 result_url
 
 =cut
@@ -1037,93 +1048,6 @@ sub reset_sql
 {
     $_[0]->{'sql_string'} = undef;
     $_[0]->{'sql_values'} = undef;
-}
-
-
-#######################################################################
-
-=head2 merge
-
-Returns a search object with current object merged with the given
-search object. Later duplicates removed
-
-=cut
-
-sub merge
-{
-    my( $s1, $s2 ) = @_;
-
-    # TODO: DO NOT USE CLONE OF REFERED OBJECTS!!!
-    $s1->remove_node;
-    $s2->remove_node;
-
-    my $search = $s1->clone();
-
-    $search->{'result'} ||= Rit::Base::List->new_empty();
-
-    # Build id list
-    my %items;
-    foreach my $id ( @{$s1->{'result'}} )
-    {
-	$id = $id->id if ref $id;
-	$items{$id} ++;
-    }
-
-    foreach my $id ( @{$s2->{'result'}} )
-    {
-	$id = $id->id if ref $id;
-	next if $items{$id};
-	debug( 2, "Adding $id to search object");
-	push @{$search->{'result'}}, $id;
-    }
-
-    $search->reset_sql;
-
-    return $search;
-}
-
-#######################################################################
-
-
-=head2 merge_first
-
-Returns a search object with current object merged with the given
-search object. Later duplicates removed. The given objects results are
-placed first.
-
-=cut
-
-sub merge_first
-{
-    my( $s1, $s2 ) = @_;
-
-    # TODO: DO NOT USE CLONE OF REFERED OBJECTS!!!
-    $s1->remove_node;
-    $s2->remove_node;
-
-    my $search = $s1->clone();
-
-    $search->{'result'} ||= Rit::Base::List->new_empty();
-
-    # Build id list
-    my %items;
-    foreach my $id ( @{$s1->{'result'}} )
-    {
-	$id = $id->id if ref $id;
-	$items{$id} ++;
-    }
-
-    foreach my $id ( @{$s2->{'result'}} )
-    {
-	$id = $id->id if ref $id;
-	next if $items{$id};
-	debug( 2, "Adding $id to search object");
-	unshift @{$search->{'result'}}, $id;
-    }
-
-    $search->reset_sql;
-
-    return $search;
 }
 
 
