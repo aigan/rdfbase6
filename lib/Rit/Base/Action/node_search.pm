@@ -23,13 +23,14 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search = $req->session->search;
+    my $search_col = $req->session->search_collection;
+    $search_col->reset;
 
     my $query = $req->q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
     length $query or throw('incomplete', "Nått får du väl skriva ändå va?");
 
-    my $prop = {};
+    my $props = {};
 
     foreach my $row (split /\r?\n/, $query )
     {
@@ -37,22 +38,23 @@ sub handler
 	next unless length $row;
 
 	my( $key, $value ) = split(/\s+/, $row, 2);
-	$prop->{$key} = $value;
+	$props->{$key} = $value;
     }
 
-    #######
-    $search->reset;
-    $search->modify( $prop );
+    my $search = Rit::Base::Search->new();
+    $search->modify($props);
     $search->execute;
+    $search_col->add($search);
+
 
     if( my $result_url = $req->q->param('search_result') )
     {
-	$req->session->search->result_url( $result_url );
+	$search_col->result_url( $result_url );
     }
 
     if( my $form_url = $req->q->param('search_form') )
     {
-	$req->session->search->form_url( $form_url );
+	$search_col->form_url( $form_url );
     }
 
     return "";
