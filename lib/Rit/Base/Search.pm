@@ -822,6 +822,11 @@ sub execute
     my( $search ) = @_;
 
     my( $sql, $values, $min_prio ) = $search->build_sql;
+    unless( $sql )
+    {
+	debug "Executing an empty search...";
+	return '';
+    }
 
     my $result;
 
@@ -932,7 +937,8 @@ sub build_sql
     if( my $sql = $search->{'sql_string'} )
     {
 	my $values = $search->{'sql_values'};
-	return( $sql, $values );
+	my $min_prio = $search->{'min_prio'} || 0;
+	return( $sql, $values, $min_prio );
     }
 
     my @elements;
@@ -954,7 +960,7 @@ sub build_sql
     {
 	debug( 2, "*** Empty search");
 	$search->{'result'} = Rit::Base::List->new_empty();
-	return '';
+	return();
     }
 
     my @outer_score = ();
@@ -1030,6 +1036,7 @@ sub build_sql
     my $values = \@values; # Lock ref
     $search->{'sql_string'} = $sql;
     $search->{'sql_values'} = $values;
+    $search->{'min_prio'} = $min_prio;
 
     return( $sql, $values, $min_prio );
 }
