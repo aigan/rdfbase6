@@ -469,14 +469,22 @@ sub broaden # removes targets from searchy type
 
 	foreach my $crit ( values %$old )
 	{
-	    my $pred = $crit->{'pred'};
-	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') )
+	    my $preds = $crit->{'pred'};
+	    my $predkey;
+	    if( $preds->size > 1 )
 	    {
-		debug( 2, sprintf("-- Comparing %s with %s", $pred->name, $target));
-		if( $pred->name->plain ne $target )
-		{
-		    push @new, $crit;
-		}
+		my @pred_names = map $_->name->plain, $preds->as_array;
+		$predkey = 'predor_'.join('_-_', @pred_names);
+	    }
+	    else
+	    {
+		$predkey = $preds->get_first_nos->name->plain;
+	    }
+
+	    debug( 0, sprintf("-- Comparing %s with %s", $predkey, $target));
+	    if( $predkey ne $target )
+	    {
+		push @new, $crit;
 	    }
 	}
 
@@ -668,6 +676,7 @@ sub modify
 	{
 	    my $rev    = $1;
 	    my $pred   = $2;
+	    my $predref;
 	    my $type;
 	    my $arclim = $3; ### TODO: test this
 	    my $clean  = $4 || 0;
@@ -683,7 +692,7 @@ sub modify
 	    {
 		my( @prednames ) = split /_-_/, $pred;
 		my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
-		$pred = \@preds;
+		$predref = \@preds;
 
 		# Assume no type mismatch between alternative preds
 		$type = $preds[0]->coltype($props); # FIXME: invalid parameter $props
@@ -696,6 +705,7 @@ sub modify
 	    {
 		$pred = Rit::Base::Pred->get( $pred );
 		$type = $pred->coltype($props);
+		$predref = [$pred];
 	    }
 
 	    if( $values[0] eq '*' )
@@ -753,7 +763,7 @@ sub modify
 
 	    $search->add_prop({
 		rev => $rev,
-		pred => $pred,
+		pred => Rit::Base::List->new($predref),
 		type => $type,
 		match => $match,
 		clean => $clean,
@@ -1140,12 +1150,12 @@ sub node
 	foreach my $prop ( values %{$search->{'query'}{'prop'}} )
 	{
 	    my $preds = $prop->{'pred'};
-	    unless( ref $preds eq 'ARRAY' )
+	    unless( UNIVERSAL::isa( $preds, 'Para::Frame::List' ) )
 	    {
-		$preds = [$prop->{'pred'}];
+		$preds = Rit::Base::List->new([$prop->{'pred'}]);
 	    }
 
-	    foreach my $pred ( @$preds )
+	    foreach my $pred ( $preds->as_array )
 	    {
 		my $values = $prop->{'values'};
 
@@ -1187,33 +1197,30 @@ sub add_prop
     my( $search, $rec ) = @_;
 
     ## pred is always an object here, I guess
-    my $pred = $rec->{'pred'};
+    my $preds = $rec->{'pred'};
 
 
-    unless( ref $pred and (ref $pred eq 'ARRAY' or
-			   ref $pred eq 'Rit::Base::List' )
-	  )
-    {
-	$pred = [$pred];
-    }
 
-    $pred = join ',', map $_->id, @$pred;
+    my $pred_key = join ',', map $_->id, $preds->as_array;
     my $rev = $rec->{'rev'}||'';
     my $match = $rec->{'match'}||'';
-    my $key = join('-', $pred, $rev, $match);
+    my $key = join('-', $pred_key, $rev, $match);
     $key .= '='.join '+', map{ref $_ ? $_->syskey : Rit::Base::Literal->new($_)->syskey} @{$rec->{'values'}};
 
     $rec->{'key'} = $key;
     my $pred_name = "";
-    if( UNIVERSAL::isa($rec->{'pred'}, 'Rit::Base::Pred' ) )
+    if( $preds->size == 1 )
     {
-	$pred_name = $rec->{'pred'}->name->plain;
+	my $first = $preds->get_first_nos;
+	$pred_name = $first->name->plain;
 	$search->replace( 'prop', $pred_name  );
 	$search->replace( 'props', $pred_name );
     }
     else
     {
 	## This shold be a list of pred objs
+
+	# TODO: Check $search->replace, et al
     }
 
     $search->{'query'}{'prop'}{$key} = $rec;
@@ -1289,7 +1296,7 @@ sub rev_query
 	    foreach my $prop ( values %{$search->{'query'}{'prop'}} )
 	    {
 		my $rev = $prop->{'rev'};
-		my $pred = $prop->{'pred'};
+		my $preds = $prop->{'pred'};
 		my $pred_alt; # Alternative pred part
 		my $type = $prop->{'type'};
 		my $match = $prop->{'match'} ||= 'eq';
@@ -1307,34 +1314,18 @@ sub rev_query
 		    }
 		}
 
-		# This is just a partial fix. And probably not
-		# right. Seems we are always expecting objs or obj
-		# lists here
-		#
-		if( UNIVERSAL::isa( $pred, 'Rit::Base::Literal' ) )
+		my $pred;
+		if( $preds->size > 1 )
 		{
-		    $pred = $pred->literal;
-		}
-
-		if( ref $pred )
-		{
-		    if( ref $pred eq 'ARRAY' )
-		    {
-			my @pred_names = map $_->name, @$pred;
-			$pred_alt = 'predor_'.join('_-_', @$pred) if $full;
-			$pred = 'predor_'.join('_-_', @pred_names);
-		    }
-		    else
-		    {
-			$pred_alt = $pred->name->plain;
-			$pred_alt = undef if $pred eq $pred_alt;
-		    }
+		    my @pred_names = map $_->name, $preds->as_array;
+		    $pred_alt = 'predor_'.join('_-_', $preds->as_array) if $full;
+		    $pred = 'predor_'.join('_-_', @pred_names);
 		}
 		else
 		{
-		    # TODO: FIXME
-		    debug "Faulty pred in prop: ".datadump($prop);
-		    next;
+		    $pred = $preds->get_first_nos;
+		    $pred_alt = $pred->name->plain;
+		    $pred_alt = undef if $pred eq $pred_alt;
 		}
 
 		if( not $full )
@@ -1428,7 +1419,7 @@ sub criterions
 {
     my( $search ) = @_;
 
-    debug 2, "Getting criterions";
+#    debug "Getting criterions";
 
     my $ecrits = {};
 
@@ -1446,12 +1437,13 @@ sub criterions
 	{
 	    foreach my $prop ( values %{$search->{'query'}{'prop'}} )
 	    {
+#		debug "Considering $prop";
 		# Do not include private parts, since criterions is
 		# for public presentation
 		next if $prop->{'private'};
 
 		my $rev = $prop->{'rev'};
-		my $pred = $prop->{'pred'};
+		my $preds = $prop->{'pred'};
 #		my $type = $prop->{'type'};
 #		my $match = $prop->{'match'};
 #		my $values = $prop->{'values'};
@@ -1460,29 +1452,21 @@ sub criterions
 
 
 		my $pred_name;
-		if( ref $pred )
+		if( $preds->size > 1 )
 		{
-		    if( ref $pred eq 'ARRAY' )
+		    if( ! $preds->get_first_nos )
 		    {
-			if( ! $pred->[0] )
-			{
-			    cluck datadump $prop;
-			    return undef; # Safe fallback
-			}
-			### CHECK ME
+			cluck datadump $prop;
+			return undef; # Safe fallback
+		    }
+		    ### CHECK ME
 #			die "not implemented";
-			my $ors = join '_-_', map $_->name->plain, @$pred;
-			$pred_name = "predor_$ors";
-		    }
-		    else
-		    {
-			$pred_name = $pred->name->plain;
-		    }
+		    my $ors = join '_-_', map $_->name->plain, $preds->as_array;
+		    $pred_name = "predor_$ors";
 		}
 		else
 		{
-		    confess "$pred not a ref";
-		    # TODO: FIXME
+		    $pred_name = $preds->get_first_nos->name->plain;
 		}
 
 
@@ -1491,19 +1475,20 @@ sub criterions
 		    $pred_name = "rev$pred_name";
 		}
 
+#		debug "  pred $pred_name";
 		push( @{$ecrits->{$pred_name}{'prop'}}, $prop );
 	    }
 	}
     }
 
-    debug 2, "Returning criterions";
-
     if( keys %$ecrits )
     {
+#	debug "Returning criterions ".datadump($ecrits,2);
 	return $ecrits;
     }
     else
     {
+	debug "  No criterions found";
 	return undef;
     }
 }
@@ -1516,27 +1501,20 @@ sub criterion_to_key
     my( $search, $cond ) = @_;
 
     my $rev = $cond->{'rev'};
-    my $pred = $cond->{'pred'};
+    my $preds = $cond->{'pred'};
     my $match = $cond->{'match'};
 
     my $prio = $cond->{'prio'} ||= set_prio( $cond );
 
     my $pred_name;
-    if( ref $pred )
+    if( $preds->size > 1 )
     {
-	if( ref $pred eq 'ARRAY' )
-	{
-	    my $ors = join '_-_', map $_->name->plain, @$pred;
-	    $pred_name = "predor_$ors";
-	}
-	else
-	{
-	    $pred_name = $pred->name->plain;
-	}
+	my $ors = join '_-_', map $_->name->plain, $preds->as_array;
+	$pred_name = "predor_$ors";
     }
     else
     {
-	confess "$pred not a ref";
+	$pred_name = $preds->get_first_nos->name->plain;
     }
 
     if( $rev )
@@ -1978,7 +1956,7 @@ sub elements_props
     foreach my $cond ( values %$props )
     {
 	my $rev = $cond->{'rev'};
-	my $pred = $cond->{'pred'}; # The obj or obj list
+	my $preds = $cond->{'pred'}; # The obj or obj list
 	my $type = $cond->{'type'};
 	my $match = $cond->{'match'} ||= 'eq';
 	my $invalues = $cond->{'values'};
@@ -1997,11 +1975,10 @@ sub elements_props
 
 	my $pred_part;
 	my @pred_ids;
-	if( (ref $pred eq 'ARRAY') or
-	    (ref $pred eq 'Rit::Base::List') )
+	if( $preds->size > 1 )
 	{
 	    my( @parts );
-	    foreach my $pred ( @$pred )
+	    foreach my $pred ( $preds->as_array )
 	    {
 #		debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
 
@@ -2021,7 +1998,7 @@ sub elements_props
 	{
 #	    debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
 
-	    @pred_ids = $pred->id;
+	    @pred_ids = $preds->get_first_nos->id;
 	    $pred_part = "pred=?";
 	}
 
@@ -2036,7 +2013,8 @@ sub elements_props
 	    $where = $pred_part;
 	    @outvalues = @pred_ids;
 	}
-	elsif( (ref $pred ne 'ARRAY') and ($pred->name->plain eq 'id') )
+	elsif( ($preds->size < 1) and
+	       ($preds->get_first_nos->name->plain eq 'id') )
 	{
 	    $where = join(" or ", map "sub = ?", @$invalues);
 	    @outvalues = @$invalues; # value should be numeric
@@ -2236,7 +2214,8 @@ sub set_prio
 {
     my( $cond ) = @_;
 
-    my $pred = $cond->{'pred'};
+    my $preds = $cond->{'pred'};
+    my $first_pred = $preds->get_first_nos;
     my $vals = $cond->{'values'};
     my $match = $cond->{'match'};
 
@@ -2258,16 +2237,16 @@ sub set_prio
     {
 	return 8;
     }
-    elsif( ref $pred eq 'ARRAY' ) #alternative preds
+    elsif( $preds->size > 1 ) #alternative preds
     {
-	$key = join('-', map $_->plain, @$pred);
+	$key = join('-', map $_->plain, $preds->as_array);
 	if( $key eq 'name-name_short-code' ){ return 3 }
 
 	$key .= '='.join ',', @$vals;
 	return $DBSTAT{$key} if defined $DBSTAT{$key};
 
-	$coltype = $pred->[0]->coltype();
-	my @predid = map $_->id, @$pred;
+	$coltype = $first_pred->coltype();
+	my @predid = map $_->id, $preds->as_array;
 	my $sqlor = join " or ", map "pred=?", @predid;
 	my $valor = join " or ", map "$coltype=?", @$vals;
 	my $sql = "select count(sub) from rel where ($sqlor)";
@@ -2292,13 +2271,13 @@ sub set_prio
     }
     else
     {
-	if( $pred->plain eq 'id'       ){ return  1 }
-	if( $pred->plain eq 'value'    ){ return 10 }
-	if( $pred->plain eq 'name'     ){ return  2 }
-	$coltype = $pred->coltype();
+	if( $first_pred->plain eq 'id'       ){ return  1 }
+	if( $first_pred->plain eq 'value'    ){ return 10 }
+	if( $first_pred->plain eq 'name'     ){ return  2 }
+	$coltype = $first_pred->coltype();
 	if( $coltype eq 'valtext'      ){ return  3 }
 
-	$key = $pred->plain;
+	$key = $first_pred->plain;
 	$key .= '='.join ',', @$vals;
 	return $DBSTAT{$key} if defined $DBSTAT{$key};
 
@@ -2309,7 +2288,7 @@ sub set_prio
 	    $sql .= " and ($valor)";
 	}
 	my $sth = $Rit::dbix->dbh->prepare( $sql );
-	my @values = ($pred->id, @$vals);
+	my @values = ($first_pred->id, @$vals);
 
 	eval
 	{
