@@ -16,7 +16,7 @@
 
 [% textarea('query') %]
 
-[% hidden("search_form", "$home/admin/node_search.tt") %]
-[% hidden("search_result", "$home/admin/node_search_result.tt") %]
+[% hidden("search_form", "$home/rb/node/search.tt") %]
+[% hidden("search_result", "$home/rb/node/list.tt") %]
 
 <p>[% submit('Sök') %]
