@@ -24,13 +24,13 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search_col = $req->session->search_col or die "No search obj";
+    my $search_col = $req->session->search_collection or die "No search obj";
     $search_col->reset_result;
 
     if( $req->user->level < 20 )
     {
 	# Store search stats
-	$search->add_stats(1);
+	$search_col->add_stats(1);
     }
 
 #    $search_col->order_default(['score desc', 'random()']);
