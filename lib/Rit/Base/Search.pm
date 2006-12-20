@@ -1934,7 +1934,7 @@ sub elements_props
 	}
 
 
-	if( ($match||'eq') eq 'exist' )
+	if( $match eq 'exist' )        # match any
 	{
 	    $where = $pred_part;
 	    @outvalues = @pred_ids;
@@ -1944,7 +1944,7 @@ sub elements_props
 	    $where = $pred_part;
 	    @outvalues = @pred_ids;
 	}
-	elsif( ($preds->size < 1) and
+	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->name->plain eq 'id') )
 	{
 	    $where = join(" or ", map "sub = ?", @$invalues);
