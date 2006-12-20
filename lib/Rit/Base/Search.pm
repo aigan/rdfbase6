@@ -789,16 +789,9 @@ sub modify
 	    # - Change maxlimit if search on city
 	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') and $pred->name->plain eq 'is' and getnode('city')->equals($values[0]) )
 	    {
-		debug "*** Maxlimit changed!";
+		debug 2, "*** Maxlimit changed!";
 		$search->{'maxlimit'} = TOPLIMIT;
 	    }
-
-
-	    ### DEBUG
-	    unless( @values )
-	    {
-	    }
-
 	}
 	else
 	{
