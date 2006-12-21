@@ -1522,6 +1522,50 @@ sub equals
     return 1;
 }
 
+#######################################################################
+
+=head2 get_first_nos
+
+Same as L<Para::Frame::List/get_first_nos>, but returns
+L<Rit::Base::Undef> if no element found
+
+=cut
+
+sub get_first_nos
+{
+    my( $val, $err ) = $_[0]->get_first;
+    if( $err )
+    {
+	return is_undef;
+    }
+    else
+    {
+	return $val;
+    }
+}
+
+#######################################################################
+
+=head2 get_next_nos
+
+Same as L<Para::Frame::List/get_next_nos>, but returns
+L<Rit::Base::Undef> if no element found
+
+=cut
+
+sub get_next_nos
+{
+    my( $val, $err ) = $_[0]->get_next;
+    if( $err )
+    {
+	return is_undef;
+    }
+    else
+    {
+	return $val;
+    }
+}
+
 #########################################################################
 ################################  Private methods  ######################
 
@@ -1730,6 +1774,8 @@ sub flatten_list
     }
     return \@list_out;
 }
+
+#######################################################################
 
 #######################################################################
 
