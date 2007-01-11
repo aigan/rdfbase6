@@ -623,7 +623,8 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'alts'} = undef;
 	$result->{'info'}{'alternatives'}{'query'} = $props;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	$Para::Frame::REQ->set_error_template('/node_query_error.tt');
+	my $home = $req->site->home_url_path;
+	$req->set_error_response($home.'/node_query_error.tt');
 	throw('notfound', "No nodes matches query");
     }
 
