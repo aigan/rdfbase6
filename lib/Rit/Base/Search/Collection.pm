@@ -50,6 +50,7 @@ sub new
      rb_search => [],
      custom_result => undef,
      result => undef,
+     is_active => 0,
     };
 
     bless $search, $class;
@@ -83,6 +84,44 @@ sub set_result
 
 #######################################################################
 
+=head2 has_criterions
+
+=cut
+
+sub has_criterions
+{
+    my( $search ) = @_;
+
+    if( @{$search->{'rb_search'}} or $search->{'custom_result'} )
+    {
+	return 1;
+    }
+    else
+    {
+	return 0;
+    }
+}
+
+#######################################################################
+
+=head2 is_rb_search
+
+=cut
+
+sub is_rb_search
+{
+    if( $_[0]->{'rb_search'}[0] )
+    {
+	return 1;
+    }
+    else
+    {
+	return 0;
+    }
+}
+
+#######################################################################
+
 =head2 result
 
 =cut
@@ -109,6 +148,9 @@ sub reset
     # Removes all rb_search parts
     $search->{'rb_search'} = [];
     $search->{'result'} = undef;
+    $search->{'is_active'} = 0;
+
+#    debug "Search collection resetted: ".datadump($search,1);
 
     return $search;
 }
@@ -262,10 +304,25 @@ sub order_default
 
 sub execute
 {
-    foreach my $s (@{shift->rb_parts})
+    my( $search ) = shift;
+    foreach my $s (@{$search->rb_parts})
     {
 	$s->execute(@_);
     }
+
+    $search->{'is_active'} = 1;
+}
+
+
+#######################################################################
+
+=head2 is_active
+
+=cut
+
+sub is_active
+{
+    return $_[0]->{'is_active'};
 }
 
 
