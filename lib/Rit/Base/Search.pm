@@ -122,8 +122,12 @@ Returns a L<Para::Frame::List>
 sub result
 {
     my( $search ) = @_;
+
+    # May have a cb search result instead...
     my $res = $search->{'result'} or return Rit::Base::List->new_empty();
+
     confess(datadump($res)) if ref $res eq 'ARRAY';
+    confess(datadump($search)) unless $res;
 
     my $limit = 10;
     my $req = $Para::Frame::REQ;
