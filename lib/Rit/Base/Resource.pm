@@ -299,7 +299,7 @@ sub find_by_label
 
 #    debug 3, "find_by_label: $val ($coltype)";
 
-    # obj as object
+    # 1. obj as object
     #
     if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource::Compatible') )
     {
@@ -307,7 +307,7 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # obj as subquery
+    # 2. obj as subquery
     #
     elsif( ref $val and ref $val eq 'HASH' )
     {
@@ -366,7 +366,7 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # obj as list
+    # 9. obj as list
     #
     elsif( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::List') )
     {
@@ -374,7 +374,7 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # obj as name of obj with criterions
+    # 3/4. obj as name of obj with criterions
     #
     elsif( $val =~ /^\s*(.*?)\s*\(\s*(.*?)\s*\)\s*$/ )
     {
@@ -405,7 +405,7 @@ sub find_by_label
 	push @new, $objs->as_array;
     }
     #
-    # obj as obj id and name
+    # 5. obj as obj id and name
     #
     elsif( $val =~ /^(\d+):\s*(.*?)\s*$/ )
     {
@@ -431,7 +431,7 @@ sub find_by_label
 	push @new, $obj;
     }
     #
-    # obj as obj id with prefix '#'
+    # 6. obj as obj id with prefix '#'
     #
     elsif( $val =~ /^#(\d+)$/ )
     {
@@ -448,7 +448,7 @@ sub find_by_label
 	# Keep @new empty
     }
     #
-    # obj as name of obj
+    # 7. obj as name of obj
     #
     elsif( $val !~ /^\d+$/ )
     {
@@ -461,7 +461,7 @@ sub find_by_label
 	@new = $this->find({ name_clean => $val })->as_array;
     }
     #
-    # obj as obj id
+    # 8. obj as obj id
     #
     else
     {
