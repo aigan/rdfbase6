@@ -22,7 +22,6 @@ Rit::Base::User
 use strict;
 
 use DBI;
-use Data::Dumper;
 use Carp qw( confess cluck carp );
 use Time::HiRes qw( time );
 
@@ -32,7 +31,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( debug passwd_crypt trim datadump );
+use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
 use Para::Frame::Reload;
 
@@ -60,7 +59,7 @@ C<%Rit::Base::LOOKUP_CLASS_FOR> to make it be reblessd in the right
 metaclass based on the nodes other possible classes.  See
 L<Rit::Base::Resource/get>.
 
-Forsubclassing, create both the subclass (L<Rit::Guides::User>) and
+For subclassing, create both the subclass (L<Rit::Guides::User>) and
 also a sub metaclass that inherits from it and from
 L<Rit::Base::Resource> (L<Rit::Guides::User::Meta>). Set
 L<Para::Frame/user_class> to the meta class but point to the subclass
@@ -73,12 +72,22 @@ resource representing the user class.
 
 =head2 get
 
+This will call back to L</find_by_label>.
+
 =cut
 
 sub get
 {
-#    debug "Getting user $_[1]";
-    my $u = $_[0]->Rit::Base::Resource::get($_[1]);
+#    debug "Getting Rit::Base user $_[1]";
+    my $u = eval
+    {
+	$_[0]->Rit::Base::Resource::get($_[1]);
+    };
+    if( catch(['notfound']) )
+    {
+	return undef;
+    }
+
 #    debug "Got $u";
     return $u;
 }
@@ -235,7 +244,7 @@ sub find_by_label
 	my $class = ref($_[0]) || $_[0];
 	@new = @{ $class->find
 	    ({
-	      'customer_id' => $val,
+	      'customer_id' => uc($val),
 	      is            => $C_login_account,
 	     })};
     }
@@ -292,6 +301,11 @@ sub verify_password
 
 #    debug "Retrieving password for $node->{id}";
     my $n_password = $u->first_prop('password') || '';
+    unless( $n_password )
+    {
+	my $uname = $u->desig;
+	throw('validation', "$uname has no password");
+    }
 
     # Validating password
     #
