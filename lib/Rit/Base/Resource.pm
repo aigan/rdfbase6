@@ -2826,7 +2826,7 @@ sub construct_proplist
 
 
 Returns true (C<1>) if the argument matches the node, and false (C<0>)
-if it doesn't.
+if it does not.
 
 Case C<2> search for nodes matching the criterions and returns true if
 any of the elements in the list is the node.
@@ -3555,6 +3555,33 @@ sub code_class
     my( $node ) = @_;
 
     return Para::Frame::Code::Class->get($node);
+}
+
+
+#########################################################################
+
+=head2 code_class_desig
+
+  $node->code_class_desig()
+
+Return a string naming the class of the node suitable for Rit::Base.
+
+=cut
+
+sub code_class_desig
+{
+    my( $node ) = @_;
+
+    my $cl = Para::Frame::Code::Class->get($node);
+    my $cl_name = $cl->name;
+    if( $cl_name =~ /^Rit::Base::Metaclass/ )
+    {
+	return join ", ", map $_->name, @{$cl->parents};
+    }
+    else
+    {
+	return $cl_name;
+    }
 }
 
 
@@ -5545,20 +5572,21 @@ elements C<$method> and return the new list.
 
 AUTOLOAD
 {
-    $AUTOLOAD =~ s/.*:://;
-    return if $AUTOLOAD =~ /DESTROY$/;
+    my $method = $AUTOLOAD;
+    $method =~ s/.*:://;
+    return if $method =~ /DESTROY$/;
     my $node = shift;
     my $class = ref($node);
 
-#    warn "Calling $AUTOLOAD\n";
-    confess "AUTOLOAD $node -> $AUTOLOAD"
+#    warn "Calling $method\n";
+    confess "AUTOLOAD $node -> $method"
       unless UNIVERSAL::isa($node, 'Rit::Base::Resource');
 
 #    die "deep recurse" if $Rit::count++ > 200;
 
     # Set arclim
     #
-    if( $AUTOLOAD =~ s/_(direct|indirect|explicit|implicit)$// )
+    if( $method =~ s/_(direct|indirect|explicit|implicit)$// )
     {
 	$_[1] = $1;
     }
@@ -5566,27 +5594,44 @@ AUTOLOAD
 
     # This part is returning the corersponging value in the object
     #
-    if( $AUTOLOAD =~ s/^rev_?// )
+    my $res =  eval
     {
-	if( @_ )
+	if( $method =~ s/^rev_?// )
 	{
-	    return $node->revlist($AUTOLOAD, @_);
+	    if( @_ )
+	    {
+		return $node->revlist($method, @_);
+	    }
+	    else
+	    {
+		return $node->revprop($method);
+	    }
 	}
 	else
 	{
-	    return $node->revprop($AUTOLOAD);
+	    if( @_ )
+	    {
+		return $node->list($method, @_);
+	    }
+	    else
+	    {
+		return $node->prop($method);
+	    }
 	}
+    };
+
+#    debug "Res $res err $@";
+
+
+    if( $@ )
+    {
+	my $err = catch($@);
+	die sprintf "While calling %s for %s (%s):\n%s",
+	  $method, $node->sysdesig, $node->code_class_desig, $err;
     }
     else
     {
-	if( @_ )
-	{
-	    return $node->list($AUTOLOAD, @_);
-	}
-	else
-	{
-	    return $node->prop($AUTOLOAD);
-	}
+	return $res;
     }
 }
 
