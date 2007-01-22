@@ -805,15 +805,16 @@ sub find_by_label
 
 sub get_by_label
 {
-    my( $node ) = shift->find_by_label($_[0], 1);
+    my( $node ) = $_[0]->find_by_label($_[1], 1);
 
     if( $node )
     {
+#	debug "$_[0] -> get_by_label($_[1])";
 	return $node;
     }
     else
     {
-	confess "No such predicate: @_\n";
+	die "No such predicate $_[1] in DB\n";
     }
 }
 
