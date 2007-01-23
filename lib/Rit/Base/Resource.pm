@@ -1121,6 +1121,20 @@ sub form_url
 }
 
 
+#########################################################################
+
+=head2 page_url_path_slash
+
+Returns a default page for presenting a resource.  Defaults to form_url()
+
+=cut
+
+sub page_url_path_slash
+{
+    return $_[0]->form_url;
+}
+
+
 #######################################################################
 
 =head2 plain
@@ -5626,7 +5640,7 @@ AUTOLOAD
     if( $@ )
     {
 	my $err = catch($@);
-	die sprintf "While calling %s for %s (%s):\n%s",
+	confess sprintf "While calling %s for %s (%s):\n%s",
 	  $method, $node->sysdesig, $node->code_class_desig, $err;
     }
     else
