@@ -9,7 +9,7 @@ package Rit::Base::Resource;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -4010,7 +4010,7 @@ sub get_by_label
 	 },
 	 button =>
 	 [
-	  ['Backa', $req->referer(), 'skip_step'],
+	  ['Backa', $req->referer_path(), 'skip_step'],
 	 ],
 	};
 	$req->q->delete_all();
@@ -4817,7 +4817,7 @@ sub handle_query_arc_value
 			 },
 			 button =>
 			 [
-			  ['Backa', $req->referer(), 'skip_step'],
+			  ['Backa', $req->referer_path(), 'skip_step'],
 			 ],
 			};
 			$q->delete_all();
@@ -4984,7 +4984,7 @@ sub handle_query_prop_value
 	     },
 	     button =>
 	     [
-	      ['Backa', $req->referer(), 'skip_step'],
+	      ['Backa', $req->referer_path(), 'skip_step'],
 	     ],
 	    };
 	    $q->delete_all();

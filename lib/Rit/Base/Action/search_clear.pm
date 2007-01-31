@@ -9,7 +9,7 @@ package Rit::Base::Action::search_clear;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 use strict;
@@ -29,7 +29,7 @@ sub handler
     }
     else
     {
-	$search_col->form_url( $req->referer );
+	$search_col->form_url( $req->referer_path );
     }
 
     return "";

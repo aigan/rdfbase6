@@ -9,7 +9,7 @@ package Rit::Base::Action::node_merge;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -52,7 +52,7 @@ sub handler
 	if( @node_list_out )
 	{
 	    $result->{'info'}{'alternatives'}{'alts'} = \@node_list_out;
-	    $req->set_page($req->referer);
+	    $req->set_page($req->referer_path);
 	    throw('alternatives', "välj nod att slå samman med");
 	}
 	else
