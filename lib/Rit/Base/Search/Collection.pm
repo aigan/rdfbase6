@@ -128,11 +128,22 @@ sub is_rb_search
 
 sub result
 {
-    my( $search ) = @_;
+    unless( $_[0]->{'result'} )
+    {
+	my( $search ) = @_;
 
-    return $search->{'result'} ||=
-      $Para::Frame::CFG->{'search_result_class'}->
-	new(undef, {search => $search});
+	my %params = ( search => $search );
+	if( my $page_size = $search->{'page_size'} )
+	{
+	    $params{'page_size'} = $page_size;
+	}
+
+	return $search->{'result'} =
+	  $Para::Frame::CFG->{'search_result_class'}->
+	    new(undef, \%params );
+    }
+
+    return $_[0]->{'result'};
 }
 
 #######################################################################
@@ -351,6 +362,22 @@ sub form_url
     $_[0]->{'form_url'} = $_[1] if defined $_[1];
     return $_[0]->{'form_url'} ||
       $Para::Frame::REQ->site->home->url_path_slash;
+}
+
+
+######################################################################
+
+=head2 set_page_size
+
+  $l->set_page_size( $page_size )
+
+Sets and returns the given C<$page_size>
+
+=cut
+
+sub set_page_size
+{
+    return $_[0]->{'page_size'} = int($_[1]);
 }
 
 
