@@ -1826,7 +1826,8 @@ sub set_pred
 	my $extra = "";
 	if( $new_coltype ne $old_coltype )
 	{
-	    $arc->set_value(undef);
+	    $arc->{'value'} = is_undef;
+	    $arc->{'clean'} = undef;
 	}
 
 
@@ -1846,7 +1847,7 @@ sub set_pred
 	$arc->schedule_check_create;
 	cache_update;
 
-	if( $new_coltype eq $old_coltype )
+	if( $new_coltype ne $old_coltype )
 	{
 	    # May not initiate arc cache
 	    # Both old and new value could be undef
