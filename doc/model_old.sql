@@ -58,15 +58,21 @@ tdin;
 
 COPY constant (sub, label, updated, updated_by) FROM stdin;
 1105    login_account   2006-07-17 15:57:53+02  1115
-1116    full_access     2006-07-17 15:57:53+02  1115
-2672004 guest_access    2006-07-17 15:57:53+02  1115
-721274  literal 2006-07-17 15:57:53+02  1115
-2669126 webpage 2006-07-17 15:57:53+02  1115
-1117    language        2006-07-17 15:57:53+02  1115
 1106    intelligent_agent       2006-07-17 15:57:53+02  1115
-914447  person  2006-07-17 15:57:53+02  1115
-2672025 class   2006-10-04 16:39:43.918294+02   1115
+1116    full_access     2006-07-17 15:57:53+02  1115
+1117    language        2006-07-17 15:57:53+02  1115
+2001	guest_access    2006-07-17 15:57:53+02  1115
+2002	literal 2006-07-17 15:57:53+02  1115
+2003	webpage 2006-07-17 15:57:53+02  1115
+2004 	person  2006-07-17 15:57:53+02  1115
+2005	class   2006-10-04 16:39:43.918294+02   1115
 \.
+
+COPY syllogism (id, a, b, c) FROM stdin;
+1084483 1       2       1
+1084484 2       2       2
+\.
+
 
 CREATE INDEX reltype_label_idx ON reltype USING btree (label);
 CREATE INDEX rel_sub_idx ON rel USING btree (sub);
