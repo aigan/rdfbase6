@@ -1821,30 +1821,38 @@ sub set_pred
 
 	my $new_coltype = $new_pred->coltype;
 	my $old_coltype = $arc->coltype;
+	my $value_new = $arc->{'value'}->literal;
+
 	my $extra = "";
 	if( $new_coltype ne $old_coltype )
 	{
-	    $extra = "$old_coltype=null, ";
-	    $arc->{'value'} = undef;
-	    $arc->{'clean'} = undef;
+	    $arc->set_value(undef);
 	}
 
 
 	debug "  extra part: $extra\n" if $DEBUG;
-	my $sth = $dbh->prepare("update rel set pred=?, $extra".
+	my $sth = $dbh->prepare("update rel set pred=?, ".
 				       "updated=?, updated_by=? ".
 				       "where id=?");
 	$sth->execute($new_pred_id, $now_db, $u_node->id, $arc_id);
 
 	$arc->{'pred'} = $new_pred;
+
 	$arc->{'updated'} = $now;
 	$arc->{'updated_by'} = $u_node;
 	$arc->subj->initiate_cache;
 	$arc->value->initiate_cache($arc);
 	$arc->initiate_cache;
-
 	$arc->schedule_check_create;
 	cache_update;
+
+	if( $new_coltype eq $old_coltype )
+	{
+	    # May not initiate arc cache
+	    # Both old and new value could be undef
+	    $arc->set_value( $value_new );
+	}
+
 	$changes ++;
     }
 
