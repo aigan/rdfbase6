@@ -41,7 +41,6 @@ use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
-use Rit::Base::Constants qw( $C_location $C_organization );
 
 ### Inherit
 #
