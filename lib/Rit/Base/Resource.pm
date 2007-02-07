@@ -3021,7 +3021,7 @@ sub update_by_query
 	if( $param =~ /^arc_.*$/ )
 	{
 	    $changes += $node->handle_query_arc( $param, $row, $deathrow );
-        }
+	}
 	elsif($param =~ /^prop_(.*?)/) # Was previously only be used for locations
 	{
 	    $changes += $node->handle_query_prop( $param );
@@ -4490,6 +4490,7 @@ sub handle_query_arc_value
     # Switch node if subj is set
     if( $arg->{'subj'} and $arg->{'subj'} =~ /^\d+$/ )
     {
+	debug "Switching subj in handle_query_arc_value for: $param";
 	$id = $arg->{'subj'};
 	$node = Rit::Base::Resource->get($id);
     }
@@ -5362,21 +5363,24 @@ sub handle_query_newsubjs
     {
 	my $arg = parse_form_field_prop($param);
 
-	debug 3, "Newsubj param: $param";
+	debug "Newsubj param: $param: ". $q->param($param);
 	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
 	{
 	    next unless $q->param( $param );
-	    debug 3, " -handling...";
+	    debug " -handling...";
 	    my $main = $1;
 	    my $no = $2;
 
 	    $keysubjs{$no} = 'True'
 	      if( $main );
-	    debug 3, " adding $no"
+	    debug " adding $no"
 	      if( $main );
 
 	    $newsubj{$no} = {} unless $newsubj{$no};
 	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
+
+	    # Cleaning up newsubj-params to get a clean form...
+	    $q->delete($param);
 	}
     }
 
