@@ -5362,13 +5362,17 @@ sub handle_query_newsubjs
     {
 	my $arg = parse_form_field_prop($param);
 
-	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)/ )
+	debug 3, "Newsubj param: $param";
+	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
 	{
 	    next unless $q->param( $param );
+	    debug 3, " -handling...";
 	    my $main = $1;
 	    my $no = $2;
 
 	    $keysubjs{$no} = 'True'
+	      if( $main );
+	    debug 3, " adding $no"
 	      if( $main );
 
 	    $newsubj{$no} = {} unless $newsubj{$no};
