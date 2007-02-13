@@ -2374,6 +2374,12 @@ sub get_related_arc_by_id
 
   $n->add({ $pred1 => $value1, $pred2 => $value2, ... })
 
+The value may be a list (or L<Para::Frame::List>) of values.
+
+Returns:
+
+  The node object
+
 =cut
 
 sub add
@@ -2404,6 +2410,65 @@ sub add
 	  }
     }
     return $node;
+}
+
+
+#######################################################################
+
+=head2 add_arc
+
+  $n->add_arc( $pred => $value )
+
+  $n->add_arc({ $pred => $value })
+
+Returns:
+
+  The arc object
+
+=cut
+
+sub add_arc
+{
+    my( $node, $props, $val ) = @_;
+
+    # either name/value pairs in props, or one name/value
+    unless( ref $props eq 'HASH' )
+    {
+	$props = $props->plain if ref $props;
+	$props = {$props, $val};
+    }
+
+    if( scalar keys %$props > 1 )
+    {
+	confess "add_arc only takes one prop";
+    }
+
+    my $arc;
+
+    foreach my $pred_name ( keys %$props )
+    {
+	# Must be pred_name, not pred
+
+	# Values may be other than Resources
+	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
+
+	my @vals_array = $vals->as_array;
+	if( scalar @vals_array > 1 )
+	{
+	    confess "add_arc only takes one value";
+	}
+
+	foreach my $val ( @vals_array )
+	{
+	    $arc = Rit::Base::Arc->create({
+		subj => $node,
+		pred => $pred_name,
+		value => $val,
+	    });
+	  }
+    }
+
+    return $arc;
 }
 
 
