@@ -1284,7 +1284,7 @@ whith the preicate C<$predname>, those values has the properties
 specified in C<$proplim>. A C<find()> is done on the list, using
 C<$proplim>.
 
-  $n->list( $predname, $proplim, 'direct' )
+  $n->list( $predname, $proplim, $arclim )
 
 Same, but restrict list to values of
 L<direct|Rit::Base::Arc/direct> property arcs.
@@ -1293,10 +1293,13 @@ L<direct|Rit::Base::Arc/direct> property arcs.
 
 Accepts proplim without {} for the simple case of only one criterion.
 
-  $n->list( $predname, $pred => $value, 'direct' )
+  $n->list( $predname, $pred => $value, $arclim )
 
 Same, but restrict list to values of
 L<direct|Rit::Base::Arc/direct> property arcs.
+
+C<$arclim> can be any of the strings 'direct', 'explicit', 'indirect',
+'implicit' and 'not_disregarded'.
 
 Note that C<list> is a virtual method in L<Template>. Use it via
 autoload in TT.
@@ -1342,6 +1345,14 @@ sub list
 	    elsif( $arclim eq 'explicit' )
 	    {
 		@arcs = grep $_->explicit, @arcs;
+	    }
+	    elsif( $arclim eq 'indirect' )
+	    {
+		@arcs = grep $_->indirect, @arcs;
+	    }
+	    elsif( $arclim eq 'implicit' )
+	    {
+		@arcs = grep $_->implicit, @arcs;
 	    }
 	    elsif( $arclim eq 'not_disregarded' )
 	    {
@@ -1394,24 +1405,24 @@ sub list_preds
 
   $n->revlist
 
-Retuns a ref to a list of all reverse property names. Also availible as
-L</revlist_preds>.
-
   $n->revlist( $predname )
 
-Returns a L<Rit::Base::List> of all values of the reverse
-propertis whith the predicate C<$predname>.
+  $n->revlist( $predname, $proplim )
 
-  $n->revlist( $predname, 'direct' )
+  $n->revlist( $predname, $proplim, $arclim )
 
-Same, but restrict list to values of
-L<direct|Rit::Base::Arc/direct> reverse property arcs.
+  $n->revlist( $predname, $pred => $value )
+
+  $n->revlist( $predname, $pred => $value, $arclim )
+
+The same as L</list> but returns the values of the reverse properties
+instead.
 
 =cut
 
 sub revlist
 {
-    my( $node, $name, $proplim, $arclim ) = @_;
+    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
 
     # Gives a List of nodes for rev property $name
     # Without $name: returns a list of rev property names
@@ -1437,6 +1448,13 @@ sub revlist
 	    debug 3, "  No values for revprop $name found!";
 	}
 
+	# Do *not* accept undef arclim, for this construct
+	if( $proplim and not ref $proplim and $arclim )
+	{
+	    $proplim = { $proplim => $arclim };
+	    $arclim = $arclim2;
+	}
+
 	if( $arclim )
 	{
 	    if( $arclim eq 'direct' )
@@ -1446,6 +1464,18 @@ sub revlist
 	    elsif( $arclim eq 'explicit' )
 	    {
 		@arcs = grep $_->explicit, @arcs;
+	    }
+	    elsif( $arclim eq 'indirect' )
+	    {
+		@arcs = grep $_->indirect, @arcs;
+	    }
+	    elsif( $arclim eq 'implicit' )
+	    {
+		@arcs = grep $_->implicit, @arcs;
+	    }
+	    elsif( $arclim eq 'not_disregarded' )
+	    {
+		@arcs = grep $_->not_disregarded, @arcs;
 	    }
 	    else
 	    {
@@ -1497,11 +1527,16 @@ sub revlist_preds
 
   $n->prop( $predname )
 
-  $n->prop( $predname, $query )
+  $n->prop( $predname, $proplim )
 
-Returns the values of the property with predicate C<$predname>.  If
-C<$query> is given, restritcts the result to the matching nodes, using
-L</find>.
+  $n->prop( $predname, $proplim, $arclim )
+
+  $n->prop( $predname, $pred => $value )
+
+  $n->prop( $predname, $pred => $value, $arclim )
+
+Returns the values of the property with predicate C<$predname>.  See
+L</list> for explanation of the params.
 
 Use L</first_prop> or L</list> instead if that's what you want!
 
@@ -1517,7 +1552,7 @@ In no nodes found, returns C<undef>.
 
 sub prop
 {
-    my( $node, $name, $proplim, $arclim ) = @_;
+    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
 
     $name or confess "No name param given";
     return  $node->id if $name eq 'id';
@@ -1537,7 +1572,7 @@ sub prop
     confess "WRONG" if $name eq 'subj';
 
     $node->initiate_prop( $name );
-    my $values = $node->list($name, $proplim, $arclim);
+    my $values = $node->list($name, $proplim, $arclim, $arclim2);
 
     if( $values->size > 1 ) # More than one element
     {
@@ -1577,11 +1612,16 @@ sub prop
 
   $n->revprop( $predname )
 
-  $n->revprop( $predname, $query )
+  $n->revprop( $predname, $proplim )
+
+  $n->revprop( $predname, $proplim, $arclim )
+
+  $n->revprop( $predname, $pred => $value )
+
+  $n->revprop( $predname, $pred => $value, $arclim )
 
 Returns the values of the reverse property with predicate
-C<$predname>.  If C<$query> is given, restritcts the result to the
-matching nodes, using L</find>.
+C<$predname>.  See L</list> for explanation of the params.
 
 Returns:
 
@@ -1595,13 +1635,13 @@ In no nodes found, returns C<undef>.
 
 sub revprop     # Get first value or the list.
 {
-    my( $node, $name, $proplim, $arclim ) = @_;
+    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
     #
     # Use first_revprop() or list() explicitly if that's what you want!
 
     $node->initiate_revprop( $name );
 
-    my $values = $node->revlist($name, $proplim, $arclim);
+    my $values = $node->revlist($name, $proplim, $arclim, $arclim2);
 
     if( $values->size > 1 ) # More than one element
     {
@@ -1632,7 +1672,7 @@ Returns the value of one of the properties with predicate C<$pred_name>
 
 =cut
 
-sub first_prop    # Just get first value
+sub first_prop
 {
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
@@ -1656,7 +1696,7 @@ C<$pred_name>
 
 =cut
 
-sub first_revprop    # Just get first value
+sub first_revprop
 {
     my( $node, $name ) = @_;
     $node->initiate_revprop( $name );
@@ -5675,6 +5715,12 @@ AUTOLOAD
     #
     if( $method =~ s/_(direct|indirect|explicit|implicit)$// )
     {
+	if( 
+
+
+	# Support both ways to give proplim in list() by making it either the 
+
+	push @_, $1;
 	$_[1] = $1;
     }
 
