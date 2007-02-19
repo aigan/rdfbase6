@@ -1448,6 +1448,56 @@ sub value_equals
 
 #######################################################################
 
+=head2 value_begins
+
+  $a->value_begins( $val )
+
+Returns: true if the arc L</value> begins with C<$val>
+
+=cut
+
+sub value_begins
+{
+    my( $arc, $val2 ) = @_;
+
+    my $DEBUG = 0;
+
+    if( $arc->obj )
+    {
+	warn "  Compare object with $val2\n" if $DEBUG;
+	return 0;
+    }
+    elsif( ref $val2 eq 'Rit::Base::Resource' )
+    {
+	warn "  A value node is compared with a plain Literal\n" if $DEBUG;
+
+	# It seems that the value of the arc is a literal.  val2 is a
+	# node, probably a value node. They are not equal.
+
+	return 0;
+    }
+    else
+    {
+	my $val1 = $arc->value;
+	warn "  Compare $val1 with $val2\n" if $DEBUG;
+	unless( defined $val1 )
+	{
+	    warn "  val1 is not defined\n" if $DEBUG;
+	    return 1 unless defined $val2;
+	    return 0;
+	}
+
+	if( $val1 =~ /^\Q$val2/ )
+	{
+	    return 1;
+	}
+    }
+
+    return 0;
+}
+
+#######################################################################
+
 =head2 remove
 
   $a->remove
