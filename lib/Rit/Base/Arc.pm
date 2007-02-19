@@ -1406,70 +1406,40 @@ sub has_value
 
   $a->value_equals( $val )
 
-Returns: true if the arc L</value> equals C<$val>
+  $a->value_begins( $val, $match )
+
+  $a->value_begins( $val, $match, $clean )
+
+Default C<$match> is C<eq>. Other supported values are C<begins> and
+C<like>.
+
+Default C<$clean> is C<false>. If C<$clean> is true, strings will be
+compared in clean mode. (You don't have to clean the C<$value> by
+yourself.)
+
+Returns: true if the arc L</value> C<$match> C<$val>
 
 =cut
 
 sub value_equals
 {
-    my( $arc, $val2 ) = @_;
-
-    my $DEBUG = 0;
-
-    if( $arc->obj )
-    {
-	warn "  Compare object with $val2\n" if $DEBUG;
-	return $arc->obj->equals( $val2 );
-    }
-    elsif( ref $val2 eq 'Rit::Base::Resource' )
-    {
-	warn "  A value node is compared with a plain Literal\n" if $DEBUG;
-
-	# It seems that the value of the arc is a literal.  val2 is a
-	# node, probably a value node. They are not equal.
-
-	return 0;
-    }
-    else
-    {
-	my $val1 = $arc->value;
-	warn "  Compare $val1 with $val2\n" if $DEBUG;
-	unless( defined $val1 )
-	{
-	    warn "  val1 is not defined\n" if $DEBUG;
-	    return 1 unless defined $val2;
-	    return 0;
-	}
-	return $val1 eq $val2;
-    }
-
-    return 0;
-}
-
-#######################################################################
-
-=head2 value_begins
-
-  $a->value_begins( $val )
-
-  $a->value_begins( $val, $match )
-
-  $a->value_begins( $val, $match, $clean )
-
-Returns: true if the arc L</value> begins with C<$val>
-
-=cut
-
-sub value_begins
-{
     my( $arc, $val2, $match, $clean ) = @_;
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
+    $match ||= 'eq';
+    $clean ||= 0;
 
     if( $arc->obj )
     {
 	warn "  Compare object with $val2\n" if $DEBUG;
-	return 0;
+	if( $match eq 'eq' )
+	{
+	    return $arc->obj->equals( $val2 );
+	}
+	else
+	{
+	    return 0;
+	}
     }
     elsif( ref $val2 eq 'Rit::Base::Resource' )
     {
@@ -1482,31 +1452,44 @@ sub value_begins
     }
     else
     {
-	$match ||= 'begins';
-	$clean ||= 0;
-
 	my $val1 = $arc->value->plain;
-	warn "  Compare beginning of $val1 with $val2\n" if $DEBUG;
+	warn "  See if $val1 $match($clean) $val2\n" if $DEBUG;
 	unless( defined $val1 )
 	{
 	    warn "  val1 is not defined\n" if $DEBUG;
 	    return 1 unless defined $val2;
 	    return 0;
 	}
+
+	$val2 = $val2->plain if ref $val2;
 
 	if( $clean )
 	{
 	    $val1 = valclean(\$val1);
+	    $val2 = valclean(\$val2);
 	}
 
-	if( $val1 =~ /^\Q$val2/ )
+	if( $match eq 'eq' )
 	{
-	    return 1;
+	    return $val1 eq $val2;
+	}
+	elsif( $match eq 'begins' )
+	{
+	    return 1 if $val1 =~ /^\Q$val2/;
+	}
+	elsif( $match eq 'like' )
+	{
+	    return 1 if $val1 =~ /\Q$val2/;
+	}
+	else
+	{
+	    confess "Matchtype $match not implemented";
 	}
     }
 
     return 0;
 }
+
 
 #######################################################################
 
