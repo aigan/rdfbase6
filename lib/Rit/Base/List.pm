@@ -562,6 +562,16 @@ sub find
 			unless $node->has_value( $pred, $target_value );
 		}
 	    }
+	    elsif(  $match eq 'begins' )
+	    {
+		if( $clean )
+		{
+		    $target_value = valclean(\$target_value);
+		}
+
+		next PRED # Check next if this test pass
+		  if $node->has_beginning( $pred, $target_value );
+	    }
 	    else
 	    {
 		confess "Matchtype '$match' not implemented";
