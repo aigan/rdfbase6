@@ -1927,6 +1927,144 @@ sub has_value
 
 #######################################################################
 
+=head2 has_beginning
+
+  $n->has_beginning( $pred, $value )
+
+  $n->has_beginning({ $pred, $value })
+
+Returns true if one of the node properties has a combination of any of
+the predicates and any of the beginnings.
+
+Predicate can be a name, object or array.  Value can be a list of
+values or anything that L<Rit::Base::List/find> takes.
+
+Examples:
+
+See if node C<$n> has the name or short name beginning with 'oll' or 'kall'.
+
+  $n->has_beginning( ['name','name_short'], ['olle', 'kall'] )
+
+Returns:
+
+If true, returns one of the relevant arcs.
+
+If false, returns 0.  Not the undef object.
+
+If it's a dynamic property (a method) returns -1, that is true.
+
+TODO: Scalars (i.e strings) with properties not yet supported.
+
+Consider $n->has_value('some_pred', is_undef)
+
+=cut
+
+sub has_beginning
+{
+    my( $node, $pred_name, $value ) = @_;
+
+    $pred_name or confess;
+
+    if( ref($pred_name) and ref($pred_name) eq 'HASH' )
+    {
+	( $pred_name, $value ) = each( %$pred_name );
+    }
+
+    my $pred;
+    if( ref $pred_name )
+    {
+	if( UNIVERSAL::isa( $pred_name, 'Rit::Base::Literal') )
+	{
+	    $pred = $pred_name->literal;
+	}
+	elsif( ref $pred_name eq 'Rit::Base::Pred' )
+	{
+	    $pred = $pred_name;
+	}
+	elsif( ref $pred_name eq 'ARRAY' )
+	{
+	    # Either predicate can have the value
+	    foreach my $pred ( @$pred_name )
+	    {
+		my $arc = $node->has_beginning( $pred, $value );
+		return $arc if $arc;
+	    }
+	    return 0;
+	}
+	else
+	{
+	    die "has_beginning pred $pred_name not supported";
+	}
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get( $pred_name );
+    }
+
+    $pred_name = $pred->name->plain;
+
+    if( debug > 2 )
+    {
+	my $value_str = defined($value)?$value:"<undef>";
+	debug "  Checking if node $node->{'id'} has $pred_name $value_str";
+    }
+
+    # Sub query
+    if( ref $value eq 'HASH' )
+    {
+	if( debug > 3 )
+	{
+	    debug "  Checking if ".$node->desig.
+	      " has $pred_name with the props ".
+		datadump($value,4);
+	}
+
+	foreach my $arc ( $node->arc_list($pred_name)->as_array )
+	{
+	    if( $arc->obj->find($value)->size )
+	    {
+		return $arc;
+	    }
+	}
+	return 0;
+    }
+
+    # $value holds alternative values
+    elsif( ref $value eq 'ARRAY' )
+    {
+	foreach my $val (@$value )
+	{
+	    my $arc = $node->has_beginning($pred_name, $val);
+	    return $arc if $arc;
+	}
+	return 0;
+    }
+
+
+    # Check the dynamic properties (methods) for the node
+    if( $node->can($pred_name) )
+    {
+	debug 3, "  check method $pred_name";
+	return -1 if $node->$pred_name =~ /^\Q$value/;
+    }
+
+    foreach my $arc ( $node->arc_list($pred_name)->as_array )
+    {
+	debug 3, "  check arc ".$arc->id;
+	return $arc if $arc->value_begins( $value );
+    }
+    if( debug > 2 )
+    {
+	my $value_str = defined($value)?$value:"<undef>";
+	debug "  no such value $value_str for ".$node->desig;
+    }
+
+    return 0;
+}
+
+
+#######################################################################
+
 =head2 has_revprop
 
   $n->has_revprop( $pred_name, $subj)
@@ -5715,7 +5853,7 @@ AUTOLOAD
     #
     if( $method =~ s/_(direct|indirect|explicit|implicit)$// )
     {
-	if( 
+#	if( 
 
 
 	# Support both ways to give proplim in list() by making it either the 
