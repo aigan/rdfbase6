@@ -2314,11 +2314,25 @@ sub searchvals
 
     if( $match eq 'like' )
     {
-	@searchvals = map "%$_%", @searchvals;
+	# Assume the SQL escape char is '\'
+	foreach( @searchvals )
+	{
+	    s/\\/\\/g;
+	    s/%/\%/g;
+	    s/_/\_/g;
+	    s/(.*)/%$1%/;
+	}
     }
     elsif( $match eq 'begins' )
     {
-	@searchvals = map "$_%", @searchvals;
+	# Assume the SQL escape char is '\'
+	foreach( @searchvals )
+	{
+	    s/\\/\\/g;
+	    s/%/\%/g;
+	    s/_/\_/g;
+	    s/(.*)/$1%/;
+	}
     }
 
     return \@searchvals;
