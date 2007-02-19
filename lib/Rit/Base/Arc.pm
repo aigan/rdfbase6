@@ -1452,15 +1452,19 @@ sub value_equals
 
   $a->value_begins( $val )
 
+  $a->value_begins( $val, $match )
+
+  $a->value_begins( $val, $match, $clean )
+
 Returns: true if the arc L</value> begins with C<$val>
 
 =cut
 
 sub value_begins
 {
-    my( $arc, $val2 ) = @_;
+    my( $arc, $val2, $match, $clean ) = @_;
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
     if( $arc->obj )
     {
@@ -1478,13 +1482,21 @@ sub value_begins
     }
     else
     {
-	my $val1 = $arc->value;
-	warn "  Compare $val1 with $val2\n" if $DEBUG;
+	$match ||= 'begins';
+	$clean ||= 0;
+
+	my $val1 = $arc->value->plain;
+	warn "  Compare beginning of $val1 with $val2\n" if $DEBUG;
 	unless( defined $val1 )
 	{
 	    warn "  val1 is not defined\n" if $DEBUG;
 	    return 1 unless defined $val2;
 	    return 0;
+	}
+
+	if( $clean )
+	{
+	    $val1 = valclean(\$val1);
 	}
 
 	if( $val1 =~ /^\Q$val2/ )
