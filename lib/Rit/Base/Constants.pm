@@ -273,6 +273,9 @@ sub get_set
 
     my $node_in = Rit::Base::Resource->get( $node_in_in );
 
+    confess("Node in not found: ". $node_in_in)
+      unless $node_in;
+
     unless( $Constant{$label} )
     {
 	my $sth = $Rit::dbix->dbh->prepare(
