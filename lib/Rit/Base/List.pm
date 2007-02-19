@@ -537,18 +537,15 @@ sub find
 		if( $rev )
 		{
 		    debug "      (rev)\n" if $DEBUG;
+		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
-			if $target_value->has_value( $pred, $node );
+			if $target_value->has_value( $pred, $node, );
 		}
 		else
 		{
-		    if( $clean )
-		    {
-			$target_value = valclean(\$target_value);
-		    }
-
 		    next PRED # Check next if this test pass
-			if $node->has_value( $pred, $target_value );
+			if $node->has_value( $pred, $target_value,
+					     'eq', $clean);
 		}
 	    }
 	    elsif( $match eq 'ne' )
@@ -557,30 +554,29 @@ sub find
 		if( $rev )
 		{
 		    debug "      (rev)" if $DEBUG;
+		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
 			unless $target_value->has_value( $pred, $node );
 		}
 		else
 		{
-		    if( $clean )
-		    {
-			$target_value = valclean(\$target_value);
-		    }
+		    # Matchtype is 'eq'. Result is negated here
 
 		    next PRED # Check next if this test pass
-			unless $node->has_value( $pred, $target_value );
+			unless $node->has_value( $pred, $target_value,
+						 'eq', $clean );
 		}
 	    }
-	    elsif(  $match eq 'begins' )
+	    elsif( ($match eq 'begins') or ($match eq 'like') )
 	    {
-		debug "    match is begins" if $DEBUG;
-		if( $clean )
+		debug "    match is $match" if $DEBUG;
+		if( $rev )
 		{
-		    $target_value = valclean(\$target_value);
+		    confess "      rev not supported for matchtype $match";
 		}
 
 		next PRED # Check next if this test pass
-		  if $node->has_beginning( $pred, $target_value, $match, $clean );
+		  if $node->has_value( $pred, $target_value, $match, $clean );
 	    }
 	    else
 	    {
