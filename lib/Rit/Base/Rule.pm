@@ -211,10 +211,11 @@ sub create
     debug sprintf "Created %s\n", $rule->sysdesig;
 
     # TODO: Make this a constant
-    my $syllogism_class = $Rit::Base::Resource->get({
-						     name => 'syllogism',
-						     scof => 'rule',
-						    });
+    my $R = Rit::Base->Resource;
+    my $syllogism_class = $R->get({
+				   name => 'syllogism',
+				   scof => 'rule',
+				  });
     $rule->add({ is => $syllogism_class });
 
     if( $vacuum )
