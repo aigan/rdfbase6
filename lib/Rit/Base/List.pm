@@ -287,6 +287,9 @@ sub find
     my( $self, $tmpl, $val ) = @_;
     my $class = ref $self;            # confess;
 
+    my $DEBUG = debug();
+    $DEBUG and $DEBUG --;
+
     # either name/value pairs in props, or one name/value
     if( defined $val )
     {
@@ -306,7 +309,7 @@ sub find
 	return $self->contains( $tmpl );
     }
 
-    if( debug>2 )
+    if( $DEBUG > 1 )
     {
 	debug "Find: ".datadump($tmpl, 3);
     }
@@ -323,7 +326,7 @@ sub find
   NODE:
     foreach my $node ( $self->nodes )
     {
-	debug 3, "Resource ".$node->id;
+	debug "Resource ".$node->id if $DEBUG;
 
 	# Check each prop in the template.  All must match.  One
 	# failed match and this $node in not placed in @newlist
@@ -332,8 +335,11 @@ sub find
 	foreach my $pred_part ( keys %$tmpl )
 	{
 	    my $target_value =  $tmpl->{$pred_part};
-	    debug 3, "  Pred $pred_part";
-	    debug 3, "  Target $target_value (".ref($target_value).")";
+	    if( $DEBUG )
+	    {
+		debug "  Pred $pred_part";
+		debug "  Target $target_value (".ref($target_value).")";
+	    }
 
 	    # Target value may be a plain scalar or undef or an object !!!
 
@@ -342,7 +348,7 @@ sub find
 		my $pred_first = $1;
 		my $pred_after = $2;
 
-		debug 3,"  Found a nested pred_part: $pred_first -> $pred_after";
+		debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
 
 		my $subres = $node->$pred_first;
 
@@ -379,9 +385,12 @@ sub find
 		$Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 		unless( $pred_part )
 		{
-		    debug "No pred_part?";
-		    debug "Template: ".datadump($tmpl,2);
-		    debug "For node ".$node->sysdesig;
+		    if( debug )
+		    {
+			debug "No pred_part?";
+			debug "Template: ".datadump($tmpl,2);
+			debug "For node ".$node->sysdesig;
+		    }
 		}
 		die "wrong format in find: $pred_part\n";
 	    }
@@ -412,10 +421,10 @@ sub find
 		    confess "Not implemented: $pred_part";
 		}
 
-		debug 3,"node is an arc";
+		debug "node is an arc" if $DEBUG;
 		if( $pred =~ /^(obj|value)$/ )
 		{
-		    debug 3, "  pred is value";
+		    debug "  pred is value" if $DEBUG;
 		    my $value = $node->value; # Since it's a pred
 		    next PRED if $target_value eq '*'; # match all
 		    if( ref $value )
@@ -451,13 +460,13 @@ sub find
 		}
 		elsif( $pred eq 'subj' )
 		{
-		    debug 3,"  pred is subj";
+		    debug "  pred is subj" if $DEBUG;
 		    my $subj = $node->subj;
 		    next PRED if $subj->equals( $target_value );
 		}
 		else
 		{
-		    debug 3,"Asume pred '$pred' for arc is a node prop";
+		    debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
 		}
 	    }
 
@@ -481,18 +490,18 @@ sub find
 		    $match = 'gt';
 		}
 
-		debug 3,"    count pred $pred";
+		debug "    count pred $pred" if $DEBUG;
 
 		my $count;
 		if( $rev )
 		{
 		    $count = $node->revcount($pred);
-		    debug 3,"      counted $count (rev)";
+		    debug "      counted $count (rev)" if $DEBUG;
 		}
 		else
 		{
 		    $count = $node->count($pred);
-		    debug 3,"      counted $count";
+		    debug "      counted $count" if $DEBUG;
 		}
 
 		my $matchtype =
@@ -524,10 +533,10 @@ sub find
 	    }
 	    elsif( $match eq 'eq' )
 	    {
-		debug 3,"    match is eq";
+		debug "    match is eq" if $DEBUG;
 		if( $rev )
 		{
-		    debug 3, "      (rev)\n";
+		    debug "      (rev)\n" if $DEBUG;
 		    next PRED # Check next if this test pass
 			if $target_value->has_value( $pred, $node );
 		}
@@ -544,10 +553,10 @@ sub find
 	    }
 	    elsif( $match eq 'ne' )
 	    {
-		debug 3, "    match is ne";
+		debug "    match is ne" if $DEBUG;
 		if( $rev )
 		{
-		    debug 3, "      (rev)";
+		    debug "      (rev)" if $DEBUG;
 		    next PRED # Check next if this test pass
 			unless $target_value->has_value( $pred, $node );
 		}
@@ -564,13 +573,14 @@ sub find
 	    }
 	    elsif(  $match eq 'begins' )
 	    {
+		debug "    match is begins" if $DEBUG;
 		if( $clean )
 		{
 		    $target_value = valclean(\$target_value);
 		}
 
 		next PRED # Check next if this test pass
-		  if $node->has_beginning( $pred, $target_value );
+		  if $node->has_beginning( $pred, $target_value, $match, $clean );
 	    }
 	    else
 	    {
@@ -580,10 +590,10 @@ sub find
 	    # This node failed the test.  Check next node
 	    next NODE;
 	}
-	debug 3, "  Add node to list";
+	debug "  Add node to list" if $DEBUG;
 	push @newlist, $node;
     }
-    debug 3,"Return ".(scalar @newlist)." results";
+    debug "Return ".(scalar @newlist)." results" if $DEBUG;
 
     return Rit::Base::List->new(\@newlist);
 }
