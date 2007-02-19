@@ -1364,7 +1364,7 @@ sub list
 	    }
 	}
 
-        my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
+	my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
 
 	if( $proplim )
 	{
@@ -1668,7 +1668,8 @@ sub revprop     # Get first value or the list.
 
   $n->first_prop( $pred_name )
 
-Returns the value of one of the properties with predicate C<$pred_name>
+Returns the value of one of the properties with predicate
+C<$pred_name> or C<undef> if none found.
 
 =cut
 
@@ -2320,7 +2321,7 @@ sub loc
   $n->arc_list()
 
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
-subj and C<$pred_anme> as predicate.
+subj and C<$pred_name> as predicate.
 
 With no C<$pred_name>, all arcs from the node is returned.
 
@@ -2337,7 +2338,7 @@ sub arc_list
     {
 	$name = $name->name if ref $name eq 'Rit::Base::Pred';
 	$node->initiate_prop( $name );
- 	my $lr = $node->{'relarc'}{$name} || [];
+	my $lr = $node->{'relarc'}{$name} || [];
 	return Rit::Base::List->new($lr);
     }
     else
@@ -2362,7 +2363,7 @@ sub arc_list
   $n->revarc_list()
 
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
-subj and C<$pred_anme> as predicate.
+subj and C<$pred_name> as predicate.
 
 With no C<$pred_name>, all revarcs from the node is returned.
 
@@ -3588,7 +3589,7 @@ sub tree_select_widget
 						title => 'Select a node',
 						button_label => 'Choose',
 						include_css => 0,
-						image_path => $Para::Frame::REQ->site->home_url_path . '/images/PopupTreeSelect/'
+						image_path => $Para::Frame::REQ->site->home_url_path . '/images/PopupTreeSelect/',
 					       );
     return $select->output;
 }
@@ -4733,7 +4734,7 @@ sub handle_query_arc_value
     # Switch node if subj is set
     if( $arg->{'subj'} and $arg->{'subj'} =~ /^\d+$/ )
     {
-	debug "Switching subj in handle_query_arc_value for: $param";
+	#debug "Switching subj in handle_query_arc_value for: $param";
 	$id = $arg->{'subj'};
 	$node = Rit::Base::Resource->get($id);
     }
@@ -4767,7 +4768,8 @@ sub handle_query_arc_value
 	$rev = 1;
     }
 
-    my $pred = getpred( $pred_name );
+    my $pred = getpred( $pred_name )
+      or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
     my $valtype = $pred->valtype;
@@ -4779,11 +4781,11 @@ sub handle_query_arc_value
 	my $arcs;
 	if( $rev )
 	{
-	    $arcs = $node->revarc_list($pred_name);
+	    $arcs = $node->revarc_list($pred_name)->explicit;
 	}
 	else
 	{
-	    $arcs = $node->arc_list($pred_name);
+	    $arcs = $node->arc_list($pred_name)->explicit;
 	}
 
 	if( $type and  $arcs->size )
@@ -5606,11 +5608,10 @@ sub handle_query_newsubjs
     {
 	my $arg = parse_form_field_prop($param);
 
-	debug "Newsubj param: $param: ". $q->param($param);
+	#debug "Newsubj param: $param: ". $q->param($param);
 	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
 	{
 	    next unless $q->param( $param );
-	    debug " -handling...";
 	    my $main = $1;
 	    my $no = $2;
 
@@ -5858,7 +5859,7 @@ AUTOLOAD
 
 	# Support both ways to give proplim in list() by making it either the 
 
-	push @_, $1;
+#	push @_, $1;
 	$_[1] = $1;
     }
 
