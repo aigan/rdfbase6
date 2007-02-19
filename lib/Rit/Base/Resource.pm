@@ -1934,6 +1934,10 @@ sub has_value
 
   $n->has_beginning({ $pred, $value })
 
+  $n->has_beginning( $pred, $value, $match )
+
+  $n->has_beginning( $pred, $value, $match, $clean )
+
 Returns true if one of the node properties has a combination of any of
 the predicates and any of the beginnings.
 
@@ -1962,7 +1966,7 @@ Consider $n->has_value('some_pred', is_undef)
 
 sub has_beginning
 {
-    my( $node, $pred_name, $value ) = @_;
+    my( $node, $pred_name, $value, $match, $clean ) = @_;
 
     $pred_name or confess;
 
@@ -1970,6 +1974,9 @@ sub has_beginning
     {
 	( $pred_name, $value ) = each( %$pred_name );
     }
+
+    $match ||= 'begins';
+    $clean ||= 0;
 
     my $pred;
     if( ref $pred_name )
@@ -2004,29 +2011,33 @@ sub has_beginning
 
     $pred_name = $pred->name->plain;
 
-    if( debug > 2 )
+    if( debug > 0 )
     {
 	my $value_str = defined($value)?$value:"<undef>";
-	debug "  Checking if node $node->{'id'} has $pred_name $value_str";
+	debug "  Checking if node $node->{'id'} has $pred_name beginning with $value_str";
     }
 
     # Sub query
     if( ref $value eq 'HASH' )
     {
-	if( debug > 3 )
+	if( debug > 0 )
 	{
 	    debug "  Checking if ".$node->desig.
 	      " has $pred_name with the props ".
 		datadump($value,4);
 	}
 
-	foreach my $arc ( $node->arc_list($pred_name)->as_array )
-	{
-	    if( $arc->obj->find($value)->size )
-	    {
-		return $arc;
-	    }
-	}
+
+	confess "subquery not implemented";
+
+#	foreach my $arc ( $node->arc_list($pred_name)->as_array )
+#	{
+#	    if( $arc->obj->find($value)->size )
+#	    {
+#		return $arc;
+#	    }
+#	}
+
 	return 0;
     }
 
@@ -2035,7 +2046,7 @@ sub has_beginning
     {
 	foreach my $val (@$value )
 	{
-	    my $arc = $node->has_beginning($pred_name, $val);
+	    my $arc = $node->has_beginning($pred_name, $val, $match, $clean);
 	    return $arc if $arc;
 	}
 	return 0;
@@ -2045,16 +2056,23 @@ sub has_beginning
     # Check the dynamic properties (methods) for the node
     if( $node->can($pred_name) )
     {
-	debug 3, "  check method $pred_name";
-	return -1 if $node->$pred_name =~ /^\Q$value/;
+	debug 1, "  check method $pred_name";
+	my $prop_value = $node->$pred_name;
+
+	if( $clean )
+	{
+	    $prop_value = valclean(\$prop_value);
+	}
+
+	return -1 if $prop_value =~ /^\Q$value/;
     }
 
     foreach my $arc ( $node->arc_list($pred_name)->as_array )
     {
-	debug 3, "  check arc ".$arc->id;
-	return $arc if $arc->value_begins( $value );
+	debug 1, "  check arc ".$arc->id;
+	return $arc if $arc->value_begins( $value, $match, $clean );
     }
-    if( debug > 2 )
+    if( debug > 1 )
     {
 	my $value_str = defined($value)?$value:"<undef>";
 	debug "  no such value $value_str for ".$node->desig;
