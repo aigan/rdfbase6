@@ -1788,11 +1788,23 @@ sub has_revpred
 
   $n->has_value({ $pred, $value })
 
+  $n->has_beginning( $pred, $value, $match )
+
+  $n->has_beginning( $pred, $value, $match, $clean )
+
 Returns true if one of the node properties has a combination of any of
-the properties and any of the values.
+the predicates and any of the values matched with C<$match> and
+C<$clean>.
 
 Predicate can be a name, object or array.  Value can be a list of
 values or anything that L<Rit::Base::List/find> takes.
+
+Default C<$match> is C<eq>. Other supported values are C<begins> and
+C<like>.
+
+Default C<$clean> is C<false>. If C<$clean> is true, strings will be
+compared in clean mode. (You don't have to clean the C<$value> by
+yourself.)
 
 Examples:
 
@@ -1800,6 +1812,10 @@ See if node C<$n> has the name or short name 'olle' or a name (or short
 name) that is an alias.
 
   $n->has_value( ['name','name_short'], ['olle', {is => 'alias'}] )
+
+See if node C<$n> has the name beginning with 'oll' or 'kall'.
+
+  $n->has_beginning( 'name', ['olle', 'kall'] )
 
 Returns:
 
@@ -1817,7 +1833,7 @@ Consider $n->has_value('some_pred', is_undef)
 
 sub has_value
 {
-    my( $node, $pred_name, $value ) = @_;
+    my( $node, $pred_name, $value, $match, $clean ) = @_;
 
     $pred_name or confess;
 
@@ -1825,6 +1841,9 @@ sub has_value
     {
 	( $pred_name, $value ) = each( %$pred_name );
     }
+
+    $match ||= 'eq';
+    $clean ||= 0;
 
     my $pred;
     if( ref $pred_name )
@@ -1842,7 +1861,7 @@ sub has_value
 	    # Either predicate can have the value
 	    foreach my $pred ( @$pred_name )
 	    {
-		my $arc = $node->has_value( $pred, $value );
+		my $arc = $node->has_value( $pred, $value, $match, $clean );
 		return $arc if $arc;
 	    }
 	    return 0;
@@ -1862,7 +1881,7 @@ sub has_value
     if( debug > 2 )
     {
 	my $value_str = defined($value)?$value:"<undef>";
-	debug "  Checking if node $node->{'id'} has $pred_name $value_str";
+	debug "  Checking if node $node->{'id'} has $pred_name $match($clean) $value_str";
     }
 
 ### Should not be needed (and is wrong)
@@ -1882,6 +1901,11 @@ sub has_value
 		datadump($value,4);
 	}
 
+	unless( $match eq 'eq' )
+	{
+	    confess "subquery not implemented for matchtype $match";
+	}
+
 	foreach my $arc ( $node->arc_list($pred_name)->as_array )
 	{
 	    if( $arc->obj->find($value)->size )
@@ -1897,7 +1921,7 @@ sub has_value
     {
 	foreach my $val (@$value )
 	{
-	    my $arc = $node->has_value($pred_name, $val);
+	    my $arc = $node->has_value($pred_name, $val, $match, $clean);
 	    return $arc if $arc;
 	}
 	return 0;
@@ -1908,171 +1932,38 @@ sub has_value
     if( $node->can($pred_name) )
     {
 	debug 3, "  check method $pred_name";
-	return -1 if $node->$pred_name eq $value;
-    }
-
-    foreach my $arc ( $node->arc_list($pred_name)->as_array )
-    {
-	debug 3, "  check arc ".$arc->id;
-	return $arc if $arc->value_equals( $value );
-    }
-    if( debug > 2 )
-    {
-	my $value_str = defined($value)?$value:"<undef>";
-	debug "  no such value $value_str for ".$node->desig;
-    }
-
-    return 0;
-}
-
-
-#######################################################################
-
-=head2 has_beginning
-
-  $n->has_beginning( $pred, $value )
-
-  $n->has_beginning({ $pred, $value })
-
-  $n->has_beginning( $pred, $value, $match )
-
-  $n->has_beginning( $pred, $value, $match, $clean )
-
-Returns true if one of the node properties has a combination of any of
-the predicates and any of the beginnings.
-
-Predicate can be a name, object or array.  Value can be a list of
-values or anything that L<Rit::Base::List/find> takes.
-
-Examples:
-
-See if node C<$n> has the name or short name beginning with 'oll' or 'kall'.
-
-  $n->has_beginning( ['name','name_short'], ['olle', 'kall'] )
-
-Returns:
-
-If true, returns one of the relevant arcs.
-
-If false, returns 0.  Not the undef object.
-
-If it's a dynamic property (a method) returns -1, that is true.
-
-TODO: Scalars (i.e strings) with properties not yet supported.
-
-Consider $n->has_value('some_pred', is_undef)
-
-=cut
-
-sub has_beginning
-{
-    my( $node, $pred_name, $value, $match, $clean ) = @_;
-
-    $pred_name or confess;
-
-    if( ref($pred_name) and ref($pred_name) eq 'HASH' )
-    {
-	( $pred_name, $value ) = each( %$pred_name );
-    }
-
-    $match ||= 'begins';
-    $clean ||= 0;
-
-    my $pred;
-    if( ref $pred_name )
-    {
-	if( UNIVERSAL::isa( $pred_name, 'Rit::Base::Literal') )
-	{
-	    $pred = $pred_name->literal;
-	}
-	elsif( ref $pred_name eq 'Rit::Base::Pred' )
-	{
-	    $pred = $pred_name;
-	}
-	elsif( ref $pred_name eq 'ARRAY' )
-	{
-	    # Either predicate can have the value
-	    foreach my $pred ( @$pred_name )
-	    {
-		my $arc = $node->has_beginning( $pred, $value );
-		return $arc if $arc;
-	    }
-	    return 0;
-	}
-	else
-	{
-	    die "has_beginning pred $pred_name not supported";
-	}
-    }
-    else
-    {
-	$pred = Rit::Base::Pred->get( $pred_name );
-    }
-
-    $pred_name = $pred->name->plain;
-
-    if( debug > 0 )
-    {
-	my $value_str = defined($value)?$value:"<undef>";
-	debug "  Checking if node $node->{'id'} has $pred_name beginning with $value_str";
-    }
-
-    # Sub query
-    if( ref $value eq 'HASH' )
-    {
-	if( debug > 0 )
-	{
-	    debug "  Checking if ".$node->desig.
-	      " has $pred_name with the props ".
-		datadump($value,4);
-	}
-
-
-	confess "subquery not implemented";
-
-#	foreach my $arc ( $node->arc_list($pred_name)->as_array )
-#	{
-#	    if( $arc->obj->find($value)->size )
-#	    {
-#		return $arc;
-#	    }
-#	}
-
-	return 0;
-    }
-
-    # $value holds alternative values
-    elsif( ref $value eq 'ARRAY' )
-    {
-	foreach my $val (@$value )
-	{
-	    my $arc = $node->has_beginning($pred_name, $val, $match, $clean);
-	    return $arc if $arc;
-	}
-	return 0;
-    }
-
-
-    # Check the dynamic properties (methods) for the node
-    if( $node->can($pred_name) )
-    {
-	debug 1, "  check method $pred_name";
 	my $prop_value = $node->$pred_name;
 
 	if( $clean )
 	{
 	    $prop_value = valclean(\$prop_value);
+	    $value = valclean(\$value);
 	}
 
-	return -1 if $prop_value =~ /^\Q$value/;
+	if( $match eq 'eq' )
+	{
+	    return -1 if $node->$pred_name eq $value;
+	}
+	elsif( $match eq 'begins' )
+	{
+	    return -1 if $prop_value =~ /^\Q$value/;
+	}
+	elsif( $match eq 'like' )
+	{
+	    return -1 if $prop_value =~ /\Q$value/;
+	}
+	else
+	{
+	    confess "Matchtype $match not implemented";
+	}
     }
 
     foreach my $arc ( $node->arc_list($pred_name)->as_array )
     {
-	debug 1, "  check arc ".$arc->id;
-	return $arc if $arc->value_begins( $value, $match, $clean );
+	debug 3, "  check arc ".$arc->id;
+	return $arc if $arc->value_equals( $value, $match, $clean );
     }
-    if( debug > 1 )
+    if( debug > 2 )
     {
 	my $value_str = defined($value)?$value:"<undef>";
 	debug "  no such value $value_str for ".$node->desig;
