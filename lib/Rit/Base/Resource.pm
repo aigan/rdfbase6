@@ -4493,12 +4493,18 @@ sub initiate_revprop
 	my $stmts = $sth_init_obj_pred->fetchall_arrayref({});
 	$sth_init_obj_pred->finish;
 
+	my $num_of_arcs = scalar( @$stmts );
+	if( $num_of_arcs > 100 )
+	{
+	    $Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
+	}
+
 	if( debug > 1 )
 	{
 	    my $ts = $Rit::Base::timestamp;
 	    $Rit::Base::timestamp = time;
 	    debug sprintf("Got %d arcs in %2.2f secs",
-			 scalar( @$stmts ), time - $ts);
+			 $num_of_arcs, time - $ts);
 	}
 	foreach my $stmt ( @$stmts )
 	{
