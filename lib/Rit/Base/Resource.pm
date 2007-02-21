@@ -5819,8 +5819,23 @@ AUTOLOAD
     if( $@ )
     {
 	my $err = catch($@);
-	confess sprintf "While calling %s for %s (%s):\n%s",
-	  $method, $node->sysdesig, $node->code_class_desig, $err;
+	my $desc = "";
+	foreach my $isnode ( $node->list('is')->as_array )
+	{
+	    $desc .= sprintf("  is %s\n", $isnode->desig);
+	}
+
+	if( my $lock_level = $Rit::Base::Arc::lock_check )
+	{
+	    $desc .= "Arc lock is in effect at level $lock_level\n";
+	}
+	else
+	{
+	    $desc .= "Arc lock not in effect\n";
+	}
+
+	confess sprintf "While calling %s for %s (%s):\n%s\n%s",
+	    $method, $node->sysdesig, $node->code_class_desig, $desc, $err;
     }
     else
     {
