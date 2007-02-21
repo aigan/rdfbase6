@@ -3768,6 +3768,12 @@ If the class has changed, calls L</on_unbless> in the old class,
 reblesses in the new class and then calls L</on_bless>. This should
 work also for metaclasses L<Rit::Base::Metaclass>.
 
+For a new C<is> arc; the rebless is done after the infered arcs are
+created and before the calling of L</on_arc_add>.
+
+For a removed C<is> arc; the rebless is done after the infered arcs
+are removed and before the calling of L</on_arc_del>.
+
 The new package are required if necessary.
 
 Returns: the resource object
