@@ -373,11 +373,6 @@ sub create
     $arc->subj->initiate_cache;
     $arc->value->initiate_cache($arc);
 
-    if( $pred_name eq 'is' )
-    {
-	$arc->subj->rebless;
-    }
-
     $arc->schedule_check_create;
 
     $$changes_ref ++ if $changes_ref; # increment changes
@@ -2627,6 +2622,11 @@ sub create_check
     my $pred_name = $arc->pred->name->plain;
     my $subj = $arc->subj;
 
+    if( $pred_name eq 'is' )
+    {
+	$subj->rebless;
+    }
+
     $subj->on_arc_add($arc, $pred_name);
  }
 
@@ -2688,7 +2688,6 @@ sub remove_check
 
     if( $pred_name eq 'is' )
     {
-	# Corresponding rebless for arc create is in method create()
 	$subj->rebless;
     }
 
