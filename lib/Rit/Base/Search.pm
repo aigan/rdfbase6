@@ -529,7 +529,8 @@ sub broaden # removes targets from searchy type
   $search->modify( \%crits, \%args )
 
 C<%crits> consists of key/value pairs. The values can be an arrayref,
-a L<Rit::Base::List> or a single value.
+a L<Rit::Base::List> or a single value. For a list, we search for
+nodes having at least one of the listed values.
 
 Each value can be a L<Rit::Base::Resource> object, a ref to a hash
 containing an C<id> key or a ref to a hash in the form of a
@@ -1773,8 +1774,17 @@ sub build_outer_select_field
 
 	if( $tr )
 	{
+	    if( $dir eq 'exists' )
+	    {
+		confess "Not sane";
+	    }
+
 	    # Sort by weight
 	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from rel where pred=4 and sub=${sortkey}_inner.obj) ELSE $coltype END, CASE WHEN obj is not null THEN (select valint from rel where pred=302 and sub=${sortkey}_inner.obj) ELSE 0 END as weight from rel as ${sortkey}_inner where $where and pred=? order by weight limit 1) as ${sortkey}_mid";
+	}
+	elsif( $dir eq 'exists' )
+	{
+	    $sql = "COALESCE((select 1 from rel where $where and pred=? limit 1),0)";
 	}
 	elsif( ($coltype eq 'valint') or ($coltype eq 'valfloat') )
 	{
@@ -1782,7 +1792,8 @@ sub build_outer_select_field
 	}
 	elsif( $coltype eq 'valtext' )
 	{
-	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),'')";	}
+	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),'')";
+	}
 	else # valdate or obj
 	{
 	    $sql = "select $coltype from rel where $where and pred=? limit 1";
@@ -1793,6 +1804,10 @@ sub build_outer_select_field
 
     $sql = "($sql) as $sortkey";
 
+    if( $dir eq 'exists' )
+    {
+	$dir = 'desc';
+    }
 
     debug "SORT SQL: $sql";
     return( $sql, \@values, "$sortkey $dir" );
@@ -2253,6 +2268,14 @@ sub set_prio
 
 
 #######################################################################
+
+=head2 order_add
+
+  $search->order_add( ... )
+
+See L<Para::Frame::List/sorted>
+
+=cut
 
 sub order_add
 {
