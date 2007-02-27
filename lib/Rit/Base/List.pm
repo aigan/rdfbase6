@@ -750,7 +750,7 @@ Returns a list of nodes, sorted by the selected proprty of the node.
 The default sorting property is C<desig>.
 
 C<$dir> is the direction of the sort.  It can be C<asc> or C<desc> and
-defaults to C<asc>.
+defaults to C<asc>. It can also be C<exists> (for a SQL search).
 
 C<$prop> can be of the form C<p1.p2.p3> which translates to a property
 lookup in several steps.  For example; C<$arcs->sorted('obj.name')>
