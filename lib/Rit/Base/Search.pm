@@ -1763,12 +1763,7 @@ sub build_outer_select_field
 
 	my $pred = Rit::Base::Pred->get( $field );
 	my $coltype = $pred->coltype;
-
-# Sort on real value. Not clean
-#	if( $coltype eq 'valtext' )
-#	{
-#	    $coltype = 'valclean';
-#	}
+	# Sort on real value. Not clean
 
 	my $where = "sub=frame.node";
 	if( $sql )
@@ -1781,11 +1776,19 @@ sub build_outer_select_field
 	    # Sort by weight
 	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from rel where pred=4 and sub=${sortkey}_inner.obj) ELSE $coltype END, CASE WHEN obj is not null THEN (select valint from rel where pred=302 and sub=${sortkey}_inner.obj) ELSE 0 END as weight from rel as ${sortkey}_inner where $where and pred=? order by weight limit 1) as ${sortkey}_mid";
 	}
-	else
+	elsif( ($coltype eq 'valint') or ($coltype eq 'valfloat') )
+	{
+	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),0)";
+	}
+	elsif( $coltype eq 'valtext' )
+	{
+	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),'')";	}
+	else # valdate or obj
 	{
 	    $sql = "select $coltype from rel where $where and pred=? limit 1";
 	}
-	    push @values, $pred->id;
+
+	push @values, $pred->id;
     }
 
     $sql = "($sql) as $sortkey";
