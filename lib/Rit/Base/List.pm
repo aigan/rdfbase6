@@ -1160,6 +1160,69 @@ sub loc
     }
 }
 
+
+###############################################################################
+
+=head2 loc_by_lang
+
+my $prop = $list->loc_by_lang( [ 'sv', 'c' ] );
+
+Returns one prop from the list, chosen first on language and then on
+weight.
+
+=cut
+
+sub loc_by_lang
+{
+    my( $list, $lc_list ) = @_;
+
+    my %lang;
+
+    my $langprio = 100;
+    foreach my $lc ( @$lc_list )
+    {
+	$lang{ $lc } = $langprio--;
+    }
+
+    my $got_weight = -1;
+    my $got_lprio = -1;
+    my $got_prop = is_undef;
+
+    debug "Getting loc_by_list from: ". $list->sysdesig;
+
+    while( my $prop = $list->get_next_nos )
+    {
+	if( ref $prop and
+	    UNIVERSAL::isa($prop, 'Rit::Base::Resource::Compatible') )
+	{
+	    my $propweight = $prop->weight || 0;
+	    my $lprio = $lang{ $prop->language->code } || 0;
+
+	    next unless( $lprio or defined $lang{'c'} );
+
+	    if( $lprio gt $got_lprio )
+	    {
+		$got_prop   = $prop;
+		$got_weight = $propweight;
+		$got_lprio  = $lprio;
+	    }
+	    elsif( $lprio eq $got_lprio and
+		   $propweight gt $got_weight )
+	    {
+		$got_prop   = $prop;
+		$got_weight = $propweight;
+	    }
+	}
+	elsif( $got_lprio eq -1 )
+	{
+	    $got_prop = $prop;
+	}
+    }
+
+    return $got_prop;
+}
+
+
 #######################################################################
 
 =head2 desig
