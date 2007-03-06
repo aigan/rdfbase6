@@ -1439,7 +1439,7 @@ sub revlist
 	$name = $name->name if ref $name eq 'Rit::Base::Pred';
 
 	my @arcs;
-	if( $node->initiate_revprop( $name ) )
+	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
 	{
 	    @arcs = @{ $node->{'revarc'}{$name} };
 	}
@@ -1459,19 +1459,23 @@ sub revlist
 	{
 	    if( $arclim eq 'direct' )
 	    {
-		@arcs = grep $_->direct, @arcs;
+		# Handled in initiate_revprop()
+#		@arcs = grep $_->direct, @arcs;
 	    }
 	    elsif( $arclim eq 'explicit' )
 	    {
-		@arcs = grep $_->explicit, @arcs;
+		# Handled in initiate_revprop()
+#		@arcs = grep $_->explicit, @arcs;
 	    }
 	    elsif( $arclim eq 'indirect' )
 	    {
-		@arcs = grep $_->indirect, @arcs;
+		# Handled in initiate_revprop()
+#		@arcs = grep $_->indirect, @arcs;
 	    }
 	    elsif( $arclim eq 'implicit' )
 	    {
-		@arcs = grep $_->implicit, @arcs;
+		# Handled in initiate_revprop()
+#		@arcs = grep $_->implicit, @arcs;
 	    }
 	    elsif( $arclim eq 'not_disregarded' )
 	    {
@@ -2114,11 +2118,26 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if(    $node->name->defined       ){ $desig = $node->name         }
-    elsif( $node->name_short->defined ){ $desig = $node->name_short   }
-    elsif( $node->value->defined      ){ $desig = $node->value        }
-    elsif( $node->code->defined       ){ $desig = $node->code         }
-    else                               { $desig = $node->id           }
+    if( $node->first_prop('name')->defined )
+    {
+	$desig = $node->first_prop('name')
+    }
+    elsif( $node->first_prop('name_short')->defined )
+    {
+	$desig = $node->first_prop('name_short')
+    }
+    elsif( $node->value->defined )
+    {
+	$desig = $node->value
+    }
+    elsif( $node->first_prop('code')->defined )
+    {
+	$desig = $node->first_prop('code')
+    }
+    else
+    {
+	$desig = $node->id
+    }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
 
@@ -2143,13 +2162,25 @@ sub sysdesig  # The designation of obj, including node id
 
     my $desig;
 
-    if(    $node->name->defined       ){ $desig = $node->name         }
-    elsif( $node->name_short->defined ){ $desig = $node->name_short   }
-    elsif( $node->value->defined      ){ $desig = $node->value        }
-    elsif( $node->code->defined       ){ $desig = $node->code         }
+    if( $node->first_prop('name')->defined )
+    {
+	$desig = $node->first_prop('name')
+    }
+    elsif( $node->first_prop('name_short')->defined )
+    {
+	$desig = $node->first_prop('name_short')
+    }
+    elsif( $node->value->defined )
+    {
+	$desig = $node->value
+    }
+    elsif( $node->first_prop('code')->defined )
+    {
+	$desig = $node->first_prop('code')
+    }
     else
     {
-	return( $node->id );
+	$desig = $node->id
     }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
@@ -4471,7 +4502,7 @@ TODO: Use custom DBI fetchrow
 
 sub initiate_revprop
 {
-    my( $node, $name ) = @_;
+    my( $node, $name, $proplim, $arclim) = @_;
 
     debug 3, "May initiate prop $name for $node->{id}";
     return $node->{'revarc'}{ $name } if $node->{'initiated_revprop'}{$name};
@@ -4494,30 +4525,113 @@ sub initiate_revprop
 	    $Rit::Base::timestamp = time;
 	}
 
-	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare("select * from rel where obj=? and pred=?");
+	my $sql = "select * from rel where obj=? and pred=?";
+	if( $arclim )
+	{
+	    if( $arclim eq 'direct' )
+	    {
+		$sql .= " and indirect is false";
+	    }
+	    elsif( $arclim eq 'explicit' )
+	    {
+		$sql .= " and implicit is false";
+	    }
+	    elsif( $arclim eq 'indirect' )
+	    {
+		$sql .= " and indirect is true";
+	    }
+	    elsif( $arclim eq 'implicit' )
+	    {
+		$sql .= " and implicit is true";
+	    }
+	    else
+	    {
+		# arclim not handled here
+		undef $arclim;
+	    }
+	}
+
+	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_obj_pred->execute( $node->id, $pred_id );
 	my $stmts = $sth_init_obj_pred->fetchall_arrayref({});
 	$sth_init_obj_pred->finish;
 
 	my $num_of_arcs = scalar( @$stmts );
-	if( $num_of_arcs > 100 )
-	{
-	    $Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
-	}
-
 	if( debug > 1 )
 	{
 	    my $ts = $Rit::Base::timestamp;
 	    $Rit::Base::timestamp = time;
 	    debug sprintf("Got %d arcs in %2.2f secs",
-			 $num_of_arcs, time - $ts);
+			  $num_of_arcs, time - $ts);
 	}
-	foreach my $stmt ( @$stmts )
+
+	my $cnt = 0;
+	my $ts = time;
+
+	$Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
+
+	if( 0 ) # $num_of_arcs > 100
 	{
-	    debug "  populating with ".datadump($stmt,4)
-	      if debug > 4;
-	    $node->populate_rev( $stmt, undef );
+	    ######### OPTIMIZED CODE ############## No win...!
+	    foreach my $stmt ( @$stmts )
+	    {
+#		unless( ++$cnt % 100 )
+#		{
+#		    my $now = time;
+#		    debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
+#		    $ts = $now;
+#		}
+
+		my $id = $stmt->{'id'};
+
+		if( my $arc = $Rit::Base::Cache::Resource{$id} )
+		{
+		    $arc->register_with_nodes;
+		}
+		else
+		{
+		    ## Resource->new
+		    my $arc = $Rit::Base::Cache::Resource{ $id } =
+		      bless
+		      {
+		       'id' => $id,
+		       'lables' => {},
+		       'arc_id' => {},
+		       'revarc' => {},
+		       'initiated_relprop' => {},
+		       'initiated_revprop' => {},
+		       'initiated_rel' => {},
+		       'initiated_rev' => {},
+		      }, 'Rit::Base::Arc';
+
+		    $arc->init($stmt, undef, $node);
+		}
+	    }
+
+
+	    #######################################
 	}
+	else
+	{
+	    foreach my $stmt ( @$stmts )
+	    {
+#		unless( ++$cnt % 100 )
+#		{
+#		    my $now = time;
+#		    debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
+#		    $ts = $now;
+#		}
+
+#		debug "  populating with ".datadump($stmt,4) if debug > 4;
+
+		$node->populate_rev( $stmt, undef );
+	    }
+	}
+
+	my $now = time;
+	debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
+	$ts = $now;
+
 	debug 3, "* revprop $name for $node->{id} is now initiated";
     }
     else
@@ -4525,7 +4639,11 @@ sub initiate_revprop
 	debug "* revprop $name does not exist!";
     }
 
-    $node->{'initiated_revprop'}{$name} = 2;
+    unless( $arclim )
+    {
+	$node->{'initiated_revprop'}{$name} = 2;
+    }
+
 #    debug 3, "  Will now return '$node->{'revarc'}{ $name }' from initiate_revprop"; ### HEAVY!!!
     return $node->{'revarc'}{ $name };
 }
@@ -5818,11 +5936,15 @@ AUTOLOAD
 
     if( $@ )
     {
-	my $err = catch($@);
+	my $err = $Para::Frame::REQ->result->exception;
+	debug datadump $err;
 	my $desc = "";
-	foreach my $isnode ( $node->list('is')->as_array )
+	if( $node->defined )
 	{
-	    $desc .= sprintf("  is %s\n", $isnode->desig);
+	    foreach my $isnode ( $node->list('is')->as_array )
+	    {
+		$desc .= sprintf("  is %s\n", $isnode->desig);
+	    }
 	}
 
 	if( my $lock_level = $Rit::Base::Arc::lock_check )
@@ -5834,8 +5956,16 @@ AUTOLOAD
 	    $desc .= "Arc lock not in effect\n";
 	}
 
-	confess sprintf "While calling %s for %s (%s):\n%s\n%s",
-	    $method, $node->sysdesig, $node->code_class_desig, $desc, $err;
+	if( $node->defined )
+	{
+	    confess sprintf "While calling %s for %s (%s):\n%s\n%s",
+	      $method, $node->sysdesig, $node->code_class_desig, $desc, $err;
+	}
+	else
+	{
+	    confess sprintf "While calling %s for <undef>:\n%s\n%s",
+	      $method, $desc, $err;
+	}
     }
     else
     {
