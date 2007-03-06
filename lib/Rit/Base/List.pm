@@ -819,8 +819,8 @@ sub sorted
     my @sort;
     for( my $i = 0; $i < @$args; $i++ )
     {
-#	debug 3, "i: $i";
-#	debug 3, sprintf("args: %d\n", scalar @$args);
+#	debug "i: $i";
+#	debug sprintf("args: %d\n", scalar @$args);
 	unless( ref $args->[$i] eq 'HASH' )
 	{
 	    $args->[$i] =
@@ -866,27 +866,32 @@ sub sorted
     }
     my $sort_str = join ' || ', @sort;
 
-#    debug 3, "--- SORTING: $sort_str";
+#    debug "--- SORTING: $sort_str";
 
     my @props;
     foreach my $item ( $list->as_array )
     {
-	debug 2, sprintf("  add item %s", $item->sysdesig);
+#	debug 2, sprintf("  add item %s", $item->sysdesig);
 	for( my $i=0; $i<@$args; $i++ )
 	{
 	    my $method = $args->[$i]{'on'};
-#	    debug 3, sprintf("    arg $i: %s", $args->[$i]{'on'});
+#	    debug sprintf("    arg $i: %s", $args->[$i]{'on'});
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
 		$val = $val->$part;
-#		debug 3,sprintf("      -> %s", $val);
+#		debug sprintf("      -> %s", $val);
 	    }
 
 	    # Make it a string
 	    $val = $val->loc if ref $val;
 
-#	    debug 3, sprintf("      => %s", $val);
+	    if( $args->[$i]->{'cmp'} eq '<=>') # Make it an integer
+	    {
+		$val ||= 0;
+	    }
+
+#	    debug sprintf("      => %s", $val);
 
 	    push @{$props[$i]}, $val;
 #	    push @{$props[$i]}, $item->$method;
