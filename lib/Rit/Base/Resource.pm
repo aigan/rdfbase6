@@ -1438,6 +1438,13 @@ sub revlist
     {
 	$name = $name->name if ref $name eq 'Rit::Base::Pred';
 
+	# Do *not* accept undef arclim, for this construct
+	if( $proplim and not ref $proplim and $arclim )
+	{
+	    $proplim = { $proplim => $arclim };
+	    $arclim = $arclim2;
+	}
+
 	my @arcs;
 	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
 	{
@@ -1446,13 +1453,6 @@ sub revlist
 	else
 	{
 	    debug 3, "  No values for revprop $name found!";
-	}
-
-	# Do *not* accept undef arclim, for this construct
-	if( $proplim and not ref $proplim and $arclim )
-	{
-	    $proplim = { $proplim => $arclim };
-	    $arclim = $arclim2;
 	}
 
 	if( $arclim )
@@ -1500,7 +1500,7 @@ sub revlist
     }
     else
     {
-	return $node->revlist_preds;
+	return $node->revlist_preds( $proplim, $arclim );
     }
 }
 
@@ -1511,6 +1511,10 @@ sub revlist
 
   $n->revlist_preds
 
+  $n->revlist_preds( $proplim )
+
+  $n->revlist_preds( $proplim, $arclim )
+
 The same as L</revlist> with no args.
 
 Retuns: a ref to a list of all reverse property names.
@@ -1519,8 +1523,13 @@ Retuns: a ref to a list of all reverse property names.
 
 sub revlist_preds
 {
-    my( $node ) = @_;
-    $node->initiate_rev;
+    my( $node, $proplim, $arclim ) = @_;
+    $node->initiate_rev( $proplim, $arclim );
+    if( $proplim )
+    {
+	die "proplim not implemented";
+    }
+
     return Rit::Base::List->new([map Rit::Base::Pred->get_by_label($_), keys %{$node->{'revarc'}}]);
 }
 
@@ -2298,9 +2307,17 @@ sub arc_list
 
 =head2 revarc_list
 
+  $n->revarc_list()
+
   $n->revarc_list( $pred_name )
 
-  $n->revarc_list()
+  $n->revarc_list( $predname, $proplim )
+
+  $n->revarc_list( $predname, $proplim, $arclim )
+
+  $n->revarc_list( $predname, $pred => $value )
+
+  $n->revarc_list( $predname, $pred => $value, $arclim )
 
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
 subj and C<$pred_name> as predicate.
@@ -2311,14 +2328,67 @@ With no C<$pred_name>, all revarcs from the node is returned.
 
 sub revarc_list
 {
-    my( $node, $name ) = @_;
+    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
 
     if( $name )
     {
-	$name = $name->plain if ref $name;
-	$node->initiate_revprop( $name );
-	my $lr = $node->{'revarc'}{$name} || [];
-	return Rit::Base::List->new($lr);
+	$name = $name->plain if ref $name eq 'Rit::Base::Pred';
+
+	debug "Initiating revprop for $node->{id} with arclim ";
+
+
+	# Do *not* accept undef arclim, for this construct
+	if( $proplim and not ref $proplim and $arclim )
+	{
+	    $proplim = { $proplim => $arclim };
+	    $arclim = $arclim2;
+	}
+
+	my @arcs;
+	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
+	{
+	    @arcs = @{ $node->{'revarc'}{$name} };
+	}
+	else
+	{
+	    debug 3, "  No values for revprop $name found!";
+	}
+
+	if( $arclim )
+	{
+	    if( $arclim eq 'direct' )
+	    {
+		# Handled in initiate_revprop()
+	    }
+	    elsif( $arclim eq 'explicit' )
+	    {
+		# Handled in initiate_revprop()
+	    }
+	    elsif( $arclim eq 'indirect' )
+	    {
+		# Handled in initiate_revprop()
+	    }
+	    elsif( $arclim eq 'implicit' )
+	    {
+		# Handled in initiate_revprop()
+	    }
+	    elsif( $arclim eq 'not_disregarded' )
+	    {
+		@arcs = grep $_->not_disregarded, @arcs;
+	    }
+	    else
+	    {
+		die "not implemented: $arclim";
+	    }
+	}
+
+	my $lr = Rit::Base::List->new(\@arcs);
+	if( $proplim )
+	{
+	    $lr = $lr->find($proplim);
+	}
+
+	return $lr;
     }
     else
     {
@@ -4294,8 +4364,6 @@ sub initiate_rel
 
     my $nid = $node->id;
 
-    $node->{'initiated_rel'} = 1;
-
     # Get statements for node $id
     my $sth_init_sub_name = $Rit::dbix->dbh->prepare("select * from rel where sub in(select obj from rel where (sub=? and pred=11)) UNION select * from rel where sub=?");
     $sth_init_sub_name->execute($nid, $nid);
@@ -4339,6 +4407,8 @@ sub initiate_rel
 	$subnode->{'initiated_rel'} = 1;
     }
 #    warn "End   init all props of node $node->{id}\n";
+
+    $node->{'initiated_rel'} = 1;
 }
 
 #########################################################################
@@ -4351,13 +4421,38 @@ sub initiate_rev
 {
     return if $_[0]->{'initiated_rev'};
 
-    my( $node ) = @_;
+    my( $node, $proplim, $arclim ) = @_;
 
     my $nid = $node->id;
 
-    $node->{'initiated_rev'} = 1;
 
-    my $sth_init_obj = $Rit::dbix->dbh->prepare("select * from rel where obj=?");
+    my $sql = "select * from rel where obj=?";
+    if( $arclim )
+    {
+	if( $arclim eq 'direct' )
+	{
+	    $sql .= " and indirect is false";
+	}
+	elsif( $arclim eq 'explicit' )
+	{
+	    $sql .= " and implicit is false";
+	}
+	elsif( $arclim eq 'indirect' )
+	{
+	    $sql .= " and indirect is true";
+	}
+	elsif( $arclim eq 'implicit' )
+	{
+	    $sql .= " and implicit is true";
+	}
+	else
+	{
+	    # arclim not handled here
+	    undef $arclim;
+	}
+    }
+
+    my $sth_init_obj = $Rit::dbix->dbh->prepare($sql);
     $sth_init_obj->execute($nid);
     my $revstmts = $sth_init_obj->fetchall_arrayref({});
     $sth_init_obj->finish;
@@ -4365,7 +4460,7 @@ sub initiate_rev
     my $cnt = 0;
     foreach my $stmt ( @$revstmts )
     {
-	$node->populate_rev( $stmt );
+	$node->populate_rev( $stmt, undef );
 
 	# Handle long lists
 	unless( ++$cnt % 25 )
@@ -4376,10 +4471,15 @@ sub initiate_rev
 	}
     }
 
-    # Mark up all individual preds for the node as initiated
-    foreach my $name ( keys %{$node->{'revarc'}} )
+    unless( $arclim )
     {
-	$node->{'initiated_revprop'}{$name} = 2;
+	# Mark up all individual preds for the node as initiated
+	foreach my $name ( keys %{$node->{'revarc'}} )
+	{
+	    $node->{'initiated_revprop'}{$name} = 2;
+	}
+
+	$node->{'initiated_rev'} = 1;
     }
 
 #    warn "End   init all props of node $node->{id}\n";
