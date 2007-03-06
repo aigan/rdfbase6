@@ -2330,7 +2330,7 @@ sub revarc_list
     {
 	$name = $name->plain if ref $name eq 'Rit::Base::Pred';
 
-	debug "Initiating revprop for $node->{id} with arclim ";
+#	debug "Initiating revprop for $node->{id} with arclim ";
 
 
 	# Do *not* accept undef arclim, for this construct
@@ -4664,10 +4664,10 @@ sub initiate_revprop
 	my $cnt = 0;
 	my $ts = time;
 
-	$Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
-
 	if( 0 ) # $num_of_arcs > 100
 	{
+	    $Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
+
 	    ######### OPTIMIZED CODE ############## No win...!
 	    foreach my $stmt ( @$stmts )
 	    {
