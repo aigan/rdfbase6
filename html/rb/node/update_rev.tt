@@ -16,8 +16,8 @@
 <table class='admin'>
 <tr><th>Value</th> <th>Property</th> <th>Flags</th> <th>Updated</th> </tr>
 
-[% FOREACH pred = node.revlist.sorted %]
-   [% FOREACH arc = node.revarc_list(pred).direct.sorted %]
+[% FOREACH pred = node.revlist_preds('','direct').sorted %]
+   [% FOREACH arc = node.revarc_list(pred,'','direct').direct.sorted %]
       <tr>
       <td>
       [% jump(arc.subj.sysdesig, 'update_rev.tt', id=arc.subj.id) %]
