@@ -1459,23 +1459,19 @@ sub revlist
 	{
 	    if( $arclim eq 'direct' )
 	    {
-		# Handled in initiate_revprop()
-#		@arcs = grep $_->direct, @arcs;
+		@arcs = grep $_->direct, @arcs;
 	    }
 	    elsif( $arclim eq 'explicit' )
 	    {
-		# Handled in initiate_revprop()
-#		@arcs = grep $_->explicit, @arcs;
+		@arcs = grep $_->explicit, @arcs;
 	    }
 	    elsif( $arclim eq 'indirect' )
 	    {
-		# Handled in initiate_revprop()
-#		@arcs = grep $_->indirect, @arcs;
+		@arcs = grep $_->indirect, @arcs;
 	    }
 	    elsif( $arclim eq 'implicit' )
 	    {
-		# Handled in initiate_revprop()
-#		@arcs = grep $_->implicit, @arcs;
+		@arcs = grep $_->implicit, @arcs;
 	    }
 	    elsif( $arclim eq 'not_disregarded' )
 	    {
@@ -2358,19 +2354,19 @@ sub revarc_list
 	{
 	    if( $arclim eq 'direct' )
 	    {
-		# Handled in initiate_revprop()
+		@arcs = grep $_->direct, @arcs;
 	    }
 	    elsif( $arclim eq 'explicit' )
 	    {
-		# Handled in initiate_revprop()
+		@arcs = grep $_->explicit, @arcs;
 	    }
 	    elsif( $arclim eq 'indirect' )
 	    {
-		# Handled in initiate_revprop()
+		@arcs = grep $_->indirect, @arcs;
 	    }
 	    elsif( $arclim eq 'implicit' )
 	    {
-		# Handled in initiate_revprop()
+		@arcs = grep $_->implicit, @arcs;
 	    }
 	    elsif( $arclim eq 'not_disregarded' )
 	    {
