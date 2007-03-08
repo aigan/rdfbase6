@@ -884,7 +884,10 @@ sub sorted
 	    }
 
 	    # Make it a string
-	    $val = $val->loc if ref $val;
+	    if( UNIVERSAL::isa $val, 'Rit::Base::List' )
+	    {
+		$val = $val->loc;
+	    }
 
 	    if( $args->[$i]->{'cmp'} eq '<=>') # Make it an integer
 	    {
