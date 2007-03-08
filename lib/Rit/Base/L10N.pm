@@ -125,11 +125,11 @@ sub maketext
 	    {
 		return $val;
 	    }
-	    croak "Can't translate value: ". datadump($phrase, 2);
+	    confess "Can't translate value: ". datadump($phrase, 2);
 	}
 	else
 	{
-	    croak "Can't translate value: ". datadump($phrase, 2);
+	    confess "Can't translate value: ". datadump($phrase, 2);
 	}
     }
 
