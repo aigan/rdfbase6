@@ -1809,7 +1809,7 @@ sub build_outer_select_field
 	$dir = 'desc';
     }
 
-    debug "SORT SQL: $sql";
+#    debug "SORT SQL: $sql";
     return( $sql, \@values, "$sortkey $dir" );
 }
 
