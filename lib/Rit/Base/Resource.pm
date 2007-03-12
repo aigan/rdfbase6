@@ -4724,9 +4724,9 @@ sub initiate_revprop
 	    }
 	}
 
-	my $now = time;
-	debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
-	$ts = $now;
+#	my $now = time;
+#	debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
+#	$ts = $now;
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
     }
