@@ -940,5 +940,88 @@ sub string
 
 #######################################################################
 
+=head2 query_desig
+
+  query_desig($query)
+
+=cut
+
+sub query_desig
+{
+    my( $query, $ident ) = @_;
+
+    $ident ||= 0;
+    my $out = "";
+
+    if( ref $query )
+    {
+	if( ref $query eq 'HASH' )
+	{
+	    foreach my $key ( keys %$query )
+	    {
+		my $val = query_desig($query->{$key}, $ident+1);
+		if( $val =~ /\n.*?\n/s )
+		{
+		    $out .= '  'x$ident . "$key:\n";
+		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+		}
+		else
+		{
+		    $val =~ s/\n*$/\n/;
+		    $out .= '  'x$ident . "$key: $val";
+		}
+	    }
+	}
+	elsif( ref $query eq 'ARRAY' )
+	{
+	    foreach my $val ( @$query )
+	    {
+		my $val = query_desig($val, $ident+1);
+		if( $val =~ /\n.*?\n/s )
+		{
+		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+		}
+		else
+		{
+		    $val =~ s/\n*$/\n/;
+		    $out .= '  'x$ident . $val;
+		}
+	    }
+	}
+	else
+	{
+	    my $val = $query->sysdesig;
+	    debug "Got val $val\n";
+	    if( $val =~ /\n.*?\n/s )
+	    {
+		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+	    }
+	    else
+	    {
+		$val =~ s/\n*$/\n/;
+		$out .= '  'x$ident . $val;
+	    }
+	}
+    }
+    else
+    {
+	debug "Query is plain $query\n";
+	if( $query =~ /\n.*?\n/s )
+	{
+	    $out .= join "\n", map '  'x$ident.$_, split /\n/, $query;
+	}
+	else
+	{
+	    $out =~ s/\n*$/\n/;
+	    $out .= '  'x$ident . $query;
+	}
+    }
+
+    return $out;
+}
+
+
+#######################################################################
+
 
 1;
