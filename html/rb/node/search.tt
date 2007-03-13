@@ -20,3 +20,8 @@
 [% hidden("search_result", "$home/rb/node/list.tt") %]
 
 <p>[% submit('Sök') %]
+
+<p>Examples:
+
+<p>name_clean hotel<br>
+private_ne 1
