@@ -40,7 +40,13 @@
 [% END %]
 
 <h2>Query</h2>
-<pre>[% dump(a.query) %]</pre>
+<pre>
+[% query_desig(a.query) %]
+</pre>
+
+[% BLOCK querypart %]
+
+[% END %]
 
 <h2>Stacktrace</h2>
 <pre>[% a.trace %]</pre>
