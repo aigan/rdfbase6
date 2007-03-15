@@ -134,7 +134,7 @@ An arc can have diffrent versions
 
 Only one version of an arc can be active
 
-An deactivated arc can't be activated. The actication of a previous
+A deactivated arc can't be activated. The activation of a previous
 version is done by creating a new version.
 
 An arc can only be deactivated by the activation of a new version. The
@@ -206,7 +206,7 @@ Inference:
 Infered arcs will be created without any data about voting, submission
 or the other things.
 
-The infered arc will have the infered bool set.
+The infered arc will have the indirect bool set.
 
 We may use some of the other fields for keeping some inference
 information.
