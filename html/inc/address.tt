@@ -8,9 +8,9 @@
      [% END %]
   </td></tr>
 
-  [% IF node.zipcode %]
+  [% IF node.zip_code %]
   <tr><td>Postnummer</td>
-     <td>[% input('adr_zipcode', node.zipcode.loc) %](gammal)</td>
+     <td>[% input('adr_zipcode', node.zip_code.loc) %](gammal)</td>
   </tr>
   [% ELSE %]
   <tr><td>Postnummer</td>

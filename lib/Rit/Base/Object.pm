@@ -155,7 +155,7 @@ we could have
 
   $obj -name-> $valobj,
   $valobj -value-> $name,
-  $valobj -language-> $langobj.
+  $valobj -is_of_language-> $langobj.
 
 =cut
 

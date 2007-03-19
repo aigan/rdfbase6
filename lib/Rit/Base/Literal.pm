@@ -222,7 +222,7 @@ This converts the literal to a value node.
 
 Example:
 
-  $node->name->update( language => $C_swedish );
+  $node->name->update( is_of_language => $C_swedish );
 
 =cut
 

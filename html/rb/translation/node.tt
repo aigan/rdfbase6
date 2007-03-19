@@ -21,15 +21,15 @@
 
 <table>
 <tr><th>Språk <th>Arc <th>Text <th>Prio
-[% FOREACH arc IN node.arc_list(pred).sorted(['obj.language.code',{on='obj.weight' dir='desc'}]) %]
+[% FOREACH arc IN node.arc_list(pred).sorted(['obj.is_of_language.code',{on='obj.weight' dir='desc'}]) %]
    [% aid = arc.id %]
    [% tr2%]
-   [% l = arc.obj.language %]
+   [% l = arc.obj.is_of_language %]
    <td>
    [% IF arc.obj %]
-      [% l.code %] [% hidden("arc_${aid}_language", l.id) %]
+      [% l.code %] [% hidden("arc_${aid}_is_of_language", l.id) %]
    [% ELSE %]
-      [% select("arc_${aid}_language", '', langlist)%]
+      [% select("arc_${aid}_is_of_language", '', langlist)%]
    [% END %]
    <td>[% jump(aid, "$home/admin/arc_edit.tt", id=aid) %]
    <td>
@@ -41,7 +41,7 @@
    <td align="right">[% select("arc_${aid}_weight", arc.obj.weight, {''='-','1'=1,'2'=2}, undef,undef,'-') %]
 [% END %]
 <tr>
-<td>[% select('new_language', '', langlist)%]
+<td>[% select('new_is_of_language', '', langlist)%]
 <td><td>[% input('new_val') %] <td>[% select('new_weight', '', {''='-','1'=1,'2'=2}, undef,undef,'-') %]
 </table>
 

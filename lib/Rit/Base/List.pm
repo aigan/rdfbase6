@@ -764,10 +764,10 @@ Sort all predicates on id:
 
   my $predlist = Rit::Base::Pred->find->sorted('id');
 
-Loop over the name arcs of a node, sorted by firstly on the language
+Loop over the name arcs of a node, sorted by firstly on the is_of_language
 code and secondly on the weight in reverse order:
 
-  [% FOREACH arc IN n.arc_list('name').sorted(['obj.language.code',{on='obj.weight' dir='desc'}]) %]
+  [% FOREACH arc IN n.arc_list('name').sorted(['obj.is_of_language.code',{on='obj.weight' dir='desc'}]) %]
 
 Returns:
 
@@ -1069,7 +1069,7 @@ sub loc
 	# TODO: correct?
 	if( ref $item and UNIVERSAL::isa($item, 'Rit::Base::Resource::Compatible') )
 	{
-	    my $langs = $item->list('language');
+	    my $langs = $item->list('is_of_language');
 	    if( @$langs )
 	    {
 		foreach my $lang ( @$langs )
@@ -1175,7 +1175,7 @@ sub loc
 
 my $prop = $list->loc_by_lang( [ 'sv', 'c' ] );
 
-Returns one prop from the list, chosen first on language and then on
+Returns one prop from the list, chosen first on is_of_language and then on
 weight.
 
 =cut
@@ -1204,7 +1204,7 @@ sub loc_by_lang
 	    UNIVERSAL::isa($prop, 'Rit::Base::Resource::Compatible') )
 	{
 	    my $propweight = $prop->weight || 0;
-	    my $lprio = $lang{ $prop->language->code } || 0;
+	    my $lprio = $lang{ $prop->is_of_language->code } || 0;
 
 	    next unless( $lprio or defined $lang{'c'} );
 

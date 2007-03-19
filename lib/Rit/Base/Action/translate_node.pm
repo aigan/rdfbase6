@@ -98,10 +98,10 @@ sub handler
 	    }
 
 	    my $props = {};
-	    if( my $lc = $q->param("arc_${aid}_language") )
+	    if( my $lc = $q->param("arc_${aid}_is_of_language") )
 	    {
 		my $l = Rit::Base::Resource->get({code=>$lc, is=>$C_language});
-		$props->{'language'} = $l;
+		$props->{'is_of_language'} = $l;
 	    }
 
 	    if( my $weight_new = $q->param("arc_${aid}_weight") )
@@ -121,10 +121,10 @@ sub handler
 	$n->add($p => $lit );
 
 	my $props = {};
-	if( my $lc = $q->param("new_language") )
+	if( my $lc = $q->param("new_is_of_language") )
 	{
 	    my $l = Rit::Base::Resource->get({code=>$lc, is=>$C_language});
-	    $props->{'language'} = $l;
+	    $props->{'is_of_language'} = $l;
 	}
 
 	if( my $weight_new = $q->param("new_weight") )
@@ -136,7 +136,7 @@ sub handler
     }
 
     $q->delete('new_val');
-    $q->delete("new_language");
+    $q->delete("new_is_of_language");
     $q->delete("new_weight");
 
     $req->change->report;

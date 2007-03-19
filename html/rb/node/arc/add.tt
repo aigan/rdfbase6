@@ -27,8 +27,8 @@
 
 <p>Examples:
 <pre>
-name Sverige -> language sv (code)
-name Sweden  -> language en (code)
+name Sverige -> is_of_language sv (code)
+name Sweden  -> is_of_language en (code)
 is country
 </pre>
 </p>

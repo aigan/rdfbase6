@@ -491,14 +491,14 @@ a props hash with pred/value pairs.
 
 Example:
 
-  name Sverige -> language sv (code)
+  name Sverige -> is_of_language sv (code)
   is country
 
 This would create a node with the properties
 
   $valnode1 =
   {
-    language => 'sv (code)',
+    is_of_language => 'sv (code)',
     value    => 'Sverige',
     datatype => $text,
   }

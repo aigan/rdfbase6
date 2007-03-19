@@ -27,24 +27,26 @@ sub handler
     my $dbix = $Rit::dbix;
     my $dbh = $dbix->dbh;
 
+
+}
+
+
+sub create_database
+{
     my $dbuser = $q->param('dbuser') or die "dbuser missing";
 
+#
+# Create database rgv6 with owner rit encoding UNICODE;
+#
 
     $dbh->do("CREATE SEQUENCE node_seq");
-
-    $dbh->do("CREATE TABLE pred (
-    id int NOT NULL UNIQUE,
-    label varchar(32) PRIMARY KEY,
-    coltype smallint NOT NULL CONSTRAINT coltype_max CHECK (coltype<5)
-    )");
-
 
     $dbh->do("CREATE TABLE arc (
     id int NOT NULL,
     ver int PRIMARY KEY,
     replaces int REFERENCES arc (ver),
     subj int NOT NULL,
-    pred int NOT NULL REFERENCES pred (id),
+    pred int NOT NULL REFERENCES node (node),
     source int NOT NULL,
     active boolean NOT NULL,
     indirect boolean NOT NULL,
@@ -95,13 +97,30 @@ sub handler
     $dbh->do("CREATE INDEX arc_valclean_idx ON arc (valclean, active)");
 
 
-    $dbh->do("CREATE TABLE constant (
-    subj integer NOT NULL UNIQUE,
-    label varchar(64) PRIMARY KEY,
-    updated timestamp with time zone NOT NULL,
-    updated_by integer NOT NULL
+    $dbh->do("CREATE TABLE node (
+    node int PRIMARY KEY,
+    label varchar(64) UNIQUE,
+    owned_by int,
+    read_access int,
+    write_access int,
+    pred_coltype smallint CONSTRAINT coltype_max CHECK (pred_coltype<6),
+    created TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_by int NOT NULL,
+    updated TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_by int NOT NULL
     )");
 
+    $dbh->do("CREATE INDEX node_label_idx ON node (label)");
+
+    $dbh->do("CREATE INDEX node_ownded_by_idx ON node (owned_by)");
+
+    $dbh->do("CREATE INDEX node_created_idx ON node (created)");
+
+    $dbh->do("CREATE INDEX node_created_by_idx ON node (created_by)");
+
+    $dbh->do("CREATE INDEX node_updated_idx ON node (updated)");
+
+    $dbh->do("CREATE INDEX node_updated_by_idx ON node (updated_by)");
 }
 
 

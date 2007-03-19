@@ -41,7 +41,7 @@ sub handler
 	throw('validation', "The node must be a website_text");
     }
 
-    my $arcs = $n->find_arcs( 'description' => {language=>$l});
+    my $arcs = $n->find_arcs( 'description' => {is_of_language=>$l});
 
     if( my $arc = $arcs->get_first_nos )
     {
@@ -52,7 +52,7 @@ sub handler
 	my $pred = Rit::Base::Pred->get_by_label( 'description' );
 	my $props =
 	{
-	 language => $l,
+	 is_of_language => $l,
 	 value => $trt,
 	 datatype => $pred->valtype,
 	};
