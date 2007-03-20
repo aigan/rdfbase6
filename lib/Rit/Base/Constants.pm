@@ -62,12 +62,18 @@ sub import
 
     my $temp = bless{NOT_INITIALIZED=>1};
 
+    my $updating_db = 0;
+    if( $ARGV[0] eq 'upgrade' )
+    {
+	$updating_db = 1;
+    }
+
     foreach my $const ( @_ )
     {
 	$const =~ /^\$C_(\w+)/ or croak "malformed constant: $const";
 	debug 2, "Package $callpkg imports $1";
 
-	if( $Rit::dbix )
+	if( $Rit::dbix and not $updating_db  )
 	{
 	    my $obj = $class->get($1);
 	    *{"$callpkg\::C_$1"} = \ $obj;
