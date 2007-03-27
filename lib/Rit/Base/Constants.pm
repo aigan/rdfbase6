@@ -329,7 +329,7 @@ sub init
     my( $class ) = @_;
 
     my $dbh = $Rit::dbix->dbh;
-    foreach my $colname (qw(valdate valfloat valtext valbin obj))
+    foreach my $colname (qw(valdate valfloat valtext valbin))
     {
 	my $sth = $dbh->prepare("select node from node where label=?") or die;
 	$sth->execute($colname) or die;
@@ -344,6 +344,7 @@ sub init
 	    debug "Valtype $nid = $colname";
 	}
     }
+    $Rit::Base::COLTYPE_valtype2name{5} = 'obj';
 
     no strict 'refs'; # Symbolic refs
     foreach my $export (@Initlist)
