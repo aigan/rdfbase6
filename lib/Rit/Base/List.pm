@@ -567,6 +567,40 @@ sub find
 						 'eq', $clean );
 		}
 	    }
+	    elsif( $match eq 'exist' )
+	    {
+		debug "    match is exist" if $DEBUG;
+		if( $rev )
+		{
+		    if( $target_value ) # '1'
+		    {
+			debug "Checking rev exist true";
+			next PRED
+			  if( $node->has_revpred( $pred ) );
+		    }
+		    else
+		    {
+			debug "Checking rev exist false";
+			next PRED
+			  unless( $node->has_revpred( $pred ) );
+		    }
+		}
+		else
+		{
+		    if( $target_value ) # '1'
+		    {
+			debug "Checking rel exist true";
+			next PRED
+			  if( $node->has_pred( $pred ) );
+		    }
+		    else
+		    {
+			debug "Checking rel exist false";
+			next PRED
+			  unless( $node->has_pred( $pred ) );
+		    }
+		}
+	    }
 	    elsif( ($match eq 'begins') or ($match eq 'like') )
 	    {
 		debug "    match is $match" if $DEBUG;

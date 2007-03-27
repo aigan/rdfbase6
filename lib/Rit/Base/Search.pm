@@ -723,7 +723,9 @@ sub modify
 		$predref = [$pred];
 	    }
 
-	    if( $values[0] eq '*' )
+	    if( (not ref $values[0] or
+		 UNIVERSAL::isa($values[0],'Rit::Base::String') ) and
+		($values[0] eq '*') )
 	    {
 		$match = 'exist';
 	    }
@@ -731,9 +733,9 @@ sub modify
 	    if( $type eq 'valtext' )
 	    {
 		if( $clean )
- 		{
- 		    $type = 'valclean';
- 		}
+		{
+		    $type = 'valclean';
+		}
 	    }
 	    elsif( $type eq 'obj' )
 	    {
@@ -758,6 +760,15 @@ sub modify
 		    {
 			push @new, undef;
 		    }
+		}
+		@values = @new;
+	    }
+	    elsif( $type eq 'valdate' )
+	    {
+		my @new;
+		foreach my $val ( @values )
+		{
+		    push @new, $Rit::dbix->format_datetime($val);
 		}
 		@values = @new;
 	    }
