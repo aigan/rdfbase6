@@ -91,7 +91,7 @@ sub populate_all
 {
     my( $l ) = @_;
 
-    debug "POPULATING RB result";
+#    debug "POPULATING RB result";
 
     return $l->{'_DATA'} if $l->{'populated'} > 1;
 
@@ -102,12 +102,12 @@ sub populate_all
 
     foreach my $rb_search ( @{$search->{'rb_search'}} )
     {
-	debug "Adding data from $rb_search";
+#	debug "Adding data from $rb_search";
 	$l->add_part( $rb_search->result->as_raw_arrayref);
     }
     if( my $res = $search->{'custom_result'} )
     {
-	debug "Adding data from custom result";
+#	debug "Adding data from custom result";
 	$l->add_part( $res );
     }
 

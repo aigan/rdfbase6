@@ -815,7 +815,7 @@ sub init
     $pred->{'name'}         = $rec->{'label'};
     $pred->{'coltype'}      = $rec->{'pred_coltype'};
 
-    debug "--> Initiated pred $pred->{name}: ".datadump($pred);
+#    debug "--> Initiated pred $pred->{name}: ".datadump($pred);
 #    confess datadump($rec) if $id==14; ######## DEBUG
 
     return $pred;

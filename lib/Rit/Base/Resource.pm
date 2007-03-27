@@ -132,7 +132,7 @@ sub get
     return undef unless $id;
     my $node;
 
-    debug "Getting $id ($class)";
+#    debug "Getting $id ($class)";
 
     # Get the resource id
     #
@@ -141,7 +141,7 @@ sub get
 	if( ref $id and UNIVERSAL::isa($id, 'Rit::Base::Resource::Compatible') )
 	{
 	    # This already is a (node?) obj
-	    debug "Got     $id";
+#	    debug "Got     $id";
 	    return $id;
 	}
 
@@ -161,7 +161,7 @@ sub get
 
 	    # Cache id lookups
 	    #
-	    debug "Got $id: Caching node $resolved_id: $node";
+#	    debug "Got $id: Caching node $resolved_id: $node";
 	    $Rit::Base::Cache::Resource{ $resolved_id } = $node;
 
 	    return $node;
@@ -174,7 +174,7 @@ sub get
     #
     if( $node = $Rit::Base::Cache::Resource{ $id } )
     {
-	debug "Got     $id from Resource cache: $node";
+#	debug "Got     $id from Resource cache: $node";
 	return $node;
     }
 
@@ -183,7 +183,7 @@ sub get
 
     $node->first_bless;
 
-    debug "Got     $id ($node)";
+#    debug "Got     $id ($node)";
 
     return $node;
 }
@@ -2414,16 +2414,7 @@ sub first_arc
 {
        my( $node, $name ) = @_;
 
-       debug "Initiating(1) prop $name for $node->{id}";
-       confess if $node->{'initiated_relprop'}{'value'};
-
-       if( ($node->id == 757871) and ($name eq 'value') ) ### DEBUG
-       {
-	   $Para::Frame::REQ->session->set_debug(4);
-	   debug datadump($node,2); ### DEBUG
-       }
-
-
+#       debug "Initiating(1) prop $name for $node->{id}";
        $node->initiate_prop( $name );
        return is_undef unless defined $node->{'relarc'}{$name};
        return $node->{'relarc'}{$name}[0] || is_undef;
@@ -4508,15 +4499,7 @@ sub initiate_prop
     return $node->{'relarc'}{ $name } if $node->{'initiated_relprop'}{$name};
     return undef if $node->{'initiated_rel'};
 
-       if( ($node->id == 757871) and ($name eq 'value') ) ### DEBUG
-       {
-	   $Para::Frame::REQ->session->set_debug(4);
-	   debug datadump($node,2);
-       }
-
     debug 4, "Initiating(2) prop $name for $node->{id}";
-    confess if $name eq 'coltype';
-
 
     my $nid = $node->id;
     confess "Node id missing: ".datadump($node,3) unless $nid;
@@ -4775,17 +4758,11 @@ sub populate_rel
 {
     my( $node, $stmt, $nocount ) = @_;
 
-       if( ($node->id == 757871) ) ### DEBUG
-       {
-	   $Para::Frame::REQ->session->set_debug(4);
-	   debug datadump($node,2);
-       }
-
     my $class = ref($node);
 
     # Oh, yeah? Like I care?!?
     my $pred_name = Rit::Base::Pred->get( $stmt->{'pred'} )->name;
-    debug "Populating node $node->{id} prop $pred_name"; ### DEBUG
+#    debug "Populating node $node->{id} prop $pred_name"; ### DEBUG
     if(($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1)
     {
 	debug 4, "NOT creating arc";
