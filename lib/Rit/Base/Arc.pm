@@ -1169,7 +1169,14 @@ L<Rit::Base::Resource/is_value_node>.
 sub coltype
 {
     my( $arc ) = @_;
-    return $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} };
+    if( my $name = $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} } )
+    {
+	return $name;
+    }
+    else
+    {
+	confess "No name registred for arc $arc->{'id'} valtype $arc->{'valtype'}";
+    }
 }
 
 
@@ -2130,7 +2137,7 @@ sub get_by_rec_and_register
     my $id = $_[0]->{id} or
       croak "get_by_rec misses the id param: ".datadump($_[0],2);
 
-    debug "Re-Registring arc $id";
+#    debug "Re-Registring arc $id";
 
     if( my $arc = $Rit::Base::Cache::Resource{$id} )
     {
@@ -2188,8 +2195,6 @@ sub init
     }
 
 
-    debug datadump $rec; ### DEBUG
-
     my $DEBUG = 0;#1 if $id == 1023211;
     if( $DEBUG )
     {
@@ -2245,7 +2250,7 @@ sub init
 	$value = is_undef;
     }
 
-    debug "Value =====> $value";
+#    debug "Value =====> $value";
 
 
     my $clean = $rec->{'valclean'};
@@ -2270,6 +2275,24 @@ sub init
     $arc->{'updated'} = $updated;
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
+
+    ########## NEW data (db v6)
+    #
+    $arc->{'ver'} = $rec->{'ver'};
+    $arc->{'replaces'} = $rec->{'replaces'};
+    $arc->{'source'} = $rec->{'source'};
+    $arc->{'active'} = $rec->{'active'};
+    $arc->{'submitted'} = $rec->{'submitted'};
+    $arc->{'read_access'} = $rec->{'read_access'};
+    $arc->{'write_access'} = $rec->{'write_access'};
+    $arc->{'activated'} = $rec->{'activated'};
+    $arc->{'activated_by'} = $rec->{'activated_by'};
+    $arc->{'deactivated'} = $rec->{'deactivated'};
+    $arc->{'unsubmitted'} = $rec->{'unsubmitted'};
+    $arc->{'valtype'} = $rec->{'valtype'}; # Get obj on demand
+    #
+    ####################################
+
 
     # Store arc in cache (if not yet done)
     #
