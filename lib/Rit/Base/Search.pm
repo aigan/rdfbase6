@@ -773,7 +773,7 @@ sub modify
 
 	    if( $rev )
 	    {
-		$type = 'sub';
+		$type = 'subj';
 	    }
 
 	    $search->add_prop({
@@ -1509,7 +1509,7 @@ sub build_outer_select
     my @values = ();
     my @sortkeys = ();
 
-    push @parts, 'node as sub';
+    push @parts, 'node as subj';
 
     if( $search->{'query'}{'sorttype'}{'score'} )
     {
@@ -1612,7 +1612,7 @@ sub build_main_where
 
 	my @where = ref $part->{'where'} ? @{$part->{'where'}} : $part->{'where'};
 
-	my $part_sql = join " UNION ", map "select 1 from rel where $select=main.node and $_", @where;
+	my $part_sql = join " UNION ", map "select 1 from arc where $select=main.node and $_", @where;
 
 	my $sql;
 	if( $part->{'negate'} )
@@ -1649,7 +1649,7 @@ sub build_main_from
 	if( my $where = $part->{'where'} )
 	{
 	    my @where = ref $part->{'where'} ? @{$part->{'where'}} : $part->{'where'};
-	    $part_sql .= join " UNION ", map "select $part->{'select'} as node from rel where $_", @where;
+	    $part_sql .= join " UNION ", map "select $part->{'select'} as node from arc where $_", @where;
 	}
 	else
 	{
@@ -1663,7 +1663,7 @@ sub build_main_from
 	    # We save more time in the common case if we only use 'distinct'
 	    # in cases it relay cuts down the number of records
 	    #
-	    $part_sql .= "select distinct $part->{'select'} from rel";
+	    $part_sql .= "select distinct $part->{'select'} from arc";
 	}
 
 	push @part_sql_list, $part_sql;
@@ -1766,10 +1766,10 @@ sub build_outer_select_field
 	my $coltype = $pred->coltype;
 	# Sort on real value. Not clean
 
-	my $where = "sub=frame.node";
+	my $where = "subj=frame.node";
 	if( $sql )
 	{
-	    $where = "sub in ($sql)";
+	    $where = "subj in ($sql)";
 	}
 
 	if( $tr )
@@ -1780,23 +1780,23 @@ sub build_outer_select_field
 	    }
 
 	    # Sort by weight
-	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from rel where pred=4 and sub=${sortkey}_inner.obj) ELSE $coltype END, CASE WHEN obj is not null THEN (select valint from rel where pred=302 and sub=${sortkey}_inner.obj) ELSE 0 END as weight from rel as ${sortkey}_inner where $where and pred=? order by weight limit 1) as ${sortkey}_mid";
+	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=302 and subj=${sortkey}_inner.obj) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? order by weight limit 1) as ${sortkey}_mid";
 	}
 	elsif( $dir eq 'exists' )
 	{
-	    $sql = "COALESCE((select 1 from rel where $where and pred=? limit 1),0)";
+	    $sql = "COALESCE((select 1 from arc where $where and pred=? limit 1),0)";
 	}
 	elsif( ($coltype eq 'valint') or ($coltype eq 'valfloat') )
 	{
-	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),0)";
+	    $sql = "COALESCE((select $coltype from arc where $where and pred=? limit 1),0)";
 	}
 	elsif( $coltype eq 'valtext' )
 	{
-	    $sql = "COALESCE((select $coltype from rel where $where and pred=? limit 1),'')";
+	    $sql = "COALESCE((select $coltype from arc where $where and pred=? limit 1),'')";
 	}
 	else # valdate or obj
 	{
-	    $sql = "select $coltype from rel where $where and pred=? limit 1";
+	    $sql = "select $coltype from arc where $where and pred=? limit 1";
 	}
 
 	push @values, $pred->id;
@@ -1826,8 +1826,8 @@ sub build_main_select_group
     {
 	### 'Distinct' evades error from dirty DB data
 	my $sql = "select distinct $elem->{'select'} ";
-	$sql   .= "from rel ";
-	$sql   .= "where sub=main.node and ";
+	$sql   .= "from arc ";
+	$sql   .= "where subj=main.node and ";
 	$sql   .= $elem->{'where'};
 
 	$sql = "($sql) as ".$elem->{'name'};
@@ -1850,16 +1850,16 @@ sub build_main_select_price
 "
               (
                select sum(rel2.valint)
-               from rel as rel1, rel as rel2
+               from arc as rel1, rel as rel2
                where
-                   rel1.sub=main.node and rel1.obj=rel2.sub and rel2.pred=302 and rel1.indirect is false and
+                   rel1.subj=main.node and rel1.obj=rel2.subj and rel2.pred=302 and rel1.indirect is false and
                    exists
                    (
                        select 1
-                       from rel
-                       where sub=rel2.sub and pred=1 and obj=1111
+                       from arc
+                       where subj=rel2.sub and pred=1 and obj=1111
                    )
-               group by rel1.sub
+               group by rel1.subj
            ) as price
 ";
 
@@ -1880,7 +1880,7 @@ sub elements_path
 
 	push @element,
 	{
-	    select => 'sub',
+	    select => 'subj',
 	    where => $where,
 	    values => $path_values,
 	    prio => $prio,
@@ -1914,7 +1914,7 @@ sub elements_props
 	    $prio = set_prio( $cond );
 	}
 
-	my $select = ($rev ? 'obj' : 'sub');
+	my $select = ($rev ? 'obj' : 'subj');
 	my $where;
 	my @outvalues;
 
@@ -1961,7 +1961,7 @@ sub elements_props
 	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->name->plain eq 'id') )
 	{
-	    $where = join(" or ", map "sub = ?", @$invalues);
+	    $where = join(" or ", map "subj = ?", @$invalues);
 	    @outvalues = @$invalues; # value should be numeric
 	    $prio = 1;
 	}
@@ -1979,7 +1979,7 @@ sub elements_props
 		# See time comparsion in doc/notes2.txt
 		$where =
 		  [
-		   "$pred_part and obj in ( select sub from rel where pred=4 and ($matchpart) )",
+		   "$pred_part and obj in ( select subj from arc where pred=4 and ($matchpart) )",
 		   "$pred_part and ($matchpart)",
 		  ];
 		@outvalues = ( @pred_ids, @matchvalues, @pred_ids, @matchvalues );
@@ -1995,7 +1995,7 @@ sub elements_props
 	{
 #	    debug sprintf("--> add stats for props search? (type $type, pred %s, vals %s)\n",
 #			 $pred->name, join '-', map $_, @$invalues);
-	    if( $type =~ /^(obj|sub|id)$/ )
+	    if( $type =~ /^(obj|subj|id)$/ )
 	    {
 		foreach my $node_id ( @$invalues )
 		{
@@ -2082,11 +2082,11 @@ sub build_path_part
     {
 	my $pred_id = Rit::Base::Pred->get_id($step);
 
-	$where = "pred=? and obj in (select sub from rel where $where)";
+	$where = "pred=? and obj in (select subj from arc where $where)";
 	unshift @path_values, $pred_id;
     }
 
-    my $sql = "select sub from rel where $where";
+    my $sql = "select subj from arc where $where";
 
 #    my $time = time;
     my $result = $Rit::dbix->select_list( $sql, @path_values );
@@ -2118,7 +2118,7 @@ sub build_path_part
     {
 	foreach my $rec ( @$result )
 	{
-	    getnode($rec->{'sub'})->log_search;
+	    getnode($rec->{'subj'})->log_search;
 	}
     }
 
@@ -2129,7 +2129,7 @@ sub build_path_part
     }
     elsif( @$result )
     {
-	my $value = $result->[0]->{'sub'};
+	my $value = $result->[0]->{'subj'};
 	return( "$pred_part and obj=?", [@pred_ids, $value], 2);
     }
     else
@@ -2194,7 +2194,7 @@ sub set_prio
 	my @predid = map $_->id, $preds->as_array;
 	my $sqlor = join " or ", map "pred=?", @predid;
 	my $valor = join " or ", map "$coltype=?", @$vals;
-	my $sql = "select count(sub) from rel where ($sqlor)";
+	my $sql = "select count(subj) from arc where ($sqlor)";
 	if( $valor )
 	{
 	    $sql .= " and ($valor)";
@@ -2227,7 +2227,7 @@ sub set_prio
 	return $DBSTAT{$key} if defined $DBSTAT{$key};
 
 	my $valor = join " or ", map "$coltype=?", @$vals;
-	my $sql = "select count(sub) from rel where (pred=?)";
+	my $sql = "select count(subj) from arc where (pred=?)";
 	if( $valor )
 	{
 	    $sql .= " and ($valor)";

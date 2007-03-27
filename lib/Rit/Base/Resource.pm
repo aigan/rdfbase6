@@ -132,7 +132,7 @@ sub get
     return undef unless $id;
     my $node;
 
-#    debug "Getting $id ($class)";
+    debug "Getting $id ($class)";
 
     # Get the resource id
     #
@@ -141,7 +141,7 @@ sub get
 	if( ref $id and UNIVERSAL::isa($id, 'Rit::Base::Resource::Compatible') )
 	{
 	    # This already is a (node?) obj
-#	    debug "Got     $id";
+	    debug "Got     $id";
 	    return $id;
 	}
 
@@ -161,7 +161,7 @@ sub get
 
 	    # Cache id lookups
 	    #
-#	    debug "Got    $id: Caching node $resolved_id: $node";
+	    debug "Got $id: Caching node $resolved_id: $node";
 	    $Rit::Base::Cache::Resource{ $resolved_id } = $node;
 
 	    return $node;
@@ -174,7 +174,7 @@ sub get
     #
     if( $node = $Rit::Base::Cache::Resource{ $id } )
     {
-#	debug "Got     $id from Resource cache: $node";
+	debug "Got     $id from Resource cache: $node";
 	return $node;
     }
 
@@ -183,7 +183,7 @@ sub get
 
     $node->first_bless;
 
-#    debug "Got     $id ($node)";
+    debug "Got     $id ($node)";
 
     return $node;
 }
@@ -205,8 +205,8 @@ sub get_by_rec
 {
     my $this = shift;
 
-    my $id = $_[0]->{id} or
-      croak "get_by_rec misses the id param: ".datadump($_[0],2);
+    my $id = $_[0]->{'node'} or
+      confess "get_by_rec misses the id param: ".datadump($_[0],2);
     return $Rit::Base::Cache::Resource{$id} || $this->new($id)->init(@_);
 }
 
@@ -669,7 +669,7 @@ sub find_simple
     unless( defined $list ) # Avoid using list overload
     {
 	my @nodes;
-	my $st = "select sub from rel where pred=? and valclean=?";
+	my $st = "select subj from arc where pred=? and valclean=?";
 	my $dbh = $Rit::dbix->dbh;
 	my $sth = $dbh->prepare($st);
 	$sth->execute($pred_id, $value);
@@ -2041,7 +2041,7 @@ sub count
     my $pred_id = Rit::Base::Pred->get_id( $pred_name );
 
     my $dbh = $Rit::dbix->dbh;
-    my $sth = $dbh->prepare( "select count(id) as cnt from rel where pred=? and sub=?" );
+    my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and subj=?" );
     $sth->execute( $pred_id, $node->id );
     my( $cnt ) =  $sth->fetchrow_array;
     return $cnt;
@@ -2076,7 +2076,7 @@ sub revcount
     my $pred_id = Rit::Base::Pred->get_id( $pred_name );
 
     my $dbh = $Rit::dbix->dbh;
-    my $sth = $dbh->prepare( "select count(id) as cnt from rel where pred=? and obj=?" );
+    my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and obj=?" );
     $sth->execute( $pred_id, $node->id );
     my( $cnt ) =  $sth->fetchrow_array;
     $sth->finish;
@@ -2413,6 +2413,17 @@ predicate.
 sub first_arc
 {
        my( $node, $name ) = @_;
+
+       debug "Initiating(1) prop $name for $node->{id}";
+       confess if $node->{'initiated_relprop'}{'value'};
+
+       if( ($node->id == 757871) and ($name eq 'value') ) ### DEBUG
+       {
+	   $Para::Frame::REQ->session->set_debug(4);
+	   debug datadump($node,2); ### DEBUG
+       }
+
+
        $node->initiate_prop( $name );
        return is_undef unless defined $node->{'relarc'}{$name};
        return $node->{'relarc'}{$name}[0] || is_undef;
@@ -3151,7 +3162,8 @@ sub equals
 	}
 	else
 	{
-	    die "not implemented: $node2";
+#	    die "not implemented: $node2";
+	    die "not implemented: ".datadump($node2);
 	}
     }
 
@@ -3622,7 +3634,7 @@ sub tree_select_data
 
     my $name = $node->name->loc;
     debug 2, "Processing treepart $id: $name";
-    my $rec = $Rit::dbix->select_record("select count(id) as cnt from rel where pred=? and obj=?", $pred_id, $id);
+    my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=?", $pred_id, $id);
     my $cnt = $rec->{'cnt'};
     debug 3, "                    $id: $cnt nodes";
     my $flags = " ";
@@ -3778,7 +3790,7 @@ sub first_bless
 	{
 	    # Check if this is an arc
 	    #
-	    my $sth_id = $Rit::dbix->dbh->prepare("select * from rel where id = ?");
+	    my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where id = ?");
 	    $sth_id->execute($node->{'id'});
 	    my $rec = $sth_id->fetchrow_hashref;
 	    $sth_id->finish;
@@ -4361,7 +4373,7 @@ sub initiate_rel
     my $nid = $node->id;
 
     # Get statements for node $id
-    my $sth_init_sub_name = $Rit::dbix->dbh->prepare("select * from rel where sub in(select obj from rel where (sub=? and pred=11)) UNION select * from rel where sub=?");
+    my $sth_init_sub_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from rel where (subj=? and pred=11)) UNION select * from rel where subj=?");
     $sth_init_sub_name->execute($nid, $nid);
     my $stmts = $sth_init_sub_name->fetchall_arrayref({});
     $sth_init_sub_name->finish;
@@ -4370,13 +4382,13 @@ sub initiate_rel
     my $cnt = 0;
     foreach my $stmt ( @$stmts )
     {
-	if( $stmt->{'sub'} == $nid )
+	if( $stmt->{'subj'} == $nid )
 	{
 	    $node->populate_rel( $stmt );
 	}
 	else # A literal resource for pred name
 	{
-	    my $subnode = $node->get( $stmt->{'sub'} );
+	    my $subnode = $node->get( $stmt->{'subj'} );
 	    $subnode->populate_rel( $stmt );
 	    push @extra_nodes_initiated, $subnode;
 	}
@@ -4422,7 +4434,7 @@ sub initiate_rev
     my $nid = $node->id;
 
 
-    my $sql = "select * from rel where obj=?";
+    my $sql = "select * from arc where obj=?";
     if( $arclim )
     {
 	if( $arclim eq 'direct' )
@@ -4493,11 +4505,18 @@ sub initiate_prop
 {
     my( $node, $name ) = @_;
 
-    confess datadump \@_ unless ref $node; ### DEBUG
     return $node->{'relarc'}{ $name } if $node->{'initiated_relprop'}{$name};
     return undef if $node->{'initiated_rel'};
 
-    debug 4, "Initiating prop $name for $node->{id}";
+       if( ($node->id == 757871) and ($name eq 'value') ) ### DEBUG
+       {
+	   $Para::Frame::REQ->session->set_debug(4);
+	   debug datadump($node,2);
+       }
+
+    debug 4, "Initiating(2) prop $name for $node->{id}";
+    confess if $name eq 'coltype';
+
 
     my $nid = $node->id;
     confess "Node id missing: ".datadump($node,3) unless $nid;
@@ -4519,14 +4538,14 @@ sub initiate_prop
 	my $stmts;
 	if( $pred_id == 11 ) # Optimization...
 	{
-	    my $sth_init_sub_pred_name = $Rit::dbix->dbh->prepare("select * from rel where sub in(select obj from rel where (sub=? and pred=?)) UNION select * from rel where (sub=? and pred=?)");
+	    my $sth_init_sub_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=?)) UNION select * from arc where (subj=? and pred=?)");
 	    $sth_init_sub_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
 	    $stmts = $sth_init_sub_pred_name->fetchall_arrayref({});
 	    $sth_init_sub_pred_name->finish;
 	}
 	else
 	{
-	    my $sth_init_sub_pred = $Rit::dbix->dbh->prepare("select * from rel where sub=? and pred=?");
+	    my $sth_init_sub_pred = $Rit::dbix->dbh->prepare("select * from arc where subj=? and pred=?");
 	    $sth_init_sub_pred->execute( $nid, $pred_id );
 	    $stmts = $sth_init_sub_pred->fetchall_arrayref({});
 	    $sth_init_sub_pred->finish;
@@ -4554,13 +4573,13 @@ sub initiate_prop
 	{
 	    debug "  populating with ".datadump($stmt,4)
 	      if debug > 4;
-	    if( $stmt->{'sub'} == $nid )
+	    if( $stmt->{'subj'} == $nid )
 	    {
 		$node->populate_rel( $stmt );
 	    }
 	    else
 	    {
-		my $subnode = $node->get_by_id( $stmt->{'sub'} );
+		my $subnode = $node->get_by_id( $stmt->{'subj'} );
 		$subnode->populate_rel( $stmt );
 		push @extra_nodes_initiated, $subnode;
 	    }
@@ -4621,7 +4640,7 @@ sub initiate_revprop
 	    $Rit::Base::timestamp = time;
 	}
 
-	my $sql = "select * from rel where obj=? and pred=?";
+	my $sql = "select * from arc where obj=? and pred=?";
 	if( $arclim )
 	{
 	    if( $arclim eq 'direct' )
@@ -4756,10 +4775,17 @@ sub populate_rel
 {
     my( $node, $stmt, $nocount ) = @_;
 
+       if( ($node->id == 757871) ) ### DEBUG
+       {
+	   $Para::Frame::REQ->session->set_debug(4);
+	   debug datadump($node,2);
+       }
+
     my $class = ref($node);
 
     # Oh, yeah? Like I care?!?
     my $pred_name = Rit::Base::Pred->get( $stmt->{'pred'} )->name;
+    debug "Populating node $node->{id} prop $pred_name"; ### DEBUG
     if(($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1)
     {
 	debug 4, "NOT creating arc";
@@ -5433,7 +5459,7 @@ sub handle_query_row_value
 
     my $pred_name = $arg->{'pred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};   # arc to update. Create arc if undef
-    my $subj_id    = $arg->{'sub'} || $arg->{'subj'};;  # sub for this arc
+    my $subj_id   = $arg->{'subj'};  # sub for this arc
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs
@@ -5560,7 +5586,7 @@ sub handle_query_check_row
 
     my $pred_name = $arg->{'pred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};   # arc to update. Create arc if undef
-    my $subj_id    = $arg->{'sub'} || $arg->{'subj'};  # sub for this arc
+    my $subj_id   = $arg->{'subj'};  # sub for this arc
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs

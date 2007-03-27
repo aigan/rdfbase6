@@ -56,6 +56,7 @@ our $special_id =
 
 our $special_label = { reverse %$special_id };
 
+
 =head1 DESCRIPTION
 
 Represents preds.
@@ -103,28 +104,28 @@ Returns: a L<Rit::Base::List>
 
 sub find
 {
-    my( $this, $props, $default ) = @_;
+    my( $this, $props_in, $default ) = @_;
     my $class = ref($this) || $this;
 
     my $recs;
 
-    if( $props )
+    if( $props_in )
     {
-	unless( ref $props )
+	unless( ref $props_in )
 	{
 	    if( defined $default )
 	    {
-		$props = { $props => $default };
+		$props_in = { $props_in => $default };
 	    }
 	    else
 	    {
-		$props = { 'label' => $props };
+		$props_in = { 'label' => $props_in };
 	    }
 	    $default = undef;
 	}
 
 	# Special case for label lookup
-	if( my $label = $props->{'label'} )
+	if( my $label = $props_in->{'label'} )
 	{
 	    my $pred = $Rit::Base::Cache::PredId{ $label };
 	    my $preds;
@@ -145,26 +146,35 @@ sub find
 
 
 	    # Narrow the serach for the rest of the props
-	    if( scalar(keys %$props) > 2 )
+	    if( scalar(keys %$props_in) > 2 )
 	    {
-		# Do not modify the $props given as argument
-		my %newprops = %$props;
+		# Do not modify the $props_in given as argument
+		my %newprops = %$props_in;
 		delete $newprops{'label'};
 		return $preds->find(\%newprops);
 	    }
 	    return $preds;
 	}
 
+	my $node_props = {};
+	my $props = {};
 
 	my( @values, @parts );
 
-	if( $props->{'valtype'} )
+	foreach my $key ( keys %$props )
 	{
-	    push @parts, "valtype=?";
-	    my $val = $props->{'valtype'};
-	    $val = $val->literal;
-	    push @values, $val;
-	    delete $props->{'valtype'};
+	    if( $key eq 'valtype' )
+	    {
+		push @parts, "valtype=?";
+		my $val = $props->{'valtype'};
+		$val = $val->literal;
+		push @values, $val;
+		die "not implemented: translate $val to number";
+	    }
+	    else
+	    {
+		die "not implemented: $key";
+	    }
 	}
 
 	if( scalar %$props )
@@ -178,7 +188,7 @@ sub find
 	}
 
 	my $and_part = join " and ", @parts;
-	my $st = "select * from reltype where $and_part";
+	my $st = "select * from node where $and_part";
 	my $sth = $Rit::dbix->dbh->prepare($st);
 	$sth->execute(@values);
 	$recs = $sth->fetchall_arrayref({});
@@ -186,7 +196,7 @@ sub find
     }
     else
     {
-	$recs = $Rit::dbix->select_list('from reltype order by label');
+	$recs = $Rit::dbix->select_list('from node where pred_coltype is not null order by label');
     }
 
     my @preds;
@@ -214,18 +224,6 @@ label: See L</label>. Mandatory
 
 valtype: See L</valtype>. Mandatory
 
-comment: Sets a comment. Optional
-
-domain_is: Optional
-
-domain_scof: Optional
-
-range_is: Optional
-
-range_scof: Optional
-
-TODO: Implement the domain and range
-
 Returns: The created object.
 
 =cut
@@ -235,6 +233,11 @@ sub create
     my( $this, $props, $changes_ref ) = @_;
     my $class = ref($this) || $this;
 
+
+    die "not implemented";
+
+
+
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
 
@@ -243,16 +246,16 @@ sub create
 
 
     ##################### id
-    if( $props->{'id'} )
+    if( $props->{'node'} )
     {
-	$rec->{'id'}  = $props->{'id'};
+	$rec->{'node'}  = $props->{'node'};
     }
     else
     {
-	$rec->{'id'}  = $dbix->get_nextval('node_seq');
+	$rec->{'node'}  = $dbix->get_nextval('node_seq');
     }
-    push @fields, 'id';
-    push @values, $rec->{'id'};
+    push @fields, 'node';
+    push @values, $rec->{'node'};
 
 
     ##################### label
@@ -288,18 +291,6 @@ sub create
 	{
 	    $rec->{$key}  = $props->{$key};
 	    $rec->{$key}  = $rec->{$key}->plain if ref $rec->{$key};
-
-	    push @fields, $key;
-	    push @values, $rec->{$key};
-	}
-    }
-
-    ##################### Optional properties
-    foreach my $key (qw(domain_is domain_scof range_is range_scof))
-    {
-	if( $props->{$key} )
-	{
-	    $rec->{$key}  = Rit::Base::Resource->get( $props->{$key} )->id;
 
 	    push @fields, $key;
 	    push @values, $rec->{$key};
@@ -510,6 +501,8 @@ sub set_valtype
 {
     my( $pred, $value ) = @_;
 
+    die "not implemented";
+
     if( defined $value )
     {
 	return $value if $value eq $pred->{'valtype'};
@@ -565,8 +558,6 @@ sub objtype
 Can be called with a subject node or a ref to a hash of properties.
 These are used to find the datatype of a value property.
 
-TODO: Put this in the DB
-
 The retuned value will be one of C<valint>, C<obj>, C<valtext>,
 C<valdate>, C<valfloat>.
 
@@ -578,47 +569,22 @@ sub coltype
 {
     my( $pred, $subj ) = @_;
 
-    # valtype value is note cached
-    unless( $pred->{'coltype'} )
+    my $coltype_num = $pred->{'coltype'}
+      or confess "Pred misses coltype: ".datadump($pred);
+    if( $subj and ($coltype_num == 6) )
     {
-#	warn "Calling valtype for $pred\n";
-	my $valtype = $pred->valtype( $subj );
-
-#	debug "valtype == $valtype\n"; ### DEBUG
-	my $coltype;
-	if   ( $valtype eq "id"       ){ $coltype="valint"  }
-	elsif( $valtype eq "score"    ){ $coltype="valint"  }
-	elsif( $valtype eq "random"   ){ $coltype="valint"  }
-	elsif( $valtype eq "obj"      ){ $coltype="obj"     }
-	elsif( $valtype eq "int"      ){ $coltype="valint"  }
-	elsif( $valtype eq "text"     ){ $coltype="valtext" }
-	elsif( $valtype eq "textbox"  ){ $coltype="valtext" }
-	elsif( $valtype eq "date"     ){ $coltype="valdate" }
-	elsif( $valtype eq "password" ){ $coltype="valtext" }
-	elsif( $valtype eq "bool"     ){ $coltype="valint"  }
-	elsif( $valtype eq "zipcode"  ){ $coltype="valtext" }
-	elsif( $valtype eq "phone"    ){ $coltype="valtext" }
-	elsif( $valtype eq "url"      ){ $coltype="valtext" }
-	elsif( $valtype eq "file"     ){ $coltype="valtext" }
-	elsif( $valtype eq "email"    ){ $coltype="valtext" }
-	elsif( $valtype eq "float"    ){ $coltype="valfloat"}
-	else
+	my $arc = $subj->first_arc('value');
+	unless( $arc )
 	{
-	    confess "valtype $valtype not recognized";
+	    my $desig = $subj->sysdesig;
+	    confess "The subj $desig has no value property";
 	}
-
-	if( $valtype eq "value" )
-	{
-	    return $coltype;
-	}
-	else
-	{
-	    $pred->{'coltype'} = $coltype;
-	}
+	return $arc->coltype;
     }
-
-#    warn "coltype is $pred->{'coltype'}\n";
-    return $pred->{'coltype'};
+    else
+    {
+	return $Rit::Base::COLTYPE_num2name{ $coltype_num };
+    }
 }
 
 #########################################################################
@@ -742,7 +708,7 @@ sub find_by_label
 	return $class->get_by_rec({
 				   label   => $1,
 				   valtype => $1,
-				   id      => $special_id->{$1},
+				   node    => $special_id->{$1},
 				  });
     }
     if( $label =~ /^(desig|loc|plain)$/ )
@@ -750,11 +716,11 @@ sub find_by_label
 	return $class->get_by_rec({
 				   label   => $1,
 				   valtype => 'text',
-				   id      => $special_id->{$1},
+				   node    => $special_id->{$1},
 				  });
     }
 
-    my $sql = 'select * from reltype where ';
+    my $sql = 'select * from node where ';
 
     if( $label =~ /^-?\d+$/ )
     {
@@ -837,29 +803,20 @@ sub init
 	    croak "Pred init misses a rec for negative id";
 	}
 
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from reltype where id = ?")
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from node where node = ?")
 	  or die;
 	$sth_id->execute($id);
 	$rec = $sth_id->fetchrow_hashref;
 	$sth_id->finish;
 	$rec or confess "Predicate '$id' not found";
+	$pred->{'id'}       = $rec->{'node'};
     }
 
     $pred->{'name'}         = $rec->{'label'};
-    $pred->{'valtype'}      = $rec->{'valtype'};
-    $pred->{'comment'}      = $rec->{'comment'};
-    $pred->{'domain_is'}    = $rec->{'domain_is'};
-    $pred->{'domain_scof'}  = $rec->{'domain_scof'};
-    $pred->{'range_is'}     = $rec->{'range_is'};
-    $pred->{'range_scof'}   = $rec->{'range_scof'};
+    $pred->{'coltype'}      = $rec->{'pred_coltype'};
 
-    foreach my $key (qw(domain_is domain_scof range_is range_scof))
-    {
-	if( $rec->{$key} )
-	{
-	    $pred->{$key} = Rit::Base::Resource->get( $rec->{$key} );
-	}
-    }
+    debug "--> Initiated pred $pred->{name}: ".datadump($pred);
+#    confess datadump($rec) if $id==14; ######## DEBUG
 
     return $pred;
 }

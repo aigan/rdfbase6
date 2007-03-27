@@ -45,7 +45,7 @@ our %Constant; # The initiated constants
 our %Constobj; # The initiated constant objects
 our $AUTOLOAD;
 our @Initlist; # Constants to export then the DB is online
-
+our %COLTYPE;
 
 #######################################################################
 
@@ -111,7 +111,7 @@ sub new_by_rec
 {
     my( $this, $rec, $node ) = @_;
 
-    $node ||= Rit::Base::Resource->get_by_id( $rec->{'sub'} );
+    $node ||= Rit::Base::Resource->get_by_id( $rec->{'node'} );
 
     my $const = bless $rec, "Rit::Base::Constant";
     $const->{'node'} = $node;
@@ -144,12 +144,12 @@ sub find
 
     my @list;
     my $sth = $Rit::dbix->dbh->prepare(
-	      "select * from constant");
+	      "select * from node where label is not null");
     $sth->execute();
     while( my $rec = $sth->fetchrow_hashref )
     {
 	my $label = $rec->{'label'};
-	my $id    = $rec->{'sub'};
+	my $id    = $rec->{'node'};
 
 #	debug "Found $id: $label";
 	unless( $Constant{$label} )
@@ -191,7 +191,7 @@ sub get_by_id
     unless( $Constobj{$id} )
     {
 	my $sth = $Rit::dbix->dbh->prepare(
-		  "select * from constant where sub=?");
+		  "select * from node where node=?");
 	$sth->execute( $id );
 	my( $rec ) = $sth->fetchrow_hashref;
 	$sth->finish;
@@ -235,7 +235,7 @@ sub get
     {
 #	debug "Initiating constant $label";
 	my $sth = $Rit::dbix->dbh->prepare(
-		  "select sub from constant where label=?");
+		  "select node from node where label=?");
 	$sth->execute( $label );
 	my( $id ) = $sth->fetchrow_array;
 	$sth->finish;
@@ -245,6 +245,7 @@ sub get
 	    croak "Constant $label doesn't exist";
 	}
 
+	debug "Fetching constant $id";
 	$Constant{$label} = Rit::Base::Resource->get( $id );
     }
 
@@ -285,7 +286,7 @@ sub get_set
     unless( $Constant{$label} )
     {
 	my $sth = $Rit::dbix->dbh->prepare(
-		  "select sub from constant where label=?");
+		  "select node from node where label=?");
 	$sth->execute( $label );
 	my( $id ) = $sth->fetchrow_array;
 	$sth->finish;
@@ -326,6 +327,24 @@ sub get_set
 sub init
 {
     my( $class ) = @_;
+
+    my $dbh = $Rit::dbix->dbh;
+    foreach my $colname (qw(valdate valfloat valtext valbin obj))
+    {
+	my $sth = $dbh->prepare("select node from node where label=?") or die;
+	$sth->execute($colname) or die;
+	my( $colid ) = $sth->fetchrow_array or die;
+
+	$sth = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
+	debug "Caching colname $colname";
+	$sth->execute($colid) or die;
+	while(my( $nid ) = $sth->fetchrow_array)
+	{
+	    $Rit::Base::COLTYPE_valtype2name{$nid} = $colname;
+	    debug "Valtype $nid = $colname";
+	}
+    }
+
     no strict 'refs'; # Symbolic refs
     foreach my $export (@Initlist)
     {
@@ -352,11 +371,13 @@ sub add
     die "Constant labels cannot start with 'C_'"
       if $label =~ /^C_/;
 
+    my $uid = $Para::Frame::REQ->user->id;
+
     $Rit::dbix->commit;
     eval
     {
-	$Rit::dbix->dbh->do("INSERT INTO constant (label,sub,updated_by) values (?,?,?)",
-			    {}, $label, $node->id, $Para::Frame::REQ->user->id);
+	$Rit::dbix->dbh->do("INSERT INTO node (label,node,created,created_by,updated,updated_by) values (?,?,now(),?,now(),?)",
+			    {}, $label, $node->id, $uid, $uid);
     };
 
     if( $@ )

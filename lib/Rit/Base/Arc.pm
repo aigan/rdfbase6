@@ -168,9 +168,9 @@ sub create
     {
 	confess "Subj missing\n";
     }
-    $rec->{'sub'} = $subj->id or confess "id missing".datadump($props, 2);
+    $rec->{'subj'} = $subj->id or confess "id missing".datadump($props, 2);
     push @fields, 'sub';
-    push @values, $rec->{'sub'};
+    push @values, $rec->{'subj'};
 
 
     ##################### pred_id
@@ -192,15 +192,19 @@ sub create
     ##################### updated_by
     if( $req->user )
     {
-	$rec->{'updated_by'} = $req->user->id;
-	push @fields, 'updated_by';
-	push @values, $rec->{'updated_by'};
+	$rec->{'created_by'} = $req->user->id;
+	push @fields, 'created_by';
+	push @values, $rec->{'created_by'};
     }
 
    ##################### updated
     $rec->{'updated'} = now();
     push @fields, 'updated';
     push @values, $dbix->format_datetime($rec->{'updated'});
+
+    $rec->{'created'} = $rec->{'updated'};
+    push @fields, 'created';
+    push @values, $dbix->format_datetime($rec->{'created'});
 
 
     ##################### implicit
@@ -310,11 +314,11 @@ sub create
 	    push @fields, $coltype;
 	    push @values, $rec->{$coltype};
 
-	    debug "Create arc $pred_name($rec->{'sub'}, $rec->{$coltype})\n" if $DEBUG;
+	    debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})\n" if $DEBUG;
 	}
 	else
 	{
-	    debug "Create arc $pred_name($rec->{'sub'}, undef)\n" if $DEBUG;
+	    debug "Create arc $pred_name($rec->{'subj'}, undef)\n" if $DEBUG;
 	}
     }
 
@@ -322,10 +326,10 @@ sub create
     # Do not create duplicate arcs.  Check if arc with sub, pred, val
     # already exists:
     {
-	my $subj = Rit::Base::Resource->get_by_id( $rec->{'sub'} );
+	my $subj = Rit::Base::Resource->get_by_id( $rec->{'subj'} );
 	my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
 
-	warn "Check if subj $rec->{'sub'} has pred $rec->{'pred'} with value ".datadump($value_obj,2) if $DEBUG;
+	warn "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".datadump($value_obj,2) if $DEBUG;
 	if( my $arc = $subj->has_value($pred, $value_obj) )
 	{
 	    warn "Arc is ".datadump($arc,2) if $DEBUG > 1;
@@ -336,7 +340,7 @@ sub create
 
     # Don't allow arcs where subj and obj is the same node:
     #
-    if( $rec->{obj} and ( $rec->{'sub'} == $rec->{obj} ) )
+    if( $rec->{obj} and ( $rec->{'subj'} == $rec->{obj} ) )
     {
 	confess "Cyclic references not allowed\n".datadump($rec,2);
 	throw('validation', "Cyclic references not allowed\n");
@@ -345,7 +349,7 @@ sub create
 
     my $fields_part = join ",", @fields;
     my $values_part = join ",", map "?", @fields;
-    my $st = "insert into rel($fields_part) values ($values_part)";
+    my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
     warn "SQL $st (@values)\n" if $DEBUG;
     $sth->execute( @values );
@@ -433,7 +437,7 @@ sub find
 
     if( $props->{'subj_id'} )
     {
-	push @parts, "sub=?";
+	push @parts, "subj=?";
 	push @values, $props->{'subj_id'};
     }
 
@@ -482,7 +486,7 @@ sub find
     }
 
     my $and_part = join " and ", @parts;
-    my $st = "select * from rel where $and_part";
+    my $st = "select * from arc where $and_part";
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare($st);
 #    warn "Executing $st\Values: @values\n";
@@ -800,6 +804,23 @@ sub value_sysdesig
 
 #######################################################################
 
+=head2 created
+
+  $a->created
+
+Returns: The time as an L<Rit::Base::Time> object, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub created
+{
+    my( $arc ) = @_;
+    return $arc->{'created'} || is_undef;
+}
+
+#######################################################################
+
 =head2 updated
 
   $a->updated
@@ -821,16 +842,31 @@ sub updated
 
   $a->updated_by
 
-Returns: The L<Rit::Base::Resource> of the crator, or
-L<Rit::Base::Undef>.
+See L</created_by>
 
 =cut
 
 sub updated_by
 {
+    return$_[0]->created_by;
+}
+
+#######################################################################
+
+=head2 created_by
+
+  $a->created_by
+
+Returns: The L<Rit::Base::Resource> of the creator, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub created_by
+{
     my( $arc ) = @_;
-    return $arc->{'updated_by_obj'} ||=
-      $Para::Frame::CFG->{'user_class'}->get( $arc->{'updated_by'} ) ||
+    return $arc->{'created_by_obj'} ||=
+      $Para::Frame::CFG->{'user_class'}->get( $arc->{'created_by'} ) ||
 	  is_undef;
 }
 
@@ -1078,7 +1114,7 @@ L<Rit::Base::Resource/is_value_node>.
 
 sub objtype
 {
-    return 1 if $_[0]->pred->coltype($_[0]->subj) eq 'obj';
+    return 1 if $_[0]->coltype eq 'obj';
     return 0;
 }
 
@@ -1133,7 +1169,7 @@ L<Rit::Base::Resource/is_value_node>.
 sub coltype
 {
     my( $arc ) = @_;
-    $arc->pred->coltype($arc->subj);
+    return $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} };
 }
 
 
@@ -1301,7 +1337,7 @@ sub reset_clean
 	    # TODO: convert to arc method
 	    my $dbh = $Rit::dbix->dbh;
 	    my $sth = $dbh->prepare
-	      ("update rel set valclean=? where id=?");
+	      ("update arc set valclean=? where id=?");
 	    die if $cleaned =~ /^ritbase/;
 	    $sth->execute($cleaned, $arc->id);
 	    $arc->{'clean'} = $cleaned;
@@ -1360,10 +1396,10 @@ sub remove_duplicates
 
 	### Same as for remove()
 	$arc2->SUPER::remove();  # Removes the arc node: the arcs properties
-	$dbh->do("delete from rel where id=?", {}, $arc2->id);
+	$dbh->do("delete from arc where id=?", {}, $arc2->id);
 
 	foreach my $prop (qw( subj pred_name value clean coltype valtype
-			      updated updated_by implicit indirect ))
+			      created updated created_by implicit indirect ))
 	{
 	    $arc2->{$prop} = undef;
 	}
@@ -1597,7 +1633,7 @@ sub remove
     my $arc_id = $arc->id;
     debug "Removed arc id ".$arc->sysdesig."\n";
     my $dbh = $Rit::dbix->dbh;
-    my $sth = $dbh->prepare("delete from rel where id=?");
+    my $sth = $dbh->prepare("delete from arc where id=?");
 
     ### DEBUG
 #    confess "***** Would have removed arc\n"; 
@@ -1613,7 +1649,7 @@ sub remove
     #
     debug "  clear arc data\n" if $DEBUG;
     foreach my $prop (qw( subj pred_name value clean coltype valtype
-			  updated updated_by implicit indirect ))
+			  created updated created_by implicit indirect ))
     {
 	$arc->{$prop} = undef;
     }
@@ -1762,8 +1798,7 @@ sub set_value
 	{
 	    $value_db = $dbix->format_datetime($value_new);
 	}
-	elsif( $coltype_new eq 'valint' or
-	       $coltype_new eq 'valfloat' )
+	elsif( $coltype_new eq 'valfloat' )
 	{
 	    $value_db = $value_new;
 	}
@@ -1772,7 +1807,7 @@ sub set_value
 	    $value_db = $value_new;
 
 	    my $sth = $dbh->prepare
-		("update rel set valclean=? where id=?");
+		("update arc set valclean=? where id=?");
 	    my $clean = $value_new->clean->plain;
 #	    die if $clean =~ /^ritbase/;
 	    $sth->execute($clean, $arc_id);
@@ -1786,20 +1821,19 @@ sub set_value
 	    $value_db = $value_new;
 	}
 
-	my $sth = $dbh->prepare("update rel set $coltype_new=?, ".
-				       "updated=?, updated_by=? ".
+	my $sth = $dbh->prepare("update arc set $coltype_new=?, ".
+				       "updated=? ".
 				       "where id=?");
 
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
 
 	my $now_db = $dbix->format_datetime($now);
-	$sth->execute($value_db, $now_db, $u_node->id, $arc_id);
+	$sth->execute($value_db, $now_db, $u_node->id, $u_node->id, $arc_id);
 
 	$arc->{'value'}      = $value_new;
 	$arc->{$coltype_new} = $value_new;
 	$arc->{'updated'}    = $now;
-	$arc->{'updated_by'} = $u_node;
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
@@ -1876,15 +1910,14 @@ sub set_pred
 
 
 	debug "  extra part: $extra\n" if $DEBUG;
-	my $sth = $dbh->prepare("update rel set pred=?, ".
-				       "updated=?, updated_by=? ".
+	my $sth = $dbh->prepare("update arc set pred=?, ".
+				       "updated=? ".
 				       "where id=?");
 	$sth->execute($new_pred_id, $now_db, $u_node->id, $arc_id);
 
 	$arc->{'pred'} = $new_pred;
 
 	$arc->{'updated'} = $now;
-	$arc->{'updated_by'} = $u_node;
 	$arc->subj->initiate_cache;
 	$arc->value->initiate_cache($arc);
 	$arc->initiate_cache;
@@ -1972,13 +2005,12 @@ sub set_implicit
     my $now_db    = $dbix->format_datetime($now);
     my $bool      = $val ? 't' : 'f';
 
-    my $sth = $dbh->prepare("update rel set implicit=?, ".
-				   "updated=?, updated_by=? ".
+    my $sth = $dbh->prepare("update arc set implicit=?, ".
+				   "updated=? ".
 				   "where id=?");
     $sth->execute($bool, $now_db, $u_node->id, $arc_id);
 
     $arc->{'updated'} = $now;
-    $arc->{'updated_by'} = $u_node;
     $arc->{'implicit'} = $val;
 
     cache_update;
@@ -2048,13 +2080,12 @@ sub set_indirect
     my $now_db    = $dbix->format_datetime($now);
     my $bool      = $val ? 't' : 'f';
 
-    my $sth = $dbh->prepare("update rel set indirect=?, ".
-				   "updated=?, updated_by=? ".
+    my $sth = $dbh->prepare("update arc set indirect=?, ".
+				   "updated=? ".
 				   "where id=?");
     $sth->execute($bool, $now_db, $u_node->id, $arc_id);
 
     $arc->{'updated'} = $now;
-    $arc->{'updated_by'} = $u_node;
     $arc->{'indirect'} = $val;
 
     if( not $val and $arc->implicit ) # direct ==> explicit
@@ -2099,7 +2130,7 @@ sub get_by_rec_and_register
     my $id = $_[0]->{id} or
       croak "get_by_rec misses the id param: ".datadump($_[0],2);
 
-#    debug "Re-Registring arc $id";
+    debug "Re-Registring arc $id";
 
     if( my $arc = $Rit::Base::Cache::Resource{$id} )
     {
@@ -2145,7 +2176,7 @@ sub init
     }
     else
     {
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from rel where id = ?");
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where id = ?");
 	$sth_id->execute($id);
 	$rec = $sth_id->fetchrow_hashref;
 	$sth_id->finish;
@@ -2157,6 +2188,8 @@ sub init
     }
 
 
+    debug datadump $rec; ### DEBUG
+
     my $DEBUG = 0;#1 if $id == 1023211;
     if( $DEBUG )
     {
@@ -2166,14 +2199,25 @@ sub init
 
     unless( $subj )  # This will use CACHE
     {
-	$subj = Rit::Base::Resource->get( $rec->{'sub'} );
+	$subj = Rit::Base::Resource->get( $rec->{'subj'} );
     }
 
 
     croak "Not a rec: $rec" unless ref $rec eq 'HASH';
 
     my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
-    my $coltype = $pred->coltype( $subj );
+
+    ### Bootstrap coltype
+    my $coltype_num = $pred->{'coltype'};
+    my $coltype;
+    if( $coltype_num == 6 )
+    {
+	$coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} };
+    }
+    else
+    {
+	$coltype = $Rit::Base::COLTYPE_num2name{ $coltype_num };
+    }
 
     my $value = $value_obj;
     unless( $value )
@@ -2201,13 +2245,15 @@ sub init
 	$value = is_undef;
     }
 
+    debug "Value =====> $value";
+
 
     my $clean = $rec->{'valclean'};
     my $implicit =  $rec->{'implicit'} || 0; # default
     my $indirect = $rec->{'indirect'}  || 0; # default
     my $updated = Rit::Base::Time->get($rec->{'updated'} );
-
-    my $updated_by = $rec->{'updated_by'};
+    my $created = Rit::Base::Time->get($rec->{'created'} );
+    my $created_by = $rec->{'created_by'};
 
     # Setup data
     $arc->{'id'} = $id;
@@ -2215,11 +2261,12 @@ sub init
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
     $arc->{'clean'} = $clean;
-    $arc->{'updated_by'} = $updated_by;
+    $arc->{'created_by'} = $created_by;
     $arc->{'implicit'} = $implicit;
     $arc->{'indirect'} = $indirect;
     $arc->{'disregard'} ||= 0; ### Keep previous value
     $arc->{'in_remove_chek'} = 0;
+    $arc->{'created'} = $created;
     $arc->{'updated'} = $updated;
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
@@ -2278,7 +2325,7 @@ sub register_with_nodes
     my $pred = $arc->pred;
     my $subj = $arc->{'subj'};
     my $pred_name = $pred->name->plain;
-    my $coltype = $pred->coltype( $subj );
+    my $coltype = $arc->coltype;
 
 #    debug "Registring arc $id with subj and obj";
 
