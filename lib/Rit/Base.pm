@@ -47,6 +47,17 @@ our %LOOKUP_CLASS_FOR =
      Rit::Base::User::Meta => 1,
     );
 
+our %COLTYPE_num2name =
+(
+ 1 => 'obj',
+ 2 => 'valfloat',
+ 3 => 'valbin',
+ 4 => 'valdate',
+ 5 => 'valtext',
+ 6 => 'value',
+);
+
+
 
 #########################################################################
 ################################  Constructors  #########################
