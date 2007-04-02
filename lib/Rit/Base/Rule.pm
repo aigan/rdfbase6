@@ -35,6 +35,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
 use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Constants qw( $C_syllogism );
 
 
 ### Inherit
@@ -63,22 +64,15 @@ Inherits from L<Rit::Base::Resource>.
 
 sub on_configure
 {
-    my $dbix = $Rit::dbix;
-
-#    warn "  ----------> Initializing \%Rules\n";
+    warn "  ----------> Initializing \%Rules\n";
 
     %Rules = ();
 
-    my $recs = $dbix->select_list("from syllogism");
-    foreach my $rec ( @$recs )
-    {
-	my $id = $rec->{'id'};
+    my $rules = $C_syllogism->revlist('is');
 
-	# Get from or store in CACHE
-	#
-	$Rules{$id} = $Rit::Base::Cache::Resource{$id}
-	  ||= Rit::Base::Rule->get_by_rec( $rec );
-#	debug "Caching node $id: $Rules{$id}";
+    foreach my $rule ( $rules->as_array )
+    {
+	$Rules{$rule->id} = $rule;
     }
 
     Rit::Base::Rule->build_lists();
@@ -124,23 +118,9 @@ sub init
 {
     my( $rule, $rec ) = @_;
 
-    unless( $rec )
-    {
-	my $id = $rule->{'id'};
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from syllogism where id=?");
-	$sth_id->execute($id);
-	$rec = $sth_id->fetchrow_hashref;
-	$sth_id->finish;
-	$rec or confess "Rule '$id' not found";
-    }
-
-    my $a = Rit::Base::Pred->get( $rec->{'a'} );
-    my $b = Rit::Base::Pred->get( $rec->{'b'} );
-    my $c = Rit::Base::Pred->get( $rec->{'c'} );
-
-    $rule->{'a'} = Rit::Base::Pred->get( $rec->{'a'} );
-    $rule->{'b'} = Rit::Base::Pred->get( $rec->{'b'} );
-    $rule->{'c'} = Rit::Base::Pred->get( $rec->{'c'} );
+    $rule->{'a'} = $rule->first_prop('pred_1');
+    $rule->{'b'} = $rule->first_prop('pred_2');
+    $rule->{'c'} = $rule->first_prop('pred_3');
 
     return $rule;
 }
@@ -168,63 +148,44 @@ sub create
     $b = Rit::Base::Pred->get( $b ) unless ref $b;
     $c = Rit::Base::Pred->get( $c ) unless ref $c;
 
+
     unless( $a and $b and $c )
     {
 	throw('action', "Invalid parameters to Rule add");
     }
 
-
-    my $dbix = $Rit::dbix;
-    my $dbh = $dbix->dbh;
-
-    if( my $rec = $dbix->select_possible_record("from syllogism where a=? and b=? and c=?",
-						$a->id, $b->id, $c->id) )
+    my $props =
     {
-	my $id = $rec->{'id'};
-	my $rule = $Rules{$id} = $Rit::Base::Cache::Resource{$id}
-	  = $this->get_by_rec( $rec );
-#	debug "Caching node $id: $Rules{$id}";
+     pred_1 => $a,
+     pred_2 => $b,
+     pred_3 => $c,
+     is => $C_syllogism,
+    };
+
+
+    my $existing_list = Rit::Base::Resource->find($props);
+    if( $existing_list->size )
+    {
+	my $rule = $existing_list->get_first;
 	debug sprintf "%s already exist\n", $rule->sysdesig;
 	return $rule;
     }
 
-    my $rec =
-    {
-     id => $dbix->get_nextval('node_seq'),
-     a  => $a->id,
-     b  => $b->id,
-     c  => $c->id,
-    };
+    my $rule = Rit::Base::Resource->create($props);
+    $Rules{$rule->id} = $rule;
 
-    $dbh->do("insert into syllogism (id, a, b, c) values (?,?,?,?)", {},
-	     $rec->{id},
-	     $rec->{a},
-	     $rec->{b},
-	     $rec->{c},
-	    );
-
-    my $id = $rec->{'id'};
-    my $rule = $Rules{$id} = $Rit::Base::Cache::Resource{$id}
-      = $this->get_by_rec( $rec );
-#    debug "Caching node $id: $Rules{$id}";
     $this->build_lists;
-    debug sprintf "Created %s\n", $rule->sysdesig;
 
-    # TODO: Make this a constant
-    my $R = Rit::Base->Resource;
-    my $syllogism_class = $R->get({
-				   name => 'syllogism',
-				   scof => 'rule',
-				  });
-    $rule->add({ is => $syllogism_class });
+    debug sprintf "Created %s\n", $rule->sysdesig;
 
     if( $vacuum )
     {
 	use Array::Uniq;
-	foreach my $pred_id ( uniq sort @{$rec}{'a','b','c'} )
+	my $dbh = $Rit::dbix->dbh;
+	my $sth = $dbh->prepare( "select * from arc where pred=?" );
+	foreach my $pred_id ( uniq sort $a->id, $b->id, $c->id )
 	{
 	    # TODO: create_check for rels instead
-	    my $sth = $dbh->prepare( "select * from rel where pred=?" );
 	    $sth->execute( $pred_id );
 	    while( my( $rec ) = $sth->fetchrow_hashref )
 	    {
@@ -317,24 +278,6 @@ sub list_c
 =head2 Accessors
 
 =cut
-
-#######################################################################
-
-=head2 id
-
-Get rule id.
-
-=cut
-
-sub id
-{
-    my( $rule ) = @_;
-
-    ref $rule or confess "Not an object: $rule";
-
-    return $rule->{'id'};
-}
-
 
 #######################################################################
 
@@ -471,7 +414,7 @@ sub equals
 {
     my( $rule, $val ) = @_;
 
-    if( ref $val eq 'Rit::Base::Rule' )
+    if( UNIVERSAL::isa($val,'Rit::Base::Rule') )
     {
 	if( $rule->{'id'} eq $val->{'id'} )
 	{

@@ -53,11 +53,15 @@ sub handler
 	my $props =
 	{
 	 is_of_language => $l,
-	 value => $trt,
-	 datatype => $pred->valtype,
 	};
 
 	my $value = Rit::Base::Resource->create( $props );
+	Rit::Base::Arc->create({
+				subj    => $value,
+				pred    => 'value',
+				value   => $trt,
+				valtype => $pred->valtype,
+			       });
 
 	$n->add($pred => $value);
     }

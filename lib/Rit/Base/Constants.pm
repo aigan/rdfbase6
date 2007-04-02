@@ -329,22 +329,40 @@ sub init
     my( $class ) = @_;
 
     my $dbh = $Rit::dbix->dbh;
+    my $sth_label = $dbh->prepare("select node from node where label=?") or die;
+    my $sth_child = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
     foreach my $colname (qw(valdate valfloat valtext valbin))
     {
-	my $sth = $dbh->prepare("select node from node where label=?") or die;
-	$sth->execute($colname) or die;
-	my( $colid ) = $sth->fetchrow_array or die;
+	$sth_label->execute($colname) or die;
+	my( $colid ) = $sth_label->fetchrow_array or die;
+	$sth_label->finish;
 
-	$sth = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
 	debug "Caching colname $colname";
-	$sth->execute($colid) or die;
-	while(my( $nid ) = $sth->fetchrow_array)
+	$sth_child->execute($colid) or die;
+	while(my( $nid ) = $sth_child->fetchrow_array)
 	{
 	    $Rit::Base::COLTYPE_valtype2name{$nid} = $colname;
 	    debug "Valtype $nid = $colname";
 	}
+	$sth_child->finish;
+
+	$Rit::Base::COLTYPE_valtype2name{$colid} = $colname;
     }
     $Rit::Base::COLTYPE_valtype2name{5} = 'obj';
+
+
+    #################################
+
+#    # Bootstrap the is Pred
+#    debug "Bootstrapping is";
+#    Rit::Base::Pred->new(1)->init();
+#    debug "Bootstrapping class_handled_by_perl_module ";
+#    $sth_label->execute('class_handled_by_perl_module');
+#    Rit::Base::Pred->new($sth_label->fetchrow_array)->init();
+#    $sth_label->finish;
+#    debug "Bootstrapping done";
+
+    #################################
 
     no strict 'refs'; # Symbolic refs
     foreach my $export (@Initlist)

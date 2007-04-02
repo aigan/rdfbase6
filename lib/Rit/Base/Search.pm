@@ -710,7 +710,7 @@ sub modify
 		$predref = \@preds;
 
 		# Assume no type mismatch between alternative preds
-		$type = $preds[0]->coltype($props); # FIXME: invalid parameter $props
+		$type = $preds[0]->coltype;
 	    }
 	    elsif( $pred =~ /^count_pred_(.*)/ )
 	    {
@@ -719,7 +719,7 @@ sub modify
 	    else
 	    {
 		$pred = Rit::Base::Pred->get( $pred );
-		$type = $pred->coltype($props);
+		$type = $pred->coltype;
 		$predref = [$pred];
 	    }
 

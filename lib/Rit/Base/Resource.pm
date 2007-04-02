@@ -126,47 +126,50 @@ See L</get_by_label> then called with anything but $id
 
 sub get
 {
-    my( $this, $id ) = @_;
+    my( $this, $val_in ) = @_;
     my $class = ref($this) || $this;
 
-    return undef unless $id;
+    return undef unless $val_in;
     my $node;
+    my $id;
 
 #    debug "Getting $id ($class)";
 
     # Get the resource id
     #
-    if( $id !~ /^\d+$/ )
+    if( $val_in !~ /^\d+$/ )
     {
-	if( ref $id and UNIVERSAL::isa($id, 'Rit::Base::Resource::Compatible') )
+	if( ref $val_in and UNIVERSAL::isa($val_in, 'Rit::Base::Resource::Compatible') )
 	{
 	    # This already is a (node?) obj
 #	    debug "Got     $id";
-	    return $id;
+	    return $val_in;
 	}
 
-	my $resolved_id;
-	# $id could be a hashref, but those are not chached
-	unless( $resolved_id = $Rit::Base::Cache::Label{$class}{ $id } )
+	# $val_in could be a hashref, but those are not chached
+	unless( $id = $Rit::Base::Cache::Label{$class}{ $val_in } )
 	{
-	    $node = $class->get_by_label( $id ) or return is_undef;
-	    my $resolved_id = $node->id;
+	    $node = $class->get_by_label( $val_in ) or return is_undef;
+	    $id = $node->id;
 
 	    # Cache name lookups
-	    unless( ref $id ) # Do not cache searches
+	    unless( ref $val_in ) # Do not cache searches
 	    {
-		$Rit::Base::Cache::Label{$class}{ $id } = $resolved_id;
-		$node->{'lables'}{$class}{$id} ++;
+		$Rit::Base::Cache::Label{$class}{ $val_in } = $id;
+		$node->{'lables'}{$class}{$val_in} ++;
 	    }
 
 	    # Cache id lookups
 	    #
-#	    debug "Got $id: Caching node $resolved_id: $node";
-	    $Rit::Base::Cache::Resource{ $resolved_id } = $node;
+#	    debug "Got $id: Caching node $id: $node";
+	    $Rit::Base::Cache::Resource{ $id } = $node;
 
 	    return $node;
 	}
-	$id = $resolved_id;
+    }
+    else
+    {
+	$id = $val_in;
     }
 
 
@@ -206,8 +209,8 @@ sub get_by_rec
     my $this = shift;
 
     my $id = $_[0]->{'node'} or
-      confess "get_by_rec misses the id param: ".datadump($_[0],2);
-    return $Rit::Base::Cache::Resource{$id} || $this->new($id)->init(@_);
+      confess "get_by_rec misses the node param: ".datadump($_[0],2);
+    return $Rit::Base::Cache::Resource{$id} || $this->new($id)->first_bless(@_);
 }
 
 
@@ -932,17 +935,19 @@ sub create
 
     my $subj_id = $Rit::dbix->get_nextval('node_seq');
 
-    # Any value props should be added after datatype props
-    my @props_list;
-    if( defined $props->{'value'} )
-    {
-	@props_list =  grep{ $_ ne 'value'} keys(%$props);
-	push @props_list, 'value';
-    }
-    else
-    {
-	@props_list =  keys(%$props);
-    }
+#    # Any value props should be added after datatype props
+#    my @props_list;
+#    if( defined $props->{'value'} )
+#    {
+#	@props_list =  grep{ $_ ne 'value'} keys(%$props);
+#	push @props_list, 'value';
+#    }
+#    else
+#    {
+#	@props_list =  keys(%$props);
+#    }
+    my @props_list =  keys(%$props);
+
 
     my $adr = undef; # Define if used
 
@@ -1312,7 +1317,7 @@ sub list
 
     if( $name )
     {
-	if( ref $name eq 'Rit::Base::Pred' )
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
 	    confess "Now why did you go and do that?";
 	    $name = $name->name;
@@ -1436,7 +1441,7 @@ sub revlist
 
     if( $name )
     {
-	$name = $name->name if ref $name eq 'Rit::Base::Pred';
+	$name = $name->name if UNIVERSAL::isa($name,'Rit::Base::Pred');
 
 	# Do *not* accept undef arclim, for this construct
 	if( $proplim and not ref $proplim and $arclim )
@@ -1861,7 +1866,7 @@ sub has_value
 	{
 	    $pred = $pred_name->literal;
 	}
-	elsif( ref $pred_name eq 'Rit::Base::Pred' )
+	elsif( UNIVERSAL::isa($pred_name,'Rit::Base::Pred') )
 	{
 	    $pred = $pred_name;
 	}
@@ -2281,7 +2286,7 @@ sub arc_list
 
     if( $name )
     {
-	$name = $name->name if ref $name eq 'Rit::Base::Pred';
+	$name = $name->name if UNIVERSAL::isa($name,'Rit::Base::Pred');
 	$node->initiate_prop( $name );
 	my $lr = $node->{'relarc'}{$name} || [];
 	return Rit::Base::List->new($lr);
@@ -2328,7 +2333,7 @@ sub revarc_list
 
     if( $name )
     {
-	$name = $name->plain if ref $name eq 'Rit::Base::Pred';
+	$name = $name->plain if UNIVERSAL::isa($name,'Rit::Base::Pred');
 
 #	debug "Initiating revprop for $node->{id} with arclim ";
 
@@ -2929,7 +2934,7 @@ sub find_arcs
 
     # Returns the union of all results from each criterion
 
-    if( ref $crits eq 'Rit::Base::Pred' )
+    if( UNIVERSAL::isa($crits,'Rit::Base::Pred') )
     {
 	$crits = $crits->plain if ref $crits;
     }
@@ -3394,22 +3399,13 @@ sub vacuum
 	$arc->remove_duplicates;
     }
 
-    my $pred_name_list = $node->list;
-    foreach my $pred_name ( $pred_name_list->as_array )
+    foreach my $arc ( $node->arc_list->as_array )
     {
-	my $pred = getpred( $pred_name );
-	debug( sprintf "vacuum --> Check %s\n", $pred->name->plain);
-	my $coltype = $pred->coltype($node);
-
-	if( $coltype eq 'obj' )
-	{
-	    foreach my $arc ( $node->arc_list( $pred_name )->as_array )
-	    {
-		$Para::Frame::REQ->may_yield;
-		$arc->vacuum;
-	    }
-	}
+	next unless $arc->real_coltype eq 'obj';
+	$Para::Frame::REQ->may_yield;
+	$arc->vacuum;
     }
+
     return $node;
 }
 
@@ -3735,7 +3731,8 @@ sub find_class
     elsif( $classes[0] )
     {
 	no strict "refs";
-	my $classname = $classes[0]->first_prop('code')->plain;
+	my $classname = $classes[0]->first_prop('code')->plain
+	  or confess "No classname found for class $classes[0]->{id}";
 	require(package_to_module($classname));
 
 	my $metaclass = "Rit::Base::Metaclass::$classname";
@@ -3758,15 +3755,19 @@ sub find_class
 
   $node->first_bless()
 
+  $node->first_bless(@init_params)
+
 Used by L</get> and L<Rit::Base::Lazy::AUTOLOAD>.
 
 Uses C<%Rit::Base::LOOKUP_CLASS_FOR>
+
+Calls L</init> with given params
 
 =cut
 
 sub first_bless
 {
-    my( $node ) = @_;
+    my( $node ) = shift;
 
     # get the right class
     my( $class ) = ref $node;
@@ -3777,7 +3778,9 @@ sub first_bless
 	# is arc. Lastly, look if it's an arc if it's nothing else.
 
 	$class = $node->find_class;
-	if( $class eq 'Rit::Base::Resource' )
+
+	# If its a resource and no args given for init
+	if( ($class eq 'Rit::Base::Resource') and not $_[0] )
 	{
 	    # Check if this is an arc
 	    #
@@ -3787,19 +3790,17 @@ sub first_bless
 	    $sth_id->finish;
 	    if( $rec )
 	    {
-		bless $node, "Rit::Base::Arc";
-		return $node->init($rec);
+		$class = "Rit::Base::Arc";
+		@_ = ($rec);
 	    }
 	}
-	else
-	{
-	    bless $node, $class;
-	}
+
+	bless $node, $class;
     }
 
     confess $node unless ref $node;
 
-    $node->init;
+    $node->init(@_);
 
 #    debug sprintf "Node %d initiated as $node", $node->id;
 
@@ -4702,6 +4703,7 @@ sub initiate_revprop
 		       'initiated_rev' => {},
 		      }, 'Rit::Base::Arc';
 
+		    # Use first_bless instead
 		    $arc->init($stmt, undef, $node);
 		}
 	    }
@@ -4910,7 +4912,7 @@ sub handle_query_arc_value
       or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
-    my $valtype = $pred->valtype;
+#    my $valtype = $pred->valtype;
     $row->{$rowno}{'pred_id'} = $pred_id if $rowno;
 
     if( $arc_id eq 'singular' ) # Only one prop of this type
@@ -5323,7 +5325,7 @@ sub handle_query_prop_value
 	my $pred = getpred( $pred_name ) or die "Can't find pred $pred_name\n";
 	my $pred_id = $pred->id;
 	my $coltype = $pred->coltype;
-	my $valtype = $pred->valtype;
+#	my $valtype = $pred->valtype;
 	die "$pred_name should be of obj type" unless $coltype eq 'obj';
 
 	my( $objs );
@@ -5450,7 +5452,7 @@ sub handle_query_row_value
     my $pred = getpred( $pred_name );
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
-    my $valtype = $pred->valtype;
+#    my $valtype = $pred->valtype;
     if( $coltype eq 'obj' )
     {
 	$value = Rit::Base::Resource->get( $value );
@@ -5676,7 +5678,7 @@ sub handle_query_check_prop
     my $pred = getpred( $pred_name );
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
-    my $valtype = $pred->valtype;
+#    my $valtype = $pred->valtype;
 
     ########################################
     # Authenticate change of prop
@@ -5797,7 +5799,7 @@ sub handle_query_check_revprop
     my $pred = getpred( $pred_name );
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
-    my $valtype = $pred->valtype;
+#    my $valtype = $pred->valtype;
 
     ########################################
     # Authenticate change of prop

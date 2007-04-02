@@ -24,6 +24,8 @@ Using Locale::Maketext
 =cut
 
 use strict;
+use utf8;
+
 use Carp qw(cluck croak carp confess );
 
 BEGIN
@@ -100,6 +102,8 @@ sub maketext
 {
     my $lh = shift;
     my $phrase = shift || "";
+
+    utf8::upgrade($phrase);
 
     my $req = $Para::Frame::REQ;
 

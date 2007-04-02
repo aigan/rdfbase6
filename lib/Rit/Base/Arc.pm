@@ -41,6 +41,7 @@ use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
+use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group );
 
 ### Inherit
 #
@@ -157,6 +158,86 @@ sub create
     push @values, $rec->{'id'};
 
 
+    ##################### ver_id
+    if( $props->{'ver'} )
+    {
+	$rec->{'ver'}  = $props->{'ver'};
+    }
+    else
+    {
+	$rec->{'ver'}  = $dbix->get_nextval('node_seq');
+    }
+    push @fields, 'ver';
+    push @values, $rec->{'ver'};
+
+
+    ##################### source
+    if( $props->{'source'} )
+    {
+	$rec->{'source'}  = $props->{'source'};
+    }
+    else
+    {
+	$rec->{'source'}  = $C_ritguides->id;
+    }
+    push @fields, 'source';
+    push @values, $rec->{'source'};
+
+
+    ##################### active
+    push @fields, 'active';
+    if( $props->{'active'} )
+    {
+	$rec->{'active'} = 1;
+	push @values, 't';
+    }
+    else
+    {
+	$rec->{'active'} = 0;
+	push @values, 'f';
+    }
+
+
+    ##################### submitted
+    push @fields, 'submitted';
+    if( $props->{'submitted'} )
+    {
+	$rec->{'submitted'} = 1;
+	push @values, 't';
+    }
+    else
+    {
+	$rec->{'submitted'} = 0;
+	push @values, 'f';
+    }
+
+
+    ##################### read_access
+    if( $props->{'read_access'} )
+    {
+	$rec->{'read_access'}  = $props->{'read_access'};
+    }
+    else
+    {
+	$rec->{'read_access'}  = $C_public->id;
+    }
+    push @fields, 'read_access';
+    push @values, $rec->{'read_access'};
+
+
+    ##################### write_access
+    if( $props->{'write_access'} )
+    {
+	$rec->{'write_access'}  = $props->{'write_access'};
+    }
+    else
+    {
+	$rec->{'write_access'}  = $C_sysadmin_group->id;
+    }
+    push @fields, 'write_access';
+    push @values, $rec->{'write_access'};
+
+
     ##################### subj_id
     my $subj;
     if( my $subj_label = $props->{'subj_id'} || $props->{'subj'} )
@@ -169,7 +250,7 @@ sub create
 	confess "Subj missing\n";
     }
     $rec->{'subj'} = $subj->id or confess "id missing".datadump($props, 2);
-    push @fields, 'sub';
+    push @fields, 'subj';
     push @values, $rec->{'subj'};
 
 
@@ -181,12 +262,25 @@ sub create
 
     my $pred_name = $pred->name;
 #    warn "PRED NAME: $pred_name\n";
-    my $coltype = $pred->coltype($subj);
 
     $rec->{'pred'} = $pred_id;
 
     push @fields, 'pred';
     push @values, $rec->{'pred'};
+
+
+    ##################### valtype
+    if( $props->{'valtype'} )
+    {
+	$rec->{'valtype'} =
+	  Rit::Base::Resource->get( $props->{'valtype'} )->id;
+    }
+    else
+    {
+	$rec->{'valtype'} = $pred->valtype->id;
+    }
+    push @fields, 'valtype';
+    push @values, $rec->{'valtype'};
 
 
     ##################### updated_by
@@ -208,30 +302,32 @@ sub create
 
 
     ##################### implicit
+    push @fields, 'indirect', 'implicit';
     if( $props->{'implicit'} )
     {
 	$rec->{'implicit'} = 1;
 	$rec->{'indirect'} = 1;
 
-	push @fields, 'indirect', 'implicit';
 	push @values, 't', 't';
+    }
+    else
+    {
+	$rec->{'implicit'} = 0;
+	$rec->{'indirect'} = 0;
+
+	push @values, 'f', 'f';
     }
 
 
     ##################### obj thingy
     my $value;
     my $value_obj;
+    # Find out the *real* coltype
+    my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} };
     if( my $obj_id = $props->{'obj_id'} )
     {
-	if( $coltype eq 'obj' )
-	{
-	    $value = $obj_id;
-	}
-	else
-	{
-	    die "Pred '$pred_name' is not of obj type";
-	}
-
+	$coltype = 'obj';
+	$value = $obj_id;
 	$rec->{$coltype} = $value;
 	push @fields, $coltype;
 	push @values, $rec->{$coltype};
@@ -323,7 +419,7 @@ sub create
     }
 
 
-    # Do not create duplicate arcs.  Check if arc with sub, pred, val
+    # Do not create duplicate arcs.  Check if arc with subj, pred, val
     # already exists:
     {
 	my $subj = Rit::Base::Resource->get_by_id( $rec->{'subj'} );
@@ -1199,7 +1295,7 @@ sub real_coltype
 {
     my( $arc ) = @_;
     return 'obj' if UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' );
-    return $arc->pred->coltype($arc->subj);
+    return $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} };
 }
 
 
@@ -1209,15 +1305,13 @@ sub real_coltype
 
   $a->valtype
 
-Returns: the L<Rit::Base::Pred/valtype> for this arc, given its
-L</subj>.
+Returns: the C<valtype> node for this arc.
 
 =cut
 
 sub valtype
 {
-    my( $arc ) = @_;
-    $arc->pred->valtype($arc->subj);
+    return Rit::Base::Resource->get( $_[0]->{'valtype'} );
 }
 
 
@@ -2113,6 +2207,28 @@ sub set_indirect
 }
 
 
+#######################################################################
+
+=head2 get_by_rec
+
+  $n->get_by_rec( $rec, @extra )
+
+Returns: a node
+
+Exceptions: see L</init>.
+
+=cut
+
+sub get_by_rec
+{
+    my $this = shift;
+
+    my $id = $_[0]->{'id'} or
+      confess "get_by_rec misses the id param: ".datadump($_[0],2);
+    return $Rit::Base::Cache::Resource{$id} || $this->new($id)->first_bless(@_);
+}
+
+
 #########################################################################
 
 =head2 get_by_rec_and_register
@@ -2146,7 +2262,7 @@ sub get_by_rec_and_register
     }
     else
     {
-	return $this->new($id)->init(@_);
+	return $this->new($id)->first_bless(@_);
     }
 }
 
@@ -2213,7 +2329,7 @@ sub init
     my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
 
     ### Bootstrap coltype
-    my $coltype_num = $pred->{'coltype'};
+    my $coltype_num = $pred->{'coltype'} or confess datadump($pred,1);
     my $coltype;
     if( $coltype_num == 6 )
     {

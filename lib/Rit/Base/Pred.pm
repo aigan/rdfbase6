@@ -426,61 +426,24 @@ sub syskey
 
   $p->valtype()
 
-  $p->valtype( $subj )
+Find the valtype of a predicate.  This will use the range or the coltype.
 
-  $p->valtype( $props )
-
-Find the valtype of a predicate. If called with $subj or a ref to a
-hash of properties, find the valtype for a value property.
-
-Returns: The valtype as a scalar string
+Returns: A C<valtype> node to use as the valtype for arcs with this pred.
 
 =cut
 
 sub valtype
 {
-    my( $pred, $subj ) = @_;
+    my( $pred ) = @_;
 
-    my $valtype = $pred->{'valtype'};
-
-#    debug "Getting valtype for $pred->{id} with subj $subj->{id} and valtype $valtype\n";
-
-    if( $valtype eq "value" )
+    if( my $range = $pred->first_prop('range') )
     {
-	if( $subj )
-	{
-	    if( not UNIVERSAL::isa($subj,'Rit::Base::Resource') )
-	    {
-		# Ugly hack. Fix the source of the problem instead!
-		my $dv = $subj->{'datatype'};
-		unless( $dv )
-		{
-		    confess "Called coltype with strange subj: ".datadump($subj);
-		}
-#		debug "  from $dv name\n";
-		$valtype = $dv->name->literal;
-#		debug "  Datatype for value is $valtype\n";
-	    }
-	    elsif( my $dv = $subj->first_prop('datatype') )
-	    {
-#		debug "  from $dv->{id} name\n";
-		$valtype = $dv->name->literal;
-#		debug "  Datatype for value is $valtype\n";
-	    }
-	    else
-	    {
-#		croak "No datatype found";
-		confess "No datatype found for subj $subj->{'id'}: ".datadump($subj->first_prop('datatype'))." with pred ".$pred->name;
-	    }
-	}
-	else
-	{
-#	    croak "valtype value requires knowledge of subj";
-	    confess "valtype value requires knowledge of subj";
-	}
+	return $range;
     }
-
-    return $valtype;
+    else
+    {
+	return Rit::Base::Constants->get( $Rit::Base::COLTYPE_num2name{ $pred->{'coltype'} } );
+    }
 }
 
 #######################################################################
@@ -525,15 +488,11 @@ sub set_valtype
 
   $p->objtype()
 
-  $p->objtype( $subj )
-
-  $p->objtype( \%props )
-
 Returns true if the L</coltype> the value is 'obj'.  This will not
 return true if the real value is a literal resource, unless the
 literal resource has a value that is a node.
 
-Calls L</coltype> with the given params.
+Calls L</coltype>.
 
 Returns: 1 or 0
 
@@ -541,7 +500,7 @@ Returns: 1 or 0
 
 sub objtype
 {
-    return shift->coltype(@_) eq 'obj' ? 1 : 0;
+    return shift->coltype eq 'obj' ? 1 : 0;
 }
 
 
@@ -551,15 +510,8 @@ sub objtype
 
   $p->coltype()
 
-  $p->coltype( $subj )
-
-  $p->coltype( \%props )
-
-Can be called with a subject node or a ref to a hash of properties.
-These are used to find the datatype of a value property.
-
-The retuned value will be one of C<valint>, C<obj>, C<valtext>,
-C<valdate>, C<valfloat>.
+The retuned value will be one of C<obj>, C<valtext>,
+C<valdate>, C<valfloat> or C<valbin>.
 
 Returns: A scalar string
 
@@ -567,24 +519,7 @@ Returns: A scalar string
 
 sub coltype
 {
-    my( $pred, $subj ) = @_;
-
-    my $coltype_num = $pred->{'coltype'}
-      or confess "Pred misses coltype: ".datadump($pred);
-    if( $subj and ($coltype_num == 6) )
-    {
-	my $arc = $subj->first_arc('value');
-	unless( $arc )
-	{
-	    my $desig = $subj->sysdesig;
-	    confess "The subj $desig has no value property";
-	}
-	return $arc->coltype;
-    }
-    else
-    {
-	return $Rit::Base::COLTYPE_num2name{ $coltype_num };
-    }
+    return $Rit::Base::COLTYPE_num2name{ $_[0]->{'coltype'} };
 }
 
 #########################################################################
@@ -707,16 +642,18 @@ sub find_by_label
     {
 	return $class->get_by_rec({
 				   label   => $1,
-				   valtype => $1,
+#				   valtype => $1,
 				   node    => $special_id->{$1},
+				   pred_coltype => 2, # valfloat
 				  });
     }
     if( $label =~ /^(desig|loc|plain)$/ )
     {
 	return $class->get_by_rec({
 				   label   => $1,
-				   valtype => 'text',
+#				   valtype => 'text',
 				   node    => $special_id->{$1},
+				   pred_coltype => 5, # valtext
 				  });
     }
 
@@ -780,7 +717,7 @@ sub get_by_label
     }
     else
     {
-	die "No such predicate $_[1] in DB\n";
+	confess "No such predicate $_[1] in DB\n";
     }
 }
 

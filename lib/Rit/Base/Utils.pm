@@ -539,10 +539,15 @@ sub parse_arc_add_box
 	if( $value =~ /^\s*(.*?)\s*->\s*(.*)$/ )
 	{
 	    my $sprops = parse_query_props( $2 );
-	    $sprops->{'value'} = $1;
+	    my $svalue = $1;
 	    my $pred = Rit::Base::Pred->get_by_label( $pred_name );
-	    $sprops->{'datatype'} = $pred->valtype;
 	    $value = Rit::Base::Resource->create( $sprops );
+	    Rit::Base::Arc->create({
+				    subj    => $value,
+				    pred    => 'value',
+				    value   => $svalue,
+				    valtype => $pred->valtype,
+				   });
 	    $changed ++;
 	}
 
@@ -599,7 +604,7 @@ sub parse_query_pred
 	    $pred = \@preds;
 
 	    # Assume no type mismatch between alternative preds
-	    $type = $preds[0]->coltype($subj); # FIXME: invalid parameter $props
+	    $type = $preds[0]->coltype;
 	}
 	else
 	{
@@ -610,7 +615,7 @@ sub parse_query_pred
 	    }
 
 	    $pred = Rit::Base::Pred->get( $pred );
-	    $type = $pred->coltype($subj);
+	    $type = $pred->coltype;
 	}
 
 	if( $type eq 'valtext' )
@@ -624,7 +629,7 @@ sub parse_query_pred
 	{
 	    if( $rev )
 	    {
-		$type = 'sub';
+		$type = 'subj';
 	    }
 	}
 

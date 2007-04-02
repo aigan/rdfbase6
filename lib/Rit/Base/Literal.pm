@@ -243,9 +243,14 @@ sub update
     if( keys %$props )
     {
 	my $arc = $literal->arc or die "Literal has no defined arc";
-	$props->{'value'}    = $literal;
-	$props->{'datatype'} = $arc->pred->valtype;
 	my $node = Rit::Base::Resource->create( $props );
+	Rit::Base::Arc->create({
+				subj    => $node,
+				pred    => 'value',
+				value   => $literal,
+				valtype => $arc->valtype,
+			       });
+
 	$arc->set_value( $node );
 	$changes ++;
     }
