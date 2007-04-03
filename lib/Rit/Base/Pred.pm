@@ -634,6 +634,26 @@ sub find_by_label
 
 #    warn "New pred $label\n"; ### DEBUG
 
+    if( ref $label )
+    {
+	if( UNIVERSAL::isa( $label, 'Rit::Base::Literal') )
+	{
+	    $label = $label->literal;
+	}
+	elsif( UNIVERSAL::isa( $label, 'Rit::Base::Pred') )
+	{
+	    return $label;
+	}
+	else
+	{
+	    if( UNIVERSAL::isa( $label, 'Rit::Base::Resource') )
+	    {
+		confess "Pred not a pred: ".$label->sysdesig;
+	    }
+	    confess "Pred label format $label not supported";
+	}
+    }
+
     $label = $label->literal if ref $label;
     $label or confess "get_by_label got empty label";
 
@@ -659,9 +679,13 @@ sub find_by_label
 
     my $sql = 'select * from node where ';
 
-    if( $label =~ /^-?\d+$/ )
+    if( $label =~ /^-\d+$/ )
     {
 	return $this->get_by_label( $special_label->{$label} );
+    }
+    elsif( $label =~ /^\d+$/ )
+    {
+	$sql .= 'node = ?';
     }
     else
     {
