@@ -3798,6 +3798,34 @@ sub first_bless
 	bless $node, $class;
     }
 
+
+    # Incorporate the node data
+    my $sth_node = $Rit::dbix->dbh->prepare("select * from node where node = ?");
+    $sth_node->execute($node->{'node'});
+    my $rec = $sth_node->fetchrow_hashref;
+    $sth_node->finish;
+    if( $rec )
+    {
+	if( my $prec_coltype = $rec->{'pred_coltype'} )
+	{
+	    $class = "Rit::Base::Pred";
+	    bless $node, $class;
+	    $node->{'coltype'} = $prec_coltype;
+	}
+
+	my $label = $rec->{'label'};
+	$Rit::Base::Cache::Label{$class}{ $label } = $node;
+	$node->{'lables'}{$class}{$label} ++;
+
+	$node->{'owned_by'} = $rec->{'owned_by'};
+	$node->{'read_access'} = $rec->{'read_access'};
+	$node->{'write_access'} = $rec->{'write_access'};
+	$node->{'created'} = $rec->{'created'};
+	$node->{'created_by'} = $rec->{'created_by'};
+	$node->{'updated'} = $rec->{'updated'};
+	$node->{'updated_by'} = $rec->{'updated_by'};
+    }
+
     confess $node unless ref $node;
 
     $node->init(@_);
@@ -4365,7 +4393,7 @@ sub initiate_rel
     my $nid = $node->id;
 
     # Get statements for node $id
-    my $sth_init_sub_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from rel where (subj=? and pred=11)) UNION select * from rel where subj=?");
+    my $sth_init_sub_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=11)) UNION select * from arc where subj=?");
     $sth_init_sub_name->execute($nid, $nid);
     my $stmts = $sth_init_sub_name->fetchall_arrayref({});
     $sth_init_sub_name->finish;
