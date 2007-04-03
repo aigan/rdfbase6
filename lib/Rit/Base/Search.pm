@@ -20,6 +20,7 @@ Rit::Base::Search - Search directly in DB
 =cut
 
 use strict;
+use utf8;
 use Carp qw( cluck confess croak carp shortmess longmess );
 use Time::HiRes qw( time );
 use List::Util qw( min );
@@ -1022,7 +1023,11 @@ sub build_sql
 						 @$where_values,
 						 @$order_values,
 						);
-
+    # Upgrade to UTF8
+    foreach( @values )
+    {
+	utf8::upgrade($_);
+    }
 
     my $sql = "select $select_sql from ( $main_sql ) as frame";
     if( $where_sql )
