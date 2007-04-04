@@ -36,7 +36,8 @@ use Para::Frame::Reload;
 
 use Rit::Base::Time qw( now );
 use Rit::Base::List;
-use Rit::Base::Utils qw( cache_update getpred valclean translate is_undef truncstring);
+use Rit::Base::Utils qw( cache_update getpred valclean translate is_undef
+ truncstring send_cache_update );
 use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
@@ -117,7 +118,7 @@ C<subj>, C<pred> and C<value> must be given.
 
 A check is made for not creating an arc that already exists.
 
-We do not allow arcs there subj and obj is the same resouce. (This
+We do not allow arcs where subj and obj is the same resouce. (This
 check may catch bad cyclic recursive arc inferences.)
 
 Inferences from the new arc weill be done directly or after
@@ -478,6 +479,10 @@ sub create
     $$changes_ref ++ if $changes_ref; # increment changes
 
     cache_update;
+
+    send_cache_update({ change => 'arc_created',
+			arc_id => $arc->id,
+		      });
 
     return $arc;
 }
@@ -1518,7 +1523,12 @@ sub remove_duplicates
 	$arc->initiate_cache;
 	warn "    Arc resetted. Commit DB\n" if $DEBUG;
 	cache_update;
-	$dbh->commit
+	$dbh->commit;
+
+	send_cache_update({ change => 'arc_removed',
+			    subj_id => $arc->subj->id,
+			    obj_id => $arc->obj->id,
+			  });
     }
 }
 
@@ -1744,6 +1754,20 @@ sub remove
     $arc->subj->initiate_cache;
     $arc->value->initiate_cache(undef);
 
+    if( $arc->obj )
+    {
+	send_cache_update({ change => 'arc_removed',
+			    subj_id => $arc->subj->id,
+			    obj_id => $arc->obj->id,
+			  });
+    }
+    else
+    {
+	send_cache_update({ change => 'arc_removed',
+			    subj_id => $arc->subj->id,
+			  });
+    }
+
     # Clear out data from arc (and arc in cache)
     #
     # We use the subj prop to determine if this arc is removed
@@ -1951,6 +1975,10 @@ sub set_value
 	$arc->schedule_check_create;
 	cache_update;
 
+	send_cache_update({ change => 'arc_updated',
+			    arc_id => $arc->id,
+			  });
+
 	debug "Updated arc id $arc_id: ".$arc->desig."\n";
 
 	$changes ++;
@@ -2037,6 +2065,10 @@ sub set_pred
 	    # Both old and new value could be undef
 	    $arc->set_value( $value_new );
 	}
+
+	send_cache_update({ change => 'arc_updated',
+			    arc_id => $arc->id,
+			  });
 
 	$changes ++;
     }
@@ -2430,17 +2462,17 @@ sub init
     if( $DEBUG > 1 )
     {
 	my $pred_name = $pred->name->plain;
- 	warn "arcs for $subj->{id} $pred_name:\n";
- 	foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
- 	{
- 	    warn "- ".$arc->id."\n";
- 	}
+	warn "arcs for $subj->{id} $pred_name:\n";
+	foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
+	{
+	    warn "- ".$arc->id."\n";
+	}
 
- 	warn "revarcs for $subj->{id} $pred_name:\n";
- 	foreach my $revarc ( @{$subj->{'revarc'}{ $pred_name }} )
- 	{
- 	    warn "- ".$revarc->id."\n";
- 	}
+	warn "revarcs for $subj->{id} $pred_name:\n";
+	foreach my $revarc ( @{$subj->{'revarc'}{ $pred_name }} )
+	{
+	    warn "- ".$revarc->id."\n";
+	}
     }
 
     # The node sense of the arc should NOT be resetted. It must have

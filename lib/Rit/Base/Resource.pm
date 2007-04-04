@@ -431,7 +431,7 @@ sub find_by_label
 	    }
 	    else
 	    {
-		throw('validation', "id/name mismatch.\nid $id is called '$desig'");
+		confess('validation', "id/name mismatch.\nid $id is called '$desig'");
 	    }
 	}
 	push @new, $obj;

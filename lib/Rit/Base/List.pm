@@ -574,13 +574,13 @@ sub find
 		{
 		    if( $target_value ) # '1'
 		    {
-			debug "Checking rev exist true";
+			debug 2, "Checking rev exist true";
 			next PRED
 			  if( $node->has_revpred( $pred ) );
 		    }
 		    else
 		    {
-			debug "Checking rev exist false";
+			debug 2, "Checking rev exist false";
 			next PRED
 			  unless( $node->has_revpred( $pred ) );
 		    }
@@ -589,13 +589,13 @@ sub find
 		{
 		    if( $target_value ) # '1'
 		    {
-			debug "Checking rel exist true";
+			debug 2, "Checking rel exist true (target_value: $target_value)";
 			next PRED
 			  if( $node->has_pred( $pred ) );
 		    }
 		    else
 		    {
-			debug "Checking rel exist false";
+			debug 2, "Checking rel exist false";
 			next PRED
 			  unless( $node->has_pred( $pred ) );
 		    }
