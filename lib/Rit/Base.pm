@@ -73,6 +73,45 @@ sub init
 {
     my( $this, $dbix ) = @_;
 
+    warn "Adding hooks for Rit::Base\n";
+
+    Para::Frame->add_hook('on_error_detect', sub
+			  {
+			      Rit::Base::User->revert_from_temporary_user();
+			  });
+
+    Para::Frame->add_hook('on_startup', sub
+			  {
+ 			      Rit::Base::Constants->init;
+			  });
+
+    Para::Frame->add_hook('before_db_commit', sub
+			  {
+			      Rit::Base::Resource->commit();
+			  });
+    Para::Frame->add_hook('after_db_rollback', sub
+			  {
+			      Rit::Base::Resource->rollback();
+			  });
+
+
+
+    my $global_params =
+    {
+     find            => sub{ Rit::Base::Resource->find($_[0]) },
+     get             => sub{ Rit::Base::Resource->get(@_) },
+     new_search      => sub{ Rit::Base::Search->new(@_) },
+     find_preds      => sub{ Rit::Base::Pred->find(@_) },
+     find_arcs       => sub{ Rit::Base::Arc->find(@_) },
+     find_rules      => sub{ Rit::Base::Rule->find(@_) },
+     find_constants  => sub{ Rit::Base::Constants->find(@_) },
+     query_desig     => \&Rit::Base::Utils::query_desig, # move to ritbase!
+     C               => Rit::Base::Constants->new,
+     timediff        => \&Para::Frame::Utils::timediff,
+     timeobj         => sub{ Rit::Base::Time->get( @_ ) },
+    };
+    Para::Frame->add_global_tt_params( $global_params );
+
 #    Rit::Base::Resource->init( $dbix );
 #    Rit::Base::Arc->init( $dbix );
 #    Rit::Base::Pred->init( $dbix );
