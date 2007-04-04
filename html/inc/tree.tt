@@ -64,7 +64,7 @@
   function ritbase_selected_item()
   {
         if ([* tsw *]_selected_id == -1) {
-           alert("Välj en rad");
+           alert("VÃ¤lj en rad");
            return;
         }
 
@@ -105,4 +105,4 @@
 
 <p>p = privat
 <p>i = inaktiv
-<p>Siffra inom parantes anger summan av antalet noder med relationen <em>är</em> till objektet.  Både direkta och indirekta.
+<p>Siffra inom parantes anger summan av antalet noder med relationen <em>Ã¤r</em> till objektet.  BÃ¥de direkta och indirekta.

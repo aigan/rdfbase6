@@ -38,7 +38,7 @@ sub handler
     {
 	my $result = $Para::Frame::REQ->result;
 	my $desig2 = $q->param('node2_desig') or
-	    throw('incomplete', "Ange nod add slå samman med");
+	    throw('incomplete', "Ange nod add slÃ¥ samman med");
 
 	my $node_list = Rit::Base::Resource->find({
 	    'predor_name_-_code_-_name_short' => $desig2,
@@ -53,7 +53,7 @@ sub handler
 	{
 	    $result->{'info'}{'alternatives'}{'alts'} = \@node_list_out;
 	    $req->set_page($req->referer_path);
-	    throw('alternatives', "välj nod att slå samman med");
+	    throw('alternatives', "vÃ¤lj nod att slÃ¥ samman med");
 	}
 	else
 	{

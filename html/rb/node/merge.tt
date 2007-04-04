@@ -1,4 +1,4 @@
-[% META title="Slå samman noder"
+[% META title="SlÃ¥ samman noder"
 	next_action = 'node_merge'
 	default_template = 'update.tt'
 	focus = 'node2'
@@ -12,7 +12,7 @@
 
 [% BLOCK merge_alternatives %]
 
-   <p>Slå samman <code>[% node1.sysdesig | html %]</code> med:</p>
+   <p>SlÃ¥ samman <code>[% node1.sysdesig | html %]</code> med:</p>
 
    <table class='admin'>
    [% FOR n = req.result.info.alternatives.alts %]
@@ -48,10 +48,10 @@
    [% END %]
    </table>
 
-<p>[% checkbox('move_literals',1) %] Flytta även literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
+<p>[% checkbox('move_literals',1) %] Flytta Ã¤ven literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
 
    [% hidden('node2_desig', q.param('node2_desig')) %]
-   <p>[% submit(' Slå samman ') %]</p>
+   <p>[% submit(' SlÃ¥ samman ') %]</p>
 [% END %]
 
 [%
@@ -61,18 +61,18 @@ ELSE;
 %]
 
 
-<p>Slå samman <code>[% node1.desig %]</code> med en annan nod.
+<p>SlÃ¥ samman <code>[% node1.desig %]</code> med en annan nod.
 
 <o>Kopplingar till denna nod flyttas till den andra noden.  Literal
-properties från denna nod tags bort för att undvika dubletter i den
+properties frÃ¥n denna nod tags bort fÃ¶r att undvika dubletter i den
 nya noden.</p>
 
-<p>[% checkbox('move_literals',1,1) %] Flytta även literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
+<p>[% checkbox('move_literals',1,1) %] Flytta Ã¤ven literals. (Ej att rekommendera ifall du mergar en organisation.)</p>
 
-<p>Den <strong>rätta</strong> benämningen för <code>[% node1.desig %]</code> är: [% input('node2_desig') %]</p>
+<p>Den <strong>rÃ¤tta</strong> benÃ¤mningen fÃ¶r <code>[% node1.desig %]</code> Ã¤r: [% input('node2_desig') %]</p>
 
-<p>[% step(' Slå samman ') %]</p>
+<p>[% step(' SlÃ¥ samman ') %]</p>
 
-<p>Alternativlista visas ifall flera träffar erhålles.</p>
+<p>Alternativlista visas ifall flera trÃ¤ffar erhÃ¥lles.</p>
 
 [% END %]

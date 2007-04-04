@@ -13,6 +13,6 @@
 <tr><td>C <td>[% input('c') %]
 </table>
 
-<p><strong>OBS! Tryck INTE pÂ den h‰r knappen!</strong></p>
+<p><strong>OBS! Tryck INTE p√• den h√§r knappen!</strong></p>
 
 <p>[% step('Add rule') %]

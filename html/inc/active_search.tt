@@ -1,5 +1,5 @@
 [% IF admin_mode %]
-<h2>Översättningar
+<h2>Ã–versÃ¤ttningar
 <table class="admin">
 
 <tr><td>[* aloc('Results/page') *]

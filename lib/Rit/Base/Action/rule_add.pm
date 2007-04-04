@@ -37,9 +37,9 @@ sub handler
     my $c_str = $q->param('c') or throw('validation', "Saknar C");
 
     my $Pred = 'Rit::Base::Pred';
-    my $a = $Pred->get( $a_str ) or throw('validation', "A är inte ett existerande predikat");
-    my $b = $Pred->get( $b_str ) or throw('validation', "B är inte ett existerande predikat");
-    my $c = $Pred->get( $c_str ) or throw('validation', "C är inte ett existerande predikat");
+    my $a = $Pred->get( $a_str ) or throw('validation', "A Ã¤r inte ett existerande predikat");
+    my $b = $Pred->get( $b_str ) or throw('validation', "B Ã¤r inte ett existerande predikat");
+    my $c = $Pred->get( $c_str ) or throw('validation', "C Ã¤r inte ett existerande predikat");
 
     my $rule = Rit::Base::Rule->add($a, $b, $c );
 

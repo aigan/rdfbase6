@@ -1,5 +1,5 @@
 [% META
-   otitle = "Redigera översättning"
+   otitle = "Redigera Ã¶versÃ¤ttning"
    next_action = "translate_node"
    level = 20
 %]
@@ -13,14 +13,14 @@
 [% hidden('id', id) %]
 
 
-<h1>Redigera översättning [% id %]: [% node.${pred}.loc %]</h1>
+<h1>Redigera Ã¶versÃ¤ttning [% id %]: [% node.${pred}.loc %]</h1>
 
 <p>[% PROCESS node_menu.tt %]</p>
 
 [% langlist = {''='-',sv='sv',en='en',de='de',no='no',da='da',fi='fi',is='is'} %]
 
 <table>
-<tr><th>Språk <th>Arc <th>Text <th>Prio
+<tr><th>SprÃ¥k <th>Arc <th>Text <th>Prio
 [% FOREACH arc IN node.arc_list(pred).sorted(['obj.is_of_language.code',{on='obj.weight' dir='desc'}]) %]
    [% aid = arc.id %]
    [% tr2%]
@@ -48,5 +48,5 @@
 
 <p>[% step("Spara") %]</p>
 
-<p>Efter att du sparat behöver de ändrade sidorna kompileras om på
+<p>Efter att du sparat behÃ¶ver de Ã¤ndrade sidorna kompileras om pÃ¥
 respektive server.

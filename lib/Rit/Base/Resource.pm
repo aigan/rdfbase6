@@ -2120,9 +2120,9 @@ takes.
 
 Examples:
 
-Check if the region C<$n> contains the city Göteborg.
+Check if the region C<$n> contains the city GÃ¶teborg.
 
-  $n->has_revprop( 'in_region', { name => 'Göteborg', is => 'city' } )
+  $n->has_revprop( 'in_region', { name => 'GÃ¶teborg', is => 'city' } )
 
 =cut
 
@@ -3230,7 +3230,7 @@ For case C<7> we compare the id with the node id.
 
 In cases C<6> and C<8> we searches for nodes that has the given
 C<name> and returns true if one of the elements found matches the
-node. This search is done using L</find_simple> which dosnät handle
+node. This search is done using L</find_simple> which dosnÃ¤t handle
 literal nodes.
 
 
@@ -4360,8 +4360,8 @@ sub get_by_label
 	my $result = $req->result;
 	$result->{'info'}{'alternatives'} =
 	{
-	 title => "Välj alterativ",
-	 text  => "Sökning gav flera alternativ\n",
+	 title => "VÃ¤lj alterativ",
+	 text  => "SÃ¶kning gav flera alternativ\n",
 	 alts => $list,
 	 rowformat => sub
 	 {
@@ -5465,7 +5465,7 @@ sub handle_query_arc_value
 
 			$result->{'info'}{'alternatives'} =
 			{
-			 title => "Välj $pred_name",
+			 title => "VÃ¤lj $pred_name",
 			 text  => "Flera noder har namnet '$val'",
 			 alts => $objs,
 			 rowformat => sub
@@ -5641,7 +5641,7 @@ sub handle_query_prop_value
 	    $result->{'info'}{'alternatives'} =
 	    {
 	     # TODO: Create cusom title and text
-	     title => "Välj $pred_name",
+	     title => "VÃ¤lj $pred_name",
 	     alts => $objs,
 	     rowformat => sub
 	     {
@@ -6173,9 +6173,9 @@ sub authenticate_update
 	my $desig = $node->desig;
 	my $pred_name = $pred->name;
 	throw('denied',
-	      autoformat("Ert val innebär att fältet '$pred_name' ".
-			 "för objektet '$desig' behöver uppdateras. ".
-			 "Ni har dock inte tillgång till detta fält. "
+	      autoformat("Ert val innebÃ¤r att fÃ¤ltet '$pred_name' ".
+			 "fÃ¶r objektet '$desig' behÃ¶ver uppdateras. ".
+			 "Ni har dock inte tillgÃ¥ng till detta fÃ¤lt. "
 			 )
 	      );
     }

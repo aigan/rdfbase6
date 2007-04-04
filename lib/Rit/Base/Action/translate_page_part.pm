@@ -66,7 +66,7 @@ sub handler
 	$n->add($pred => $value);
     }
 
-    return "Översättning ändrad";
+    return "Ã–versÃ¤ttning Ã¤ndrad";
 }
 
 1;

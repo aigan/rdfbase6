@@ -44,7 +44,7 @@ sub handler
 
     $q->param('step_add_params', 'prop_is');
 
-    return "Förslag mottaget";
+    return "FÃ¶rslag mottaget";
 }
 
 

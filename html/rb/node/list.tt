@@ -7,7 +7,7 @@
 [% search_result = searchobj.result %]
 
    <p>
-   [ [% jump('Modifiera sökning', searchobj.form_url ) %]
+   [ [% jump('Modifiera sÃ¶kning', searchobj.form_url ) %]
    ]</p>
 
 <p>[% search_result.size %] [%+ loc("hits") %].</p>

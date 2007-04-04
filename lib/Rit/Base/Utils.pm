@@ -239,10 +239,10 @@ sub cache_sync
 Returns: The new value after a lot of transformation
 
     $value = lc($value);
-    $value =~ s/(aa)/ε/g;
-    $value =~ s/(ζ|ae)/δ/g;
-    $value =~ s/(ψ|oe)/φ/g;
-    $value =~ tr[ΰαβδγειθκλνμοξσςφτυϊωόϋύÿπώί]
+    $value =~ s/(aa)/Γ¥/g;
+    $value =~ s/(Γ¦|ae)/Γ¤/g;
+    $value =~ s/(ΓΈ|oe)/Γ¶/g;
+    $value =~ tr[Γ Γ΅ΓΆΓ¤Γ£Γ¥Γ©Γ¨ΓªΓ«Γ­Γ¬Γ―Γ®Γ³Γ²Γ¶Γ΄ΓµΓΊΓΉΓΌΓ»Γ½ΓΏΓ°ΓΎΓ]
                 [aaaaaaeeeeiiiiooooouuuuyydps];
     $value =~ tr/`'/'/;
     $value =~ tr/qwz/kvs/;
@@ -278,11 +278,11 @@ sub valclean
     setlocale(LC_ALL, "sv_SE");
 
     $value = lc($value);
-    $value =~ s/(aa)/ε/g;
-    $value =~ s/(ζ|ae)/δ/g;
-    $value =~ s/(ψ|oe)/φ/g;
+    $value =~ s/(aa)/Γ¥/g;
+    $value =~ s/(Γ¦|ae)/Γ¤/g;
+    $value =~ s/(ΓΈ|oe)/Γ¶/g;
 #    $value =~ s/_/ /g;  ############### FIXME
-    $value =~ tr[ΰαβδγειθκλνμοξσςφτυϊωόϋύÿπώί]
+    $value =~ tr[Γ Γ΅ΓΆΓ¤Γ£Γ¥Γ©Γ¨ΓªΓ«Γ­Γ¬Γ―Γ®Γ³Γ²Γ¶Γ΄ΓµΓΊΓΉΓΌΓ»Γ½ΓΏΓ°ΓΎΓ]
                 [aaaaaaeeeeiiiiooooouuuuyydps];
     $value =~ tr/`'/'/;
     $value =~ tr/qwz/kvs/;
@@ -320,7 +320,7 @@ sub name2url
     setlocale(LC_ALL, "sv_SE");
     my $url = lc($name);
 
-    $url =~ tr[ΰαβδγεζιθκλνμοξσςφτυψϊωόϋύÿπώί]
+    $url =~ tr[Γ Γ΅ΓΆΓ¤Γ£Γ¥Γ¦Γ©Γ¨ΓªΓ«Γ­Γ¬Γ―Γ®Γ³Γ²Γ¶Γ΄ΓµΓΈΓΊΓΉΓΌΓ»Γ½ΓΏΓ°ΓΎΓ]
 	      [aaaaaaaeeeeiiiioooooouuuuyydps];
     $url =~ s/[^\w\s\-~]//g;
     $url =~ s/\s+/_/g;

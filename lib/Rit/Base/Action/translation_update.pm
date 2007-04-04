@@ -56,7 +56,7 @@ sub handler
 	$create_sth->execute($c, $sv, $en, $de, $no, $dk, $fi, $is);
     }
 
-    return "Översättning ändrad";
+    return "Ã–versÃ¤ttning Ã¤ndrad";
 }
 
 1;

@@ -28,7 +28,7 @@ sub handler
 
     my $query = $req->q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
-    length $query or throw('incomplete', "NÂtt fÂr du v‰l skriva ‰ndÂ va?");
+    length $query or throw('incomplete', "N√•tt f√•r du v√§l skriva √§nd√• va?");
 
     my $props = {};
 

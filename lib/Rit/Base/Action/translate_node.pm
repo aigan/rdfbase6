@@ -140,7 +140,7 @@ sub handler
     $q->delete("new_weight");
 
     $req->change->report;
-    return "Översättning ändrad";
+    return "Ã–versÃ¤ttning Ã¤ndrad";
 }
 
 1;

@@ -2,7 +2,7 @@
 [% IF crits %]
 <div id="search_box_small">
    <span class="menu_item_expanded">
-      <a class="menu" href="$home/search/modify.tt">[% loc('menusearch') %] »</a>
+      <a class="menu" href="$home/search/modify.tt">[% loc('menusearch') %] Â»</a>
    </span>
 
    [% FOREACH pred = crits.keys %]
@@ -45,15 +45,15 @@
    [% END %]
 
    <span class="menu_item_expanded">
-      <a class="submenu" href="[* uri("$home/search/result.tt", run='search_organization_execute', search_result="$home/search_result.tt", search_form="$home/search_modify.tt") *]">» [* loc('Show result') *]</a>
+      <a class="submenu" href="[* uri("$home/search/result.tt", run='search_organization_execute', search_result="$home/search_result.tt", search_form="$home/search_modify.tt") *]">Â» [* loc('Show result') *]</a>
    </span>
 
    <span class="menu_item_expanded">
-      <a class="submenu" href="[* uri("$home/search/modify.tt") *]">» [* loc('Modify search') *]</a>
+      <a class="submenu" href="[* uri("$home/search/modify.tt") *]">Â» [* loc('Modify search') *]</a>
    </span>
 
    <span class="menu_item_expanded">
-      <a class="submenu" href="[* uri("$home/search/modify.tt", run='search_clear') *]">» [* loc('New search') *]</a>
+      <a class="submenu" href="[* uri("$home/search/modify.tt", run='search_clear') *]">Â» [* loc('New search') *]</a>
    </span>
 
 </div>

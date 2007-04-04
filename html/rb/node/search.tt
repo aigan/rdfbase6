@@ -1,4 +1,4 @@
-[% META title="Sök nod"
+[% META title="SÃ¶k nod"
    next_template = 'list.tt'
    next_action = 'node_search'
    focus = 'query_row'
@@ -19,7 +19,7 @@
 [% hidden("search_form", "$home/rb/node/search.tt") %]
 [% hidden("search_result", "$home/rb/node/list.tt") %]
 
-<p>[% submit('Sök') %]
+<p>[% submit('SÃ¶k') %]
 
 <p>Examples:
 
