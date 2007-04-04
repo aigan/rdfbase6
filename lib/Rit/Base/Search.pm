@@ -1802,7 +1802,7 @@ sub build_outer_select_field
 	{
 	    $sql = "COALESCE((select 1 from arc where $where and pred=? limit 1),0)";
 	}
-	elsif( ($coltype eq 'valint') or ($coltype eq 'valfloat') )
+	elsif( $coltype eq 'valfloat' )
 	{
 	    $sql = "COALESCE((select $coltype from arc where $where and pred=? limit 1),0)";
 	}
@@ -1865,15 +1865,15 @@ sub build_main_select_price
     my $sql =
 "
               (
-               select sum(rel2.valint)
-               from arc as rel1, rel as rel2
+               select sum(rel2.valfloat)
+               from arc as rel1, arc as rel2
                where
                    rel1.subj=main.node and rel1.obj=rel2.subj and rel2.pred=302 and rel1.indirect is false and
                    exists
                    (
                        select 1
                        from arc
-                       where subj=rel2.sub and pred=1 and obj=1111
+                       where subj=rel2.subj and pred=1 and obj=1111
                    )
                group by rel1.subj
            ) as price
