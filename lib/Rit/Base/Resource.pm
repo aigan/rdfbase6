@@ -54,6 +54,8 @@ use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
 			 arc_unlock truncstring
 			 convert_query_prop_for_creation );
 
+our %UNSAVED;
+
 ### Inherit
 #
 use base qw( Rit::Base::Node Rit::Base::Resource::Compatible );
@@ -172,6 +174,7 @@ sub get
 	$id = $val_in;
     }
 
+#	debug sprintf "id=%s (%s)", $id, ref($id);
 
     # Is the resource cached?
     #
@@ -1241,6 +1244,123 @@ sub is_value_node
 
 
 #######################################################################
+
+=head2 created
+
+  $n->created
+
+Returns: L<Rit::Base::Time> object
+
+=cut
+
+sub created
+{
+    return $_[0]->initiate_node->{'created'};
+}
+
+
+#######################################################################
+
+=head2 updated
+
+  $n->updated
+
+Returns: L<Rit::Base::Time> object
+
+=cut
+
+sub updated
+{
+    return $_[0]->initiate_node->{'updated'};
+}
+
+
+#######################################################################
+
+=head2 owned_by
+
+  $n->ownde_by
+
+Returns: L<Rit::Base::Resource> object
+
+=cut
+
+sub owned_by
+{
+    return $_[0]->{'owned_by_obj'} ||=
+      Rit::Base::Resource->get( $_[0]->initiate_node->{'owned_by'} );
+}
+
+
+########################################################################
+
+=head2 read_access
+
+  $n->read_access
+
+Returns: L<Rit::Base::Resource> object
+
+=cut
+
+sub read_access
+{
+    return $_[0]->{'read_access_obj'} ||=
+      Rit::Base::Resource->get( $_[0]->initiate_node->{'read_access'} );
+}
+
+
+########################################################################
+
+=head2 write_access
+
+  $n->write_access
+
+Returns: L<Rit::Base::Resource> object
+
+=cut
+
+sub write_access
+{
+    return $_[0]->{'write_access_obj'} ||=
+      Rit::Base::Resource->get( $_[0]->initiate_node->{'write_access'} );
+}
+
+
+########################################################################
+
+=head2 created_by
+
+  $n->created_by
+
+Returns: L<Rit::Base::Resource> object
+
+=cut
+
+sub created_by
+{
+    return $_[0]->{'created_by_obj'} ||=
+      Rit::Base::Resource->get( $_[0]->initiate_node->{'created_by'} );
+}
+
+
+########################################################################
+
+=head2 updated_by
+
+  $n->updated_by
+
+Returns: L<Rit::Base::Resource> object
+
+=cut
+
+sub updated_by
+{
+    return $_[0]->{'updated_by_obj'} ||=
+      Rit::Base::Resource->get( $_[0]->initiate_node->{'updated_by'} );
+}
+
+
+########################################################################
 
 =head2 sorted
 
@@ -3480,16 +3600,8 @@ sub merge
 	}
 	elsif( $move_literals )
 	{
-	    if( $pred_name eq 'created' or
-		$pred_name eq 'updated' )
-	    {
-		debug sprintf "  Ignoring %s", $arc->sysdesig;
-	    }
-	    else
-	    {
-		debug sprintf "  Moving %s", $arc->sysdesig;
-		$node2->add( $pred_name => $arc->value );
-	    }
+	    debug sprintf "  Moving %s", $arc->sysdesig;
+	    $node2->add( $pred_name => $arc->value );
 	}
 	$arc->remove;
     }
@@ -3798,33 +3910,7 @@ sub first_bless
 	bless $node, $class;
     }
 
-
-    # Incorporate the node data
-    my $sth_node = $Rit::dbix->dbh->prepare("select * from node where node = ?");
-    $sth_node->execute($node->{'node'});
-    my $rec = $sth_node->fetchrow_hashref;
-    $sth_node->finish;
-    if( $rec )
-    {
-	if( my $prec_coltype = $rec->{'pred_coltype'} )
-	{
-	    $class = "Rit::Base::Pred";
-	    bless $node, $class;
-	    $node->{'coltype'} = $prec_coltype;
-	}
-
-	my $label = $rec->{'label'};
-	$Rit::Base::Cache::Label{$class}{ $label } = $node;
-	$node->{'lables'}{$class}{$label} ++;
-
-	$node->{'owned_by'} = $rec->{'owned_by'};
-	$node->{'read_access'} = $rec->{'read_access'};
-	$node->{'write_access'} = $rec->{'write_access'};
-	$node->{'created'} = $rec->{'created'};
-	$node->{'created_by'} = $rec->{'created_by'};
-	$node->{'updated'} = $rec->{'updated'};
-	$node->{'updated_by'} = $rec->{'updated_by'};
-    }
+    $node->initiate_node;
 
     confess $node unless ref $node;
 
@@ -4372,9 +4458,187 @@ sub initiate_cache
     $node->{'initiated_revprop'} = {};
     $node->{'initiated_rel'}     = 0;
     $node->{'initiated_rev'}     = 0;
+    $node->{'initiated_node'}    = 0;
     $node->{'lables'}            = {};
+    $node->{'owned_by_obj'}      = undef;
+    $node->{'owned_by'}          = undef;
+    $node->{'read_access_obj'}   = undef;
+    $node->{'read_access'}       = undef;
+    $node->{'write_access_obj'}  = undef;
+    $node->{'write_access'}      = undef;
+    $node->{'created_by_obj'}    = undef;
+    $node->{'created_by'}        = undef;
+    $node->{'updated_by_obj'}    = undef;
+    $node->{'updated_by'}        = undef;
 
     return $node;
+}
+
+
+#########################################################################
+
+=head2 initiate_node
+
+=cut
+
+sub initiate_node
+{
+    my( $node ) = @_;
+    return $node if $node->{'initiated_node'};
+
+    my $nid = $node->{'id'};
+    my $class = ref $node;
+    my $sth_node = $Rit::dbix->dbh->prepare("select * from node where node = ?");
+    $sth_node->execute($nid);
+    my $rec = $sth_node->fetchrow_hashref;
+    $sth_node->finish;
+    if( $rec )
+    {
+	if( my $prec_coltype = $rec->{'pred_coltype'} )
+	{
+	    $class = "Rit::Base::Pred";
+	    bless $node, $class;
+	    $node->{'coltype'} = $prec_coltype;
+	}
+
+	if( my $label = $rec->{'label'} )
+	{
+	    $Rit::Base::Cache::Label{$class}{ $label } = $nid;
+	    $node->{'lables'}{$class}{$label} ++;
+	}
+
+	$node->{'owned_by'} = $rec->{'owned_by'};
+	$node->{'read_access'} = $rec->{'read_access'};
+	$node->{'write_access'} = $rec->{'write_access'};
+	$node->{'created'} = Rit::Base::Time->get( $rec->{'created'} );
+	$node->{'created_by'} = $rec->{'created_by'};
+	$node->{'updated'} = Rit::Base::Time->get( $rec->{'updated'} );
+	$node->{'updated_by'} = $rec->{'updated_by'};
+#	debug "  Created $node->{created} by $node->{created_by}";
+    }
+    $node->{'initiated_node'} = 1;
+
+    return $node;
+}
+
+
+#########################################################################
+
+=head2 mark_unsaved
+
+=cut
+
+sub mark_unsaved
+{
+    $UNSAVED{$_[0]->{'id'}} = $_[0];
+}
+
+
+#########################################################################
+
+=head2 mark_updated
+
+=cut
+
+sub mark_updated
+{
+    my( $node, $time, $u ) = @_;
+    $time ||= now();
+    $u ||= $Para::Frame::REQ->user;
+    $node->initiate_node;
+    $node->{'updated'} = $time;
+    $node->{'created'} ||= $time;
+    $node->{'updated_by_obj'} = $u;
+    $node->{'created_by_obj'} ||= $u;
+    $node->mark_unsaved;
+    return $time;
+}
+
+
+#########################################################################
+
+=head2 commit
+
+=cut
+
+sub commit
+{
+    eval
+    {
+	foreach my $node ( values %UNSAVED )
+	{
+	    $node->save;
+	}
+    };
+    if( $@ )
+    {
+	debug $@;
+	Rit::Base::Resource->rollback;
+    }
+}
+
+
+#########################################################################
+
+=head2 rollback
+
+=cut
+
+sub rollback
+{
+    foreach my $node ( values %UNSAVED )
+    {
+	$node->initiate_cache;
+    }
+    %UNSAVED = ();
+}
+
+
+#########################################################################
+
+=head2 save$Rit::dbix
+
+=cut
+
+sub save
+{
+    my( $node ) = @_;
+
+    my $nid = $node->{'id'};
+
+    my $dbix = $Rit::dbix;
+    my $sth = $dbix->dbh->prepare("update node set
+                                        label=?,
+                                        owned_by=?,
+                                        read_access=?,
+                                        write_access=?,
+                                        pred_coltype=?,
+                                        created=?,
+                                        created_by=?,
+                                        updated=?,
+                                        updated_by=?
+                                        where node=?");
+
+    $node->initiate_node;
+
+    my @values =
+      (
+       $node->label,
+       $node->{'owned_by'},
+       $node->{'read_access'},
+       $node->{'write_access'},
+       $node->{'coltype'},
+       $dbix->format_datetime($node->{'created'}),
+       $node->{'created_by'},
+       $dbix->format_datetime($node->{'updated'}),
+       $node->{'updated_by'},
+      );
+
+
+    $sth->execute(@values);
+
+    delete $UNSAVED{$nid};
+    return 1;
 }
 
 
@@ -4438,6 +4702,7 @@ sub initiate_rel
 
     $node->{'initiated_rel'} = 1;
 }
+
 
 #########################################################################
 
