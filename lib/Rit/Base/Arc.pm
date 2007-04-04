@@ -912,7 +912,7 @@ L<Rit::Base::Undef>.
 sub created
 {
     my( $arc ) = @_;
-    return $arc->{'created'} || is_undef;
+    return $arc->{'arc_created'} || is_undef;
 }
 
 #######################################################################
@@ -929,7 +929,7 @@ L<Rit::Base::Undef>.
 sub updated
 {
     my( $arc ) = @_;
-    return $arc->{'updated'} || is_undef;
+    return $arc->{'arc_updated'} || is_undef;
 }
 
 #######################################################################
@@ -944,7 +944,7 @@ See L</created_by>
 
 sub updated_by
 {
-    return$_[0]->created_by;
+    return $_[0]->created_by;
 }
 
 #######################################################################
@@ -961,8 +961,8 @@ L<Rit::Base::Undef>.
 sub created_by
 {
     my( $arc ) = @_;
-    return $arc->{'created_by_obj'} ||=
-      $Para::Frame::CFG->{'user_class'}->get( $arc->{'created_by'} ) ||
+    return $arc->{'arc_created_by_obj'} ||=
+      $Para::Frame::CFG->{'user_class'}->get( $arc->{'arc_created_by'} ) ||
 	  is_undef;
 }
 
@@ -1828,7 +1828,7 @@ sub set_value
 {
     my( $arc, $value_new_in ) = @_;
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
     my $changes = 0;
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
@@ -1923,18 +1923,24 @@ sub set_value
 	}
 
 	my $sth = $dbh->prepare("update arc set $coltype_new=?, ".
-				       "updated=? ".
+				       "created=?, created_by=?, updated=? ".
 				       "where id=?");
 
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
 
 	my $now_db = $dbix->format_datetime($now);
-	$sth->execute($value_db, $now_db, $u_node->id, $u_node->id, $arc_id);
+	$sth->execute($value_db, $now_db, $u_node->id, $now_db, $arc_id);
 
 	$arc->{'value'}      = $value_new;
 	$arc->{$coltype_new} = $value_new;
-	$arc->{'updated'}    = $now;
+	$arc->{'arc_updated'}    = $now;
+	$arc->{'arc_created'}    = $now;
+	$arc->{'arc_created_by'} = $u_node->id;
+	$arc->{'arc_created_by_obj'} = $u_node;
+
+	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
+	$arc->created_by(); ### DEBUG
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
@@ -2018,7 +2024,7 @@ sub set_pred
 
 	$arc->{'pred'} = $new_pred;
 
-	$arc->{'updated'} = $now;
+	$arc->{'arc_updated'} = $now;
 	$arc->subj->initiate_cache;
 	$arc->value->initiate_cache($arc);
 	$arc->initiate_cache;
@@ -2111,7 +2117,7 @@ sub set_implicit
 				   "where id=?");
     $sth->execute($bool, $now_db, $u_node->id, $arc_id);
 
-    $arc->{'updated'} = $now;
+    $arc->{'arc_updated'} = $now;
     $arc->{'implicit'} = $val;
 
     cache_update;
@@ -2186,7 +2192,7 @@ sub set_indirect
 				   "where id=?");
     $sth->execute($bool, $now_db, $u_node->id, $arc_id);
 
-    $arc->{'updated'} = $now;
+    $arc->{'arc_updated'} = $now;
     $arc->{'indirect'} = $val;
 
     if( not $val and $arc->implicit ) # direct ==> explicit
@@ -2382,13 +2388,13 @@ sub init
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
     $arc->{'clean'} = $clean;
-    $arc->{'created_by'} = $created_by;
+    $arc->{'arc_created_by'} = $created_by;
     $arc->{'implicit'} = $implicit;
     $arc->{'indirect'} = $indirect;
     $arc->{'disregard'} ||= 0; ### Keep previous value
     $arc->{'in_remove_chek'} = 0;
-    $arc->{'created'} = $created;
-    $arc->{'updated'} = $updated;
+    $arc->{'arc_created'} = $created;
+    $arc->{'arc_updated'} = $updated;
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
 
