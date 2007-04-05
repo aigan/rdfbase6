@@ -51,7 +51,7 @@ use Rit::Base::Metaclass;
 use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
 			 getpred parse_query_props cache_update
 			 parse_form_field_prop is_undef arc_lock
-			 arc_unlock truncstring
+			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation );
 
 our %UNSAVED;
@@ -318,7 +318,7 @@ sub find_by_label
     elsif( ref $val and ref $val eq 'HASH' )
     {
 	debug 3, "  obj as subquery";
-	debug "    query: ".datadump($val,4) if debug > 3;
+	debug "    query: ".query_desig($val,4) if debug > 3;
 	my $objs = $this->find($val);
 	unless( $objs->size )
 	{
@@ -397,7 +397,7 @@ sub find_by_label
 	{
 	    my $props = parse_query_props( $spec );
 	    $props->{'predor_name_-_code_-_name_short_clean'} = $name;
-	    debug "    Constructing props for find: ".datadump($props,4)
+	    debug "    Constructing props for find: ".query_desig($props,4)
 	      if debug > 3;
 	    $objs = $this->find($props);
 	}
@@ -2031,8 +2031,7 @@ sub has_value
 	if( debug > 3 )
 	{
 	    debug "  Checking if ".$node->desig.
-	      " has $pred_name with the props ".
-		datadump($value,4);
+	      " has $pred_name with the props ". query_desig($value);
 	}
 
 	unless( $match eq 'eq' )
@@ -2904,7 +2903,7 @@ sub replace
     $oldarcs = $node->find_arcs($oldarcs);
     $props   = $node->construct_proplist($props);
 
-    debug "Normalized oldarcs ".($oldarcs->sysdesig)." and props ".datadump($props,4)
+    debug "Normalized oldarcs ".($oldarcs->sysdesig)." and props ".query_desig($props)
       if debug > 3;
 
     my $changes = 0;
@@ -3094,13 +3093,13 @@ sub find_arcs
 	}
 	else
 	{
-	    die "not implemented".datadump($crits,4);
+	    die "not implemented".query_desig($crits);
 	}
     }
 
     if( debug > 3 )
     {
-	debug "Finding arcs: ".datadump($crits,2);
+	debug "Finding arcs: ".query_desig($crits);
 
 	if( @$arcs )
 	{
@@ -3178,7 +3177,7 @@ sub construct_proplist
 		}
 		else
 		{
-		    debug datadump($val,4) if debug > 2;
+		    debug query_desig($val) if debug > 2;
 		    confess "Not implemented: ".ref($val);
 		}
 	    }
@@ -4327,7 +4326,7 @@ sub get_by_label
 	}
 	else
 	{
-	    $msg .= datadump($_[0]);
+	    $msg .= query_desig($_[0]);
 	    $msg .= Carp::longmess;
 	}
 	throw('notfound', "No nodes matches query:\n$msg");
