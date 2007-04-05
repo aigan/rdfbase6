@@ -651,7 +651,30 @@ sub modify
 		    $_ = Rit::Base::Resource->get_id( $_ );
 		}
 	    }
+
+	    # The string may have been octets in utf8 format but not
+	    # labled as utf8
+
+	    utf8::decode($_);
 	}
+
+#	### DEBUG
+#	use bytes ();
+#	foreach my $val (@values)
+#	{
+#	    next unless $val =~ /^Stockholms/;
+#	    if( defined $val )
+#	    {
+#		my $length1 = length $val;
+#		my $length2 = bytes::length $val;
+#		debug " * '$val'($length1/$length2)";
+#	    }
+#	    else
+#	    {
+#		debug ' * <undef>';
+#	    }
+#	}
+
 
 	confess datadump $props if $key =~ /^0x/; ### DEBUG
 
@@ -860,10 +883,10 @@ sub execute
     else
     {
 #	debug "MIN PRIO = $min_prio";
-	if( debug > 2 )
+	if( debug > 4 )
 	{
-	    debug $search->sysdesig;
-	    debug 4, $search->sql_sysdesig;
+	    debug 2, $search->sysdesig;
+	    debug 0, $search->sql_sysdesig;
 	}
 	$result = $search->get_result($sql, $values, 15); # 10
     }
@@ -2457,6 +2480,25 @@ sub sysdesig
 sub sql_sysdesig
 {
     return $_[0]->sql_string .sprintf "; (%s)", join(", ", map{defined $_ ? "'$_'" : '<undef>'} @{$_[0]->sql_values} );
+
+#    my( $search ) = @_;
+#    my $out = $search->sql_string ."; ";
+#
+#    my @vals;
+#    foreach my $val (@{$search->sql_values})
+#    {
+#	if( defined $val )
+#	{
+#	    my $length = length $val;
+#	    push @vals, "'$val'($length)";
+#	}
+#	else
+#	{
+#	    push @vals, '<undef>';
+#	}
+#    }
+#    $out .= sprintf "(%s)", join ', ', @vals;
+#    return $out;
 }
 
 
