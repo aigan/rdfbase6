@@ -20,7 +20,6 @@ Rit::Base::Search - Search directly in DB
 =cut
 
 use strict;
-use utf8;
 use Carp qw( cluck confess croak carp shortmess longmess );
 use Time::HiRes qw( time );
 use List::Util qw( min );

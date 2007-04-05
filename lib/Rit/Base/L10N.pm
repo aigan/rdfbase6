@@ -24,7 +24,6 @@ Using Locale::Maketext
 =cut
 
 use strict;
-use utf8;
 
 use Carp qw(cluck croak carp confess );
 
