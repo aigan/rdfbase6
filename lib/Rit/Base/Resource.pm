@@ -318,7 +318,7 @@ sub find_by_label
     elsif( ref $val and ref $val eq 'HASH' )
     {
 	debug 3, "  obj as subquery";
-	debug "    query: ".query_desig($val,4) if debug > 3;
+	debug "    query: ".query_desig($val) if debug > 3;
 	my $objs = $this->find($val);
 	unless( $objs->size )
 	{
@@ -397,7 +397,7 @@ sub find_by_label
 	{
 	    my $props = parse_query_props( $spec );
 	    $props->{'predor_name_-_code_-_name_short_clean'} = $name;
-	    debug "    Constructing props for find: ".query_desig($props,4)
+	    debug "    Constructing props for find: ".query_desig($props)
 	      if debug > 3;
 	    $objs = $this->find($props);
 	}
