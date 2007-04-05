@@ -1469,6 +1469,8 @@ sub criterion_to_key
     my $rev = $cond->{'rev'};
     my $preds = $cond->{'pred'};
     my $match = $cond->{'match'};
+    my $arclim = $cond->{'arclim'};
+    my $clean = $cond->{'clean'};
 
     my $prio = $cond->{'prio'} ||= set_prio( $cond );
 
@@ -1486,6 +1488,16 @@ sub criterion_to_key
     if( $rev )
     {
 	$pred_name = "rev$pred_name";
+    }
+
+    if( $arclim )
+    {
+	$pred_name .= "_$arclim";
+    }
+
+    if( $clean )
+    {
+	$pred_name .= "_$clean";
     }
 
     if( $match )
