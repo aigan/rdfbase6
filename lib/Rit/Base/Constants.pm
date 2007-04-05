@@ -245,7 +245,7 @@ sub get
 	    croak "Constant $label doesn't exist";
 	}
 
-	debug "Fetching constant $id";
+#	debug "Fetching constant $id";
 	$Constant{$label} = Rit::Base::Resource->get( $id );
     }
 
