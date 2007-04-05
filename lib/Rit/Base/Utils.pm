@@ -22,6 +22,7 @@ Rit::Base::Utils - Utility functions for RitBase
 use strict;
 use Carp qw( cluck confess carp croak );
 use UNIVERSAL;
+use utf8; # This module has utf8 chars!
 
 BEGIN
 {
