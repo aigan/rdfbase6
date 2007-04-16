@@ -302,9 +302,9 @@ sub loc
 	if( utf8::is_utf8( $str ) )
 	{
 	    # Good...
-	    my $len1 = length($str);
-	    my $len2 = bytes::length($str);
-	    debug sprintf "Returning %s(%d/%d):\n", $str, $len1, $len2;
+#	    my $len1 = length($str);
+#	    my $len2 = bytes::length($str);
+#	    debug sprintf "Returning %s(%d/%d):\n", $str, $len1, $len2;
 	}
 	else
 	{
