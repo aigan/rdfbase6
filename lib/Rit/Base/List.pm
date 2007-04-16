@@ -1096,7 +1096,7 @@ sub loc
     my %alts;
     my $default;
 
-    debug 3,"Choosing among ".(scalar @$list)." values";
+    debug 0,"Choosing among ".(scalar @$list)." values";
 
     foreach my $item ( @$list )
     {

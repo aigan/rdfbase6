@@ -102,8 +102,6 @@ sub maketext
     my $lh = shift;
     my $phrase = shift || "";
 
-    utf8::upgrade($phrase);
-
     my $req = $Para::Frame::REQ;
 
     return "" unless length($phrase);
@@ -136,6 +134,8 @@ sub maketext
 	}
     }
 
+    utf8::upgrade($phrase);
+
 
     my @alts = $req->language->alternatives;
     my( $rec, $value );
@@ -147,7 +147,10 @@ sub maketext
 	    $rec ||= $Rit::dbix->select_possible_record('from tr where c=?',$phrase) || {};
 	    if( defined $rec->{$langcode} and length $rec->{$langcode} )
 	    {
-#		debug "  Compiling $phrase in $langcode";
+		### DECODE UTF8 from database
+		utf8::decode( $rec->{$langcode} );
+
+		debug "  Compiling $phrase in $langcode";
 		$value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($rec->{$langcode});
 		last;
 	    }

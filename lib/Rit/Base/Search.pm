@@ -2462,6 +2462,9 @@ sub sysdesig
 	{
 	    my $key = $search->criterion_to_key( $cond );
 
+#	    my $len1 = length($key);
+#	    my $len2 = bytes::length($key);
+#	    $txt .= sprintf "    $key (%d/%d):\n", $len1, $len2;
 	    $txt .= "    $key:\n";
 
 	    foreach my $val (@{$cond->{'values'}} )
@@ -2478,7 +2481,9 @@ sub sysdesig
 			$valout = datadump( $val );
 		    }
 		}
-		$txt .= "      $valout\n";
+		my $len1 = length($valout);
+		my $len2 = bytes::length($valout);
+		$txt .= sprintf "      $valout (%d/%d)\n", $len1, $len2;
 	    }
 	}
     }

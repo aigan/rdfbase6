@@ -20,6 +20,7 @@ Rit::Base::String
 =cut
 
 use strict;
+use utf8;
 use Carp qw( cluck confess );
 use Digest::MD5 qw( md5_base64 );
 
@@ -91,6 +92,15 @@ sub new
     {
 	$value->{'value'} = $in_value;
     }
+
+    if( $value->{'value'} =~ /Ã/ )
+    {
+	confess "HANDLE THIS";
+    }
+
+    utf8::upgrade( $value->{'value'} );
+#    debug "Created string $value->{'value'}";
+
     return bless $value, $class;
 }
 
@@ -288,7 +298,20 @@ sub loc
     }
     else
     {
-	return $lit->{'value'};
+	my $str = $lit->{'value'};
+	if( utf8::is_utf8( $str ) )
+	{
+	    # Good...
+	    my $len1 = length($str);
+	    my $len2 = bytes::length($str);
+	    debug sprintf "Returning %s(%d/%d):\n", $str, $len1, $len2;
+	}
+	else
+	{
+	    confess "String '$str' not marked as UTF8"
+#	utf8::upgrade($str);
+	}
+	return $str;
     }
 }
 

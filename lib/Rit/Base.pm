@@ -105,7 +105,7 @@ sub init
      find_arcs       => sub{ Rit::Base::Arc->find(@_) },
      find_rules      => sub{ Rit::Base::Rule->find(@_) },
      find_constants  => sub{ Rit::Base::Constants->find(@_) },
-     query_desig     => \&Rit::Base::Utils::query_desig, # move to ritbase!
+     query_desig     => \&Rit::Base::Utils::query_desig,
      C               => Rit::Base::Constants->new,
      timediff        => \&Para::Frame::Utils::timediff,
      timeobj         => sub{ Rit::Base::Time->get( @_ ) },

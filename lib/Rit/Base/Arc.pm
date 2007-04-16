@@ -2349,8 +2349,8 @@ sub init
     }
 
 
-    my $DEBUG = 0;#1 if $id == 1023211;
-    if( $DEBUG )
+    my $DEBUG = 1;#1 if $id == 1023211;
+    if( $DEBUG > 1 )
     {
 	warn timediff("init");
 	carp datadump($rec,2);
@@ -2393,7 +2393,10 @@ sub init
 	}
 	else
 	{
-	    warn "  Setting $coltype value to '$rec->{$coltype}'\n" if $DEBUG;
+	    ### DECODE UTF8 from database
+	    utf8::decode( $rec->{$coltype} );
+
+#	    warn "  Setting $coltype value to '$rec->{$coltype}'\n" if $DEBUG;
 	    $value = Rit::Base::String->new( $rec->{$coltype} );
 	}
     }
@@ -2430,6 +2433,7 @@ sub init
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
 
+
     ########## NEW data (db v6)
     #
     $arc->{'ver'} = $rec->{'ver'};
@@ -2458,7 +2462,7 @@ sub init
     #
     $arc->register_with_nodes;
 
-    warn "Arc $arc->{id} $arc->{ioid} has disregard value $arc->{'disregard'}\n" if $DEBUG;
+    warn "Arc $arc->{id} $arc->{ioid} ($value) has disregard value $arc->{'disregard'}\n" if $DEBUG > 1;
     if( $DEBUG > 1 )
     {
 	my $pred_name = $pred->name->plain;
@@ -2478,7 +2482,7 @@ sub init
     # The node sense of the arc should NOT be resetted. It must have
     # been initialized on object creation
 
-    warn timediff("arc init done") if $DEBUG;
+    warn timediff("arc init done") if $DEBUG > 1;
 
     return $arc;
 }
