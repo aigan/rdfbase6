@@ -1,4 +1,4 @@
-[* MACRO input_focus(text, name) BLOCK *]
+﻿[* MACRO input_focus(text, name) BLOCK *]
    [% IF admin_mode %]
       [* jump("Edit", "$home/admin/translation/update.tt", run='mark', c=text) *]:
    [% END %]

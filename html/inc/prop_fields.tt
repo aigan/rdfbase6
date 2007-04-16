@@ -1,4 +1,4 @@
-[% BLOCK updated %]
+﻿[% BLOCK updated %]
    [%## Displays who and when arc was updated %]
    [%## var arc must be defined %]
    <span class="small_note">

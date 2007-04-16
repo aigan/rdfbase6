@@ -1,4 +1,4 @@
-[% IF admin_mode %]
+﻿[% IF admin_mode %]
 <h2>Översättningar
 <table class="admin">
 

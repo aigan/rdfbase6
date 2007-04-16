@@ -1,4 +1,4 @@
-[% base = "$home/rb/node" %]
+﻿[% base = "$home/rb/node" %]
 [
 [% IF node.is(C.business_role) %]
    [%+ jump('FORM', "[*base*]/contact_update.tt", id=node.first_revprop('has_contact').id) %] |

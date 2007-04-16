@@ -1,4 +1,4 @@
-[% crits = searchobj.criterions %]
+﻿[% crits = searchobj.criterions %]
 [% IF crits %]
 <div id="search_box_small">
    <span class="menu_item_expanded">

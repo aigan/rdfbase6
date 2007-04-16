@@ -1,4 +1,4 @@
-[% META otitle="Arc edit"
+﻿[% META otitle="Arc edit"
    	next_action = 'arc_edit'
 	default_template = 'update.tt'
         level = 20

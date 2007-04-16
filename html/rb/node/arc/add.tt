@@ -1,4 +1,4 @@
-[% META title="Add arcs"
+﻿[% META title="Add arcs"
    default_template = '../update.tt'
    next_action = 'arc_add'
    focus = 'query_row'

@@ -1,4 +1,4 @@
-<table class='address'>
+﻿<table class='address'>
   <tr><td>Adress</td><td>
      [% address_arcs = node.arc_list('address') %]
      [% IF address_arcs.size > 1 %]

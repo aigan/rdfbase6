@@ -1,4 +1,4 @@
-[% META
+﻿[% META
    otitle = "Redigera översättning"
    next_action = "translate_node"
    level = 20
