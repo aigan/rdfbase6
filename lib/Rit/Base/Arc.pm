@@ -2399,17 +2399,20 @@ sub init
 	}
 	else
 	{
-	    ### DECODE UTF8 from database
-	    utf8::decode( $rec->{$coltype} );
-
-	    ### Check for and correct accidental multiple encodings
-	    if( $rec->{$coltype} =~ /Ã/ )
+	    if( $rec->{$coltype} )
 	    {
-		my $val = $rec->{$coltype};
-		if( utf8::decode( $val ) )
+		### DECODE UTF8 from database
+		utf8::decode( $rec->{$coltype} );
+
+		### Check for and correct accidental multiple encodings
+		if( $rec->{$coltype} =~ /Ã/ )
 		{
-		    debug "Corrected multiple encoding for arc $id";
-		    $rec->{$coltype} = $val;
+		    my $val = $rec->{$coltype};
+		    if( utf8::decode( $val ) )
+		    {
+			debug "Corrected multiple encoding for arc $id";
+			$rec->{$coltype} = $val;
+		    }
 		}
 	    }
 
