@@ -19,6 +19,8 @@ Rit::Base::Arc
 
 =cut
 
+use utf8;
+
 use Carp qw( cluck confess carp croak );
 use strict;
 use Time::HiRes qw( time );
@@ -2399,6 +2401,17 @@ sub init
 	{
 	    ### DECODE UTF8 from database
 	    utf8::decode( $rec->{$coltype} );
+
+	    ### Check for and correct accidental multiple encodings
+	    if( $rec->{$coltype} =~ /Ã/ )
+	    {
+		my $val = $rec->{$coltype};
+		if( utf8::decode( $val ) )
+		{
+		    debug "Corrected multiple encoding for arc $id";
+		    $rec->{$coltype} = $val;
+		}
+	    }
 
 #	    warn "  Setting $coltype value to '$rec->{$coltype}'\n" if $DEBUG;
 	    $value = Rit::Base::String->new( $rec->{$coltype} );
