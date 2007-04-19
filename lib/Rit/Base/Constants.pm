@@ -63,7 +63,7 @@ sub import
     my $temp = bless{NOT_INITIALIZED=>1};
 
     my $updating_db = 0;
-    if( $ARGV[0] eq 'upgrade' )
+    if( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
     {
 	$updating_db = 1;
     }
