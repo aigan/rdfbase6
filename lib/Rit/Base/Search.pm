@@ -865,7 +865,7 @@ sub execute
     {
 	debug "Search is to heavy! Runs in background";
 	debug $search->sysdesig;
-#	debug $search->sql_sysdesig;
+	debug $search->sql_sysdesig;
 
 	my $req = $Para::Frame::REQ;
 	$req->note("This search may take a some time!");
@@ -2224,7 +2224,7 @@ sub set_prio
 	}
 	elsif( $match eq 'like' )
 	{
-	    return 8;
+	    return 5;
 	}
 	return 7;
     }
