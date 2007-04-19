@@ -97,8 +97,11 @@ sub new
     {
 	confess "HANDLE THIS";
     }
+    else
+    {
+	utf8::upgrade( $value->{'value'} );
+    }
 
-    utf8::upgrade( $value->{'value'} );
 #    debug "Created string $value->{'value'}";
 
     return bless $value, $class;
