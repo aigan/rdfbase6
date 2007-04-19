@@ -2349,7 +2349,11 @@ sub init
     }
 
 
-    my $DEBUG = 1;#1 if $id == 1023211;
+    my $DEBUG = 0;#1 if $id == 1023211;
+    if( $DEBUG )
+    {
+	debug "Initiating arc $id";
+    }
     if( $DEBUG > 1 )
     {
 	warn timediff("init");

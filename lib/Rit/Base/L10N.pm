@@ -150,7 +150,7 @@ sub maketext
 		### DECODE UTF8 from database
 		utf8::decode( $rec->{$langcode} );
 
-		debug "  Compiling $phrase in $langcode";
+#		debug "  Compiling $phrase in $langcode";
 		$value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($rec->{$langcode});
 		last;
 	    }
