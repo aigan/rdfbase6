@@ -311,8 +311,8 @@ sub loc
 	}
 	else
 	{
-	    confess "String '$str' not marked as UTF8"
-#	utf8::upgrade($str);
+	    debug "String '$str' not marked as UTF8; upgrading";
+	    utf8::upgrade($str);
 	}
 	return $str;
     }
