@@ -884,6 +884,7 @@ sub execute
     {
 #	debug "MIN PRIO = $min_prio";
 	if( debug > 4 )
+#	if( @{$search->{'query'}{'order_by'}} )
 	{
 	    debug 2, $search->sysdesig;
 	    debug 0, $search->sql_sysdesig;
@@ -1791,6 +1792,8 @@ sub build_outer_select_field
 # sub=frame.node and pred=116 limit 1) and pred=11 limit 1)
 #
 
+#    debug "Building sorting sql from $fieldpart";
+
     while( $fieldpart )
     {
 	my $tr=0;
@@ -1812,6 +1815,8 @@ sub build_outer_select_field
 	    $fieldpart = "";
 	}
 
+#	debug "  field $field";
+
 	my $pred = Rit::Base::Pred->get( $field );
 	my $coltype = $pred->coltype;
 	# Sort on real value. Not clean
@@ -1820,6 +1825,7 @@ sub build_outer_select_field
 	if( $sql )
 	{
 	    $where = "subj in ($sql)";
+#	    debug "  Setting where to previous part";
 	}
 
 	if( $tr )
