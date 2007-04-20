@@ -21,7 +21,7 @@ Rit::Base::Arc
 
 use utf8;
 
-use Carp qw( cluck confess carp croak );
+use Carp qw( cluck confess carp croak shortmess );
 use strict;
 use Time::HiRes qw( time );
 
@@ -2320,6 +2320,9 @@ sub get_by_rec_and_register
 
   $a->init( $rec, $subj, $value_obj )
 
+The existing subj and obj can be given, if known, to speed up the
+initialization process.
+
 Returns: the arc
 
 =cut
@@ -2405,7 +2408,7 @@ sub init
 		utf8::decode( $rec->{$coltype} );
 
 		### Check for and correct accidental multiple encodings
-		if( $rec->{$coltype} =~ /Ã/ )
+		if( $rec->{$coltype} =~ /Ã./ )
 		{
 		    my $val = $rec->{$coltype};
 		    if( utf8::decode( $val ) )
@@ -2426,8 +2429,6 @@ sub init
     {
 	$value = is_undef;
     }
-
-#    debug "Value =====> $value";
 
 
     my $clean = $rec->{'valclean'};
@@ -2549,7 +2550,7 @@ sub register_with_nodes
 
     # Setup Value
     my $value = $arc->{'value'};
-    if( $value )
+    if( defined $value )
     {
 	check_value(\$value);
     }
@@ -2993,6 +2994,7 @@ sub check_value
     my( $valref ) = @_;
 
     my $val = $$valref;
+#    debug "Checking value";
 
     if( UNIVERSAL::isa($val, "Rit::Base::List" ) )
     {
@@ -3015,6 +3017,30 @@ sub check_value
     }
     elsif( UNIVERSAL::isa($val, "Rit::Base::Literal" ) )
     {
+	if( UNIVERSAL::isa($val, "Rit::Base::String" ) )
+	{
+	    my $value = $val->literal;
+
+	    if( utf8::is_utf8($value) )
+	    {
+		if( utf8::valid($value) )
+		{
+		    if( $value =~ /Ã./ )
+		    {
+			debug "Value '$value' DOUBLE ENCODED!!!";
+		    }
+		}
+		else
+		{
+		    confess "Value '$value' marked as INVALID utf8";
+		}
+	    }
+	    else
+	    {
+		debug "Value '$value' NOT Marked as utf8; upgrading";
+		utf8::upgrade( $val->{'value'} );
+	    }
+	}
 	# all good
     }
     else
