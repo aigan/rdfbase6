@@ -2245,7 +2245,7 @@ sub desig  # The designation of obj, meant for human admins
 {
     my( $node ) = @_;
 
-    debug "About to give a designation for $node->{id}";
+#    debug "About to give a designation for $node->{id}";
 
     my $desig;
 
@@ -2272,7 +2272,7 @@ sub desig  # The designation of obj, meant for human admins
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
     utf8::upgrade($desig);
-    debug "Returning desig $desig";
+#    debug "Returning desig $desig";
 
     return truncstring( \$desig );
 }
