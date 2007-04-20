@@ -19,8 +19,10 @@ Rit::Base::Resource
 
 =cut
 
-use Carp qw( cluck confess croak carp shortmess );
 use strict;
+use utf8;
+
+use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use LWP::Simple (); # Do not import get
@@ -336,7 +338,6 @@ sub find_by_label
 	if( not ref $val )
 	{
 	    if( $coltype eq 'valtext' or
-		$coltype eq 'valint'  or
 		$coltype eq 'valfloat' )
 	    {
 		$val = Rit::Base::String->new( $val );
@@ -351,7 +352,6 @@ sub find_by_label
 	    }
 	}
 	elsif( ( $coltype eq 'valtext' or
-		 $coltype eq 'valint'  or
 		 $coltype eq 'valfloat'
 		 ) and
 	       ( ref $val eq 'Rit::Base::String' or
@@ -2245,6 +2245,8 @@ sub desig  # The designation of obj, meant for human admins
 {
     my( $node ) = @_;
 
+    debug "About to give a designation for $node->{id}";
+
     my $desig;
 
     if( $node->first_prop('name')->defined )
@@ -2269,6 +2271,8 @@ sub desig  # The designation of obj, meant for human admins
     }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    utf8::upgrade($desig);
+    debug "Returning desig $desig";
 
     return truncstring( \$desig );
 }
@@ -3229,7 +3233,7 @@ For case C<7> we compare the id with the node id.
 
 In cases C<6> and C<8> we searches for nodes that has the given
 C<name> and returns true if one of the elements found matches the
-node. This search is done using L</find_simple> which dosnät handle
+node. This search is done using L</find_simple> which dosn't handle
 literal nodes.
 
 
@@ -3480,10 +3484,7 @@ sub update_by_query
     #
     if( $changes )
     {
-	$node->update({ updated => now() });
-
-	# We used to call cache_sync here. But do it later. Should
-	# only save changes if no exceptions are introduced
+	$node->mark_updated();
     }
 
     # Clear out used query params
@@ -4603,7 +4604,7 @@ sub save
 {
     my( $node ) = @_;
 
-    my $nid = $node->{'id'};
+    my $nid = $node->{'id'} or confess "No id in $node";
 
     my $dbix = $Rit::dbix;
     my $sth = $dbix->dbh->prepare("update node set
@@ -4631,8 +4632,10 @@ sub save
        $node->{'created_by'},
        $dbix->format_datetime($node->{'updated'}),
        $node->{'updated_by'},
+       $nid,
       );
 
+#    debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
     $sth->execute(@values);
 
@@ -5730,7 +5733,7 @@ sub handle_query_row_value
 
     my $pred_name = $arg->{'pred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};   # arc to update. Create arc if undef
-    my $subj_id   = $arg->{'subj'};  # sub for this arc
+    my $subj_id   = $arg->{'subj'};  # subj for this arc
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs
@@ -5857,7 +5860,7 @@ sub handle_query_check_row
 
     my $pred_name = $arg->{'pred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};   # arc to update. Create arc if undef
-    my $subj_id   = $arg->{'subj'};  # sub for this arc
+    my $subj_id   = $arg->{'subj'};  # subj for this arc
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs
@@ -5889,7 +5892,7 @@ sub handle_query_check_row
     }
     else
     {
-	die "Not refering to arc?";
+	die "Not refering to arc? (@_)";
     }
 
     my $pred = getpred( $pred_name );
