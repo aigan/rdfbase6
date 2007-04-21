@@ -79,32 +79,55 @@ sub new
 
     my $class = ref($this) || $this;
 
-    my $value =
-    {
-	'arc' => undef,
-    };
+    my $val; # The actual string
 
     if( ref $in_value )
     {
-	$value->{'value'} = $$in_value;
+	$val = $$in_value;
     }
     else
     {
-	$value->{'value'} = $in_value;
+	$val = $in_value;
     }
 
-    if( $value->{'value'} =~ /Ã/ )
+    if( utf8::is_utf8($val) )
     {
-	confess "HANDLE THIS";
+	if( utf8::valid($val) )
+	{
+	    if( $val =~ /Ã./ )
+	    {
+		die "Value '$val' DOUBLE ENCODED!!!";
+	    }
+	}
+	else
+	{
+	    confess "Value '$val' marked as INVALID utf8";
+	}
     }
     else
     {
-	utf8::upgrade( $value->{'value'} );
+	if( $val =~ /Ã./ )
+	{
+	    debug "HANDLE THIS (apparent undecoded UTF8: $val)";
+	    unless( utf8::decode( $val ) )
+	    {
+		die "Failed to convert to UTF8!";
+	    }
+	}
+	else
+	{
+	    utf8::upgrade( $val );
+	}
     }
 
 #    debug "Created string $value->{'value'}";
 
-    return bless $value, $class;
+
+    return bless
+    {
+     'arc' => undef,
+     'value' => $val,
+    }, $class;
 }
 
 
@@ -182,6 +205,12 @@ Returns a unique predictable id representing this object
 
 sub syskey
 {
+    if( utf8::is_utf8( $_[0]->{'value'} ) )
+    {
+	my $encoded = $_[0]->{'value'};
+	utf8::encode( $encoded );
+	return sprintf("lit:%s", md5_base64($encoded));
+    }
     return sprintf("lit:%s", md5_base64(shift->{'value'}));
 }
 
