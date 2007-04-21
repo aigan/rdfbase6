@@ -1954,6 +1954,15 @@ sub set_value
 
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
+	# Assume that ->plain() always returns charstring
+	utf8::upgrade( $value_db );
+
+	if( $coltype_new eq 'valtext' ) ### DEBUG
+	{
+	    my $len1 = length($value_db);
+	    my $len2 = bytes::length($value_db);
+	    debug "Setting value to: $value_db ($len2/$len1)";
+	}
 
 	my $now_db = $dbix->format_datetime($now);
 	$sth->execute($value_db, $now_db, $u_node->id, $now_db, $arc_id);
