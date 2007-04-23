@@ -2233,7 +2233,7 @@ sub set_indirect
     my $sth = $dbh->prepare("update arc set indirect=?, ".
 				   "updated=? ".
 				   "where id=?");
-    $sth->execute($bool, $now_db, $u_node->id, $arc_id);
+    $sth->execute($bool, $now_db, $arc_id);
 
     $arc->{'arc_updated'} = $now;
     $arc->{'indirect'} = $val;
