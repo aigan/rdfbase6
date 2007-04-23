@@ -1702,8 +1702,8 @@ sub prop
 	}
     }
 
-    confess "WRONG" if $name eq 'loc';
-    confess "WRONG" if $name eq 'subj';
+    confess "loc is a reserved dynamic property" if $name eq 'loc';
+    confess "This node is not an arc" if $name eq 'subj';
 
     $node->initiate_prop( $name );
     my $values = $node->list($name, $proplim, $arclim, $arclim2);
