@@ -927,6 +927,7 @@ sub get_result
 	    throw('dbi', "Database search took to long");
 	}
 
+	cluck "DB error at";
 	throw('dbi',  $@ . "Values: ".join(", ", map{defined $_ ? "'$_'" : '<undef>'} @$values)."\n");
     }
 
