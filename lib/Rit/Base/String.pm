@@ -21,7 +21,8 @@ Rit::Base::String
 
 use strict;
 use utf8;
-use Carp qw( cluck confess );
+
+use Carp qw( cluck confess longmess );
 use Digest::MD5 qw( md5_base64 );
 
 BEGIN
@@ -96,7 +97,7 @@ sub new
 	{
 	    if( $val =~ /Ã./ )
 	    {
-		die "Value '$val' DOUBLE ENCODED!!!";
+		debug longmess "Value '$val' DOUBLE ENCODED!!!";
 	    }
 	}
 	else
