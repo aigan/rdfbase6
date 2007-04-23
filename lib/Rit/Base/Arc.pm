@@ -1276,6 +1276,10 @@ sub coltype
     {
 	return $name;
     }
+    elsif( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' ) )
+    {
+	return 'obj';
+    }
     else
     {
 	confess "No name registred for arc $arc->{'id'} valtype $arc->{'valtype'}";
