@@ -326,7 +326,36 @@ sub create
     my $value;
     my $value_obj;
     # Find out the *real* coltype
-    my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} };
+    my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} } || 'obj';
+
+    # Sanitycheck
+    if( my $val = $props->{'value'} )
+    {
+	if( $coltype eq 'obj' )
+	{
+	    if( UNIVERSAL::isa($val, 'Rit::Base::Resource::Compatible' ) )
+	    {
+		# All good
+	    }
+	    else
+	    {
+		confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+	    }
+	}
+	else
+	{
+	    if( UNIVERSAL::isa($val, 'Rit::Base::Resource::Compatible' ) )
+	    {
+		confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+	    }
+	    else
+	    {
+		# All good
+	    }
+	}
+    }
+
+
     if( my $obj_id = $props->{'obj_id'} )
     {
 	$coltype = 'obj';
@@ -586,6 +615,11 @@ sub find
 
 	push @parts, "$coltype=?";
 	push @values, $value;
+    }
+
+    unless( @parts )
+    {
+	confess "Insufficient arguments: ".datadump($props,2);
     }
 
     my $and_part = join " and ", @parts;
@@ -1271,19 +1305,10 @@ L<Rit::Base::Resource/is_value_node>.
 
 sub coltype
 {
-    my( $arc ) = @_;
-    if( my $name = $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} } )
-    {
-	return $name;
-    }
-    elsif( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' ) )
-    {
-	return 'obj';
-    }
-    else
-    {
-	confess "No name registred for arc $arc->{'id'} valtype $arc->{'valtype'}";
-    }
+    # The arc value may be undefined.
+    # Assume that all valtypes not in the COLTYPE hash are objs
+
+    return $Rit::Base::COLTYPE_valtype2name{ $_[0]->{'valtype'} } || 'obj';
 }
 
 
@@ -2063,7 +2088,7 @@ sub set_pred
 	my $sth = $dbh->prepare("update arc set pred=?, ".
 				       "updated=? ".
 				       "where id=?");
-	$sth->execute($new_pred_id, $now_db, $u_node->id, $arc_id);
+	$sth->execute($new_pred_id, $now_db, $arc_id);
 
 	$arc->{'pred'} = $new_pred;
 
