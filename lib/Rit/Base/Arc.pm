@@ -328,34 +328,6 @@ sub create
     # Find out the *real* coltype
     my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} } || 'obj';
 
-    # Sanitycheck
-    if( my $val = $props->{'value'} )
-    {
-	if( $coltype eq 'obj' )
-	{
-	    if( UNIVERSAL::isa($val, 'Rit::Base::Resource::Compatible' ) )
-	    {
-		# All good
-	    }
-	    else
-	    {
-		confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
-	    }
-	}
-	else
-	{
-	    if( UNIVERSAL::isa($val, 'Rit::Base::Resource::Compatible' ) )
-	    {
-		confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
-	    }
-	    else
-	    {
-		# All good
-	    }
-	}
-    }
-
-
     if( my $obj_id = $props->{'obj_id'} )
     {
 	$coltype = 'obj';
@@ -415,6 +387,30 @@ sub create
 	    # coltype will be set as obj.
 
 	    $coltype = 'obj' if UNIVERSAL::isa( $value, 'Rit::Base::Resource' );
+
+	    if( $coltype eq 'obj' )
+	    {
+		if( UNIVERSAL::isa($value, 'Rit::Base::Resource::Compatible' ) )
+		{
+		    # All good
+		}
+		else
+		{
+		    confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+		}
+	    }
+	    else
+	    {
+		if( UNIVERSAL::isa($value, 'Rit::Base::Resource::Compatible' ) )
+		{
+		    confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+		}
+		else
+		{
+		    # All good
+		}
+	    }
+
 
 	    if( $coltype eq 'obj' )
 	    {
