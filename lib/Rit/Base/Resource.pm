@@ -1169,7 +1169,9 @@ The unique node id.
 
 =cut
 
-sub id { $_[0]->{'id'} }
+sub id {
+#    confess "not a object" unless ref $_[0]; ### DEBUG
+ $_[0]->{'id'} }
 
 
 #######################################################################
@@ -2224,9 +2226,40 @@ Returns:
 
 sub label
 {
-    my( $node ) = @_;
+    return $_[0]->initiate_node->{'label'};
+}
 
-    return Rit::Base::Constants->get_by_id($node->id)->label;
+
+#######################################################################
+
+=head2 set_label
+
+  $n->set_label($label)
+
+Sets the constant label. Crates the constant if not existing yet. Set to undef to remove the constant.
+
+Returns:
+
+  A plain string or plain undef.
+
+=cut
+
+sub set_label
+{
+    my( $node, $label_new ) = @_;
+
+#    debug "$node->{id}:  set_label to $label_new";
+
+    my $label_old = $node->label;
+
+    if( ($label_old||'') ne ($label_new||'') )
+    {
+#	debug "  changed";
+	$node->{'label'} = $label_new;
+	$node->mark_updated;
+    }
+
+    return $label_new;
 }
 
 
@@ -4407,6 +4440,39 @@ sub get_by_label
 
 #########################################################################
 
+=head2 get_by_constant_label
+
+  $n->get_by_constant_label( $label )
+
+=cut
+
+sub get_by_constant_label
+{
+    my( $this, $label ) = @_;
+
+    unless( $Rit::Base::Constants::Label{$label} )
+    {
+	my $sth = $Rit::dbix->dbh->prepare(
+		  "select node from node where label=?");
+	$sth->execute( $label );
+	my( $id ) = $sth->fetchrow_array;
+	$sth->finish;
+
+	unless( $id )
+	{
+	    confess "Constant $label doesn't exist";
+	}
+
+	$Rit::Base::Constants::Label{$label} = Rit::Base::Resource->get( $id );
+    }
+
+    return $Rit::Base::Constants::Label{$label};
+
+}
+
+
+#########################################################################
+
 =head2 init
 
   $node->init
@@ -4494,17 +4560,18 @@ sub initiate_node
     $sth_node->finish;
     if( $rec )
     {
-	if( my $prec_coltype = $rec->{'pred_coltype'} )
+	if( my $pred_coltype = $rec->{'pred_coltype'} )
 	{
 	    $class = "Rit::Base::Pred";
 	    bless $node, $class;
-	    $node->{'coltype'} = $prec_coltype;
+	    $node->{'coltype'} = $pred_coltype;
 	}
 
 	if( my $label = $rec->{'label'} )
 	{
 	    $Rit::Base::Cache::Label{$class}{ $label } = $nid;
 	    $node->{'lables'}{$class}{$label} ++;
+	    $node->{'label'} = $label;
 	}
 
 	$node->{'owned_by'} = $rec->{'owned_by'};
@@ -4515,8 +4582,13 @@ sub initiate_node
 	$node->{'updated'} = Rit::Base::Time->get( $rec->{'updated'} );
 	$node->{'updated_by'} = $rec->{'updated_by'};
 #	debug "  Created $node->{created} by $node->{created_by}";
+
+	$node->{'initiated_node'} = 2;
     }
-    $node->{'initiated_node'} = 1;
+    else
+    {
+	$node->{'initiated_node'} = 1;
+    }
 
     return $node;
 }
@@ -4606,8 +4678,34 @@ sub save
 
     my $nid = $node->{'id'} or confess "No id in $node";
 
+#    debug "Saving node $nid with label ".$node->label;
+
     my $dbix = $Rit::dbix;
-    my $sth = $dbix->dbh->prepare("update node set
+
+    $node->initiate_node;
+
+    my $u = $Para::Frame::REQ->user;
+    my $uid = $u->id;
+    my $now = now();
+
+
+    my @values =
+      (
+       $node->label,
+       $node->{'owned_by'}       || $uid,
+       $node->{'read_access'}    || Rit::Base::Constants->get('public')->id,
+       $node->{'write_access'}   || Rit::Base::Constants->get('sysadmin_group')->id,
+       $node->{'coltype'},
+       $dbix->format_datetime($node->{'created'}||$now),
+       $node->{'created_by'}     || $uid,
+       $dbix->format_datetime($node->{'updated'}||$now),
+       $node->{'updated_by'}     || $uid,
+       $nid,
+      );
+
+    if( $node->{'initiated_node'} == 2 ) # Existing node part
+    {
+	my $sth = $dbix->dbh->prepare("update node set
                                         label=?,
                                         owned_by=?,
                                         read_access=?,
@@ -4619,25 +4717,23 @@ sub save
                                         updated_by=?
                                         where node=?");
 
-    $node->initiate_node;
+#	debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
-    my @values =
-      (
-       $node->label,
-       $node->{'owned_by'},
-       $node->{'read_access'},
-       $node->{'write_access'},
-       $node->{'coltype'},
-       $dbix->format_datetime($node->{'created'}),
-       $node->{'created_by'},
-       $dbix->format_datetime($node->{'updated'}),
-       $node->{'updated_by'},
-       $nid,
-      );
+	$sth->execute(@values) or die;
+    }
+    else
+    {
+	my $sth = $dbix->dbh->prepare("insert into node (label, owned_by,
+                                        read_access, write_access,
+                                        pred_coltype, created,
+                                        created_by, updated,
+                                        updated_by, node)
+                                        values (?,?,?,?,?,?,?,?,?,?)");
 
-#    debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
+#	debug "Creating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
-    $sth->execute(@values);
+	$sth->execute(@values) or die;
+    }
 
     delete $UNSAVED{$nid};
     return 1;
@@ -6332,7 +6428,15 @@ AUTOLOAD
 
     if( $@ )
     {
-	my $err = $Para::Frame::REQ->result->exception;
+	my $err;
+	if( $Para::Frame::REQ )
+	{
+	    $err = $Para::Frame::REQ->result->exception;
+	}
+	else
+	{
+	    $err = $@;
+	}
 	debug datadump $err;
 	my $desc = "";
 	if( $node->defined )
