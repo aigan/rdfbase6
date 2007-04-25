@@ -5,20 +5,22 @@
 [% order = q.param('order') || 'id' %]
 [% direction = q.param('direction') %]
 
+<p>Predicate constants not showed.
+
 <table>
 <tr><th>[% sort('ID','id') %]
     <th>[% sort('Label', 'label') %]
-    <th>[% sort('Name', 'node.name.loc') %]
-    <th>[% sort('is', 'node.is.desig') %]
-    <th>[% sort('scof', 'node.scof.desig') %]
+    <th>[% sort('Name', 'name.loc') %]
+    <th>[% sort('is', 'is.desig') %]
+    <th>[% sort('scof', 'scof.desig') %]
 
-[% FOREACH c = find_constants.sorted(order, direction) %]
+[% FOREACH c IN find_constants.find(is_ne=C.predicate).sorted(order, direction) %]
    [% tr2 %]
       <td>[% c.id %]</td>
       <td>[% jump(c.label, "$home/rb/node/update.tt", id=c.id) %]</td>
-      <td>[% jump(c.node.name.loc, c.node.form_url) %]</td>
-      <td>[% c.node.is.desig %]</td>
-      <td>[% c.node.scof.desig %]</td>
+      <td>[% IF c.name; jump(c.name.loc, c.form_url); END %]</td>
+      <td>[% c.is.desig %]</td>
+      <td>[% c.scof.desig %]</td>
    </td></tr>
 [% END %]
 </table>
