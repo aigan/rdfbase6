@@ -789,7 +789,7 @@ defaults to C<asc>. It can also be C<exists> (for a SQL search).
 C<$prop> can be of the form C<p1.p2.p3> which translates to a property
 lookup in several steps.  For example; C<$arcs->sorted('obj.name')>
 
-The type of sort (numeric or string) id secided by the predicate type.
+The type of sort (numeric or string) is decided by the predicate type.
 Numeric predicates will give numeric sorts.
 
 Examples:
@@ -879,7 +879,7 @@ sub sorted
 	# Silently ignore dynamic props (that isn't preds)
 	if( my $pred = Rit::Base::Pred->find_by_label( $pred_str, 1 ) )
 	{
-	    if( $pred->coltype eq 'valint' )
+	    if( $pred->coltype eq 'valfloat' )
 	    {
 		$cmp = '<=>';
 	    }
