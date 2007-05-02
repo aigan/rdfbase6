@@ -84,7 +84,7 @@
       <td>owned_by</td>
       <td>
       [% IF node.owned_by %]
-         <td>[% jump(node.owned_by.name.loc, node.owned_by.form_url) %]</td>
+         [% jump(node.owned_by.name.loc, node.owned_by.form_url) %]
       [% END %]
       </td>
       <td>hard</td>
@@ -95,7 +95,7 @@
       <td>read_access</td>
       <td>
       [% IF node.read_access %]
-         <td>[% jump(node.read_access.desig, node.read_access.form_url) %]</td>
+         [% jump(node.read_access.desig, node.read_access.form_url) %]
       [% END %]
       </td>
       <td>hard</td>
@@ -106,7 +106,7 @@
       <td>write_access</td>
       <td>
       [% IF node.write_access %]
-         <td>[% jump(node.write_access.desig, node.write_access.form_url) %]</td>
+         [% jump(node.write_access.desig, node.write_access.form_url) %]
       [% END %]
       </td>
       <td>hard</td>
