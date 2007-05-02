@@ -3,7 +3,7 @@
    [%## var arc must be defined %]
    <span class="small_note">
    [%- IF arc.updated_by %]
-      av [% arc.updated_by.name.loc %]
+      by [% jump(arc.updated_by.desig, arc.updated_by.form_url) %]
    [% END %]
    [%+ arc.updated IF arc.updated %]</span>
 [% END %]
