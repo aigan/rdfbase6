@@ -2282,7 +2282,11 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if( $node->first_prop('name')->defined )
+    if( $desig = $node->label )
+    {
+	# That's good
+    }
+    elsif( $node->first_prop('name')->defined )
     {
 	$desig = $node->first_prop('name')
     }
@@ -2328,7 +2332,11 @@ sub sysdesig  # The designation of obj, including node id
 
     my $desig;
 
-    if( $node->first_prop('name')->defined )
+    if( $desig = $node->label )
+    {
+	# That's good
+    }
+    elsif( $node->first_prop('name')->defined )
     {
 	$desig = $node->first_prop('name')
     }
@@ -4668,7 +4676,7 @@ sub rollback
 
 #########################################################################
 
-=head2 save$Rit::dbix
+=head2 save
 
 =cut
 
@@ -4687,19 +4695,44 @@ sub save
     my $u = $Para::Frame::REQ->user;
     my $uid = $u->id;
     my $now = now();
+    my $public = Rit::Base::Constants->get('public');
+    my $sysadmin_group = Rit::Base::Constants->get('sysadmin_group');
+
+    $node->{'read_access'}    ||= $public->id;
+    $node->{'write_access'}   ||= $sysadmin_group->id;
+    $node->{'created'}        ||= $now;
+
+    if( $node->{'updated_by_obj'} )
+    {
+	$node->{'created_by'}   = $node->{'updated_by_obj'}->id;
+    }
+    $node->{'created_by'}     ||= $uid;
+
+    $node->{'updated'}        ||= $now;
+    if( $node->{'updated_by_obj'} )
+    {
+	$node->{'updated_by'}   = $node->{'updated_by_obj'}->id;
+    }
+    $node->{'updated_by'}     ||= $node->{'created_by'};
+
+    if( $node->{'owned_by_obj'} )
+    {
+	$node->{'owned_by'}     = $node->{'owned_by_obj'}->id;
+    }
+    $node->{'owned_by'}       ||= $node->{'created_by'};
 
 
     my @values =
       (
        $node->label,
-       $node->{'owned_by'}       || $uid,
-       $node->{'read_access'}    || Rit::Base::Constants->get('public')->id,
-       $node->{'write_access'}   || Rit::Base::Constants->get('sysadmin_group')->id,
+       $node->{'owned_by'},
+       $node->{'read_access'},
+       $node->{'write_access'},
        $node->{'coltype'},
-       $dbix->format_datetime($node->{'created'}||$now),
-       $node->{'created_by'}     || $uid,
-       $dbix->format_datetime($node->{'updated'}||$now),
-       $node->{'updated_by'}     || $uid,
+       $dbix->format_datetime($node->{'created'}),
+       $node->{'created_by'},
+       $dbix->format_datetime($node->{'updated'}),
+       $node->{'updated_by'},
        $nid,
       );
 
