@@ -32,7 +32,6 @@
 [% END %]
 [% END %]
 
-
 [% WRAPPER imgexpand label="Class $node.code_class.name" %]
 <h2>Parents</h2>
 <ol>[% INCLUDE superclass class=node.code_class %]</ol>
@@ -49,24 +48,85 @@
 <table class="admin" style="margin-top:2em">
 <tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
-[% IF node.is_arc.sorted %]
    <tr>
       <td>-</td>
+      <td>created</td>
+      <td>
+         [% node.created %]
+         by [% jump(node.created_by.name.loc, node.created_by.form_url) %]
+      </td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>updated</td>
+      <td>
+         [% node.updated %]
+         by [% jump(node.updated_by.name.loc, node.updated_by.form_url) %]
+      </td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>label</td>
+      <td>[% node.label %]</td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>owned_by</td>
+      [% IF node.owned_by %]
+         <td>[% jump(node.owned_by.name.loc, node.owned_by.form_url) %]</td>
+      [% ELSE %]
+         <td>-</td>
+      [% END %]
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>read_access</td>
+      [% IF node.read_access %]
+         <td>[% jump(node.read_access.desig, node.read_access.form_url) %]</td>
+      [% ELSE %]
+         <td>-</td>
+      [% END %]
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+   <tr>
+      <td>-</td>
+      <td>write_access</td>
+      [% IF node.write_access %]
+         <td>[% jump(node.write_access.desig, node.write_access.form_url) %]</td>
+      [% ELSE %]
+         <td>-</td>
+      [% END %]
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+
+[% IF node.is_arc %]
+   <tr>
+      <td>[% jump('E', node.form_url ) %]</td>
       <td>subj</td>
       <td>[% jump(node.subj.desig, me, id=node.subj.id) %]</td>
       <td>hard</td>
       <td>-</td>
    </tr>
    <tr>
-      <td>-</td>
+      <td>[% jump('E', node.form_url ) %]</td>
       <td>pred</td>
-      <td>[% node.pred.name %]</td>
+      <td>[% jump(node.pred.label, node.pred.form_url) %]</td>
       <td>hard</td>
       <td>-</td>
    </tr>
    [% IF node.obj %]
       <tr>
-         <td>-</td>
+         <td>[% jump('E', node.form_url ) %]</td>
          <td>obj</td>
          <td>[% jump(node.obj.desig, me, id=node.obj.id) %]</td>
          <td>hard</td>
@@ -74,7 +134,7 @@
       </tr>
    [% ELSE %]
       <tr>
-         <td>-</td>
+         <td>[% jump('E', node.form_url ) %]</td>
          <td>literal</td>
          <td>[% node.value | html %]</td>
          <td>hard</td>
@@ -82,6 +142,17 @@
       </tr>
    [% END %]
 [% END %]
+
+[% IF node.is_pred %]
+   <tr>
+      <td>-</td>
+      <td>coltype</td>
+      <td>[% node.coltype %]</td>
+      <td>hard</td>
+      <td>-</td>
+   </tr>
+[% END %]
+
 
 [% FOREACH pred IN node.list.sorted %]
    [% FOREACH arc IN node.arc_list(pred).sorted('value.plain') %]
