@@ -971,6 +971,57 @@ sub updated
 
 #######################################################################
 
+=head2 activated
+
+  $a->activated
+
+Returns: The time as an L<Rit::Base::Time> object, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub activated
+{
+    my( $arc ) = @_;
+    return $arc->{'arc_activated'} || is_undef;
+}
+
+#######################################################################
+
+=head2 deactivated
+
+  $a->deactivated
+
+Returns: The time as an L<Rit::Base::Time> object, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub deactivated
+{
+    my( $arc ) = @_;
+    return $arc->{'arc_deactivated'} || is_undef;
+}
+
+#######################################################################
+
+=head2 unsubmitted
+
+  $a->unsubmitted
+
+Returns: The time as an L<Rit::Base::Time> object, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub unsubmitted
+{
+    my( $arc ) = @_;
+    return $arc->{'arc_unsubmitted'} || is_undef;
+}
+
+#######################################################################
+
 =head2 updated_by
 
   $a->updated_by
@@ -982,6 +1033,25 @@ See L</created_by>
 sub updated_by
 {
     return $_[0]->created_by;
+}
+
+#######################################################################
+
+=head2 activated_by
+
+  $a->activated_by
+
+Returns: The L<Rit::Base::Resource> of the activator, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub activated_by
+{
+    my( $arc ) = @_;
+    return $arc->{'activated_by_obj'} ||=
+      $Para::Frame::CFG->{'user_class'}->get( $arc->{'activated_by'} ) ||
+	  is_undef;
 }
 
 #######################################################################
@@ -1001,6 +1071,77 @@ sub created_by
     return $arc->{'arc_created_by_obj'} ||=
       $Para::Frame::CFG->{'user_class'}->get( $arc->{'arc_created_by'} ) ||
 	  is_undef;
+}
+
+#######################################################################
+
+=head2 version_id
+
+  $a->version_id
+
+=cut
+
+sub version_id
+{
+    return $_[0]->{'ver'};
+}
+
+#######################################################################
+
+=head2 replaces_id
+
+  $a->replaces_id
+
+=cut
+
+sub replaces_id
+{
+    return $_[0]->{'replaces'};
+}
+
+#######################################################################
+
+=head2 source
+
+  $a->source
+
+=cut
+
+sub source
+{
+    my( $arc ) = @_;
+    return $arc->{'source_obj'} ||=
+      Rit::Base::Resource->get( $arc->{'source'} );
+}
+
+#######################################################################
+
+=head2 read_access
+
+  $a->read_access
+
+=cut
+
+sub read_access
+{
+    my( $arc ) = @_;
+    return $arc->{'arc_read_access_obj'} ||=
+      Rit::Base::Resource->get( $arc->{'arc_read_access'} );
+}
+
+#######################################################################
+
+=head2 write_access
+
+  $a->write_access
+
+=cut
+
+sub write_access
+{
+    my( $arc ) = @_;
+    return $arc->{'arc_write_access_obj'} ||=
+      Rit::Base::Resource->get( $arc->{'arc_write_access'} );
 }
 
 #######################################################################
@@ -1116,6 +1257,38 @@ sub direct
 {
     my( $arc ) = @_;
     return not $arc->{'indirect'};
+}
+
+
+#######################################################################
+
+=head2 active
+
+  $a->active
+
+Returns: true if this arc is active
+
+=cut
+
+sub active
+{
+    return $_[0]->{'active'};
+}
+
+
+#######################################################################
+
+=head2 submitted
+
+  $a->submitted
+
+Returns: true if this arc is submitted
+
+=cut
+
+sub submitted
+{
+    return $_[0]->{'submitted'};
 }
 
 
@@ -2496,8 +2669,8 @@ sub init
     $arc->{'source'} = $rec->{'source'};
     $arc->{'active'} = $rec->{'active'};
     $arc->{'submitted'} = $rec->{'submitted'};
-    $arc->{'read_access'} = $rec->{'read_access'};
-    $arc->{'write_access'} = $rec->{'write_access'};
+    $arc->{'arc_read_access'} = $rec->{'read_access'};
+    $arc->{'arc_write_access'} = $rec->{'write_access'};
     $arc->{'activated'} = $rec->{'activated'};
     $arc->{'activated_by'} = $rec->{'activated_by'};
     $arc->{'deactivated'} = $rec->{'deactivated'};
