@@ -2052,7 +2052,7 @@ sub set_value
 {
     my( $arc, $value_new_in ) = @_;
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
     my $changes = 0;
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
