@@ -7,13 +7,46 @@
    PROCESS prop_fields.tt;
 %]
 
-[% id = q.param('id') || 1115 %]
-[% node = get(id) %]
-[% hidden('id', id) %]
+[%
+   id = q.param('id');
+   node = get(id);
+   hidden('id', id);
+   keep = [ 'id' 'include_indirect' 'include_inactive' 'include_rev' ];
+   include_indirect = q.param('include_indirect');
+   hidden('include_indirect', include_indirect);
+   include_inactive = q.param('include_inactive');
+   hidden('include_inactive', include_inactive);
+   include_rev = q.param('include_rev');
+   hidden('include_rev', include_rev);
+%]
 
 <h2>[% node.sysdesig | html %]</h2>
 
 <p>[% PROCESS node_menu.tt %]</p>
+
+<p>Also show
+[ 
+[%
+IF include_inactive;
+   jump('*inactive*', me, keep_params=keep, href_class='selected', include_inactive=0);
+ELSE;
+   jump('inactive', me, keep_params=keep, href_class='', include_inactive=1);
+END;
+' | ';
+IF include_indirect;
+   jump('*indirect*', me, keep_params=keep, href_class='selected', include_indirect=0);
+ELSE;
+   jump('indirect', me, keep_params=keep, href_class='', include_indirect=1);
+END;
+' | ';
+IF include_rev;
+   jump('*reverse*', me, keep_params=keep, href_class='selected', include_rev=0);
+ELSE;
+   jump('reverse', me, keep_params=keep, href_class='', include_rev=1);
+END;
++%]
+]</p>
+
 
 [% BLOCK superclass %]
 [% FOREACH sc IN class.parents %]
@@ -157,9 +190,14 @@
    </tr>
 [% END %]
 
+[% IF include_indirect %]
+   [% arclim = '' %]
+[% ELSE %]
+   [% arclim = 'direct' %]
+[% END %]
 
-[% FOREACH pred IN node.list.sorted %]
-   [% FOREACH arc IN node.arc_list(pred).sorted('value.plain') %]
+[% FOREACH pred IN node.list_preds('',arclim).sorted %]
+   [% FOREACH arc IN node.arc_list(pred,'',arclim).sorted('value.plain') %]
       <tr>
       <td>
       [% IF arc.direct %]
@@ -181,4 +219,82 @@
       </tr>
    [% END %]
 [% END %]
+
+[% IF include_inactive %]
+[% FOREACH pred IN node.list_preds('','inactive').sorted %]
+   [% FOREACH arc IN node.arc_list(pred,'','inactive').sorted('value.plain') %]
+      <tr>
+      <td>
+      [% IF arc.direct %]
+         [% jump('E', 'arc/update.tt', id=arc.id ) %]
+      [% ELSE %]
+         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+      [% END %]
+      </td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>
+      [% IF arc.obj %]
+         [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+      [% ELSE %]
+         [% arc.value | html %]
+      [% END %]
+      </td>
+      <td>[% arc.view_flags %]</td>
+      <td>[% PROCESS updated %]</td>
+      </tr>
+   [% END %]
+[% END %]
+[% END %]
+
 </table>
+
+
+[% IF include_rev %]
+<table class="admin" style="margin-top:2em">
+<tr><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
+[% FOREACH pred IN node.revlist_preds('',arclim).sorted %]
+   [% FOREACH arc IN node.revarc_list(pred,'',arclim).sorted %]
+      <tr>
+      <td>
+      [% IF arc.direct %]
+         [% jump('E', 'arc/update.tt', id=arc.id ) %]
+      [% ELSE %]
+         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+      [% END %]
+      </td>
+      <td>
+         [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
+      </td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>[% arc.view_flags %]</td>
+      <td>[% PROCESS updated %]</td>
+      </tr>
+   [% END %]
+[% END %]
+
+[% IF include_inactive %]
+[% FOREACH pred IN node.revlist_preds('','inactive').sorted %]
+   [% FOREACH arc IN node.revarc_list(pred,'','inactive').sorted %]
+      <tr>
+      <td>
+      [% IF arc.direct %]
+         [% jump('E', 'arc/update.tt', id=arc.id ) %]
+      [% ELSE %]
+         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+      [% END %]
+      </td>
+      <td>
+         [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
+      </td>
+      <td valign="top">[% pred.name.loc %]</td>
+      <td>[% arc.view_flags %]</td>
+      <td>[% PROCESS updated %]</td>
+      </tr>
+   [% END %]
+[% END %]
+[% END %]
+
+</table>
+[% END %]
+
+
