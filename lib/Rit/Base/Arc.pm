@@ -71,7 +71,9 @@ Inherits from L<Rit::Base::Resource>.
 
 =cut
 
-
+# NOTE:
+# $arc->{'id'}        == $rec->{'ver'}
+# $arc->{'common_id'} == $rec->{'id'}
 
 #########################################################################
 ################################  Constructors  #########################
@@ -148,7 +150,7 @@ sub create
 
     my $rec = {};
 
-    ##################### arc_id
+    ##################### id == common_id
     if( $props->{'id'} )
     {
 	$rec->{'id'}  = $props->{'id'};
@@ -161,7 +163,7 @@ sub create
     push @values, $rec->{'id'};
 
 
-    ##################### ver_id
+    ##################### ver == id
     if( $props->{'ver'} )
     {
 	$rec->{'ver'}  = $props->{'ver'};
@@ -508,7 +510,7 @@ sub create
     cache_update;
 
     send_cache_update({ change => 'arc_created',
-			arc_id => $arc->id,
+			arc_id => $arc->common_id,
 		      });
 
     return $arc;
@@ -567,6 +569,23 @@ sub find
     {
 	push @parts, "subj=?";
 	push @values, $props->{'subj_id'};
+    }
+
+    if( defined $props->{'active'} )
+    {
+	if( $props->{'active'} )
+	{
+	    push @parts, "active is true";
+	}
+	else
+	{
+	    push @parts, "active is false";
+	}
+    }
+    else
+    {
+	# FIND ACTIVE VERSION
+	push @parts, "active is true";
     }
 
     my $pred = Rit::Base::Pred->get( $props->{'pred_id'} ||
@@ -1165,10 +1184,11 @@ sub view_flags # To be used in admin view
 {
     my( $node ) = @_;
 
+    my $active = $node->active ? "Ac" : "In";
     my $direct = $node->direct ? "Di" : "In";
     my $explicit = $node->explicit ? "Ex" : "Im";
 
-    return "$direct $explicit";
+    return "$active $direct $explicit";
 }
 
 #######################################################################
@@ -1278,6 +1298,22 @@ sub active
 
 #######################################################################
 
+=head2 inactive
+
+  $a->inactive
+
+Returns: true if this arc is inactive
+
+=cut
+
+sub inactive
+{
+    return not $_[0]->{'active'};
+}
+
+
+#######################################################################
+
 =head2 submitted
 
   $a->submitted
@@ -1289,6 +1325,43 @@ Returns: true if this arc is submitted
 sub submitted
 {
     return $_[0]->{'submitted'};
+}
+
+
+#######################################################################
+
+=head2 common
+
+  $a->common
+
+TODO: Should be it's own class
+
+Returns: The node representing the arc, regardless of version
+
+=cut
+
+sub common
+{
+    return $_[0]->{'common'} ||=
+      Rit::Base::Resource->get_by_id($_[0]->{'common_id'});
+}
+
+
+#######################################################################
+
+=head2 common_id
+
+  $a->common_id
+
+TODO: Should be it's own class
+
+Returns: The node id representing the arc, regardless of version
+
+=cut
+
+sub common_id
+{
+    return $_[0]->{'common_id'};
 }
 
 
@@ -1643,9 +1716,9 @@ sub reset_clean
 	    # TODO: convert to arc method
 	    my $dbh = $Rit::dbix->dbh;
 	    my $sth = $dbh->prepare
-	      ("update arc set valclean=? where id=?");
+	      ("update arc set valclean=? where ver=?");
 	    die if $cleaned =~ /^ritbase/;
-	    $sth->execute($cleaned, $arc->id);
+	    $sth->execute($cleaned, $arc->version_id);
 	    $arc->{'clean'} = $cleaned;
 
 	    # TODO: What is this?
@@ -1668,6 +1741,8 @@ Returns: ---
 
 sub remove_duplicates
 {
+    confess "DEPRECATED";
+
     my( $arc ) = @_;
 
     my $DEBUG = 0;
@@ -1702,7 +1777,7 @@ sub remove_duplicates
 
 	### Same as for remove()
 	$arc2->SUPER::remove();  # Removes the arc node: the arcs properties
-	$dbh->do("delete from arc where id=?", {}, $arc2->id);
+	$dbh->do("delete from arc where id=? and active is true", {}, $arc2->id);
 
 	foreach my $prop (qw( subj pred_name value clean coltype valtype
 			      created updated created_by implicit indirect ))
@@ -1840,6 +1915,53 @@ sub value_equals
 
 #######################################################################
 
+=head2 meets_arclim
+
+  $a->meets_arclim( $arclim )
+
+=cut
+
+sub meets_arclim
+{
+    my( $arc, $arclim ) = @_;
+
+    if( $arclim eq 'active' )
+    {
+	return $arc->active;
+    }
+    elsif(  $arclim eq 'inactive' )
+    {
+	return $arc->inactive;
+    }
+    elsif( $arclim eq 'direct' )
+    {
+	return $arc->direct;
+    }
+    elsif( $arclim eq 'explicit' )
+    {
+	return $arc->explicit;
+    }
+    elsif( $arclim eq 'indirect' )
+    {
+	return $arc->indirect;
+    }
+    elsif( $arclim eq 'implicit' )
+    {
+	return $arc->implicit;
+    }
+    elsif( $arclim eq 'not_disregarded' )
+    {
+	return $arc->not_disregarded;
+    }
+    else
+    {
+	confess "not implemented: ".datadump($arclim);
+    }
+}
+
+
+#######################################################################
+
 =head2 remove
 
   $a->remove
@@ -1868,6 +1990,8 @@ Returns: the number of arcs removed.
 sub remove
 {
     my( $arc, $implicit ) = @_;
+
+    confess "IMPLEMENT ME";
 
     my $DEBUG = 0;
 
@@ -1944,10 +2068,10 @@ sub remove
     my $arc_id = $arc->id;
     debug "Removed arc id ".$arc->sysdesig."\n";
     my $dbh = $Rit::dbix->dbh;
-    my $sth = $dbh->prepare("delete from arc where id=?");
+    my $sth = $dbh->prepare("delete from arc where ver=?");
 
     ### DEBUG
-#    confess "***** Would have removed arc\n"; 
+    confess "***** Would have removed arc $arc_id\n"; 
     $sth->execute($arc_id);
 
     debug "  init subj\n" if $DEBUG;
@@ -2052,6 +2176,8 @@ sub set_value
 {
     my( $arc, $value_new_in ) = @_;
 
+    confess "WOULD HAVE set value of arc $arc->{'id'} to '$value_new_in'\n";
+
     my $DEBUG = 0;
     my $changes = 0;
 
@@ -2132,7 +2258,7 @@ sub set_value
 	    $value_db = $value_new;
 
 	    my $sth = $dbh->prepare
-		("update arc set valclean=? where id=?");
+		("update arc set valclean=? where ver=?");
 	    my $clean = $value_new->clean->plain;
 #	    die if $clean =~ /^ritbase/;
 	    $sth->execute($clean, $arc_id);
@@ -2148,7 +2274,7 @@ sub set_value
 
 	my $sth = $dbh->prepare("update arc set $coltype_new=?, ".
 				       "created=?, created_by=?, updated=? ".
-				       "where id=?");
+				       "where ver=?");
 
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
@@ -2220,6 +2346,8 @@ sub set_pred
 {
     my( $arc, $pred ) = @_;
 
+    confess "WOULD HAVE set pred of arc $arc->{'id'}\n";
+
     my $DEBUG = 0;
 
     my $changes = 0;
@@ -2256,7 +2384,7 @@ sub set_pred
 	debug "  extra part: $extra\n" if $DEBUG;
 	my $sth = $dbh->prepare("update arc set pred=?, ".
 				       "updated=? ".
-				       "where id=?");
+				       "where ver=?");
 	$sth->execute($new_pred_id, $now_db, $arc_id);
 
 	$arc->{'pred'} = $new_pred;
@@ -2347,7 +2475,7 @@ sub set_implicit
 
     my $dbix      = $Rit::dbix;
     my $dbh       = $dbix->dbh;
-    my $arc_id    = $arc->id;
+    my $arc_ver   = $arc->version_id;
     my $u_node    = $Para::Frame::REQ->user;
     my $now       = now();
     my $now_db    = $dbix->format_datetime($now);
@@ -2355,8 +2483,8 @@ sub set_implicit
 
     my $sth = $dbh->prepare("update arc set implicit=?, ".
 				   "updated=? ".
-				   "where id=?");
-    $sth->execute($bool, $now_db, $u_node->id, $arc_id);
+				   "where ver=?");
+    $sth->execute($bool, $now_db, $u_node->id, $arc_ver);
 
     $arc->{'arc_updated'} = $now;
     $arc->{'implicit'} = $val;
@@ -2422,7 +2550,7 @@ sub set_indirect
 
     my $dbix      = $Rit::dbix;
     my $dbh       = $dbix->dbh;
-    my $arc_id    = $arc->id;
+    my $arc_ver   = $arc->version_id;
     my $u_node    = $Para::Frame::REQ->user;
     my $now       = now();
     my $now_db    = $dbix->format_datetime($now);
@@ -2430,8 +2558,8 @@ sub set_indirect
 
     my $sth = $dbh->prepare("update arc set indirect=?, ".
 				   "updated=? ".
-				   "where id=?");
-    $sth->execute($bool, $now_db, $arc_id);
+				   "where ver=?");
+    $sth->execute($bool, $now_db, $arc_ver);
 
     $arc->{'arc_updated'} = $now;
     $arc->{'indirect'} = $val;
@@ -2469,10 +2597,10 @@ Exceptions: see L</init>.
 sub get_by_rec
 {
     my $this = shift;
-
-    my $id = $_[0]->{'id'} or
-      confess "get_by_rec misses the id param: ".datadump($_[0],2);
-    return $Rit::Base::Cache::Resource{$id} || $this->new($id)->first_bless(@_);
+    my $id = $_[0]->{'ver'} or
+      confess "get_by_rec misses the ver param: ".datadump($_[0],2);
+    return $Rit::Base::Cache::Resource{$id}
+      || $this->new($id)->first_bless(@_);
 }
 
 
@@ -2497,13 +2625,12 @@ sub get_by_rec_and_register
 {
     my $this = shift;
 
-    my $id = $_[0]->{id} or
+    my $id = $_[0]->{'ver'} or
       croak "get_by_rec misses the id param: ".datadump($_[0],2);
-
-#    debug "Re-Registring arc $id";
 
     if( my $arc = $Rit::Base::Cache::Resource{$id} )
     {
+	debug "Re-Registring arc $id";
 	$arc->register_with_nodes;
 	return $arc;
     }
@@ -2538,18 +2665,23 @@ sub init
 {
     my( $arc, $rec, $subj, $value_obj ) = @_;
 
-    my $id = $arc->{'id'};
+# NOTE:
+# $arc->{'id'}        == $rec->{'ver'}
+# $arc->{'common_id'} == $rec->{'id'}
+
+
+    my $id = $arc->{'id'}; # Yes!
 
     if( $rec )
     {
-	unless( $id eq $rec->{'id'} )
+	unless( $id eq $rec->{'ver'} )
 	{
 	    confess "id mismatch: ".datadump($arc,2).datadump($rec,2);
 	}
     }
     else
     {
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where id = ?");
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where ver = ?");
 	$sth_id->execute($id);
 	$rec = $sth_id->fetchrow_hashref;
 	$sth_id->finish;
@@ -2646,7 +2778,7 @@ sub init
     my $created_by = $rec->{'created_by'};
 
     # Setup data
-    $arc->{'id'} = $id;
+    $arc->{'id'} = $id; # This is $rec->{'ver'}
     $arc->{'subj'} = $subj;
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
@@ -2664,7 +2796,7 @@ sub init
 
     ########## NEW data (db v6)
     #
-    $arc->{'ver'} = $rec->{'ver'};
+    $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
     $arc->{'replaces'} = $rec->{'replaces'};
     $arc->{'source'} = $rec->{'source'};
     $arc->{'active'} = $rec->{'active'};
@@ -2741,17 +2873,29 @@ sub register_with_nodes
     # Register the arc hos the subj
     unless( $subj->{'arc_id'}{$id}  )
     {
-	if( ref $subj->{'relarc'}{ $pred_name } )
+	if( $arc->{'active'} )
 	{
-	    push @{$subj->{'relarc'}{ $pred_name }}, $arc;
+	    if( ref $subj->{'relarc'}{ $pred_name } )
+	    {
+		push @{$subj->{'relarc'}{ $pred_name }}, $arc;
+	    }
+	    else
+	    {
+		$subj->{'relarc'}{ $pred_name } = [$arc];
+	    }
 	}
 	else
 	{
-	    # Is realy the List class needed?
-#	    $subj->{'relarc'}{ $pred_name } =
-#		new Rit::Base::List( [$arc] );
-	    $subj->{'relarc'}{ $pred_name } = [$arc];
+	    if( ref $subj->{'relarc_inactive'}{ $pred_name } )
+	    {
+		push @{$subj->{'relarc_inactive'}{ $pred_name }}, $arc;
+	    }
+	    else
+	    {
+		$subj->{'relarc_inactive'}{ $pred_name } = [$arc];
+	    }
 	}
+
 	$subj->{'arc_id'}{$id} = $arc;
     }
 
@@ -2772,17 +2916,29 @@ sub register_with_nodes
 
 	unless( $value->{'arc_id'}{$id} )
 	{
-	    if( ref $value->{'revarc'}{ $pred_name } )
+	    if( $arc->{'active'} )
 	    {
-		push @{$value->{'revarc'}{ $pred_name }}, $arc;
+		if( ref $value->{'revarc'}{ $pred_name } )
+		{
+		    push @{$value->{'revarc'}{ $pred_name }}, $arc;
+		}
+		else
+		{
+		    $value->{'revarc'}{ $pred_name } = [$arc];
+		}
 	    }
 	    else
 	    {
-	    # Is realy the List class needed?
-#		$value->{'revarc'}{ $pred_name } =
-#		    new Rit::Base::List( [$arc] );
-		$value->{'revarc'}{ $pred_name } = [$arc];
+		if( ref $value->{'revarc_inactive'}{ $pred_name } )
+		{
+		    push @{$value->{'revarc_inactive'}{ $pred_name }}, $arc;
+		}
+		else
+		{
+		    $value->{'revarc_inactive'}{ $pred_name } = [$arc];
+		}
 	    }
+
 	    $value->{'arc_id'}{$id} = $arc;
 	}
     }
