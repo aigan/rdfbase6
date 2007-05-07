@@ -191,6 +191,11 @@ sub create
 
     ##################### active
     push @fields, 'active';
+    unless( defined $props->{'active'} )
+    {
+	$props->{'active'} = 1;
+    }
+
     if( $props->{'active'} )
     {
 	$rec->{'active'} = 1;
