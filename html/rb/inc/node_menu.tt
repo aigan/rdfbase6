@@ -1,13 +1,6 @@
 ﻿[% base = "$home/rb/node" %]
-[
-[% IF node.is(C.business_role) %]
-   [%+ jump('FORM', "[*base*]/contact_update.tt", id=node.first_revprop('has_contact').id) %] |
-[% ELSIF node.is(C.business_persona) %]
-   [%+ jump('FORM', "[*base*]/person_modify.tt", id=node.is_persona_of.id) %] |
-[% ELSE %]
-   [%+ jump('FORM', node.form_url) %] |
-[% END %]
-  [%+ jump('Node', "$base/update.tt", id=id) +%]
+[ [%+ jump('FORM', node.form_url) +%]
+| [%+ jump('Node', "$base/update.tt", id=id) +%]
 | [% jump('Translate', "$home/rb/translation/node.tt", id=id ) +%]
 | [% jump('Add arcs', "$base/arc/add.tt", id=id ) +%]
 | [% jump('Merge', "$base/merge.tt", id=id) +%]
@@ -16,8 +9,4 @@
 ]<br/>
 [ [%+ jump('Search result', search.result_url ) +%]
 | [% jump('Modify search', search.form_url ) +%]
-]<br/>
-[ [% jump('View rels', "$base/update.tt", id=id) %]
-| [% jump('View direct revs', "$base/update_rev.tt", id=id) %]
-| [% jump('List preds', "$base/pred/list.tt") %]
 ]
