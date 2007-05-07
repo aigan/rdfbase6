@@ -120,7 +120,7 @@ sub username
 {
 #    warn "in User username: ".datadump($_[0],3);
 
-    return $_[0]->{username} ||= $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id;
+    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id;
 }
 
 #######################################################################
@@ -299,11 +299,12 @@ sub verify_password
 
     $password_encrypted ||= '';
 
-#    debug "Retrieving password for $node->{id}";
+#    debug "Retrieving password for $u->{id}";
     my $n_password = $u->first_prop('password') || '';
     unless( $n_password )
     {
 	my $uname = $u->desig;
+	confess "No desig for user" unless $uname;
 	throw('validation', "$uname has no password");
     }
 
