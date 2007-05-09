@@ -9,7 +9,7 @@ package Rit::Base::Constants;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -121,7 +121,7 @@ sub init
 
     #################################
 
-#    # Bootstrap the is Pred
+#    # Bootstrap the 'is' Pred
 #    debug "Bootstrapping is";
 #    Rit::Base::Pred->new(1)->init();
 #    debug "Bootstrapping class_handled_by_perl_module ";
