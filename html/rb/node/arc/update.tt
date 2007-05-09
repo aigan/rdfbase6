@@ -16,6 +16,19 @@
 
 <p>[% PROCESS node_menu.tt %]</p>
 
+[% IF arc.inactive %]
+<p>This arc is <strong>inactive</strong>
+   [% IF arc.submitted %]
+      and <strong>submitted</strong>
+   [% ELSE %]
+      and <strong>not yet submitted</strong>
+   [% END %]
+</p>
+[% ELSE %]
+<p>This is an <strong>active</strong> version. Changes will create a
+new arc.</p>
+[% END %]
+
 <table class='admin'>
 <tr>
    <td>[% jump('Subj', '../update.tt', id=arc.subj.id) %]</td>
@@ -92,9 +105,27 @@
 [% END %]
 [% END %]
 
-<tr><td>Version</td><td>[% arc.version_id %]</td></tr>
+<tr><td>Common</td><td>[% arc.common_id %]</td></tr>
 
-<tr><td>Replaces</td><td>[% arc.replaces_id %]</td></tr>
+<tr><td>Replaces</td><td>
+[% IF arc.replaces_id %]
+   [% jump(arc.replaces_id, me, id=arc.replaces_id) %]
+[% END %]
+</td></tr>
+
+<tr><td>Replaced by</td><td>
+[% FOREACH rarc IN arc.replaced_by %]
+   [% jump(rarc.id, me, id=rarc.id) %]<br>
+[% END %]
+</td></tr>
+
+<tr><td>Active version</td><td>
+[% IF arc.active %]
+   This version
+[% ELSIF arc.active_version %]
+   [% jump(arc.active_version.id, me, id=arc.active_version.id) %]
+[% END %]
+</td></tr>
 
 <tr><td>Source</td><td>[% jump(arc.source.desig, arc.source.form_url) %]</td></tr>
 
@@ -116,7 +147,17 @@
 
 </table>
 
-<p>[% step %]</p>
+<p>
+[% IF arc.inactive %]
+   [% IF arc.submitted %]
+      [% go("Activate", me, "arc_activate") %]
+   [% ELSE %]
+      [% go("Submit", me, "arc_submit") %]
+   [% END %]
+[% END %]
+[% step %] &nbsp;
+[% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+</p>
 
 [% IF arc.indirect %]
   <h2>This arc is infered</h2>
@@ -130,10 +171,6 @@
   [% END %]
   </dl>
 [% END %]
-
-<h2>Notes</h2>
-
-<p>Remove predicate to remove the arc</p>
 
 [%
 BLOCK flags;
@@ -158,7 +195,7 @@ BLOCK flags;
    IF arc.submitted;
       GET 'submitted';
    ELSE;
-      GET 'unsubmitted';
+      GET 'not submitted';
    END;
 END;
 %]

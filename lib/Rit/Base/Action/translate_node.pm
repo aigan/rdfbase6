@@ -94,6 +94,7 @@ sub handler
 	    my $val_old = $arc->value;
 	    if( $val_new ne $val_old )
 	    {
+		confess "implement this";
 		$arc->set_value($val_new);
 	    }
 

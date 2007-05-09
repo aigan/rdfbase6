@@ -9,7 +9,7 @@ package Rit::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -150,10 +150,10 @@ sub create
 
     my $rec = {};
 
-    ##################### id == common_id
-    if( $props->{'id'} )
+    ##################### common_id == id
+    if( $props->{'common_id'} )
     {
-	$rec->{'id'}  = $props->{'id'};
+	$rec->{'id'}  = $props->{'common_id'};
     }
     else
     {
@@ -163,10 +163,10 @@ sub create
     push @values, $rec->{'id'};
 
 
-    ##################### ver == id
-    if( $props->{'ver'} )
+    ##################### id == ver
+    if( $props->{'id'} )
     {
-	$rec->{'ver'}  = $props->{'ver'};
+	$rec->{'ver'}  = $props->{'id'};
     }
     else
     {
@@ -174,6 +174,15 @@ sub create
     }
     push @fields, 'ver';
     push @values, $rec->{'ver'};
+
+
+    ##################### replaces_id
+    if( $props->{'replaces_id'} )
+    {
+	$rec->{'replaces'}  = $props->{'replaces_id'};
+	push @fields, 'replaces';
+	push @values, $rec->{'replaces'};
+    }
 
 
     ##################### source
@@ -1033,6 +1042,12 @@ sub deactivated
 
   $a->unsubmitted
 
+NB: This is not the reverse of L</submitted>
+
+C<unsubmitted> means that the submission has been taken back.  The
+date of the submission is the L</updated> time, if the L</submitted>
+flag is set.
+
 Returns: The time as an L<Rit::Base::Time> object, or
 L<Rit::Base::Undef>.
 
@@ -1174,10 +1189,14 @@ sub write_access
 
   $a->view_flags
 
+  Ac = active
+  NA = Not Active
   Di = direct
   In = indirect
   Ex = explicit
   Im = implicit
+  Su = Submitted
+  NS = Not Submitted
 
 Returns: A plain string the the direct/explicit status.
 
@@ -1189,11 +1208,12 @@ sub view_flags # To be used in admin view
 {
     my( $node ) = @_;
 
-    my $active = $node->active ? "Ac" : "In";
+    my $active = $node->active ? "Ac" : "NA";
     my $direct = $node->direct ? "Di" : "In";
     my $explicit = $node->explicit ? "Ex" : "Im";
+    my $submitted = $node->submitted ? "Su" : "NS";
 
-    return "$active $direct $explicit";
+    return "$active $direct $explicit $submitted";
 }
 
 #######################################################################
@@ -1323,6 +1343,13 @@ sub inactive
 
   $a->submitted
 
+NB: This is not the reverse of L</unsubmitted>
+
+C<unsubmitted> means that the submission has been taken back.  The
+date of the submission is the L</updated> time, if the L</submitted>
+flag is set.
+
+
 Returns: true if this arc is submitted
 
 =cut
@@ -1330,6 +1357,130 @@ Returns: true if this arc is submitted
 sub submitted
 {
     return $_[0]->{'submitted'};
+}
+
+
+#######################################################################
+
+=head2 active_version
+
+  $a->active_version
+
+May return undef;
+
+Returns: The active arc, if there is one, even if it's this arc
+
+=cut
+
+sub active_version
+{
+    my( $arc ) = @_;
+    my $class = ref($arc);
+
+    if( $arc->active )
+    {
+	return $arc;
+    }
+
+    my $aarc;
+
+    # Updates here on demand
+    if( $aarc = $arc->{'active_version'} )
+    {
+	if( $aarc->active )
+	{
+	    return $aarc;
+	}
+    }
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? and active is true");
+    $sth->execute($arc->common_id);
+    if( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	$aarc = $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    # May be undef
+    return $arc->{'active_version'} = $aarc;
+}
+
+
+#######################################################################
+
+=head2 replaced_by
+
+  $a->replaced_by
+
+May return empty listref
+
+Returns: A list of arcs replacing this version. Active or inactive
+
+=cut
+
+sub replaced_by
+{
+    my( $arc ) = @_;
+    my $class = ref($arc);
+
+    my @list;
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? and replaces=?");
+    $sth->execute($arc->common_id, $arc->id);
+    if( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	push @list, $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    return Rit::Base::List->new(\@list);
+}
+
+
+#######################################################################
+
+=head2 deactivate
+
+  $a->deactivate( $arc )
+
+Must give the new active arc as arg. This will be called by
+L</activate> or by L</remove>.
+
+=cut
+
+sub deactivate
+{
+    my( $arc, $narc ) = @_;
+    my $class = ref($arc);
+
+    unless( $arc->active )
+    {
+	throw('validation', "Arc $arc->{id} is not active");
+    }
+
+    my $updated = $narc->updated;
+
+    my $dbix = $Rit::dbix;
+    my $date_db = $dbix->format_datetime($updated);
+
+    my $st = "update arc set updated=?, deactivated=?, active='false' where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $date_db, $arc->id );
+
+    $arc->{'arc_updated'} = $updated;
+    $arc->{'arc_deactivated'} = $updated;
+    $arc->{'active'} = 0;
+
+    # Reset caches
+    #
+    $arc->obj->initiate_cache if $arc->obj;
+    $arc->subj->initiate_cache;
+    $arc->initiate_cache;
+    cache_update;
+
+    return;
 }
 
 
@@ -1996,8 +2147,6 @@ sub remove
 {
     my( $arc, $implicit ) = @_;
 
-    confess "IMPLEMENT ME";
-
     my $DEBUG = 0;
 
     if( $DEBUG )
@@ -2010,6 +2159,16 @@ sub remove
 
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
+
+    if( $arc->active )
+    {
+	confess "IMPLEMENT ME";
+    }
+    elsif( $arc->submitted )
+    {
+	confess "IMPLEMENT ME";
+    }
+
 
     # Can this arc be infered?
     if( $arc->validate_check )
@@ -2076,7 +2235,7 @@ sub remove
     my $sth = $dbh->prepare("delete from arc where ver=?");
 
     ### DEBUG
-    confess "***** Would have removed arc $arc_id\n"; 
+#    confess "***** Would have removed arc $arc_id\n"; 
     $sth->execute($arc_id);
 
     debug "  init subj\n" if $DEBUG;
@@ -2127,6 +2286,7 @@ sub remove
 
 Proprties:
 
+
   value: Calls L</set_value>
 
 No other uses are implemented.
@@ -2148,7 +2308,7 @@ sub update
 	my $val = $props->{$pred_name};
 	if( $pred_name eq 'value' )
 	{
-	    $arc->set_value( $val );
+	    $arc = $arc->set_value( $val );
 	}
 	else
 	{
@@ -2164,6 +2324,8 @@ sub update
 
   $a->set_value( $new_value )
 
+  $a->set_value( $new_value, $changes_ref )
+
 Sets the L</value> of the arc.
 
 Determines if we are dealning with L<Rit::Base::Resource> or
@@ -2173,18 +2335,16 @@ Old and/or new value could be a value node.  Fail if old value
 is obj and new value isn't.  If old is value and new is obj,
 just accept that.
 
-Returns: The number of changes
+Returns: the arc changed, or the same arc
 
 =cut
 
 sub set_value
 {
-    my( $arc, $value_new_in ) = @_;
+    my( $arc, $value_new_in, $changes_ref ) = @_;
 
-    confess "WOULD HAVE set value of arc $arc->{'id'} to '$value_new_in'\n";
-
-    my $DEBUG = 0;
-    my $changes = 0;
+    my $DEBUG = 1;
+    $changes_ref ||= \ 0;
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
@@ -2203,7 +2363,7 @@ sub set_value
 	    my $result = $Para::Frame::REQ->result;
 	    $result->{'info'}{'alternatives'}{'alts'} = $value_new_list;
 	    $result->{'info'}{'alternatives'}{'query'} = $value_new_in;
-	    throw('alternatives', "Flera noder matchar kriterierna");
+	    throw('alternatives', "More than one node matches the criterions");
     }
 
     my $value_new = $value_new_list->get_first_nos;
@@ -2234,6 +2394,21 @@ sub set_value
 
     unless( $value_new->equals( $value_old ) )
     {
+	if( $arc->active or $arc->submitted )
+	{
+	    my $new = Rit::Base::Arc->create({
+					      common_id => $arc->common_id,
+					      replaces_id => $arc->id,
+					      active => 0,
+					      subj_id => $arc->{'subj'},
+					      pred_id => $arc->{'pred'},
+					      value => $value_new,
+					     }, $changes_ref);
+	    return $new;
+	}
+
+
+
 	debug "    Changing value\n" if $DEBUG;
 
 	$arc->remove_check;
@@ -2304,7 +2479,6 @@ sub set_value
 	$arc->{'arc_created_by_obj'} = $u_node;
 
 	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
-	$arc->created_by(); ### DEBUG
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
@@ -2321,14 +2495,14 @@ sub set_value
 
 	debug "Updated arc id $arc_id: ".$arc->desig."\n";
 
-	$changes ++;
+	$$changes_ref ++;
     }
     else
     {
 	debug "    Same value\n" if $DEBUG;
     }
 
-    return $changes;
+    return $arc;
 }
 
 
@@ -2338,20 +2512,20 @@ sub set_value
 
   $a->set_pred( $pred )
 
+  $a->set_pred( $pred, $changes_ref )
+
 Sets the pred to what we get from L<Rit::Base::Resource/get> called
 from L<Rit::Base::Pred>.
 
 TODO: Make sure that the new pred has the same coltype.
 
-Returns: the number of changes
+Returns: the arc changed, or the same arc
 
 =cut
 
 sub set_pred
 {
-    my( $arc, $pred ) = @_;
-
-    confess "WOULD HAVE set pred of arc $arc->{'id'}\n";
+    my( $arc, $pred, $changes_ref ) = @_;
 
     my $DEBUG = 0;
 
@@ -2362,6 +2536,8 @@ sub set_pred
 
     if( $new_pred_id != $old_pred_id )
     {
+	confess "WOULD HAVE set pred of arc $arc->{'id'}\n";
+
 	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->name."\n" if $DEBUG;
 
 	$arc->remove_check;
@@ -2403,6 +2579,8 @@ sub set_pred
 
 	if( $new_coltype ne $old_coltype )
 	{
+	    confess "implement this";
+
 	    # May not initiate arc cache
 	    # Both old and new value could be undef
 	    $arc->set_value( $value_new );
@@ -2412,10 +2590,123 @@ sub set_pred
 			    arc_id => $arc->id,
 			  });
 
-	$changes ++;
+	$$changes_ref ++ if $changes_ref; # increment changes
     }
 
-    return $changes;
+    return $arc;
+}
+
+#######################################################################
+
+=head2 submit
+
+  $a->submit
+
+Submits the arc
+
+Returns: the number of changes
+
+Exceptions: validation
+
+=cut
+
+sub submit
+{
+    my( $arc ) = @_;
+
+    unless( $arc->inactive )
+    {
+	throw('validation', "Arc is already active");
+    }
+
+    if( $arc->submitted )
+    {
+	throw('validation', "Arc is already submitted");
+    }
+
+    my $dbix = $Rit::dbix;
+
+    my $updated = now();
+    my $date_db = $dbix->format_datetime($updated);
+
+    my $st = "update arc set updated=?, submitted='true' where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $arc->id );
+
+    $arc->{'arc_updated'} = $updated;
+    $arc->{'submitted'} = 1;
+
+    $arc->initiate_cache;
+    cache_update;
+
+    return 1;
+}
+
+#######################################################################
+
+=head2 activate
+
+  $a->activate
+
+Activates the arc
+
+Returns: the number of changes
+
+Exceptions: validation
+
+=cut
+
+sub activate
+{
+    my( $arc ) = @_;
+
+    unless( $arc->inactive )
+    {
+	throw('validation', "Arc is already active");
+    }
+
+    unless( $arc->submitted )
+    {
+	throw('validation', "Arc is not yet submittes");
+    }
+
+    my $updated = now();
+    my $activated_by = $Para::Frame::REQ->user;
+
+    my $aarc = $arc->active_version;
+
+
+    my $activated_by_id = $activated_by->id;
+    my $dbix = $Rit::dbix;
+    my $date_db = $dbix->format_datetime($updated);
+
+    # Replaces is already set if this version is based on another
+    # It may be another version than the currently active one
+
+    my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $date_db, $activated_by_id, $arc->id );
+
+    $arc->{'arc_updated'} = $updated;
+    $arc->{'arc_activated'} = $updated;
+    $arc->{'submitted'} = 0;
+    $arc->{'active'} = 1;
+    $arc->{'activated_by'} = $activated_by_id;
+    $arc->{'activated_by_obj'} = $activated_by;
+
+    # Reset caches
+    #
+    $arc->obj->initiate_cache if $arc->obj;
+    $arc->subj->initiate_cache;
+    $arc->initiate_cache;
+    cache_update;
+
+    if( $aarc ) # Previously active arc
+    {
+	$aarc->deactivate( $arc );
+    }
+
+    return 1;
 }
 
 #########################################################################
@@ -2781,6 +3072,9 @@ sub init
     my $updated = Rit::Base::Time->get($rec->{'updated'} );
     my $created = Rit::Base::Time->get($rec->{'created'} );
     my $created_by = $rec->{'created_by'};
+    my $arc_activated = Rit::Base::Time->get($rec->{'activated'} );
+    my $arc_deactivated = Rit::Base::Time->get($rec->{'deactivated'} );
+    my $arc_unsubmitted = Rit::Base::Time->get($rec->{'unsubmitted'} );
 
     # Setup data
     $arc->{'id'} = $id; # This is $rec->{'ver'}
@@ -2788,31 +3082,27 @@ sub init
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
     $arc->{'clean'} = $clean;
-    $arc->{'arc_created_by'} = $created_by;
     $arc->{'implicit'} = $implicit;
     $arc->{'indirect'} = $indirect;
     $arc->{'disregard'} ||= 0; ### Keep previous value
     $arc->{'in_remove_chek'} = 0;
-    $arc->{'arc_created'} = $created;
-    $arc->{'arc_updated'} = $updated;
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
-
-
-    ########## NEW data (db v6)
-    #
     $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
     $arc->{'replaces'} = $rec->{'replaces'};
     $arc->{'source'} = $rec->{'source'};
     $arc->{'active'} = $rec->{'active'};
     $arc->{'submitted'} = $rec->{'submitted'};
+    $arc->{'activated_by'} = $rec->{'activated_by'};
+    $arc->{'unsubmitted'} = $arc_unsubmitted;
+    $arc->{'valtype'} = $rec->{'valtype'}; # Get obj on demand
+    $arc->{'arc_created_by'} = $created_by;
+    $arc->{'arc_created'} = $created;
+    $arc->{'arc_updated'} = $updated;
     $arc->{'arc_read_access'} = $rec->{'read_access'};
     $arc->{'arc_write_access'} = $rec->{'write_access'};
-    $arc->{'activated'} = $rec->{'activated'};
-    $arc->{'activated_by'} = $rec->{'activated_by'};
-    $arc->{'deactivated'} = $rec->{'deactivated'};
-    $arc->{'unsubmitted'} = $rec->{'unsubmitted'};
-    $arc->{'valtype'} = $rec->{'valtype'}; # Get obj on demand
+    $arc->{'arc_activated'} = $arc_activated;
+    $arc->{'arc_deactivated'} = $arc_deactivated;
     #
     ####################################
 

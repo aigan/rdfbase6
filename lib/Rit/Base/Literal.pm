@@ -251,11 +251,11 @@ sub update
 				valtype => $arc->valtype,
 			       });
 
-	$arc->set_value( $node );
+	$arc = $arc->set_value( $node, \$changes );
 	$changes ++;
     }
 
-    return $changes;
+    return $literal;
 }
 
 

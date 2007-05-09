@@ -2450,7 +2450,14 @@ sub sysdesig  # The designation of obj, including node id
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
 
-    return truncstring("$node->{'id'}: $desig");
+    if( $desig eq $node->{'id'} )
+    {
+	return $desig;
+    }
+    else
+    {
+	return truncstring("$node->{'id'}: $desig");
+    }
 }
 
 
@@ -5664,6 +5671,8 @@ sub handle_query_arc_value
 {
     my( $node, $param, $row, $deathrow, $value ) = @_;
 
+    confess "implement this";
+
     die "missing value" unless defined $value;
 
     my $req = $Para::Frame::REQ;
@@ -5866,7 +5875,7 @@ sub handle_query_arc_value
 
 	if( $arc->pred->id != $pred_id )
 	{
-	    $changes += $arc->set_pred( $pred_id );
+	    $arc->set_pred( $pred_id, \$changes );
 	}
 
 	my $present_value = $arc->value;
@@ -5898,7 +5907,8 @@ sub handle_query_arc_value
 		    $value = $list->get($props);
 		}
 
-		$changes += $arc->set_value( $value );
+
+		$arc = $arc->set_value( $value, \$changes );
 	    }
 	    else
 	    {
@@ -5909,7 +5919,7 @@ sub handle_query_arc_value
 	{
 	    if( length $value )
 	    {
-		$changes += $arc->set_value( $value );
+		$arc = $arc->set_value( $value, \$changes );
 	    }
 	    else
 	    {
@@ -6335,7 +6345,7 @@ sub handle_query_row_value
 	}
 	else
 	{
-	    $changes += $arc->set_value( $value );
+	    $arc = $arc->set_value( $value, \$changes );
 	    $q->delete("check_$param");
 
 	    # Remove the subject (that is an arc) from deathrow

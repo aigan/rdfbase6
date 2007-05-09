@@ -16,7 +16,7 @@ package Rit::Base::Action::arc_edit;
 use strict;
 use Data::Dumper;
 
-use Para::Frame::Utils qw( clear_params );
+use Para::Frame::Utils qw( clear_params debug );
 
 use Rit::Base::Utils qw( parse_arc_add_box );
 
@@ -54,12 +54,21 @@ sub handler
     #
     elsif( $pred_name )
     {
-	$changed += $arc->set_pred( $pred_name );
-	$changed += $arc->set_value( $value );
+	my $new = $arc->set_pred( $pred_name, \$changed );
+	$new = $new->set_value( $value, \$changed );
+	debug "New arc is ".$new->sysdesig;
+	debug "Changes: $changed";
 
 	# Should we transform this literal to a value node?
 	my $props = parse_arc_add_box( $literal_arcs );
-	$changed += $arc->value->update( $props );
+	$new->value->update( $props, \$changed );
+
+	if( $changed )
+	{
+	    $arc_id = $new->id;
+	    $q->param('arc_id', $arc_id);
+	    return "Arc $arc_id created as a new version";
+	}
     }
     #
     # Direct arc (remove)
