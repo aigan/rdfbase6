@@ -9,7 +9,7 @@ package Rit::Base::Constant;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -26,6 +26,7 @@ BEGIN
 {
     our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
     print "Loading ".__PACKAGE__." $VERSION\n";
+    die "DEPRECATED";
 }
 
 use Para::Frame::Reload;
