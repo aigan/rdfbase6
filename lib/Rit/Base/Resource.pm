@@ -1435,68 +1435,45 @@ autoload in TT.
 
 sub list
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
+    my $node = shift;
+    my $name = shift;
 
-    # Do *not* accept undef arclim, for this construct
-    if( $proplim and not ref $proplim and $arclim )
-    {
-	$proplim = { $proplim => $arclim };
-	$arclim = $arclim2;
-    }
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
 
     if( $name )
     {
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    confess "Now why did you go and do that?";
 	    $name = $name->name;
 	}
 
-	my $inactive = 0;
+	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 	my @arcs;
+
 	if( $node->initiate_prop( $name, $proplim, $arclim ) )
 	{
-	    if( ($arclim||'') eq 'inactive' )
+	    if( $active )
 	    {
-		$inactive = 1;
-		undef $arclim;
-		@arcs = @{ $node->{'relarc_inactive'}{$name} };
+#		debug "Adding relarcs";
+		push @arcs, @{ $node->{'relarc'}{$name} };
 	    }
-	    else
+
+	    if( $inactive )
 	    {
-		@arcs = @{ $node->{'relarc'}{$name} };
+#		debug "Adding relarcs inactive";
+		push @arcs, @{ $node->{'relarc_inactive'}{$name} };
 	    }
 	}
 	else
 	{
-	    debug 3, "No values for $node->{id} prop $name found!";
+#	    debug "No values for $node->{id} prop $name found!";
 	}
 
-	if( $arclim )
+	if( @$arclim )
 	{
-	    if( $arclim eq 'direct' )
+	    foreach my $lim (@$arclim)
 	    {
-		@arcs = grep $_->direct, @arcs;
-	    }
-	    elsif( $arclim eq 'explicit' )
-	    {
-		@arcs = grep $_->explicit, @arcs;
-	    }
-	    elsif( $arclim eq 'indirect' )
-	    {
-		@arcs = grep $_->indirect, @arcs;
-	    }
-	    elsif( $arclim eq 'implicit' )
-	    {
-		@arcs = grep $_->implicit, @arcs;
-	    }
-	    elsif( $arclim eq 'not_disregarded' )
-	    {
-		@arcs = grep $_->not_disregarded, @arcs;
-	    }
-	    else
-	    {
-		confess "not implemented: ".datadump($arclim);
+		@arcs = grep $_->meets_arclim($lim), @arcs;
 	    }
 	}
 
@@ -1507,6 +1484,7 @@ sub list
 	    # TODO: Include inactive properties?
 	    $vals = $vals->find($proplim);
 	}
+
 	return $vals;
     }
     else
@@ -1534,45 +1512,80 @@ Retuns: a ref to a list of all property names.
 
 sub list_preds
 {
-    my( $node, $proplim, $arclim ) = @_;
+    my $node = shift;
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+
     if( $proplim )
     {
 	die "proplim not implemented";
     }
 
-    if( ($arclim||'') eq 'inactive' )
-    {
-#	debug "LOOKS FOR INACTIVE PROPS";
-#	debug datadump($node,2);
-	$node->initiate_rel( $proplim, $arclim );
-	return Rit::Base::List->new([map Rit::Base::Pred->get_by_label($_), keys %{$node->{'relarc_inactive'}}]);
-    }
-    else
-    {
-	$node->initiate_rel( $proplim, $arclim );
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 
-	my @preds;
-	if( $arclim )
+    $node->initiate_rel( $proplim, $arclim );
+
+    my %preds_name;
+    if( $active )
+    {
+	if( @$arclim )
 	{
 	    foreach my $predname (keys %{$node->{'relarc'}})
 	    {
+	      ARCTEST:
 		foreach my $arc (@{$node->{'relarc'}{$predname}})
 		{
-		    if( $arc->meets_arclim($arclim) )
+		    foreach my $lim (@$arclim)
 		    {
-			push @preds, Rit::Base::Pred->get_by_label($predname);
-			last;
+			if( $arc->meets_arclim($lim) )
+			{
+			    $preds_name{$predname} ++;
+			    last ARCTEST;
+			}
 		    }
 		}
 	    }
 	}
 	else
 	{
-	    @preds = map Rit::Base::Pred->get_by_label($_), keys %{$node->{'relarc'}};
+	    foreach my $predname ( keys %{$node->{'relarc'}} )
+	    {
+		$preds_name{ $predname } ++;
+	    }
 	}
-
-	return Rit::Base::List->new([@preds]);
     }
+
+    if( $inactive )
+    {
+	if( @$arclim )
+	{
+	    foreach my $predname (keys %{$node->{'relarc_inactive'}})
+	    {
+	      ARCTEST2:
+		foreach my $arc (@{$node->{'relarc_inactive'}{$predname}})
+		{
+		    foreach my $lim (@$arclim)
+		    {
+			if( $arc->meets_arclim($lim) )
+			{
+			    $preds_name{$predname} ++;
+			    last ARCTEST2;
+			}
+		    }
+		}
+	    }
+	}
+	else
+	{
+	    foreach my $predname ( keys %{$node->{'relarc'}} )
+	    {
+		$preds_name{ $predname } ++;
+	    }
+	}
+    }
+
+    my @preds = map Rit::Base::Pred->get_by_label($_), keys %preds_name;
+
+    return Rit::Base::List->new([@preds]);
 }
 
 
@@ -1599,42 +1612,31 @@ instead.
 
 sub revlist
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
+    my $node = shift;
+    my $name = shift;
 
-    # Gives a List of nodes for rev property $name
-    # Without $name: returns a list of rev property names
-
-    if( debug > 2 )
-    {
-	my $arclim_str = $arclim || "";
-	my $proplim_str = $proplim || "";
-	debug "Revlist $name for $node->{id} with $proplim and $arclim";
-    }
-
-    # Do *not* accept undef arclim, for this construct
-    if( $proplim and not ref $proplim and $arclim )
-    {
-	$proplim = { $proplim => $arclim };
-	$arclim = $arclim2;
-    }
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
 
     if( $name )
     {
-	$name = $name->name if UNIVERSAL::isa($name,'Rit::Base::Pred');
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->name;
+	}
 
-	my $inactive = 0;
+	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 	my @arcs;
+
 	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
 	{
-	    if( ($arclim||'') eq 'inactive' )
+	    if( $active )
 	    {
-		$inactive = 1;
-		undef $arclim;
-		@arcs = @{ $node->{'revarc_inactive'}{$name} };
+		push @arcs, @{ $node->{'revarc'}{$name} };
 	    }
-	    else
+
+	    if( $inactive )
 	    {
-		@arcs = @{ $node->{'revarc'}{$name} };
+		push @arcs, @{ $node->{'revarc_inactive'}{$name} };
 	    }
 	}
 	else
@@ -1642,38 +1644,15 @@ sub revlist
 	    debug 3, "  No values for revprop $name found!";
 	}
 
-	if( $arclim )
+	if( @$arclim )
 	{
-	    if( $arclim eq 'direct' )
+	    foreach my $lim (@$arclim)
 	    {
-		@arcs = grep $_->direct, @arcs;
-	    }
-	    elsif( $arclim eq 'explicit' )
-	    {
-		@arcs = grep $_->explicit, @arcs;
-	    }
-	    elsif( $arclim eq 'indirect' )
-	    {
-		@arcs = grep $_->indirect, @arcs;
-	    }
-	    elsif( $arclim eq 'implicit' )
-	    {
-		@arcs = grep $_->implicit, @arcs;
-	    }
-	    elsif( $arclim eq 'not_disregarded' )
-	    {
-		@arcs = grep $_->not_disregarded, @arcs;
-	    }
-	    else
-	    {
-		die "not implemented: $arclim";
+		@arcs = grep $_->meets_arclim($lim), @arcs;
 	    }
 	}
 
 	my $vals = Rit::Base::List->new([ map $_->subj, @arcs ]);
-
-	debug "VALS IS NOW: ".datadump($vals,4)
-	  if debug > 3;
 
 	if( $proplim )
 	{
@@ -1707,43 +1686,80 @@ Retuns: a ref to a list of all reverse property names.
 
 sub revlist_preds
 {
-    my( $node, $proplim, $arclim ) = @_;
+    my $node = shift;
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+
     if( $proplim )
     {
 	die "proplim not implemented";
     }
 
-    if( ($arclim||'') eq 'inactive' )
-    {
-	$node->initiate_rev( $proplim, $arclim );
-	return Rit::Base::List->new([map Rit::Base::Pred->get_by_label($_), keys %{$node->{'revarc_inactive'}}]);
-    }
-    else
-    {
-	$node->initiate_rev( $proplim, $arclim );
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 
-	my @preds;
-	if( $arclim )
+    $node->initiate_rev( $proplim, $arclim );
+
+    my %preds_name;
+    if( $active )
+    {
+	if( @$arclim )
 	{
 	    foreach my $predname (keys %{$node->{'revarc'}})
 	    {
+	      ARCTEST:
 		foreach my $arc (@{$node->{'revarc'}{$predname}})
 		{
-		    if( $arc->meets_arclim($arclim) )
+		    foreach my $lim (@$arclim)
 		    {
-			push @preds, Rit::Base::Pred->get_by_label($predname);
-			last;
+			if( $arc->meets_arclim($lim) )
+			{
+			    $preds_name{$predname} ++;
+			    last ARCTEST;
+			}
 		    }
 		}
 	    }
 	}
 	else
 	{
-	    @preds = map Rit::Base::Pred->get_by_label($_), keys %{$node->{'revarc'}};
+	    foreach my $predname ( keys %{$node->{'revarc'}} )
+	    {
+		$preds_name{ $predname } ++;
+	    }
 	}
-
-	return Rit::Base::List->new([@preds]);
     }
+
+    if( $inactive )
+    {
+	if( @$arclim )
+	{
+	    foreach my $predname (keys %{$node->{'revarc_inactive'}})
+	    {
+	      ARCTEST2:
+		foreach my $arc (@{$node->{'revarc_inactive'}{$predname}})
+		{
+		    foreach my $lim (@$arclim)
+		    {
+			if( $arc->meets_arclim($lim) )
+			{
+			    $preds_name{$predname} ++;
+			    last ARCTEST2;
+			}
+		    }
+		}
+	    }
+	}
+	else
+	{
+	    foreach my $predname ( keys %{$node->{'revarc'}} )
+	    {
+		$preds_name{ $predname } ++;
+	    }
+	}
+    }
+
+    my @preds = map Rit::Base::Pred->get_by_label($_), keys %preds_name;
+
+    return Rit::Base::List->new([@preds]);
 }
 
 
@@ -1764,6 +1780,8 @@ sub revlist_preds
 Returns the values of the property with predicate C<$predname>.  See
 L</list> for explanation of the params.
 
+For special predname C<id>, returns the id.
+
 Use L</first_prop> or L</list> instead if that's what you want!
 
 Returns:
@@ -1778,56 +1796,30 @@ In no nodes found, returns C<undef>.
 
 sub prop
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
+    my $node = shift;
+    my $name = shift;
 
     $name or confess "No name param given";
     return  $node->id if $name eq 'id';
 
     debug 3, "!!! get ".$node->id."-> $name";
 
-    if( 0 )### DEBUG
-    {
-	cluck;
-	if( $Rit::tmpcount ++ > 100 )
-	{
-	    confess;
-	}
-    }
-
     confess "loc is a reserved dynamic property" if $name eq 'loc';
     confess "This node is not an arc" if $name eq 'subj';
 
-    $node->initiate_prop( $name );
-    my $values = $node->list($name, $proplim, $arclim, $arclim2);
+    my $values = $node->list($name, @_);
 
     if( $values->size > 1 ) # More than one element
     {
-#	debug 3, "=== Ret ".$node->id."-> $name: (List with ".(scalar @$values)." nodes)";
 	return $values;  # Returns list
+    }
+    elsif( $values->size ) # Return Resource, or undef if no such element
+    {
+	return $values->get_first_nos;
     }
     else
     {
-	# Return Resource, or undef if no such element
-	if( debug > 2 )
-	{
-	    if( debug > 4 )
-	    {
-		debug "=== Ret ".$node->id."-> $name: ".datadump($values->[0], 2);
-	    }
-	    else
-	    {
-		debug "=== Ret ".$node->id."-> $name: ".($values->[0]||'<undef>');
-	    }
-	}
-
-	if( $values->size )
-	{
-	    return $values->get_first_nos;
-	}
-	else
-	{
-	    return is_undef;
-	}
+	return is_undef;
     }
 }
 
@@ -1859,31 +1851,26 @@ In no nodes found, returns C<undef>.
 
 =cut
 
-sub revprop     # Get first value or the list.
+sub revprop
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
-    #
-    # Use first_revprop() or list() explicitly if that's what you want!
+    my $node = shift;
+    my $name = shift;
 
-    $node->initiate_revprop( $name );
+    $name or confess "No name param given";
 
-    my $values = $node->revlist($name, $proplim, $arclim, $arclim2);
+    my $values = $node->revlist($name, @_);
 
     if( $values->size > 1 ) # More than one element
     {
 	return $values;  # Returns list
     }
+    elsif( $values->size ) # Return Resource, or undef if no such element
+    {
+	return $values->get_first_nos;
+    }
     else
     {
-	# Return Resource, or undef if no such element
-	if( $values->size )
-	{
-	    return $values->get_first_nos;
-	}
-	else
-	{
-	    return is_undef;
-	}
+	return is_undef;
     }
 }
 
@@ -1901,11 +1888,12 @@ C<$pred_name> or C<undef> if none found.
 
 sub first_prop
 {
+    my( $node, $name ) = @_;
+
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    my( $node, $name ) = @_;
-    $node->initiate_prop( $name );
+    $node->initiate_prop( $name, undef, [] );
     return is_undef unless defined $node->{'relarc'}{$name};
     $node->{'relarc'}{$name}[0] or confess "Empty list for $name in ".$node->id;
     return $node->{'relarc'}{$name}[0]->value;
@@ -2549,32 +2537,31 @@ With no C<$pred_name>, all arcs from the node is returned.
 
 sub arc_list
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
+    my $node = shift;
+    my $name = shift;
 
-    # Do *not* accept undef arclim, for this construct
-    if( $proplim and not ref $proplim and $arclim )
-    {
-	$proplim = { $proplim => $arclim };
-	$arclim = $arclim2;
-    }
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 
     if( $name )
     {
-	$name = $name->name if UNIVERSAL::isa($name,'Rit::Base::Pred');
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->name;
+	}
 
-	my $inactive = 0;
 	my @arcs;
+
 	if( $node->initiate_prop( $name, $proplim, $arclim ) )
 	{
-	    if( ($arclim||'') eq 'inactive' )
+	    if( $active )
 	    {
-		$inactive = 1;
-		undef $arclim;
-		@arcs = @{ $node->{'relarc_inactive'}{$name} };
+		push @arcs, @{ $node->{'relarc'}{$name} };
 	    }
-	    else
+
+	    if( $inactive )
 	    {
-		@arcs = @{ $node->{'relarc'}{$name} };
+		push @arcs, @{ $node->{'relarc_inactive'}{$name} };
 	    }
 	}
 	else
@@ -2582,37 +2569,15 @@ sub arc_list
 	    debug 3, "  No values for relprop $name found!";
 	}
 
-	if( $arclim )
+	foreach my $lim (@$arclim)
 	{
-	    if( $arclim eq 'direct' )
-	    {
-		@arcs = grep $_->direct, @arcs;
-	    }
-	    elsif( $arclim eq 'explicit' )
-	    {
-		@arcs = grep $_->explicit, @arcs;
-	    }
-	    elsif( $arclim eq 'indirect' )
-	    {
-		@arcs = grep $_->indirect, @arcs;
-	    }
-	    elsif( $arclim eq 'implicit' )
-	    {
-		@arcs = grep $_->implicit, @arcs;
-	    }
-	    elsif( $arclim eq 'not_disregarded' )
-	    {
-		@arcs = grep $_->not_disregarded, @arcs;
-	    }
-	    else
-	    {
-		die "not implemented: $arclim";
-	    }
+	    @arcs = grep $_->meets_arclim($lim), @arcs;
 	}
 
 	my $lr = Rit::Base::List->new(\@arcs);
 	if( $proplim )
 	{
+	    # TODO: Include inactive properties?
 	    $lr = $lr->find($proplim);
 	}
 
@@ -2628,35 +2593,25 @@ sub arc_list
 	}
 
 	my @arcs;
-	if( ($arclim||'') eq 'inactive' )
+	if( $active )
+	{
+	    foreach my $pred_name ( keys %{$node->{'relarc'}} )
+	    {
+		push @arcs, @{ $node->{'relarc'}{$pred_name} };
+	    }
+	}
+
+	if( $inactive )
 	{
 	    foreach my $pred_name ( keys %{$node->{'relarc_inactive'}} )
 	    {
 		push @arcs, @{ $node->{'relarc_inactive'}{$pred_name} };
 	    }
 	}
-	else
+
+	foreach my $lim (@$arclim)
 	{
-	    if( $arclim )
-	    {
-		foreach my $predname (keys %{$node->{'relarc'}})
-		{
-		    foreach my $arc (@{$node->{'relarc'}{$predname}})
-		    {
-			if( $arc->meets_arclim($arclim) )
-			{
-			    push @arcs, $arc;
-			}
-		    }
-		}
-	    }
-	    else
-	    {
-		foreach my $pred_name ( keys %{$node->{'relarc'}} )
-		{
-		    push @arcs, @{ $node->{'relarc'}{$pred_name} };
-		}
-	    }
+	    @arcs = grep $_->meets_arclim($lim), @arcs;
 	}
 
 	return Rit::Base::List->new(\@arcs);
@@ -2689,32 +2644,31 @@ With no C<$pred_name>, all revarcs from the node is returned.
 
 sub revarc_list
 {
-    my( $node, $name, $proplim, $arclim, $arclim2 ) = @_;
+    my $node = shift;
+    my $name = shift;
 
-    # Do *not* accept undef arclim, for this construct
-    if( $proplim and not ref $proplim and $arclim )
-    {
-	$proplim = { $proplim => $arclim };
-	$arclim = $arclim2;
-    }
+    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 
     if( $name )
     {
-	$name = $name->plain if UNIVERSAL::isa($name,'Rit::Base::Pred');
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->name;
+	}
 
-	my $inactive = 0;
 	my @arcs;
+
 	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
 	{
-	    if( ($arclim||'') eq 'inactive' )
+	    if( $active )
 	    {
-		$inactive = 1;
-		undef $arclim;
-		@arcs = @{ $node->{'revarc_inactive'}{$name} };
+		push @arcs, @{ $node->{'revarc'}{$name} };
 	    }
-	    else
+
+	    if( $inactive )
 	    {
-		@arcs = @{ $node->{'revarc'}{$name} };
+		push @arcs, @{ $node->{'revarc_inactive'}{$name} };
 	    }
 	}
 	else
@@ -2722,32 +2676,9 @@ sub revarc_list
 	    debug 3, "  No values for revprop $name found!";
 	}
 
-	if( $arclim )
+	foreach my $lim (@$arclim)
 	{
-	    if( $arclim eq 'direct' )
-	    {
-		@arcs = grep $_->direct, @arcs;
-	    }
-	    elsif( $arclim eq 'explicit' )
-	    {
-		@arcs = grep $_->explicit, @arcs;
-	    }
-	    elsif( $arclim eq 'indirect' )
-	    {
-		@arcs = grep $_->indirect, @arcs;
-	    }
-	    elsif( $arclim eq 'implicit' )
-	    {
-		@arcs = grep $_->implicit, @arcs;
-	    }
-	    elsif( $arclim eq 'not_disregarded' )
-	    {
-		@arcs = grep $_->not_disregarded, @arcs;
-	    }
-	    else
-	    {
-		die "not implemented: $arclim";
-	    }
+	    @arcs = grep $_->meets_arclim($lim), @arcs;
 	}
 
 	my $lr = Rit::Base::List->new(\@arcs);
@@ -2768,35 +2699,25 @@ sub revarc_list
 	}
 
 	my @arcs;
-	if( ($arclim||'') eq 'inactive' )
+	if( $active )
+	{
+	    foreach my $pred_name ( keys %{$node->{'revarc'}} )
+	    {
+		push @arcs, @{ $node->{'revarc'}{$pred_name} };
+	    }
+	}
+
+	if( $inactive )
 	{
 	    foreach my $pred_name ( keys %{$node->{'revarc_inactive'}} )
 	    {
 		push @arcs, @{ $node->{'revarc_inactive'}{$pred_name} };
 	    }
 	}
-	else
+
+	foreach my $lim (@$arclim)
 	{
-	    if( $arclim )
-	    {
-		foreach my $predname (keys %{$node->{'revarc'}})
-		{
-		    foreach my $arc (@{$node->{'revarc'}{$predname}})
-		    {
-			if( $arc->meets_arclim($arclim) )
-			{
-			    push @arcs, $arc;
-			}
-		    }
-		}
-	    }
-	    else
-	    {
-		foreach my $pred_name ( keys %{$node->{'revarc'}} )
-		{
-		    push @arcs, @{ $node->{'revarc'}{$pred_name} };
-		}
-	    }
+	    @arcs = grep $_->meets_arclim($lim), @arcs;
 	}
 
 	return Rit::Base::List->new(\@arcs);
@@ -2820,7 +2741,7 @@ sub first_arc
        my( $node, $name ) = @_;
 
 #       debug "Initiating(1) prop $name for $node->{id}";
-       $node->initiate_prop( $name );
+       $node->initiate_prop( $name, undef, [] );
        return is_undef unless defined $node->{'relarc'}{$name};
        return $node->{'relarc'}{$name}[0] || is_undef;
 }
@@ -2850,10 +2771,10 @@ sub first_revarc
 
 =head2 arc
 
-  $n->arc( $pred_name )
+  $n->arc( $pred_name, ... )
 
-As L</arc_list>, but returns the only value, if only one.  Else, it
-returns an array ref to the list of values.
+As L</arc_list>, but returns the only value, if only one (or zero).
+Else, it returns an array ref to the list of values.
 
 Use L</first_arc> or L</arc_list> explicitly if that's what you want!
 
@@ -2861,27 +2782,17 @@ Use L</first_arc> or L</arc_list> explicitly if that's what you want!
 
 sub arc
 {
-    my( $node, $name ) = @_;
+    my $node = shift;
 
-    $node->initiate_prop( $name );
-
-    my $arcs = $node->{'relarc'}{$name} || [];
+    my $arcs = $node->arc_list(@_);
 
     if( defined $arcs->[1] ) # More than one element
     {
-	return Rit::Base::List->new($arcs);
+	return $arcs;
     }
     else
     {
-	# Return arc hash or undef
-	if( defined $arcs->[0] )
-	{
-	    return $arcs->[0];
-	}
-	else
-	{
-	    return is_undef;
-	}
+	return $arcs->get_first_nos;
     }
 }
 
@@ -2890,10 +2801,10 @@ sub arc
 
 =head2 revarc
 
-  $n->revarc( $pred_name )
+  $n->revarc( $pred_name, ... )
 
-As L</revarc_list>, but returns the only value, if only one.  Else, it
-returns an array ref to the list of values.
+As L</revarc_list>, but returns the only value, if only one (or zero).
+Else, it returns an array ref to the list of values.
 
 Use L</first_revarc> or L<revarc_list> explicitly if that's what you want!
 
@@ -2901,27 +2812,17 @@ Use L</first_revarc> or L<revarc_list> explicitly if that's what you want!
 
 sub revarc
 {
-    my( $node, $name ) = @_;
+    my $node = shift;
 
-    $node->initiate_revprop( $name );
-
-    my $arcs = $node->{'revarc'}{$name} || [];
+    my $arcs = $node->revarc_list(@_);
 
     if( defined $arcs->[1] ) # More than one element
     {
-	return Rit::Base::List->new($arcs);
+	return $arcs;
     }
     else
     {
-	# Return arc hash or undef
-	if( defined $arcs->[0] )
-	{
-	    return $arcs->[0];
-	}
-	else
-	{
-	    return is_undef;
-	}
+	return $arcs->get_first_nos;
     }
 }
 
@@ -5004,44 +4905,65 @@ sub initiate_rel
 
     my $nid = $node->id;
 
-    if( $arclim )
+    if( @$arclim )
     {
-	my $sql = "select * from arc where subj=?";
-	my $inactive = 0;
+	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
 
-	if( $arclim eq 'inactive' )
+	my $sql = "select * from arc where subj=?";
+
+	if( $active and not $inactive )
+	{
+	    return if $_[0]->{'initiated_rel'};
+	    $sql .= " and active is false";
+	}
+	elsif( $inactive and not $active )
 	{
 	    return if $_[0]->{'initiated_rel_inactive'};
-	    $sql .= " and active is false";
-	    $inactive = 1;
-	    $arclim = '';
-	}
-	else
-	{
 	    $sql .= " and active is true";
 	}
 
-	if( $arclim eq 'direct' )
+	my $extralim = 0;
+	if( @$arclim == 1 )
 	{
-	    $sql .= " and indirect is false";
+	    my $lim = $arclim->[0];
+
+	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+	    {
+		$sql .= " and indirect is false";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
+	    {
+		$sql .= " and indirect is true";
+		$extralim++;
+	    }
+
+	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+	    {
+		$sql .= " and implicit is false";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
+	    {
+		$sql .= " and implicit is true";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
+	    {
+		$sql .= " and submitted is true";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
+	    {
+		$sql .= " and submitted is false";
+		$extralim++;
+	    }
 	}
-	elsif( $arclim eq 'explicit' )
-	{
-	    $sql .= " and implicit is false";
-	}
-	elsif( $arclim eq 'indirect' )
-	{
-	    $sql .= " and indirect is true";
-	}
-	elsif( $arclim eq 'implicit' )
-	{
-	    $sql .= " and implicit is true";
-	}
-	else
-	{
-	    # arclim not handled here
-	    undef $arclim;
-	}
+
 
 	my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_subj->execute($nid);
@@ -5062,9 +4984,24 @@ sub initiate_rel
 	    }
 	}
 
-	if( $inactive )
+	unless( $extralim )
 	{
-	    $node->{'initiated_rel_inactive'} = 1;
+	    if( $active )
+	    {
+		$node->{'initiated_rel'} = 1;
+
+		# Mark up all individual preds for the node as initiated
+		foreach my $name ( keys %{$node->{'relarc'}} )
+		{
+		    $node->{'initiated_relprop'}{$name} = 2;
+		}
+
+	    }
+
+	    if( $inactive )
+	    {
+		$node->{'initiated_rel_inactive'} = 1;
+	    }
 	}
     }
     else
@@ -5128,64 +5065,74 @@ sub initiate_rel
 
 sub initiate_rev
 {
-    return if $_[0]->{'initiated_rev'};
-
     my( $node, $proplim, $arclim ) = @_;
+    # proplim ignored
 
     my $nid = $node->id;
-    my $inactive = 0;
-
-
     my $sql = "select * from arc where obj=?";
-    if( ($arclim||'') eq 'inactive' )
-    {
-	return if $_[0]->{'initiated_rev_inactive'};
-	$sql .= " and active is false";
-	$inactive = 1;
-	$arclim = '';
-    }
-    else
+
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my $extralim = 0;
+
+    if( $active and not $inactive )
     {
 	return if $_[0]->{'initiated_rev'};
+	$sql .= " and active is false";
+    }
+    elsif( $inactive and not $active )
+    {
+	return if $_[0]->{'initiated_rev_inactive'};
 	$sql .= " and active is true";
     }
 
-    if( $arclim )
+    if( @$arclim == 1 )
     {
-	if( $arclim eq 'direct' )
+	my $lim = $arclim->[0];
+
+	if( $lim & $Rit::Base::Arc::LIM{'direct'} )
 	{
 	    $sql .= " and indirect is false";
+	    $extralim++;
 	}
-	elsif( $arclim eq 'explicit' )
-	{
-	    $sql .= " and implicit is false";
-	}
-	elsif( $arclim eq 'indirect' )
+
+	if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
 	{
 	    $sql .= " and indirect is true";
+	    $extralim++;
 	}
-	elsif( $arclim eq 'implicit' )
+
+	if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+	{
+	    $sql .= " and implicit is false";
+	    $extralim++;
+	}
+
+	if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
 	{
 	    $sql .= " and implicit is true";
+	    $extralim++;
 	}
-	else
+
+	if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
 	{
-	    # arclim not handled here
-	    undef $arclim;
+	    $sql .= " and submitted is true";
+	    $extralim++;
 	}
-    }
-    else
-    {
-	$sql .= " and active is true";
+
+	if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
+	{
+	    $sql .= " and submitted is false";
+	    $extralim++;
+	}
     }
 
-    my $sth_init_obj = $Rit::dbix->dbh->prepare($sql);
-    $sth_init_obj->execute($nid);
-    my $revstmts = $sth_init_obj->fetchall_arrayref({});
-    $sth_init_obj->finish;
+    my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
+    $sth_init_subj->execute($nid);
+    my $stmts = $sth_init_subj->fetchall_arrayref({});
+    $sth_init_subj->finish;
 
     my $cnt = 0;
-    foreach my $stmt ( @$revstmts )
+    foreach my $stmt ( @$stmts )
     {
 	$node->populate_rev( $stmt, undef );
 
@@ -5198,29 +5145,32 @@ sub initiate_rev
 	}
     }
 
-    if( $inactive )
+    unless( $extralim )
     {
-	$node->{'initiated_rev_inactive'} = 1;
-    }
-    elsif( not $arclim )
-    {
-	# Mark up all individual preds for the node as initiated
-	foreach my $name ( keys %{$node->{'revarc'}} )
+	if( $active )
 	{
-	    $node->{'initiated_revprop'}{$name} = 2;
+	    $node->{'initiated_rev'} = 1;
+
+	    # Mark up all individual preds for the node as initiated
+	    foreach my $name ( keys %{$node->{'revarc'}} )
+	    {
+		$node->{'initiated_revprop'}{$name} = 2;
+	    }
+
 	}
 
-	$node->{'initiated_rev'} = 1;
+	if( $inactive )
+	{
+	    $node->{'initiated_rev_inactive'} = 1;
+	}
     }
-
-#    warn "End   init all props of node $node->{id}\n";
 }
 
 #########################################################################
 
 =head2 initiate_prop
 
-Returns undef if no values for this prop (regardless proplim and arclim)
+Returns undef if no values for this prop
 
 =cut
 
@@ -5228,18 +5178,17 @@ sub initiate_prop
 {
     my( $node, $name, $proplim, $arclim ) = @_;
 
-    my $inactive = 0;
-    if( ($arclim||'') eq 'inactive' )
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+
+    if( $inactive and not $active )
     {
 	if( $node->{'initiated_rel_inactive'} )
 	{
 	    # Keeps key nonexistent if nonexistent
 	    return $node->{'relarc_inactive'}{ $name };
 	}
-	$inactive = 1;
-	undef $arclim;
     }
-    else
+    elsif( $active and not $inactive )
     {
 	if( $node->{'initiated_relprop'}{$name} )
 	{
@@ -5250,13 +5199,24 @@ sub initiate_prop
 	if( $node->{'initiated_rel'} )
 	{
 	    # Keeps key nonexistent if nonexistent
-	    return $node->{'relarc_inactive'}{ $name };
+	    return $node->{'relarc'}{ $name };
 	}
+    }
+    elsif( $active and $inactive )
+    {
+	if( $node->{'initiated_relprop'}{$name} and
+	    $node->{'initiated_rel_inactive'} )
+	{
+	    return 1;
+	}
+    }
 
+    if( $active )
+    {
 	$node->{'initiated_relprop'}{$name} = 1;
     }
 
-    debug 4, "Initiating(2) prop $name for $node->{id}";
+#    debug "Initiating(2) prop $name for $node->{id}";
 
     my $nid = $node->id;
     confess "Node id missing: ".datadump($node,3) unless $nid;
@@ -5271,7 +5231,7 @@ sub initiate_prop
     {
 	if( debug > 3 )
 	{
-	    $Rit::Base::Resource::timestamp = time;
+	    $Rit::Base::timestamp = time;
 	}
 
 	my $stmts;
@@ -5284,51 +5244,23 @@ sub initiate_prop
 	}
 	else
 	{
-	    my $sql_active;
-	    if( $inactive )
+	    my $sql = "select * from arc where subj=? and pred=?";
+	    if( $inactive and not $active )
 	    {
-		$sql_active = " and active is false";
-	    }
-	    else
-	    {
-		$sql_active = " and active is true";
+		$sql .= " and active is false";
 	    }
 
-	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare("select * from arc where subj=? and pred=?$sql_active");
+	    if( $active and not $inactive )
+	    {
+		$sql .= " and active is true";
+	    }
+
+	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
 	    $sth_init_subj_pred->execute( $nid, $pred_id );
 	    $stmts = $sth_init_subj_pred->fetchall_arrayref({});
 	    $sth_init_subj_pred->finish;
 	}
 
-	if( debug > 3 )
-	{
-	    my $ts = $Rit::Base::Resource::timestamp;
-	    $Rit::Base::Resource::timestamp = time;
-	    debug sprintf("Got %d arcs in %2.3f secs for pred %d subj %d",
-			 scalar( @$stmts ), time - $ts, $pred_id, $nid);
-
-	    debug "Before populating:\n";
-	    if( $inactive )
-	    {
-		if( $node->{'relarc_inactive'}{ $name } )
-		{
-		    foreach my $arc (@{$node->{'relarc_inactive'}{ $name }})
-		    {
-			debug "  ".$arc->sysdesig_nosubj;
-		    }
-		}
-	    }
-	    else
-	    {
-		if( $node->{'relarc'}{ $name } )
-		{
-		    foreach my $arc (@{$node->{'relarc'}{ $name }})
-		    {
-			debug "  ".$arc->sysdesig_nosubj;
-		    }
-		}
-	    }
-	}
 
 	my @extra_nodes_initiated;
 	foreach my $stmt ( @$stmts )
@@ -5357,20 +5289,25 @@ sub initiate_prop
 	    $subnode->{'initiated_rel'} = 1;
 	}
 
-	debug 4, "* prop $name for $nid is now initiated";
+#	debug "* prop $name for $nid is now initiated";
     }
     else
     {
-	debug 4, "* prop $name does not exist!";
-    }
-
-    unless( $inactive )
-    {
-	$node->{'initiated_relprop'}{$name} = 2;
+	debug "* prop $name does not exist!";
     }
 
     # Keeps key nonexistent if nonexistent
-    return $node->{'relarc'}{ $name };
+    if( $active )
+    {
+	$node->{'initiated_relprop'}{$name} = 2;
+#	debug "Returning relarc $name: ".$node->{'relarc'}{ $name };
+	return $node->{'relarc'}{ $name };
+    }
+    else
+    {
+#	debug "Returning relarc inactive $name: ".$node->{'relarc'}{ $name };
+	return $node->{'relarc_inactive'}{ $name };
+    }
  }
 
 #########################################################################
@@ -5387,18 +5324,18 @@ sub initiate_revprop
 {
     my( $node, $name, $proplim, $arclim) = @_;
 
-    my $inactive = 0;
-    if( ($arclim||'') eq 'inactive' )
+    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my $extralim = 0;
+
+    if( $inactive and not $active )
     {
 	if( $node->{'initiated_rev_inactive'} )
 	{
 	    # Keeps key nonexistent if nonexistent
 	    return $node->{'revarc_inactive'}{ $name };
 	}
-	$inactive = 1;
-	undef $arclim;
     }
-    else
+    elsif( $active and not $inactive )
     {
 	if( $node->{'initiated_revprop'}{$name} )
 	{
@@ -5411,9 +5348,21 @@ sub initiate_revprop
 	    # Keeps key nonexistent if nonexistent
 	    return $node->{'revarc_inactive'}{ $name };
 	}
+    }
+    elsif( $active and $inactive )
+    {
+	if( $node->{'initiated_revprop'}{$name} and
+	    $node->{'initiated_rev_inactive'} )
+	{
+	    return 1;
+	}
+    }
 
+    if( $active )
+    {
 	$node->{'initiated_revprop'}{$name} = 1;
     }
+
 
     debug 3, "Initiating revprop $name for $node->{id}";
 
@@ -5432,37 +5381,54 @@ sub initiate_revprop
 
 	my $sql = "select * from arc where obj=? and pred=?";
 
-	if( $inactive )
+	if( $inactive and not $active )
 	{
 	    $sql .= " and active is false";
 	}
-	else
+
+	if( $active and not $inactive )
 	{
 	    $sql .= " and active is true";
 	}
 
-	if( $arclim )
+	if( @$arclim == 1 )
 	{
-	    if( $arclim eq 'direct' )
+	    my $lim = $arclim->[0];
+
+	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
 	    {
 		$sql .= " and indirect is false";
+		$extralim++;
 	    }
-	    elsif( $arclim eq 'explicit' )
-	    {
-		$sql .= " and implicit is false";
-	    }
-	    elsif( $arclim eq 'indirect' )
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
 	    {
 		$sql .= " and indirect is true";
+		$extralim++;
 	    }
-	    elsif( $arclim eq 'implicit' )
+
+	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+	    {
+		$sql .= " and implicit is false";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
 	    {
 		$sql .= " and implicit is true";
+		$extralim++;
 	    }
-	    else
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
 	    {
-		# arclim not handled here
-		undef $arclim;
+		$sql .= " and submitted is true";
+		$extralim++;
+	    }
+
+	    if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
+	    {
+		$sql .= " and submitted is false";
+		$extralim++;
 	    }
 	}
 
@@ -5483,70 +5449,10 @@ sub initiate_revprop
 	my $cnt = 0;
 	my $ts = time;
 
-	if( 0 ) # $num_of_arcs > 100
+	foreach my $stmt ( @$stmts )
 	{
-	    $Para::Frame::REQ->note("Initiating $num_of_arcs arcs!");
-
-	    ######### OPTIMIZED CODE ############## No win...!
-	    foreach my $stmt ( @$stmts )
-	    {
-#		unless( ++$cnt % 100 )
-#		{
-#		    my $now = time;
-#		    debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
-#		    $ts = $now;
-#		}
-
-		my $id = $stmt->{'id'};
-
-		if( my $arc = $Rit::Base::Cache::Resource{$id} )
-		{
-		    $arc->register_with_nodes;
-		}
-		else
-		{
-		    ## Resource->new
-		    my $arc = $Rit::Base::Cache::Resource{ $id } =
-		      bless
-		      {
-		       'id' => $id,
-		       'lables' => {},
-		       'arc_id' => {},
-		       'revarc' => {},
-		       'initiated_relprop' => {},
-		       'initiated_revprop' => {},
-		       'initiated_rel' => {},
-		       'initiated_rev' => {},
-		      }, 'Rit::Base::Arc';
-
-		    # Use first_bless instead
-		    $arc->init($stmt, undef, $node);
-		}
-	    }
-
-
-	    #######################################
+	    $node->populate_rev( $stmt, undef );
 	}
-	else
-	{
-	    foreach my $stmt ( @$stmts )
-	    {
-#		unless( ++$cnt % 100 )
-#		{
-#		    my $now = time;
-#		    debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
-#		    $ts = $now;
-#		}
-
-#		debug "  populating with ".datadump($stmt,4) if debug > 4;
-
-		$node->populate_rev( $stmt, undef );
-	    }
-	}
-
-#	my $now = time;
-#	debug sprintf("%.5d: %1.2f", $cnt, ($now - $ts));
-#	$ts = $now;
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
     }
@@ -5555,15 +5461,23 @@ sub initiate_revprop
 	debug "* revprop $name does not exist!";
     }
 
-    unless( $arclim or $inactive )
+    unless( $extralim )
     {
-	$node->{'initiated_revprop'}{$name} = 2;
+	if( $active )
+	{
+	    $node->{'initiated_revprop'}{$name} = 2;
+	}
     }
 
-#    debug 3, "  Will now return '$node->{'revarc'}{ $name }' from initiate_revprop"; ### HEAVY!!!
-
     # Keeps key nonexistent if nonexistent
-    return $node->{'revarc'}{ $name };
+    if( $active )
+    {
+	return $node->{'revarc'}{ $name };
+    }
+    else
+    {
+	return $node->{'revarc_inactive'}{ $name };
+    }
 }
 
 #########################################################################
@@ -5589,11 +5503,11 @@ sub populate_rel
 	return;
     }
 
-    debug 4, "Creating arc for $node with $stmt";
+#    debug "Creating arc for $node with $stmt";
     my $arc = Rit::Base::Arc->get_by_rec_and_register( $stmt, $node );
-    debug 4, "  Created";
+#    debug "  Created";
 
-    debug 3, "**Add prop $pred_name to $node->{id}";
+#    debug "**Add prop $pred_name to $node->{id}";
 
     return 1;
 }

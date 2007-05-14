@@ -54,6 +54,20 @@ use base qw( Rit::Base::Resource );
 # Move from implicit to explicit then updating implicit properties
 # explicitly
 
+our %LIM =
+  (
+   active           =>    1,
+   inactive         =>    2,
+   direct           =>    4,
+   indirect         =>    8,
+   explicit         =>   16,
+   implicit         =>   32,
+   disregarded      =>   64,
+   not_disregarded  =>  128,
+   submitted        =>  256,
+   not_submitted    =>  512,
+  );
+
 
 
 # This will make "if($arc)" false if the arc is 'removed'
@@ -2081,38 +2095,193 @@ sub meets_arclim
 {
     my( $arc, $arclim ) = @_;
 
-    if( $arclim eq 'active' )
+    if( $arclim & $LIM{'active'} )
     {
-	return $arc->active;
+	return 0 unless $arc->active;
     }
-    elsif(  $arclim eq 'inactive' )
+
+    if( $arclim & $LIM{'direct'} )
     {
-	return $arc->inactive;
+	return 0 unless $arc->direct;
     }
-    elsif( $arclim eq 'direct' )
+
+    if( $arclim & $LIM{'submitted'} )
     {
-	return $arc->direct;
+	return 0 unless $arc->submitted;
     }
-    elsif( $arclim eq 'explicit' )
+
+    if(  $arclim & $LIM{'inactive'} )
     {
-	return $arc->explicit;
+	return 0 unless $arc->inactive;
     }
-    elsif( $arclim eq 'indirect' )
+
+    if( $arclim & $LIM{'indirect'} )
     {
-	return $arc->indirect;
+	return 0 unless $arc->indirect;
     }
-    elsif( $arclim eq 'implicit' )
+
+    if( $arclim & $LIM{'not_submitted'} )
     {
-	return $arc->implicit;
+	return 0 if     $arc->submitted;
     }
-    elsif( $arclim eq 'not_disregarded' )
+
+    if( $arclim & $LIM{'explicit'} )
     {
-	return $arc->not_disregarded;
+	return 0 unless $arc->explicit;
     }
-    else
+
+    if( $arclim & $LIM{'implicit'} )
     {
-	confess "not implemented: ".datadump($arclim);
+	return 0 unless $arc->implicit;
     }
+
+    if( $arclim & $LIM{'not_disregarded'} )
+    {
+	return 0 unless $arc->not_disregarded;
+    }
+
+    if( $arclim & $LIM{'disregarded'} )
+    {
+	return 0 if     $arc->not_disregarded;
+    }
+
+    return 1;
+}
+
+
+#######################################################################
+
+=head2 limflag
+
+  $a->limflag( $label )
+
+  $a->limflag( $label1, $label2, ... )
+
+Supported lables are:
+
+  active
+  inactive
+
+  direct
+  indirect
+
+  explicit
+  implicit
+
+  disregarded
+  not_disregarded
+
+  submitted
+  not_submitted
+
+Returns the corresponding limit as a number to be used for
+arclim. Additional limits are added together.
+
+=cut
+
+sub limflag
+{
+    my( $arc ) = shift;
+
+    my $val = 0;
+    while( pop )
+    {
+	$val += ($LIM{ $_ }||(die "Flag $_ not recognized"));
+    }
+    return  $val;
+}
+
+
+#######################################################################
+
+=head2 lims_incl_act
+
+  Rit::Base::Arc->lims_incl_act( \@arclim )
+
+Stands for "Does the arclim includes active and/or inactive arcs?"
+
+No arclims menas that only active arcs are included.
+
+Returns:
+
+  ($includes_active, $includes_inactive)
+
+=cut
+
+sub lims_incl_act
+{
+    my( $this, $arclim ) = @_;
+
+    my $active   = 1;
+    my $inactive = 0;
+
+    confess "Invalid arclim ($arclim)" unless ref $arclim;
+
+    if( @$arclim )
+    {
+	$active = 0;
+	foreach(@$arclim)
+	{
+	    if( $_ & $LIM{'active'} )
+	    {
+		$active = 1;
+	    }
+
+	    if( $_ & $LIM{'inactive'} )
+	    {
+		$inactive = 1;
+	    }
+	}
+
+	unless( $inactive )
+	{
+	    $active = 1;
+	}
+    }
+
+    return( $active, $inactive );
+}
+
+
+#######################################################################
+
+=head2 parse_proparclim
+
+  Rit::Base::Arc->parse_proparclim( $arclim_in, $arclim_in2 )
+
+Returns:
+
+  $arclim
+
+=cut
+
+sub parse_proparclim
+{
+    my( $this, $proplim, $arclim, $arclim2 ) = @_;
+
+    # Do *not* accept undef arclim, for this construct
+    if( $proplim and not ref $proplim and $arclim )
+    {
+	$proplim = { $proplim => $arclim };
+	$arclim = $arclim2;
+    }
+
+    $arclim ||= [];
+
+    unless( ref $arclim )
+    {
+	$arclim = [$arclim];
+    }
+
+    foreach(@$arclim)
+    {
+	if( my $val = $LIM{$_} )
+	{
+	    $_ = $val;
+	}
+    }
+
+    return( $proplim, $arclim );
 }
 
 
@@ -2926,12 +3095,13 @@ sub get_by_rec_and_register
 
     if( my $arc = $Rit::Base::Cache::Resource{$id} )
     {
-	debug "Re-Registring arc $id";
+#	debug "Re-Registring arc $id";
 	$arc->register_with_nodes;
 	return $arc;
     }
     else
     {
+#	debug "Calling firstbless for $id, with stmt"; ### DEBUG
 	return $this->new($id)->first_bless(@_);
     }
 }
@@ -2989,7 +3159,7 @@ sub init
     }
 
 
-    my $DEBUG = 0;#1 if $id == 1023211;
+    my $DEBUG = 0; #1 if $id == 4558203; ### DEBUG
     if( $DEBUG )
     {
 	debug "Initiating arc $id";
@@ -3163,7 +3333,7 @@ sub register_with_nodes
     my $pred_name = $pred->name->plain;
     my $coltype = $arc->coltype;
 
-#    debug "Registring arc $id with subj and obj";
+#    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
 
     # Register the arc hos the subj
     unless( $subj->{'arc_id'}{$id}  )
@@ -3192,6 +3362,9 @@ sub register_with_nodes
 	}
 
 	$subj->{'arc_id'}{$id} = $arc;
+
+#	debug "RELARC:";
+#	debug datadump( $subj->{'relarc'}, 1);
     }
 
     # Setup Value
