@@ -1,4 +1,5 @@
-﻿[% BLOCK updated %]
+﻿[%# This is not the same as prop_fields in inc_pre! #%]
+[% BLOCK updated %]
    [%## Displays who and when arc was updated %]
    [%## var arc must be defined %]
    <span class="small_note">

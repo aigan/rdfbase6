@@ -4,7 +4,7 @@
 %]
 
 [%
-   PROCESS prop_fields.tt;
+   PROCESS prop_fields.tt; # From rb/inc
 %]
 
 [%
