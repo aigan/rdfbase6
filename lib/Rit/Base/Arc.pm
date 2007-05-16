@@ -1487,7 +1487,7 @@ sub replaced_by
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? and replaces=?");
     $sth->execute($arc->common_id, $arc->id);
-    if( my $arc_rec = $sth->fetchrow_hashref )
+    while( my $arc_rec = $sth->fetchrow_hashref )
     {
 	push @list, $class->get_by_rec( $arc_rec );
     }
@@ -3291,8 +3291,8 @@ sub init
 	{
 	    if( $rec->{$coltype} )
 	    {
-		### DECODE UTF8 from database
-		utf8::decode( $rec->{$coltype} );
+#		### DECODE UTF8 from database
+#		utf8::decode( $rec->{$coltype} );
 
 		### Check for and correct accidental multiple encodings
 		if( $rec->{$coltype} =~ /Ã./ )
