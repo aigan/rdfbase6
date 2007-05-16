@@ -2139,8 +2139,13 @@ sub meets_arclim
 {
     my( $arc, $arclim ) = @_;
 
-    foreach( @$arclim )
+#    debug "Filtering arc $arc->{id}";
+    foreach( @$arclim, 0 )
     {
+#	debug "  Applying arclim $_";
+
+	return 1 if $_ == 0;
+
 	if( $_ & $LIM{'active'} )
 	{
 	    next unless $arc->active;
@@ -2211,9 +2216,11 @@ sub meets_arclim
 	    next if     $arc->not_disregarded;
 	}
 
+#	debug "    passed";
 	return 1;
     }
 
+#    debug "    failed";
     return 0;
 }
 
