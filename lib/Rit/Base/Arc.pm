@@ -66,8 +66,14 @@ our %LIM =
    not_disregarded  =>  128,
    submitted        =>  256,
    not_submitted    =>  512,
+   new              => 1024,
+   not_new          => 2048,
+   old              => 4096,
+   not_old          => 8192,
   );
 
+use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192);
+use constant FLAGS_ACTIVE   => (1+512+2048+8192);
 
 
 # This will make "if($arc)" false if the arc is 'removed'
@@ -1376,6 +1382,44 @@ sub submitted
 
 #######################################################################
 
+=head2 is_new
+
+  $a->is_new
+
+This is a nonactvie and nonsubmitted arc that hasn't been deactivated.
+
+Returns: true if this arc is new
+
+=cut
+
+sub is_new
+{
+    return( !$_[0]->{'active'} &&
+	    !$_[0]->{'submitted'} &&
+	    !$_[0]->{'arc_deactivated'} );
+}
+
+
+#######################################################################
+
+=head2 old
+
+  $a->old
+
+This is a arc that has been deactivated.
+
+Returns: true if this arc is old
+
+=cut
+
+sub old
+{
+    return( $_[0]->{'arc_deactivated'} );
+}
+
+
+#######################################################################
+
 =head2 active_version
 
   $a->active_version
@@ -2095,57 +2139,82 @@ sub meets_arclim
 {
     my( $arc, $arclim ) = @_;
 
-    if( $arclim & $LIM{'active'} )
+    foreach( @$arclim )
     {
-	return 0 unless $arc->active;
+	if( $_ & $LIM{'active'} )
+	{
+	    next unless $arc->active;
+	}
+
+	if( $_ & $LIM{'direct'} )
+	{
+	    next unless $arc->direct;
+	}
+
+	if( $_ & $LIM{'submitted'} )
+	{
+	    next unless $arc->submitted;
+	}
+
+	if(  $_ & $LIM{'new'} )
+	{
+	    next unless $arc->is_new;
+	}
+
+	if(  $_ & $LIM{'old'} )
+	{
+	    next unless $arc->old;
+	}
+
+	if(  $_ & $LIM{'inactive'} )
+	{
+	    next unless $arc->inactive;
+	}
+
+	if( $_ & $LIM{'indirect'} )
+	{
+	    next unless $arc->indirect;
+	}
+
+	if( $_ & $LIM{'not_submitted'} )
+	{
+	    next if     $arc->submitted;
+	}
+
+	if( $_ & $LIM{'explicit'} )
+	{
+	    next unless $arc->explicit;
+	}
+
+	if( $_ & $LIM{'implicit'} )
+	{
+	    next unless $arc->implicit;
+	}
+
+	if( $_ & $LIM{'not_new'} )
+	{
+	    next if     $arc->is_new;
+	}
+
+	if( $_ & $LIM{'not_old'} )
+	{
+	    next if     $arc->old;
+	}
+
+	if( $_ & $LIM{'not_disregarded'} )
+	{
+	    next unless $arc->not_disregarded;
+	}
+
+	if( $_ & $LIM{'disregarded'} )
+	{
+	    next if     $arc->not_disregarded;
+	}
+
+	return 1;
     }
 
-    if( $arclim & $LIM{'direct'} )
-    {
-	return 0 unless $arc->direct;
-    }
-
-    if( $arclim & $LIM{'submitted'} )
-    {
-	return 0 unless $arc->submitted;
-    }
-
-    if(  $arclim & $LIM{'inactive'} )
-    {
-	return 0 unless $arc->inactive;
-    }
-
-    if( $arclim & $LIM{'indirect'} )
-    {
-	return 0 unless $arc->indirect;
-    }
-
-    if( $arclim & $LIM{'not_submitted'} )
-    {
-	return 0 if     $arc->submitted;
-    }
-
-    if( $arclim & $LIM{'explicit'} )
-    {
-	return 0 unless $arc->explicit;
-    }
-
-    if( $arclim & $LIM{'implicit'} )
-    {
-	return 0 unless $arc->implicit;
-    }
-
-    if( $arclim & $LIM{'not_disregarded'} )
-    {
-	return 0 unless $arc->not_disregarded;
-    }
-
-    if( $arclim & $LIM{'disregarded'} )
-    {
-	return 0 if     $arc->not_disregarded;
-    }
-
-    return 1;
+    return 0;
 }
 
 
@@ -2173,6 +2242,12 @@ Supported lables are:
 
   submitted
   not_submitted
+
+  new
+  not_new
+
+  old
+  not_old
 
 Returns the corresponding limit as a number to be used for
 arclim. Additional limits are added together.
@@ -2222,12 +2297,12 @@ sub lims_incl_act
 	$active = 0;
 	foreach(@$arclim)
 	{
-	    if( $_ & $LIM{'active'} )
+	    if( $_ & FLAGS_ACTIVE )
 	    {
 		$active = 1;
 	    }
 
-	    if( $_ & $LIM{'inactive'} )
+	    if( $_ & FLAGS_INACTIVE )
 	    {
 		$inactive = 1;
 	    }
