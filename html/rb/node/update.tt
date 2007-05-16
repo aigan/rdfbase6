@@ -224,7 +224,7 @@ END;
 [% FOREACH pred IN node.list_preds('','inactive').sorted %]
    [% FOREACH arc IN node.arc_list(pred,'','inactive').sorted('value.plain') %]
       <tr>
-      <td>
+      <td style="background: red">
       [% IF arc.direct %]
          [% jump('E', 'arc/update.tt', id=arc.id ) %]
       [% ELSE %]
