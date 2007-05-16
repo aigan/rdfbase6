@@ -1451,10 +1451,11 @@ sub list
 	my @arcs;
 
 	### DEBUG
-	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-	{
-	    debug "Initiating lodging_description:";
-	}
+#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
+#	if( ($name eq 'is') and ($node->{id} == 914450) )
+#	{
+#	    debug "Initiating $name:";
+#	}
 
 
 	if( $node->initiate_prop( $name, $proplim, $arclim ) )
@@ -1478,26 +1479,28 @@ sub list
 	}
 
 	### DEBUG
-	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-	{
-	    debug "Arcs found:";
-	    foreach my $arc ( @arcs )
-	    {
-		debug "  ".$arc->sysdesig;
-	    }
-	}
+#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
+#	if( ($name eq 'is') and ($node->{id} == 914450) )
+#	{
+#	    debug "Arcs found:";
+#	    foreach my $arc ( @arcs )
+#	    {
+#		debug "  ".$arc->sysdesig;
+#	    }
+#	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	### DEBUG
-	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-	{
-	    debug "Arcs after filter:";
-	    foreach my $arc ( @arcs )
-	    {
-		debug "  ".$arc->sysdesig;
-	    }
-	}
+#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
+#	if( ($name eq 'is') and ($node->{id} == 914450) )
+#	{
+#	    debug "Arcs after filter:";
+#	    foreach my $arc ( @arcs )
+#	    {
+#		debug "  ".$arc->sysdesig;
+#	    }
+#	}
 
 	my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
 
@@ -4051,14 +4054,15 @@ sub find_class
     # my $classes = $islist->list('class_handled_by_perl_module');
     #
 #    my $islist = $node->list('is',undef,'not_disregarded');
+#    debug "Finding the class for node $node->{id}";
     my $islist = $node->list('is');
     my @classes;
     foreach my $elem ($islist->as_array)
     {
-	debug "Looking at is ".$elem->sysdesig;
+#	debug "Looking at is ".$elem->sysdesig;
 	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
-	    debug "  Handled by $class";
+#	    debug "  Handled by $class";
 	    push @classes, $class;
 	}
     }
