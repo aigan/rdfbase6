@@ -147,8 +147,8 @@ sub maketext
 	    $rec ||= $Rit::dbix->select_possible_record('from tr where c=?',$phrase) || {};
 	    if( defined $rec->{$langcode} and length $rec->{$langcode} )
 	    {
-		### DECODE UTF8 from database
-		utf8::decode( $rec->{$langcode} );
+#		### DECODE UTF8 from database
+#		utf8::decode( $rec->{$langcode} );
 
 #		debug "  Compiling $phrase in $langcode";
 		$value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($rec->{$langcode});
