@@ -2139,12 +2139,12 @@ sub meets_arclim
 {
     my( $arc, $arclim ) = @_;
 
+    return 1 unless @$arclim;
+
 #    debug "Filtering arc $arc->{id}";
     foreach( @$arclim, 0 )
     {
 #	debug "  Applying arclim $_";
-
-	return 1 if $_ == 0;
 
 	if( $_ & $LIM{'active'} )
 	{
@@ -2413,11 +2413,7 @@ sub remove
 
     if( $arc->active )
     {
-	confess "IMPLEMENT ME";
-    }
-    elsif( $arc->submitted )
-    {
-	confess "IMPLEMENT ME";
+	confess "IMPLEMENT ME"; ### <<<--- HERE !!!
     }
 
 
