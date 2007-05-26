@@ -98,6 +98,7 @@ sub new
 	    if( $val =~ /Ã./ )
 	    {
 		debug longmess "Value '$val' DOUBLE ENCODED!!!";
+		$Para::Frame::REQ->result->message("Some text double encoded!");
 	    }
 	}
 	else
@@ -112,7 +113,7 @@ sub new
 	    debug "HANDLE THIS (apparent undecoded UTF8: $val)";
 	    unless( utf8::decode( $val ) )
 	    {
-		die "Failed to convert to UTF8!";
+		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
 	    }
 	}
 	else
