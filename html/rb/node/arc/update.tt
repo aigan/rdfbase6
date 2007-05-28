@@ -156,7 +156,9 @@ new arc.</p>
    [% END %]
 [% END %]
 [% step %] &nbsp;
-[% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+[% IF arc.active %]
+   [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+[% END %]
 </p>
 
 [% IF arc.indirect %]

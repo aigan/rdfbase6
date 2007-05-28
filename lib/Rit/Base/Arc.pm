@@ -44,6 +44,7 @@ use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
+use Rit::Base::Resource::Change;
 use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group );
 
 ### Inherit
@@ -56,20 +57,21 @@ use base qw( Rit::Base::Resource );
 
 our %LIM =
   (
-   active           =>    1,
-   inactive         =>    2,
-   direct           =>    4,
-   indirect         =>    8,
-   explicit         =>   16,
-   implicit         =>   32,
-   disregarded      =>   64,
-   not_disregarded  =>  128,
-   submitted        =>  256,
-   not_submitted    =>  512,
-   new              => 1024,
-   not_new          => 2048,
-   old              => 4096,
-   not_old          => 8192,
+   active           =>     1,
+   inactive         =>     2,
+   direct           =>     4,
+   indirect         =>     8,
+   explicit         =>    16,
+   implicit         =>    32,
+   disregarded      =>    64,
+   not_disregarded  =>   128,
+   submitted        =>   256,
+   not_submitted    =>   512,
+   new              =>  1024,
+   not_new          =>  2048,
+   old              =>  4096,
+   not_old          =>  8192,
+   created_by_me    => 16384,
   );
 
 use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192);
@@ -110,7 +112,7 @@ These can be called with the class name or any pred object.
 
   Rit::Base::Arc->create( \%props )
 
-  Rit::Base::Arc->create( \%props, \$num_of_changes )
+  Rit::Base::Arc->create( \%props, $res )
 
 Creates a new arc and stores in in the DB.
 
@@ -154,7 +156,11 @@ Returns: The arc object
 
 sub create
 {
-    my( $this, $props, $changes_ref ) = @_;
+    my( $this, $props, $res ) = @_;
+
+    $res ||= Rit::Base::Resource::Change->new();
+    confess "Res not a change object" unless
+      UNIVERSAL::isa( $res, 'Rit::Base::Resource::Change');
 
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
@@ -484,17 +490,38 @@ sub create
 
 
     # Do not create duplicate arcs.  Check if arc with subj, pred, val
-    # already exists:
+    # already exists. This checks if the arc already is existing. It
+    # doesn't match on other properties. ( TODO: Also consider the
+    # read_access value.)
+
+
     {
 	my $subj = Rit::Base::Resource->get_by_id( $rec->{'subj'} );
 	my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
 
+
+	# Also returns new and submitted arcs, from the same user
+
 	warn "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".datadump($value_obj,2) if $DEBUG;
-	if( my $arc = $subj->has_value($pred, $value_obj) )
+
+	debug "Getting arclist for ".$subj->sysdesig;
+	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
+	debug datadump($existing_arcs, 2); ### DEBUG
+
+	foreach my $arc ($subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new'])->as_array )
 	{
-	    warn "Arc is ".datadump($arc,2) if $DEBUG > 1;
-	    warn $arc->desig. " already exist\n" if $DEBUG;
-	    return $arc;
+	    if( $arc->active )
+	    {
+		warn $arc->desig. " already exist\n" if $DEBUG;
+		return $arc;
+	    }
+
+	    if( $arc->created_by->equals( $Para::Frame::REQ->user ) )
+	    {
+		warn $arc->desig. " already exist, but not active\n" if $DEBUG;
+		$res->add_newarc( $arc );
+		return $arc;
+	    }
 	}
     }
 
@@ -539,13 +566,18 @@ sub create
 
     $arc->schedule_check_create;
 
-    $$changes_ref ++ if $changes_ref; # increment changes
+    if( $res )
+    {
+	$res->{'changes'} ++;
+    }
 
     cache_update;
 
     send_cache_update({ change => 'arc_created',
 			arc_id => $arc->common_id,
 		      });
+
+    $res->add_newarc( $arc );
 
     return $arc;
 }
@@ -734,7 +766,7 @@ Returns: The arc
 
 sub find_set
 {
-    my( $this, $props, $default, $changes_ref ) = @_;
+    my( $this, $props, $default, $res ) = @_;
 
     my $arcs = $this->find( $props );
     $default ||= {};
@@ -742,7 +774,7 @@ sub find_set
     if( $arcs->[1] )
     {
 	# Try to eliminate duplicate arcs
-	$arcs->[1]->remove_duplicates;
+	$arcs->[1]->remove_duplicates( $res );
 	$arcs = $this->find( $props );
     }
 
@@ -760,8 +792,7 @@ sub find_set
 	{
 	    $props->{$pred} ||= $default->{$pred};
 	}
-	$$changes_ref ++ if $changes_ref; # increment changes
-	return $this->create($props);
+	return $this->create($props, $res);
     }
 
     my $arc = $arcs->[0];
@@ -1878,7 +1909,7 @@ Returns: ---
 
 sub vacuum
 {
-    my( $arc ) = @_;
+    my( $arc, $res ) = @_;
 
     my $DEBUG = 0;
 
@@ -1891,7 +1922,7 @@ sub vacuum
     return 1 if $arc->{'vacuum'} ++;
 #    debug "vacuum ".$arc->sysdesig."\n";
 
-    $arc->remove_duplicates;
+    $arc->remove_duplicates( $res );
 
 #    warn "  Remove implicit\n";
     $arc->remove('implicit'); ## Only removes if not valid
@@ -1945,7 +1976,7 @@ sub reset_clean
 
 =head2 remove_duplicates
 
-  $a->remove_duplicates
+  $a->remove_duplicates( $res )
 
 Removes any other arcs identical to this.
 
@@ -1955,9 +1986,7 @@ Returns: ---
 
 sub remove_duplicates
 {
-    confess "DEPRECATED";
-
-    my( $arc ) = @_;
+    my( $arc, $res ) = @_;
 
     my $DEBUG = 0;
 
@@ -1975,7 +2004,6 @@ sub remove_duplicates
 
     my $dbh = $Rit::dbix->dbh;
 
-    my $changes = 0;
     my $subj = $arc->subj;
     foreach my $arc2 ( $subj->arc_list($arc->pred)->nodes )
     {
@@ -1989,35 +2017,7 @@ sub remove_duplicates
 
 	debug "Removing duplicate ".$arc2->sysdesig."\n";
 
-	### Same as for remove()
-	$arc2->SUPER::remove();  # Removes the arc node: the arcs properties
-	$dbh->do("delete from arc where id=? and active is true", {}, $arc2->id);
-
-	foreach my $prop (qw( subj pred_name value clean coltype valtype
-			      created updated created_by implicit indirect ))
-	{
-	    $arc2->{$prop} = undef;
-	}
-	$arc2->{disregard} ++;
-
-	delete $Rit::Base::Cache::Resource{ $arc2->id };
-
-	$changes ++;
-    }
-
-    if( $changes )
-    {
-	$arc->obj->initiate_cache;
-	$arc->subj->initiate_cache;
-	$arc->initiate_cache;
-	warn "    Arc resetted. Commit DB\n" if $DEBUG;
-	cache_update;
-	$dbh->commit;
-
-	send_cache_update({ change => 'arc_removed',
-			    subj_id => $arc->subj->id,
-			    obj_id => $arc->obj->id,
-			  });
+	$arc2->remove( $res );
     }
 }
 
@@ -2042,9 +2042,13 @@ sub has_value
 
   $a->value_equals( $val )
 
-  $a->value_begins( $val, $match )
+  $a->value_equals( $val, \%props )
 
-  $a->value_begins( $val, $match, $clean )
+Supported props are
+
+  match
+  clean
+  arclim
 
 Default C<$match> is C<eq>. Other supported values are C<begins> and
 C<like>.
@@ -2053,17 +2057,31 @@ Default C<$clean> is C<false>. If C<$clean> is true, strings will be
 compared in clean mode. (You don't have to clean the C<$value> by
 yourself.)
 
-Returns: true if the arc L</value> C<$match> C<$val>
+Default C<arclim> is C<active>.
+
+Returns: true if the arc L</value> C<$match> C<$val>, given C<clean>
+and C<arclim>
 
 =cut
 
 sub value_equals
 {
-    my( $arc, $val2, $match, $clean ) = @_;
+    my( $arc, $val2, $props ) = @_;
 
     my $DEBUG = 0;
-    $match ||= 'eq';
-    $clean ||= 0;
+
+
+    $props ||= {};
+
+    my $match = $props->{'match'} || 'eq';
+    my $clean = $props->{'clean'} || 0;
+    my $arclim = Rit::Base::Arc->parse_arclim( $props->{'arclim'} );
+
+    unless( $arc->meets_arclim( $arclim ) )
+    {
+	return 0;
+    }
+
 
     if( $arc->obj )
     {
@@ -2142,7 +2160,7 @@ sub meets_arclim
     return 1 unless @$arclim;
 
 #    debug "Filtering arc $arc->{id}";
-    foreach( @$arclim, 0 )
+    foreach( @$arclim )
     {
 #	debug "  Applying arclim $_";
 
@@ -2164,6 +2182,11 @@ sub meets_arclim
 	if(  $_ & $LIM{'new'} )
 	{
 	    next unless $arc->is_new;
+	}
+
+	if(  $_ & $LIM{'created_by_me'} )
+	{
+	    next unless $arc->created_by->equals($Para::Frame::REQ->user);
 	}
 
 	if(  $_ & $LIM{'old'} )
@@ -2227,6 +2250,135 @@ sub meets_arclim
 
 #######################################################################
 
+=head2 arclim_sql
+
+  $this->arclim_sql( $arclim, \%args )
+
+Supported args are
+
+  prefix
+
+Returns: The sql string to insert, NOT beginning with "and ..."
+
+=cut
+
+sub arclim_sql
+{
+    my( $this, $arclim, $args ) = @_;
+
+    $args ||= {};
+
+    $arclim ||= [];
+
+    my $pf = $args->{'prefix'} || "";
+
+    unless( @$arclim )
+    {
+	return "${pf}active is true";
+    }
+
+    my @alt;
+    foreach( @$arclim )
+    {
+	my @crit = ();
+
+	if( $_ & $LIM{'active'} )
+	{
+	    push @crit, "${pf}active is true";
+	}
+
+	if( $_ & $LIM{'direct'} )
+	{
+	    push @crit, "${pf}indirect is false";
+	}
+
+	if( $_ & $LIM{'submitted'} )
+	{
+	    push @crit, "${pf}submitted is true";
+	}
+
+	if(  $_ & $LIM{'new'} )
+	{
+	    push @crit, "(${pf}active is false and ${pf}submitted is false and ${pf}activated is null )";
+	}
+
+	if(  $_ & $LIM{'created_by_me'} )
+	{
+	    my $uid = $Para::Frame::REQ->user->id;
+	    push @crit, "${pf}created_by=$uid";
+	}
+
+	if(  $_ & $LIM{'old'} )
+	{
+	    push @crit, "${pf}deactivated is not null";
+	}
+
+	if(  $_ & $LIM{'inactive'} )
+	{
+	    push @crit, "${pf}active is false";
+	}
+
+	if( $_ & $LIM{'indirect'} )
+	{
+	    push @crit, "${pf}indirect is true";
+	}
+
+	if( $_ & $LIM{'not_submitted'} )
+	{
+	    push @crit, "${pf}submitted is false";
+	}
+
+	if( $_ & $LIM{'explicit'} )
+	{
+	    push @crit, "${pf}implicit is false";
+	}
+
+	if( $_ & $LIM{'implicit'} )
+	{
+	    push @crit, "${pf}implicit is true";
+	}
+
+	if( $_ & $LIM{'not_new'} )
+	{
+	    push @crit, "not (${pf}active is false and ${pf}submitted is false and ${pf}activated is null )";
+	}
+
+	if( $_ & $LIM{'not_old'} )
+	{
+	    push @crit, "${pf}deactivated is null";
+	}
+
+	if( $_ & $LIM{'not_disregarded'} )
+	{
+	    # That's all arcs here
+	}
+
+	if( $_ & $LIM{'disregarded'} )
+	{
+	    confess "Limiting to disregarded arcs makes no sense";
+	}
+
+	push @alt, join " and ", @crit;
+    }
+
+    if( @alt == 1 )
+    {
+	return $alt[0];
+    }
+    elsif( @alt > 1 )
+    {
+	my $joined = join " or ", map "($_)", @alt;
+	return "($joined)";
+    }
+    else
+    {
+	return "${pf}active is true";
+    }
+}
+
+
+#######################################################################
+
 =head2 limflag
 
   $a->limflag( $label )
@@ -2255,6 +2407,8 @@ Supported lables are:
 
   old
   not_old
+
+  created_by_me
 
 Returns the corresponding limit as a number to be used for
 arclim. Additional limits are added together.
@@ -2329,7 +2483,9 @@ sub lims_incl_act
 
 =head2 parse_proparclim
 
-  Rit::Base::Arc->parse_proparclim( $arclim_in, $arclim_in2 )
+  Rit::Base::Arc->parse_proparclim( $proplim, $arclim )
+
+  Rit::Base::Arc->parse_proparclim( $pred => $value, $arclim )
 
 Returns:
 
@@ -2339,16 +2495,39 @@ Returns:
 
 sub parse_proparclim
 {
-    my( $this, $proplim, $arclim, $arclim2 ) = @_;
+    my( $this, $proplim, $arclim1, $arclim2 ) = @_;
+
+    confess "strange proparclim" if $arclim2 and not $arclim1;
+#    debug "Parsing proparclim 1:$proplim 2:$arclim1 3:$arclim2";
 
     # Do *not* accept undef arclim, for this construct
-    if( $proplim and not ref $proplim and $arclim )
+    if( $proplim and not ref $proplim and $arclim1 )
     {
-	$proplim = { $proplim => $arclim };
-	$arclim = $arclim2;
+	$proplim = { $proplim => $arclim1 };
+	$arclim1 = $arclim2;
     }
 
-    $arclim ||= [];
+    my $arclim = $this->parse_arclim($arclim1);
+
+    return( $proplim, $arclim );
+}
+
+
+#######################################################################
+
+=head2 parse_arclim
+
+  Rit::Base::Arc->parse_arclim( $arclim )
+
+Returns:
+
+  $arclim
+
+=cut
+
+sub parse_arclim
+{
+    my $arclim = $_[1] || [];
 
     unless( ref $arclim )
     {
@@ -2363,7 +2542,7 @@ sub parse_proparclim
 	}
     }
 
-    return( $proplim, $arclim );
+    return( $arclim );
 }
 
 
@@ -2413,7 +2592,32 @@ sub remove
 
     if( $arc->active )
     {
-	confess "IMPLEMENT ME"; ### <<<--- HERE !!!
+	my $dbix = $Rit::dbix;
+	my $new = Rit::Base::Arc->create({
+					  common_id => $arc->common_id,
+					  replaces_id => $arc->id,
+					  active => 0,
+					  subj_id => $arc->{'subj'},
+					  pred_id => $arc->{'pred'},
+					  value => is_undef,
+					 });
+	$arc->deactivate($new);
+	my $updated = $new->updated;
+	my $date_db = $dbix->format_datetime($updated);
+
+	my $activated_by    = $new->created_by;
+	my $activated_by_id = $activated_by->id;
+
+	my $st = "update arc set activated=?, activated_by=?, deactivated=? where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $date_db, $activated_by_id, $date_db, $new->id );
+
+	$new->{'arc_deactivated'} = $updated;
+	$new->{'arc_activated'} = $updated;
+	$new->{'activated_by'} = $activated_by_id;
+	$new->{'activated_by_obj'} = $activated_by;
+
+	return 1;
     }
 
 
@@ -2571,7 +2775,7 @@ sub update
 
   $a->set_value( $new_value )
 
-  $a->set_value( $new_value, $changes_ref )
+  $a->set_value( $new_value, $res )
 
 Sets the L</value> of the arc.
 
@@ -2588,10 +2792,11 @@ Returns: the arc changed, or the same arc
 
 sub set_value
 {
-    my( $arc, $value_new_in, $changes_ref ) = @_;
+    my( $arc, $value_new_in, $res ) = @_;
 
     my $DEBUG = 1;
-    $changes_ref ||= \ 0;
+
+    $res ||= Rit::Base::Resource::Change->new();
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
@@ -2650,7 +2855,7 @@ sub set_value
 					      subj_id => $arc->{'subj'},
 					      pred_id => $arc->{'pred'},
 					      value => $value_new,
-					     }, $changes_ref);
+					     }, $res);
 	    return $new;
 	}
 
@@ -2742,7 +2947,10 @@ sub set_value
 
 	debug "Updated arc id $arc_id: ".$arc->desig."\n";
 
-	$$changes_ref ++;
+	if( $res )
+	{
+	    $res->{'changes'} ++;
+	}
     }
     else
     {
@@ -2759,12 +2967,10 @@ sub set_value
 
   $a->set_pred( $pred )
 
-  $a->set_pred( $pred, $changes_ref )
+  $a->set_pred( $pred, $res )
 
 Sets the pred to what we get from L<Rit::Base::Resource/get> called
 from L<Rit::Base::Pred>.
-
-TODO: Make sure that the new pred has the same coltype.
 
 Returns: the arc changed, or the same arc
 
@@ -2772,72 +2978,29 @@ Returns: the arc changed, or the same arc
 
 sub set_pred
 {
-    my( $arc, $pred, $changes_ref ) = @_;
+    my( $arc, $pred, $res ) = @_;
 
     my $DEBUG = 0;
 
-    my $changes = 0;
     my $new_pred = getpred( $pred );
     my $new_pred_id = $new_pred->id;
     my $old_pred_id = $arc->pred->id;
 
     if( $new_pred_id != $old_pred_id )
     {
-	confess "WOULD HAVE set pred of arc $arc->{'id'}\n";
-
 	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->name."\n" if $DEBUG;
 
-	$arc->remove_check;
+	my $narc = $arc->create({
+				 read_access => $arc->read_access->id,
+				 write_access => $arc->write_access->id,
+				 subj_id => $arc->subj->id,
+				 pred => $new_pred,
+				 value => $arc->value,
+				}, $res);
 
-	my $dbix      = $Rit::dbix;
-	my $dbh       = $dbix->dbh;
+	$arc->remove( $res );
 
-	my $arc_id    = $arc->id;
-	my $u_node    = $Para::Frame::REQ->user;
-	my $now       = now();
-	my $now_db    = $dbix->format_datetime($now);
-
-	my $new_coltype = $new_pred->coltype;
-	my $old_coltype = $arc->coltype;
-	my $value_new = $arc->{'value'}->literal;
-
-	my $extra = "";
-	if( $new_coltype ne $old_coltype )
-	{
-	    $arc->{'value'} = is_undef;
-	    $arc->{'clean'} = undef;
-	}
-
-
-	debug "  extra part: $extra\n" if $DEBUG;
-	my $sth = $dbh->prepare("update arc set pred=?, ".
-				       "updated=? ".
-				       "where ver=?");
-	$sth->execute($new_pred_id, $now_db, $arc_id);
-
-	$arc->{'pred'} = $new_pred;
-
-	$arc->{'arc_updated'} = $now;
-	$arc->subj->initiate_cache;
-	$arc->value->initiate_cache($arc);
-	$arc->initiate_cache;
-	$arc->schedule_check_create;
-	cache_update;
-
-	if( $new_coltype ne $old_coltype )
-	{
-	    confess "implement this";
-
-	    # May not initiate arc cache
-	    # Both old and new value could be undef
-	    $arc->set_value( $value_new );
-	}
-
-	send_cache_update({ change => 'arc_updated',
-			    arc_id => $arc->id,
-			  });
-
-	$$changes_ref ++ if $changes_ref; # increment changes
+	return $narc;
     }
 
     return $arc;

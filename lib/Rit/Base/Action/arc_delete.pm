@@ -24,8 +24,6 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $changed = 0;
-
     my $q = $req->q;
 
     my $node_id = $q->param('id');
@@ -55,14 +53,21 @@ sub handler
     # Place it first
     unshift @arcs, $value_arc if $value_arc;
 
-
+    my $res = Rit::Base::Resource::Change->new;
 
     foreach my $arc ( @arcs )
     {
-	$arc->remove;
+	$arc->remove( $res );
     }
 
-    return "Deleted node $desig";
+    if( $res->changes )
+    {
+	return "Deleted node $desig";
+    }
+    else
+    {
+	return "No change";
+    }
 }
 
 

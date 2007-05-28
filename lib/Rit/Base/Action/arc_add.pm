@@ -19,12 +19,12 @@ use Data::Dumper;
 use Para::Frame::Utils qw( trim );
 
 use Rit::Base::Utils qw( parse_arc_add_box );
+use Rit::Base::Resource::Change;
 
 sub handler
 {
     my( $req ) = @_;
 
-    my $changed = 0;
     my $DEBUG = 0;
 
     my $q = $req->q;
@@ -41,8 +41,9 @@ sub handler
 
 	warn Dumper $props if $DEBUG;
 
-	$changed += $subj->add( $props );
-	return "Updated node $subj_id" if $changed;
+	my $res = Rit::Base::Resource::Change->new;
+	$subj->add( $props, $res );
+	return "Updated node $subj_id" if $res->changes;
 	return "No changes to node $subj_id";
     }
     else

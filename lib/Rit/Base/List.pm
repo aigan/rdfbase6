@@ -157,6 +157,8 @@ Methods that returnes new modified lists
   # Returns the same object
   $l->find()
 
+  $l->find( $ref, \%args );
+
 The first two forms calls L</contains> with the params and returns 1
 or 0. It will call L</contains> for all cases where there is one
 parameter that is not a hashref.
@@ -214,6 +216,12 @@ L<Rit::Base::List> or L<Para::Frame::List> object.
 
 The actual comparsion for the C<eq> and C<ne> matchtypes are done by
 the L<Rit::Base::Resource/has_value> method.
+
+The supported args are:
+
+  private?
+  clean
+  arclim
 
 =head3 See also
 
@@ -284,20 +292,25 @@ TODO: Is example 4 correct..?
 
 sub find
 {
-    my( $self, $tmpl, $val ) = @_;
-    my $class = ref $self;            # confess;
+    my( $l, $tmpl, $args ) = @_;
 
     my $DEBUG = debug();
     $DEBUG and $DEBUG --;
 
     # either name/value pairs in props, or one name/value
-    if( defined $val )
+    if( not(ref $tmpl) and $args )
     {
-	$tmpl = {$tmpl, $val};
+	$tmpl = {$tmpl, $args};
+	undef $args;
     }
 
-    return $self unless $tmpl; # Support finds with no criterions
+    # Support finds with no criterions
+    return $l unless $tmpl; # Handling tmpl={} later
 
+
+    $args ||= {};
+
+    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
 
     # Two ways to use find:
 
@@ -306,7 +319,7 @@ sub find
     unless( ref $tmpl and ref $tmpl eq 'HASH' )
     {
 #	debug 2, "Does list contain $tmpl?";
-	return $self->contains( $tmpl );
+	return $l->contains( $tmpl );
     }
 
     if( $DEBUG > 1 )
@@ -315,8 +328,8 @@ sub find
     }
 
 
-    # En empty tmpl matches the whole list
-    return $self unless keys %$tmpl;
+    # En empty tmpl matches the whole list (regardless of args)
+    return $l unless keys %$tmpl;
 
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.
@@ -324,7 +337,7 @@ sub find
     my @newlist;
 
   NODE:
-    foreach my $node ( $self->nodes )
+    foreach my $node ( $l->nodes )
     {
 	debug "Resource ".$node->id if $DEBUG;
 
@@ -350,7 +363,8 @@ sub find
 
 		debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
 
-		my $subres = $node->$pred_first;
+		# It may be a method for the node class
+		my $subres = $node->$pred_first({}, $arclim);
 
 		unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
 		{
@@ -364,7 +378,8 @@ sub find
 		my $found = 0;
 		foreach my $subnode ( $subres->nodes )
 		{
-		    if( $subnode->find($pred_after, $target_value)->size )
+		    if( $subnode->find({$pred_after => $target_value},
+				       $args)->size )
 		    {
 			$found ++;
 			last;
@@ -380,7 +395,8 @@ sub find
 	    }
 
 
-	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x )
+	    #                      Regexp compiles once
+	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	    {
 		$Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 		unless( $pred_part )
@@ -397,8 +413,8 @@ sub find
 
 	    my $rev    = $1;
 	    my $pred   = $2;
-	    my $arclim = $3;
-	    my $clean  = $4 || 0;
+	    my $arclim = $3 || $arclim;
+	    my $clean  = $4 || $args->{'clean'} || 0;
 	    my $match  = $5 || 'eq';
 	    my $prio   = $6; #not used
 
@@ -411,15 +427,18 @@ sub find
 
 	    # match '*' handled below (but not matchtype 'exist')
 
+	    #### ARCS
 	    if( ref $node eq 'Rit::Base::Arc' )
 	    {
 		## TODO: Handle preds in the form 'obj.scof'
 
-		if( ($match ne 'eq' and $match ne 'begins') or
-		    $arclim or $clean )
+		if( ($match ne 'eq' and $match ne 'begins') or $clean )
 		{
 		    confess "Not implemented: $pred_part";
 		}
+
+		# Failes test if arc doesn't meets the arclim
+		next NODE unless $node->meets_arclim( $arclim );
 
 		debug "node is an arc" if $DEBUG;
 		if( $pred =~ /^(obj|value)$/ )
@@ -468,12 +487,8 @@ sub find
 		{
 		    debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
 		}
-	    }
+	    } #### END ARCS
 
-	    if( $arclim )
-	    {
-		confess "arclim not implemented: $pred_part";
-	    }
 
 	    if( $pred =~ /^count_pred_(.*)/ )
 	    {
@@ -495,12 +510,12 @@ sub find
 		my $count;
 		if( $rev )
 		{
-		    $count = $node->revcount($pred);
+		    $count = $node->revcount($pred, $arclim);
 		    debug "      counted $count (rev)" if $DEBUG;
 		}
 		else
 		{
-		    $count = $node->count($pred);
+		    $count = $node->count($pred, $arclim);
 		    debug "      counted $count" if $DEBUG;
 		}
 
@@ -539,13 +554,20 @@ sub find
 		    debug "      (rev)\n" if $DEBUG;
 		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
-			if $target_value->has_value( $pred, $node, );
+			if $target_value->has_value( $pred, $node,
+						   {
+						    arclim => $arclim,
+						   });
 		}
 		else
 		{
 		    next PRED # Check next if this test pass
 			if $node->has_value( $pred, $target_value,
-					     'eq', $clean);
+					     {
+					      match =>'eq',
+					      clean => $clean,
+					      arclim => $arclim,
+					     });
 		}
 	    }
 	    elsif( $match eq 'ne' )
@@ -556,7 +578,10 @@ sub find
 		    debug "      (rev)" if $DEBUG;
 		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
-			unless $target_value->has_value( $pred, $node );
+			unless $target_value->has_value( $pred, $node,
+						       {
+							arclim => $arclim,
+						       });
 		}
 		else
 		{
@@ -564,7 +589,11 @@ sub find
 
 		    next PRED # Check next if this test pass
 			unless $node->has_value( $pred, $target_value,
-						 'eq', $clean );
+						 {
+						  match => 'eq',
+						  clean => $clean,
+						  arclim => $arclim,
+						 });
 		}
 	    }
 	    elsif( $match eq 'exist' )
@@ -576,13 +605,13 @@ sub find
 		    {
 			debug 2, "Checking rev exist true";
 			next PRED
-			  if( $node->has_revpred( $pred ) );
+			  if( $node->has_revpred( $pred, {}, $arclim ) );
 		    }
 		    else
 		    {
 			debug 2, "Checking rev exist false";
 			next PRED
-			  unless( $node->has_revpred( $pred ) );
+			  unless( $node->has_revpred( $pred, {}, $arclim ) );
 		    }
 		}
 		else
@@ -591,13 +620,13 @@ sub find
 		    {
 			debug 2, "Checking rel exist true (target_value: $target_value)";
 			next PRED
-			  if( $node->has_pred( $pred ) );
+			  if( $node->has_pred( $pred, {}, $arclim ) );
 		    }
 		    else
 		    {
 			debug 2, "Checking rel exist false";
 			next PRED
-			  unless( $node->has_pred( $pred ) );
+			  unless( $node->has_pred( $pred, {}, $arclim ) );
 		    }
 		}
 	    }
@@ -610,7 +639,12 @@ sub find
 		}
 
 		next PRED # Check next if this test pass
-		  if $node->has_value( $pred, $target_value, $match, $clean );
+		  if $node->has_value( $pred, $target_value,
+				       {
+					match => $match,
+					clean => $clean,
+					arclim => $arclim,
+				       });
 	    }
 	    else
 	    {
@@ -653,15 +687,16 @@ If no matches are found:
 
 sub find_one
 {
-    my( $list, $props ) = @_;
+    my( $list, $tmpl, $args ) = @_;
 
-    my $nodes = $list->find( $props );
+    my $nodes = $list->find( $tmpl, $args );
 
     if( $nodes->[1] )
     {
 	my $result = $Para::Frame::REQ->result;
 	$result->{'info'}{'alternatives'}{'alts'} = $nodes;
-	$result->{'info'}{'alternatives'}{'query'} = $props;
+	$result->{'info'}{'alternatives'}{'query'} = $tmpl;
+	$result->{'info'}{'alternatives'}{'args'} = $args;
 	throw('alternatives', "Flera noder matchar kriterierna");
     }
 
@@ -671,7 +706,8 @@ sub find_one
 	my $result = $req->result;
 	my $site = $req->site;
 	$result->{'info'}{'alternatives'}{'alts'} = undef;
-	$result->{'info'}{'alternatives'}{'query'} = $props;
+	$result->{'info'}{'alternatives'}{'query'} = $tmpl;
+	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	my $home = $req->site->home_url_path;
 	$req->set_error_response($home.'/node_query_error.tt');
@@ -681,53 +717,6 @@ sub find_one
     return $nodes->[0];
 }
 
-
-#######################################################################
-
-=head2 direct
-
-  $l->direct
-
-Should only be called for lists of L<Rit::Base::Arc> elements.
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/direct>
-
-This method is only an optimization, for the same effect would be get
-via L</AUTOLOAD>.
-
-=cut
-
-sub direct  # Exclude indirect arcs
-{
-#    if( $_[0][0] and  not (ref $_[0][0] eq 'Rit::Base::Arc') )
-#    {
-#	confess "->direct() called in wrong context: OBJ $_[0] CONTENT @{$_[0]}\n";
-#    }
-#    warn sprintf("List %s has %d nodes. The first is %s\n",
-#		 $_[0], scalar(@{$_[0]}), $_[0][0] );
-
-    $_[0]->new([grep $_->direct, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 explicit
-
-  $l->explicit
-
-Should only be called for lists of L<Rit::Base::Arc> elements.
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/explicit>
-
-This method is only an optimization, for the same effect would be get
-via L</AUTOLOAD>.
-
-=cut
-
-sub explicit  # Exclude implicit arcs
-{
-    $_[0]->new([grep $_->explicit, @{$_[0]}]);
-}
 
 #######################################################################
 
@@ -1387,11 +1376,19 @@ sub is_true
 
   $list->contains( $list2 )
 
+  $list->contains( $node, \%args )
+
+  $list->contains( $list2, \%args )
+
 
 Returns true if the list contains all mentioned items supplied as a
 list, list objekt or single item.
 
 Each element is compared with L<Para::Frame::Object/equals>.
+
+Supported args are:
+
+  arclim
 
 TODO: Use iteration with the iterators
 
@@ -1401,7 +1398,7 @@ Returns: A boolean value
 
 sub contains
 {
-    my( $list, $tmpl ) = @_;
+    my( $list, $tmpl, $args ) = @_;
 
     if( ref $tmpl )
     {
@@ -1409,7 +1406,7 @@ sub contains
 	{
 	    foreach my $val (@{$tmpl->as_list})
 	    {
-		return 0 unless $list->contains($val);
+		return 0 unless $list->contains($val, $args);
 	    }
 	    return 1;
 	}
@@ -1425,7 +1422,7 @@ sub contains
 	{
 	    foreach my $val ($tmpl->as_list)
 	    {
-		return 0 unless $list->contains($val);
+		return 0 unless $list->contains($val, $args);
 	    }
 	    return 1;
 	}
@@ -1453,11 +1450,19 @@ sub contains
 
   $list->contains_any_of( $list2 )
 
+  $list->contains_any_of( $node, \%args )
+
+  $list->contains_any_of( $list2, \%args )
+
 
 Returns true if the list contains at least one of the mentioned items
 supplied as a list, list objekt or single item.
 
 Each element is compared with L<Para::Frame::Object/equals>.
+
+Supported args are:
+
+  arclim
 
 TODO: Use iteration with the iterators
 
@@ -1467,7 +1472,7 @@ Returns: A boolean value
 
 sub contains_any_of
 {
-    my( $list, $tmpl ) = @_;
+    my( $list, $tmpl, $args ) = @_;
 
     my $DEBUG = 0;
 
@@ -1487,7 +1492,7 @@ sub contains_any_of
 	    foreach my $val (@{$tmpl->as_list})
 	    {
 		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val);
+		return 1 if $list->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -1497,7 +1502,7 @@ sub contains_any_of
 	    foreach my $val (@$tmpl )
 	    {
 		debug 2, sprintf "  check array item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val);
+		return 1 if $list->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -1507,7 +1512,7 @@ sub contains_any_of
 	    foreach my $val ($tmpl->as_list)
 	    {
 		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val);
+		return 1 if $list->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -1537,6 +1542,8 @@ sub contains_any_of
 
   $l->has_value($val)
 
+  $l->has_value($val, $args)
+
 To be used for lists of literal resources.
 
 This calls translates to
@@ -1545,13 +1552,17 @@ This calls translates to
 
 See L</find>.
 
+Supported args are:
+
+  arclim
+
 =cut
 
 # TODO: Shouldn't this do the same as Resource->has_value() ???
 
 sub has_value
 {
-    shift->find({value=>shift});
+    shift->find({value=>shift}, @_);
 }
 
 #######################################################################
@@ -1596,11 +1607,13 @@ Returns: C<$l>
 
 sub initiate_rel
 {
-    foreach( @{$_[0]} )
+    my( $l ) = shift;
+
+    foreach( @$l )
     {
-	$_->initiate_rel;
+	$_->initiate_rel(@_);
     }
-    return $_[0];
+    return $l;
 }
 
 #######################################################################
@@ -1897,7 +1910,264 @@ sub flatten_list
     return \@list_out;
 }
 
+
 #######################################################################
+
+=head1 Arc methods
+
+Should only be called for lists of L<Rit::Base::Arc> elements.
+
+=cut
+
+#######################################################################
+
+=head2 active
+
+  $l->active
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/active>
+
+=cut
+
+sub active
+{
+    $_[0]->new([grep $_->active, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 direct
+
+  $l->direct
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/direct>
+
+=cut
+
+sub direct
+{
+    $_[0]->new([grep $_->direct, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 submitted
+
+  $l->submitted
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/submitted>
+
+=cut
+
+sub submitted
+{
+    $_[0]->new([grep $_->submitted, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 is_new
+
+  $l->is_new
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/is_new>
+
+=cut
+
+sub is_new
+{
+    $_[0]->new([grep $_->is_new, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 old
+
+  $l->old
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/old>
+
+=cut
+
+sub old
+{
+    $_[0]->new([grep $_->old, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 inactive
+
+  $l->inactive
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/inactive>
+
+=cut
+
+sub inactive
+{
+    $_[0]->new([grep $_->inactive, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 indirect
+
+  $l->indirect
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/indirect>
+
+=cut
+
+sub indirect
+{
+    $_[0]->new([grep $_->indirect, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 not_submitted
+
+  $l->not_submitted
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/not_submitted>
+
+=cut
+
+sub not_submitted
+{
+    $_[0]->new([grep $_->not_submitted, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 explicit
+
+  $l->explicit
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/explicit>
+
+=cut
+
+sub explicit
+{
+    $_[0]->new([grep $_->explicit, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 implicit
+
+  $l->implicit
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/implicit>
+
+=cut
+
+sub implicit
+{
+    $_[0]->new([grep $_->implicit, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 not_new
+
+  $l->not_new
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/not_new>
+
+=cut
+
+sub not_new
+{
+    $_[0]->new([grep $_->not_new, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 not_old
+
+  $l->not_old
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/not_old>
+
+=cut
+
+sub not_old
+{
+    $_[0]->new([grep $_->not_old, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 not_disregarded
+
+  $l->not_disregarded
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/not_disregarded>
+
+=cut
+
+sub not_disregarded
+{
+    $_[0]->new([grep $_->not_disregarded, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 disregarded
+
+  $l->disregarded
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/disregarded>
+
+=cut
+
+sub disregarded
+{
+    $_[0]->new([grep $_->disregarded, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 meets_arclim
+
+  $l->meets_arclim($arclim)
+
+Returns: A new list with the arcs that meets the arclim
+
+=cut
+
+sub meets_arclim
+{
+    my( $l, $arclim ) = @_;
+
+    $arclim = Rit::Base::Arc->parse_arclim($arclim);
+
+    unless( @$arclim )
+    {
+	return $l;
+    }
+
+    my @arcs;
+
+    my( $arc, $error ) = $l->get_first;
+    while(! $error )
+    {
+	if( $arc->meets_arclim( $arclim ) )
+	{
+	    push @arcs, $arc;
+	}
+
+	( $arc, $error ) = $l->get_next;
+    }
+
+    return $l->new(\@arcs);
+}
+
+#######################################################################
+
 
 #######################################################################
 

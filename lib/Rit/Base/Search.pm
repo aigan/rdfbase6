@@ -547,6 +547,7 @@ a search object.
 
   clean: Sets the clean property for each criterion.
 
+  arclim: Only search for nodes where the properties meets the arclim
 
 The keys are built up of parts used to describe the type of search
 part (search criterion).
@@ -567,7 +568,7 @@ This functionality may be moved to L</modify_from_query>.
 
 =head3 Main search key format
 
-  <rev> _ <pred> _ <arctype> _ <clean> _ <comp> _ <prio>
+  <rev> _ <pred> _ <arclim> _ <clean> _ <comp> _ <prio>
 
 All parts except C<pred> is optional.
 
@@ -579,11 +580,13 @@ C<rev>: C<rev> indicates a reverse property.
 
 C<pred>: Any predicate name.
 
-C<actype>: Any of C<direct>, C<indirect>, C<explicit>,
-C<implicit>. Those are criterions for the arcs to match.
+C<arclim>: Any of L<Rit::Base::Arc/limflag>.  Those are criterions for
+the arcs to match. This will override the value of C<args.arclim>.
+Defaults to L<Rit::Base::Arc/active>.
 
 C<clean>: If C<clean>, uses the clean version of strings in the
-search.
+search. This will override the value of C<args.clean>. Defaults to
+false.
 
 C<comp>: Any of C<eq>, C<like>, C<begins>, C<gt>, C<lt>, C<ne>,
 C<exist>.
@@ -611,6 +614,11 @@ sub modify
     $args ||= {};
 
     my $private = $args->{'private'} || 0;
+
+    if( my $arclim_in = $args->{'arclim'} )
+    {
+	$search->set_arclim( $arclim_in );
+    }
 
     foreach my $key ( keys %$props )
     {
@@ -716,15 +724,10 @@ sub modify
 	    my $pred   = $2;
 	    my $predref;
 	    my $type;
-	    my $arclim = $3; ### TODO: test this
-	    my $clean  = $4 || 0;
+	    my $arclim = $3 || undef; # defaults to search arclim on execute
+	    my $clean  = $4 || $args->{'clean'} || 0;
 	    my $match  = $5 || 'eq';
 	    my $prio   = $6; #Low prio first (default later)
-
-	    if( $arclim )
-	    {
-		confess "not implemented ($key)";
-	    }
 
 	    if( $pred =~ s/^predor_// )
 	    {
@@ -1748,7 +1751,7 @@ sub build_main_select
 
     if( $search->{'query'}{'sorttype'}{'score'} )
     {
-	push @parts, build_main_select_price();
+	push @parts, $search->build_main_select_price();
     }
 
    my $sql = join(", ", @parts);
@@ -1829,6 +1832,8 @@ sub build_outer_select_field
 #	    debug "  Setting where to previous part";
 	}
 
+	my $arclim_sql = $search->arclim_sql;
+
 	if( $tr )
 	{
 	    if( $dir eq 'exists' )
@@ -1837,23 +1842,23 @@ sub build_outer_select_field
 	    }
 
 	    # Sort by weight
-	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=302 and subj=${sortkey}_inner.obj) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? order by weight limit 1) as ${sortkey}_mid";
+	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj $arclim_sql) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=302 and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
 	}
 	elsif( $dir eq 'exists' )
 	{
-	    $sql = "COALESCE((select 1 from arc where $where and pred=? limit 1),0)";
+	    $sql = "COALESCE((select 1 from arc where $where and pred=? $arclim_sql limit 1),0)";
 	}
 	elsif( $coltype eq 'valfloat' )
 	{
-	    $sql = "COALESCE((select $coltype from arc where $where and pred=? limit 1),0)";
+	    $sql = "COALESCE((select $coltype from arc where $where and pred=? $arclim_sql limit 1),0)";
 	}
 	elsif( $coltype eq 'valtext' )
 	{
-	    $sql = "COALESCE((select $coltype from arc where $where and pred=? limit 1),'')";
+	    $sql = "COALESCE((select $coltype from arc where $where and pred=? $arclim_sql limit 1),'')";
 	}
 	else # valdate or obj
 	{
-	    $sql = "select $coltype from arc where $where and pred=? limit 1";
+	    $sql = "select $coltype from arc where $where and pred=? $arclim_sql limit 1";
 	}
 
 	push @values, $pred->id;
@@ -1899,9 +1904,17 @@ sub build_main_select_group
 
 #######################################################################
 
+# rel1 is the has_subscription relation and rel2 is the weight
+# relation of the specific subscription object.
+
+
 sub build_main_select_price
 {
-    # rel1 is the has_subscription relation and rel2 is the weight relation of the specific subscription object.
+    my( $search ) = @_;
+
+    my $arclim_sql0 = $search->arclim_sql();
+    my $arclim_sql1 = $search->arclim_sql({prefix => 'rel1.'});
+    my $arclim_sql2 = $search->arclim_sql({prefix => 'rel2.'});
 
     my $sql =
 "
@@ -1915,7 +1928,10 @@ sub build_main_select_price
                        select 1
                        from arc
                        where subj=rel2.subj and pred=1 and obj=1111
+                             $arclim_sql0
                    )
+                   $arclim_sql1
+                   $arclim_sql2
                group by rel1.subj
            ) as price
 ";
@@ -1963,6 +1979,7 @@ sub elements_props
 	my $match = $cond->{'match'} ||= 'eq';
 	my $invalues = $cond->{'values'};
 	my $prio = $cond->{'prio'};
+	my $arclim = $cond->{'arclim'} || $search->arclim;
 
 	my $negate = ( $match eq 'ne' ? 1 : 0 );
 
@@ -1970,6 +1987,8 @@ sub elements_props
 	{
 	    $prio = set_prio( $cond );
 	}
+
+	my $arclim_sql = $search->arclim_sql({ arclim => $arclim });
 
 	my $select = ($rev ? 'obj' : 'subj');
 	my $where;
@@ -2007,18 +2026,19 @@ sub elements_props
 
 	if( $match eq 'exist' )        # match any
 	{
-	    $where = $pred_part;
+	    $where = "$pred_part $arclim_sql";
 	    @outvalues = @pred_ids;
 	}
 	elsif( $invalues->[0] eq '*' ) # match all
 	{
-	    $where = $pred_part;
+	    $where = "$pred_part $arclim_sql";
 	    @outvalues = @pred_ids;
 	}
 	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->name->plain eq 'id') )
 	{
 	    $where = join(" or ", map "subj = ?", @$invalues);
+	    $where .= " " . $arclim_sql;
 	    @outvalues = @$invalues; # value should be numeric
 	    $prio = 1;
 	}
@@ -2036,14 +2056,14 @@ sub elements_props
 		# See time comparsion in doc/notes2.txt
 		$where =
 		  [
-		   "$pred_part and obj in ( select subj from arc where pred=4 and ($matchpart) )",
-		   "$pred_part and ($matchpart)",
+		   "$pred_part and obj in ( select subj from arc where pred=4 and ($matchpart) $arclim_sql) $arclim_sql",
+		   "$pred_part and ($matchpart) $arclim_sql",
 		  ];
 		@outvalues = ( @pred_ids, @matchvalues, @pred_ids, @matchvalues );
 	    }
 	    else
 	    {
-		$where = "$pred_part and ($matchpart)";
+		$where = "$pred_part and ($matchpart) $arclim_sql";
 		@outvalues = ( @pred_ids, @matchvalues);
 	    }
 	}
@@ -2111,6 +2131,8 @@ sub build_path_part
     my $last_step = pop @steps;
     my $first_step = shift @steps;
 
+    my $arclim_sql = $search->arclim_sql;
+
     #### LAST STEP
 
     my $pred = Rit::Base::Pred->get( $last_step );
@@ -2128,7 +2150,7 @@ sub build_path_part
     }
 
     my $value_part = join " or ", map "$coltype=?", @$values;
-    my $where = "pred=? and ($value_part)";
+    my $where = "pred=? and ($value_part) $arclim_sql";
     my @path_values = $pred->id;
     push @path_values, @$values;
 
@@ -2139,7 +2161,7 @@ sub build_path_part
     {
 	my $pred_id = Rit::Base::Pred->get_id($step);
 
-	$where = "pred=? and obj in (select subj from arc where $where)";
+	$where = "pred=? and obj in (select subj from arc where $where) $arclim_sql";
 	unshift @path_values, $pred_id;
     }
 
@@ -2321,6 +2343,70 @@ sub set_prio
     debug 3, "Setting prio $key = $prio";
 
     return $DBSTAT{$key} = $prio;
+}
+
+
+#######################################################################
+
+=head2 set_arclim
+
+  $search->set_arclim( $arclim )
+
+See L<Rit::Base::Arc/limflag>
+
+=cut
+
+sub set_arclim
+{
+    my( $search, $arclim ) = @_;
+
+    return $search->{'arclim'} =
+      Rit::Base::Arc->parse_arclim( $arclim );
+}
+
+
+#######################################################################
+
+=head2 arclim
+
+  $search->arclim
+
+See L<Rit::Base::Arc/limflag>
+
+=cut
+
+sub arclim
+{
+    return $_[0]->{'arclim'} ||= [];
+}
+
+
+#######################################################################
+
+=head2 arclim_sql
+
+  $search->arclim_sql
+
+  $search->arclim_sql( \%args )
+
+Supported args are
+
+  arclim
+  prefix
+
+Returns: The sql string to insert, beginning with "and ..."
+
+=cut
+
+sub arclim_sql
+{
+    my( $search, $args ) = @_;
+
+    $args ||= {};
+
+    my $arclim = $args->{'arclim'} || $search->arclim;
+
+    return "and " . Rit::Base::Arc->arclim_sql($arclim, $args);
 }
 
 

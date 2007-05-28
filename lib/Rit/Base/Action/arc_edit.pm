@@ -15,16 +15,16 @@ package Rit::Base::Action::arc_edit;
 
 use strict;
 use Data::Dumper;
+use Carp qw( confess );
 
 use Para::Frame::Utils qw( clear_params debug );
 
 use Rit::Base::Utils qw( parse_arc_add_box );
+use Rit::Base::Resource::Change;
 
 sub handler
 {
     my( $req ) = @_;
-
-    my $changed = 0;
 
     my $q = $req->q;
     my $arc_id = $q->param('arc_id');
@@ -39,14 +39,16 @@ sub handler
 
     my $arc = Rit::Base::Arc->get( $arc_id );
 
+    my $res = Rit::Base::Resource::Change->new;
+
     # Indirect arc
     #
     if( $check_explicit )
     {
 	if( $arc->explicit <=> $explicit )
 	{
-	    $arc->set_explicit( $explicit );
-	    $changed ++;
+	    confess "Not implemented";
+#	    $arc->set_explicit( $explicit );
 	}
     }
     #
@@ -54,16 +56,15 @@ sub handler
     #
     elsif( $pred_name )
     {
-	my $new = $arc->set_pred( $pred_name, \$changed );
-	$new = $new->set_value( $value, \$changed );
+	my $new = $arc->set_pred( $pred_name, $res );
+	$new = $new->set_value( $value, $res );
 	debug "New arc is ".$new->sysdesig;
-	debug "Changes: $changed";
 
 	# Should we transform this literal to a value node?
 	my $props = parse_arc_add_box( $literal_arcs );
-	$new->value->update( $props, \$changed );
+	$new->value->update( $props, $res );
 
-	if( $changed )
+	if( $res->changes )
 	{
 	    $arc_id = $new->id;
 	    $q->param('arc_id', $arc_id);
@@ -76,7 +77,7 @@ sub handler
     else
     {
 	my $subj = $arc->subj;
-	if( $arc->remove )
+	if( $arc->remove( $res ) )
 	{
 	    $q->param('id', $subj->id);
 	    my $home = $req->site->home_url_path;
@@ -86,7 +87,7 @@ sub handler
     }
 
 
-    if( $changed )
+    if( $res->changes )
     {
 	return "Arc $arc_id updated";
     }

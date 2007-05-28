@@ -27,7 +27,6 @@ sub handler
 
     throw('denied', "Nope") unless $req->user->level >= 20;
 
-    my $changed = 0;
     my $DEBUG = 0;
 
     my $q = $req->q;

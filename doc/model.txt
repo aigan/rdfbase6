@@ -140,10 +140,10 @@ version is done by creating a new version.
 An arc can only be deactivated by the activation of a new version. The
 activation and deactivation date must be identical.
 
-An arc is removed by the activation of a new version with the pred set
-to null. That arc will have the activation and deactivation date
-identical. This will keep history about who requested the removal and
-who authorized it.
+An arc is removed by the activation (and deactivation) of a new
+version with the value set to null and with valtype 0. That arc will
+have the activation and deactivation date identical. This will keep
+history about who requested the removal and who authorized it.
 
 A new version of an arc must have the same pred as the previous
 version, and must have either the same subj or obj. The only exception
