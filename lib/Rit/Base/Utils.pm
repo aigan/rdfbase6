@@ -958,6 +958,7 @@ sub query_desig
 
     $ident ||= 0;
     my $out = "";
+#    warn "query_desig on level $ident\n";
 
     if( ref $query )
     {
@@ -968,12 +969,16 @@ sub query_desig
 		my $val = query_desig($query->{$key}, $ident+1);
 		if( $val =~ /\n.*?\n/s )
 		{
+#		    warn "a\n";
 		    $out .= '  'x$ident . "$key:\n";
 		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
 		}
 		else
 		{
+#		    warn "b\n";
 		    $val =~ s/\n*$/\n/;
+		    $val =~ s/\s+/ /g;
+		    $val =~ s/^\s+//g;
 		    $out .= '  'x$ident . "$key: $val";
 		}
 	    }
@@ -985,11 +990,15 @@ sub query_desig
 		my $val = query_desig($val, $ident+1);
 		if( $val =~ /\n.*?\n/s )
 		{
+#		    warn "c\n";
 		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
 		}
 		else
 		{
+#		    warn "d\n";
 		    $val =~ s/\n*$/\n/;
+		    $val =~ s/\s+/ /g;
+		    $val =~ s/^\s+//g;
 		    $out .= '  'x$ident . $val;
 		}
 	    }
@@ -997,32 +1006,41 @@ sub query_desig
 	else
 	{
 	    my $val = $query->sysdesig;
-	    debug "Got val $val\n";
+#	    debug "Got val $val\n";
 	    if( $val =~ /\n.*?\n/s )
 	    {
+#		warn "e\n";
 		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
 	    }
 	    else
 	    {
+#		warn "f\n";
 		$val =~ s/\n*$/\n/;
+		$val =~ s/\s+/ /g;
+		$val =~ s/^\s+//g;
 		$out .= '  'x$ident . $val;
 	    }
 	}
     }
     else
     {
-	debug "Query is plain $query\n";
+#	debug "Query is plain $query\n";
 	if( $query =~ /\n.*?\n/s )
 	{
+	    warn "g\n";
 	    $out .= join "\n", map '  'x$ident.$_, split /\n/, $query;
 	}
 	else
 	{
+#	    warn "h\n";
 	    $out =~ s/\n*$/\n/;
+	    $query =~ s/\s+/ /g;
+	    $query =~ s/^\s+//g;
 	    $out .= '  'x$ident . $query;
 	}
     }
 
+#    warn "Returning:\n$out<-\n";
     return $out;
 }
 

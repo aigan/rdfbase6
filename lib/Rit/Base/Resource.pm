@@ -2722,7 +2722,7 @@ sub arc_list
 
 	my @arcs;
 
-	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, datadump($arclim));
+#	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, datadump($arclim));
 
 	if( $node->initiate_prop( $name, $proplim, $arclim ) )
 	{
@@ -2738,18 +2738,18 @@ sub arc_list
 	}
 	else
 	{
-	    debug 1, "  No values for relprop $name found!";
+#	    debug 1, "  No values for relprop $name found!";
 	    return Rit::Base::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	my $lr = Rit::Base::List->new(\@arcs);
-	debug "List is now ".$lr->sysdesig;
+#	debug "List is now ".$lr->sysdesig;
 	if( $proplim )
 	{
 	    # TODO: Include inactive properties?
-	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
+#	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
 
 	    if( ref $proplim and ref $proplim eq 'HASH' )
 	    {
@@ -2783,7 +2783,7 @@ sub arc_list
 	    }
 	}
 
-	debug "Returning list $lr";
+#	debug "Returning list $lr";
 	return $lr;
     }
     else
@@ -2814,7 +2814,7 @@ sub arc_list
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	debug "Returnig new list";
+#	debug "Returnig new list";
 	return Rit::Base::List->new(\@arcs);
     }
 }
@@ -3270,7 +3270,7 @@ sub update
 
 =head2 replace
 
-  $n->replace( \@arclist, \%props, $res )
+  $n->replace( \@arclist, \%props, $args, $res )
 
 See L</update> for description of what is done.
 
@@ -3298,7 +3298,7 @@ The number of arcs created or removed.
 
 sub replace
 {
-    my( $node, $oldarcs, $props, $res ) = @_;
+    my( $node, $oldarcs, $props, $args, $res ) = @_;
 
     $res ||= Rit::Base::Resource::Change->new();
 
@@ -3375,7 +3375,7 @@ sub replace
     foreach my $key ( keys %del )
     {
 	debug 3, "    now removing $key";
-	$del{$key}->remove( $res );
+	$del{$key}->remove( $args, $res );
     }
 
     debug 3, "  -- done";
@@ -3387,7 +3387,7 @@ sub replace
 
 =head2 remove
 
-  $n->remove( $res )
+  $n->remove( $args, $res )
 
 Removes the node with all arcs pointing to and from the node.
 
@@ -3402,15 +3402,18 @@ Returns: The number of arcs removed
 
 sub remove
 {
-    my( $node, $res ) = @_;
+    my( $node, $args, $res ) = @_;
 
     $res ||= Rit::Base::Resource::Change->new();
+
+    $args ||= {};
+    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
     my $pred_value_id = getpred('value')->id;
 
-    foreach my $arc ( $node->arc_list->nodes )
+    foreach my $arc ( $node->arc_list(undef,$arclim)->nodes )
     {
 	if( $arc->pred->id == $pred_value_id )
 	{
@@ -3426,7 +3429,7 @@ sub remove
     unshift @arcs, $value_arc if $value_arc;
 
 
-    foreach my $arc ( @arcs, $node->revarc_list->nodes )
+    foreach my $arc ( @arcs, $node->revarc_list(undef,$arclim)->nodes )
     {
 	$arc->remove( $res );
     }
@@ -3447,6 +3450,8 @@ sub remove
 
   $n->find_arcs( [ @crits ] )
 
+  $n->find_arcs( $query, \%args )
+
 C<@crits> can be a mixture of arcs, hashrefs or arc numbers. Hashrefs
 holds pred/value pairs that is added as arcs.
 
@@ -3456,7 +3461,7 @@ Returns: A L<Rit::Base::List> of found L<Rit::Base::Arc>s
 
 sub find_arcs
 {
-    my( $node, $crits, $extra ) = @_;
+    my( $node, $crits, $args, $extra ) = @_;
 
     # Returns the union of all results from each criterion
 
@@ -3465,10 +3470,13 @@ sub find_arcs
 	$crits = $crits->plain if ref $crits;
     }
 
-    if( not(ref $crits) and defined $extra )
+    if( not(ref $crits) and defined $args )
     {
-	$crits = { $crits => $extra };
+	$crits = { $crits => $args };
+	$args = $extra;
     }
+
+    $args ||= {};
 
     unless( ref $crits and (ref $crits eq 'ARRAY' or
 			   ref $crits eq 'Rit::Base::List' )
@@ -3478,6 +3486,8 @@ sub find_arcs
     }
 
     my $arcs = [];
+
+    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
 
     foreach my $crit ( @$crits )
     {
@@ -3490,7 +3500,7 @@ sub find_arcs
 	    foreach my $pred ( keys %$crit )
 	    {
 		my $val = $crit->{$pred};
-		my $found = $node->arc_list($pred)->find(value=>$val);
+		my $found = $node->arc_list($pred,undef,$arclim)->find(value=>$val);
 		push @$arcs, $found->as_array if $found->size;
 	    }
 	}
@@ -5224,7 +5234,7 @@ sub initiate_rel
 	}
 
 
-	debug "Initiating node $nid with $sql";
+#	debug "Initiating node $nid with $sql";
 	my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_subj->execute($nid);
 	my $stmts = $sth_init_subj->fetchall_arrayref({});

@@ -35,7 +35,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump  );
 use Para::Frame::List;
 
-use Rit::Base::Utils qw( is_undef valclean );
+use Rit::Base::Utils qw( is_undef valclean query_desig );
 
 ### Inherit
 #
@@ -324,7 +324,7 @@ sub find
 
     if( $DEBUG > 1 )
     {
-	debug "Find: ".datadump($tmpl, 3);
+	debug query_desig($tmpl);
     }
 
 

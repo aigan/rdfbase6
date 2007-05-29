@@ -735,13 +735,13 @@ sub find
 
 =head2 find_set
 
-  Rit::Base::Arc->fins_set( \%props )
+  Rit::Base::Arc->find_set( \%props )
 
-  Rit::Base::Arc->fins_set( \%props, \%default )
+  Rit::Base::Arc->find_set( \%props, \%args )
 
-  Rit::Base::Arc->fins_set( \%props, undef, \$num_of_changes )
+  Rit::Base::Arc->find_set( \%props, undef, $res )
 
-  Rit::Base::Arc->fins_set( \%props, \%default, \$num_of_changes )
+  Rit::Base::Arc->find_set( \%props, \%args, $res )
 
 Finds the one matching arc or create one.
 
@@ -756,6 +756,11 @@ L</create> is called with the modified C<%props>.
 If more than one arc is found, tries to eliminate one of them by
 calling L</remove_duplicates>.
 
+Supported args are:
+
+  default
+  arclim
+
 Exceptions:
 
   alternatives - More than one arc matches the criterions
@@ -766,16 +771,18 @@ Returns: The arc
 
 sub find_set
 {
-    my( $this, $props, $default, $res ) = @_;
+    my( $this, $props, $args, $res ) = @_;
 
-    my $arcs = $this->find( $props );
-    $default ||= {};
+    my $arcs = $this->find( $props, $args );
+
+    $args ||= {};
+    my $default = $args->{'default'} || {};
 
     if( $arcs->[1] )
     {
 	# Try to eliminate duplicate arcs
 	$arcs->[1]->remove_duplicates( $res );
-	$arcs = $this->find( $props );
+	$arcs = $this->find( $props, $args );
     }
 
     if( $arcs->[1] )
@@ -803,7 +810,7 @@ sub find_set
 
 =head2 find_remove
 
-  Rit::Base::Arc->find_remove(\%props )
+  Rit::Base::Arc->find_remove(\%props, \%args, $res )
 
 Remove matching arcs if existing.
 
@@ -815,19 +822,23 @@ If the property C<implicit> is given, the value of it is passed on to
 L</remove>. This will only remove arc if it no longer can be infered
 and it's not explicitly declared
 
+Supported args:
+
+  arclim
+
 Returns: ---
 
 =cut
 
 sub find_remove
 {
-    my( $this, $props ) = @_;
+    my( $this, $props, $args, $res ) = @_;
 
     # If called with 'implicit', only remove arc if it no longer can
     # be infered and it's not explicitly declared.  All checks in
     # remove method
 
-    my $arcs = $this->find( $props );
+    my $arcs = $this->find( $props, $args );
 
     foreach my $arc ( @$arcs )
     {
@@ -839,9 +850,13 @@ sub find_remove
 
 =head2 find_one
 
-  Rit::Base::Arc->fins_one( \%props )
+  Rit::Base::Arc->fins_one( \%props, \%args )
 
 Calls L</find> with the given props.
+
+Supported args are:
+
+  arclim
 
 Exceptions:
 
@@ -855,9 +870,9 @@ Returns: The arc
 
 sub find_one
 {
-    my( $this, $props ) = @_;
+    my( $this, $props, $args ) = @_;
 
-    my $arcs = $this->find( $props );
+    my $arcs = $this->find( $props, $args );
 
     if( $arcs->[1] )
     {
@@ -1925,7 +1940,7 @@ sub vacuum
     $arc->remove_duplicates( $res );
 
 #    warn "  Remove implicit\n";
-    $arc->remove('implicit'); ## Only removes if not valid
+    $arc->remove({implicit => 1}, $res); ## Only removes if not valid
     unless( disregard $arc )
     {
 #	warn "  Reset clean\n";
@@ -2017,7 +2032,7 @@ sub remove_duplicates
 
 	debug "Removing duplicate ".$arc2->sysdesig."\n";
 
-	$arc2->remove( $res );
+	$arc2->remove( {}, $res );
     }
 }
 
@@ -2552,7 +2567,7 @@ sub parse_arclim
 
   $a->remove
 
-  $a->remove( $implicit_bool ) # FOR INTERNAL USE ONLY
+  $a->remove( \%args, $res )
 
 Removes the arc. Will also remove arcs pointing to/from the arc itself.
 
@@ -2569,13 +2584,17 @@ If called with a false value, it will remove the arc only if the arc
 can't be infered. If the arc can be infered, the arc will be changed
 from L</explicit> to L</implicit>.
 
+Supported args are:
+
+  implicit
+
 Returns: the number of arcs removed.
 
 =cut
 
 sub remove
 {
-    my( $arc, $implicit ) = @_;
+    my( $arc, $args, $res ) = @_;
 
     my $DEBUG = 0;
 
@@ -2590,6 +2609,9 @@ sub remove
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
 
+    $args ||= {};
+    my $implicit = $args->{'implicit'} || 0;
+
     if( $arc->active )
     {
 	my $dbix = $Rit::dbix;
@@ -2600,7 +2622,7 @@ sub remove
 					  subj_id => $arc->{'subj'},
 					  pred_id => $arc->{'pred'},
 					  value => is_undef,
-					 });
+					 }, $res);
 	$arc->deactivate($new);
 	my $updated = $new->updated;
 	my $date_db = $dbix->format_datetime($updated);
@@ -2735,6 +2757,8 @@ sub remove
 
   $a->update( \%props )
 
+  $a->update( \%props, \%args, $res )
+
 Proprties:
 
 
@@ -2752,14 +2776,14 @@ Returns: The arc
 
 sub update
 {
-    my( $arc, $props ) = @_;
+    my( $arc, $props, $args, $res ) = @_;
 
     foreach my $pred_name ( keys %$props )
     {
 	my $val = $props->{$pred_name};
 	if( $pred_name eq 'value' )
 	{
-	    $arc = $arc->set_value( $val );
+	    $arc = $arc->set_value( $val, $args, $res );
 	}
 	else
 	{
@@ -2775,7 +2799,7 @@ sub update
 
   $a->set_value( $new_value )
 
-  $a->set_value( $new_value, $res )
+  $a->set_value( $new_value, $args, $res )
 
 Sets the L</value> of the arc.
 
@@ -2792,7 +2816,7 @@ Returns: the arc changed, or the same arc
 
 sub set_value
 {
-    my( $arc, $value_new_in, $res ) = @_;
+    my( $arc, $value_new_in, $args, $res ) = @_;
 
     my $DEBUG = 1;
 
@@ -2806,7 +2830,10 @@ sub set_value
     # is; If the previous value was an object: try to find a new
     # object.  Not a Literal.
     #
-    my $value_new_list = Rit::Base::Resource->find_by_label( $value_new_in, $coltype_old );
+    my $value_new_list = Rit::Base::Resource->find_by_label( $value_new_in,
+							     {
+							      coltype => $coltype_old,
+							     });
     $value_new_list->defined or die "wrong input '$value_new_in'";
 
     if( $value_new_list->[1] ) # More than one
@@ -2998,7 +3025,7 @@ sub set_pred
 				 value => $arc->value,
 				}, $res);
 
-	$arc->remove( $res );
+	$arc->remove( {}, $res );
 
 	return $narc;
     }
