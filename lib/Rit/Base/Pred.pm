@@ -85,9 +85,7 @@ These can be called with the class name or any arc object.
 
   $p->find( $label )
 
-  $p->find( $key => $value )
-
-  $p->find({ $key1 => $value1, $key2 => $value2, ... })
+  $p->find({ $key1 => $value1, $key2 => $value2, ... }, \%args)
 
 With no params, returns a L<Rit::Base::List> with all predicates.
 
@@ -98,30 +96,29 @@ For the params as key/value pair, look up all predicates that matches
 all the given properties.  The only supported content for the keys are
 L</label> and L</valtype>.
 
+Supported args are:
+
+  default
+
 Returns: a L<Rit::Base::List>
 
 =cut
 
 sub find
 {
-    my( $this, $props_in, $default ) = @_;
+    my( $this, $props_in, $args ) = @_;
     my $class = ref($this) || $this;
 
     my $recs;
+
+    $args ||= {};
+    my $default = $args->{'default'};
 
     if( $props_in )
     {
 	unless( ref $props_in )
 	{
-	    if( defined $default )
-	    {
-		$props_in = { $props_in => $default };
-	    }
-	    else
-	    {
-		$props_in = { 'label' => $props_in };
-	    }
-	    $default = undef;
+	    $props_in = { 'label' => $props_in };
 	}
 
 	# Special case for label lookup
@@ -135,7 +132,7 @@ sub find
 	    }
 	    else
 	    {
-		$preds = $class->find_by_label( $label );
+		$preds = $class->find_by_label( $label, $args );
 		$pred = $preds->[0];
 		unless( $pred )
 		{
@@ -151,7 +148,7 @@ sub find
 		# Do not modify the $props_in given as argument
 		my %newprops = %$props_in;
 		delete $newprops{'label'};
-		return $preds->find(\%newprops);
+		return $preds->find(\%newprops, $args);
 	    }
 	    return $preds;
 	}
@@ -212,7 +209,7 @@ sub find
 
 =head2 create
 
-  $p->create(\%props)
+  $p->create(\%props, \%args)
 
 Creates a new predicate and stores it in the DB.
 
@@ -230,7 +227,7 @@ Returns: The created object.
 
 sub create
 {
-    my( $this, $props, $changes_ref ) = @_;
+    my( $this, $props, $args ) = @_;
     my $class = ref($this) || $this;
 
 
@@ -318,8 +315,6 @@ sub create
 #    $pred->add({ is => $predicate_class });
 
 
-
-    $$changes_ref ++ if $changes_ref; # increment changes
 
     cache_update;
 
@@ -534,11 +529,7 @@ sub coltype
 
 =head2 find_set
 
-  $Pred->find_set( \%criterions, \%default, \$counter )
-
-  $Pred->find_set( \%criterions, \%default )
-
-  $Pred->find_set( \%criterions )
+  $Pred->find_set( \%criterions, \%args )
 
 Searches for a pred matching the criterions.
 
@@ -566,10 +557,13 @@ Example:
       label => 'can_have_cert',
     },
     {
-       valtype => 'obj',
-       comment => "Business of this type can have certs of this type",
-       domain_scof => $C_business,
-       range_scof  => $C_certificate,
+      default =>
+      {
+         valtype => 'obj',
+         comment => "Business of this type can have certs of this type",
+         domain_scof => $C_business,
+         range_scof  => $C_certificate,
+      },
     });
 
 
@@ -577,12 +571,14 @@ Example:
 
 sub find_set  # Find the one matching pred or create one
 {
-    my( $this, $props, $default, $changes_ref ) = @_;
+    my( $this, $props, $args ) = @_;
 
     my $DEBUG = 0;
 
+    $args ||= {};
+    my $default ||= $args->{'default'} || {};
+
     my $preds = $this->find( $props );
-    $default ||= {};
 
     if( $preds->[1] )
     {
@@ -598,8 +594,7 @@ sub find_set  # Find the one matching pred or create one
 	    $props->{$pred} ||= $default->{$pred};
 	}
 	warn "Will now create pred with: ".datadump($props) if $DEBUG;
-	$$changes_ref ++ if $changes_ref; # increment changes
-	return $this->create($props);
+	return $this->create($props, $args);
     }
 
     my $pred = $preds->[0];
@@ -625,12 +620,22 @@ sub is_pred { 1 };
 
 =head2 find_by_label
 
+  $this->find_by_label( $label, \%args )
+
+Supported args are:
+
+  return_single_value
+
 =cut
 
 sub find_by_label
 {
-    my( $this, $label, $no_list ) = @_;
+    my( $this, $label, $args ) = @_;
     my $class = ref($this) || $this;
+
+    $args ||= {};
+
+    my $no_list = $args->{'return_single_value'} || 0;
 
 #    warn "New pred $label\n"; ### DEBUG
 
@@ -681,7 +686,7 @@ sub find_by_label
 
     if( $label =~ /^-\d+$/ )
     {
-	return $this->get_by_label( $special_label->{$label} );
+	return $this->get_by_label( $special_label->{$label}, $args );
     }
     elsif( $label =~ /^\d+$/ )
     {
@@ -732,7 +737,9 @@ sub find_by_label
 
 sub get_by_label
 {
-    my( $node ) = $_[0]->find_by_label($_[1], 1);
+    my $args = {'return_single_value' => 1};
+
+    my( $node ) = $_[0]->find_by_label($_[1], $args);
 
     if( $node )
     {

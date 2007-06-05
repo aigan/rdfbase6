@@ -171,11 +171,11 @@ sub level
 	my $node = $_[0];
 	## See $apphome/doc/notes.txt
 	my $level;
-	if( $node->has_prop( 'has_access_right', $C_guest_access ) )
+	if( $node->has_value({ 'has_access_right' => $C_guest_access }) )
 	{
 	    $level = 0;
 	}
-	elsif( $node->has_prop( 'has_access_right', $C_full_access ) )
+	elsif( $node->has_value({ 'has_access_right' => $C_full_access }) )
 	{
 	    $level = 40;
 	}
@@ -192,16 +192,20 @@ sub level
 
 #######################################################################
 
-=head2 find_by_level
+=head2 find_by_label
 
 Called by L<Rit::Base::Resource/get> that gets called by
 L<Para::Frame::User/identify_user>.
+
+Supported args are:
+
+  arclim
 
 =cut
 
 sub find_by_label
 {
-    my( $this, $val, $coltype ) = @_;
+    my( $this, $val, $args ) = @_;
     return is_undef unless defined $val;
 
     unless( ref $val )
@@ -221,10 +225,10 @@ sub find_by_label
 #	warn datadump($C_guest_access, 2);
 	my $class = ref($_[0]) || $_[0];
 	@new = @{ $class->find
-	    ({
-	      'name_short'       => 'guest',
-	      has_access_right   => $C_guest_access,
-	     })};
+		    ({
+		      'name_short'       => 'guest',
+		      has_access_right   => $C_guest_access,
+		     }, $args )};
     }
     #
     # obj is root
@@ -246,7 +250,7 @@ sub find_by_label
 	    ({
 	      'customer_id' => uc($val),
 	      is            => $C_login_account,
-	     })};
+	     }, $args)};
     }
     elsif( $val !~ /^\d+$/ )
     {
@@ -258,7 +262,7 @@ sub find_by_label
 	    ({
 	      'name_short' => $val,
 	      is           => $C_login_account,
-	     })};
+	     }, $args)};
 
 	unless(@new)
 	{
@@ -267,7 +271,7 @@ sub find_by_label
 		({
 		  'name' => $val,
 		  is     => $C_login_account,
-		 })};
+		 }, $args)};
 	}
     }
     #

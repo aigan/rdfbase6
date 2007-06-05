@@ -36,12 +36,12 @@ sub handler
     my $l = Rit::Base::Resource->find_one({code=>$lc, is=>'language'});
     my $tb = Rit::Base::Resource->find_one({name=>'textbox', scof=>'text'});
 
-    unless( $n->has_value(is=>$wst) )
+    unless( $n->has_value({is=>$wst}) )
     {
 	throw('validation', "The node must be a website_text");
     }
 
-    my $arcs = $n->find_arcs( 'description' => {is_of_language=>$l});
+    my $arcs = $n->find_arcs({ 'description' => {is_of_language=>$l} });
 
     if( my $arc = $arcs->get_first_nos )
     {

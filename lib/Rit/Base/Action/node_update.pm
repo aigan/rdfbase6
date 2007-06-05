@@ -37,10 +37,6 @@ sub handler
 
     my $node = Rit::Base::Resource->get($id);
     $node->update_by_query();
-    if( $req->user->level >= 20 )
-    {
-	$node->update_adr_by_query();
-    }
 
     return "Resource updated";
 }

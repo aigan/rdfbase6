@@ -63,7 +63,7 @@ sub handler
 	    my $val_old = $obj->desig;
 	    if( $val_new ne $val_old )
 	    {
-		$obj->update('value'=>$val_new);
+		$obj->update({'value' => $val_new });
 	    }
 
 #	    debug "BEFORE ".datadump($obj, 2); ### DEBUG
@@ -75,7 +75,7 @@ sub handler
 #		debug "AFTER ".datadump($obj, 2); ### DEBUG
 		if( $weight_new->defined )
 		{
-		    $obj->update('weight'=>$weight_new);
+		    $obj->update({ 'weight' => $weight_new });
 		}
 		else
 		{

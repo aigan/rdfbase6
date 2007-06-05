@@ -292,25 +292,28 @@ TODO: Is example 4 correct..?
 
 sub find
 {
-    my( $l, $tmpl, $args ) = @_;
+    if( ref $_[1] and ( $_[1]->{'arclim'} or $_[1]->{'res'} ) )
+    {
+	confess datadump(\@_,2);
+    }
+
+    my $l = shift;
+    my $tmpl = shift;
+    my( $args_in, $arclim_in ) = Rit::Base::Resource::parse_propargs(@_);
 
     my $DEBUG = debug();
     $DEBUG and $DEBUG --;
 
-    # either name/value pairs in props, or one name/value
-    if( not(ref $tmpl) and $args )
-    {
-	$tmpl = {$tmpl, $args};
-	undef $args;
-    }
+#    # either name/value pairs in props, or one name/value
+#    if( not(ref $tmpl) and $args )
+#    {
+#	$tmpl = {$tmpl, $args};
+#	undef $args;
+#    }
 
     # Support finds with no criterions
     return $l unless $tmpl; # Handling tmpl={} later
 
-
-    $args ||= {};
-
-    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
 
     # Two ways to use find:
 
@@ -319,7 +322,7 @@ sub find
     unless( ref $tmpl and ref $tmpl eq 'HASH' )
     {
 #	debug 2, "Does list contain $tmpl?";
-	return $l->contains( $tmpl );
+	return $l->contains( $tmpl, $args_in );
     }
 
     if( $DEBUG > 1 )
@@ -364,7 +367,7 @@ sub find
 		debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
 
 		# It may be a method for the node class
-		my $subres = $node->$pred_first({}, $arclim);
+		my $subres = $node->$pred_first({}, $args_in);
 
 		unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
 		{
@@ -379,7 +382,7 @@ sub find
 		foreach my $subnode ( $subres->nodes )
 		{
 		    if( $subnode->find({$pred_after => $target_value},
-				       $args)->size )
+				       $args_in)->size )
 		    {
 			$found ++;
 			last;
@@ -396,6 +399,8 @@ sub find
 
 
 	    #                      Regexp compiles once
+	    my $re;
+
 	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	    {
 		$Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
@@ -413,10 +418,19 @@ sub find
 
 	    my $rev    = $1;
 	    my $pred   = $2;
-	    my $arclim = $3 || $arclim;
-	    my $clean  = $4 || $args->{'clean'} || 0;
+	    my $arclim = $3 || $arclim_in;
+	    my $clean  = $4 || $args_in->{'clean'} || 0;
 	    my $match  = $5 || 'eq';
 	    my $prio   = $6; #not used
+
+	    my $args =
+	    {
+	     %$args_in,
+	     match =>'eq',
+	     clean => $clean,
+	     arclim => $arclim,
+	    };
+
 
 	    if( $pred =~ s/^predor_// )
 	    {
@@ -451,14 +465,14 @@ sub find
 			if( $match eq 'eq' )
 			{
 			    next PRED # Passed test
-			      if $value->equals( $target_value );
+			      if $value->equals( $target_value, $args );
 			}
 			elsif( $match eq 'begins' )
 			{
 			    confess "Matchtype 'begins' only allowed for strings, not ". ref $value
 			      unless( ref $value eq 'Rit::Base::String' );
 
-			    if( $value->begins( $target_value ) )
+			    if( $value->begins( $target_value, $args ) )
 			    {
 				next PRED; # Passed test
 			    }
@@ -481,7 +495,7 @@ sub find
 		{
 		    debug "  pred is subj" if $DEBUG;
 		    my $subj = $node->subj;
-		    next PRED if $subj->equals( $target_value );
+		    next PRED if $subj->equals( $target_value, $args );
 		}
 		else
 		{
@@ -510,12 +524,12 @@ sub find
 		my $count;
 		if( $rev )
 		{
-		    $count = $node->revcount($pred, $arclim);
+		    $count = $node->revcount($pred, $args);
 		    debug "      counted $count (rev)" if $DEBUG;
 		}
 		else
 		{
-		    $count = $node->count($pred, $arclim);
+		    $count = $node->count($pred, $args);
 		    debug "      counted $count" if $DEBUG;
 		}
 
@@ -554,20 +568,12 @@ sub find
 		    debug "      (rev)\n" if $DEBUG;
 		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
-			if $target_value->has_value( $pred, $node,
-						   {
-						    arclim => $arclim,
-						   });
+			if $target_value->has_value({$pred=>$node}, $args );
 		}
 		else
 		{
 		    next PRED # Check next if this test pass
-			if $node->has_value( $pred, $target_value,
-					     {
-					      match =>'eq',
-					      clean => $clean,
-					      arclim => $arclim,
-					     });
+			if $node->has_value({$pred=>$target_value}, $args );
 		}
 	    }
 	    elsif( $match eq 'ne' )
@@ -578,22 +584,14 @@ sub find
 		    debug "      (rev)" if $DEBUG;
 		    # clean not sane in rev props
 		    next PRED # Check next if this test pass
-			unless $target_value->has_value( $pred, $node,
-						       {
-							arclim => $arclim,
-						       });
+			unless $target_value->has_value({$pred=>$node}, $args );
 		}
 		else
 		{
 		    # Matchtype is 'eq'. Result is negated here
 
 		    next PRED # Check next if this test pass
-			unless $node->has_value( $pred, $target_value,
-						 {
-						  match => 'eq',
-						  clean => $clean,
-						  arclim => $arclim,
-						 });
+			unless $node->has_value({$pred=>$target_value}, $args );
 		}
 	    }
 	    elsif( $match eq 'exist' )
@@ -605,13 +603,13 @@ sub find
 		    {
 			debug 2, "Checking rev exist true";
 			next PRED
-			  if( $node->has_revpred( $pred, {}, $arclim ) );
+			  if( $node->has_revpred( $pred, {}, $args ) );
 		    }
 		    else
 		    {
 			debug 2, "Checking rev exist false";
 			next PRED
-			  unless( $node->has_revpred( $pred, {}, $arclim ) );
+			  unless( $node->has_revpred( $pred, {}, $args ) );
 		    }
 		}
 		else
@@ -620,13 +618,13 @@ sub find
 		    {
 			debug 2, "Checking rel exist true (target_value: $target_value)";
 			next PRED
-			  if( $node->has_pred( $pred, {}, $arclim ) );
+			  if( $node->has_pred( $pred, {}, $args ) );
 		    }
 		    else
 		    {
 			debug 2, "Checking rel exist false";
 			next PRED
-			  unless( $node->has_pred( $pred, {}, $arclim ) );
+			  unless( $node->has_pred( $pred, {}, $args ) );
 		    }
 		}
 	    }
@@ -639,12 +637,7 @@ sub find
 		}
 
 		next PRED # Check next if this test pass
-		  if $node->has_value( $pred, $target_value,
-				       {
-					match => $match,
-					clean => $clean,
-					arclim => $arclim,
-				       });
+		  if $node->has_value({$pred=>$target_value}, $args );
 	    }
 	    else
 	    {
@@ -667,7 +660,7 @@ sub find
 
 =head2 find_one
 
-  $l->find_one({ $key1 => $value1, $key2 => $value2, ... })
+  $l->find_one({ $key1 => $value1, $key2 => $value2, ... }, \%args )
 
 Expects a hashref as the only param.
 
@@ -804,17 +797,19 @@ Dies if given faulty parameters.
 
 sub sorted
 {
-    my( $list, $args, $dir ) = @_;
+    my( $list, $sortargs, $dir ) = @_;
 
     my $DEBUG = 0;
 
-    $args ||= 'desig';
+    my $args = {};
 
-    unless( ref $args and ( ref $args eq 'ARRAY' or
-			    ref $args eq 'Rit::Base::List' )
+    $sortargs ||= 'desig';
+
+    unless( ref $sortargs and ( ref $sortargs eq 'ARRAY' or
+			    ref $sortargs eq 'Rit::Base::List' )
 	  )
     {
-	$args = [ $args ];
+	$sortargs = [ $sortargs ];
     }
 
     if( $dir )
@@ -824,13 +819,13 @@ sub sorted
 	    die "direction '$dir' out of bound";
 	}
 
-	for( my $i = 0; $i < @$args; $i++ )
+	for( my $i = 0; $i < @$sortargs; $i++ )
 	{
-	    unless( ref $args->[$i] eq 'HASH' )
+	    unless( ref $sortargs->[$i] eq 'HASH' )
 	    {
-		$args->[$i] =
+		$sortargs->[$i] =
 		{
-		 on => $args->[$i],
+		 on => $sortargs->[$i],
 		 dir => $dir,
 		};
 	    }
@@ -840,23 +835,23 @@ sub sorted
     $list->materialize_all; # for sorting on props
 
     my @sort;
-    for( my $i = 0; $i < @$args; $i++ )
+    for( my $i = 0; $i < @$sortargs; $i++ )
     {
 #	debug "i: $i";
-#	debug sprintf("args: %d\n", scalar @$args);
-	unless( ref $args->[$i] eq 'HASH' )
+#	debug sprintf("sortargs: %d\n", scalar @$sortargs);
+	unless( ref $sortargs->[$i] eq 'HASH' )
 	{
-	    $args->[$i] =
+	    $sortargs->[$i] =
 	    {
-		on => $args->[$i],
+		on => $sortargs->[$i],
 	    };
 	}
 
-	$args->[$i]->{'dir'} ||= 'asc';
+	$sortargs->[$i]->{'dir'} ||= 'asc';
 
 	# Find out if we should do a numeric or literal sort
 	#
-	my $on =  $args->[$i]->{'on'};
+	my $on =  $sortargs->[$i]->{'on'};
 	if( ref $on )
 	{
 	    die "not implemented ($on)";
@@ -866,17 +861,24 @@ sub sorted
 	my $cmp = 'cmp';
 
 	# Silently ignore dynamic props (that isn't preds)
-	if( my $pred = Rit::Base::Pred->find_by_label( $pred_str, 1 ) )
+	if( my $pred = Rit::Base::Pred->find_by_label( $pred_str,
+						       {
+							%$args,
+							return_single_value=>1,
+						       }))
 	{
-	    if( $pred->coltype eq 'valfloat' )
+	    my $coltype = $pred->coltype;
+	    $sortargs->[$i]->{'coltype'} = $coltype;
+
+	    if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
 	    {
 		$cmp = '<=>';
 	    }
 	}
 
-	$args->[$i]->{'cmp'} = $cmp;
+	$sortargs->[$i]->{'cmp'} = $cmp;
 
-	if( $args->[$i]->{'dir'} eq 'desc')
+	if( $sortargs->[$i]->{'dir'} eq 'desc')
 	{
 #	    push @sort, "\$b->[$i] cmp \$a->[$i]";
 	    push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
@@ -895,10 +897,10 @@ sub sorted
     foreach my $item ( $list->as_array )
     {
 #	debug 2, sprintf("  add item %s", $item->sysdesig);
-	for( my $i=0; $i<@$args; $i++ )
+	for( my $i=0; $i<@$sortargs; $i++ )
 	{
-	    my $method = $args->[$i]{'on'};
-#	    debug sprintf("    arg $i: %s", $args->[$i]{'on'});
+	    my $method = $sortargs->[$i]{'on'};
+#	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
@@ -912,9 +914,17 @@ sub sorted
 		$val = $val->loc;
 	    }
 
-	    if( $args->[$i]->{'cmp'} eq '<=>') # Make it an integer
+	    my $coltype = $sortargs->[$i]->{'coltype'};
+	    if( $coltype eq 'valfloat' )
 	    {
+		# Make it an integer
 		$val ||= 0;
+	    }
+	    elsif( $coltype eq 'valdate' )
+	    {
+		# Infinite future date
+		use DateTime::Infinite;
+		$val ||= DateTime::Infinite::Future->new;
 	    }
 
 #	    debug sprintf("      => %s", $val);
@@ -1205,7 +1215,7 @@ weight.
 
 sub loc_by_lang
 {
-    my( $list, $lc_list ) = @_;
+    my( $list, $lc_list, $args ) = @_;
 
     my %lang;
 
@@ -1226,8 +1236,8 @@ sub loc_by_lang
 	if( ref $prop and
 	    UNIVERSAL::isa($prop, 'Rit::Base::Resource::Compatible') )
 	{
-	    my $propweight = $prop->weight || 0;
-	    my $lprio = $lang{ $prop->is_of_language->code } || 0;
+	    my $propweight = $prop->first_prop('weight', {}, $args) || 0;
+	    my $lprio = $lang{ $prop->first_prop('is_of_language', {}, $args)->first_prop('code', {}, $args)->plain } || 0;
 
 	    next unless( $lprio or defined $lang{'c'} );
 
@@ -1270,7 +1280,7 @@ See L<Rit::Base::Object/desig>
 sub desig
 {
 #    warn "Stringifies object ".ref($_[0])."\n"; ### DEBUG
-    return join ' / ', map $_->desig, $_[0]->nodes;
+    return join ' / ', map $_->desig($_[1]), $_[0]->nodes;
 }
 
 #######################################################################
@@ -1289,7 +1299,7 @@ See L<Rit::Base::Object/sysdesig>
 sub sysdesig
 {
 #    warn "Stringifies object ".ref($_[0])."\n"; ### DEBUG
-    return join ' / ', map $_->sysdesig, $_[0]->nodes;
+    return join ' / ', map $_->sysdesig($_[1]), $_[0]->nodes;
 }
 
 ######################################################################
@@ -1414,7 +1424,7 @@ sub contains
 	{
 	    foreach my $val (@$tmpl )
 	    {
-		return 0 unless $list->equals($val);
+		return 0 unless $list->equals($val, $args);
 	    }
 	    return 1;
 	}
@@ -1436,7 +1446,7 @@ sub contains
 
     foreach my $node ( @{$list->as_list} )
     {
-	return $node if $node->equals($tmpl);
+	return $node if $node->equals($tmpl, $args);
     }
     return undef;
 }
@@ -1445,10 +1455,6 @@ sub contains
 #######################################################################
 
 =head2 contains_any_of
-
-  $list->contains_any_of( $node )
-
-  $list->contains_any_of( $list2 )
 
   $list->contains_any_of( $node, \%args )
 
@@ -1529,7 +1535,7 @@ sub contains_any_of
     {
 	debug 2, sprintf "  check node %s", $node->sysdesig;
 	debug 2, sprintf "  against %s", $tmpl->sysdesig;
-	return $node if $node->equals($tmpl);
+	return $node if $node->equals($tmpl, $args);
     }
     debug 2,"    failed";
     return undef;
@@ -1540,15 +1546,13 @@ sub contains_any_of
 
 =head2 has_value
 
-  $l->has_value($val)
-
-  $l->has_value($val, $args)
+  $l->has_value($val, \%args)
 
 To be used for lists of literal resources.
 
 This calls translates to
 
-  $l->find({value => $val })
+  $l->find({value => $val }, \%args )
 
 See L</find>.
 
@@ -1562,7 +1566,8 @@ Supported args are:
 
 sub has_value
 {
-    shift->find({value=>shift}, @_);
+    my( $l, $value, $args ) = @_;
+    $l->find({value=>$value}, $args);
 }
 
 #######################################################################

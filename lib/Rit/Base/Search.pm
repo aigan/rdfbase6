@@ -43,6 +43,7 @@ use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
 use Rit::Base::Lazy;
+use Rit::Base::Arc::Lim;
 
 use base 'Clone'; # gives method clone()
 
@@ -492,7 +493,7 @@ sub broaden # removes targets from searchy type
 	    }
 	    else
 	    {
-		$predkey = $preds->get_first_nos->name->plain;
+		$predkey = $preds->get_first_nos->plain;
 	    }
 
 	    debug( 0, sprintf("-- Comparing %s with %s", $predkey, $target));
@@ -828,9 +829,9 @@ sub modify
 
 	    # Modify MAXLIMIT
 	    # - Change maxlimit if search on city
-	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') and $pred->name->plain eq 'is' and getnode('city')->equals($values[0]) )
+	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') and $pred->plain eq 'is' and getnode('city')->equals($values[0]) )
 	    {
-		debug 2, "*** Maxlimit changed!";
+		debug "*** Maxlimit changed for search on city (FIXME)!";
 		$search->{'maxlimit'} = TOPLIMIT;
 	    }
 	}
@@ -1130,7 +1131,7 @@ sub node
 	    {
 		my $values = $prop->{'values'};
 
-		$node->add({ $pred->name => $values });
+		$node->add({ $pred->plain => $values });
 	    }
 	}
     }
@@ -1432,12 +1433,12 @@ sub criterions
 		    }
 		    ### CHECK ME
 #			die "not implemented";
-		    my $ors = join '_-_', map $_->name->plain, $preds->as_array;
+		    my $ors = join '_-_', map $_->plain, $preds->as_array;
 		    $pred_name = "predor_$ors";
 		}
 		else
 		{
-		    $pred_name = $preds->get_first_nos->name->plain;
+		    $pred_name = $preds->get_first_nos->plain;
 		}
 
 
@@ -1482,12 +1483,12 @@ sub criterion_to_key
     my $pred_name;
     if( $preds->size > 1 )
     {
-	my $ors = join '_-_', map $_->name->plain, $preds->as_array;
+	my $ors = join '_-_', map $_->plain, $preds->as_array;
 	$pred_name = "predor_$ors";
     }
     else
     {
-	$pred_name = $preds->get_first_nos->name->plain;
+	$pred_name = $preds->get_first_nos->plain;
     }
 
     if( $rev )
@@ -2377,7 +2378,7 @@ See L<Rit::Base::Arc/limflag>
 
 sub arclim
 {
-    return $_[0]->{'arclim'} ||= [];
+    return $_[0]->{'arclim'} ||= Rit::Base::Arc::Lim->new;
 }
 
 
@@ -2406,7 +2407,7 @@ sub arclim_sql
 
     my $arclim = $args->{'arclim'} || $search->arclim;
 
-    return "and " . Rit::Base::Arc->arclim_sql($arclim, $args);
+    return "and " . $arclim->sql($args);
 }
 
 

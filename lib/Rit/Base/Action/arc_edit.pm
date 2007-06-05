@@ -40,6 +40,7 @@ sub handler
     my $arc = Rit::Base::Arc->get( $arc_id );
 
     my $res = Rit::Base::Resource::Change->new;
+    my $args = { res => $res };
 
     # Indirect arc
     #
@@ -56,13 +57,13 @@ sub handler
     #
     elsif( $pred_name )
     {
-	my $new = $arc->set_pred( $pred_name, $res );
-	$new = $new->set_value( $value, $res );
+	my $new = $arc->set_pred( $pred_name, {}, $args );
+	$new = $new->set_value( $value, {}, $args );
 	debug "New arc is ".$new->sysdesig;
 
 	# Should we transform this literal to a value node?
 	my $props = parse_arc_add_box( $literal_arcs );
-	$new->value->update( $props, $res );
+	$new->value->update( $props, {}, $args );
 
 	if( $res->changes )
 	{
@@ -77,7 +78,7 @@ sub handler
     else
     {
 	my $subj = $arc->subj;
-	if( $arc->remove( $res ) )
+	if( $arc->remove( {}, $args ) )
 	{
 	    $q->param('id', $subj->id);
 	    my $home = $req->site->home_url_path;

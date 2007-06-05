@@ -42,7 +42,7 @@ sub handler
 	warn Dumper $props if $DEBUG;
 
 	my $res = Rit::Base::Resource::Change->new;
-	$subj->add( $props, $res );
+	$subj->add( $props, { res => $res } );
 	return "Updated node $subj_id" if $res->changes;
 	return "No changes to node $subj_id";
     }

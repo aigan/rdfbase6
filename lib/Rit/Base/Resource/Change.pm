@@ -179,6 +179,68 @@ sub add_newarc
 
 #########################################################################
 
+=head2 sysdesig
+
+  $c->sysdesig(\%args, $ident)
+
+=cut
+
+sub sysdesig
+{
+    my( $c, $args, $ident ) = @_;
+
+    $ident ||= 0;
+    my $out = "";
+
+    my $deathrow = "";
+    foreach my $node (values %{$c->{'deathrow'}})
+    {
+	$deathrow .= "  ".$node->sysdesig($args)."\n";
+    }
+
+    if( length $deathrow )
+    {
+	$out .= "Deathrow:\n$deathrow";
+    }
+
+    my $newarcs = "";
+    foreach my $arc (@{$c->{'newarcs'}})
+    {
+	$newarcs .= "  ".$arc->sysdesig($args)."\n";
+    }
+
+    if( length $newarcs )
+    {
+	$out .= "Newarcs:\n$newarcs";
+    }
+
+    my $rows = "";
+    foreach my $row (sort {$a <=> $b} keys %{$c->{'row'}})
+    {
+	if( my $arc_id = $c->{'row'}{$row}{'arc_id'} )
+	{
+	    $rows .= sprintf "  %.2d -> arc_id %d\n", $row, $arc_id;
+	}
+
+	if( my $pred_id = $c->{'row'}{$row}{'pred_id'} )
+	{
+	    $rows .= sprintf "  %.2d -> pred_id %d\n", $row, $pred_id;
+	}
+    }
+
+    if( length $rows )
+    {
+	$out .= "Rows:\n$rows";
+    }
+
+    $out .= "Changes: $c->{changes}\n";
+
+    return $out;
+}
+
+
+#########################################################################
+
 1;
 
 =head1 SEE ALSO

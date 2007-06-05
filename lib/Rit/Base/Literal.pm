@@ -195,14 +195,14 @@ L<Rit::Base::String>, L<Rit::Base::Time> and L<Rit::Base::Undef>.
 
 sub equals
 {
-    my( $lit, $val ) = @_;
+    my( $lit, $val, $args ) = @_;
 
     $val = Rit::Base::String->new($val)
       unless( ref $val );
 
     if( ref $val and UNIVERSAL::isa($val, 'Rit::Base::Literal') )
     {
-	if( $lit->syskey eq $val->syskey )
+	if( $lit->syskey($args) eq $val->syskey($args) )
 	{
 	    return 1;
 	}
@@ -222,37 +222,29 @@ This converts the literal to a value node.
 
 Example:
 
-  $node->name->update( is_of_language => $C_swedish );
+  $node->name->update({ is_of_language => $C_swedish });
 
 =cut
 
 sub update
 {
-    my( $literal, $props, $val ) = @_;
+    my( $literal, $props, $args ) = @_;
 
     # Just convert to value node and forward the call.
     # But check if we realy have props to add
 
-    # either name/value pairs in props, or one name/value
-    unless( ref $props )
-    {
-	$props = {$props => $val};
-    }
-
-    my $changes = 0;
     if( keys %$props )
     {
 	my $arc = $literal->arc or die "Literal has no defined arc";
-	my $node = Rit::Base::Resource->create( $props );
+	my $node = Rit::Base::Resource->create( $props, $args );
 	Rit::Base::Arc->create({
 				subj    => $node,
 				pred    => 'value',
 				value   => $literal,
 				valtype => $arc->valtype,
-			       });
+			       }, $args);
 
-	$arc = $arc->set_value( $node, \$changes );
-	$changes ++;
+	$arc = $arc->set_value( $node, $args );
     }
 
     return $literal;

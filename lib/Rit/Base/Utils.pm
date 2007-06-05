@@ -473,7 +473,7 @@ sub parse_form_field_prop
 
 =head2 parse_arc_add_box
 
-  parse_arc_add_box( $string )
+  parse_arc_add_box( $string, \%args )
 
 Splits the string up with one property for each row.
 
@@ -521,10 +521,9 @@ L<Rit::Base::Resource/find_by_label>, as will all the values.
 
 sub parse_arc_add_box
 {
-    my( $query ) = @_;
+    my( $query, $args ) = @_;
 
     my $DEBUG = 0;
-    my $changed = 0;  # How to use?
     my $props = {};
 
     foreach my $row ( split /\r?\n/, $query )
@@ -539,23 +538,26 @@ sub parse_arc_add_box
 	## Support adding value nodes "$name -> $props"
 	if( $value =~ /^\s*(.*?)\s*->\s*(.*)$/ )
 	{
-	    my $sprops = parse_query_props( $2 );
+	    my $sprops = parse_query_props( $2, $args );
 	    my $svalue = $1;
-	    my $pred = Rit::Base::Pred->get_by_label( $pred_name );
-	    $value = Rit::Base::Resource->create( $sprops );
+	    my $pred = Rit::Base::Pred->get_by_label( $pred_name, $args );
+	    $value = Rit::Base::Resource->create( $sprops, $args );
 	    Rit::Base::Arc->create({
 				    subj    => $value,
 				    pred    => 'value',
 				    value   => $svalue,
 				    valtype => $pred->valtype,
-				   });
-	    $changed ++;
+				   }, $args);
 	}
 
 	unless( ref $value )
 	{
 	    my $coltype = Rit::Base::Pred->get($pred_name)->coltype;
-	    $value = Rit::Base::Resource->get_by_label( $value, $coltype );
+	    $value = Rit::Base::Resource->get_by_label( $value,
+							{
+							 %$args,
+							 coltype => $coltype,
+							});
 	}
 
 	debug "  $pred_name: ".$value->sysdesig."\n" if $DEBUG;
@@ -569,8 +571,6 @@ sub parse_arc_add_box
 #######################################################################
 
 =head2 parse_query_pred
-
-  parse_query_pred( $predstring )
 
   parse_query_pred( $predstring, \%args )
 
@@ -653,8 +653,6 @@ sub parse_query_pred
 #######################################################################
 
 =head2 parse_query_prop
-
-  parse_query_preds( \%props )
 
   parse_query_preds( \%props, \%args )
 
@@ -760,8 +758,6 @@ sub parse_query_prop
 #######################################################################
 
 =head2 convert_query_prop_for_creation
-
-  convert_query_prop_for_creation( \%props )
 
   convert_query_prop_for_creation( \%props, \%args )
 
@@ -948,13 +944,13 @@ sub string
 
 =head2 query_desig
 
-  query_desig($query)
+  query_desig($query, \%args, $ident)
 
 =cut
 
 sub query_desig
 {
-    my( $query, $ident ) = @_;
+    my( $query, $args, $ident ) = @_;
 
     $ident ||= 0;
     my $out = "";
@@ -966,7 +962,7 @@ sub query_desig
 	{
 	    foreach my $key ( keys %$query )
 	    {
-		my $val = query_desig($query->{$key}, $ident+1);
+		my $val = query_desig($query->{$key}, $args, $ident+1);
 		if( $val =~ /\n.*?\n/s )
 		{
 #		    warn "a\n";
@@ -979,7 +975,7 @@ sub query_desig
 		    $val =~ s/\n*$/\n/;
 		    $val =~ s/\s+/ /g;
 		    $val =~ s/^\s+//g;
-		    $out .= '  'x$ident . "$key: $val";
+		    $out .= '  'x$ident . "$key: $val\n";
 		}
 	    }
 	}
@@ -987,7 +983,7 @@ sub query_desig
 	{
 	    foreach my $val ( @$query )
 	    {
-		my $val = query_desig($val, $ident+1);
+		my $val = query_desig($val, $args, $ident+1);
 		if( $val =~ /\n.*?\n/s )
 		{
 #		    warn "c\n";
@@ -999,13 +995,13 @@ sub query_desig
 		    $val =~ s/\n*$/\n/;
 		    $val =~ s/\s+/ /g;
 		    $val =~ s/^\s+//g;
-		    $out .= '  'x$ident . $val;
+		    $out .= '  'x$ident . $val."\n";
 		}
 	    }
 	}
 	else
 	{
-	    my $val = $query->sysdesig;
+	    my $val = $query->sysdesig( $args, $ident );
 #	    debug "Got val $val\n";
 	    if( $val =~ /\n.*?\n/s )
 	    {
@@ -1027,7 +1023,7 @@ sub query_desig
 #	debug "Query is plain $query\n";
 	if( $query =~ /\n.*?\n/s )
 	{
-	    warn "g\n";
+#	    warn "g\n";
 	    $out .= join "\n", map '  'x$ident.$_, split /\n/, $query;
 	}
 	else

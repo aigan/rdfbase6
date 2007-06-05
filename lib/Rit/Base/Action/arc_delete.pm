@@ -57,7 +57,7 @@ sub handler
 
     foreach my $arc ( @arcs )
     {
-	$arc->remove( $res );
+	$arc->remove( { res => $res } );
     }
 
     if( $res->changes )

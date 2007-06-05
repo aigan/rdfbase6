@@ -423,9 +423,9 @@ sub coltype
 
 =head2 contains_any_of
 
-  $obj->contains_any_of( $node )
+  $obj->contains_any_of( $node, \%args )
 
-  $obj->contains_any_of( $list )
+  $obj->contains_any_of( $list, \%args )
 
 See L<Rit::Base::List::contains_any_of>
 
@@ -435,7 +435,7 @@ Only checks this single object.
 
 sub contains_any_of
 {
-    my( $obj, $tmpl ) = @_;
+    my( $obj, $tmpl, $args ) = @_;
 
     if( ref $tmpl )
     {
@@ -444,7 +444,7 @@ sub contains_any_of
 	    foreach my $val (@{$tmpl->as_list})
 	    {
 		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $obj->contains_any_of($val);
+		return 1 if $obj->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -454,7 +454,7 @@ sub contains_any_of
 	    foreach my $val (@$tmpl )
 	    {
 		debug 2, sprintf "  check array item %s", $val->sysdesig;
-		return 1 if $obj->contains_any_of($val);
+		return 1 if $obj->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -464,7 +464,7 @@ sub contains_any_of
 	    foreach my $val ($tmpl->as_list)
 	    {
 		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $obj->contains_any_of($val);
+		return 1 if $obj->contains_any_of($val, $args);
 	    }
 	    debug 2, "    failed";
 	    return 0;
@@ -477,7 +477,7 @@ sub contains_any_of
 
     # Default for simple values and objects:
 
-    return $obj if $obj->equals($tmpl);
+    return $obj if $obj->equals($tmpl, $args);
 
     debug 2,"    failed";
     return undef;

@@ -49,6 +49,7 @@ use Rit::Base::Time qw( now );
 use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
+use Rit::Base::Arc::Lim;
 #use Rit::Base::Constants qw( );
 
 use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
@@ -244,21 +245,21 @@ sub get_by_id
 
 =head2 find_by_label
 
-  1. $n->find_by_label( $node, $datatype )
+  1. $n->find_by_label( $node, \%args )
 
-  2. $n->find_by_label( $query, $datatype )
+  2. $n->find_by_label( $query, \%args )
 
-  3. $n->find_by_label( "$any_name ($props)", $datatype )
+  3. $n->find_by_label( "$any_name ($props)", \%args )
 
-  4. $n->find_by_label( "$called ($predname)", $datatype )
+  4. $n->find_by_label( "$called ($predname)", \%args )
 
-  5. $n->find_by_label( "$id: $name", $datatype )
+  5. $n->find_by_label( "$id: $name", \%args )
 
-  6. $n->find_by_label( "#$id", $datatype )
+  6. $n->find_by_label( "#$id", \%args )
 
-  7. $n->find_by_label( $name, $datatype );
+  7. $n->find_by_label( $name, \%args );
 
-  8. $n->find_by_label( $id, $datatype );
+  8. $n->find_by_label( $id, \%args );
 
   9. $n->find_by_label( $list );
 
@@ -275,6 +276,10 @@ In case C<4>, we can identify a node by the predicate of our choosing.
 The node myst have a property C<$predname> with value C<$called>.
 
 A C<$list> returns itself.
+
+Supported args are
+  coltype
+  arclim
 
 If C<$datatype> is defined and anyting other than C<obj>, the text
 value is returned for cases C<7> and C<8>.  The other cases is provided for
@@ -295,7 +300,7 @@ See also L</find> if C<$query> or C<$props> is used.
 
 sub find_by_label
 {
-    my( $this, $val, $coltype ) = @_;
+    my( $this, $val, $args ) = @_;
     return is_undef unless defined $val;
 
     unless( ref $val )
@@ -303,8 +308,10 @@ sub find_by_label
 	trim(\$val);
     }
 
+    $args ||= {};
+
     my( @new );
-    $coltype ||= 'obj';
+    my $coltype = $args->{'coltype'} || 'obj';
 
 #    debug 3, "find_by_label: $val ($coltype)";
 
@@ -322,7 +329,7 @@ sub find_by_label
     {
 	debug 3, "  obj as subquery";
 	debug "    query: ".query_desig($val) if debug > 3;
-	my $objs = $this->find($val);
+	my $objs = $this->find($val, $args);
 	unless( $objs->size )
 	{
 	    return is_undef;
@@ -392,7 +399,7 @@ sub find_by_label
 	if( $spec !~ /\s/ ) # just one word
 	{
 	    debug 3, "    Finding nodes with $spec = $name";
-	    $objs = $this->find({$spec => $name});
+	    $objs = $this->find({$spec => $name}, $args);
 	}
 	else
 	{
@@ -400,7 +407,7 @@ sub find_by_label
 	    $props->{'predor_name_-_code_-_name_short_clean'} = $name;
 	    debug "    Constructing props for find: ".query_desig($props)
 	      if debug > 3;
-	    $objs = $this->find($props);
+	    $objs = $this->find($props, $args);
 	}
 
 	unless( $objs->size )
@@ -465,7 +472,7 @@ sub find_by_label
 	# Used to use find_simple.  But this is a general find
 	# function and can not assume the simple case
 
-	@new = $this->find({ name_clean => $val })->as_array;
+	@new = $this->find({ name_clean => $val }, $args)->as_array;
     }
     #
     # 8. obj as obj id
@@ -502,14 +509,14 @@ See L</get>.
 
 sub get_id
 {
-    my( $this, $label ) = @_;
+    my( $this, $label, $args ) = @_;
     my $class = ref($this) || $this;
 
     return undef unless defined $label;
     my $id;
     unless( $id = $Rit::Base::Cache::Label{$class}{ $label } )
     {
-	my $node = $class->get_by_label( $label ) or return is_undef;
+	my $node = $class->get_by_label( $label, $args ) or return is_undef;
 	$id = $node->id;
 	# Cache name lookups
 	unless( ref $label ) # Do not cache searches
@@ -594,15 +601,7 @@ sub find
 
     unless( ref $query )
     {
-	if( defined $args )
-	{
-	    $query = { $query => $args };
-	}
-	else
-	{
-	    $query = { 'name' => $query };
-	}
-	$args = undef;
+	$query = { 'name' => $query };
     }
 
     $args ||= {};
@@ -628,8 +627,10 @@ sub find
     }
     my $class = ref($this) || $this;
 
-    my $search = Rit::Base::Search->new({maxlimit =>
-					 Rit::Base::Search::TOPLIMIT});
+    my $search = Rit::Base::Search->new({ %$args,
+					  maxlimit =>
+					  Rit::Base::Search::TOPLIMIT,
+					});
     $search->modify($query, $args);
     $search->execute();
 
@@ -742,22 +743,31 @@ sub find_one
 {
     my( $this, $query, $args ) = @_;
 
-    my $nodes = $this->find( $query, $args )->as_arrayref;
+    my $nodes = $this->find( $query, $args );
 
-    if( $nodes->[1] )
+    if( $nodes->size > 1 )
     {
+	my $new_nodes;
 	debug "Found more than one match";
 
-	# TODO: This should find the best official match
+	if( $args->{'clean'} )
+	{
+	    # Look for an exact match
+	    debug "Trying to exclude some matches";
+	    my $new_nodes = $nodes->find($query,
+					 { %$args,
+					   clean => 0,
+					 });
 
-	# Look for an exact match
-	debug "Trying to exclude some matches";
-	my $new_nodes = $nodes->find($query, $args);
+	    # Go with the original search result if the exclusion
+	    # excluded all matches
 
-	# Go with the original search result if the exclusion excluded
-	# all matches
-
-	unless( $new_nodes->[0] )
+	    unless( $new_nodes->[0] )
+	    {
+		$new_nodes = $nodes;
+	    }
+	}
+	else
 	{
 	    $new_nodes = $nodes;
 	}
@@ -775,6 +785,7 @@ sub find_one
 	$nodes = $new_nodes;
     }
 
+    my $node = $nodes->[0];
     unless( $nodes->[0] )
     {
 	my $req = $Para::Frame::REQ;
@@ -794,9 +805,9 @@ sub find_one
 
 =head2 find_set
 
-  $n->find_set( $query )
+  $n->find_set( $query, \%args )
 
-  $n->find_set( $query, \%args, $res )
+  $n->find_set( $query, \%args )
 
 Finds the nodes matching $query, as would L</find_one>.  But if no
 node are found, one is created using the C<$query> and C<$default> as
@@ -806,6 +817,7 @@ Supported args are
 
   default
   arclim
+  res
 
 Properties specified in C<$defult> is used unless corresponding
 properties i C<$query> is defined.  The resulting properties are
@@ -827,22 +839,7 @@ See also L</find> and L</create>.
 
 sub find_set
 {
-    my( $this, $query, $args, $res ) = @_;
-
-    # Do this here, since the values will be needed later here
-    unless( ref $query eq 'HASH' )
-    {
-	$query = $query->plain if ref $query;
-	if( defined $args )
-	{
-	    $query = { $query => $args };
-	}
-	else
-	{
-	    $query = { 'name' => $query };
-	}
-	$args = undef;
-    }
+    my( $this, $query, $args ) = @_;
 
     $args ||= {};
 
@@ -851,20 +848,40 @@ sub find_set
     if( $nodes->[1] )
     {
 	debug "Found more than one match";
+	my $new_nodes;
 
-	# TODO: This should find the best official match
+	if( $args->{'clean'} )
+	{
+	    # Look for an exact match
+	    debug "Trying to exclude some matches";
+	    $new_nodes = $nodes->find($query,
+				      {
+				       %$args,
+				       clean => 0,
+				      });
 
-	# Look for an exact match
-	debug "Trying to exclude some matches";
-	$nodes = $nodes->find($query, $args); # looks in list
+	    # Go with the original search result if the exclusion
+	    # excluded all matches
 
-	if( $nodes->[1] )
+	    unless( $new_nodes->[0] )
+	    {
+		$new_nodes = $nodes;
+	    }
+	}
+	else
+	{
+	    $new_nodes = $nodes;
+	}
+
+	if( $new_nodes->[1] )
 	{
 	    my $result = $Para::Frame::REQ->result;
 	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
 	    $result->{'info'}{'alternatives'}{'query'} = $query;
 	    throw('alternatives', "Flera noder matchar kriterierna");
 	}
+
+	$nodes = $new_nodes;
     }
 
     my $node = $nodes->[0];
@@ -876,7 +893,7 @@ sub find_set
 	{
 	    $query_new->{$pred} ||= $default->{$pred};
 	}
-	return $this->create($query_new, $res);
+	return $this->create($query_new, $args);
     }
 
     return $node;
@@ -889,7 +906,7 @@ sub find_set
 
   $n->set_one( $query )
 
-  $n->set_one( $query, \%args, $res )
+  $n->set_one( $query, \%args )
 
 Just as L</find_set>, but merges all found nodes to one, if more than
 one is found.
@@ -903,6 +920,7 @@ Supported args are:
 
   default
   arclim
+  res
 
 Returns:
 
@@ -918,19 +936,21 @@ See also L</find_set> and L</find_one>
 
 sub set_one
 {
-    my( $this, $query, $args, $res ) = @_;
+    my( $this, $query, $args ) = @_;
 
+    $args ||= {};
 
     my $nodes = $this->find( $query, $args );
     my $node = $nodes->get_first_nos;
 
     while( my $enode = $nodes->get_next_nos )
     {
-	$enode->merge($node, {move_literals => 1});
+	$enode->merge($node,
+		      {
+		       %$args,
+		       move_literals => 1,
+		      });
     }
-
-    $args ||= {};
-
 
     unless( $node )
     {
@@ -941,7 +961,7 @@ sub set_one
 	{
 	    $args->{$pred} ||= $default->{$pred};
 	}
-	return $this->create($args, $res);
+	return $this->create($args);
     }
 
     return $node;
@@ -952,7 +972,7 @@ sub set_one
 
 =head2 create
 
-  $n->create( $props, $res )
+  $n->create( $props, \%args )
 
 Creates a node with the specified props.
 
@@ -973,9 +993,9 @@ See L</get>.
 
 sub create
 {
-    my( $this, $props, $res ) = @_;
+    my( $this, $props, $args ) = @_;
 
-    $res ||= Rit::Base::Resource::Change->new;
+    $args ||= {};
 
     my $subj_id = $Rit::dbix->get_nextval('node_seq');
 
@@ -1023,15 +1043,8 @@ sub create
 		    subj    => $val,
 		    pred    => $pred_name,
 		    obj_id  => $subj_id,
-		}, $res);
+		}, $args);
 	    }
-	}
-	elsif( $pred_name =~ /^adr_(.*)$/ and $vals->size )
-	{
-	    # TODO: generalize this!
-	    $adr ||= {};
-	    $adr->{ $1 } = $vals;
-	    debug 3, "Defining address data $1";
 	}
 	else
 	{
@@ -1041,77 +1054,16 @@ sub create
 		    subj_id => $subj_id,
 		    pred    => $pred_name,
 		    value   => $val,
-		}, $res);
+		}, $args);
 	    }
 	}
     }
 
     my $node = Rit::Base::Resource->get( $subj_id );
 
-#    if( $adr ) # Set the address data of the node
-#    {
-#	# TODO: generalize this!
-#	$node->update_adr( $adr );
-#    }
-
     arc_unlock;
 
     return $node;
-}
-
-
-#######################################################################
-
-=head2 create_if_unique
-
-  $n->create_if_unique( $props )
-
-  $n->create_if_unique( $props, \% args, $res )
-
-Creates a node with the specified props, if its unique
-
-Same as C<$n->create> except that it checks if some key params are
-unique. If the test passes, the node will be created.
-
-The tests will be bypassed if the property C<checked> is true.
-
-=cut
-
-sub create_if_unique
-{
-    my( $this, $props, $args, $res ) = @_;
-
-    debug shortmess("#\n# DEPRECATED: create_if_unique\n#");
-
-    $args ||= {};
-
-    if( $props->{'checked'} )
-    {
-	delete $props->{'checked'};
-    }
-    else
-    {
-	foreach my $pred_name ('name', 'telephone', 'facsimile', 'url_main', 'email_main')
-	{
-	    if( my $val = $props->{$pred_name} )
-	    {
-		next unless $val;
-		die "not implemented" if ref $val;
-
-		my $list = $this->find({$pred_name => $val }, $args);
-		if( $list->size )
-		{
-		    # A duplicate was found. But ignore that if ...
-
-
-		    my $val_other = $list->get_first_nos->sysdesig;
-		    throw('validation', "\u$pred_name are the same as $val_other");
-		}
-	    }
-	}
-    }
-
-    return $this->create( $props, $res );
 }
 
 
@@ -1271,7 +1223,7 @@ sub is_resource { 1 };
 
 =head2 is_value_node
 
-  $n->is_value_node
+  $n->is_value_node( \%args )
 
 Returns true if this node is a Literal Resource (aka value node).
 
@@ -1281,7 +1233,7 @@ Returns: boolean
 
 sub is_value_node
 {
-    if( $_[0]->first_prop('value') )
+    if( shift->first_prop('value', @_) )
     {
 	return 1;
     }
@@ -1458,17 +1410,13 @@ whith the preicate C<$predname>, those values has the properties
 specified in C<$proplim>. A C<find()> is done on the list, using
 C<$proplim>.
 
-  $n->list( $predname, $proplim, $arclim )
+  $n->list( $predname, $proplim, \%args )
 
 Same, but restrict list to values of C<$arclim> property arcs.
 
-  $n->list( $predname, $pred => $value )
+Supported args are:
 
-Accepts proplim without {} for the simple case of only one criterion.
-
-  $n->list( $predname, $pred => $value, $arclim )
-
-Same, but restrict list to values of C<$arclim> property arcs.
+  arclim
 
 C<$arclim> can be any of the strings L<direct|Rit::Base::Arc/direct>,
 L<explicit|Rit::Base::Arc/explicit>,
@@ -1484,17 +1432,22 @@ sub list
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource::Compatible' )
+    {
+	confess "Not a resource: ".datadump($node);
+    }
 
     if( $name )
     {
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->name;
+	    $name = $name->plain;
 	}
 
-	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
 
 	### DEBUG
@@ -1505,7 +1458,7 @@ sub list
 #	}
 
 
-	if( $node->initiate_prop( $name, $proplim, $arclim ) )
+	if( $node->initiate_prop( $name, $proplim, $args ) )
 	{
 	    if( $active and $node->{'relarc'}{$name} )
 	    {
@@ -1551,17 +1504,17 @@ sub list
 
 	my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
 
-	if( $proplim )
+	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
 	    # TODO: Include inactive properties?
-	    $vals = $vals->find($proplim);
+	    $vals = $vals->find($proplim, $args);
 	}
 
 	return $vals;
     }
     else
     {
-	return $node->list_preds( $proplim, $arclim );
+	return $node->list_preds( $proplim, $args );
     }
 }
 
@@ -1574,7 +1527,7 @@ sub list
 
   $n->list_preds( $proplim )
 
-  $n->list_preds( $proplim, $arclim )
+  $n->list_preds( $proplim, \%args )
 
 The same as L</list> with no args.
 
@@ -1585,16 +1538,17 @@ Retuns: a ref to a list of all property names.
 sub list_preds
 {
     my $node = shift;
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
 
     if( $proplim )
     {
 	die "proplim not implemented";
     }
 
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my( $active, $inactive ) = $arclim->incl_act;
 
-    $node->initiate_rel( $proplim, $arclim );
+    $node->initiate_rel( $proplim, $args );
 
     my %preds_name;
     if( $active )
@@ -1649,7 +1603,7 @@ sub list_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_label($_), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
     return Rit::Base::List->new([@preds]);
 }
@@ -1665,11 +1619,7 @@ sub list_preds
 
   $n->revlist( $predname, $proplim )
 
-  $n->revlist( $predname, $proplim, $arclim )
-
-  $n->revlist( $predname, $pred => $value )
-
-  $n->revlist( $predname, $pred => $value, $arclim )
+  $n->revlist( $predname, $proplim, \%args )
 
 The same as L</list> but returns the values of the reverse properties
 instead.
@@ -1680,20 +1630,21 @@ sub revlist
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    my( $args, $arclim ) = parse_propargs(@_);
 
     if( $name )
     {
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->name;
+	    $name = $name->plain;
 	}
 
-	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
 
-	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
+	if( $node->initiate_revprop( $name, $proplim, $args ) )
 	{
 	    if( $active and $node->{'revarc'}{$name} )
 	    {
@@ -1715,16 +1666,15 @@ sub revlist
 
 	my $vals = Rit::Base::List->new([ map $_->subj, @arcs ]);
 
-	if( $proplim )
+	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
-	    # TODO: Include inactive properties?
-	    $vals = $vals->find($proplim);
+	    $vals = $vals->find($proplim, $args);
 	}
 	return $vals;
     }
     else
     {
-	return $node->revlist_preds( $proplim, $arclim );
+	return $node->revlist_preds( $proplim, $args );
     }
 }
 
@@ -1737,7 +1687,7 @@ sub revlist
 
   $n->revlist_preds( $proplim )
 
-  $n->revlist_preds( $proplim, $arclim )
+  $n->revlist_preds( $proplim, \%args )
 
 The same as L</revlist> with no args.
 
@@ -1748,16 +1698,18 @@ Retuns: a ref to a list of all reverse property names.
 sub revlist_preds
 {
     my $node = shift;
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
+    my $proplim = shift;
+
+    my( $args, $arclim ) = parse_propargs(@_);
 
     if( $proplim )
     {
 	die "proplim not implemented";
     }
 
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my( $active, $inactive ) = $arclim->incl_act;
 
-    $node->initiate_rev( $proplim, $arclim );
+    $node->initiate_rev( $proplim, $args );
 
     my %preds_name;
     if( $active )
@@ -1810,7 +1762,7 @@ sub revlist_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_label($_), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
     return Rit::Base::List->new([@preds]);
 }
@@ -1824,11 +1776,7 @@ sub revlist_preds
 
   $n->prop( $predname, $proplim )
 
-  $n->prop( $predname, $proplim, $arclim )
-
-  $n->prop( $predname, $pred => $value )
-
-  $n->prop( $predname, $pred => $value, $arclim )
+  $n->prop( $predname, $proplim, \%args )
 
 Returns the values of the property with predicate C<$predname>.  See
 L</list> for explanation of the params.
@@ -1885,11 +1833,7 @@ sub prop
 
   $n->revprop( $predname, $proplim )
 
-  $n->revprop( $predname, $proplim, $arclim )
-
-  $n->revprop( $predname, $pred => $value )
-
-  $n->revprop( $predname, $pred => $value, $arclim )
+  $n->revprop( $predname, $proplim, \%args )
 
 Returns the values of the reverse property with predicate
 C<$predname>.  See L</list> for explanation of the params.
@@ -1943,14 +1887,15 @@ sub first_prop
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
 
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
-    $node->initiate_prop( $name, $proplim, $arclim );
+    $node->initiate_prop( $name, $proplim, $args );
     if( $active )
     {
 	if( defined $node->{'relarc'}{$name} )
@@ -1990,14 +1935,15 @@ sub first_revprop
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
 
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
-    $node->initiate_revprop( $name, $proplim, $arclim );
+    $node->initiate_revprop( $name, $proplim, $args );
     if( $active )
     {
 	if( defined $node->{'revarc'}{$name} )
@@ -2032,6 +1978,7 @@ Same as L</has_value>.
 
 sub has_prop
 {
+    confess "DEPRECATED. use has_value() instead";
     return shift->has_value(@_);
 }
 
@@ -2112,13 +2059,7 @@ sub has_revpred
 
 =head2 has_value
 
-  $n->has_value({ $pred, $value })
-
-  $n->has_value( $pred, $value )
-
-  $n->has_value( $pred, $value, {%args})
-
-  $n->has_value({ $pred, $value }, {%args})
+  $n->has_value({ $pred => $value }, \%args)
 
 Returns true if one of the node properties has a combination of any of
 the predicates and any of the values.  The true value returned is the
@@ -2173,21 +2114,16 @@ Consider $n->has_value('some_pred', is_undef)
 
 sub has_value
 {
-    my( $node, $pred_name, $value, $props ) = @_;
+    my( $node, $preds, $args ) = @_;
 
-    $pred_name or confess;
+    confess "Not a hashref" unless ref $preds;
 
-    if( ref($pred_name) and ref($pred_name) eq 'HASH' )
-    {
-	 $props = $value;
-	( $pred_name, $value ) = each( %$pred_name );
-    }
+    my( $pred_name, $value ) = each( %$preds );
 
-    $props ||= {};
+    $args ||= {};
 
-    my $match = $props->{'match'} || 'eq';
-    my $clean = $props->{'clean'} || 0;
-    my $arclim = Rit::Base::Arc->parse_arclim( $props->{'arclim'} );
+    my $match = $args->{'match'} || 'eq';
+    my $clean = $args->{'clean'} || 0;
 
     my $pred;
     if( ref $pred_name )
@@ -2205,12 +2141,7 @@ sub has_value
 	    # Either predicate can have the value
 	    foreach my $pred ( @$pred_name )
 	    {
-		my $arc = $node->has_value( $pred, $value,
-					    {
-					     match => $match,
-					     clean => $clean,
-					     arclim => $arclim,
-					    });
+		my $arc = $node->has_value({$pred=>$value}, $args );
 		return $arc if $arc;
 	    }
 	    return 0;
@@ -2225,7 +2156,7 @@ sub has_value
 	$pred = Rit::Base::Pred->get( $pred_name );
     }
 
-    $pred_name = $pred->name->plain;
+    $pred_name = $pred->plain;
 
     if( debug > 2 )
     {
@@ -2233,12 +2164,6 @@ sub has_value
 	debug "  Checking if node $node->{'id'} has $pred_name $match($clean) $value_str";
     }
 
-### Should not be needed (and is wrong)
-#    # Convert from name to sub query ***
-#    if( not ref $value and $pred->coltype eq 'obj')
-#    {
-#	$value = { name => $value };
-#    }
 
     # Sub query
     if( ref $value eq 'HASH' )
@@ -2254,11 +2179,9 @@ sub has_value
 	    confess "subquery not implemented for matchtype $match";
 	}
 
-	foreach my $arc ( $node->arc_list($pred_name,
-					  undef,
-					  $arclim)->as_array )
+	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
 	{
-	    if( $arc->obj->find($value)->size )
+	    if( $arc->obj->find($value, $args)->size )
 	    {
 		return $arc;
 	    }
@@ -2271,12 +2194,7 @@ sub has_value
     {
 	foreach my $val (@$value )
 	{
-	    my $arc = $node->has_value($pred_name, $val,
-				       {
-					match => $match,
-					clean => $clean,
-					arclim => $arclim,
-				       });
+	    my $arc = $node->has_value({$pred_name=>$val},  $args);
 	    return $arc if $arc;
 	}
 	return 0;
@@ -2287,7 +2205,7 @@ sub has_value
     if( $node->can($pred_name) )
     {
 	debug 3, "  check method $pred_name";
-	my $prop_value = $node->$pred_name;
+	my $prop_value = $node->$pred_name( {}, $args );
 
 	if( $clean )
 	{
@@ -2297,7 +2215,7 @@ sub has_value
 
 	if( $match eq 'eq' )
 	{
-	    return -1 if $node->$pred_name eq $value;
+	    return -1 if $prop_value eq $value;
 	}
 	elsif( $match eq 'begins' )
 	{
@@ -2313,17 +2231,10 @@ sub has_value
 	}
     }
 
-    foreach my $arc ( $node->arc_list($pred_name,
-				      undef,
-				      $arclim)->as_array )
+    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
     {
 	debug 3, "  check arc ".$arc->id;
-	return $arc if $arc->value_equals( $value,
-					   {
-					    match => $match,
-					    clean => $clean,
-					    arclim => $arclim,
-					   });
+	return $arc if $arc->value_equals( $value, $args );
     }
     if( debug > 2 )
     {
@@ -2356,11 +2267,21 @@ Check if the region C<$n> contains the city Göteborg.
 
 sub has_revprop
 {
-    my ($node, $pred_name, $subj) = @_;
+    my ($node, $pred_name, $subj, $args ) = @_;
 
-    foreach my $arc ( $node->revarc_list($pred_name)->as_array )
+    $pred_name or confess;
+
+    if( ref($pred_name) and ref($pred_name) eq 'HASH' )
     {
-	return 1 if $arc->subj->equals( $subj );
+	 $args = $subj;
+	( $pred_name, $subj ) = each( %$pred_name );
+    }
+
+    $args ||= {};
+
+    foreach my $arc ( $node->revarc_list($pred_name, undef, $args)->as_array )
+    {
+	return 1 if $arc->subj->equals( $subj, $args );
     }
     return 0;
 }
@@ -2370,9 +2291,9 @@ sub has_revprop
 
 =head2 count
 
-  $n->count( $pred, $arclim )
+  $n->count( $pred, \%args )
 
-  $n->count( \%tmpl, $arclim ) # not implemented
+  $n->count( \%tmpl, \%args ) # not implemented
 
 Counts the number of properties the node has with a specific property,
 meeting the arclim.  Default arclim is C<active>.
@@ -2389,7 +2310,10 @@ pattern. Example from TT; select active (direct) subclasses that has
 
 sub count
 {
-    my ($node, $tmpl, $arclim ) = @_;
+    my $node = shift;
+    my $tmpl = shift;
+
+    my( $args, $arclim ) = parse_propargs(@_);
 
     if( ref $tmpl and ref $tmpl eq 'HASH' )
     {
@@ -2397,8 +2321,7 @@ sub count
     }
     my $pred_id = Rit::Base::Pred->get_id( $tmpl );
 
-    $arclim = Rit::Base::Arc->parse_arclim($arclim);
-    my $arclim_sql = Rit::Base::Arc->arclim_sql( $arclim );
+    my $arclim_sql = $arclim->sql;
 
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql" );
@@ -2412,9 +2335,9 @@ sub count
 
 =head2 revcount
 
-  $n->revcount( $pred, $arclim )
+  $n->revcount( $pred, \%args )
 
-  $n->revcount( \%tmpl, $arclim ) # not implemented
+  $n->revcount( \%tmpl, \%args ) # not implemented
 
 Counts the number of properties the node has with a specific property,
 meeting the arclim.  Default arclim is C<active>.
@@ -2431,7 +2354,10 @@ pattern. Example from TT; select active (direct) subclasses that has
 
 sub revcount
 {
-    my ($node, $tmpl, $arclim ) = @_;
+    my $node = shift;
+    my $tmpl = shift;
+
+    my( $args, $arclim ) = parse_propargs(@_);
 
     if( ref $tmpl and ref $tmpl eq 'HASH' )
     {
@@ -2439,8 +2365,7 @@ sub revcount
     }
     my $pred_id = Rit::Base::Pred->get_id( $tmpl );
 
-    $arclim = Rit::Base::Arc->parse_arclim($arclim);
-    my $arclim_sql = Rit::Base::Arc->arclim_sql( $arclim );
+    my $arclim_sql = $arclim->sql;
 
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and obj=? and $arclim_sql" );
@@ -2508,7 +2433,7 @@ sub set_label
 
 =head2 desig
 
-  $n->desig()
+  $n->desig( \%args )
 
 The designation of an object, to be used for node administration or
 debugging.
@@ -2517,7 +2442,7 @@ debugging.
 
 sub desig  # The designation of obj, meant for human admins
 {
-    my( $node ) = @_;
+    my( $node, $args ) = @_;
 
 #    debug "About to give a designation for $node->{id}";
 
@@ -2527,28 +2452,28 @@ sub desig  # The designation of obj, meant for human admins
     {
 	# That's good
     }
-    elsif( $node->first_prop('name')->defined )
+    elsif( $node->first_prop('name',{},$args)->defined )
     {
-	$desig = $node->first_prop('name')
+	$desig = $node->first_prop('name',{},$args)
     }
-    elsif( $node->first_prop('name_short')->defined )
+    elsif( $node->first_prop('name_short',{},$args)->defined )
     {
-	$desig = $node->first_prop('name_short')
+	$desig = $node->first_prop('name_short',{},$args)
     }
     elsif( $node->value->defined )
     {
 	$desig = $node->value
     }
-    elsif( $node->first_prop('code')->defined )
+    elsif( $node->first_prop('code',{},$args)->defined )
     {
-	$desig = $node->first_prop('code')
+	$desig = $node->first_prop('code',{},$args)
     }
     else
     {
 	$desig = $node->id
     }
 
-    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    $desig = $desig->loc( $args ) if ref $desig; # Could be a Literal Resource
     utf8::upgrade($desig);
 #    debug "Returning desig $desig";
 
@@ -2560,7 +2485,7 @@ sub desig  # The designation of obj, meant for human admins
 
 =head2 sysdesig
 
-  $n->sysdesig()
+  $n->sysdesig( \%args )
 
 The designation of an object, to be used for node administration or
 debugging.  This version of desig indludes the node id.
@@ -2569,7 +2494,7 @@ debugging.  This version of desig indludes the node id.
 
 sub sysdesig  # The designation of obj, including node id
 {
-    my( $node ) = @_;
+    my( $node, $args ) = @_;
 
     my $desig;
 
@@ -2577,28 +2502,28 @@ sub sysdesig  # The designation of obj, including node id
     {
 	# That's good
     }
-    elsif( $node->first_prop('name')->defined )
+    elsif( $node->first_prop('name',{},$args)->defined )
     {
-	$desig = $node->first_prop('name')
+	$desig = $node->first_prop('name',{},$args)
     }
-    elsif( $node->first_prop('name_short')->defined )
+    elsif( $node->first_prop('name_short',{},$args)->defined )
     {
-	$desig = $node->first_prop('name_short')
+	$desig = $node->first_prop('name_short',{},$args)
     }
     elsif( $node->value->defined )
     {
 	$desig = $node->value
     }
-    elsif( $node->first_prop('code')->defined )
+    elsif( $node->first_prop('code',{},$args)->defined )
     {
-	$desig = $node->first_prop('code')
+	$desig = $node->first_prop('code',{},$args)
     }
     else
     {
 	$desig = $node->id
     }
 
-    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    $desig = $desig->loc( $args ) if ref $desig; # Could be a Literal Resource
 
     if( $desig eq $node->{'id'} )
     {
@@ -2641,17 +2566,17 @@ know that this L</is_value_node>.
 
 sub literal
 {
-    my( $node ) = @_;
+    my( $node, $args ) = @_;
 
     if( UNIVERSAL::isa($node,'Para::Frame::List') )
     {
 	croak "deprecated";
 
-	return $node->loc;
+	return $node->loc( $args );
     }
 
     debug "Turning node ".$node->{'id'}." to literal";
-    return $node->desig;
+    return $node->desig( $args );
 }
 
 
@@ -2659,7 +2584,7 @@ sub literal
 
 =head2 loc
 
-  $n->loc()
+  $n->loc( \%args )
 
 Asking to translate this word.  But there is only one value.  This is
 probably a lone literal resource.
@@ -2690,10 +2615,6 @@ sub loc
 
   $n->arc_list( $predname, $proplim, $arclim )
 
-  $n->arc_list( $predname, $pred => $value )
-
-  $n->arc_list( $predname, $pred => $value, $arclim )
-
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
 subj and C<$pred_name> as predicate.
 
@@ -2709,22 +2630,22 @@ sub arc_list
 {
     my $node = shift;
     my $name = shift;
-
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
     if( $name )
     {
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->name;
+	    $name = $name->plain;
 	}
 
 	my @arcs;
 
 #	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, datadump($arclim));
 
-	if( $node->initiate_prop( $name, $proplim, $arclim ) )
+	if( $node->initiate_prop( $name, $proplim, $args ) )
 	{
 	    if( $active and $node->{'relarc'}{$name} )
 	    {
@@ -2755,7 +2676,7 @@ sub arc_list
 	    {
 		# $n->arc_list( $predname, { $pred => $value } )
 		#
-		$lr = $lr->find($proplim);
+		$lr = $lr->find($proplim, $args);
 	    }
 	    else
 	    {
@@ -2772,7 +2693,7 @@ sub arc_list
 		my( $arc, $error ) = $lr->get_first;
 		while(! $error )
 		{
-		    if( $proplist->contains( $arc->value ) )
+		    if( $proplist->contains( $arc->value, $args ) )
 		    {
 			push @newlist, $arc;
 		    }
@@ -2788,7 +2709,7 @@ sub arc_list
     }
     else
     {
-	$node->initiate_rel($proplim, $arclim);
+	$node->initiate_rel($proplim, $args);
 
 	if( $proplim )
 	{
@@ -2832,10 +2753,6 @@ sub arc_list
 
   $n->revarc_list( $predname, $proplim, $arclim )
 
-  $n->revarc_list( $predname, $pred => $value )
-
-  $n->revarc_list( $predname, $pred => $value, $arclim )
-
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
 subj and C<$pred_name> as predicate.
 
@@ -2847,20 +2764,20 @@ sub revarc_list
 {
     my $node = shift;
     my $name = shift;
-
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
     if( $name )
     {
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->name;
+	    $name = $name->plain;
 	}
 
 	my @arcs;
 
-	if( $node->initiate_revprop( $name, $proplim, $arclim ) )
+	if( $node->initiate_revprop( $name, $proplim, $args ) )
 	{
 	    if( $active and $node->{'revarc'}{$name} )
 	    {
@@ -2881,16 +2798,16 @@ sub revarc_list
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	my $lr = Rit::Base::List->new(\@arcs);
-	if( $proplim )
+	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
-	    $lr = $lr->find($proplim);
+	    $lr = $lr->find($proplim, $args);
 	}
 
 	return $lr;
     }
     else
     {
-	$node->initiate_rev($proplim, $arclim);
+	$node->initiate_rev($proplim, $args);
 
 	if( $proplim )
 	{
@@ -2925,7 +2842,7 @@ sub revarc_list
 
 =head2 first_arc
 
-  $n->first_arc( $pred_name )
+  $n->first_arc( $pred_name, \%args )
 
 Returns one of the arcs that have C<$n> as subj and C<$pred_anme> as
 predicate.
@@ -2936,14 +2853,14 @@ sub first_arc
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
-
-    $node->initiate_prop( $name, $proplim, $arclim );
+    $node->initiate_prop( $name, $proplim, $args );
     if( $active )
     {
 	if( defined $node->{'relarc'}{$name} )
@@ -2968,7 +2885,7 @@ sub first_arc
 
 =head2 first_revarc
 
-  $n->first_revarc( $pred_name )
+  $n->first_revarc( $pred_name, \%args )
 
 Returns one of the arcs that have C<$n> as obj and C<$pred_anme> as
 predicate.
@@ -2979,14 +2896,14 @@ sub first_revarc
 {
     my $node = shift;
     my $name = shift;
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    my( $proplim, $arclim ) = Rit::Base::Arc->parse_proparclim(@_);
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
-
-    $node->initiate_revprop( $name, $proplim, $arclim );
+    $node->initiate_revprop( $name, $proplim, $args );
     if( $active )
     {
 	if( defined $node->{'revarc'}{$name} )
@@ -3080,11 +2997,12 @@ sub revarc
 
 =head2 add
 
-  $n->add( $pred => $value )
-
-  $n->add({ $pred1 => $value1, $pred2 => $value2, ... }, $res)
+  $n->add({ $pred1 => $value1, $pred2 => $value2, ... }, \%args )
 
 The value may be a list (or L<Para::Frame::List>) of values.
+
+Supported args are:
+  res
 
 Returns:
 
@@ -3094,18 +3012,9 @@ Returns:
 
 sub add
 {
-    my( $node, $props, $val2, $res ) = @_;
+    my( $node, $props, $args ) = @_;
 
-    # either name/value pairs in props, or one name/value
-    if( ref $props eq 'HASH' )
-    {
-	$res = $val2;
-    }
-    else
-    {
-	$props = $props->plain if ref $props;
-	$props = {$props, $val2};
-    }
+    $args ||= {};
 
     foreach my $pred_name ( keys %$props )
     {
@@ -3120,7 +3029,7 @@ sub add
 		subj => $node,
 		pred => $pred_name,
 		value => $val,
-	    }, $res);
+	    }, $args);
 	  }
     }
     return $node;
@@ -3131,9 +3040,10 @@ sub add
 
 =head2 add_arc
 
-  $n->add_arc( $pred => $value )
+  $n->add_arc({ $pred => $value }, \%args )
 
-  $n->add_arc({ $pred => $value }, $res)
+Supported args are:
+  res
 
 Returns:
 
@@ -3143,18 +3053,10 @@ Returns:
 
 sub add_arc
 {
-    my( $node, $props, $val2, $res ) = @_;
+    my( $node, $props, $args) = @_;
 
-    # either name/value pairs in props, or one name/value
-    if( ref $props eq 'HASH' )
-    {
-	$res = $val2;
-    }
-    else
-    {
-	$props = $props->plain if ref $props;
-	$props = {$props, $val2};
-    }
+
+    $args ||= {};
 
     if( scalar keys %$props > 1 )
     {
@@ -3182,7 +3084,7 @@ sub add_arc
 		subj => $node,
 		pred => $pred_name,
 		value => $val,
-	    }, $res);
+	    }, $args);
 	  }
     }
 
@@ -3194,9 +3096,7 @@ sub add_arc
 
 =head2 update
 
-  $n->update( \%props, $res )
-
-  $n->update( $pred => $value )
+  $n->update( \%props, \%args )
 
 Updates all properties having the mentioned predicate.  It doesn't
 touch properties with predicates not mentioned. C<%props> is a
@@ -3219,6 +3119,10 @@ remain.
 
 The most of the job is done by L</replace>.
 
+Supported args are:
+
+  res
+
 Returns:
 
 The number of arcs created or removed.
@@ -3231,21 +3135,15 @@ See L</replace>
 
 sub update
 {
-    my( $node, $props, $res ) = @_;
+    my( $node, $props, $args ) = @_;
 
     # Update specified props to their values
 
     # Does not update props not mentioned
 
-    # either name/value pairs in props, or one name/value
-    unless( ref $props eq 'HASH' )
-    {
-	$props = $props->plain if ref $props;
-	$props = {$props => $res};
-	undef $res;
-    }
-
-    $res ||= Rit::Base::Resource::Change->new();
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     # - existing specified values is unchanged
     # - nonexisting specified values is created
@@ -3256,13 +3154,13 @@ sub update
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
-	my $old = $node->arc_list( $pred_name );
+	my $old = $node->arc_list( $pred_name, $args );
 	push @arcs_old, $old->as_array;
     }
 
-    $node->replace(\@arcs_old, $props, $res);
+    $node->replace(\@arcs_old, $props, $args);
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 
@@ -3270,7 +3168,7 @@ sub update
 
 =head2 replace
 
-  $n->replace( \@arclist, \%props, $args, $res )
+  $n->replace( \@arclist, \%props, \%args )
 
 See L</update> for description of what is done.
 
@@ -3285,6 +3183,10 @@ are processed by L</find_arcs>.
 We use valclean of the value syskey for a key for what strings to
 replace.
 
+Supported args are:
+
+  res
+
 Debug:
 
   3 = detailed info
@@ -3298,9 +3200,7 @@ The number of arcs created or removed.
 
 sub replace
 {
-    my( $node, $oldarcs, $props, $args, $res ) = @_;
-
-    $res ||= Rit::Base::Resource::Change->new();
+    my( $node, $oldarcs, $props, $args ) = @_;
 
     # Determine new and old arcs
 
@@ -3310,8 +3210,12 @@ sub replace
 
     my( %del );
 
-    $oldarcs = $node->find_arcs($oldarcs);
-    $props   = $node->construct_proplist($props);
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
+
+    $oldarcs = $node->find_arcs($oldarcs, $args);
+    $props   = $node->construct_proplist($props, $args);
 
     debug "Normalized oldarcs ".($oldarcs->sysdesig)." and props ".query_desig($props)
       if debug > 3;
@@ -3335,7 +3239,11 @@ sub replace
 
 	foreach my $val_in ( @{$props->{$pred_name}} )
 	{
-	    my $val  = Rit::Base::Resource->get_by_label( $val_in, $pred->coltype );
+	    my $val  = Rit::Base::Resource->get_by_label( $val_in,
+							  {
+							   %$args,
+							   coltype => $pred->coltype,
+							  });
 
 	    my $val_str = valclean( $val->syskey );
 
@@ -3368,18 +3276,18 @@ sub replace
 		subj => $node,
 		pred => $pred,
 		value => $add{$key},
-	    }, $res );
+	    }, $args );
 	}
     }
 
     foreach my $key ( keys %del )
     {
 	debug 3, "    now removing $key";
-	$del{$key}->remove( $args, $res );
+	$del{$key}->remove( $args );
     }
 
     debug 3, "  -- done";
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 
@@ -3387,12 +3295,16 @@ sub replace
 
 =head2 remove
 
-  $n->remove( $args, $res )
+  $n->remove( $args )
 
 Removes the node with all arcs pointing to and from the node.
 
 It does not do a recursive remove.  You will have to traverse the tree
 by yourself.
+
+Supported args are:
+  arclim
+  res
 
 TODO: Count the changes correctly
 
@@ -3402,18 +3314,17 @@ Returns: The number of arcs removed
 
 sub remove
 {
-    my( $node, $args, $res ) = @_;
-
-    $res ||= Rit::Base::Resource::Change->new();
+    my( $node, $args ) = @_;
 
     $args ||= {};
-    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
     my $pred_value_id = getpred('value')->id;
 
-    foreach my $arc ( $node->arc_list(undef,$arclim)->nodes )
+    foreach my $arc ( $node->arc_list(undef, $args)->nodes )
     {
 	if( $arc->pred->id == $pred_value_id )
 	{
@@ -3429,16 +3340,16 @@ sub remove
     unshift @arcs, $value_arc if $value_arc;
 
 
-    foreach my $arc ( @arcs, $node->revarc_list(undef,$arclim)->nodes )
+    foreach my $arc ( @arcs, $node->revarc_list(undef, $args)->nodes )
     {
-	$arc->remove( $res );
+	$arc->remove( $args );
     }
 
     # Remove from cache
     #
     delete $Rit::Base::Cache::Resource{ $node->id };
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 
@@ -3446,9 +3357,7 @@ sub remove
 
 =head2 find_arcs
 
-  $n->find_arcs( $pred => $value )
-
-  $n->find_arcs( [ @crits ] )
+  $n->find_arcs( [ @crits ], \%args )
 
   $n->find_arcs( $query, \%args )
 
@@ -3461,35 +3370,23 @@ Returns: A L<Rit::Base::List> of found L<Rit::Base::Arc>s
 
 sub find_arcs
 {
-    my( $node, $crits, $args, $extra ) = @_;
+    my( $node, $props, $args ) = @_;
 
     # Returns the union of all results from each criterion
 
-    if( UNIVERSAL::isa($crits,'Rit::Base::Pred') )
-    {
-	$crits = $crits->plain if ref $crits;
-    }
-
-    if( not(ref $crits) and defined $args )
-    {
-	$crits = { $crits => $args };
-	$args = $extra;
-    }
-
     $args ||= {};
 
-    unless( ref $crits and (ref $crits eq 'ARRAY' or
-			   ref $crits eq 'Rit::Base::List' )
+
+    unless( ref $args and (ref $args eq 'ARRAY' or
+			   ref $args eq 'Rit::Base::List' )
 	  )
     {
-	$crits = [$crits];
+	$args = [$args];
     }
 
     my $arcs = [];
 
-    my $arclim = Rit::Base::Arc->parse_arclim( $args->{'arclim'} );
-
-    foreach my $crit ( @$crits )
+    foreach my $crit ( @$args )
     {
 	if( ref $crit and UNIVERSAL::isa($crit, 'Rit::Base::Arc') )
 	{
@@ -3500,7 +3397,7 @@ sub find_arcs
 	    foreach my $pred ( keys %$crit )
 	    {
 		my $val = $crit->{$pred};
-		my $found = $node->arc_list($pred,undef,$arclim)->find(value=>$val);
+		my $found = $node->arc_list($pred,undef,$args)->find({value=>$val}, $args);
 		push @$arcs, $found->as_array if $found->size;
 	    }
 	}
@@ -3510,13 +3407,13 @@ sub find_arcs
 	}
 	else
 	{
-	    die "not implemented".query_desig($crits);
+	    die "not implemented".query_desig($args);
 	}
     }
 
     if( debug > 3 )
     {
-	debug "Finding arcs: ".query_desig($crits);
+	debug "Finding arcs: ".query_desig($args);
 
 	if( @$arcs )
 	{
@@ -3529,11 +3426,11 @@ sub find_arcs
 
 	foreach my $arc (@$arcs)
 	{
-	    debug "  ".$arc->sysdesig;
+	    debug "  ".$arc->sysdesig($args);
 	}
     }
 
-    return new Rit::Base::List $arcs;
+    return Rit::Base::List->new($arcs);
 }
 
 
@@ -3541,7 +3438,7 @@ sub find_arcs
 
 =head2 construct_proplist
 
-  $n->construct_proplist(\%props)
+  $n->construct_proplist(\%props, \%args)
 
 Checks that the values has the right format. If a value is a hashref;
 looks up an object with those properties using L</find_set>.
@@ -3560,7 +3457,7 @@ confesses if a value is an object of an unknown class.
 
 sub construct_proplist
 {
-    my( $node, $props_in ) = @_;
+    my( $node, $props_in, $args ) = @_;
 
     my $props_out = {};
 
@@ -3578,7 +3475,7 @@ sub construct_proplist
 		if( ref $val eq 'HASH' )
 		{
 		    ## find_set node
-		    $val = Rit::Base::Resource->find_set($val);
+		    $val = Rit::Base::Resource->find_set($val, $args);
 		}
 		elsif( ref $val eq 'Rit::Base::Undef' )
 		{
@@ -3654,7 +3551,7 @@ literal nodes.
 
 sub equals
 {
-    my( $node, $node2 ) = @_;
+    my( $node, $node2, $args ) = @_;
 
     return 0 unless defined $node2;
 
@@ -3666,13 +3563,13 @@ sub equals
 	}
 	elsif( ref $node2 eq 'HASH' )
 	{
-	    return Rit::Base::List->new([$node])->find($node2)->size;
+	    return Rit::Base::List->new([$node])->find($node2, $args)->size;
 	}
 	elsif( ref $node2 eq 'Rit::Base::List' )
 	{
 	    foreach my $val ( $node2->as_array )
 	    {
-		return 1 if $node->equals($val);
+		return 1 if $node->equals($val, $args);
 	    }
 	    return 0;
 	}
@@ -3680,7 +3577,7 @@ sub equals
 	{
 	    foreach my $val (@$node2 )
 	    {
-		return 1 if $node->equals($val);
+		return 1 if $node->equals($val, $args);
 	    }
 	    return 0;
 	}
@@ -3706,7 +3603,7 @@ sub equals
     else
     {
 	my $nodes = Rit::Base::Resource->find_simple( name => $node2 );
-	return $node->equals( $nodes );
+	return $node->equals( $nodes, $args );
     }
 }
 
@@ -3715,7 +3612,7 @@ sub equals
 
 =head2 update_by_query
 
-  $n->update_by_query
+  $n->update_by_query( \%args )
 
 Overall plan:
 
@@ -3750,6 +3647,10 @@ main-parameter is supplied (no 1 above).  There can be several
 main-parameters.  If no main-parameter is set, the other
 newsubj-parameters with that number are ignored.
 
+Supported args are:
+
+  res
+
 
 =comment
 
@@ -3770,7 +3671,7 @@ is
 
 sub update_by_query
 {
-    my( $node ) = @_;
+    my( $node, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -3778,6 +3679,9 @@ sub update_by_query
     my $id = $node->id;
     $q->param('id', $id); # Just in case...
 
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     # Sort params
     my @arc_params;
@@ -3806,23 +3710,21 @@ sub update_by_query
 	}
     }
 
-    my $res = Rit::Base::Resource::Change->new;
-
     foreach my $param (@arc_params)
     {
 	if( $param =~ /^arc_.*$/ )
 	{
-	    $node->handle_query_arc( $param, $res );
+	    $node->handle_query_arc( $param, $args );
 	}
 	elsif($param =~ /^prop_(.*?)/) # Was previously only be used for locations
 	{
-	    $node->handle_query_prop( $param, $res );
+	    $node->handle_query_prop( $param, $args );
 	}
     }
 
     foreach my $param (@row_params)
     {
-	$node->handle_query_row( $param, $res );
+	$node->handle_query_row( $param, $args );
     }
 
     foreach my $param (@check_params)
@@ -3836,31 +3738,31 @@ sub update_by_query
 	#
 	if( $param =~ /^check_row_.*$/ )
 	{
-	    $node->handle_query_check_row( $param, $res );
+	    $node->handle_query_check_row( $param, $args );
 	}
 	elsif($param =~ /^check_arc_(.*)/)
         {
 	    my $arc_id = $1 or next;
-	    $node->handle_query_check_arc( $param, $arc_id, $res );
+	    $node->handle_query_check_arc( $param, $arc_id, $args );
         }
         elsif($param =~ /^check_prop_(.*)/)
         {
 	    my $pred_name = $1;
-	    $node->handle_query_check_prop( $param, $pred_name, $res );
+	    $node->handle_query_check_prop( $param, $pred_name, $args );
         }
         elsif($param =~ /^check_revprop_(.*)/)
         {
 	    my $pred_name = $1;
-	    $node->handle_query_check_revprop( $param, $pred_name, $res );
+	    $node->handle_query_check_revprop( $param, $pred_name, $args );
         }
 	elsif($param =~ /^check_node_(.*)/)
 	{
 	    my $node_id = $1 or next;
-	    $node->handle_query_check_node( $param, $node_id, $res );
+	    $node->handle_query_check_node( $param, $node_id, $args );
 	}
     }
 
-    handle_query_newsubjs( $q, \@newsubj_params, $res );
+    handle_query_newsubjs( $q, \@newsubj_params, $args );
 
     # Remove arcs on deathrow
     #
@@ -3878,10 +3780,10 @@ sub update_by_query
 	#
 	$node->authenticate_update( $arc->pred );
 
-	$arc->remove( $res );
+	$arc->remove( $args );
     }
 
-    foreach my $arc ( $res->deathrow_listw )
+    foreach my $arc ( $res->deathrow_list )
     {
 	# If they got removed, they will still have positive disregard
 	# value
@@ -3905,7 +3807,7 @@ sub update_by_query
 	$q->delete( $param );
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 
@@ -3913,9 +3815,13 @@ sub update_by_query
 
 =head2 vacuum
 
-  $n->vacuum
+  $n->vacuum( \%args )
 
 Vacuums each arc of the resource
+
+Supported args are:
+
+  arclim
 
 Returns: The node
 
@@ -3923,18 +3829,20 @@ Returns: The node
 
 sub vacuum
 {
-    my( $node ) = @_;
+    my( $node, $args ) = @_;
 
-    foreach my $arc ( $node->arc_list->nodes )
+    $args ||= {};
+
+    foreach my $arc ( $node->arc_list( {}, $args )->nodes )
     {
-	$arc->remove_duplicates;
+	$arc->remove_duplicates( $args );
     }
 
-    foreach my $arc ( $node->arc_list->as_array )
+    foreach my $arc ( $node->arc_list( {}, $args )->as_array )
     {
 	next unless $arc->real_coltype eq 'obj';
 	$Para::Frame::REQ->may_yield;
-	$arc->vacuum;
+	$arc->vacuum( $args );
     }
 
     return $node;
@@ -3945,31 +3853,33 @@ sub vacuum
 
 =head2 add_note
 
-  $n->add_note( $text )
+  $n->add_note( $text, \%args )
 
 Adds a C<note>
+
+Supported args are:
+
+  res
 
 =cut
 
 sub add_note
 {
-    my( $node, $note ) = @_;
+    my( $node, $note, $args ) = @_;
 
     $note =~ s/\n+$//; # trim
     unless( length $note )
     {
 	confess "No note given";
     }
-    debug $node->desig.">> $note";
-    $node->add('note', $note);
+    debug $node->desig($args).">> $note";
+    $node->add({'note' => $note}, $args);
 }
 
 
 #######################################################################
 
 =head2 merge
-
-  $node1->merge($node2)
 
   $node1->merge($node2, \%args )
 
@@ -3979,6 +3889,8 @@ C<$node1>.  Copies both arcs and reverse arcs.
 Supported args are:
 
   move_literals
+  res
+  arclim
 
 If C<$move_literals> is true, all properties are copied.  If false or
 missing, only ovject properties are copied.
@@ -3998,41 +3910,44 @@ sub merge
 {
     my( $node1, $node2, $args ) = @_;
 
-    if( $node1->equals( $node2 ) )
+    if( $node1->equals( $node2, $args ) )
     {
 	throw('validation', "You can't merge a node into itself");
     }
 
-    debug sprintf("Merging %s with %s", $node1->sysdesig, $node2->sysdesig);
+    debug sprintf("Merging %s with %s",
+		  $node1->sysdesig($args),
+		  $node2->sysdesig($args),
+		 );
 
     $args ||= {};
+
     my $move_literals = $args->{'move_literals'} || 0;
 
-
-    foreach my $arc ( $node1->arc_list->explicit->nodes )
+    foreach my $arc ( $node1->arc_list({},aais($args,'explicit'))->nodes )
     {
-	my $pred_name = $arc->pred->name->plain;
+	my $pred_name = $arc->pred->plain;
 	if( my $obj = $arc->obj )
 	{
 	    debug sprintf "  Moving %s", $arc->sysdesig;
-	    $node2->add( $pred_name => $obj );
+	    $node2->add({ $pred_name => $obj }, $args );
 	}
 	elsif( $move_literals )
 	{
-	    debug sprintf "  Moving %s", $arc->sysdesig;
-	    $node2->add( $pred_name => $arc->value );
+	    debug sprintf "  Moving %s", $arc->sysdesig($args);
+	    $node2->add({$pred_name => $arc->value}, $args );
 	}
-	$arc->remove;
+	$arc->remove( $args );
     }
 
-    foreach my $arc ( $node1->revarc_list->explicit->nodes )
+    foreach my $arc ( $node1->revarc_list({},aais($args,'explicit'))->nodes )
     {
-	my $pred_name = $arc->pred->name->plain;
+	my $pred_name = $arc->pred->plain;
 	if( my $subj = $arc->subj )
 	{
-	    $subj->add( $pred_name => $node2 );
+	    $subj->add({ $pred_name => $node2 }, $args);
 	}
-	$arc->remove;
+	$arc->remove( $args );
     }
 
     return $node2;
@@ -4043,18 +3958,25 @@ sub merge
 
 =head2 link_paths
 
-  $n->link_paths
+  $n->link_paths( \%args, $level )
 
 Create a list of paths leading up to this node. A list of a list of
 nodes. The list of nodes is the path from the base down to the leaf.
 
 This can be used to generate a path with links to go up in the tree.
 
+Supported args are:
+
+  level
+  arclim
+
 =cut
 
 sub link_paths
 {
-    my( $node, $lvl ) = @_;
+    my( $node, $args, $lvl ) = @_;
+
+    $args ||= {};
 
     $lvl ||= 0;
     $lvl ++;
@@ -4062,12 +3984,15 @@ sub link_paths
     my @link_paths;
 
     debug 3, '  'x$lvl . "link_paths for ".$node->id;
-    my @parents = $node->list('scof', {inactive_ne=>1}, 'direct')->nodes;
+
+    # TODO:  ----> merge arclim with 'direct' with a method
+    my @parents = $node->list('scof', {inactive_ne=>1},
+			      aais($args,'direct'))->nodes;
 
     foreach my $parent ( @parents )
     {
 	debug 3, '  'x$lvl . "  parent ".$parent->id;
-	foreach my $part ( @{ $parent->link_paths($lvl) } )
+	foreach my $part ( @{ $parent->link_paths($args, $lvl) } )
 	{
 	    if( debug > 2 )
 	    {
@@ -4104,7 +4029,7 @@ sub link_paths
 
 =head2 tree_select_widget
 
-  $n->tree_select_widget
+  $n->tree_select_widget( $pred, \%args )
 
 Returns: a HTML widget that draws the C<scof> tree.
 
@@ -4112,12 +4037,12 @@ Returns: a HTML widget that draws the C<scof> tree.
 
 sub tree_select_widget
 {
-    my( $node, $pred_in ) = @_;
+    my( $node, $pred_in, $args ) = @_;
 
     my $pred = Rit::Base::Pred->get($pred_in)
       or die "no pred ($pred_in)";
 
-    my $data = $node->tree_select_data($pred);
+    my $data = $node->tree_select_data($pred, $args);
 
     my $select = Template::PopupTreeSelect->new(
 						name => 'Ritbase_tsw',
@@ -4135,7 +4060,7 @@ sub tree_select_widget
 
 =head2 tree_select_data
 
-  $n->tree_select_data
+  $n->tree_select_data( $pred, \%args )
 
 Used by L</tree_select_widget>
 
@@ -4143,14 +4068,14 @@ Used by L</tree_select_widget>
 
 sub tree_select_data
 {
-    my( $node, $pred ) = @_;
+    my( $node, $pred, $args ) = @_;
 
     $pred or confess "param pred missing";
 
     my $id = $node->id;
     my $pred_id = $pred->id;
 
-    my $name = $node->name->loc;
+    my $name = $node->prop('name', {}, $args)->loc;
     debug 2, "Processing treepart $id: $name";
     my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
     my $cnt = $rec->{'cnt'};
@@ -4167,7 +4092,7 @@ sub tree_select_data
      value  => $id,
     };
 
-    my $childs = $node->revlist('scof',undef,'direct');
+    my $childs = $node->revlist('scof',{},aais($args,'direct'));
 
     if( $childs->size )
     {
@@ -4176,7 +4101,8 @@ sub tree_select_data
 
 	foreach my $subnode ( $childs->nodes )
 	{
-	    push @{ $data->{children} }, $subnode->tree_select_data($pred);
+	    push @{ $data->{children} },
+	      $subnode->tree_select_data($pred, $args);
 	}
     }
 
@@ -4203,7 +4129,7 @@ Checks if the resource has a property C<is> to a class that has the
 property C<class_handled_by_perl_module>.
 
 This tells that the resource object should be blessd into the class
-represented bu the object pointet to by
+represented bu the object pointed to by
 C<class_handled_by_perl_module>.  The package name is given by the
 nodes C<code> property.
 
@@ -4214,6 +4140,11 @@ C<class_handled_by_perl_module>.
 A Class can only be handled by one perl class. But a resource can have
 propertis C<is> to more than one class. Special perl packages may be
 constructed for this, that inherits from all the given classes.
+
+Each node has one single object in the cache. The class of the object
+are based on the currently B<active> nodes. In order to work on a new,
+not yet active node, you may have to first get the is-relation
+activated. (TODO: Fix this)
 
 Returns: A scalar with the package name
 
@@ -4290,7 +4221,7 @@ sub find_class
 
   $node->first_bless()
 
-  $node->first_bless(@init_params)
+  $node->first_bless( @init_params )
 
 Used by L</get> and L<Rit::Base::Lazy::AUTOLOAD>.
 
@@ -4302,7 +4233,7 @@ Calls L</init> with given params
 
 sub first_bless
 {
-    my( $node ) = shift;
+    my $node = shift;
 
     # get the right class
     my( $class ) = ref $node;
@@ -4312,7 +4243,7 @@ sub first_bless
 	# only look for 'is' arcs. Pred and Rule nodes should have an
 	# is arc. Lastly, look if it's an arc if it's nothing else.
 
-	$class = $node->find_class;
+	$class = $node->find_class();
 
 	# If its a resource and no args given for init
 	if( ($class eq 'Rit::Base::Resource') and not $_[0] )
@@ -4719,22 +4650,26 @@ sub new
 
 =head2 get_by_label
 
+  Rit::Base::Resource->get_by_label( $val, \%args )
+
+Same as L</find_by_label>, but returns ONE node
+
 =cut
 
 sub get_by_label
 {
-    my $class = shift;
+    my( $class, $val, $args ) = @_;
 
     # Look in lable cache
-    unless( ref($_[0]) or $_[1] ) # Do not lookup complex searches from cache
+    unless( ref($val) or $args ) # Do not lookup complex searches from cache
     {
-	if( my $id = $Rit::Base::Cache::Label{$class}{ $_[0] } )
+	if( my $id = $Rit::Base::Cache::Label{$class}{ $val } )
 	{
 	    return $class->get( $id );
 	}
     }
 
-    my $list = $class->find_by_label(@_);
+    my $list = $class->find_by_label($val, $args);
 
     my $req = $Para::Frame::REQ;
     confess "No REQ" unless $req;
@@ -4745,13 +4680,13 @@ sub get_by_label
 	if( $req->is_from_client )
 	{
 	    my $result = $req->result;
-	    $result->{'info'}{'alternatives'}{'query'} = $_[0];
+	    $result->{'info'}{'alternatives'}{'query'} = $val;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $req->set_error_response_path("/node_query_error.tt");
 	}
 	else
 	{
-	    $msg .= query_desig($_[0]);
+	    $msg .= query_desig($val);
 	    $msg .= Carp::longmess;
 	}
 	throw('notfound', "No nodes matches query:\n$msg");
@@ -4790,8 +4725,8 @@ sub get_by_label
 	 rowformat => sub
 	 {
 	     my( $item ) = @_;
-	     my $tstr = $item->list('is', '', 'direct')->name->loc || '';
-	     my $cstr = $item->list('scof', '', 'direct')->name->loc;
+	     my $tstr = $item->list('is', {}, 'direct')->name->loc || '';
+	     my $cstr = $item->list('scof', {}, 'direct')->name->loc;
 	     my $desig = $item->desig;
 	     my $desc = "$tstr $desig";
 	     if( $cstr )
@@ -5005,6 +4940,8 @@ sub mark_unsaved
 
 =head2 mark_updated
 
+IMPLEMENT ARGS
+
 =cut
 
 sub mark_updated
@@ -5168,15 +5105,15 @@ sub save
 
 sub initiate_rel
 {
-    my( $node, $proplim, $arclim ) = @_;
-    # proplim ignored
+    my $node = shift;
+    my $proplim = shift; # proplim ignored
+    my( $args, $arclim ) = parse_propargs(@_);
 
     my $nid = $node->id;
-    $arclim ||= [];
 
-    if( @$arclim )
+    if( $arclim->size )
     {
-	my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+	my( $active, $inactive ) = $arclim->incl_act();
 
 	my $sql = "select * from arc where subj=?";
 
@@ -5190,48 +5127,64 @@ sub initiate_rel
 	    return if $_[0]->{'initiated_rel_inactive'};
 	    $sql .= " and active is false";
 	}
-
-	my $extralim = 0;
-	if( @$arclim == 1 )
+	elsif( $active and $inactive )
 	{
-	    my $lim = $arclim->[0];
-
-	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+	    if( $_[0]->{'initiated_rel'} and
+		$_[0]->{'initiated_rel_inactive'} )
 	    {
-		$sql .= " and indirect is false";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
-	    {
-		$sql .= " and indirect is true";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-	    {
-		$sql .= " and implicit is false";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
-	    {
-		$sql .= " and implicit is true";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
-	    {
-		$sql .= " and submitted is true";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
-	    {
-		$sql .= " and submitted is false";
-		$extralim++;
+		return;
 	    }
 	}
+
+	# Here we have to make an intelligent guess if it's faster to
+	# initiate all the arcs or just the ones that are asked for.
+
+	my $extralim = 0;
+#	if( $arclim->size == 1 )
+#	{
+#	    # Start over with the sql part
+#	    $sql = "select * from arc where subj=?";
+#
+#	    $sql .= $arclim->sql;
+#
+#	    my $lim = $arclim->[0];
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+#	    {
+#		$sql .= " and indirect is false";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
+#	    {
+#		$sql .= " and indirect is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+#	    {
+#		$sql .= " and implicit is false";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
+#	    {
+#		$sql .= " and implicit is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
+#	    {
+#		$sql .= " and submitted is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
+#	    {
+#		$sql .= " and submitted is false";
+#		$extralim++;
+#	    }
+#	}
 
 
 #	debug "Initiating node $nid with $sql";
@@ -5335,15 +5288,13 @@ sub initiate_rel
 
 sub initiate_rev
 {
-    my( $node, $proplim, $arclim ) = @_;
-    # proplim ignored
+    my $node = shift;
+    my $proplim = shift; # proplim ignored
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act();
 
     my $nid = $node->id;
     my $sql = "select * from arc where obj=?";
-
-    $arclim ||= [];
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
-    my $extralim = 0;
 
     if( $active and not $inactive )
     {
@@ -5355,47 +5306,59 @@ sub initiate_rev
 	return if $_[0]->{'initiated_rev_inactive'};
 	$sql .= " and active is false";
     }
-
-    if( @$arclim == 1 )
+    elsif( $active and $inactive )
     {
-	my $lim = $arclim->[0];
-
-	if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+	if( $_[0]->{'initiated_rev'} and
+	    $_[0]->{'initiated_rev_inactive'} )
 	{
-	    $sql .= " and indirect is false";
-	    $extralim++;
-	}
-
-	if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
-	{
-	    $sql .= " and indirect is true";
-	    $extralim++;
-	}
-
-	if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-	{
-	    $sql .= " and implicit is false";
-	    $extralim++;
-	}
-
-	if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
-	{
-	    $sql .= " and implicit is true";
-	    $extralim++;
-	}
-
-	if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
-	{
-	    $sql .= " and submitted is true";
-	    $extralim++;
-	}
-
-	if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
-	{
-	    $sql .= " and submitted is false";
-	    $extralim++;
+	    return;
 	}
     }
+
+    # Here we have to make an intelligent guess if it's faster to
+    # initiate all the arcs or just the ones that are asked for.
+
+    my $extralim = 0;
+#    if( @$arclim == 1 )
+#    {
+#	my $lim = $arclim->[0];
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+#	{
+#	    $sql .= " and indirect is false";
+#	    $extralim++;
+#	}
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
+#	{
+#	    $sql .= " and indirect is true";
+#	    $extralim++;
+#	}
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+#	{
+#	    $sql .= " and implicit is false";
+#	    $extralim++;
+#	}
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
+#	{
+#	    $sql .= " and implicit is true";
+#	    $extralim++;
+#	}
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
+#	{
+#	    $sql .= " and submitted is true";
+#	    $extralim++;
+#	}
+#
+#	if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
+#	{
+#	    $sql .= " and submitted is false";
+#	    $extralim++;
+#	}
+#    }
 
     my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
     $sth_init_subj->execute($nid);
@@ -5447,9 +5410,16 @@ Returns undef if no values for this prop
 
 sub initiate_prop
 {
-    my( $node, $name, $proplim, $arclim ) = @_;
+    my $node = shift;
+    my $name = shift;
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
 
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource::Compatible' )
+    {
+	confess "Not a resource: ".datadump($node);
+    }
 
     if( $inactive and not $active )
     {
@@ -5540,12 +5510,12 @@ sub initiate_prop
 	      if debug > 4;
 	    if( $stmt->{'subj'} == $nid )
 	    {
-		$node->populate_rel( $stmt );
+		$node->populate_rel( $stmt, $args );
 	    }
 	    else
 	    {
 		my $subnode = $node->get_by_id( $stmt->{'subj'} );
-		$subnode->populate_rel( $stmt );
+		$subnode->populate_rel( $stmt, $args );
 		push @extra_nodes_initiated, $subnode;
 	    }
 	}
@@ -5597,9 +5567,11 @@ TODO: Use custom DBI fetchrow
 
 sub initiate_revprop
 {
-    my( $node, $name, $proplim, $arclim) = @_;
-
-    my( $active, $inactive ) = Rit::Base::Arc->lims_incl_act($arclim);
+    my $node = shift;
+    my $name = shift;
+    my $proplim = shift;
+    my( $args, $arclim ) = parse_propargs(@_);
+    my( $active, $inactive ) = $arclim->incl_act;
     my $extralim = 0;
 
     if( $inactive and not $active )
@@ -5660,52 +5632,51 @@ sub initiate_revprop
 	{
 	    $sql .= " and active is false";
 	}
-
-	if( $active and not $inactive )
+	elsif( $active and not $inactive )
 	{
 	    $sql .= " and active is true";
 	}
 
-	if( @$arclim == 1 )
-	{
-	    my $lim = $arclim->[0];
-
-	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
-	    {
-		$sql .= " and indirect is false";
-		$extralim++;
-	    }
-
-	    if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
-	    {
-		$sql .= " and indirect is true";
-		$extralim++;
-	    }
-
-	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-	    {
-		$sql .= " and implicit is false";
-		$extralim++;
-	    }
-
-	    if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
-	    {
-		$sql .= " and implicit is true";
-		$extralim++;
-	    }
-
-	    if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
-	    {
-		$sql .= " and submitted is true";
-		$extralim++;
-	    }
-
-	    if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
-	    {
-		$sql .= " and submitted is false";
-		$extralim++;
-	    }
-	}
+#	if( @$arclim == 1 )
+#	{
+#	    my $lim = $arclim->[0];
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
+#	    {
+#		$sql .= " and indirect is false";
+#		$extralim++;
+#	    }
+#
+#	    if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
+#	    {
+#		$sql .= " and indirect is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
+#	    {
+#		$sql .= " and implicit is false";
+#		$extralim++;
+#	    }
+#
+#	    if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
+#	    {
+#		$sql .= " and implicit is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
+#	    {
+#		$sql .= " and submitted is true";
+#		$extralim++;
+#	    }
+#
+#	    if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
+#	    {
+#		$sql .= " and submitted is false";
+#		$extralim++;
+#	    }
+#	}
 
 	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_obj_pred->execute( $node->id, $pred_id );
@@ -5726,7 +5697,7 @@ sub initiate_revprop
 
 	foreach my $stmt ( @$stmts )
 	{
-	    $node->populate_rev( $stmt, undef );
+	    $node->populate_rev( $stmt, $args );
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
@@ -5770,7 +5741,7 @@ Insert data from a rel record into node
 
 sub populate_rel
 {
-    my( $node, $stmt, $nocount ) = @_;
+    my( $node, $stmt ) = @_;
 
     my $class = ref($node);
 
@@ -5802,7 +5773,7 @@ Insert data from a rev record into node
 
 sub populate_rev
 {
-    my( $node, $stmt, $nocount ) = @_;
+    my( $node, $stmt ) = @_;
 
     my $class = ref($node);
 
@@ -5836,7 +5807,7 @@ sub populate_rev
 
 =head2 handle_query_arc
 
-  $n->handle_query_arc( $param, $res )
+  $n->handle_query_arc( $param, \%args )
 
 Returns the number of changes
 
@@ -5844,21 +5815,24 @@ Returns the number of changes
 
 sub handle_query_arc
 {
-    my( $node, $param, $res ) = @_;
+    my( $node, $param, $args ) = @_;
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
-	$node->handle_query_arc_value( $param, $value, $res );
+	$node->handle_query_arc_value( $param, $value, $args );
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_arc_value
 
-  $n->handle_query_arc_value( $param, $value, $res )
+  $n->handle_query_arc_value( $param, $value, \%args )
 
 Returns the number of changes
 
@@ -5866,11 +5840,13 @@ Returns the number of changes
 
 sub handle_query_arc_value
 {
-    my( $node, $param, $value, $res ) = @_;
-
-    confess "implement this";
+    my( $node, $param, $value, $args ) = @_;
 
     die "missing value" unless defined $value;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $page = $req->page;
@@ -5940,22 +5916,22 @@ sub handle_query_arc_value
 	my $arcs;
 	if( $rev )
 	{
-	    $arcs = $node->revarc_list($pred_name)->explicit;
+	    $arcs = $node->revarc_list($pred_name,aais($args,'explicit'));
 	}
 	else
 	{
-	    $arcs = $node->arc_list($pred_name)->explicit;
+	    $arcs = $node->arc_list($pred_name,aais($args,'explicit'));
 	}
 
 	if( $type and  $arcs->size )
 	{
 	    if( $rev )
 	    {
-		$arcs = $arcs->find( subj => { is => $type } );
+		$arcs = $arcs->find({ subj => { is => $type } }, $args);
 	    }
 	    else
 	    {
-		$arcs = $arcs->find( obj => { is => $type } );
+		$arcs = $arcs->find({ obj => { is => $type } }, $args);
 	    }
 	}
 
@@ -5963,11 +5939,11 @@ sub handle_query_arc_value
 	{
 	    if( $rev )
 	    {
-		$arcs = $arcs->find( subj => { scof => $type } );
+		$arcs = $arcs->find({ subj => { scof => $type } }, $args);
 	    }
 	    else
 	    {
-		$arcs = $arcs->find( obj => { scof => $type } );
+		$arcs = $arcs->find({ obj => { scof => $type } }, $args);
 	    }
 	}
 
@@ -5983,7 +5959,7 @@ sub handle_query_arc_value
 	    # TODO: Should remove extra arcs
 	    foreach my $arc ( @arclist )
 	    {
-		$arc->remove( $res );
+		$arc->remove( $args );
 	    }
 	}
 	elsif( $arcs->size ) # Replace this
@@ -6007,14 +5983,14 @@ sub handle_query_arc_value
 	{
 	    debug 3, "  Reversing arc update";
 
-	    my $subjs = Rit::Base::Resource->find_by_label( $value );
+	    my $subjs = Rit::Base::Resource->find_by_label( $value, $args );
 	    if( $type )
 	    {
-		$subjs = $subjs->find( is => $type );
+		$subjs = $subjs->find({ is => $type }, $args);
 	    }
 	    if( $scof )
 	    {
-		$subjs = $subjs->find( scof => $scof );
+		$subjs = $subjs->find({ scof => $scof }, $args);
 	    }
 	    $subjs->materialize_all;
 
@@ -6037,7 +6013,7 @@ sub handle_query_arc_value
 	elsif( not $arc_id and not length $value )
 	{
 	    # nothing changed
-	    return $res->changes;
+	    return $res->changes - $changes;
 	}
 	else
 	{
@@ -6050,9 +6026,9 @@ sub handle_query_arc_value
     {
 	debug 3, "    Set value to a $type with $desig $value";
 	$value = Rit::Base::Resource->find_one({
-	    $desig => $value,
-	    'is' => $type,
-	})->id;
+						$desig => $value,
+						'is' => $type,
+					       }, $args )->id;
 	# Convert back to obj later. (We expect id)
     }
 
@@ -6074,7 +6050,7 @@ sub handle_query_arc_value
 
 	if( $arc->pred->id != $pred_id )
 	{
-	    $arc->set_pred( $pred_id, $res );
+	    $arc->set_pred( $pred_id, $args );
 	}
 
 	my $present_value = $arc->value;
@@ -6090,7 +6066,7 @@ sub handle_query_arc_value
 		}
 		else
 		{
-		    my $list = Rit::Base::Resource->find_by_label( $value );
+		    my $list = Rit::Base::Resource->find_by_label( $value, $args );
 
 		    my $props = {};
 		    if( $type )
@@ -6107,7 +6083,7 @@ sub handle_query_arc_value
 		}
 
 
-		$arc = $arc->set_value( $value, $res );
+		$arc = $arc->set_value( $value, $args );
 	    }
 	    else
 	    {
@@ -6118,7 +6094,7 @@ sub handle_query_arc_value
 	{
 	    if( length $value )
 	    {
-		$arc = $arc->set_value( $value, $res );
+		$arc = $arc->set_value( $value, $args );
 	    }
 	    else
 	    {
@@ -6166,18 +6142,18 @@ sub handle_query_arc_value
 
 		foreach my $val ( @values )
 		{
-		    my $objs = Rit::Base::Resource->find_by_label($val);
+		    my $objs = Rit::Base::Resource->find_by_label($val, $args);
 
 		    unless( $rev )
 		    {
 			if( $type )
 			{
-			    $objs = $objs->find( is => $type );
+			    $objs = $objs->find({ is => $type }, $args);
 			}
 
 			if( $scof )
 			{
-			    $objs = $objs->find( scof => $scof );
+			    $objs = $objs->find({ scof => $scof }, $args);
 			}
 		    }
 
@@ -6218,7 +6194,7 @@ sub handle_query_arc_value
 			      run => 'next_step',
 			     };
 			     my $link = Para::Frame::Widget::forward( $label, $uri, $args );
-			     my $tstr = $item->list('is', '', 'direct')->name->loc;
+			     my $tstr = $item->list('is', {}, aais($args,'direct'))->name->loc;
 			     my $view = Para::Frame::Widget::jump('visa',
 								  $item->form_url->as_string,
 								 );
@@ -6261,7 +6237,7 @@ sub handle_query_arc_value
 			      subj_id => $id,
 			      pred_id => $pred_id,
 			      value   => $val,
-			     }, $res );
+			     }, $args );
 
 		    # Store row info
 		    if( $rowno )
@@ -6281,19 +6257,19 @@ sub handle_query_arc_value
 			  subj_id => $id,
 			  pred_id => $pred_id,
 			  value   => $value,
-			 }, $res );
+			 }, $args );
 	    }
 	}
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_prop
 
-  $n->handle_query_prop( $param, $res )
+  $n->handle_query_prop( $param, \%args )
 
 Return number of changes
 
@@ -6301,21 +6277,25 @@ Return number of changes
 
 sub handle_query_prop
 {
-    my( $node, $param, $res ) = @_;
+    my( $node, $param, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
-	$node->handle_query_prop_value( $param, $value, $res );
+	$node->handle_query_prop_value( $param, $value, $args );
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_prop_value
 
-  $n->handle_query_prop_value( $param, $value, $res )
+  $n->handle_query_prop_value( $param, $value, \%args )
 
 Return number of changes
 
@@ -6325,10 +6305,13 @@ TODO: translate this to a call to handle_query_arc
 
 sub handle_query_prop_value
 {
-    my( $node, $param, $value, $res ) = @_;
+    my( $node, $param, $value, $args ) = @_;
 
     die "missing value" unless defined $value;
 
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     $param =~ /^prop_(.*?)(?:__(.*))?$/;
     my $pred_name = $1;
@@ -6339,6 +6322,7 @@ sub handle_query_prop_value
     my $site = $page->site;
     my $q = $req->q;
     my $id = $node->id;
+
 
     ########################################
     # Authenticate change
@@ -6356,11 +6340,11 @@ sub handle_query_prop_value
 	my( $objs );
 	if( $obj_pred_name )
 	{
-	    $objs = Rit::Base::Resource->find({$obj_pred_name => $value});
+	    $objs = Rit::Base::Resource->find({$obj_pred_name => $value}, $args);
 	}
 	else
 	{
-	    $objs = Rit::Base::Resource->find_by_label($value);
+	    $objs = Rit::Base::Resource->find_by_label($value, $args);
 	}
 
 	if( $objs->size > 1 )
@@ -6379,7 +6363,7 @@ sub handle_query_prop_value
 	     {
 		 my( $node ) = @_;
 		 # TODO: create cusom label
-		 my $label = $node->sysdesig;
+		 my $label = $node->sysdesig($args);
 		 my $args =
 		 {
 		  step_replace_params => $param,
@@ -6410,19 +6394,19 @@ sub handle_query_prop_value
 	    subj_id => $id,
 	    pred_id => $pred_id,
 	    value   => $objs->get_first_nos,
-	}, $res );
+	}, $args );
 
 	$q->delete( $param ); # We will not add the same value twice
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_row
 
-  $n->handle_query_row( $param, $res )
+  $n->handle_query_row( $param, \%args )
 
 Return number of changes
 
@@ -6430,21 +6414,25 @@ Return number of changes
 
 sub handle_query_row
 {
-    my( $node, $param, $res ) = @_;
+    my( $node, $param, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
-	$node->handle_query_row_value( $param, $value, $res );
+	$node->handle_query_row_value( $param, $value, $args );
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_row_value
 
-  $n->handle_query_row_value( $param, $value, $res )
+  $n->handle_query_row_value( $param, $value, \%args )
 
 Return number of changes
 
@@ -6456,9 +6444,13 @@ inactive.
 
 sub handle_query_row_value
 {
-    my( $node, $param, $value, $res ) = @_;
+    my( $node, $param, $value, $args ) = @_;
 
     die "missing value" unless defined $value;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -6540,10 +6532,13 @@ sub handle_query_row_value
 
     eval
     {
+	# Find with arclim. Set if not found, as new
 	my $arc = Rit::Base::Arc->find_set(
-					   {subj_id => $subj_id,
+					   {
+					    subj_id => $subj_id,
 					    pred_id => $pred_id,
-					   }, undef, $res );
+					   },
+					   $args );
 
 	if( not length $value )
 	{
@@ -6551,7 +6546,7 @@ sub handle_query_row_value
 	}
 	else
 	{
-	    $arc = $arc->set_value( $value, $res );
+	    $arc = $arc->set_value( $value, $args );
 	    $q->delete("check_$param");
 
 	    # Remove the subject (that is an arc) from deathrow
@@ -6569,14 +6564,15 @@ sub handle_query_row_value
 #	    }
 	die $@; # don't bother
     }
-    return $res->changes;
+
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_check_row
 
-  $n->handle_query_check_row( $param, $res )
+  $n->handle_query_check_row( $param, \%args )
 
 Return number of changes
 
@@ -6584,7 +6580,11 @@ Return number of changes
 
 sub handle_query_check_row
 {
-    my( $node, $param, $res ) = @_;
+    my( $node, $param, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -6617,7 +6617,7 @@ sub handle_query_check_row
 	if( not $subj_id )
 	{
 	    # No arc present
-	    return $res->changes;
+	    return $res->changes - $changes;
 	}
 	else
 	{
@@ -6637,21 +6637,25 @@ sub handle_query_check_row
     #
     $node->authenticate_update( $pred );
 
-    my $arcs = Rit::Base::Arc->find({subj_id => $subj_id, pred_id => $pred_id})->active;
+    # Find with arclim. Set if not found, as new
+    my $arcs = Rit::Base::Arc->find({
+				     subj_id => $subj_id,
+				     pred_id => $pred_id,
+				    }, $args );
     # Remove found arcs
     foreach my $arc ( $arcs->as_array )
     {
-	$arc->remove( $res );
+	$arc->remove( $args );
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_check_arc
 
-  $n->handle_query_check_arc( $param, $arc_id, $res )
+  $n->handle_query_check_arc( $param, $arc_id, \%args )
 
 Return number of changes
 
@@ -6659,8 +6663,10 @@ Return number of changes
 
 sub handle_query_check_arc
 {
-    my( $node, $param, $arc_id, $res ) = @_;
+    my( $node, $param, $arc_id, $args ) = @_;
 
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
     $res->add_to_deathrow( getarc($arc_id) );
 
     return 0;
@@ -6670,7 +6676,7 @@ sub handle_query_check_arc
 
 =head2 handle_query_check_node
 
-  $n->handle_query_check_node( $param, $node_id, $res )
+  $n->handle_query_check_node( $param, $node_id, \%args )
 
 Return number of changes
 
@@ -6678,33 +6684,41 @@ Return number of changes
 
 sub handle_query_check_node
 {
-    my( $this, $param, $node_id, $res ) = @_;
+    my( $this, $param, $node_id, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
 
-    unless( grep( /^node_${node_id}/, $q->param ) )
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
+
+    unless( grep { /^node_$node_id/ } $q->param )
     {
 	my $node = Rit::Base::Resource->get( $node_id );
 	debug "Removing node: ${node_id}";
-	return $node->remove( $res );
+	return $node->remove( $args );
     }
-    debug "Saving node: ${node_id}. grep: ". grep( /^node_${node_id}/, $q->param );
+    debug "Saving node: ${node_id}. grep: ". grep( /^node_$node_id/, $q->param );
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
 #########################################################################
 
 =head2 handle_query_check_prop
 
-  $n->handle_query_check_prop( $param, $pred_in, $res )
+  $n->handle_query_check_prop( $param, $pred_in, \%args )
 
 =cut
 
 sub handle_query_check_prop
 {
-    my( $node, $param, $pred_in, $res ) = @_;
+    my( $node, $param, $pred_in, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     my $id = $node->id;
     my $req = $Para::Frame::REQ;
@@ -6723,7 +6737,7 @@ sub handle_query_check_prop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( $node->list($pred_name)->as_array )
+    foreach my $val ( $node->list($pred_name, {}, $args)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -6751,11 +6765,11 @@ sub handle_query_check_prop
 		subj_id => $id,
 		pred_id => $pred_id,
 		value   => $value,
-	    });
+	    }, $args );
 
 	    foreach my $arc ( $arcs->as_array )
 	    {
-		$arc->remove( $res );
+		$arc->remove( $args );
 	    }
 	}
 	# Add rel
@@ -6765,59 +6779,19 @@ sub handle_query_check_prop
 		subj_id => $id,
 		pred_id => $pred_id,
 		value   => $value,
-	    }, $res );
+	    }, $args );
 	}
     }
 
-    return $res->changes;
+    return $res->changes - $changes;
 }
 
-
-sub handle_query_newsubjs
-{
-    my( $q, $newsubj_params, $res ) = @_;
-
-    my %newsubj;
-    my %keysubjs;
-
-    foreach my $param (@$newsubj_params)
-    {
-	my $arg = parse_form_field_prop($param);
-
-	#debug "Newsubj param: $param: ". $q->param($param);
-	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
-	{
-	    next unless $q->param( $param );
-	    my $main = $1;
-	    my $no = $2;
-
-	    $keysubjs{$no} = 'True'
-	      if( $main );
-	    debug " adding $no"
-	      if( $main );
-
-	    $newsubj{$no} = {} unless $newsubj{$no};
-	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
-
-	    # Cleaning up newsubj-params to get a clean form...
-	    $q->delete($param);
-	}
-    }
-
-    foreach my $ns (keys %keysubjs)
-    {
-	debug "Newsubj creating a node: ". datadump $newsubj{$ns};
-	Rit::Base::Resource->create( $newsubj{$ns}, $res );
-    }
-
-    return $res->changes;
-}
 
 #########################################################################
 
 =head2 handle_query_check_revprop
 
-  $n->handle_query_check_revprop( $param, $pred_name, $res )
+  $n->handle_query_check_revprop( $param, $pred_name, \%args )
 
 Return number of changes
 
@@ -6825,7 +6799,11 @@ Return number of changes
 
 sub handle_query_check_revprop
 {
-    my( $node, $param, $pred_name, $res ) = @_;
+    my( $node, $param, $pred_name, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
 
     my $id = $node->id;
     my $req = $Para::Frame::REQ;
@@ -6842,7 +6820,7 @@ sub handle_query_check_revprop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( $node->revlist($pred_name)->as_array )
+    foreach my $val ( $node->revlist($pred_name,{},$args)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -6869,11 +6847,11 @@ sub handle_query_check_revprop
 		subj_id => $val_key,
 		pred_id => $pred_id,
 		obj_id  => $id,
-	    });
+	    }, $args);
 
 	    foreach my $arc ( $arcs->as_array )
 	    {
-		$arc->remove( $res );
+		$arc->remove( $args );
 	    }
 	}
 	# Add rel
@@ -6883,16 +6861,19 @@ sub handle_query_check_revprop
 		subj_id => $val_key,
 		pred_id => $pred_id,
 		value   => $id,
-	    }, $res );
+	    }, $args );
 	}
     }
-    return $res->changes;
+
+    return $res->changes - $changes;
 }
 
 
 #########################################################################
 
 =head2 authenticate_update
+
+  $n->authenticate_update( $pred )
 
 =cut
 
@@ -6926,6 +6907,8 @@ sub authenticate_update
 #########################################################################
 
 =head2 resolve_obj_id
+
+Same as get_by_label, but returns the node id
 
 =cut
 
@@ -6967,6 +6950,168 @@ sub set_arc
 =head1 Functions
 
 =cut
+
+#########################################################################
+
+=head2 parse_propargs
+
+  parse_propargs()
+
+  parse_propargs( \%args )
+
+  parse_propargs( $arclim )
+
+
+See the respektive method for examples. The respective method usually
+starts with a C<$pred> argument followed by a C<\%props> or
+C<\@values> argument.  We will describe the syntax based on the method
+C<$n-E<gt>list( $pred, @propargs )>.
+
+C<$value> is anything that's not a hash- or arrayref and that's the
+only (true) argument. It will return those nodes/arcs with a matching
+value. For L</list>, it will return the value of the node C<$n>
+property C<$pred> that equals C<$value>. That value may have to be
+converted to the right object type before a vomparsion.
+
+C<\@values> matches any value of the list. For example,
+C<$nE<gt>list($pred, [$alt1, $alt2])> will return a list with zero or
+more of the nodes C<$alt1> and C<$alt2> depending on if C<$n> has
+those properties with pred C<$pred>.
+
+C<\%props> holds key/value pairs of properties that the matches should
+have. L<Rit::Base::List/find> is used to filter out the nodes/arcs
+having those properties. For example, C<$n-E<gt>list('part_of', { name
+=E<gt> 'Turk' }> will give you the nodes that C<$n> are C<part_of>
+that has the C<name> C<Turk>.
+
+C<\%args> holds any extra arguments to the method as name/value
+pairs. The C<arclim> argument is always parsed and converted to a
+L<Rit::Base::Arc::Lim> object. This will modify the args variable in
+cases when arclim isn't already a valid object.
+
+C<$arclim> is given, in the right position, as anything other than a
+hashref.  It will be given to L<Rit::Base::Arc::Lim/parse>, that takes
+many alternative forms, including arrayrefs and scalar strings.
+C<$arclim> may instead be given as a named parameter in C<\%args>.
+The given C<$arclim> will be placed in a constructed C<$args> and
+returned.
+
+C<0> represents here a false argument, including undef or no
+argument. This will generate an empty C<\%props>.
+
+
+Returns: C<$arg>, C<$arclim>
+
+The returned C<arclim> is also found as the arclim named parameter in
+C<arg>, so that's just syntactic sugar. With no input, the return will
+be the three values C<{}, {}, []>, there C<[]> is an empty
+L<Rit::Base::Arc::Lim> object (that can be generated by parsing
+C<[]>).
+
+=cut
+
+sub parse_propargs
+{
+    my( $arg ) = @_;
+
+    $arg ||= {};
+    my $arclim;
+
+    if( ref $arg and ref $arg eq 'HASH' )
+    {
+	$arclim = $arg->{'arclim'};
+    }
+    else
+    {
+	$arclim = $arg;
+	$arg = { arclim => $arclim };
+    }
+
+    unless( UNIVERSAL::isa( $arclim, 'Rit::Base::Arc::Lim') )
+    {
+	$arg->{'arclim'} = $arclim =
+	  Rit::Base::Arc::Lim->parse( $arclim );
+    }
+
+    return( $arg, $arclim );
+}
+
+#########################################################################
+
+=head2 handle_query_newsubjs
+
+  handle_query_newsubjs( $q, $param, \%args )
+
+Return number of changes
+
+=cut
+
+sub handle_query_newsubjs
+{
+    my( $q, $newsubj_params, $args ) = @_;
+
+    $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
+    my $changes = $res->changes;
+
+    my %newsubj;
+    my %keysubjs;
+
+    foreach my $param (@$newsubj_params)
+    {
+	my $arg = parse_form_field_prop($param);
+
+	#debug "Newsubj param: $param: ". $q->param($param);
+	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
+	{
+	    next unless $q->param( $param );
+	    my $main = $1;
+	    my $no = $2;
+
+	    $keysubjs{$no} = 'True'
+	      if( $main );
+	    debug " adding $no"
+	      if( $main );
+
+	    $newsubj{$no} = {} unless $newsubj{$no};
+	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
+
+	    # Cleaning up newsubj-params to get a clean form...
+	    $q->delete($param);
+	}
+    }
+
+    foreach my $ns (keys %keysubjs)
+    {
+	debug "Newsubj creating a node: ". datadump $newsubj{$ns};
+	Rit::Base::Resource->create( $newsubj{$ns}, $args );
+    }
+
+    return $res->changes - $changes;
+}
+
+#########################################################################
+
+=head2 aais
+
+  aais( \%args, $limit )
+
+Stands for C<args_arclim_intersect>.
+
+Returns: A new clone of args hashref, with a clone of the arclim
+modified with L<Rit::Base::Arc::Lim/add_intersect>
+
+=cut
+
+sub aais
+{
+    my( $args, $arclim ) = parse_propargs(shift);
+    my $lim = shift;
+
+    my $arclim_new = $arclim->clone->add_intersect($lim);
+
+    return({%$args, arclim=>$arclim_new});
+}
 
 #########################################################################
 
@@ -7026,7 +7171,7 @@ AUTOLOAD
     # Set arclim
     #
     #                Compiles this regexp only once
-    if( $method =~ s/_(@{[join '|', keys %Rit::Base::Arc::LIM]})$//o )
+    if( $method =~ s/_(@{[join '|', Rit::Base::Arc::Lim->names]})$//o )
     {
 	# Arclims given in this way will override param $arclim
 	$_[1] = $1;
