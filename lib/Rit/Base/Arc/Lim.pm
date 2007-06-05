@@ -34,6 +34,8 @@ use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 			   package_to_module );
 
 use Rit::Base::Resource;
+use Rit::Base::Utils qw( query_desig );
+
 
 our %LIM =
   (
@@ -96,6 +98,16 @@ sub parse
     unless( ref $arclim )
     {
 	$arclim = [$arclim];
+    }
+
+    if( ref $arclim eq 'Rit::Base::Arc::Lim' )
+    {
+	return $arclim;
+    }
+
+    unless( ref $arclim eq 'ARRAY' )
+    {
+	confess "Invalid arclim: ".query_desig($arclim);
     }
 
     foreach(@$arclim)
