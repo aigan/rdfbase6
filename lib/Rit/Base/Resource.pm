@@ -2088,11 +2088,11 @@ Examples:
 See if node C<$n> has the name or short name 'olle' or a name (or short
 name) that is an alias.
 
-  $n->has_value( ['name','name_short'], ['olle', {is => 'alias'}] )
+#  $n->has_value( ['name','name_short'], ['olle', {is => 'alias'}] )
 
 See if node C<$n> has the name beginning with 'oll' or 'kall'.
 
-  $n->has_beginning( 'name', ['olle', 'kall'] )
+#  $n->has_beginning( 'name', ['olle', 'kall'] )
 
 Returns:
 
@@ -2108,7 +2108,7 @@ See also L</arc_list> with C<pred> and C<value> params.
 
 TODO: Scalars (i.e strings) with properties not yet supported.
 
-Consider $n->has_value('some_pred', is_undef)
+Consider $n->has_value({'some_pred'=>is_undef})
 
 =cut
 

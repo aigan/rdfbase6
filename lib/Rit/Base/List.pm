@@ -327,7 +327,8 @@ sub find
 
     if( $DEBUG > 1 )
     {
-	debug query_desig($tmpl);
+	debug "QUERY ".query_desig($tmpl);
+	debug  "ON LIST ".$l->desig;
     }
 
 
@@ -338,11 +339,13 @@ sub find
     # template.  Returned those that matches the template.
 
     my @newlist;
+    my $cnt = 0;
 
   NODE:
     foreach my $node ( $l->nodes )
     {
-	debug "Resource ".$node->id if $DEBUG;
+	$cnt ++;
+	debug "Resource $cnt: ".$node->id if $DEBUG;
 
 	# Check each prop in the template.  All must match.  One
 	# failed match and this $node in not placed in @newlist
@@ -454,10 +457,10 @@ sub find
 		# Failes test if arc doesn't meets the arclim
 		next NODE unless $node->meets_arclim( $arclim );
 
-		debug "node is an arc" if $DEBUG;
-		if( $pred =~ /^(obj|value)$/ )
+		debug "  Node is an arc" if $DEBUG;
+		if( ($pred eq 'obj') or ($pred eq 'value') )
 		{
-		    debug "  pred is value" if $DEBUG;
+		    debug "  Pred is value" if $DEBUG;
 		    my $value = $node->value; # Since it's a pred
 		    next PRED if $target_value eq '*'; # match all
 		    if( ref $value )
@@ -476,15 +479,13 @@ sub find
 			    {
 				next PRED; # Passed test
 			    }
-			    else
-			    {
-				next NODE; # Failed test
-			    }
 			}
 			else
 			{
 			    confess "Matchtype not implemented: $match";
 			}
+
+			next NODE; # Failed test
 		    }
 		    else
 		    {
@@ -495,13 +496,26 @@ sub find
 		{
 		    debug "  pred is subj" if $DEBUG;
 		    my $subj = $node->subj;
-		    next PRED if $subj->equals( $target_value, $args );
+		    if( $subj->equals( $target_value, $args ) )
+		    {
+			next PRED; # Passed test
+		    }
+		    else
+		    {
+			next NODE; # Failed test
+		    }
 		}
 		else
 		{
 		    debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
 		}
 	    } #### END ARCS
+	    elsif( ($pred eq 'subj') or ($pred eq 'obj') )
+	    {
+		debug "QUERY ".query_desig($tmpl);
+		debug  "ON LIST ".$l->desig;
+		confess "Call for $pred on a nonarc ".$node->desig;
+	    }
 
 
 	    if( $pred =~ /^count_pred_(.*)/ )
@@ -572,6 +586,7 @@ sub find
 		}
 		else
 		{
+#		    debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
 		    next PRED # Check next if this test pass
 			if $node->has_value({$pred=>$target_value}, $args );
 		}
@@ -650,7 +665,8 @@ sub find
 	debug "  Add node to list" if $DEBUG;
 	push @newlist, $node;
     }
-    debug "Return ".(scalar @newlist)." results" if $DEBUG;
+    debug "Return ".(scalar @newlist)." results for ".
+      query_desig($tmpl) if $DEBUG;
 
     return Rit::Base::List->new(\@newlist);
 }
