@@ -548,10 +548,7 @@ sub create
 
     $arc->schedule_check_create;
 
-    if( $res )
-    {
-	$res->{'changes'} ++;
-    }
+    $res->changes_add;
 
     cache_update;
 
@@ -2241,58 +2238,6 @@ sub meets_arclim
 
 #######################################################################
 
-=head2 limflag
-
-  $a->limflag( $label )
-
-  $a->limflag( $label1, $label2, ... )
-
-Supported lables are:
-
-  active
-  inactive
-
-  direct
-  indirect
-
-  explicit
-  implicit
-
-  disregarded
-  not_disregarded
-
-  submitted
-  not_submitted
-
-  new
-  not_new
-
-  old
-  not_old
-
-  created_by_me
-
-Returns the corresponding limit as a number to be used for
-arclim. Additional limits are added together.
-
-=cut
-
-sub limflag
-{
-    my( $arc ) = shift;
-
-    my $val = 0;
-    while( pop )
-    {
-	$val += ($Rit::Base::Arc::Lim::LIM{ $_ }||
-		 (die "Flag $_ not recognized"));
-    }
-    return  $val;
-}
-
-
-#######################################################################
-
 =head2 remove
 
   $a->remove( \%args )
@@ -2701,10 +2646,8 @@ sub set_value
 
 	debug "Updated arc id $arc_id: ".$arc->desig."\n";
 
-	if( $res )
-	{
-	    $res->{'changes'} ++;
-	}
+	$res->changes_add;
+	$res->add_newarc($arc);
     }
     else
     {
@@ -2797,6 +2740,47 @@ sub submit
 
     $arc->{'arc_updated'} = $updated;
     $arc->{'submitted'} = 1;
+
+    $arc->initiate_cache;
+    cache_update;
+
+    return 1;
+}
+
+#######################################################################
+
+=head2 unsubmit
+
+  $a->unsubmit
+
+Submits the arc
+
+Returns: the number of changes
+
+Exceptions: validation
+
+=cut
+
+sub unsubmit
+{
+    my( $arc ) = @_;
+
+    if( $arc->unsubmitted )
+    {
+	throw('validation', "Arc is not submitted");
+    }
+
+    my $dbix = $Rit::dbix;
+
+    my $updated = now();
+    my $date_db = $dbix->format_datetime($updated);
+
+    my $st = "update arc set updated=?, submitted='false' where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $arc->id );
+
+    $arc->{'arc_updated'} = $updated;
+    $arc->{'submitted'} = 0;
 
     $arc->initiate_cache;
     cache_update;
@@ -3658,7 +3642,7 @@ sub validate_check
 
 =head2 create_check
 
-  $a->create_check
+  $a->create_check( \%args )
 
 Creates new arcs infered from this arc.
 
@@ -3670,7 +3654,7 @@ Returns: ---
 
 sub create_check
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
 
     my $pred      = $arc->pred;
     my $DEBUG = 0;
@@ -3693,7 +3677,7 @@ sub create_check
 
     # Special creation rules
     #
-    my $pred_name = $arc->pred->name->plain;
+    my $pred_name = $arc->pred->plain;
     my $subj = $arc->subj;
 
     if( $pred_name eq 'is' )
@@ -3701,7 +3685,7 @@ sub create_check
 	$subj->rebless;
     }
 
-    $subj->on_arc_add($arc, $pred_name);
+    $subj->on_arc_add($arc, $pred_name, $args);
  }
 
 
@@ -3710,7 +3694,7 @@ sub create_check
 
 =head2 remove_check
 
-  $a->remove_check
+  $a->remove_check( \%args )
 
 Removes implicit arcs infered from this arc
 
@@ -3722,7 +3706,7 @@ Returns: ---
 
 sub remove_check
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
 
     my $DEBUG = 0;
 
@@ -3757,7 +3741,7 @@ sub remove_check
 
     # Special remove rules
     #
-    my $pred_name = $pred->name->plain;
+    my $pred_name = $pred->plain;
     my $subj = $arc->subj;
 
     if( $pred_name eq 'is' )
@@ -3765,7 +3749,7 @@ sub remove_check
 	$subj->rebless;
     }
 
-    $subj->on_arc_del($arc, $pred_name);
+    $subj->on_arc_del($arc, $pred_name, $args);
 
     $arc->{'disregard'} --;
     $arc->{'in_remove_check'} --;

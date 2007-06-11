@@ -9,6 +9,7 @@
 [% DEFAULT arc_id = q.param('id') %]
 [% id = arc_id %]
 [% arc = get(arc_id) %]
+[% node = arc %]
 [% hidden('id', arc.subj.id) %]
 [% hidden('arc_id', arc.id)  %]
 
@@ -17,16 +18,19 @@
 <p>[% PROCESS node_menu.tt %]</p>
 
 [% IF arc.inactive %]
-<p>This arc is <strong>inactive</strong>
-   [% IF arc.submitted %]
-      and <strong>submitted</strong>
+   [% IF arc.deactivated %]
+      <p>This arc is <strong>old</strong>.</p>
    [% ELSE %]
-      and <strong>not yet submitted</strong>
+   <p>This arc is <strong>inactive</strong>
+      [% IF arc.submitted %]
+         and <strong>submitted</strong>
+      [% ELSE %]
+         and <strong>not yet submitted</strong>
+      [% END %]
+   </p>
    [% END %]
-</p>
 [% ELSE %]
-<p>This is an <strong>active</strong> version. Changes will create a
-new arc.</p>
+<p>This is an <strong>active</strong> version.</p>
 [% END %]
 
 <table class='admin'>
@@ -151,6 +155,8 @@ new arc.</p>
 [% IF arc.inactive %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
+      [% go("Unsubmit", me, "arc_unsubmit") %]
+   [% ELSIF arc.deactivated %]
    [% ELSE %]
       [% go("Submit", me, "arc_submit") %]
    [% END %]

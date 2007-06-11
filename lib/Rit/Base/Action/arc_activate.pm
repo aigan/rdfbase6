@@ -33,7 +33,7 @@ sub handler
 
     if( $arc->activate )
     {
-	return "Activated arc $desig";
+	return "Activated arc";
     }
 }
 

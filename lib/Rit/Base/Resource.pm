@@ -6,7 +6,7 @@ package Rit::Base::Resource;
 #   Ritbase Resource class
 #
 # AUTHOR
-#   Jonas Liljegren   <jonas@paranormal.se>
+#   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
 #   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
@@ -2613,7 +2613,7 @@ sub loc
 
   $n->arc_list( $predname, $proplim )
 
-  $n->arc_list( $predname, $proplim, $arclim )
+  $n->arc_list( $predname, $proplim, $args )
 
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
 subj and C<$pred_name> as predicate.
@@ -2751,7 +2751,7 @@ sub arc_list
 
   $n->revarc_list( $predname, $proplim )
 
-  $n->revarc_list( $predname, $proplim, $arclim )
+  $n->revarc_list( $predname, $proplim, $args )
 
 Returns a L<Rit::Base::List> of the arcs that have C<$n> as
 subj and C<$pred_name> as predicate.
@@ -3143,7 +3143,7 @@ sub update
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     # - existing specified values is unchanged
     # - nonexisting specified values is created
@@ -3154,13 +3154,13 @@ sub update
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
-	my $old = $node->arc_list( $pred_name, $args );
+	my $old = $node->arc_list( $pred_name, undef, $args );
 	push @arcs_old, $old->as_array;
     }
 
     $node->replace(\@arcs_old, $props, $args);
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -3212,7 +3212,7 @@ sub replace
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     $oldarcs = $node->find_arcs($oldarcs, $args);
     $props   = $node->construct_proplist($props, $args);
@@ -3287,7 +3287,7 @@ sub replace
     }
 
     debug 3, "  -- done";
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -3318,13 +3318,13 @@ sub remove
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
     my $pred_value_id = getpred('value')->id;
 
-    foreach my $arc ( $node->arc_list(undef, $args)->nodes )
+    foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes )
     {
 	if( $arc->pred->id == $pred_value_id )
 	{
@@ -3340,7 +3340,7 @@ sub remove
     unshift @arcs, $value_arc if $value_arc;
 
 
-    foreach my $arc ( @arcs, $node->revarc_list(undef, $args)->nodes )
+    foreach my $arc ( @arcs, $node->revarc_list(undef, undef, $args)->nodes )
     {
 	$arc->remove( $args );
     }
@@ -3349,7 +3349,7 @@ sub remove
     #
     delete $Rit::Base::Cache::Resource{ $node->id };
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -3377,16 +3377,16 @@ sub find_arcs
     $args ||= {};
 
 
-    unless( ref $args and (ref $args eq 'ARRAY' or
-			   ref $args eq 'Rit::Base::List' )
+    unless( ref $props and (ref $props eq 'ARRAY' or
+			   ref $props eq 'Rit::Base::List' )
 	  )
     {
-	$args = [$args];
+	$props = [$props];
     }
 
     my $arcs = [];
 
-    foreach my $crit ( @$args )
+    foreach my $crit ( @$props )
     {
 	if( ref $crit and UNIVERSAL::isa($crit, 'Rit::Base::Arc') )
 	{
@@ -3407,13 +3407,13 @@ sub find_arcs
 	}
 	else
 	{
-	    die "not implemented".query_desig($args);
+	    die "not implemented".query_desig($props);
 	}
     }
 
     if( debug > 3 )
     {
-	debug "Finding arcs: ".query_desig($args);
+	debug "Finding arcs: ".query_desig($props);
 
 	if( @$arcs )
 	{
@@ -3681,7 +3681,7 @@ sub update_by_query
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     # Sort params
     my @arc_params;
@@ -3807,7 +3807,7 @@ sub update_by_query
 	$q->delete( $param );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -3833,12 +3833,12 @@ sub vacuum
 
     $args ||= {};
 
-    foreach my $arc ( $node->arc_list( {}, $args )->nodes )
+    foreach my $arc ( $node->arc_list( undef, undef, $args )->nodes )
     {
 	$arc->remove_duplicates( $args );
     }
 
-    foreach my $arc ( $node->arc_list( {}, $args )->as_array )
+    foreach my $arc ( $node->arc_list( undef, undef, $args )->as_array )
     {
 	next unless $arc->real_coltype eq 'obj';
 	$Para::Frame::REQ->may_yield;
@@ -3924,7 +3924,7 @@ sub merge
 
     my $move_literals = $args->{'move_literals'} || 0;
 
-    foreach my $arc ( $node1->arc_list({},aais($args,'explicit'))->nodes )
+    foreach my $arc ( $node1->arc_list(undef, undef, aais($args,'explicit'))->nodes )
     {
 	my $pred_name = $arc->pred->plain;
 	if( my $obj = $arc->obj )
@@ -3940,7 +3940,7 @@ sub merge
 	$arc->remove( $args );
     }
 
-    foreach my $arc ( $node1->revarc_list({},aais($args,'explicit'))->nodes )
+    foreach my $arc ( $node1->revarc_list(undef, undef, aais($args,'explicit'))->nodes )
     {
 	my $pred_name = $arc->pred->plain;
 	if( my $subj = $arc->subj )
@@ -4092,7 +4092,7 @@ sub tree_select_data
      value  => $id,
     };
 
-    my $childs = $node->revlist('scof',{},aais($args,'direct'));
+    my $childs = $node->revlist('scof', undef, aais($args,'direct'));
 
     if( $childs->size )
     {
@@ -4725,8 +4725,8 @@ sub get_by_label
 	 rowformat => sub
 	 {
 	     my( $item ) = @_;
-	     my $tstr = $item->list('is', {}, 'direct')->name->loc || '';
-	     my $cstr = $item->list('scof', {}, 'direct')->name->loc;
+	     my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
+	     my $cstr = $item->list('scof',undef, 'direct')->name->loc;
 	     my $desig = $item->desig;
 	     my $desc = "$tstr $desig";
 	     if( $cstr )
@@ -5818,14 +5818,14 @@ sub handle_query_arc
     my( $node, $param, $args ) = @_;
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
 	$node->handle_query_arc_value( $param, $value, $args );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -5846,7 +5846,7 @@ sub handle_query_arc_value
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $page = $req->page;
@@ -5912,26 +5912,28 @@ sub handle_query_arc_value
 
     if( $arc_id eq 'singular' ) # Only one ACTIVE prop of this type
     {
+	my $args_active = aais($args,'active');
+
 	# Sort out those of the specified type
 	my $arcs;
 	if( $rev )
 	{
-	    $arcs = $node->revarc_list($pred_name,aais($args,'explicit'));
+	    $arcs = $node->revarc_list($pred_name, undef, aais($args_active,'explicit'));
 	}
 	else
 	{
-	    $arcs = $node->arc_list($pred_name,aais($args,'explicit'));
+	    $arcs = $node->arc_list($pred_name, undef, aais($args_active,'explicit'));
 	}
 
 	if( $type and  $arcs->size )
 	{
 	    if( $rev )
 	    {
-		$arcs = $arcs->find({ subj => { is => $type } }, $args);
+		$arcs = $arcs->find({ subj => { is => $type } }, $args_active);
 	    }
 	    else
 	    {
-		$arcs = $arcs->find({ obj => { is => $type } }, $args);
+		$arcs = $arcs->find({ obj => { is => $type } }, $args_active);
 	    }
 	}
 
@@ -5939,11 +5941,11 @@ sub handle_query_arc_value
 	{
 	    if( $rev )
 	    {
-		$arcs = $arcs->find({ subj => { scof => $type } }, $args);
+		$arcs = $arcs->find({ subj => { scof => $type } }, $args_active);
 	    }
 	    else
 	    {
-		$arcs = $arcs->find({ obj => { scof => $type } }, $args);
+		$arcs = $arcs->find({ obj => { scof => $type } }, $args_active);
 	    }
 	}
 
@@ -6013,7 +6015,7 @@ sub handle_query_arc_value
 	elsif( not $arc_id and not length $value )
 	{
 	    # nothing changed
-	    return $res->changes - $changes;
+	    return $res->changes - $changes_prev;
 	}
 	else
 	{
@@ -6194,7 +6196,7 @@ sub handle_query_arc_value
 			      run => 'next_step',
 			     };
 			     my $link = Para::Frame::Widget::forward( $label, $uri, $args );
-			     my $tstr = $item->list('is', {}, aais($args,'direct'))->name->loc;
+			     my $tstr = $item->list('is', undef, aais($args,'direct'))->name->loc;
 			     my $view = Para::Frame::Widget::jump('visa',
 								  $item->form_url->as_string,
 								 );
@@ -6262,7 +6264,7 @@ sub handle_query_arc_value
 	}
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6281,14 +6283,14 @@ sub handle_query_prop
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
 	$node->handle_query_prop_value( $param, $value, $args );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6311,7 +6313,7 @@ sub handle_query_prop_value
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     $param =~ /^prop_(.*?)(?:__(.*))?$/;
     my $pred_name = $1;
@@ -6399,7 +6401,7 @@ sub handle_query_prop_value
 	$q->delete( $param ); # We will not add the same value twice
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6418,14 +6420,14 @@ sub handle_query_row
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
 	$node->handle_query_row_value( $param, $value, $args );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6450,7 +6452,7 @@ sub handle_query_row_value
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -6565,7 +6567,7 @@ sub handle_query_row_value
 	die $@; # don't bother
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6584,7 +6586,7 @@ sub handle_query_check_row
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -6617,7 +6619,7 @@ sub handle_query_check_row
 	if( not $subj_id )
 	{
 	    # No arc present
-	    return $res->changes - $changes;
+	    return $res->changes - $changes_prev;
 	}
 	else
 	{
@@ -6648,7 +6650,7 @@ sub handle_query_check_row
 	$arc->remove( $args );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6691,7 +6693,7 @@ sub handle_query_check_node
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     unless( grep { /^node_$node_id/ } $q->param )
     {
@@ -6701,7 +6703,7 @@ sub handle_query_check_node
     }
     debug "Saving node: ${node_id}. grep: ". grep( /^node_$node_id/, $q->param );
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -6718,7 +6720,7 @@ sub handle_query_check_prop
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my $id = $node->id;
     my $req = $Para::Frame::REQ;
@@ -6737,7 +6739,7 @@ sub handle_query_check_prop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( $node->list($pred_name, {}, $args)->as_array )
+    foreach my $val ( $node->list($pred_name, undef, $args)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -6783,7 +6785,7 @@ sub handle_query_check_prop
 	}
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -6803,7 +6805,7 @@ sub handle_query_check_revprop
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my $id = $node->id;
     my $req = $Para::Frame::REQ;
@@ -6820,7 +6822,7 @@ sub handle_query_check_revprop
 
     # Remember the values this node has for the pred
     my %has_val;
-    foreach my $val ( $node->revlist($pred_name,{},$args)->as_array )
+    foreach my $val ( $node->revlist($pred_name, undef, $args)->as_array )
     {
 	my $val_str = $val->id ? $val->id : $val->literal;
 	$has_val{$val_str} ++;
@@ -6865,7 +6867,7 @@ sub handle_query_check_revprop
 	}
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 
@@ -7000,11 +7002,11 @@ C<0> represents here a false argument, including undef or no
 argument. This will generate an empty C<\%props>.
 
 
-Returns: C<$arg>, C<$arclim>
+Returns: (C<$arg>, C<$arclim>)
 
 The returned C<arclim> is also found as the arclim named parameter in
 C<arg>, so that's just syntactic sugar. With no input, the return will
-be the three values C<{}, {}, []>, there C<[]> is an empty
+be the two values C<{}, []>, there C<[]> is an empty
 L<Rit::Base::Arc::Lim> object (that can be generated by parsing
 C<[]>).
 
@@ -7052,7 +7054,7 @@ sub handle_query_newsubjs
 
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes = $res->changes;
+    my $changes_prev = $res->changes;
 
     my %newsubj;
     my %keysubjs;
@@ -7087,7 +7089,7 @@ sub handle_query_newsubjs
 	Rit::Base::Resource->create( $newsubj{$ns}, $args );
     }
 
-    return $res->changes - $changes;
+    return $res->changes - $changes_prev;
 }
 
 #########################################################################
@@ -7134,15 +7136,15 @@ sub timediff
 
   $n->$method( $proplim )
 
-  $n->$method( $proplim, $arclim )
+  $n->$method( $proplim, $args )
 
 If C<$method> ends in C<_$arclim> there C<$arclim> is one of
-L<Rit::Base::Arc/limflag>, the param C<$arclim> is set to that value
+L<Rit::Base::Arc::Lim/limflag>, the param C<$arclim> is set to that value
 and the suffix removed from C<$method>.
 
 If C<$proplim> or C<$arclim> are given, we return the result of
 C<$n-E<gt>L<list|/list>( $proplim, $arclim )>. In the other case, we return the
-result of C<$n-E<gt>L<prop|/prop>( $proplim, $arclim )>.
+result of C<$n-E<gt>L<prop|/prop>( $proplim, $args )>.
 
 But if C<$method> begins with C<rev_> we instead call the
 corresponding L</revlist> or L</revprop> correspondingly, with the

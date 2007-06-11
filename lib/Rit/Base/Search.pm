@@ -581,7 +581,7 @@ C<rev>: C<rev> indicates a reverse property.
 
 C<pred>: Any predicate name.
 
-C<arclim>: Any of L<Rit::Base::Arc/limflag>.  Those are criterions for
+C<arclim>: Any of L<Rit::Base::Arc::Lim/limflag>.  Those are criterions for
 the arcs to match. This will override the value of C<args.arclim>.
 Defaults to L<Rit::Base::Arc/active>.
 
@@ -2353,7 +2353,7 @@ sub set_prio
 
   $search->set_arclim( $arclim )
 
-See L<Rit::Base::Arc/limflag>
+See L<Rit::Base::Arc::Lim/limflag>
 
 =cut
 
@@ -2372,7 +2372,7 @@ sub set_arclim
 
   $search->arclim
 
-See L<Rit::Base::Arc/limflag>
+See L<Rit::Base::Arc::Lim/limflag>
 
 =cut
 

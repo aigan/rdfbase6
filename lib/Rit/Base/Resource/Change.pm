@@ -166,6 +166,26 @@ sub changes
 
 #########################################################################
 
+=head2 changes_add
+
+  $c->changes_add()
+
+  $c->changes_add( $num )
+
+C<$num> defaults to 1
+
+Returns: The new total number of changes
+
+=cut
+
+sub changes_add
+{
+    return $_[0]->{'changes'} += ($_[1]||1);
+}
+
+
+#########################################################################
+
 =head2 add_newarc
 
 =cut
@@ -174,6 +194,20 @@ sub add_newarc
 {
     push @{$_[0]->{'newarcs'}}, $_[1];
     return $_[1];
+}
+
+
+#########################################################################
+
+=head2 newarcs
+
+Returns: a L<Rit::Base::List> of arcs
+
+=cut
+
+sub newarcs
+{
+    return Rit::Base::List->new($_[0]->{'newarcs'});
 }
 
 

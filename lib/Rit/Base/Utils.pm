@@ -43,7 +43,7 @@ BEGIN
 	      parse_arc_add_box is_undef arc_lock arc_unlock
 	      truncstring string parse_query_pred
 	      parse_query_prop convert_query_prop_for_creation
-	      name2url query_desig send_cache_update );
+	      name2url query_desig send_cache_update neq_argsres );
 
 }
 
@@ -1089,6 +1089,26 @@ sub send_cache_update
 
     $Para::Frame::REQ->add_background_job( $send_cache );
 
+}
+
+
+#######################################################################
+
+=head2 new_argsres
+
+  new_argsres( \%args )
+
+  new_argsres( $arclim )
+
+Returns: C<($args, $res )>
+
+=cut
+
+sub new_argsres
+{
+    my( $args ) = Rit::Base::Resource::parse_propargs(@_);
+    my $res = $args->{'res'} = Rit::Base::Resource::Change->new;
+    return( $args, $res );
 }
 
 

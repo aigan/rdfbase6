@@ -1,9 +1,9 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::Action::arc_submit;
+package Rit::Base::Action::arc_unsubmit;
 #=====================================================================
 #
 # DESCRIPTION
-#   Ritbase Action for submitting an arc
+#   Ritbase Action for unsubmitting an arc
 #
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
@@ -31,9 +31,9 @@ sub handler
     my $arc = getnode( $aid );
     my $desig = $arc->sysdesig;
 
-    if( $arc->submit )
+    if( $arc->unsubmit )
     {
-	return "Submitted arc";
+	return "Unsubmitted arc";
     }
 }
 

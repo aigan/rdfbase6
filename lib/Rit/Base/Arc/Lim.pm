@@ -61,6 +61,11 @@ our %REVLIM = reverse %LIM;
 use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192);
 use constant FLAGS_ACTIVE   => (1+512+2048+8192);
 
+use base qw( Exporter );
+BEGIN
+{
+    @Rit::Base::Arc::Lim::EXPORT_OK = qw( limflag );
+}
 
 #########################################################################
 
@@ -82,6 +87,10 @@ sub new
 
   Rit::Base::Arc::Lim->parse( [$arclim1, $arclim2, ...] )
 
+Special arclims, if not an arrayref, are:
+  auto
+  relative
+
 Returns:
 
   $arclim
@@ -97,7 +106,27 @@ sub parse
 
     unless( ref $arclim )
     {
-	$arclim = [$arclim];
+	if( $arclim eq 'auto' )
+	{
+	    if( $Para::Frame::REQ->user->has_root_access )
+	    {
+		$arclim = [8192]; # not_old
+	    }
+	    else
+	    {
+		# active or (not_old and created_by_me)
+		$arclim = [1, 8192+16384];
+	    }
+	}
+	elsif( $arclim eq 'relative' )
+	{
+	    # active or (not_old and created_by_me)
+	    $arclim = [1, 8192+16384];
+	}
+	else
+	{
+	    $arclim = [$arclim];
+	}
     }
 
     if( ref $arclim eq 'Rit::Base::Arc::Lim' )
@@ -408,6 +437,111 @@ Returns: a list of al lim names
 sub names
 {
     return keys %LIM;
+}
+
+
+#######################################################################
+
+=head2 autocommit
+
+  $this->autocommit
+
+This will submit all new arcs.
+
+If the current user has root access; All submitted arcs will be activated.
+
+Returns: The number of new arcs processed
+
+=cut
+
+sub autocommit
+{
+    my $newarcs = $_[0]->newarcs;
+    my $cnt = $newarcs->size;
+    if( $cnt )
+    {
+	my $root_access = $Para::Frame::REQ->user->has_root_access;
+	if( $root_access )
+	{
+	    debug "Activating new arcs:";
+	}
+	else
+	{
+	    debug "Submitting new arcs:";
+	}
+	my( $arc, $error ) = $newarcs->get_first;
+	while(! $error )
+	{
+	    debug "* ".$arc->sysdesig;
+
+	    if( $arc->is_new )
+	    {
+		$arc->submit;
+
+		if( $root_access )
+		{
+		    $arc->activate;
+		}
+	    }
+
+	    ( $arc, $error ) = $newarcs->get_next;
+	}
+	debug "- EOL";
+    }
+
+    return $cnt;
+}
+
+
+#######################################################################
+
+=head1 Functions
+
+=head2 limflag
+
+  limflag( $label )
+
+  limflag( $label1, $label2, ... )
+
+Supported lables are:
+
+  active
+  inactive
+
+  direct
+  indirect
+
+  explicit
+  implicit
+
+  disregarded
+  not_disregarded
+
+  submitted
+  not_submitted
+
+  new
+  not_new
+
+  old
+  not_old
+
+  created_by_me
+
+Returns the corresponding limit as a number to be used for
+arclim. Additional limits are added together.
+
+=cut
+
+sub limflag
+{
+    my $val = 0;
+    while( pop )
+    {
+	$val += ($LIM{ $_ }||
+		 (die "Flag $_ not recognized"));
+    }
+    return  $val;
 }
 
 
