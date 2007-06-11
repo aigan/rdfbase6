@@ -162,9 +162,7 @@
    [% END %]
 [% END %]
 [% step %] &nbsp;
-[% IF arc.active %]
-   [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
-[% END %]
+[% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
 </p>
 
 [% IF arc.indirect %]
