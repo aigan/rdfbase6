@@ -2842,7 +2842,7 @@ sub revarc_list
 
 =head2 first_arc
 
-  $n->first_arc( $pred_name, \%args )
+  $n->first_arc( $pred_name, $proplim, \%args )
 
 Returns one of the arcs that have C<$n> as subj and C<$pred_anme> as
 predicate.
@@ -2861,11 +2861,18 @@ sub first_arc
     # list never is empty
 
     $node->initiate_prop( $name, $proplim, $args );
+
     if( $active )
     {
 	if( defined $node->{'relarc'}{$name} )
 	{
-	    return $node->{'relarc'}{$name}[0] || is_undef;
+	    foreach my $arc (@{$node->{'relarc'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) )
+		{
+		    return $arc;
+		}
+	    }
 	}
     }
 
@@ -2873,7 +2880,14 @@ sub first_arc
     {
 	if( defined $node->{'relarc_inactive'}{$name} )
 	{
-	    return $node->{'relarc_inactive'}{$name}[0] || is_undef;
+	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) )
+		{
+		    debug "Arc ".$arc->sysdesig." meets ".$arclim->sysdesig;
+		    return $arc;
+		}
+	    }
 	}
     }
 
@@ -2885,7 +2899,7 @@ sub first_arc
 
 =head2 first_revarc
 
-  $n->first_revarc( $pred_name, \%args )
+  $n->first_revarc( $pred_name, $proplim, \%args )
 
 Returns one of the arcs that have C<$n> as obj and C<$pred_anme> as
 predicate.
@@ -2904,11 +2918,18 @@ sub first_revarc
     # list never is empty
 
     $node->initiate_revprop( $name, $proplim, $args );
+
     if( $active )
     {
 	if( defined $node->{'revarc'}{$name} )
 	{
-	    return $node->{'revarc'}{$name}[0] || is_undef;
+	    foreach my $arc (@{$node->{'revarc'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) )
+		{
+		    return $arc;
+		}
+	    }
 	}
     }
 
@@ -2916,7 +2937,13 @@ sub first_revarc
     {
 	if( defined $node->{'revarc_inactive'}{$name} )
 	{
-	    return $node->{'revarc_inactive'}{$name}[0] || is_undef;
+	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) )
+		{
+		    return $arc;
+		}
+	    }
 	}
     }
 

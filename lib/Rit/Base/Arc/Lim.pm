@@ -401,20 +401,23 @@ sub sysdesig
 {
     my( $arclim ) = @_;
 
-    debug "Generating arclim sysdesig for ".datadump($arclim);
+#    debug "Generating arclim sysdesig for ".datadump($arclim);
 
     my @limpart;
     foreach my $lim (@$arclim)
     {
+#	debug "  lim $lim";
 	my @parts;
 	my $num = 1;
 	while( $num < 16385 )
 	{
+#	    debug "    num $num";
 	    if( $lim & $num )
 	    {
 		push @parts, $REVLIM{$num};
+#		debug "      matched";
 	    }
-	    $num **=2;
+	    $num *=2;
 	}
 
 	push @limpart, "(".join(' and ', @parts).")";

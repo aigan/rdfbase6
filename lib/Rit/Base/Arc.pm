@@ -1251,10 +1251,14 @@ sub view_flags # To be used in admin view
 {
     my( $node ) = @_;
 
-    my $active = $node->active ? "Ac" : "NA";
+    my $active = $node->active ? "A" : "I";
     my $direct = $node->direct ? "Di" : "In";
     my $explicit = $node->explicit ? "Ex" : "Im";
-    my $submitted = $node->submitted ? "Su" : "NS";
+    my $submitted = $node->submitted ? "S" : "N";
+    if( $submitted eq 'N' and $node->old )
+    {
+	$submitted = 'O';
+    }
 
     return "$active $direct $explicit $submitted";
 }

@@ -43,7 +43,7 @@ BEGIN
 	      parse_arc_add_box is_undef arc_lock arc_unlock
 	      truncstring string parse_query_pred
 	      parse_query_prop convert_query_prop_for_creation
-	      name2url query_desig send_cache_update neq_argsres );
+	      name2url query_desig send_cache_update new_argsres );
 
 }
 

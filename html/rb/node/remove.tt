@@ -13,7 +13,7 @@
 
 <p>[% PROCESS node_menu.tt %]</p>
 
-<p align="center">[ [% jump('View rels', node.form_url) %] ]</p>
+<p>Removes the selected arcs that has this node as it's subject</p>
 
 <table class='admin'>
 <tr><th>Del</th><th>Property</th> <th>Value</th></tr>
@@ -45,6 +45,7 @@
    [% END %]
 [% END %]
 </table>
+
 
 <p>[% step('Delete') %]
 
