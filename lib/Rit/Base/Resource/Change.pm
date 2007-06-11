@@ -273,6 +273,59 @@ sub sysdesig
 }
 
 
+#######################################################################
+
+=head2 autocommit
+
+  $this->autocommit
+
+This will submit all new arcs.
+
+If the current user has root access; All submitted arcs will be activated.
+
+Returns: The number of new arcs processed
+
+=cut
+
+sub autocommit
+{
+    my $newarcs = $_[0]->newarcs;
+    my $cnt = $newarcs->size;
+    if( $cnt )
+    {
+	my $root_access = $Para::Frame::REQ->user->has_root_access;
+	if( $root_access )
+	{
+	    debug "Activating new arcs:";
+	}
+	else
+	{
+	    debug "Submitting new arcs:";
+	}
+	my( $arc, $error ) = $newarcs->get_first;
+	while(! $error )
+	{
+	    debug "* ".$arc->sysdesig;
+
+	    if( $arc->is_new )
+	    {
+		$arc->submit;
+
+		if( $root_access )
+		{
+		    $arc->activate;
+		}
+	    }
+
+	    ( $arc, $error ) = $newarcs->get_next;
+	}
+	debug "- EOL";
+    }
+
+    return $cnt;
+}
+
+
 #########################################################################
 
 1;
