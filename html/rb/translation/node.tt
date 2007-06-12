@@ -1,5 +1,5 @@
 ﻿[% META
-   otitle = "Redigera översättning"
+   otitle = "Update translation"
    next_action = "translate_node"
    level = 20
 %]
@@ -13,14 +13,14 @@
 [% hidden('id', id) %]
 
 
-<h1>Redigera översättning [% id %]: [% node.${pred}.loc %]</h1>
+<h1>[% loc("Update translation of [_1]: [_2]", id, node.${pred}.loc) %]</h1>
 
 <p>[% PROCESS node_menu.tt %]</p>
 
 [% langlist = {''='-',sv='sv',en='en',de='de',no='no',da='da',fi='fi',is='is'} %]
 
 <table>
-<tr><th>Språk <th>Arc <th>Text <th>Prio
+<tr><th>[% loc('Language') %] <th>Arc <th>[% loc('Text') %] <th>[% loc('Prio') %]
 [% FOREACH arc IN node.arc_list(pred).sorted(['obj.is_of_language.code',{on='obj.weight' dir='desc'}]) %]
    [% aid = arc.id %]
    [% tr2%]
@@ -31,7 +31,7 @@
    [% ELSE %]
       [% select("arc_${aid}_is_of_language", '', langlist)%]
    [% END %]
-   <td>[% jump(aid, "$home/admin/arc_edit.tt", id=aid) %]
+   <td>[% jump(aid, "$home/rb/node/arc/update.tt", id=aid) %]
    <td>
    [% IF arc.obj %]
       [% input("arc_${aid}_val", arc.obj.desig) %]
@@ -47,6 +47,3 @@
 
 
 <p>[% step("Spara") %]</p>
-
-<p>Efter att du sparat behöver de ändrade sidorna kompileras om på
-respektive server.
