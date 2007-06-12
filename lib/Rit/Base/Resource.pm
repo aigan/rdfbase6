@@ -50,7 +50,7 @@ use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-#use Rit::Base::Constants qw( );
+use Rit::Base::Constants qw( $C_language );
 
 use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
 			 getpred parse_query_props cache_update
@@ -3653,7 +3653,7 @@ It sorts into 4 groups, depending on what the parameter begins with:
 
 Returns: the number of changes
 
-4. Add new resources
+=head3 4. Add new resources
 
 To create a new resource and add arcs to it, the parameters should be
 in the format "newsubj_$key__pred_$pred", where $key is used to group
@@ -3679,9 +3679,7 @@ Supported args are:
   res
 
 
-=comment
-
-  Document all field props:
+=head3 Field props:
 
 pred
 revpred
@@ -3693,6 +3691,10 @@ rowno
 subj
 newsubj
 is
+
+=head4 lang
+
+A language-code; Set the language on this value (as an arc to the value-node).
 
 =cut
 
@@ -5871,6 +5873,7 @@ sub handle_query_arc_value
 
     die "missing value" unless defined $value;
 
+    my $R = Rit::Base->Resource;
     $args ||= {};
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
     my $changes_prev = $res->changes;
@@ -5890,13 +5893,14 @@ sub handle_query_arc_value
     my $type      = $arg->{'type'};     # desig obj must be of this type
     my $scof      = $arg->{'scof'};     # desig obj must be a scof of this type
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
+    my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
 
     # Switch node if subj is set
     if( $arg->{'subj'} and $arg->{'subj'} =~ /^\d+$/ )
     {
 	#debug "Switching subj in handle_query_arc_value for: $param";
 	$id = $arg->{'subj'};
-	$node = Rit::Base::Resource->get($id);
+	$node = $R->get($id);
     }
 
 
@@ -6012,7 +6016,7 @@ sub handle_query_arc_value
 	{
 	    debug 3, "  Reversing arc update";
 
-	    my $subjs = Rit::Base::Resource->find_by_label( $value, $args );
+	    my $subjs = $R->find_by_label( $value, $args );
 	    if( $type )
 	    {
 		$subjs = $subjs->find({ is => $type }, $args);
@@ -6054,10 +6058,10 @@ sub handle_query_arc_value
     if( $desig and length( $value ) ) # replace $value with the node id
     {
 	debug 3, "    Set value to a $type with $desig $value";
-	$value = Rit::Base::Resource->find_one({
-						$desig => $value,
-						'is' => $type,
-					       }, $args )->id;
+	$value = $R->find_one({
+			       $desig => $value,
+			       'is' => $type,
+			      }, $args )->id;
 	# Convert back to obj later. (We expect id)
     }
 
@@ -6091,11 +6095,11 @@ sub handle_query_arc_value
 	    {
 		if( ref $value )
 		{
-		    $value = Rit::Base::Resource->get( $value );
+		    $value = $R->get( $value );
 		}
 		else
 		{
-		    my $list = Rit::Base::Resource->find_by_label( $value, $args );
+		    my $list = $R->find_by_label( $value, $args );
 
 		    my $props = {};
 		    if( $type )
@@ -6143,13 +6147,13 @@ sub handle_query_arc_value
     }
     else # create new arc
     {
-	########################################
-	# Authenticate creation of prop
-	#
-	$node->authenticate_update( $pred );
-
 	if( length $value )
 	{
+	    ########################################
+	    # Authenticate creation of prop
+	    #
+	    $node->authenticate_update( $pred );
+
 	    debug 3, "  Creating new property";
 	    debug 3, "  Value is $value" if not ref $value;
 	    debug 3, sprintf "  Value is %s", $value->sysdesig if ref $value;
@@ -6171,7 +6175,7 @@ sub handle_query_arc_value
 
 		foreach my $val ( @values )
 		{
-		    my $objs = Rit::Base::Resource->find_by_label($val, $args);
+		    my $objs = $R->find_by_label($val, $args);
 
 		    unless( $rev )
 		    {
@@ -6187,8 +6191,6 @@ sub handle_query_arc_value
 		    }
 
 		    $objs->materialize_all;
-
-
 
 		    if( $objs->size > 1 )
 		    {
@@ -6281,12 +6283,36 @@ sub handle_query_arc_value
 	    }
 	    else
 	    {
-		my $arc = Rit::Base::Arc->
-		  create({
-			  subj_id => $id,
-			  pred_id => $pred_id,
-			  value   => $value,
-			 }, $args );
+		if( $lang )
+		{
+		    debug(1, "Making value-node with langcode $lang");
+
+		    my $language = $R->get({
+					    code => $lang,
+					    is   => $C_language,
+					   })
+		      or die("Erronuous lang-code $lang");
+		    my $value_str = Rit::Base::String->new( $value );
+		    my $valnode = $R->create({
+					      is_of_language => $language,
+					     });
+		    Rit::Base::Arc->create({
+					    subj_id => $valnode,
+					    pred => 'value',
+					    value   => $value,
+					    valtype => $pred->valtype,
+					   });
+		    $node->add({ $pred_name => $valnode });
+		}
+		else
+		{
+		    my $arc = Rit::Base::Arc->
+		      create({
+			      subj_id => $id,
+			      pred_id => $pred_id,
+			      value   => $value,
+			     }, $args );
+		}
 	    }
 	}
     }
@@ -6492,6 +6518,7 @@ sub handle_query_row_value
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs
+    my $lang	  = $arg->{'lang'};  # lang-code of value (set on value/obj)
 
     # Switch node if subj is set. May be 'arc' if the arc is the subj
     if( $subj_id  and $subj_id =~ /^\d+$/ )
@@ -6626,6 +6653,7 @@ sub handle_query_check_row
     my $desig     = $arg->{'desig'}; # look up obj that has $value as $desig
     my $type      = $arg->{'type'};  # desig obj must be of this type
     my $rowno     = $arg->{'row'};   # rownumber for matching props with new/existing arcs
+    my $lang	  = $arg->{'lang'};  # lang-code of value (set on value/obj)
 
     # Switch node if subj is set. May be 'arc' if the arc is the subj
     if( $subj_id and $subj_id =~ /^\d+$/ )
