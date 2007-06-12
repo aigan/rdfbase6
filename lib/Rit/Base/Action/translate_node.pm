@@ -14,14 +14,15 @@ package Rit::Base::Action::translate_node;
 #=====================================================================
 
 use strict;
-
-use Data::Dumper;
+use Carp qw( confess );
 
 use Para::Frame::Utils qw( throw debug trim datadump );
+use Para::Frame::L10N qw( loc );
+
 
 use Rit::Base::Resource;
 use Rit::Base::String;
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( is_undef new_argsres );
 
 use Rit::Base::Constants qw( $C_language );
 
@@ -30,13 +31,14 @@ sub handler
     my ($req) = @_;
 
     my $q = $req->q;
+    my( $args, $res ) = new_argsres('auto');
 
     my $id = $q->param('id') or die "id param missing";
-    my $pred_name = $q->param('pred') or die "pred param missing";
+    my $pred_in = $q->param('pred') or die "pred param missing";
 
     my $n = Rit::Base::Resource->get_by_id( $id );
 
-    my $p = Rit::Base::Pred->get( $pred_name );
+    my $p = Rit::Base::Pred->get( $pred_in );
 
 
     foreach my $key ( $q->param )
@@ -56,18 +58,18 @@ sub handler
 	{
 	    unless( length $val_new ) # Remove?
 	    {
-		$arc->obj->remove;
+		$arc->obj->remove($args);
 		next;
 	    }
 
-	    my $val_old = $obj->desig;
+	    my $val_old = $obj->desig($args);
 	    if( $val_new ne $val_old )
 	    {
-		$obj->update({'value' => $val_new });
+		$obj->update({'value' => $val_new }, $args);
 	    }
 
 #	    debug "BEFORE ".datadump($obj, 2); ### DEBUG
-	    my $weight_old = $obj->weight;
+	    my $weight_old = $obj->first_prop('weight');
 	    debug "  old weight is $weight_old";
 	    debug "  new weight is $weight_new";
 	    if( $weight_new != $weight_old )
@@ -75,11 +77,11 @@ sub handler
 #		debug "AFTER ".datadump($obj, 2); ### DEBUG
 		if( $weight_new->defined )
 		{
-		    $obj->update({ 'weight' => $weight_new });
+		    $obj->update({ 'weight' => $weight_new }, $args);
 		}
 		else
 		{
-		    $obj->arc('weight')->remove;
+		    $obj->arc('weight')->remove( $args );
 		}
 	    }
 	}
@@ -87,7 +89,7 @@ sub handler
 	{
 	    unless( length $val_new ) # Remove?
 	    {
-		$arc->remove;
+		$arc->remove( $args );
 		next;
 	    }
 
@@ -95,13 +97,17 @@ sub handler
 	    if( $val_new ne $val_old )
 	    {
 		confess "implement this";
-		$arc->set_value($val_new);
+		$arc->set_value($val_new, $args);
 	    }
 
 	    my $props = {};
 	    if( my $lc = $q->param("arc_${aid}_is_of_language") )
 	    {
-		my $l = Rit::Base::Resource->get({code=>$lc, is=>$C_language});
+		my $l = Rit::Base::Resource->get({
+						  code=>$lc,
+						  is=>$C_language,
+						 },
+						 $args);
 		$props->{'is_of_language'} = $l;
 	    }
 
@@ -110,7 +116,7 @@ sub handler
 		$props->{'weight'} = $weight_new;
 	    }
 
-	    $arc->value->update($props);
+	    $arc->value->update($props, $args);
 	}
     }
 
@@ -119,12 +125,16 @@ sub handler
     if( length $new_val ) # Create new translation
     {
 	my $lit = Rit::Base::String->new($new_val);
-	$n->add($p => $lit );
+	$n->add({ $p->plain => $lit }, $args );
 
 	my $props = {};
 	if( my $lc = $q->param("new_is_of_language") )
 	{
-	    my $l = Rit::Base::Resource->get({code=>$lc, is=>$C_language});
+	    my $l = Rit::Base::Resource->get({
+					      code=>$lc,
+					      is=>$C_language,
+					     },
+					    $args );
 	    $props->{'is_of_language'} = $l;
 	}
 
@@ -133,15 +143,23 @@ sub handler
 	    $props->{'weight'} = $weight_new;
 	}
 
-	$lit->update($props);
+	$lit->update($props, $args);
     }
 
     $q->delete('new_val');
     $q->delete("new_is_of_language");
     $q->delete("new_weight");
 
-    $req->change->report;
-    return "Översättning ändrad";
+    $res->autocommit;
+
+    if( $res->changes )
+    {
+	return loc("Translation changed");
+    }
+    else
+    {
+	return loc("No changes");
+    }
 }
 
 1;
