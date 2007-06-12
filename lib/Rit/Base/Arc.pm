@@ -1232,14 +1232,14 @@ sub write_access
 
   $a->view_flags
 
-  Ac = active
-  NA = Not Active
+  A = active
+  N = Not Active
+  S = Submitted
+  O = Old
   Di = direct
   In = indirect
   Ex = explicit
   Im = implicit
-  Su = Submitted
-  NS = Not Submitted
 
 Returns: A plain string the the direct/explicit status.
 
@@ -1251,16 +1251,28 @@ sub view_flags # To be used in admin view
 {
     my( $node ) = @_;
 
-    my $active = $node->active ? "A" : "I";
-    my $direct = $node->direct ? "Di" : "In";
-    my $explicit = $node->explicit ? "Ex" : "Im";
-    my $submitted = $node->submitted ? "S" : "N";
-    if( $submitted eq 'N' and $node->old )
+    my $state;
+    if( $node->active )
     {
-	$submitted = 'O';
+	$state = 'A';
+    }
+    elsif( $node->old )
+    {
+	$state = 'O';
+    }
+    elsif( $node->submitted )
+    {
+	$state = 'S';
+    }
+    else
+    {
+	$state = 'N',
     }
 
-    return "$active $direct $explicit $submitted";
+    my $direct = $node->direct ? "Di" : "In";
+    my $explicit = $node->explicit ? "Ex" : "Im";
+
+    return "$state $direct $explicit";
 }
 
 #######################################################################
@@ -2236,6 +2248,34 @@ sub meets_arclim
     }
 
 #    debug "    failed";
+    return 0;
+}
+
+
+#######################################################################
+
+=head2 value_meets_proplim
+
+  $a->value_meets_proplim( $proplim )
+
+Always true if proplim is undef or an empty hashref
+
+Returns: boolean
+
+=cut
+
+sub value_meets_proplim
+{
+    my( $arc, $proplim, $args ) = @_;
+
+    return 1 unless $proplim;
+    return 1 unless keys %$proplim;
+
+    if( my $obj = $arc->obj )
+    {
+	return 1 if $obj->meets_proplim($proplim, $args);
+    }
+
     return 0;
 }
 

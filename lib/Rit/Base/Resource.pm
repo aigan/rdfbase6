@@ -1468,7 +1468,7 @@ sub list
 
 	    if( $inactive and $node->{'relarc_inactive'}{$name} )
 	    {
-		debug "Adding relarcs inactive for $node->{id} prop $name";
+#		debug "Adding relarcs inactive for $node->{id} prop $name";
 		push @arcs, @{ $node->{'relarc_inactive'}{$name} };
 	    }
 	}
@@ -1896,13 +1896,19 @@ sub first_prop
     my( $active, $inactive ) = $arclim->incl_act;
 
     $node->initiate_prop( $name, $proplim, $args );
+
     if( $active )
     {
 	if( defined $node->{'relarc'}{$name} )
 	{
-	    $node->{'relarc'}{$name}[0]
-	      or confess "Empty list for $name in ".$node->id;
-	    return $node->{'relarc'}{$name}[0]->value;
+	    foreach my $arc (@{$node->{'relarc'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
+		{
+		    return $arc->value;
+		}
+	    }
 	}
     }
 
@@ -1910,9 +1916,14 @@ sub first_prop
     {
 	if( defined $node->{'relarc_inactive'}{$name} )
 	{
-	    $node->{'relarc_inactive'}{$name}[0]
-	      or confess "Empty list for $name in ".$node->id;
-	    return $node->{'relarc_inactive'}{$name}[0]->value;
+	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
+		{
+		    return $arc->value;
+		}
+	    }
 	}
     }
 
@@ -1944,13 +1955,19 @@ sub first_revprop
     my( $active, $inactive ) = $arclim->incl_act;
 
     $node->initiate_revprop( $name, $proplim, $args );
+
     if( $active )
     {
 	if( defined $node->{'revarc'}{$name} )
 	{
-	    $node->{'revarc'}{$name}[0]
-	      or confess "Empty list for $name in ".$node->id;
-	    return $node->{'revarc'}{$name}[0]->value;
+	    foreach my $arc (@{$node->{'revarc'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
+		{
+		    return $arc->value;
+		}
+	    }
 	}
     }
 
@@ -1958,28 +1975,18 @@ sub first_revprop
     {
 	if( defined $node->{'revarc_inactive'}{$name} )
 	{
-	    $node->{'revarc_inactive'}{$name}[0]
-	      or confess "Empty list for $name in ".$node->id;
-	    return $node->{'revarc_inactive'}{$name}[0]->value;
+	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
+	    {
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
+		{
+		    return $arc->value;
+		}
+	    }
 	}
     }
 
     return is_undef;
-}
-
-
-#######################################################################
-
-=head2 has_prop
-
-Same as L</has_value>.
-
-=cut
-
-sub has_prop
-{
-    confess "DEPRECATED. use has_value() instead";
-    return shift->has_value(@_);
 }
 
 
@@ -2057,6 +2064,21 @@ sub has_revpred
 
 #######################################################################
 
+=head2 has_prop
+
+Same as L</has_value>.
+
+=cut
+
+sub has_prop
+{
+    confess "DEPRECATED. use has_value() instead";
+    return shift->has_value(@_);
+}
+
+
+#######################################################################
+
 =head2 has_value
 
   $n->has_value({ $pred => $value }, \%args)
@@ -2065,8 +2087,13 @@ Returns true if one of the node properties has a combination of any of
 the predicates and any of the values.  The true value returned is the
 first arc found that matches.
 
-Predicate can be a name, object or array.  Value can be a list of
-values or anything that L<Rit::Base::List/find> takes.
+This only takes one pred/value pair. The pred must be a plain pred
+name. Not extended by prefixes or suffixes.
+
+For the extended usage, use L</meets_proplim>.
+
+# Predicate can be a name, object or array.  Value can be a list of
+# values or anything that L<Rit::Base::List/find> takes.
 
 Supported args are
 
@@ -2284,6 +2311,335 @@ sub has_revprop
 	return 1 if $arc->subj->equals( $subj, $args );
     }
     return 0;
+}
+
+
+#######################################################################
+
+=head2 meets_proplim
+
+  $n->meets_proplim( $proplim, \%args )
+
+See L<Rit::Base::List/find> for docs
+
+Returns: boolean
+
+=cut
+
+sub meets_proplim
+{
+    my $node = shift;
+    my $proplim = shift;
+    my( $args_in, $arclim_in ) = parse_propargs(@_);
+
+    my $DEBUG = 0;
+
+  PRED:
+    foreach my $pred_part ( keys %$proplim )
+    {
+	my $target_value =  $proplim->{$pred_part};
+	if( $DEBUG )
+	{
+	    debug "  Pred $pred_part";
+	    debug "  Target $target_value (".ref($target_value).")";
+	}
+
+	    # Target value may be a plain scalar or undef or an object !!!
+
+	if( $pred_part =~ /^(\w+)\.(.*)/ )
+	{
+	    my $pred_first = $1;
+	    my $pred_after = $2;
+
+	    debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
+
+	    # It may be a method for the node class
+	    my $subres = $node->$pred_first(undef, $args_in);
+
+	    unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
+	    {
+		unless( UNIVERSAL::isa($subres, 'ARRAY') )
+		{
+		    $subres = [$subres];
+		}
+		$subres = Rit::Base::List->new($subres);
+	    }
+
+	    foreach my $subnode ( $subres->nodes )
+	    {
+		if( $subnode->meets_proplim({$pred_after => $target_value},
+					    $args_in) )
+		{
+		    next PRED; # test passed
+		}
+	    }
+
+	    return 0; # test failed
+	}
+
+
+	#                      Regexp compiles once
+	unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	{
+	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+	    unless( $pred_part )
+	    {
+		if( debug )
+		{
+		    debug "No pred_part?";
+		    debug "Template: ".query_desig($proplim);
+		    debug "For node ".$node->sysdesig;
+		}
+	    }
+	    die "wrong format in find: $pred_part\n";
+	}
+
+	my $rev    = $1;
+	my $pred   = $2;
+	my $arclim = $3 || $arclim_in;
+	my $clean  = $4 || $args_in->{'clean'} || 0;
+	my $match  = $5 || 'eq';
+	my $prio   = $6; #not used
+
+	my $args =
+	{
+	 %$args_in,
+	 match =>'eq',
+	 clean => $clean,
+	 arclim => $arclim,
+	};
+
+
+	if( $pred =~ s/^predor_// )
+	{
+	    my( @prednames ) = split /_-_/, $pred;
+	    my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
+	    $pred = \@preds;
+	}
+
+	# match '*' handled below (but not matchtype 'exist')
+
+	#### ARCS
+	if( ref $node eq 'Rit::Base::Arc' )
+	{
+	    ## TODO: Handle preds in the form 'obj.scof'
+
+	    if( ($match ne 'eq' and $match ne 'begins') or $clean )
+	    {
+		confess "Not implemented: $pred_part";
+	    }
+
+	    # Failes test if arc doesn't meets the arclim
+	    return 0 unless $node->meets_arclim( $arclim );
+
+	    debug "  Node is an arc" if $DEBUG;
+	    if( ($pred eq 'obj') or ($pred eq 'value') )
+	    {
+		debug "  Pred is value" if $DEBUG;
+		my $value = $node->value; # Since it's a pred
+		next PRED if $target_value eq '*'; # match all
+		if( ref $value )
+		{
+		    if( $match eq 'eq' )
+		    {
+			next PRED # Passed test
+			  if $value->equals( $target_value, $args );
+		    }
+		    elsif( $match eq 'begins' )
+		    {
+			confess "Matchtype 'begins' only allowed for strings, not ". ref $value
+			  unless( ref $value eq 'Rit::Base::String' );
+
+			if( $value->begins( $target_value, $args ) )
+			{
+			    next PRED; # Passed test
+			}
+		    }
+		    else
+		    {
+			confess "Matchtype not implemented: $match";
+		    }
+
+		    return 0; # Failed test
+		}
+		else
+		{
+		    die "not implemented";
+		}
+	    }
+	    elsif( $pred eq 'subj' )
+	    {
+		debug "  pred is subj" if $DEBUG;
+		my $subj = $node->subj;
+		if( $subj->equals( $target_value, $args ) )
+		{
+		    next PRED; # Passed test
+		}
+		else
+		{
+		    return 0; # Failed test
+		}
+	    }
+	    else
+	    {
+		debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
+	    }
+	} #### END ARCS
+	elsif( ($pred eq 'subj') or ($pred eq 'obj') )
+	{
+	    debug "QUERY ".query_desig($proplim);
+	    debug  "ON ".$node->desig;
+	    confess "Call for $pred on a nonarc ".$node->desig;
+	}
+
+
+	if( $pred =~ /^count_pred_(.*)/ )
+	{
+	    $pred = $1;
+
+	    if( $clean )
+	    {
+		confess "clean for count_pred not implemented";
+	    }
+
+	    if( $target_value eq '*' )
+	    {
+		$target_value = 0;
+		$match = 'gt';
+	    }
+
+	    debug "    count pred $pred" if $DEBUG;
+
+	    my $count;
+	    if( $rev )
+	    {
+		$count = $node->revcount($pred, $args);
+		debug "      counted $count (rev)" if $DEBUG;
+	    }
+	    else
+	    {
+		$count = $node->count($pred, $args);
+		debug "      counted $count" if $DEBUG;
+	    }
+
+	    my $matchtype =
+	    {
+	     eq    => '==',
+	     ne    => '!=',
+	     gt    => '>',
+	     lt    => '<',
+	    };
+
+	    if( my $cmp = $matchtype->{$match} )
+	    {
+		unless( $target_value =~ /^\d+/ )
+		{
+		    throw('action', "Target value must be a number");
+		}
+
+		if( eval "$count $cmp $target_value" )
+		{
+		    debug 3,"      MATCH";
+		    next PRED; # test passed
+		}
+	    }
+	    else
+	    {
+		confess "Matchtype '$match' not implemented";
+	    }
+
+	}
+	elsif( $match eq 'eq' )
+	{
+	    debug "    match is eq" if $DEBUG;
+	    if( $rev )
+	    {
+		debug "      (rev)\n" if $DEBUG;
+		# clean not sane in rev props
+		next PRED # Check next if this test pass
+		  if $target_value->has_value({$pred=>$node}, $args );
+	    }
+	    else
+	    {
+		# debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
+		next PRED # Check next if this test pass
+		  if $node->has_value({$pred=>$target_value}, $args );
+	    }
+	}
+	elsif( $match eq 'ne' )
+	{
+	    debug "    match is ne" if $DEBUG;
+	    if( $rev )
+	    {
+		debug "      (rev)" if $DEBUG;
+		# clean not sane in rev props
+		next PRED # Check next if this test pass
+		  unless $target_value->has_value({$pred=>$node}, $args );
+	    }
+	    else
+	    {
+		# Matchtype is 'eq'. Result is negated here
+
+		next PRED # Check next if this test pass
+		  unless $node->has_value({$pred=>$target_value}, $args );
+	    }
+	}
+	elsif( $match eq 'exist' )
+	{
+	    debug "    match is exist" if $DEBUG;
+	    if( $rev )
+	    {
+		if( $target_value ) # '1'
+		{
+		    debug 2, "Checking rev exist true";
+		    next PRED
+		      if( $node->has_revpred( $pred, {}, $args ) );
+		}
+		else
+		{
+		    debug 2, "Checking rev exist false";
+		    next PRED
+		      unless( $node->has_revpred( $pred, {}, $args ) );
+		}
+	    }
+	    else
+	    {
+		if( $target_value ) # '1'
+		{
+		    debug 2, "Checking rel exist true (target_value: $target_value)";
+		    next PRED
+		      if( $node->has_pred( $pred, {}, $args ) );
+		}
+		else
+		{
+		    debug 2, "Checking rel exist false";
+		    next PRED
+		      unless( $node->has_pred( $pred, {}, $args ) );
+		}
+	    }
+	}
+	elsif( ($match eq 'begins') or ($match eq 'like') )
+	{
+	    debug "    match is $match" if $DEBUG;
+	    if( $rev )
+	    {
+		confess "      rev not supported for matchtype $match";
+	    }
+
+	    next PRED # Check next if this test pass
+	      if $node->has_value({$pred=>$target_value}, $args );
+	}
+	else
+	{
+	    confess "Matchtype '$match' not implemented";
+	}
+
+	# This node failed the test
+	return 0;
+    }
+
+    # All properties good
+    return 1;
 }
 
 
@@ -2562,6 +2918,8 @@ The literal value that this object represents.  This asumes that the
 object is a Literal Resource (aka Value Resource).  Only use this then you
 know that this L</is_value_node>.
 
+Defaults to C<is_undef>.
+
 =cut
 
 sub literal
@@ -2571,12 +2929,11 @@ sub literal
     if( UNIVERSAL::isa($node,'Para::Frame::List') )
     {
 	croak "deprecated";
-
-	return $node->loc( $args );
+#	return $node->loc( $args );
     }
 
     debug "Turning node ".$node->{'id'}." to literal";
-    return $node->desig( $args );
+    return $node->first_prop('value', $args);
 }
 
 
@@ -2868,7 +3225,8 @@ sub first_arc
 	{
 	    foreach my $arc (@{$node->{'relarc'}{$name}})
 	    {
-		if( $arc->meets_arclim($arclim) )
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
 		{
 		    return $arc;
 		}
@@ -2882,7 +3240,8 @@ sub first_arc
 	{
 	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
 	    {
-		if( $arc->meets_arclim($arclim) )
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
 		{
 		    debug "Arc ".$arc->sysdesig." meets ".$arclim->sysdesig;
 		    return $arc;
@@ -2925,7 +3284,8 @@ sub first_revarc
 	{
 	    foreach my $arc (@{$node->{'revarc'}{$name}})
 	    {
-		if( $arc->meets_arclim($arclim) )
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
 		{
 		    return $arc;
 		}
@@ -2939,7 +3299,8 @@ sub first_revarc
 	{
 	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
 	    {
-		if( $arc->meets_arclim($arclim) )
+		if( $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim) )
 		{
 		    return $arc;
 		}

@@ -421,6 +421,57 @@ sub coltype
 
 #######################################################################
 
+=head2 meets_proplim
+
+  $obj->meets_proplim( $proplim, \%args )
+
+This is implemented for L<Rit::Base::Resource>. Other objects returns
+false if proplim is defined and has content.
+
+=cut
+
+sub meets_proplim
+{
+    return 1 unless $_[1];
+    return 1 unless keys %{$_[1]};
+    return 0;
+}
+
+
+#######################################################################
+
+=head2 has_value
+
+  $literal->has_value( ... )
+
+Returns: false
+
+=cut
+
+sub has_value
+{
+    return 0;
+}
+
+
+#######################################################################
+
+=head2 has_pred
+
+  $literal->has_pred( ... )
+
+Returns: false
+
+=cut
+
+sub has_pred
+{
+    return 0;
+}
+
+
+#######################################################################
+
 =head2 contains_any_of
 
   $obj->contains_any_of( $node, \%args )

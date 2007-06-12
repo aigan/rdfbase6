@@ -143,31 +143,27 @@ Methods that returnes new modified lists
 =head2 find
 
   # Returns true/false
-  $l->find( $value )
+  $l->find( $value, \%args )
 
   # Returns true/false
-  $l->find( \@list )
+  $l->find( \@list, \%args )
 
   # Returns a list
-  $l->find( $key => $value )
-
-  # Returns a list
-  $l->find({ $key1 => $value1, $key2 => $value2, ... })
+  $l->find( \%proplim, \%args )
 
   # Returns the same object
   $l->find()
 
-  $l->find( $ref, \%args );
-
 The first two forms calls L</contains> with the params and returns 1
-or 0. It will call L</contains> for all cases where there is one
-parameter that is not a hashref.
+or 0. It will call L</contains> for all cases where the first
+parameter is not a hashref.
 
-The second two forms find the elements in the list that has the given
-properties and returns a new L<Para::Frame::List> with those elements.
+The third form finds the elements in the list that meets the given
+proplim, using L<Rit::Base::Resource/meets_proplim> and returns a new
+L<Para::Frame::List> with those elements.
 
-For the last form, the same list object will be returned if there is
-no param or if the first param is interpreted as false.
+For the last form, the same list object will be returned if the first
+param is undef or an empty hashref, regardless of C<\%args>.
 
 =head3 Details
 
@@ -297,9 +293,7 @@ sub find
 	confess datadump(\@_,2);
     }
 
-    my $l = shift;
-    my $tmpl = shift;
-    my( $args_in, $arclim_in ) = Rit::Base::Resource::parse_propargs(@_);
+    my( $l, $tmpl, $args ) = @_;
 
     my $DEBUG = debug();
     $DEBUG and $DEBUG --;
@@ -322,7 +316,7 @@ sub find
     unless( ref $tmpl and ref $tmpl eq 'HASH' )
     {
 #	debug 2, "Does list contain $tmpl?";
-	return $l->contains( $tmpl, $args_in );
+	return $l->contains( $tmpl, $args );
     }
 
     if( $DEBUG > 1 )
@@ -350,320 +344,11 @@ sub find
 	# Check each prop in the template.  All must match.  One
 	# failed match and this $node in not placed in @newlist
 
-      PRED:
-	foreach my $pred_part ( keys %$tmpl )
+	if( $node->meets_proplim( $tmpl, $args ) )
 	{
-	    my $target_value =  $tmpl->{$pred_part};
-	    if( $DEBUG )
-	    {
-		debug "  Pred $pred_part";
-		debug "  Target $target_value (".ref($target_value).")";
-	    }
-
-	    # Target value may be a plain scalar or undef or an object !!!
-
-	    if( $pred_part =~ /^(\w+)\.(.*)/ )
-	    {
-		my $pred_first = $1;
-		my $pred_after = $2;
-
-		debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
-
-		# It may be a method for the node class
-		my $subres = $node->$pred_first({}, $args_in);
-
-		unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
-		{
-		    unless( UNIVERSAL::isa($subres, 'ARRAY') )
-		    {
-			$subres = [$subres];
-		    }
-		    $subres = Rit::Base::List->new($subres);
-		}
-
-		my $found = 0;
-		foreach my $subnode ( $subres->nodes )
-		{
-		    if( $subnode->find({$pred_after => $target_value},
-				       $args_in)->size )
-		    {
-			$found ++;
-			last;
-		    }
-		}
-
-		if( $found )
-		{
-		    next PRED;
-		}
-
-		next NODE;
-	    }
-
-
-	    #                      Regexp compiles once
-	    my $re;
-
-	    unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
-	    {
-		$Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-		unless( $pred_part )
-		{
-		    if( debug )
-		    {
-			debug "No pred_part?";
-			debug "Template: ".datadump($tmpl,2);
-			debug "For node ".$node->sysdesig;
-		    }
-		}
-		die "wrong format in find: $pred_part\n";
-	    }
-
-	    my $rev    = $1;
-	    my $pred   = $2;
-	    my $arclim = $3 || $arclim_in;
-	    my $clean  = $4 || $args_in->{'clean'} || 0;
-	    my $match  = $5 || 'eq';
-	    my $prio   = $6; #not used
-
-	    my $args =
-	    {
-	     %$args_in,
-	     match =>'eq',
-	     clean => $clean,
-	     arclim => $arclim,
-	    };
-
-
-	    if( $pred =~ s/^predor_// )
-	    {
-		my( @prednames ) = split /_-_/, $pred;
-		my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
-		$pred = \@preds;
-	    }
-
-	    # match '*' handled below (but not matchtype 'exist')
-
-	    #### ARCS
-	    if( ref $node eq 'Rit::Base::Arc' )
-	    {
-		## TODO: Handle preds in the form 'obj.scof'
-
-		if( ($match ne 'eq' and $match ne 'begins') or $clean )
-		{
-		    confess "Not implemented: $pred_part";
-		}
-
-		# Failes test if arc doesn't meets the arclim
-		next NODE unless $node->meets_arclim( $arclim );
-
-		debug "  Node is an arc" if $DEBUG;
-		if( ($pred eq 'obj') or ($pred eq 'value') )
-		{
-		    debug "  Pred is value" if $DEBUG;
-		    my $value = $node->value; # Since it's a pred
-		    next PRED if $target_value eq '*'; # match all
-		    if( ref $value )
-		    {
-			if( $match eq 'eq' )
-			{
-			    next PRED # Passed test
-			      if $value->equals( $target_value, $args );
-			}
-			elsif( $match eq 'begins' )
-			{
-			    confess "Matchtype 'begins' only allowed for strings, not ". ref $value
-			      unless( ref $value eq 'Rit::Base::String' );
-
-			    if( $value->begins( $target_value, $args ) )
-			    {
-				next PRED; # Passed test
-			    }
-			}
-			else
-			{
-			    confess "Matchtype not implemented: $match";
-			}
-
-			next NODE; # Failed test
-		    }
-		    else
-		    {
-			die "not implemented";
-		    }
-		}
-		elsif( $pred eq 'subj' )
-		{
-		    debug "  pred is subj" if $DEBUG;
-		    my $subj = $node->subj;
-		    if( $subj->equals( $target_value, $args ) )
-		    {
-			next PRED; # Passed test
-		    }
-		    else
-		    {
-			next NODE; # Failed test
-		    }
-		}
-		else
-		{
-		    debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
-		}
-	    } #### END ARCS
-	    elsif( ($pred eq 'subj') or ($pred eq 'obj') )
-	    {
-		debug "QUERY ".query_desig($tmpl);
-		debug  "ON LIST ".$l->desig;
-		confess "Call for $pred on a nonarc ".$node->desig;
-	    }
-
-
-	    if( $pred =~ /^count_pred_(.*)/ )
-	    {
-		$pred = $1;
-
-		if( $clean )
-		{
-		    confess "clean for count_pred not implemented";
-		}
-
-		if( $target_value eq '*' )
-		{
-		    $target_value = 0;
-		    $match = 'gt';
-		}
-
-		debug "    count pred $pred" if $DEBUG;
-
-		my $count;
-		if( $rev )
-		{
-		    $count = $node->revcount($pred, $args);
-		    debug "      counted $count (rev)" if $DEBUG;
-		}
-		else
-		{
-		    $count = $node->count($pred, $args);
-		    debug "      counted $count" if $DEBUG;
-		}
-
-		my $matchtype =
-		{
-		 eq    => '==',
-		 ne    => '!=',
-		 gt    => '>',
-		 lt    => '<',
-		};
-
-		if( my $cmp = $matchtype->{$match} )
-		{
-		    unless( $target_value =~ /^\d+/ )
-		    {
-			throw('action', "Target value must be a number");
-		    }
-
-		    if( eval "$count $cmp $target_value" )
-		    {
-			debug 3,"      MATCH";
-			next PRED; # test passed
-		    }
-		}
-		else
-		{
-		    confess "Matchtype '$match' not implemented";
-		}
-
-	    }
-	    elsif( $match eq 'eq' )
-	    {
-		debug "    match is eq" if $DEBUG;
-		if( $rev )
-		{
-		    debug "      (rev)\n" if $DEBUG;
-		    # clean not sane in rev props
-		    next PRED # Check next if this test pass
-			if $target_value->has_value({$pred=>$node}, $args );
-		}
-		else
-		{
-#		    debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
-		    next PRED # Check next if this test pass
-			if $node->has_value({$pred=>$target_value}, $args );
-		}
-	    }
-	    elsif( $match eq 'ne' )
-	    {
-		debug "    match is ne" if $DEBUG;
-		if( $rev )
-		{
-		    debug "      (rev)" if $DEBUG;
-		    # clean not sane in rev props
-		    next PRED # Check next if this test pass
-			unless $target_value->has_value({$pred=>$node}, $args );
-		}
-		else
-		{
-		    # Matchtype is 'eq'. Result is negated here
-
-		    next PRED # Check next if this test pass
-			unless $node->has_value({$pred=>$target_value}, $args );
-		}
-	    }
-	    elsif( $match eq 'exist' )
-	    {
-		debug "    match is exist" if $DEBUG;
-		if( $rev )
-		{
-		    if( $target_value ) # '1'
-		    {
-			debug 2, "Checking rev exist true";
-			next PRED
-			  if( $node->has_revpred( $pred, {}, $args ) );
-		    }
-		    else
-		    {
-			debug 2, "Checking rev exist false";
-			next PRED
-			  unless( $node->has_revpred( $pred, {}, $args ) );
-		    }
-		}
-		else
-		{
-		    if( $target_value ) # '1'
-		    {
-			debug 2, "Checking rel exist true (target_value: $target_value)";
-			next PRED
-			  if( $node->has_pred( $pred, {}, $args ) );
-		    }
-		    else
-		    {
-			debug 2, "Checking rel exist false";
-			next PRED
-			  unless( $node->has_pred( $pred, {}, $args ) );
-		    }
-		}
-	    }
-	    elsif( ($match eq 'begins') or ($match eq 'like') )
-	    {
-		debug "    match is $match" if $DEBUG;
-		if( $rev )
-		{
-		    confess "      rev not supported for matchtype $match";
-		}
-
-		next PRED # Check next if this test pass
-		  if $node->has_value({$pred=>$target_value}, $args );
-	    }
-	    else
-	    {
-		confess "Matchtype '$match' not implemented";
-	    }
-
-	    # This node failed the test.  Check next node
-	    next NODE;
+	    debug "  Add node to list" if $DEBUG;
+	    push @newlist, $node;
 	}
-	debug "  Add node to list" if $DEBUG;
-	push @newlist, $node;
     }
     debug "Return ".(scalar @newlist)." results for ".
       query_desig($tmpl) if $DEBUG;
