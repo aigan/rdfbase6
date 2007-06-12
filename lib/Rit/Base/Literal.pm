@@ -148,6 +148,8 @@ sub id
 
 =head2 arc
 
+=head2 revarc
+
   $literal->arc
 
 Return the arc for this literal
@@ -155,6 +157,11 @@ Return the arc for this literal
 =cut
 
 sub arc
+{
+    $_[0]->{'arc'} || is_undef;
+}
+
+sub revarc
 {
     $_[0]->{'arc'} || is_undef;
 }
@@ -289,6 +296,16 @@ sub initiate_cache
     $literal->set_arc( $arc );
 
     return $literal;
+}
+
+
+sub has_value
+{
+    return 0;
+}
+sub has_pred
+{
+    return 0;
 }
 
 
