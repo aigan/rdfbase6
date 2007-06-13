@@ -6663,7 +6663,7 @@ sub handle_query_arc_value
 					    value   => $value,
 					    valtype => $pred->valtype,
 					   }, $args);
-		    $node->add({ $pred_name => $valnode });
+		    $node->add({ $pred_name => $valnode }, $args);
 		}
 		else
 		{
