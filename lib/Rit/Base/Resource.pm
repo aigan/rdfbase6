@@ -1106,7 +1106,7 @@ sub form_url
     }
     elsif( $n->is_value_node )
     {
-	$path = "rb/node/translation/node.tt";
+	$path = "rb/translation/node.tt";
     }
     else
     {
@@ -5684,6 +5684,13 @@ sub initiate_rev
     my( $active, $inactive ) = $arclim->incl_act();
 
     my $nid = $node->id;
+
+#    debug "initiating rev for $nid with A$active I$inactive";
+#    if( $_[0]->{'initiated_rev'} )
+#    {
+#	debug "  initiated_rev";
+#    }
+
     my $sql = "select * from arc where obj=?";
 
     if( $active and not $inactive )
@@ -5749,6 +5756,8 @@ sub initiate_rev
 #	    $extralim++;
 #	}
 #    }
+
+#    debug "SQL $sql";
 
     my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
     $sth_init_subj->execute($nid);
@@ -6179,7 +6188,7 @@ sub populate_rev
     if( debug > 3 )
     {
 	debug "Creating arc for $node->{id} with ".datadump($stmt,4);
-	debug timediff("new arc");
+#	debug timediff("new arc");
     }
     my $arc = Rit::Base::Arc->get_by_rec_and_register( $stmt, undef, $node );
     if( debug > 3 )
