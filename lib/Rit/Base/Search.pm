@@ -865,7 +865,7 @@ sub execute
 
     my $result;
 
-    if( $min_prio > 5 )
+    if( $min_prio > 4 ) # was 5
     {
 	debug "Search is to heavy! Runs in background";
 	debug $search->sysdesig;
