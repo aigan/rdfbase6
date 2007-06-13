@@ -6656,13 +6656,13 @@ sub handle_query_arc_value
 		    my $value_str = Rit::Base::String->new( $value );
 		    my $valnode = $R->create({
 					      is_of_language => $language,
-					     });
+					     }, $args);
 		    Rit::Base::Arc->create({
 					    subj_id => $valnode,
 					    pred => 'value',
 					    value   => $value,
 					    valtype => $pred->valtype,
-					   });
+					   }, $args);
 		    $node->add({ $pred_name => $valnode });
 		}
 		else
@@ -7596,7 +7596,7 @@ AUTOLOAD
     }
 
 
-    # This part is returning the corersponging value in the object
+    # This part is returning the corersponding value in the object
     #
     my $res =  eval
     {
