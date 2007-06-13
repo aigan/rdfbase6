@@ -2362,7 +2362,7 @@ sub set_arclim
     my( $search, $arclim ) = @_;
 
     return $search->{'arclim'} =
-      Rit::Base::Arc->parse_arclim( $arclim );
+      Rit::Base::Arc::Lim->parse( $arclim );
 }
 
 

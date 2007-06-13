@@ -36,6 +36,7 @@ use Para::Frame::Utils qw( throw debug datadump  );
 use Para::Frame::List;
 
 use Rit::Base::Utils qw( is_undef valclean query_desig );
+use Rit::Base::Arc::Lim;
 
 ### Inherit
 #
@@ -1849,7 +1850,7 @@ sub meets_arclim
 {
     my( $l, $arclim ) = @_;
 
-    $arclim = Rit::Base::Arc->parse_arclim($arclim);
+    $arclim = Rit::Base::Arc::Lim->parse($arclim);
 
     unless( @$arclim )
     {
