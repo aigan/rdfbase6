@@ -3199,6 +3199,8 @@ sub init
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
 
+#    debug "Init arc $id with value_obj $value_obj";
+
     if( $rec )
     {
 	$rec->{'ver'} or confess "no ver: ".datadump($rec);
@@ -3393,7 +3395,7 @@ sub register_with_nodes
     my $pred = $arc->pred;
     my $subj = $arc->{'subj'};
     my $pred_name = $pred->name->plain;
-    my $coltype = $arc->coltype;
+    my $coltype = $arc->real_coltype;
 
 #    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
 
