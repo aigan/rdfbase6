@@ -57,6 +57,13 @@ sub handler
     #
     elsif( $pred_name )
     {
+	my $submit = 0;
+	if( $arc->submitted )
+	{
+	    $submit = 1;
+	    $arc->unsubmit;
+	}
+
 	my $new = $arc->set_pred( $pred_name, $args );
 	$new = $new->set_value( $value, $args );
 	debug "New arc is ".$new->sysdesig;
@@ -64,6 +71,11 @@ sub handler
 	# Should we transform this literal to a value node?
 	my $props = parse_arc_add_box( $literal_arcs );
 	$new->value->update( $props, $args );
+
+	if( $submit )
+	{
+	    $arc->submit;
+	}
 
 	if( $res->changes )
 	{

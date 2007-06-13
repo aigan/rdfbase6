@@ -31,7 +31,21 @@ sub handler
     my $arc = getnode( $aid );
     my $desig = $arc->sysdesig;
 
-    if( $arc->submit )
+
+    # ignored...
+    $q->delete('val');
+    $q->delete('pred');
+    $q->delete('literal_arcs');
+
+    if( $arc->old )
+    {
+	if( my $new = $arc->resubmit )
+	{
+	    $q->param('arc_id' => $new->id );
+	    return "Resubmitted arc";
+	}
+    }
+    elsif( $arc->submit )
     {
 	return "Submitted arc";
     }

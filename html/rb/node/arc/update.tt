@@ -156,12 +156,16 @@
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
       [% go("Unsubmit", me, "arc_unsubmit") %]
+      [% step("Update submitted version") %]
    [% ELSIF arc.deactivated %]
+      [% go("Re-submit as a new version", me, "arc_submit") %]
+      [% step("Save as a new version") %]
    [% ELSE %]
       [% go("Submit", me, "arc_submit") %]
+      [% step("Save") %]
    [% END %]
 [% END %]
-[% step %] &nbsp;
+&nbsp;
 [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
 </p>
 

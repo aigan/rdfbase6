@@ -27,6 +27,11 @@ sub handler
 
     my $q = $req->q;
 
+    # ignored...
+    $q->delete('val');
+    $q->delete('pred');
+    $q->delete('literal_arcs');
+
     my $aid = $q->param('arc_id');
     my $arc = getnode( $aid );
     my $desig = $arc->sysdesig;

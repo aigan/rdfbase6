@@ -2589,7 +2589,7 @@ sub set_value
 
     unless( $value_new->equals( $value_old, $args ) )
     {
-	if( $arc->active or $arc->submitted )
+	unless( $arc->is_new )
 	{
 	    my $new = Rit::Base::Arc->create({
 					      common_id => $arc->common_id,
@@ -2749,7 +2749,7 @@ sub set_pred
 
 =head2 submit
 
-  $a->submit
+  $a->submit( \%args )
 
 Submits the arc
 
@@ -2773,6 +2773,11 @@ sub submit
 	throw('validation', "Arc is already submitted");
     }
 
+    if( $arc->old )
+    {
+	throw('validation', "Arc is old");
+    }
+
     my $dbix = $Rit::dbix;
 
     my $updated = now();
@@ -2793,11 +2798,46 @@ sub submit
 
 #######################################################################
 
+=head2 resubmit
+
+  $a->resubmit( \%args )
+
+Submits the arc
+
+Returns: the new arc
+
+Exceptions: validation
+
+=cut
+
+sub resubmit
+{
+    my( $arc, $args ) = @_;
+
+    unless( $arc->old )
+    {
+	throw('validation', "Arc is not old");
+    }
+
+    my $new = Rit::Base::Arc->create({
+				      common_id => $arc->common_id,
+				      replaces_id => $arc->id,
+				      active => 0,
+				      submitted => 1,
+				      subj_id => $arc->{'subj'},
+				      pred_id => $arc->{'pred'},
+				      value => $arc->{'value'},
+				     }, $args );
+    return $new;
+}
+
+#######################################################################
+
 =head2 unsubmit
 
   $a->unsubmit
 
-Submits the arc
+Unsubmits the arc
 
 Returns: the number of changes
 

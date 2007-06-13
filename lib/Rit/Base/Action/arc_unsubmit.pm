@@ -31,6 +31,11 @@ sub handler
     my $arc = getnode( $aid );
     my $desig = $arc->sysdesig;
 
+    # ignored...
+    $q->delete('val');
+    $q->delete('pred');
+    $q->delete('literal_arcs');
+
     if( $arc->unsubmit )
     {
 	return "Unsubmitted arc";
