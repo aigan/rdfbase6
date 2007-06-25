@@ -437,6 +437,11 @@ sub valtype
     }
     else
     {
+	if( $pred->{'coltype'} == 6 )
+	{
+	    confess "Predicate 'value' has no valtype";
+	}
+
 	return Rit::Base::Constants->get( $Rit::Base::COLTYPE_num2name{ $pred->{'coltype'} } );
     }
 }
