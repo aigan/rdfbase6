@@ -507,7 +507,7 @@ sub create
 
 	warn "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".query_desig($value_obj) if $DEBUG;
 
-	debug "Getting arclist for ".$subj->sysdesig;
+#	debug "Getting arclist for ".$subj->sysdesig;
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 	debug query_desig($existing_arcs); ### DEBUG
 
@@ -831,6 +831,8 @@ Returns: ---
 sub find_remove
 {
     my( $this, $props, $args ) = @_;
+
+    $args ||= {};
 
     # If called with 'implicit', only remove arc if it no longer can
     # be infered and it's not explicitly declared.  All checks in
@@ -1579,7 +1581,6 @@ sub deactivate
     }
 
     my $updated = $narc->updated;
-
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
 
@@ -1596,7 +1597,11 @@ sub deactivate
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
     $arc->initiate_cache;
+    $arc->remove_check();
     cache_update;
+    send_cache_update({ change => 'arc_updated',
+			arc_id => $arc->id,
+		      });
 
     return;
 }
@@ -1940,6 +1945,8 @@ sub vacuum
 {
     my( $arc, $args ) = @_;
 
+    $args ||= {};
+
     my $DEBUG = 0;
 
     warn "vacuum arc $arc->{id}\n" if $DEBUG;
@@ -2034,7 +2041,7 @@ sub remove_duplicates
     my $dbh = $Rit::dbix->dbh;
 
     my $subj = $arc->subj;
-    foreach my $arc2 ( $subj->arc_list($arc->pred, $args)->nodes )
+    foreach my $arc2 ( $subj->arc_list($arc->pred, undef, $args)->nodes )
     {
 	next unless $arc->obj->equals( $arc2->obj, $args );
 	next if $arc->id == $arc2->id;
@@ -2340,9 +2347,10 @@ sub remove
     if( $DEBUG )
     {
 	debug sprintf("  Req rem arc id %s\n", $arc->sysdesig);
+
 	my($package, $filename, $line) = caller;
-	debug "  called from $package, line $line\n";
-	debug "  validate_check\n";
+	debug "  called from $package, line $line";
+	debug "  validate_check";
     }
 
     # If this arc is removed, there is nothing to remove
@@ -2351,8 +2359,10 @@ sub remove
     $args ||= {};
     my $implicit = $args->{'implicit'} || 0;
 
-    if( $arc->active )
+    if( $arc->active and not $implicit )
     {
+	debug "  Arc active but not flag implicit" if $DEBUG;
+
 	my $dbix = $Rit::dbix;
 	my $new = Rit::Base::Arc->create({
 					  common_id => $arc->common_id,
@@ -2381,19 +2391,17 @@ sub remove
 	return 1;
     }
 
-
     # Can this arc be infered?
     if( $arc->validate_check( $args ) )
     {
 	if( $implicit )
 	{
-	    debug "  Arc implicit and infered\n" if $DEBUG;
+	    debug "  Arc implicit and infered" if $DEBUG;
 	    return 0;
 	}
 
-
 	# Arc was explicit but is now indirect implicit
-	debug "  Arc infered; set implicit\n" if $DEBUG;
+	debug "  Arc infered; set implicit" if $DEBUG;
 	$arc->set_implicit(1);
 	return 0;
     }
@@ -2405,11 +2413,10 @@ sub remove
 	    # more. -- This was probably caused by some arc being
 	    # disregarded.  (nested inference?)
 
-	    debug "  Arc implicit but not infered\n" if $DEBUG;
+	    debug "  Arc implicit but not infered" if $DEBUG;
 	    $implicit ++; # Implicit remove mode
 	}
     }
-
 
     if( $implicit and $arc->explicit ) # remove implicit
     {
@@ -2432,17 +2439,17 @@ sub remove
 	return 0;
     }
 
-    debug "  remove_check\n" if $DEBUG;
+    debug "  remove_check" if $DEBUG;
     $arc->remove_check( $args );
 
     # May have been removed during remove_check
     return 0 if $arc->is_removed;
 
-    debug "  SUPER::remove\n" if $DEBUG;
+    debug "  SUPER::remove" if $DEBUG;
     $arc->SUPER::remove();  # Removes the arc node: the arcs properties
 
     my $arc_id = $arc->id;
-    debug "Removed arc id ".$arc->sysdesig."\n";
+    debug "Removed arc id ".$arc->sysdesig;
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
 
@@ -2450,7 +2457,7 @@ sub remove
 #    confess "***** Would have removed arc $arc_id\n"; 
     $sth->execute($arc_id);
 
-    debug "  init subj\n" if $DEBUG;
+    debug "  init subj" if $DEBUG;
     $arc->subj->initiate_cache;
     $arc->value->initiate_cache(undef);
 
@@ -2704,7 +2711,6 @@ sub set_value
 
 	$arc->schedule_check_create;
 	cache_update;
-
 	send_cache_update({ change => 'arc_updated',
 			    arc_id => $arc->id,
 			  });
@@ -2950,7 +2956,13 @@ sub activate
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
     $arc->initiate_cache;
+
+    $arc->schedule_check_create;
     cache_update;
+    send_cache_update({ change => 'arc_updated',
+			arc_id => $arc->id,
+		      });
+
 
     if( $aarc ) # Previously active arc
     {
@@ -3037,6 +3049,9 @@ sub set_implicit
     $arc->{'implicit'} = $val;
 
     cache_update;
+    send_cache_update({ change => 'arc_updated',
+			arc_id => $arc->id,
+		      });
 
     return $val;
 }
@@ -3124,6 +3139,9 @@ sub set_indirect
     }
 
     cache_update;
+    send_cache_update({ change => 'arc_updated',
+			arc_id => $arc->id,
+		      });
 
     return $val;
 }
@@ -3496,7 +3514,7 @@ sub register_with_nodes
 	    $value->{'arc_id'}{$id} = $arc;
 	}
     }
-    else
+    elsif( defined $value )
     {
 	# Remember the arc this Literal belongs to
 	$value->set_arc( $arc );
@@ -3585,7 +3603,7 @@ sub schedule_check_create
     if( $Rit::Base::Arc::lock_check ||= 0 )
     {
 	push @Rit::Base::Arc::queue_check, $arc;
-#	cluck "Added ".$arc->sysdesig." to queue check";
+	debug "Added ".$arc->sysdesig." to queue check";
     }
     else
     {
