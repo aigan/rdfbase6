@@ -518,6 +518,7 @@ sub create_infere_rev
 			 subj => $arc2->subj,
 			 obj  => $obj,
 			 implicit => 1,
+			 active => 1, # Activate directly
 			})->set_indirect;
     }
 }
@@ -548,6 +549,7 @@ sub create_infere_rel
 			 subj => $subj,
 			 obj  => $arc2->obj,
 			 implicit => 1,
+			 active => 1, # Activate directly
 			})->set_indirect;
     }
 }
