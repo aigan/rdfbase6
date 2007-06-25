@@ -36,6 +36,8 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 
+#use Rit::Base::Utils qw( query_desig );
+
 use base qw(Para::Frame::L10N);
 
 our %TRANSLATION;
@@ -126,7 +128,9 @@ sub maketext
 	    {
 		return $val;
 	    }
-	    confess "Can't translate value: ". datadump($phrase, 2);
+
+	    debug "----------> During maketext: ".$phrase->sysdesig." is not a value resource";
+	    return $phrase->desig;
 	}
 	else
 	{
