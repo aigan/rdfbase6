@@ -3265,21 +3265,22 @@ sub init
 
     my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
 
-    ### Bootstrap coltype
-    my $coltype_num = $pred->{'coltype'} or confess datadump($pred,1);
-    my $coltype;
-    if( $coltype_num == 6 )
-    {
-	$coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} };
-    }
-    else
-    {
-	$coltype = $Rit::Base::COLTYPE_num2name{ $coltype_num };
-    }
-
     my $value = $value_obj;
     unless( $value )
     {
+	### Bootstrap coltype
+	my $coltype_num = $pred->{'coltype'} or confess datadump($pred,1);
+	my $coltype;
+	if( $coltype_num == 6 )
+	{
+	    $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} }
+	      or confess "Couldn't find coltype for valtype $rec->{'valtype'}";
+	}
+	else
+	{
+	    $coltype = $Rit::Base::COLTYPE_num2name{ $coltype_num };
+	}
+
 	if( $rec->{'obj'} )
 	{
 	    # Set value to obj, even if coltype is a literal, since the obj
