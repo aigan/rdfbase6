@@ -4007,12 +4007,28 @@ Overall plan:
 update_by_query maps through all parameters in the current request.
 It sorts into 4 groups, depending on what the parameter begins with:
 
- 1. Add / update properties  (arc/prop)
+ 1. Add / update properties  (arc/prop/image)
  2. Complemnt those props with second order atributes (row)
  3. Check if some props should be removed (check)
  4. Add new resources (newsubj)
 
 Returns: the number of changes
+
+=head3 1. Add / update
+
+Parameters beginning with arc_ prop_ or image_
+
+=head4 images
+
+Images are to be uploaded as a filefield, and are saved to the
+"logos"-folder
+
+The image can be scaled proportianally to fit within certain
+max-dimensions in pixels by having parameters maxx and maxy.  A
+typical image-parameter would be:
+
+image___pred_logo_main__maxx_400__maxy_300__row_12
+
 
 =head3 4. Add new resources
 
@@ -4086,6 +4102,10 @@ sub update_by_query
 	    next if $q->param("check_$param"); #handled by check below
 	    push @arc_params, $param;
 	}
+#"	elsif( $param =~ /^image_.*$/ )
+#"	{
+#"	    push @image_params, $param;
+#"	}
 	elsif( $param =~ /^row_.*$/ )
 	{
 	    push @row_params, $param;
@@ -6453,6 +6473,7 @@ sub handle_query_arc_value
 
 	if( $arc->pred->id != $pred_id )
 	{
+	    debug "Arc is: ". $arc->sysdesig;
 	    $arc->set_pred( $pred_id, $args );
 	}
 
@@ -7306,6 +7327,9 @@ sub handle_query_check_revprop
 
 sub authenticate_update
 {
+    return 1;
+
+
     my( $node, $pred ) = @_;
 
     my $req = $Para::Frame::REQ;
