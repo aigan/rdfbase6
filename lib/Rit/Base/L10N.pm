@@ -129,8 +129,10 @@ sub maketext
 		return $val;
 	    }
 
-	    debug "----------> During maketext: ".$phrase->sysdesig." is not a value resource";
-	    return $phrase->desig;
+	    my $val = $phrase->id;
+
+	    debug "----------> During maketext: node $val is not a value resource";
+	    return $val;
 	}
 	else
 	{
