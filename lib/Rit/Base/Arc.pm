@@ -305,7 +305,7 @@ sub create
     {
 	if( $pred->{'coltype'} == 6 )  # Value resource?
 	{
-	    ### Get coltype from subjs revarc
+	    ### Get valtype from subjs revarc
 	    my $revarc = $subj->revarc; # Should be only one on a value resource
 	    my $revpred = $revarc->pred;
 	    $rec->{'valtype'} = $revpred->valtype->id;
