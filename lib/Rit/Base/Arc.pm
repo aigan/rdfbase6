@@ -303,7 +303,20 @@ sub create
     }
     else
     {
-	$rec->{'valtype'} = $pred->valtype->id;
+	if( $pred->{'coltype'} == 6 )  # Value resource?
+	{
+	    ### Get coltype from subjs revarc
+	    my $revarc = $subj->revarc; # Should be only one on a value resource
+	    my $revpred = $revarc->pred;
+	    $rec->{'valtype'} = $revpred->valtype->id;
+
+	    confess("I won't make a value resource with a resource as value.")
+	      if( $props->{'obj_id'} );
+	}
+	else
+	{
+	    $rec->{'valtype'} = $pred->valtype->id;
+	}
     }
     push @fields, 'valtype';
     push @values, $rec->{'valtype'};
@@ -353,19 +366,6 @@ sub create
 
     debug "Valtype: ". $rec->{'valtype'} if $DEBUG;
     debug "Coltype: $coltype" if $DEBUG;
-
-    #################### Value resources
-    if( $rec->{'valtype'} eq $C_value->id )
-    {
-	### Get coltype from subjs revarc
-	my $revarc = $subj->revarc; # Should be only one on a value resource
-	my $revpred = $revarc->pred;
-	$coltype = $revpred->coltype;
-
-	confess("I won't make a value resource with a resource as value.")
-	  if( $props->{'obj_id'} );
-    }
-
 
     if( my $obj_id = $props->{'obj_id'} )
     {
