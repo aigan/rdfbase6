@@ -45,7 +45,7 @@ use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
 use Rit::Base::Resource::Change;
-use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group );
+use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group $C_value );
 
 ### Inherit
 #
@@ -204,7 +204,7 @@ sub create
     push @fields, 'active';
     unless( defined $props->{'active'} )
     {
-	$props->{'active'} = 1;
+	$props->{'active'} = 0;
     }
 
     if( $props->{'active'} )
@@ -223,6 +223,11 @@ sub create
     push @fields, 'submitted';
     if( $props->{'submitted'} )
     {
+	if( $rec->{'active'} )
+	{
+	    confess "Arc can't be both active and submitted: ".query_desig($props);
+	}
+
 	$rec->{'submitted'} = 1;
 	push @values, 't';
     }
