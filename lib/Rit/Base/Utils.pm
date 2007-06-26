@@ -953,6 +953,7 @@ sub query_desig
     my( $query, $args, $ident ) = @_;
 
     $ident ||= 0;
+    $query ||= '<undef>';
     my $out = "";
 #    warn "query_desig on level $ident\n";
 

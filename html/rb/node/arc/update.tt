@@ -1,7 +1,8 @@
 ﻿[% META otitle="Arc edit"
    	next_action = 'arc_edit'
 	default_template = 'update.tt'
-        level = 20
+        level = 1
+#        level = 20
 %]
 
 
@@ -47,7 +48,12 @@
    <td>[% arc.pred.name %]</td>
 </tr>
 
-[% IF arc.realy_objtype %]
+[% IF arc.is_removal %]
+<tr>
+   <td>Value</td>
+   <td><strong>REMOVED</strong></td>
+</tr>
+[% ELSIF arc.realy_objtype %]
 <tr>
    <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
    <td>[% arc.obj.sysdesig | html %]</td>
@@ -84,7 +90,12 @@
    <td>[% input('pred', arc.pred.name) %]</td>
 </tr>
 
-[% IF arc.realy_objtype %]
+[% IF arc.is_removal %]
+<tr>
+   <td>Value</td>
+   <td><strong>REMOVED</strong></td>
+</tr>
+[% ELSIF arc.realy_objtype %]
 <tr>
    <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
    <td>[% input('val', arc.obj.sysdesig) %]</td>
@@ -156,7 +167,13 @@
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
       [% go("Unsubmit", me, "arc_unsubmit") %]
-      [% step("Update submitted version") %]
+      [% IF arc.is_removal %]
+         [% nostep %]
+      [% ELSE %]
+         [% step("Update submitted version") %]
+      [% END %]
+   [% ELSIF arc.is_removal %]
+      [% nostep %]
    [% ELSIF arc.deactivated %]
       [% go("Re-submit as a new version", me, "arc_submit") %]
       [% step("Save as a new version") %]
@@ -164,9 +181,11 @@
       [% go("Submit", me, "arc_submit") %]
       [% step("Save") %]
    [% END %]
+[% ELSE %]
+   [% step("Save as a new version") %]
+   &nbsp;
+   [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
 [% END %]
-&nbsp;
-[% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
 </p>
 
 [% IF arc.indirect %]
@@ -181,6 +200,68 @@
   [% END %]
   </dl>
 [% END %]
+
+<h2>History</h2>
+<table class='admin'>
+<tr><td>Version</td><td>Created</td><td>Action</td></tr>
+[% FOREACH varc IN arc.versions %]
+<tr>
+  <td>
+  [% IF varc.equals(arc) %]
+     <strong><em>
+     [% jump(varc.version_id, varc.form_url) %]</td>
+     </em></strong>
+  [% ELSE %]
+     [% jump(varc.version_id, varc.form_url) %]</td>
+  [% END %]
+  <td>
+     [% varc.created %] by
+     [%+ jump(varc.created_by.desig, varc.created_by.form_url) %]
+  </td>
+  <td>
+  [% IF varc.active %]
+     <strong>ACTIVE</strong><br>
+  [% END %]
+
+  [% IF varc.is_removal %]
+     REMOVAL
+     [% IF varc.activated %]
+         accepted
+        [%+ varc.activated %] by
+        [%+ jump(varc.activated_by.desig, varc.activated_by.form_url) %]
+     [% ELSIF varc.submitted %]     
+        submitted
+        [%+ varc.updated %]
+     [% END %]
+  [% ELSIF varc.replaces %]
+     Replaced [% jump(varc.replaces.id, varc.replaces.form_url) %]
+  [% ELSE %]
+     New
+  [% END %]
+  <br>
+
+  [% UNLESS varc.is_removal %]
+  [% IF varc.activated %]
+     activated
+     [%+ varc.activated %] by
+     [%+ jump(varc.activated_by.desig, varc.activated_by.form_url) %]
+  [% ELSIF varc.submitted %]     
+     submitted
+     [%+ varc.updated %]
+  [% END %]
+  <br>
+
+  [% IF varc.deactivated %]
+     deactivated
+     [%+ varc.deactivated %] by
+     [%+ jump(varc.deactivated_by.desig, varc.deactivated_by.form_url) %]
+  [% END %]
+  [% END %]
+
+  </td>
+</tr>
+[% END %]
+</table>
 
 [%
 BLOCK flags;

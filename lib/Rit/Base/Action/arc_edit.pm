@@ -77,6 +77,8 @@ sub handler
 	    $arc->submit;
 	}
 
+	$res->autocommit;
+
 	if( $res->changes )
 	{
 	    $arc_id = $new->id;
@@ -89,9 +91,16 @@ sub handler
     #
     else
     {
+	if( $arc->submitted )
+	{
+	    $arc->unsubmit;
+	}
+
 	my $subj = $arc->subj;
 	if( $arc->remove( $args ) )
 	{
+	    $res->autocommit;
+
 	    $q->param('id', $subj->id);
 	    my $home = $req->site->home_url_path;
 	    $req->set_page_path("/rb/node/update.tt");

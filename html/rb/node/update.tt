@@ -1,6 +1,7 @@
 ﻿[% META
    title="Visa nod"
-   level = 20
+   level = 1
+#   level = 20
 %]
 
 [%
@@ -91,26 +92,16 @@ END;
       [% END %]
       </td>
       <td>hard</td>
-      <td>-</td>
-   </tr>
-   <tr>
-      <td>-</td>
-      <td>updated</td>
-      <td>
-      [% IF node.updated %]
-         [% node.updated %]
-         by [% jump(node.updated_by.name.loc, node.updated_by.form_url) %]
-      [% END %]
+      <td rowspan="5">
+         by [% jump(node.updated_by.name.loc, node.updated_by.form_url) %]<br/>
+	 [% node.updated %]
       </td>
-      <td>hard</td>
-      <td>-</td>
    </tr>
    <tr>
       <td>-</td>
       <td>label</td>
       <td>[% node.label %]</td>
       <td>hard</td>
-      <td>-</td>
    </tr>
    <tr>
       <td>-</td>
@@ -121,7 +112,6 @@ END;
       [% END %]
       </td>
       <td>hard</td>
-      <td>-</td>
    </tr>
    <tr>
       <td>-</td>
@@ -132,7 +122,6 @@ END;
       [% END %]
       </td>
       <td>hard</td>
-      <td>-</td>
    </tr>
    <tr>
       <td>-</td>
@@ -143,7 +132,6 @@ END;
       [% END %]
       </td>
       <td>hard</td>
-      <td>-</td>
    </tr>
 
 [% IF node.is_arc %]

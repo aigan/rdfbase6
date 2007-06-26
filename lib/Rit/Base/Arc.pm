@@ -144,7 +144,7 @@ sub create
 
     # Start at level 3...
     my $DEBUG = debug();
-    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+#    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
 
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
 
@@ -296,10 +296,17 @@ sub create
 
 
     ##################### valtype
-    if( $props->{'valtype'} )
+    if( defined $props->{'valtype'} )
     {
-	$rec->{'valtype'} =
-	  Rit::Base::Resource->get( $props->{'valtype'} )->id;
+	if( $props->{'valtype'} )
+	{
+	    $rec->{'valtype'} =
+	      Rit::Base::Resource->get( $props->{'valtype'} )->id;
+	}
+	else
+	{
+	    $rec->{'valtype'} = 0; # Special valtype for REMOVAL arc
+	}
     }
     else
     {
@@ -362,10 +369,11 @@ sub create
     my $value;
     my $value_obj;
     # Find out the *real* coltype
+    # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
     my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} } || 'obj';
 
-    debug "Valtype: ". $rec->{'valtype'} if $DEBUG;
-    debug "Coltype: $coltype" if $DEBUG;
+    debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
+    debug "Coltype now: $coltype" if $DEBUG;
 
     if( my $obj_id = $props->{'obj_id'} )
     {
@@ -420,11 +428,11 @@ sub create
 	    $value = is_undef;
 	}
 
+	$value_obj = $value;
+	debug "value_obj is now '$value_obj'" if $DEBUG;
+
 	if( $value->defined )
 	{
-	    $value_obj = $value;
-	    debug "Value is now '$value'\n" if $DEBUG;
-
 	    # Coltype says how the value should be stored.  The predicate
 	    # specifies the coltype.  But it is possible that the value is
 	    # an object even if it should be another coltype.  This will
@@ -505,23 +513,24 @@ sub create
 
 	# Also returns new and submitted arcs, from the same user
 
-	warn "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".query_desig($value_obj) if $DEBUG;
+	debug "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".query_desig($value_obj) if $DEBUG;
 
 #	debug "Getting arclist for ".$subj->sysdesig;
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 	debug query_desig($existing_arcs); ### DEBUG
+#	debug "value_obj: '$value_obj'";
 
 	foreach my $arc ($subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new'])->as_array )
 	{
 	    if( $arc->active )
 	    {
-		warn $arc->desig. " already exist\n" if $DEBUG;
+		debug $arc->desig. " already exist" if $DEBUG;
 		return $arc;
 	    }
 
 	    if( $arc->created_by->equals( $Para::Frame::REQ->user ) )
 	    {
-		warn $arc->desig. " already exist, but not active\n" if $DEBUG;
+		debug $arc->desig. " already exist, but not active" if $DEBUG;
 		$res->add_newarc( $arc );
 		return $arc;
 	    }
@@ -1104,6 +1113,60 @@ sub deactivated
 
 #######################################################################
 
+=head2 deactivated_by
+
+  $a->deactivated_by
+
+Returns: The L<Rit::Base::Resource> of the deactivator, or
+L<Rit::Base::Undef>.
+
+=cut
+
+sub deactivated_by
+{
+    my( $arc ) = @_;
+    my $class = ref($arc);
+
+    if( $arc->{'arc_deactivated_by_obj'} )
+    {
+	debug "Returning cached deactivated_by obj";
+	return $arc->{'arc_deactivated_by_obj'};
+    }
+
+    my $deactivated_by =
+    my $deactivated = $arc->{'arc_deactivated'};
+    unless( $deactivated )
+    {
+	debug "Returning undef deactivated_by obj";
+	return is_undef;
+    }
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? and activated = (select deactivated from arc where ver=?)");
+    my $common_id = $arc->common_id;
+    my $id = $arc->id;
+    debug "Searching for deactivated_by with $common_id and $id";
+    $sth->execute($arc->common_id, $arc->id);
+
+    my $aarc;
+    if( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	$aarc = $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    unless( $aarc )
+    {
+	debug "deactivated_by obj not found";
+	return is_undef;
+    }
+
+    debug "Returning deactivated_by obj from ".$aarc->sysdesig;
+    return $arc->{'arc_deactivated_by_obj'} = $aarc->activated_by;
+}
+
+#######################################################################
+
 =head2 unsubmitted
 
   $a->unsubmitted
@@ -1188,7 +1251,7 @@ sub created_by
 
 sub version_id
 {
-    return $_[0]->{'ver'};
+    return $_[0]->{'id'};
 }
 
 #######################################################################
@@ -1202,6 +1265,19 @@ sub version_id
 sub replaces_id
 {
     return $_[0]->{'replaces'};
+}
+
+#######################################################################
+
+=head2 replaces
+
+  $a->replaces
+
+=cut
+
+sub replaces
+{
+    return Rit::Base::Arc->get_by_id($_[0]->{'replaces'});
 }
 
 #######################################################################
@@ -1247,6 +1323,39 @@ sub write_access
     my( $arc ) = @_;
     return $arc->{'arc_write_access_obj'} ||=
       Rit::Base::Resource->get( $arc->{'arc_write_access'} );
+}
+
+#######################################################################
+
+=head2 is_owned_by
+
+  $a->is_owned_by( $agent )
+
+C<$agent> must be a Resource. It may be a L<Rit::Base::User>.
+
+Returns: true if C<$agent> is regarded as an owner of the arc
+
+TODO: Handle arcs where subj and obj has diffrent owners
+
+TODO: Handle user that's members of a owner group
+
+=cut
+
+sub is_owned_by
+{
+    my( $arc, $agent ) = @_;
+
+    if( UNIVERSAL::isa($agent, 'Rit::Base::User') )
+    {
+	return 1 if $agent->has_root_access;
+    }
+
+    if( $agent->equals( $arc->subj->owned_by ) )
+    {
+	return 1;
+    }
+
+    return 0;
 }
 
 #######################################################################
@@ -1529,6 +1638,38 @@ sub active_version
 
 #######################################################################
 
+=head2 versions
+
+  $a->versions
+
+Returns: A L<Rit::Base::list> of all versions of this arc
+
+TODO: Make this a non-materialized list
+
+=cut
+
+sub versions
+{
+    my( $arc ) = @_;
+    my $class = ref($arc);
+
+    my @arcs;
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? order by ver");
+    $sth->execute($arc->common_id);
+    while( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	push @arcs, $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    return Rit::Base::List->new(\@arcs);
+}
+
+
+#######################################################################
+
 =head2 replaced_by
 
   $a->replaced_by
@@ -1556,54 +1697,6 @@ sub replaced_by
     $sth->finish;
 
     return Rit::Base::List->new(\@list);
-}
-
-
-#######################################################################
-
-=head2 deactivate
-
-  $a->deactivate( $arc )
-
-Must give the new active arc as arg. This will be called by
-L</activate> or by L</remove>.
-
-=cut
-
-sub deactivate
-{
-    my( $arc, $narc ) = @_;
-    my $class = ref($arc);
-
-    unless( $arc->active )
-    {
-	throw('validation', "Arc $arc->{id} is not active");
-    }
-
-    my $updated = $narc->updated;
-    my $dbix = $Rit::dbix;
-    my $date_db = $dbix->format_datetime($updated);
-
-    my $st = "update arc set updated=?, deactivated=?, active='false' where ver=?";
-    my $sth = $dbix->dbh->prepare($st);
-    $sth->execute( $date_db, $date_db, $arc->id );
-
-    $arc->{'arc_updated'} = $updated;
-    $arc->{'arc_deactivated'} = $updated;
-    $arc->{'active'} = 0;
-
-    # Reset caches
-    #
-    $arc->obj->initiate_cache if $arc->obj;
-    $arc->subj->initiate_cache;
-    $arc->initiate_cache;
-    $arc->remove_check();
-    cache_update;
-    send_cache_update({ change => 'arc_updated',
-			arc_id => $arc->id,
-		      });
-
-    return;
 }
 
 
@@ -1725,6 +1818,9 @@ sub syskey
 
   $a->is_removed
 
+See if this arc is removed from the database. Only for arcs just
+removed but not yet removed from all caches.
+
 Returns: 1 or 0
 
 =cut
@@ -1732,6 +1828,24 @@ Returns: 1 or 0
 sub is_removed
 {
     return $_[0]->{subj} ? 0 : 1;
+}
+
+
+#######################################################################
+
+=head2 is_removal
+
+  $a->is_removal
+
+Is this an arc version representing the deletion of an arc?
+
+Returns: 1 or 0
+
+=cut
+
+sub is_removal
+{
+    return $_[0]->{'valtype'} ? 0 : 1;
 }
 
 
@@ -1868,7 +1982,14 @@ Returns: the C<valtype> node for this arc.
 
 sub valtype
 {
-    return Rit::Base::Resource->get( $_[0]->{'valtype'} );
+    if( $_[0]->{'valtype'} )
+    {
+	return Rit::Base::Resource->get( $_[0]->{'valtype'} );
+    }
+    else
+    {
+	return is_undef;
+    }
 }
 
 
@@ -1927,6 +2048,54 @@ sub explain
 =head1 Public methods
 
 =cut
+
+#######################################################################
+
+=head2 deactivate
+
+  $a->deactivate( $arc )
+
+Must give the new active arc as arg. This will be called by
+L</activate> or by L</remove>.
+
+=cut
+
+sub deactivate
+{
+    my( $arc, $narc ) = @_;
+    my $class = ref($arc);
+
+    unless( $arc->active )
+    {
+	throw('validation', "Arc $arc->{id} is not active");
+    }
+
+    my $updated = $narc->updated;
+    my $dbix = $Rit::dbix;
+    my $date_db = $dbix->format_datetime($updated);
+
+    my $st = "update arc set updated=?, deactivated=?, active='false' where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $date_db, $arc->id );
+
+    $arc->{'arc_updated'} = $updated;
+    $arc->{'arc_deactivated'} = $updated;
+    $arc->{'active'} = 0;
+
+    # Reset caches
+    #
+    $arc->obj->initiate_cache if $arc->obj;
+    $arc->subj->initiate_cache;
+    $arc->initiate_cache;
+    $arc->remove_check();
+    cache_update;
+    send_cache_update({ change => 'arc_updated',
+			arc_id => $arc->id,
+		      });
+
+    return;
+}
+
 
 #######################################################################
 
@@ -2316,23 +2485,34 @@ sub value_meets_proplim
 
 Removes the arc. Will also remove arcs pointing to/from the arc itself.
 
-Default C<$implicit_bool> is false.
+An arc is removed by the activation (and deactivation) of a new
+version with the value set to null and with valtype 0. That arc will
+have the activation and deactivation date identical. This will keep
+history about who requested the removal and who authorized it.
+
+New (non-active) arcs can be removed directly by the authorized agent,
+without the creation of a removal arc.
+
+
+Supported args are:
+
+  implicit
+  res
+
+
+Default C<$implicit> bool is false.
 
 A true value means that we want to remove an L</implict> arc.
 
 A false value means that we want to remove an L</explicit> arc.
 
-The C<$implicit_bool> is used internally to remove arcs that's no
+The C<$implicit> is used internally to remove arcs that's no
 longer infered.
 
 If called with a false value, it will remove the arc only if the arc
 can't be infered. If the arc can be infered, the arc will be changed
 from L</explicit> to L</implicit>.
 
-Supported args are:
-
-  implicit
-  res
 
 Returns: the number of arcs removed.
 
@@ -2342,7 +2522,7 @@ sub remove
 {
     my( $arc, $args ) = @_;
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
     if( $DEBUG )
     {
@@ -2357,13 +2537,14 @@ sub remove
     return 0 if $arc->is_removed;
 
     $args ||= {};
+    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new();
+
     my $implicit = $args->{'implicit'} || 0;
 
     if( $arc->active and not $implicit )
     {
 	debug "  Arc active but not flag implicit" if $DEBUG;
 
-	my $dbix = $Rit::dbix;
 	my $new = Rit::Base::Arc->create({
 					  common_id => $arc->common_id,
 					  replaces_id => $arc->id,
@@ -2371,24 +2552,14 @@ sub remove
 					  subj_id => $arc->{'subj'},
 					  pred_id => $arc->{'pred'},
 					  value => is_undef,
+					  valtype => 0,
 					 }, $args);
-	$arc->deactivate($new);
-	my $updated = $new->updated;
-	my $date_db = $dbix->format_datetime($updated);
-
-	my $activated_by    = $new->created_by;
-	my $activated_by_id = $activated_by->id;
-
-	my $st = "update arc set activated=?, activated_by=?, deactivated=? where ver=?";
-	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $activated_by_id, $date_db, $new->id );
-
-	$new->{'arc_deactivated'} = $updated;
-	$new->{'arc_activated'} = $updated;
-	$new->{'activated_by'} = $activated_by_id;
-	$new->{'activated_by_obj'} = $activated_by;
-
 	return 1;
+    }
+
+    unless( $arc->is_owned_by( $Para::Frame::REQ->user ) )
+    {
+	confess('denied', "You don't own the arc".$arc->desig);
     }
 
     # Can this arc be infered?
@@ -2443,7 +2614,7 @@ sub remove
     $arc->remove_check( $args );
 
     # May have been removed during remove_check
-    return 0 if $arc->is_removed;
+    return 1 if $arc->is_removed;
 
     debug "  SUPER::remove" if $DEBUG;
     $arc->SUPER::remove();  # Removes the arc node: the arcs properties
@@ -2937,19 +3108,37 @@ sub activate
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
 
-    # Replaces is already set if this version is based on another
-    # It may be another version than the currently active one
 
-    my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
-    my $sth = $dbix->dbh->prepare($st);
-    $sth->execute( $date_db, $date_db, $activated_by_id, $arc->id );
+    if( $arc->{'valtype'} ) # Not a REMOVAL arc
+    {
+	# Replaces is already set if this version is based on another
+	# It may be another version than the currently active one
 
-    $arc->{'arc_updated'} = $updated;
-    $arc->{'arc_activated'} = $updated;
-    $arc->{'submitted'} = 0;
-    $arc->{'active'} = 1;
-    $arc->{'activated_by'} = $activated_by_id;
-    $arc->{'activated_by_obj'} = $activated_by;
+	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $date_db, $date_db, $activated_by_id, $arc->id );
+
+	$arc->{'arc_updated'} = $updated;
+	$arc->{'arc_activated'} = $updated;
+	$arc->{'submitted'} = 0;
+	$arc->{'active'} = 1;
+	$arc->{'activated_by'} = $activated_by_id;
+	$arc->{'activated_by_obj'} = $activated_by;
+    }
+    else # This is a REMOVAL arc
+    {
+	my $st = "update arc set updated=?, activated=?, activated_by=?, deactivated=?, active='false', submitted='false' where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $arc->id );
+
+	$arc->{'arc_updated'} = $updated;
+	$arc->{'arc_deactivated'} = $updated;
+	$arc->{'arc_activated'} = $updated;
+	$arc->{'submitted'} = 0;
+	$arc->{'active'} = 0;
+	$arc->{'activated_by'} = $activated_by_id;
+	$arc->{'activated_by_obj'} = $activated_by;
+    }
 
     # Reset caches
     #

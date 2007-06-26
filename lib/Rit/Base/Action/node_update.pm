@@ -14,15 +14,19 @@ package Rit::Base::Action::node_update;
 #=====================================================================
 
 use strict;
-use Data::Dumper;
+
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Time qw( now );
+use Rit::Base::Utils qw( new_argsres );
 
 sub handler
 {
     my( $req ) = @_;
 
     throw('denied', "Nope") unless $req->session->user->level >= 20;
+
+    my( $args, $res ) = new_argsres('auto');
 
     my $q = $req->q;
     my $id = $q->param('id');
@@ -36,9 +40,23 @@ sub handler
     }
 
     my $node = Rit::Base::Resource->get($id);
-    $node->update_by_query();
+    $node->update_by_query($args);
 
-    return "Resource updated";
+    if( $res->changes )
+    {
+	$node->mark_updated();
+    }
+
+    $res->autocommit;
+
+    if( $res->changes )
+    {
+	return loc("Changes saved");
+    }
+    else
+    {
+	return loc("No changes");
+    }
 }
 
 

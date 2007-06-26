@@ -3024,16 +3024,19 @@ sub arc_list
 
 	my $lr = Rit::Base::List->new(\@arcs);
 #	debug "List is now ".$lr->sysdesig;
-	if( $proplim )
+	if( defined $proplim ) # The Undef Literal is also an proplim
 	{
-	    # TODO: Include inactive properties?
-#	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
+	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
 
 	    if( ref $proplim and ref $proplim eq 'HASH' )
 	    {
 		# $n->arc_list( $predname, { $pred => $value } )
 		#
 		$lr = $lr->find($proplim, $args);
+	    }
+	    elsif( not( ref $proplim) and not( length $proplim ) )
+	    {
+		# Treat as no proplim given
 	    }
 	    else
 	    {
