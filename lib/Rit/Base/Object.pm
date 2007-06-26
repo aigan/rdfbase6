@@ -31,6 +31,8 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
 
+use Rit::Base::Undef;
+
 use base qw( Rit::Base::Object::Compatible );
 
 
@@ -450,7 +452,7 @@ Returns: false
 
 sub has_value
 {
-    return 0;
+    return Rit::Base::Undef->new();
 }
 
 
@@ -466,7 +468,7 @@ Returns: false
 
 sub has_pred
 {
-    return 0;
+    return Rit::Base::Undef->new();
 }
 
 
