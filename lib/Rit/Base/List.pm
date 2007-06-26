@@ -1274,6 +1274,72 @@ sub has_value
 
 #######################################################################
 
+=head2 has_pred
+
+  $l->has_pred($predname, $proplim, \%args)
+
+Returns: A list of all elements that has a property with the pred to a
+value matching proplim and args
+
+=cut
+
+sub has_pred
+{
+    my( $l, $predname, $proplim, $args_in ) = @_;
+    my( $args, $arclim ) = Rit::Base::Resource::parse_propargs($args_in);
+
+#    debug "Filtering list on has_pred";
+
+    # This is an optimized version of list autoload has_pred...
+
+    if( UNIVERSAL::isa($predname,'Rit::Base::Pred') )
+    {
+	$predname = $predname->plain;
+    }
+
+    my @grep;
+
+    my( $active, $inactive ) = $arclim->incl_act;
+
+    my( $node, $error );
+    for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
+    {
+#	debug "  checking ".$node->desig;
+	my @arcs;
+	if( $node->initiate_prop( $predname, $proplim, $args ) )
+	{
+	    if( $active and $node->{'relarc'}{$predname} )
+	    {
+		push @arcs, @{ $node->{'relarc'}{$predname} };
+	    }
+
+	    if( $inactive and $node->{'relarc_inactive'}{$predname} )
+	    {
+		push @arcs, @{ $node->{'relarc_inactive'}{$predname} };
+	    }
+	}
+	else
+	{
+	    next;
+	}
+
+	foreach my $arc (@arcs )
+	{
+	    next unless $arc->meets_arclim($arclim);
+	    next unless $arc->value_meets_proplim($proplim, $args);
+
+	    push @grep, $node;
+	    last;
+	}
+    }
+
+#    debug "Filtering list on has_pred - done";
+
+    return Rit::Base::List->new(\@grep);
+}
+
+#######################################################################
+
 =head2 materialize
 
 =cut
@@ -1834,6 +1900,21 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/disregarded>
 sub disregarded
 {
     $_[0]->new([grep $_->disregarded, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 meets_proplim
+
+  $l->meets_proplim($proplim, \%args)
+
+Not implemented
+
+=cut
+
+sub meets_proplim
+{
+    confess "not implemented";
 }
 
 #######################################################################
