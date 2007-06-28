@@ -62,11 +62,23 @@ sub handler
 	}
     }
 
-    $node1->merge( $node2, $move_literals );
+    my( $args, $arclim, $res ) = parse_propargs();
+    $args->{'move_literals'} = $move_literals;
+
+    $node1->merge( $node2, $args );
+
+    $res->autocommit;
 
     $q->param('id', $node2->id );
 
-    return "Resources merged";
+    if( $res->changes )
+    {
+	return loc("Resources merged");
+    }
+    else
+    {
+	return loc("No changes");
+    }
 }
 
 
