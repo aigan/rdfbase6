@@ -617,7 +617,7 @@ sub sorted
 		$val = $val->loc;
 	    }
 
-	    my $coltype = $sortargs->[$i]->{'coltype'};
+	    my $coltype = $sortargs->[$i]->{'coltype'} || '';
 	    if( $coltype eq 'valfloat' )
 	    {
 		# Make it an integer
