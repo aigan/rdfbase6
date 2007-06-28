@@ -60,6 +60,8 @@ sub handler
 	$arc->remove( { res => $res } );
     }
 
+    $res->autocommit;
+
     if( $res->changes )
     {
 	return "Deleted node $desig";
