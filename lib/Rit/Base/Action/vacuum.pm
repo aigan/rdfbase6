@@ -9,12 +9,14 @@ package Rit::Base::Action::vacuum;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 use strict;
-use Data::Dumper;
+
+use Rit::Base::Resource;
+use Rit::Base::Utils qw( parse_propargs );
 
 sub handler
 {
@@ -22,11 +24,21 @@ sub handler
 
     my $q = $req->q;
     my $id = $q->param('id');
+    my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $node = Rit::Base::Resource->get( $id );
-    $node->vacuum;
+    $node->vacuum($args);
 
-    return "Resource vacuumed";
+    $res->autocommit;
+
+    if( $res->changes )
+    {
+	return loc("Resource vacuumed");
+    }
+    else
+    {
+	return loc("No changes");
+    }
 }
 
 

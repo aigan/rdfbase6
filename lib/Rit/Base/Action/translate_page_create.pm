@@ -9,18 +9,17 @@ package Rit::Base::Action::translate_page_create;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 use strict;
 
-use Data::Dumper;
-
 use Para::Frame::Utils qw( throw );
 
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_webpage );
+use Rit::Base::Utils qw( is_undef parse_propargs );
 
 sub handler
 {
@@ -41,11 +40,23 @@ sub handler
      code => $page_base,
     };
 
-    my $n = Rit::Base::Resource->create( $props );
+    my( $args, $arclim, $res ) = parse_propargs('auto');
+
+    my $n = Rit::Base::Resource->create( $props, $args );
 
     $q->param('id' => $n->id );
 
-    return "Textdel skapad";
+
+    $res->autocommit;
+
+    if( $res->changes )
+    {
+	return loc("Page created");
+    }
+    else
+    {
+	return loc("No changes");
+    }
 }
 
 1;

@@ -15,9 +15,7 @@ package Rit::Base::Action::arc_activate;
 
 use strict;
 
-use Para::Frame::Utils qw( );
-
-use Rit::Base::Utils qw( getarc getnode getpred );
+use Rit::Base::Utils qw( getnode );
 
 sub handler
 {

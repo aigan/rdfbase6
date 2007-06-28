@@ -25,6 +25,8 @@ sub handler
 {
     my( $req ) = @_;
 
+    die "implement me";
+
     throw('denied', "Nope") unless $req->user->level >= 20;
 
     my $DEBUG = 0;

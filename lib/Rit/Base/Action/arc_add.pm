@@ -9,7 +9,7 @@ package Rit::Base::Action::arc_add;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,12 +18,12 @@ use Data::Dumper;
 
 use Para::Frame::Utils qw( trim );
 
-use Rit::Base::Utils qw( parse_arc_add_box );
-use Rit::Base::Resource::Change;
+use Rit::Base::Utils qw( parse_arc_add_box parse_propargs );
 
 sub handler
 {
     my( $req ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $DEBUG = 0;
 
@@ -41,15 +41,16 @@ sub handler
 
 	warn Dumper $props if $DEBUG;
 
-	my $res = Rit::Base::Resource::Change->new;
-	$subj->add( $props, { res => $res } );
+	$subj->add( $props, $args );
+	$res->autocommit;
 	return "Updated node $subj_id" if $res->changes;
 	return "No changes to node $subj_id";
     }
     else
     {
-	my $subj = Rit::Base::Resource->create( $props );
+	my $subj = Rit::Base::Resource->create( $props, $args );
 	$q->param('id', $subj->id);
+	$res->autocommit;
 
 	return sprintf("Created node %d", $subj->id);
     }

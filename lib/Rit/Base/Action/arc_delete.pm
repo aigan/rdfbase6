@@ -9,7 +9,7 @@ package Rit::Base::Action::arc_delete;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -19,6 +19,7 @@ use Data::Dumper;
 use Para::Frame::Utils qw( trim );
 
 use Rit::Base::Utils qw( getarc getnode getpred cache_sync );
+use Rit::Base::Resource::Change;
 
 sub handler
 {

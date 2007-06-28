@@ -14,9 +14,10 @@ package Rit::Base::Action::node_merge;
 #=====================================================================
 
 use strict;
-use Data::Dumper;
 
-use Para::Frame::Utils qw( throw catch );
+use Para::Frame::Utils qw( throw debug datadump );
+
+use Rit::Base::Utils qw( parse_propargs );
 
 sub handler
 {
@@ -57,7 +58,7 @@ sub handler
 	}
 	else
 	{
-	    warn Dumper $result->{'info'};
+	    debug datadump $result->{'info'};
 	    throw('validation', "No nodes matches the given name");
 	}
     }
