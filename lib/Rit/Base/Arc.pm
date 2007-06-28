@@ -1622,6 +1622,7 @@ sub active_version
 	{
 	    return $aarc;
 	}
+	undef $aarc;
     }
 
     my $dbh = $Rit::dbix->dbh;
