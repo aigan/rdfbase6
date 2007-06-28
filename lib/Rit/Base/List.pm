@@ -35,8 +35,8 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump  );
 use Para::Frame::List;
 
-use Rit::Base::Utils qw( is_undef valclean query_desig );
 use Rit::Base::Arc::Lim;
+use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs );
 
 ### Inherit
 #
@@ -297,6 +297,7 @@ sub find
     my( $l, $tmpl, $args ) = @_;
 
     my $DEBUG = debug();
+    $DEBUG and $DEBUG --;
     $DEBUG and $DEBUG --;
 
 #    # either name/value pairs in props, or one name/value
@@ -797,7 +798,7 @@ sub loc
     my %alts;
     my $default;
 
-    debug 2,"Choosing among ".(scalar @$list)." values";
+#    debug 2,"Choosing among ".(scalar @$list)." values";
 
     foreach my $item ( @$list )
     {
@@ -1001,7 +1002,12 @@ See L<Rit::Base::Object/sysdesig>
 sub sysdesig
 {
 #    warn "Stringifies object ".ref($_[0])."\n"; ### DEBUG
-    return join ' / ', map $_->sysdesig($_[1]), $_[0]->nodes;
+    return join ' / ', map
+    {
+	UNIVERSAL::can($_, 'sysdesig') ?
+	    $_->sysdesig($_[1]) :
+	      $_;
+    } $_[0]->nodes;
 }
 
 ######################################################################
@@ -1286,7 +1292,7 @@ value matching proplim and args
 sub has_pred
 {
     my( $l, $predname, $proplim, $args_in ) = @_;
-    my( $args, $arclim ) = Rit::Base::Resource::parse_propargs($args_in);
+    my( $args, $arclim ) = parse_propargs($args_in);
 
 #    debug "Filtering list on has_pred";
 
@@ -1355,7 +1361,7 @@ sub materialize
     {
 	return $elem;
     }
-    else
+    elsif( $elem )
     {
 	my $obj = Rit::Base::Resource->get( $elem );
 	if( debug > 1 )
@@ -1363,6 +1369,10 @@ sub materialize
 	    debug "Materializing element $i -> ".$obj->sysdesig;
 	}
 	return $obj;
+    }
+    else
+    {
+	return is_undef; # For special cases (in search_smart)
     }
 }
 
