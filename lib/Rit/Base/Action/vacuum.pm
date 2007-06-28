@@ -15,6 +15,8 @@ package Rit::Base::Action::vacuum;
 
 use strict;
 
+use Para::Frame::L10N qw( loc );
+
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( parse_propargs );
 
