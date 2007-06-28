@@ -93,8 +93,10 @@ END;
       </td>
       <td>hard</td>
       <td rowspan="5">
+      [% IF node.updated %]
          by [% jump(node.updated_by.name.loc, node.updated_by.form_url) %]<br/>
 	 [% node.updated %]
+      [% END %] 
       </td>
    </tr>
    <tr>
