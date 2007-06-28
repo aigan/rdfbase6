@@ -384,6 +384,8 @@ sub create
 	$rec->{$coltype} = $value;
 	push @fields, $coltype;
 	push @values, $rec->{$coltype};
+
+	$value_obj = Rit::Base::Resource->get_by_id( $obj_id );
     }
     else
     {
@@ -518,6 +520,7 @@ sub create
 	debug "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".query_desig($value_obj) if $DEBUG;
 
 #	debug "Getting arclist for ".$subj->sysdesig;
+	# $value_obj may be is_undef (but not literal undef)
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 	debug query_desig($existing_arcs); ### DEBUG
 #	debug "value_obj: '$value_obj'";
