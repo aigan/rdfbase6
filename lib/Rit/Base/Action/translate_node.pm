@@ -22,7 +22,7 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::String;
-use Rit::Base::Utils qw( is_undef new_argsres );
+use Rit::Base::Utils qw( is_undef parse_propargs );
 
 use Rit::Base::Constants qw( $C_language );
 
@@ -31,7 +31,7 @@ sub handler
     my ($req) = @_;
 
     my $q = $req->q;
-    my( $args, $res ) = new_argsres('auto');
+    my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $id = $q->param('id') or die "id param missing";
     my $pred_in = $q->param('pred') or die "pred param missing";

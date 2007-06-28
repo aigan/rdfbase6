@@ -18,7 +18,7 @@ use strict;
 use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Time qw( now );
-use Rit::Base::Utils qw( new_argsres );
+use Rit::Base::Utils qw( parse_propargs );
 
 sub handler
 {
@@ -26,7 +26,7 @@ sub handler
 
     throw('denied', "Nope") unless $req->session->user->level >= 20;
 
-    my( $args, $res ) = new_argsres('auto');
+    my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $q = $req->q;
     my $id = $q->param('id');
