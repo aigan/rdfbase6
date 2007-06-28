@@ -38,14 +38,16 @@ use Para::Frame::Reload;
 
 use Rit::Base::Time qw( now );
 use Rit::Base::List;
-use Rit::Base::Utils qw( cache_update getpred valclean translate is_undef
- truncstring send_cache_update query_desig );
 use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
 use Rit::Base::Resource::Change;
 use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group $C_value );
+
+use Rit::Base::Utils qw( cache_update getpred valclean translate
+                         is_undef truncstring send_cache_update
+                         query_desig parse_propargs );
 
 ### Inherit
 #
@@ -2269,9 +2271,8 @@ and C<arclim>
 
 sub value_equals
 {
-    my $arc = shift;
-    my $val2 = shift;
-    my( $args, $arclim ) = Rit::Base::Resource::parse_propargs(@_);
+    my( $arc, $val2, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $DEBUG = 0;
 
