@@ -757,7 +757,23 @@ sub modify
 		$match = 'exist';
 	    }
 
-	    if( $type eq 'valtext' )
+	    if( $match eq 'exist' )
+	    {
+		if( $values[1] )
+		{
+		    confess "Can't use more than one value for exist";
+		}
+
+		if( $values[0] )
+		{
+		    @values = (1);
+		}
+		else
+		{
+		    @values = (0);
+		}
+	    }
+	    elsif( $type eq 'valtext' )
 	    {
 		if( $clean )
 		{
@@ -800,11 +816,7 @@ sub modify
 		@values = @new;
 	    }
 
-	    if( $match eq 'exist' )
-	    {
-		@values = ();
-	    }
-	    elsif( not @values )
+	    if( (not @values) and ($match ne 'exist') )
 	    {
 		throw('incomplete', longmess("Values missing: ".datadump $search->{'query'}{'prop'}));
 	    }
@@ -869,7 +881,7 @@ sub execute
     {
 	debug "Search is to heavy! Runs in background";
 	debug $search->sysdesig;
-	debug $search->sql_sysdesig;
+#	debug $search->sql_sysdesig;
 
 	my $req = $Para::Frame::REQ;
 	$req->note("This search may take a some time!");
@@ -888,8 +900,10 @@ sub execute
     {
 #	debug "MIN PRIO = $min_prio";
 	if( debug > 4 )
+#	if(1)
 #	if( @{$search->{'query'}{'order_by'}} )
 	{
+#	    debug datadump($search->{'prop'}, 2);
 	    debug 2, $search->sysdesig;
 	    debug 0, $search->sql_sysdesig;
 	}
@@ -2029,11 +2043,10 @@ sub elements_props
 	{
 	    $where = "$pred_part $arclim_sql";
 	    @outvalues = @pred_ids;
-	}
-	elsif( $invalues->[0] eq '*' ) # match all
-	{
-	    $where = "$pred_part $arclim_sql";
-	    @outvalues = @pred_ids;
+	    if( $invalues->[0] == 0 ) # NOT exist
+	    {
+		$negate = 1;
+	    }
 	}
 	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->name->plain eq 'id') )
