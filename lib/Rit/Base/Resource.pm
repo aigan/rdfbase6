@@ -63,7 +63,14 @@ our %UNSAVED;
 
 ### Inherit
 #
-use base qw( Rit::Base::Node Rit::Base::Resource::Compatible );
+use base qw( Rit::Base::Node Rit::Base::Resource::Compatible Exporter );
+
+BEGIN
+{
+    @Rit::Base::Resource::EXPORT_OK
+
+      = qw( aais );
+}
 
 =head1 DESCRIPTION
 
@@ -3989,18 +3996,23 @@ Returns: the number of changes
 
 =head3 1. Add / update
 
-Parameters beginning with arc_ prop_ or image_
+Parameters beginning with arc_ or prop_
 
-=head4 images
+=head4 files / images
 
 Images are to be uploaded as a filefield, and are saved to the
 "logos"-folder
 
 The image can be scaled proportianally to fit within certain
-max-dimensions in pixels by having parameters maxx and maxy.  A
+max-dimensions in pixels by having parameters maxw and maxh.  A
 typical image-parameter would be:
 
-image___pred_logo_main__maxx_400__maxy_300__row_12
+arc_singular__file_image__pred_logo_small__maxw_400__maxh_300__row_12
+
+Filenames are made of name (or id) on subj and a counter (first free
+number).  Suffix is preserved.
+
+TODO: Add possibility of using a row to set other filename.
 
 
 =head3 4. Add new resources
@@ -6244,6 +6256,7 @@ sub handle_query_arc_value
     my $scof      = $arg->{'scof'};     # desig obj must be a scof of this type
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
     my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
+    my $file	  = $arg->{'file'};	# "filetype" for upload-fields
 
     # Switch node if subj is set
     if( $arg->{'subj'} and $arg->{'subj'} =~ /^\d+$/ )
@@ -6356,6 +6369,97 @@ sub handle_query_arc_value
 	}
     }
 
+    if( $file )
+    {
+	debug "Got a fileupload, stated type: $file";
+	return $res->changes - $changes_prev
+	  unless( $value );
+
+	if( $file eq "image" ) # Check image operations (scaling etc)
+	{
+	    my $maxw = $arg->{'maxw'};
+	    my $maxh = $arg->{'maxh'};
+
+	    my $img_file = $req->uploaded($param)->tempfilename;
+	    my $image = Image::Magick->new;
+	    $image->Read( $img_file );
+	    my $w = $image->Get('width');
+	    my $h = $image->Get('height');
+
+	    debug "Image is $w × $h";
+
+	    if( $maxw < $w and $maxh < $h )
+	    {
+		($w, $h) = (($w/$h > $maxw/$maxh) ? ($maxw, $h/($w/$maxw)) : ($w/($h/$maxh), $maxh));
+	    }
+	    elsif( $maxw < $w ) # $maxh might be undef
+	    {
+		($w, $h) = ($maxw, $h * $maxw / $w);
+	    }
+	    elsif( $maxh < $h ) # $maxw might be undef
+	    {
+		($w, $h) = ($maxw * $maxh / $h, $maxh);
+	    }
+
+	    $image->Scale( width => $w, height => $h );
+	    debug "Scaled to ". $image->Get('width') ." × ".
+	      $image->Get('height');
+	    $image->Write($img_file);
+	}
+
+	my $filename_in = $value;
+	my $suffix = "";
+
+	if( $filename_in =~ /\.(.*)/ )
+	{
+	    $suffix = lc $1;
+	    debug "Suffix is $suffix";
+	}
+
+	my $dirbase = $Para::Frame::CFG->{'guides'}{'logos'}
+	  or die "logos dir not defined in site.conf";
+
+	my $index = 0;
+
+	if( $dirbase =~ m{^//([^/]+)(.+)} )
+	{
+	    my $host = $1;
+	    my $username;
+	    if( $host =~ /^([^@]+)@(.+)/ )
+	    {
+		$username = $1;
+		$host = $2;
+	    }
+
+	    local $SIG{CHLD} = 'DEFAULT';
+	    my $scp = Net::SCP->new({host=>$host, user=>$username});
+	    debug "Connected to $host as $username";
+
+	    while( $scp->size( $dirbase ."/". join('.', $node->id, $index, $suffix)) )
+	    {
+		debug "Found a file ". $dirbase ."/". join('.', $node->id, $index, $suffix);
+		$index++;
+	    }
+	}
+	else
+	{
+	    while( stat( $dirbase ."/". join('.', $node->id, $index, $suffix)) )
+	    {
+		debug "Found a file ". $dirbase ."/". join('.', $node->id, $index, $suffix);
+		$index++;
+	    }
+	}
+	debug "We got to index: $index";
+
+	my $filename_base = join( '.', $node->id, $index, $suffix );
+
+	my $destfile = $dirbase .'/'. $filename_base;
+
+	$req->uploaded($param)->save_as($destfile,{username=>'rit'});
+	debug "Saved file as $destfile";
+
+	$value = $filename_base;
+    }
 
     if( $rev ) # reverse arc
     {
