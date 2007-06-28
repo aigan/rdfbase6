@@ -24,6 +24,7 @@ Using Locale::Maketext
 =cut
 
 use strict;
+use utf8;
 
 use Carp qw(cluck croak carp confess );
 
@@ -107,7 +108,15 @@ sub maketext
     my $req = $Para::Frame::REQ;
 
     return "" unless length($phrase);
-#    debug "Translating $phrase @_";
+#    my $len1 = length($phrase);
+#    my $len2 = bytes::length($phrase);
+#    debug "  >>$phrase ($len2/$len1)";
+#    debug "-------->> Translating $phrase @_";
+
+    if( $phrase =~ /Ã/ )
+    {
+	confess "Encoded but not marked as encoded ($phrase)";
+    }
 
     # The object to be translated could be one or more value nodes.
     # choose the right value node
