@@ -427,16 +427,66 @@ sub coltype
 
   $obj->meets_proplim( $proplim, \%args )
 
-This is implemented for L<Rit::Base::Resource>. Other objects returns
-false if proplim is defined and has content.
+Implements ne and exist => 0, otherwise false if proplim is defined
+and has content.  This is re-implemented for L<Rit::Base::Resource>.
 
 =cut
 
 sub meets_proplim
 {
+    # Some quickening...
     return 1 unless $_[1];
     return 1 unless keys %{$_[1]};
-    return 0;
+
+    # Real checks; only matchtypes ne & exist can get through
+    my $node = shift;
+    my $proplim = shift;
+    foreach my $pred_part ( keys %$proplim )
+    {
+	my $target_value =  $proplim->{$pred_part};
+
+	#                      Regexp compiles once
+	unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	{
+	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+	    unless( $pred_part )
+	    {
+		if( debug )
+		{
+		    debug "No pred_part?";
+		    debug "Template: ".query_desig($proplim);
+		    debug "For node ".$node->sysdesig;
+		}
+	    }
+	    die "wrong format in find: $pred_part\n";
+	}
+
+	my $rev    = $1;
+#	my $pred   = $2;
+#	my $arclim = $3 || $arclim_in;
+#	my $clean  = $4 || $args_in->{'clean'} || 0;
+	my $match  = $5 || 'eq';
+#	my $prio   = $6; #not used
+
+	return 0
+	  if $rev;  # Not implemented at this level...
+
+	if( $match eq 'ne' )
+	{
+	    next;
+	}
+	elsif( $match eq 'exist' )
+	{
+	    next
+	      unless( $target_value );
+	}
+
+	# This node failed the test
+	return 0;
+    }
+
+    # All properties good
+    return 1;
 }
 
 
