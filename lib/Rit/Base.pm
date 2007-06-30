@@ -29,7 +29,7 @@ use vars qw( $VERSION );
 
 BEGIN
 {
-    $VERSION = "4.50";
+    $VERSION = "6.50";
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
