@@ -1,0 +1,31 @@
+Installation instructions for a new clean install
+
+ * Install paraframe
+
+ * Check the dependencies for this package by doing
+   + perl Makefile.PL
+   + make test
+
+ * You may want to install the documentation as man orh HTML. That's
+   not handled by the makefile. You can also use perldoc on the actual
+   files.
+
+ * Create a PostgreSQL database with utf8 encoding:
+
+Check that your database cluster is created with an lc_collate that
+sorts your utf8 strings in an appropriate way. do a "show lc_collate;"
+to find out the sorting. The cluster must be crated for the desired
+sorting. You may use "pg_lscluster" to list your current clusters. You
+have pg_dropcluster and pg_createcluster for creating a new cluster
+with a diffrent configuration.
+
++ Become the postgres user and run psql
+
++ create the user for the ritbase database. See current users with
+'\du'. You may use the same username as the user under which the
+program is going to be run. "create user my_user".
+
++ create the database with your choosen name for your project. I'm
+going to use the name rb1 in this guide. "create database rb1 with
+owner=my_user encoding='unicode';"
+

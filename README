@@ -17,7 +17,7 @@ INSTALL
 
     You are not meant to install Rit::Base among your Perl
     libraries.  Copy the ditribution to /usr/local/rb
-    See INSTALL for details.
+    See doc/INSTALL for details.
 
 
 DEVELOPMENT

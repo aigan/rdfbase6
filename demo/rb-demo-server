@@ -1,0 +1,217 @@
+#!/usr/bin/perl -w
+#  $Id$  -*-cperl-*-
+
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritguides daemon example server
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
+
+our $CFG;
+
+BEGIN
+{
+    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
+    print "Starting ritguides $VERSION\n";
+
+    use FindBin;
+    my $configfile = $FindBin::Bin . "/site.conf";
+
+    open PF_LOC, "<$FindBin::Bin/../.paraframe_location" or die $!;
+    my $pf = <PF_LOC>;
+    chomp( $pf );
+    push @INC, $pf.'/lib';
+
+
+    $CFG = do $configfile
+      or die "Failed to load config $configfile: $! ($@)\n";
+    push @INC, $CFG->{'rb_root'}.'/lib';
+
+    push @INC, $CFG->{'demo_root'}. "/lib";
+}
+
+use strict;
+use locale;
+use Scalar::Util qw( looks_like_number );
+
+use Para::Frame;
+use Para::Frame::DBIx;
+use Para::Frame::Time qw();
+use Para::Frame::Email;
+use Para::Frame::Email::Address;
+use Para::Frame::Utils qw( chmod_tree );
+use Para::Frame::Watchdog;
+use Para::Frame::Site;
+
+use Rit::Base;
+use Rit::Base::Constants;
+use Rit::Base::Utils qw( cache_sync cache_clear translate );
+use Rit::Base::Resource;
+use Rit::Base::Arc;
+use Rit::Base::Search;
+use Rit::Base::Pred;
+use Rit::Base::Rule;
+use Rit::Base::Time;
+use Rit::Base::Site;
+use Rit::Base::L10N;
+
+use Rit::Base::Demo;
+
+{
+    # Do not daemonize if run with cmdline argument
+    my $daemonize = @ARGV ? 0 : 1;
+
+    unless( $CFG )
+    {
+	die "Configuration missing";
+    }
+
+    Rit::Base::Demo->store_cfg( $CFG );
+
+    Para::Frame::Site->add({
+	'code'        => 'demo',
+	'name'        => 'RitBase Demo',
+	'approot'     => $CFG->{'demo_root'},
+	'webhome'     => $CFG->{site}{demo}{'webhome'}||'',
+	'webhost'     => $CFG->{'webhost'},
+	'is_compiled' => 0,
+#	'loadpage'    => "/clean/loadpage.tt",
+	'languages'       => ['sv'],
+	'email'       => $CFG->{email},
+	'css'         =>
+	{
+	 params =>
+	 {
+	  background => 'green',
+	 },
+	},
+    });
+
+
+    my $appback = [$CFG->{'rb_root'}];
+    my $demo_root = $CFG->{'demo_root'};
+
+    $CFG->{'debug'} ||= 0;
+    if( looks_like_number($ARGV[0]) )
+    {
+	$CFG->{'debug'} = $ARGV[0];
+    }
+
+    my $cfg =
+    {
+     'paraframe'       => $CFG->{'paraframe'},
+     'paraframe_group' => 'staff',
+
+     'appback'         => $appback,
+     'appbase'         => 'Rit::Base::Demo',
+     'appfmly'         => 'Rit::Base',
+
+#     'tt_plugins'      => 'Rit::Guides::Template::Plugin',
+#     'user_class'      => 'Rit::Guides::User::Meta',
+#     'session_class'   => 'Rit::Guides::Session',
+#     'resource_class'  => 'Rit::Guides::Resource',
+#     'search_collection_class' => 'Rit::Guides::Search',
+#     'search_result_class'     => 'Rit::Guides::Search::Result',
+
+     'l10n_class'      => 'Rit::Base::L10N',
+     'site_class'      => 'Rit::Base::Site',
+
+     'bg_user_code'    => sub{ Rit::Base::Resource->get_by_id(1115) },
+     'logfile'         => "$demo_root/logs/ritguides.log",
+     'pidfile'         => "$demo_root/var/ritguides.pid",
+     'dir_var'         => "$demo_root/var",
+
+     'port'            => $CFG->{'port'},
+     'debug'           => $CFG->{'debug'} || 0,
+     'do_bgjob'        => $CFG->{'do_bgjob'},
+     'umask'           => 0007,
+     'languages'       => ['sv'],
+     'time_stringify'  => 1,
+     'site_autodetect' => 1,
+     'site_auto'       => 0,
+
+#     'ie7'             => $CFG->{'ie7'},
+
+   };
+
+    Para::Frame->configure( $cfg );
+    Rit::Base::Demo->on_configure();
+
+    # Check those...
+    $Rit::Base::LOOKUP_CLASS_FOR{$cfg->{'user_class'}} = 1;
+
+
+    # Configure database
+    #
+    $Rit::dbix = Para::Frame::DBIx ->
+	new({
+	    connect => $CFG->{'dbconnect'},
+	    import_tt_params => 1,
+	});
+
+
+    # Attatch code to hooks
+    #
+
+    # Just in case we temporarily switched to root and got an exception
+    Para::Frame->add_hook('on_startup', sub
+			  {
+			      $Rit::dbix->connect;
+			      Rit::Base::Demo->initialize_db;
+			  });
+
+    Para::Frame->add_hook('before_user_logout', sub
+			  {
+			      $_[0]->before_user_logout;
+			  });
+
+    Para::Frame->add_hook('user_login', sub
+			  {
+			      $_[0]->after_user_login;
+			  });
+
+    Para::Frame->add_hook('done', \&Rit::Base::Demo::on_done);
+
+
+    Rit::Base->init();
+
+
+    my $global_params =
+    {
+     now             => \&Para::Frame::Time::now,
+     date            => \&Para::Frame::Time::date,
+     favicon         => "favicon.ico",
+    };
+    Para::Frame->add_global_tt_params( $global_params );
+
+
+    # Assign extra handlers for Burner
+    #
+    my $burner_plain = Para::Frame::Burner->get_by_type('plain');
+    $burner_plain->add_ext('htaccess');
+
+
+    if( $ARGV[0] eq 'upgrade' )
+    {
+	Para::Frame->startup;
+	Para::Frame::main_loop; #forever
+    }
+
+    if( $daemonize )
+    {
+	Para::Frame->daemonize( 1 );
+    }
+    else
+    {
+	Para::Frame->watchdog_startup();
+    }
+}
+
+#########################################################
