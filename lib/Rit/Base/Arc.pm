@@ -2498,14 +2498,23 @@ Returns: boolean
 
 sub value_meets_proplim
 {
-    my( $arc, $proplim, $args ) = @_;
+    my( $arc, $proplim, $args_in ) = @_;
 
     return 1 unless $proplim;
+    unless( ref $proplim and ref $proplim eq 'HASH' )
+    {
+	confess "proplim should be a hash";
+    }
+
     return 1 unless keys %$proplim;
+    if( $proplim->{'arclim'} )
+    {
+	confess "args given in proplim place";
+    }
 
     if( my $obj = $arc->obj )
     {
-	return 1 if $obj->meets_proplim($proplim, $args);
+	return 1 if $obj->meets_proplim($proplim, $args_in);
     }
 
     return 0;
