@@ -4222,14 +4222,16 @@ Returns: The node
 
 sub vacuum
 {
-    my( $node, $args ) = @_;
+    my( $node, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
-    foreach my $arc ( $node->arc_list( undef, undef, $args )->nodes )
+    my $no_lim = Rit::Base::Arc::Lim->parse(['active','inactive']);
+    foreach my $arc ( $node->arc_list( undef, undef, $no_lim)->nodes )
     {
 	$arc->remove_duplicates( $args );
     }
 
-    foreach my $arc ( $node->arc_list( undef, undef, $args )->as_array )
+    foreach my $arc ( $node->arc_list( undef, undef, $no_lim )->as_array )
     {
 	next unless $arc->real_coltype eq 'obj';
 	$Para::Frame::REQ->may_yield;
