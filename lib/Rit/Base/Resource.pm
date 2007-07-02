@@ -6528,7 +6528,7 @@ sub handle_query_arc_value
 	debug "The arc_id got us $arc";
     }
 
-    if( $arc_id and $node->get_by_id($arc_id)) # check old value
+    if( $arc_id and $node->get_by_id($arc_id)->is_arc ) # check old value
     {
 	debug 3, "  Check old arc $arc_id";
 	my $arc = $node->get_by_id($arc_id);
