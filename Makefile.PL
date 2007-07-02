@@ -5,9 +5,13 @@ BEGIN { require 5.008 }
 use ExtUtils::MakeMaker;
 
 use FindBin;
-open PF_LOC, "<$FindBin::Bin/.paraframe_location" or die $!;
-my $pf = <PF_LOC>;
-chomp( $pf );
+
+my $pf;
+if( open PF_LOC, "<$FindBin::Bin/.paraframe_location" )
+{
+    $pf = <PF_LOC>;
+    chomp $pf;
+}
 
 $pf ||= "/usr/local/paraframe";
 
@@ -39,7 +43,7 @@ WriteMakefile(
 		  'Para::Frame'                => 1.04,
 		  'Array::Uniq'                => 0.02,
 	          'Template::PopupTreeSelect'  => 0.90,
-	          'Clone'                      => 0.22,
+	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
 	      },
 	      'dist'          =>
