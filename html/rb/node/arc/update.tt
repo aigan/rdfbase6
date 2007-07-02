@@ -185,6 +185,10 @@
       [% go("Submit", me, "arc_submit") %]
       [% step("Save") %]
    [% END %]
+   [% UNLESS arc.old %]
+      &nbsp;
+      [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+   [% END %]
 [% ELSE %]
    [% step("Save as a new version") %]
    &nbsp;
