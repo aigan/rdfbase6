@@ -2118,20 +2118,19 @@ Returns: ---
 
 sub vacuum
 {
-    my( $arc, $args ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
 
-    $args ||= {};
+    my $DEBUG = 1;
 
-    my $DEBUG = 0;
-
-    warn "vacuum arc $arc->{id}\n" if $DEBUG;
+    debug "vacuum arc $arc->{id}" if $DEBUG;
 
     # Set global flag what we are in vacuum. Other methods will also
     # call vacuum
 #    $Rit::Base::Arc::VACUUM = 1; # NO recursive vacuum
 
     return 1 if $arc->{'vacuum'} ++;
-#    debug "vacuum ".$arc->sysdesig."\n";
+    debug "vacuum ".$arc->sysdesig;
 
     $arc->remove_duplicates( $args );
 
@@ -2139,9 +2138,9 @@ sub vacuum
     $arc->remove({%$args, implicit => 1}); ## Only removes if not valid
     unless( disregard $arc )
     {
-#	warn "  Reset clean\n";
+	debug "  Reset clean";
 	$arc->reset_clean;
-#	warn "  Create check\n";
+	debug "  Create check";
 	$arc->create_check( $args );
 	$arc->{'vacuum'} ++;
     }
@@ -2546,7 +2545,9 @@ sub remove
 
     my $implicit = $args->{'implicit'} || 0;
 
-    if( $arc->active and not $implicit )
+    if( ($arc->active and not $implicit) or
+	$arc->replaced_by->size
+      )
     {
 	debug "  Arc active but not flag implicit" if $DEBUG;
 
@@ -3979,21 +3980,34 @@ sub create_check
     my $pred      = $arc->pred;
     my $DEBUG = 0;
 
+
+    debug "a";
+
     if( my $list_a = Rit::Base::Rule->list_a($pred) )
     {
+    debug "b";
+
 	foreach my $rule ( @$list_a )
 	{
+    debug "c";
+
 	    $rule->create_infere_rel($arc);
 	}
     }
 
     if( my $list_b = Rit::Base::Rule->list_b($pred) )
     {
+    debug "d";
+
 	foreach my $rule ( @$list_b )
 	{
+    debug "e";
+
 	    $rule->create_infere_rev($arc);
 	}
     }
+
+    debug "f";
 
     # Special creation rules
     #
