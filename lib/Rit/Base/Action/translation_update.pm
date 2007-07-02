@@ -56,6 +56,9 @@ sub handler
 	$create_sth->execute($c, $sv, $en, $de, $no, $dk, $fi, $is);
     }
 
+    # Reset cache
+    delete $Rit::Base::L10N::TRANSLATION{ $c };
+
     return "Översättning ändrad";
 }
 
