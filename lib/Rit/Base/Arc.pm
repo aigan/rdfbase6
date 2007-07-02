@@ -140,7 +140,7 @@ sub create
 
     # Start at level 3...
     my $DEBUG = debug();
-#    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
 
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
 
@@ -1345,6 +1345,13 @@ sub is_owned_by
     {
 	return 1 if $agent->has_root_access;
     }
+
+    if( not( $arc->activated ) and
+	$arc->created_by->equals( $Para::Frame::REQ->user ) )
+    {
+	return 1;
+    }
+
 
     if( $agent->equals( $arc->subj->owned_by ) )
     {
@@ -2569,15 +2576,6 @@ sub remove
 
     my $DEBUG = 0;
 
-    if( $DEBUG )
-    {
-	debug sprintf("  Req rem arc id %s\n", $arc->sysdesig);
-
-	my($package, $filename, $line) = caller;
-	debug "  called from $package, line $line";
-	debug "  validate_check";
-    }
-
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
 
@@ -2585,8 +2583,26 @@ sub remove
     my $create_removal = 0;
     my $force = $args->{'force'} || 0;
 
+    if( $DEBUG )
+    {
+	debug sprintf("  Req rem arc id %s\n", $arc->sysdesig);
+
+	my($package, $filename, $line) = caller;
+	debug "  called from $package, line $line";
+	debug "  implicit: $implicit";
+	debug "  force: $force";
+	debug "  active: ".$arc->active;
+	debug "  validate_check";
+    }
+
     unless( $force )
     {
+	if( $arc->is_removal )
+	{
+	    debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
+	    return 0;
+	}
+
 	if( ($arc->active and not $implicit) or
 	    $arc->replaced_by->size
 	  )
@@ -2594,10 +2610,9 @@ sub remove
 	    debug "  Arc active but not flag implicit" if $DEBUG;
 	    $create_removal = 1;
 	}
-
-	unless( $arc->is_owned_by( $Para::Frame::REQ->user ) )
+	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
 	{
-	    confess('denied', "You don't own the arc ".$arc->sysdesig);
+	    confess('denied', sprintf "You don't own the arc %s", $arc->sysdesig);
 	}
 
 	# Can this arc be infered?
