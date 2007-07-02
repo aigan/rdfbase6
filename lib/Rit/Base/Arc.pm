@@ -30,7 +30,7 @@ BEGIN
     our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
     print "Loading ".__PACKAGE__." $VERSION\n";
 
-    $Rit::Base::Arc = 0;
+    $Rit::Base::Arc = 0; # Internal object enumeration
 }
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
@@ -42,7 +42,6 @@ use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
-use Rit::Base::Resource::Change;
 use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group $C_value );
 
 use Rit::Base::Utils qw( cache_update getpred valclean translate
@@ -133,13 +132,8 @@ Returns: The arc object
 
 sub create
 {
-    my( $this, $props, $args ) = @_;
-
-    $args ||= {};
-    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new();
-
-    confess "Res not a change object" unless
-      UNIVERSAL::isa( $res, 'Rit::Base::Resource::Change');
+    my( $this, $props, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
@@ -780,12 +774,10 @@ Returns: The arc
 
 sub find_set
 {
-    my( $this, $props, $args ) = @_;
+    my( $this, $props, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     my $arcs = $this->find( $props, $args );
-
-    $args ||= {};
-    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
 
     my $default = $args->{'default'} || {};
 
@@ -844,9 +836,8 @@ Returns: ---
 
 sub find_remove
 {
-    my( $this, $props, $args ) = @_;
-
-    $args ||= {};
+    my( $this, $props, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     # If called with 'implicit', only remove arc if it no longer can
     # be infered and it's not explicitly declared.  All checks in
@@ -2076,6 +2067,29 @@ sub deactivate
 	throw('validation', "Arc $arc->{id} is not active");
     }
 
+    if( $narc->is_removal )
+    {
+	unless( $narc->activated )
+	{
+	    throw('validation', "Arc $narc->{id} was never activated");
+	}
+
+	# Can this arc be infered?
+	if( $arc->validate_check )
+	{
+	    # Arc was explicit but is now indirect implicit
+	    debug "Arc infered; set implicit";
+	    $arc->set_implicit(1);
+	    $arc->set_indirect(1);
+	    return 0;
+	}
+    }
+    elsif( not $narc->active )
+    {
+	throw('validation', "Arc $narc->{id} is not active");
+    }
+
+
     my $updated = $narc->updated;
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
@@ -2119,9 +2133,9 @@ Returns: ---
 sub vacuum
 {
     my( $arc, $args_in ) = @_;
-    my( $args ) = parse_propargs( $args_in );
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     debug "vacuum arc $arc->{id}" if $DEBUG;
 
@@ -2129,7 +2143,7 @@ sub vacuum
     # call vacuum
 #    $Rit::Base::Arc::VACUUM = 1; # NO recursive vacuum
 
-    return 1 if $arc->{'vacuum'} ++;
+    return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig;
 
     $arc->remove_duplicates( $args );
@@ -2138,11 +2152,20 @@ sub vacuum
     $arc->remove({%$args, implicit => 1}); ## Only removes if not valid
     unless( disregard $arc )
     {
+	debug "  check activation";
+	if( $arc->inactive and $arc->indirect )
+	{
+	    unless( $arc->active_version )
+	    {
+		$arc->activate({%$args, force => 1});
+	    }
+	}
+
+
 	debug "  Reset clean";
 	$arc->reset_clean;
 	debug "  Create check";
 	$arc->create_check( $args );
-	$arc->{'vacuum'} ++;
     }
 }
 
@@ -2524,9 +2547,10 @@ Returns: the number of arcs removed.
 
 sub remove
 {
-    my( $arc, $args ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     if( $DEBUG )
     {
@@ -2540,27 +2564,15 @@ sub remove
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
 
-    $args ||= {};
-    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new();
-
     my $implicit = $args->{'implicit'} || 0;
+    my $create_removal = 0;
 
     if( ($arc->active and not $implicit) or
 	$arc->replaced_by->size
       )
     {
 	debug "  Arc active but not flag implicit" if $DEBUG;
-
-	my $new = Rit::Base::Arc->create({
-					  common_id => $arc->common_id,
-					  replaces_id => $arc->id,
-					  active => 0,
-					  subj_id => $arc->{'subj'},
-					  pred_id => $arc->{'pred'},
-					  value => is_undef,
-					  valtype => 0,
-					 }, $args);
-	return 1;
+	$create_removal = 1;
     }
 
     unless( $arc->is_owned_by( $Para::Frame::REQ->user ) )
@@ -2579,8 +2591,16 @@ sub remove
 
 	# Arc was explicit but is now indirect implicit
 	debug "  Arc infered; set implicit" if $DEBUG;
-	$arc->set_implicit(1);
-	return 0;
+	if( $create_removal )
+	{
+	    $arc->create_removal;
+	    return 1;
+	}
+	else
+	{
+	    $arc->set_implicit(1);
+	    return 0;
+	}
     }
     else
     {
@@ -2612,8 +2632,22 @@ sub remove
 
 	debug "  Removed explicit for indirect arc.  Make arc implicit\n" if $DEBUG;
 
-	$arc->set_implicit(1);
-	return 0;
+	if( $create_removal )
+	{
+	    $arc->create_removal;
+	    return 1;
+	}
+	else
+	{
+	    $arc->set_implicit(1);
+	    return 0;
+	}
+    }
+
+    if( $create_removal )
+    {
+	$arc->create_removal;
+	return 1;
     }
 
     debug "  remove_check" if $DEBUG;
@@ -2674,6 +2708,32 @@ sub remove
     return 1; # One arc removed
 }
 
+
+#######################################################################
+
+=head2 create_removal
+
+  $a->create_removal( \%args )
+
+Returns: The removal arc
+
+=cut
+
+sub create_removal
+{
+    my( $arc, $args ) = @_;
+
+    return Rit::Base::Arc->create({
+				   common_id => $arc->common_id,
+				   replaces_id => $arc->id,
+				   active => 0,
+				   subj_id => $arc->{'subj'},
+				   pred_id => $arc->{'pred'},
+				   value => is_undef,
+				   valtype => 0,
+				  }, $args);
+}
+
 #######################################################################
 
 =head2 update
@@ -2716,6 +2776,7 @@ sub update
 
 #######################################################################
 
+
 =head2 set_value
 
   $a->set_value( $new_value, \%args )
@@ -2735,12 +2796,10 @@ Returns: the arc changed, or the same arc
 
 sub set_value
 {
-    my( $arc, $value_new_in, $args ) = @_;
+    my( $arc, $value_new_in, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     my $DEBUG = 0;
-
-    $args ||= {};
-    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
@@ -3092,16 +3151,21 @@ Exceptions: validation
 
 sub activate
 {
-    my( $arc ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
 
-    unless( $arc->inactive )
-    {
-	throw('validation', "Arc is already active");
-    }
 
-    unless( $arc->submitted )
+    unless( $args->{'force'} )
     {
-	throw('validation', "Arc is not yet submittes");
+	unless( $arc->inactive )
+	{
+	    throw('validation', "Arc is already active");
+	}
+
+	unless( $arc->submitted )
+	{
+	    throw('validation', "Arc is not yet submittes");
+	}
     }
 
     my $updated = now();
@@ -3630,7 +3694,7 @@ sub register_with_nodes
     my $pred = $arc->pred;
     my $subj = $arc->{'subj'};
     my $pred_name = $pred->name->plain;
-    my $coltype = $arc->real_coltype;
+    my $coltype = $arc->real_coltype || ''; # coltype may be removal
 
 #    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
 
@@ -3981,33 +4045,21 @@ sub create_check
     my $DEBUG = 0;
 
 
-    debug "a";
-
     if( my $list_a = Rit::Base::Rule->list_a($pred) )
     {
-    debug "b";
-
 	foreach my $rule ( @$list_a )
 	{
-    debug "c";
-
 	    $rule->create_infere_rel($arc);
 	}
     }
 
     if( my $list_b = Rit::Base::Rule->list_b($pred) )
     {
-    debug "d";
-
 	foreach my $rule ( @$list_b )
 	{
-    debug "e";
-
 	    $rule->create_infere_rev($arc);
 	}
     }
-
-    debug "f";
 
     # Special creation rules
     #
