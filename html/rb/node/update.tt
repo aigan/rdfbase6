@@ -204,7 +204,7 @@ END;
          [% arc.value | html %]
       [% END %]
       </td>
-      <td>[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
    [% END %]
@@ -229,7 +229,7 @@ END;
          [% arc.value | html %]
       [% END %]
       </td>
-      <td>[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
    [% END %]
@@ -256,7 +256,7 @@ END;
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
       <td valign="top">[% pred.name.loc %]</td>
-      <td>[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
    [% END %]
@@ -277,7 +277,7 @@ END;
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
       <td valign="top">[% pred.name.loc %]</td>
-      <td>[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
    [% END %]
