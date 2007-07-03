@@ -87,6 +87,12 @@ sub new
 
   Rit::Base::Arc::Lim->parse( [$arclim1, $arclim2, ...] )
 
+  Rit::Base::Arc::Lim->parse( [ [$arclim1, $arclim2, ...], [...], ... ] )
+
+The second level arrayrefs are ANDed together. First lever are ORed
+together. [ [l1, l2], l3, [l4,l5] ] meens that the arc is accepted if
+it passes( (l1 and l2) or l3 or (l4 and l5) ).
+
 Special arclims, if not an arrayref, are:
   auto
   relative
@@ -141,10 +147,27 @@ sub parse
 
     foreach(@$arclim)
     {
-	if( my $val = $LIM{$_} )
+	if( ref $_ and ref $_ eq 'ARRAY' )
 	{
-	    die "Flag $_ not recognized" unless $val;
-	    $_ = $val;
+	    my $res_lim = 0;
+	    foreach my $lim (@$_)
+	    {
+		unless( $lim =~ /^\d+$/ )
+		{
+		    $lim = $LIM{$lim};
+		    die "Flag $lim not recognized" unless $lim;
+		}
+		$res_lim |= +$lim;
+	    }
+	    $_ = $res_lim;
+	}
+	else
+	{
+	    if( my $val = $LIM{$_} )
+	    {
+		die "Flag $_ not recognized" unless $val;
+		$_ = $val;
+	    }
 	}
     }
 
