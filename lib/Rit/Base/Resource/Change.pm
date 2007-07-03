@@ -307,7 +307,11 @@ sub autocommit
 	{
 	    debug "* ".$arc->sysdesig;
 
-	    if( $arc->is_new )
+	    if( $arc->is_removed )
+	    {
+		debug "  is removed...";
+	    }
+	    elsif( $arc->is_new )
 	    {
 		$arc->submit;
 
