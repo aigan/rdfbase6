@@ -18,6 +18,7 @@ use strict;
 use Data::Dumper;
 
 use Para::Frame::Utils qw( throw );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_website_text $C_language );

@@ -16,6 +16,7 @@ package Rit::Base::Action::translate_page_part_create;
 use strict;
 
 use Para::Frame::Utils qw( throw );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( parse_propargs );
