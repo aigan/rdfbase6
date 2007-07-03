@@ -2214,6 +2214,8 @@ sub has_value
 	    confess "subquery not implemented for matchtype $match";
 	}
 
+	######## HERE: handle unique_arcs_prio = ['submitted','active']
+
 	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
 	{
 	    if( $arc->obj->find($value, $args)->size )
@@ -2326,7 +2328,9 @@ sub has_revprop
 
   $n->meets_proplim( $proplim, \%args )
 
-See L<Rit::Base::List/find> for docs
+See L<Rit::Base::List/find> for docs.
+
+This also implements meets_proplim for arcs!!!
 
 Returns: boolean
 
@@ -3044,18 +3048,25 @@ sub arc_list
 		    $proplim = [$proplim];
 		}
 
+#		debug "proplim: ".datadump($proplim);
 		my $proplist = Rit::Base::List->new($proplim);
+#		debug "Proplist contains ".datadump($proplist);
 
 		my @newlist;
 		my( $arc, $error ) = $lr->get_first;
 		while(! $error )
 		{
-		    if( $proplist->contains( $arc->value, $args ) )
+#		    debug "  Does proplist containt the value ".$arc->value;
+		    # May return is_undef object
+		    # No match gives literal undef
+		    if( ref $proplist->contains( $arc->value, $args ) )
 		    {
 			push @newlist, $arc;
+#			debug "  MATCH";
 		    }
 		    ( $arc, $error ) = $lr->get_next;
 		}
+#		debug "limit done";
 
 		$lr = Rit::Base::List->new(\@newlist);
 	    }
