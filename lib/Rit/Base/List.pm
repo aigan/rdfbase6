@@ -629,6 +629,10 @@ sub sorted
 		use DateTime::Infinite;
 		$val ||= DateTime::Infinite::Future->new;
 	    }
+	    elsif( $coltype eq 'valtext' )
+	    {
+		$val ||= '';
+	    }
 
 #	    debug sprintf("      => %s", $val);
 
@@ -1148,6 +1152,8 @@ sub contains
 	{
 	    die "Not implemented: $tmpl";
 	}
+
+	# else: go to the default handling below
     }
 
     # Default for simple values and objects:
