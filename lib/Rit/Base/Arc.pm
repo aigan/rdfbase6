@@ -140,7 +140,7 @@ sub create
 
     # Start at level 3...
     my $DEBUG = debug();
-    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+#    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
 
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
 
@@ -149,7 +149,7 @@ sub create
     my $rec = {};
 
     ##################### common_id == id
-    if( $props->{'common_id'} )
+    if( $props->{'common_id'} ) # used in block EXISTING
     {
 	$rec->{'id'}  = $props->{'common_id'};
     }
@@ -511,19 +511,58 @@ sub create
 
 	# Also returns new and submitted arcs, from the same user
 
-	debug "Check if subj $rec->{'subj'} has pred $rec->{'pred'} with value ".query_desig($value_obj) if $DEBUG;
+	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->name, query_desig($value_obj) ) if $DEBUG;
 
 #	debug "Getting arclist for ".$subj->sysdesig;
 	# $value_obj may be is_undef (but not literal undef)
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
-	debug query_desig($existing_arcs); ### DEBUG
+
+#	debug "Existing arcs: ".query_desig($existing_arcs) if $DEBUG;
 #	debug "value_obj: '$value_obj'";
 
-	foreach my $arc ($subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new'])->as_array )
+      EXISTING:
+	foreach my $arc ($existing_arcs->as_array)
 	{
+	    if( $rec->{'replaces'} )
+	    {
+		next unless $arc->replaces_id == $rec->{'replaces'};
+	    }
+
+	    if( $props->{'common_id'} ) # Explicitly defined
+	    {
+		next unless $arc->common_id == $props->{'common_id'};
+	    }
+
+	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
+
 	    if( $arc->active )
 	    {
 		debug $arc->desig. " already exist" if $DEBUG;
+
+		# See if there already is another suggested version of
+		# this arc not equal to this version
+		foreach my $rarc ($arc->versions(undef,[['new','created_by_me'],['submitted','created_by_me']])->as_array)
+		{
+		    next if $rarc->equals($arc);
+
+		    if( $rarc->is_removal )
+		    {
+			debug "Revokes unactivated removal requests";
+			$rarc->remove({force=>1});
+		    }
+		    else
+		    {
+			# There is another suggested change of this
+			# arc that would collide with this
+			# version. Therefore, we cannot use this
+			# common arc.
+
+			debug "The new arc would collide with ".
+			  $rarc->sysdesig;
+			next EXISTING;
+		    }
+		}
+
 		return $arc;
 	    }
 
@@ -545,11 +584,15 @@ sub create
     }
 
 
+#    debug "Would have created new arc..."; return is_undef; ### DEBUG
+
+
     my $fields_part = join ",", @fields;
     my $values_part = join ",", map "?", @fields;
     my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
     warn "SQL $st (@values)\n" if $DEBUG;
+
     $sth->execute( @values );
 
     my $arc = $this->get_by_rec($rec, $subj, $value_obj );
@@ -1644,7 +1687,7 @@ sub active_version
 
 =head2 versions
 
-  $a->versions
+  $a->versions( $proplim, $arcs )
 
 Returns: A L<Rit::Base::list> of all versions of this arc
 
@@ -1654,7 +1697,11 @@ TODO: Make this a non-materialized list
 
 sub versions
 {
-    my( $arc ) = @_;
+    my( $arc, $proplim, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+#    debug "Getting versions of $arc->{id} with arclim ".$arclim->sysdesig;
+
     my $class = ref($arc);
 
     my @arcs;
@@ -1664,7 +1711,21 @@ sub versions
     $sth->execute($arc->common_id);
     while( my $arc_rec = $sth->fetchrow_hashref )
     {
-	push @arcs, $class->get_by_rec( $arc_rec );
+	my $arc = $class->get_by_rec( $arc_rec );
+	if( $arc->meets_arclim($args->{'arclim'}) )
+	{
+	    if( $proplim )
+	    {
+		if( $arc->meets_proplim( $proplim, $args ) )
+		{
+		    push @arcs, $arc;
+		}
+	    }
+	    else
+	    {
+		push @arcs, $arc;
+	    }
+	}
     }
     $sth->finish;
 
@@ -1774,7 +1835,7 @@ sub sysdesig
 {
     my( $arc ) = @_;
 
-    return sprintf("%d: %s --%s--> %s (%d) #%d", $arc->{'id'}, $arc->subj->sysdesig, $arc->pred->name, $arc->value_sysdesig, $arc->{'disregard'}, $arc->{'ioid'});
+    return sprintf("%d[%d]: %s --%s--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->name, $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
 }
 
 
@@ -2593,11 +2654,13 @@ sub remove
 	debug "  force: $force";
 	debug "  active: ".$arc->active;
 	debug "  validate_check";
+#	debug "  res: ".datadump($res,2);
+
     }
 
     unless( $force )
     {
-	if( $arc->is_removal )
+	if( $arc->is_removal and $arc->activated )
 	{
 	    debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
 	    return 0;
@@ -2628,7 +2691,7 @@ sub remove
 	    debug "  Arc infered; set implicit" if $DEBUG;
 	    if( $create_removal )
 	    {
-		$arc->create_removal;
+		$arc->create_removal($args);
 		return 1;
 	    }
 	    else
@@ -2669,7 +2732,7 @@ sub remove
 
 	    if( $create_removal )
 	    {
-		$arc->create_removal;
+		$arc->create_removal($args);
 		return 1;
 	    }
 	    else
@@ -2681,7 +2744,7 @@ sub remove
 
 	if( $create_removal )
 	{
-	    $arc->create_removal;
+	    $arc->create_removal($args);
 	    return 1;
 	}
     }
@@ -2700,8 +2763,8 @@ sub remove
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
 
-    ### DEBUG
-#    confess "***** Would have removed arc $arc_id\n"; 
+#    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
+
     $sth->execute($arc_id);
 
     debug "  init subj" if $DEBUG;
@@ -3062,6 +3125,8 @@ sub submit
 {
     my( $arc ) = @_;
 
+    return 0 if $arc->is_removed;
+
     unless( $arc->inactive )
     {
 	throw('validation', "Arc is already active");
@@ -3190,6 +3255,7 @@ sub activate
     my( $arc, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
 
+    return 0 if $arc->is_removed;
 
     unless( $args->{'force'} )
     {
