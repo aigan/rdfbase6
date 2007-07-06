@@ -2109,6 +2109,12 @@ Supported args are
   match
   clean
   arclim
+  unique_arcs_prio
+
+With a C<unique_arcs_prio>, we will also look for removal arcs that in
+it's previous version had the value. If that arc is prioritized, it will
+change the return to false, if there's no other match.
+
 
 Default C<match> is C<eq>. Other supported values are C<begins> and
 C<like>.
@@ -2151,7 +2157,7 @@ Consider $n->has_value({'some_pred'=>is_undef})
 sub has_value
 {
     my( $node, $preds, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     confess "Not a hashref" unless ref $preds;
 
@@ -2173,7 +2179,9 @@ sub has_value
 	}
 	elsif( ref $pred_name eq 'ARRAY' )
 	{
-	    # Either predicate can have the value
+	    # Either predicate can have the value.
+	    # unique_arcs_prio is not applicable here.
+
 	    foreach my $pred ( @$pred_name )
 	    {
 		my $arc = $node->has_value({$pred=>$value}, $args );
@@ -2214,13 +2222,41 @@ sub has_value
 	    confess "subquery not implemented for matchtype $match";
 	}
 
-	######## HERE: handle unique_arcs_prio = ['submitted','active']
-
-	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    if( $arc->obj->find($value, $args)->size )
+	    my @arcs;
+	    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
 	    {
-		return $arc;
+		if( $arc->is_removal )
+		{
+		    if( $arc->replaces->obj->find($value, $args)->size )
+		    {
+			push @arcs, $arc;
+		    }
+		}
+		elsif( $arc->obj->find($value, $args)->size )
+		{
+		    push @arcs, $arc;
+		}
+	    }
+
+	    if( @arcs )
+	    {
+		foreach my $arc ( Rit::Base::List->new(\@arcs)->
+				  unique_arcs_prio($uap)->as_array )
+		{
+		    return $arc unless $arc->is_removal;
+		}
+	    }
+	}
+	else
+	{
+	    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	    {
+		if( $arc->obj->find($value, $args)->size )
+		{
+		    return $arc;
+		}
 	    }
 	}
 	return 0;
@@ -2229,10 +2265,28 @@ sub has_value
     # $value holds alternative values
     elsif( ref $value eq 'ARRAY' )
     {
-	foreach my $val (@$value )
+	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    my $arc = $node->has_value({$pred_name=>$val},  $args);
-	    return $arc if $arc;
+	    my @arcs;
+	    foreach my $val (@$value )
+	    {
+		my $arc = $node->has_value({$pred_name=>$val},  $args);
+		push @arcs, $arc if $arc;
+	    }
+
+	    if( @arcs )
+	    {
+		return Rit::Base::List->new(\@arcs)->
+		  unique_arcs_prio($uap)->get_first_nos;
+	    }
+	}
+	else
+	{
+	    foreach my $val (@$value )
+	    {
+		my $arc = $node->has_value({$pred_name=>$val},  $args);
+		return $arc if $arc;
+	    }
 	}
 	return 0;
     }
@@ -2268,11 +2322,47 @@ sub has_value
 	}
     }
 
-    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+    if( my $uap = $args->{unique_arcs_prio} )
     {
-	debug 3, "  check arc ".$arc->id;
-	return $arc if $arc->value_equals( $value, $args );
+	my @arcs;
+#	debug "In has_value";
+	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	{
+#	    debug 1, "  check arc ".$arc->id;
+	    if( $arc->is_removal )
+	    {
+		if( $arc->replaces->value_equals( $value, $args ) )
+		{
+#		    debug "    removal passed";
+		    push @arcs, $arc;
+		}
+	    }
+	    elsif( $arc->value_equals( $value, $args ) )
+	    {
+#		debug "    passed";
+		push @arcs, $arc;
+	    }
+	}
+
+	if( @arcs )
+	{
+	    foreach my $arc ( Rit::Base::List->new(\@arcs)->
+			      unique_arcs_prio($uap)->as_array )
+	    {
+		return $arc unless $arc->is_removal;
+	    }
+	}
     }
+    else
+    {
+	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	{
+	    debug 3, "  check arc ".$arc->id;
+	    return $arc if $arc->value_equals( $value, $args );
+	}
+    }
+
+
     if( debug > 2 )
     {
 	my $value_str = defined($value)?$value:"<undef>";
