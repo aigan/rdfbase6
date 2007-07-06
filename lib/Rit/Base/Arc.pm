@@ -2383,8 +2383,11 @@ sub value_equals
 
     unless( $arc->meets_arclim( $arclim ) )
     {
+#	debug "  arc $arc->{id} doesn't meet arclim";
 	return 0;
     }
+
+#    debug "Compares arc ".$arc->sysdesig." with ".query_desig($val2);
 
 
     if( $arc->obj )
@@ -2463,85 +2466,14 @@ sub meets_arclim
 
     return 1 unless @$arclim;
 
-#    debug "Filtering arc $arc->{id}";
+#    debug "Filtering arc $arc->{id} on ".$arclim->sysdesig;
     foreach( @$arclim )
     {
 #	debug "  Applying arclim $_";
 
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'active'} )
-	{
-	    next unless $arc->active;
-	}
+	next unless Rit::Base::Arc::Lim::arc_meets_lim( $arc, $_ );
 
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'direct'} )
-	{
-	    next unless $arc->direct;
-	}
 
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'submitted'} )
-	{
-	    next unless $arc->submitted;
-	}
-
-	if(  $_ & $Rit::Base::Arc::Lim::LIM{'new'} )
-	{
-	    next unless $arc->is_new;
-	}
-
-	if(  $_ & $Rit::Base::Arc::Lim::LIM{'created_by_me'} )
-	{
-	    next unless $arc->created_by->equals($Para::Frame::REQ->user);
-	}
-
-	if(  $_ & $Rit::Base::Arc::Lim::LIM{'old'} )
-	{
-	    next unless $arc->old;
-	}
-
-	if(  $_ & $Rit::Base::Arc::Lim::LIM{'inactive'} )
-	{
-	    next unless $arc->inactive;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'indirect'} )
-	{
-	    next unless $arc->indirect;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'not_submitted'} )
-	{
-	    next if     $arc->submitted;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'explicit'} )
-	{
-	    next unless $arc->explicit;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'implicit'} )
-	{
-	    next unless $arc->implicit;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'not_new'} )
-	{
-	    next if     $arc->is_new;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'not_old'} )
-	{
-	    next if     $arc->old;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'not_disregarded'} )
-	{
-	    next unless $arc->not_disregarded;
-	}
-
-	if( $_ & $Rit::Base::Arc::Lim::LIM{'disregarded'} )
-	{
-	    next if     $arc->not_disregarded;
-	}
 
 #	debug "    passed";
 	return 1;
