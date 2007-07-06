@@ -110,6 +110,8 @@ sub parse
 
     $arclim ||= [];
 
+#    debug "Parsing arclim ".query_desig($arclim);
+
     unless( ref $arclim )
     {
 	if( $arclim eq 'auto' )
@@ -412,6 +414,34 @@ sub size
 }
 
 
+#########################################################################
+
+=head2 sortorder
+
+  $arclim->sortorder( $arc )
+
+Checks which of tha lims in the arclim that the arc matches, in
+order. The first is numbered 0. No match gives $number_of_tests + 1.
+
+Returns: A plain number
+
+=cut
+
+sub sortorder
+{
+    my( $arclim, $arc ) = @_;
+
+    my $i;
+    for( $i=0; $i<=$#$arclim; $i++ )
+    {
+	if( arc_meets_lim( $arc, $arclim->[$i] ) )
+	{
+	    return $i+1;
+	}
+    }
+    return $i+1;
+}
+
 #######################################################################
 
 =head2 sysdesig
@@ -515,6 +545,99 @@ sub limflag
 		 (die "Flag $_ not recognized"));
     }
     return  $val;
+}
+
+
+#######################################################################
+
+=head2 arc_meets_lim
+
+  arc_meets_lim( $arc, $lim )
+
+Returns: boolean
+
+=cut
+
+sub arc_meets_lim
+{
+    my( $arc, $lim ) = @_;
+
+    if( $lim & $LIM{'active'} )
+    {
+	return 0 unless $arc->active;
+    }
+
+    if( $lim & $LIM{'direct'} )
+    {
+	return 0 unless $arc->direct;
+    }
+
+    if( $lim & $LIM{'submitted'} )
+    {
+	return 0 unless $arc->submitted;
+    }
+
+    if(  $lim & $LIM{'new'} )
+    {
+	return 0 unless $arc->is_new;
+    }
+
+    if(  $lim & $LIM{'created_by_me'} )
+    {
+	return 0 unless $arc->created_by->equals($Para::Frame::REQ->user);
+    }
+
+    if(  $lim & $LIM{'old'} )
+    {
+	return 0 unless $arc->old;
+    }
+
+    if(  $lim & $LIM{'inactive'} )
+    {
+	return 0 unless $arc->inactive;
+    }
+
+    if( $lim & $LIM{'indirect'} )
+    {
+	return 0 unless $arc->indirect;
+    }
+
+    if( $lim & $LIM{'not_submitted'} )
+    {
+	return 0 if     $arc->submitted;
+    }
+
+    if( $lim & $LIM{'explicit'} )
+    {
+	return 0 unless $arc->explicit;
+    }
+
+    if( $lim & $LIM{'implicit'} )
+    {
+	return 0 unless $arc->implicit;
+    }
+
+    if( $lim & $LIM{'not_new'} )
+    {
+	return 0 if     $arc->is_new;
+    }
+
+    if( $lim & $LIM{'not_old'} )
+    {
+	return 0 if     $arc->old;
+    }
+
+    if( $lim & $LIM{'not_disregarded'} )
+    {
+	return 0 unless $arc->not_disregarded;
+    }
+
+    if( $lim & $LIM{'disregarded'} )
+    {
+	return 0 if     $arc->not_disregarded;
+    }
+
+    return 1;
 }
 
 
