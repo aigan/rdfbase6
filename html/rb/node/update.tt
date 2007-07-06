@@ -223,10 +223,21 @@ END;
       </td>
       <td valign="top">[% pred.name.loc %]</td>
       <td>
-      [% IF arc.obj %]
-         [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+      [% IF arc.is_removal %]
+         <span style="text-decoration:line-through; color:red">
+         [% oarc = arc.replaces %]
+         [% IF oarc.obj %]
+            [% jump(oarc.obj.sysdesig, me, id=oarc.obj.id) %]
+         [% ELSE %]
+            [% oarc.value | html %]
+         [% END %]
+         </style>
       [% ELSE %]
-         [% arc.value | html %]
+         [% IF arc.obj %]
+            [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+         [% ELSE %]
+            [% arc.value | html %]
+         [% END %]
       [% END %]
       </td>
       <td style="white-space: nowrap">[% arc.view_flags %]</td>

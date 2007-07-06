@@ -51,7 +51,20 @@
 [% IF arc.is_removal %]
 <tr>
    <td>Value</td>
-   <td><strong>REMOVED</strong></td>
+   <td>
+      <span style="text-decoration:line-through; color:red">
+      [% oarc = arc.replaces %]
+      [% IF oarc.realy_objtype %]
+         [% oarc.obj.sysdesig | html %]
+      [% ELSE %]
+         [% IF oarc.valtype.desig == 'textbox' %]
+            [% oarc.value | html | html_br %]
+         [% ELSE %]
+            [% oarc.value | html %]</td>
+         [% END %]
+      [% END %]
+      </span>
+   </td>
 </tr>
 [% ELSIF arc.realy_objtype %]
 <tr>
@@ -87,13 +100,32 @@
 
 <tr>
    <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
-   <td>[% input('pred', arc.pred.name) %]</td>
+   <td>
+   [% IF arc.is_removal %]
+      [% arc.pred.name %]
+   [% ELSE %]
+      [% input('pred', arc.pred.name) %]
+   [% END %]
+   </td>
 </tr>
 
 [% IF arc.is_removal %]
 <tr>
    <td>Value</td>
-   <td><strong>REMOVED</strong></td>
+   <td>
+      <span style="text-decoration:line-through; color:red">
+      [% oarc = arc.replaces %]
+      [% IF oarc.realy_objtype %]
+         [% oarc.obj.sysdesig | html %]
+      [% ELSE %]
+         [% IF oarc.valtype.desig == 'textbox' %]
+            [% oarc.value | html | html_br %]
+         [% ELSE %]
+            [% oarc.value | html %]</td>
+         [% END %]
+      [% END %]
+      </span>
+   </td>
 </tr>
 [% ELSIF arc.realy_objtype %]
 <tr>
@@ -185,7 +217,7 @@
       [% go("Submit", me, "arc_submit") %]
       [% step("Save") %]
    [% END %]
-   [% UNLESS arc.old %]
+   [% UNLESS arc.deactivated %]
       &nbsp;
       [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
    [% END %]
