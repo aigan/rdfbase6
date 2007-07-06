@@ -663,6 +663,61 @@ sub sorted
     return $list->new( \@new );
 }
 
+#######################################################################
+
+=head2 unique_arcs_prio
+
+  $list->unique_arcs_prio( \@arcproperties )
+
+Returns:
+
+A List object with arc duplicates filtered out
+
+=cut
+
+sub unique_arcs_prio
+{
+    my( $list, $sortargs_in ) = @_;
+
+    my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
+
+    # $points->{ $commin_id }->[ $passed_order ] = $arc
+
+#    debug "Sorting out duplicate arcs";
+
+
+    my %points;
+
+    my( $arc, $error ) = $list->get_first;
+    while(! $error )
+    {
+#	my $cid = $arc->common_id;
+#	my $sor = $sortargs->sortorder($arc);
+#	debug "Sort $sor: ".$arc->sysdesig;
+#	$points{ $cid }[ $sor ] = $arc;
+	$points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
+    }
+    continue
+    {
+	( $arc, $error ) = $list->get_next;
+    };
+
+    my @arcs;
+    foreach my $group ( values %points )
+    {
+	foreach my $arc (@$group)
+	{
+	    if( $arc )
+	    {
+		push @arcs, $arc;
+		last;
+	    }
+	}
+    }
+
+    return Rit::Base::List->new( \@arcs );
+}
+
 #########################################################################
 ################################  Accessors  ############################
 
@@ -1369,6 +1424,13 @@ sub materialize
     }
     elsif( $elem )
     {
+	# Handle long lists
+	unless( $i % 25 )
+	{
+	    $Para::Frame::REQ->may_yield;
+	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	}
+
 	my $obj = Rit::Base::Resource->get( $elem );
 	if( debug > 1 )
 	{
