@@ -2231,7 +2231,7 @@ sub vacuum
 
 
 	debug "  Reset clean";
-	$arc->reset_clean;
+	$arc->reset_clean($args);
 	debug "  Create check";
 	$arc->create_check( $args );
     }
@@ -2252,14 +2252,15 @@ Returns: ---
 
 sub reset_clean
 {
-    my( $arc ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    if( $arc->{'valtext'} )
+    if( $arc->real_coltype eq 'valtext' )
     {
 	my $cleaned = valclean( $arc->{'value'} );
 	if( $arc->{'clean'} ne $cleaned )
 	{
-	    # TODO: convert to arc method
+	    debug "Updating valclean";
 	    my $dbh = $Rit::dbix->dbh;
 	    my $sth = $dbh->prepare
 	      ("update arc set valclean=? where ver=?");
@@ -2267,8 +2268,11 @@ sub reset_clean
 	    $sth->execute($cleaned, $arc->version_id);
 	    $arc->{'clean'} = $cleaned;
 
-	    # TODO: What is this?
 	    cache_update;
+	    send_cache_update({ change => 'arc_updated',
+				arc_id => $arc->id,
+			      });
+	    $res->changes_add;
 	}
     }
 }
