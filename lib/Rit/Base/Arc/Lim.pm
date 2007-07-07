@@ -54,6 +54,8 @@ our %LIM =
    old              =>  4096,
    not_old          =>  8192,
    created_by_me    => 16384,
+   removal          => 32768,
+   not_removal      => 65536,
   );
 
 our %REVLIM = reverse %LIM;
@@ -359,6 +361,16 @@ sub sql
 	    push @crit, "${pf}implicit is true";
 	}
 
+	if( $_ & $LIM{'removal'} )
+	{
+	    push @crit, "${pf}valtype=0";
+	}
+
+	if( $_ & $LIM{'not_removal'} )
+	{
+	    push @crit, "${pf}valtype<>0";
+	}
+
 	if( $_ & $LIM{'not_new'} )
 	{
 	    push @crit, "not (${pf}active is false and ${pf}submitted is false and ${pf}activated is null )";
@@ -529,6 +541,9 @@ Supported lables are:
   old
   not_old
 
+  removal
+  not_removal
+
   created_by_me
 
 Returns the corresponding limit as a number to be used for
@@ -615,6 +630,16 @@ sub arc_meets_lim
     if( $lim & $LIM{'implicit'} )
     {
 	return 0 unless $arc->implicit;
+    }
+
+    if( $lim & $LIM{'removal'} )
+    {
+	return 0 unless $arc->is_removal;
+    }
+
+    if( $lim & $LIM{'not_removal'} )
+    {
+	return 0 if     $arc->is_removal;
     }
 
     if( $lim & $LIM{'not_new'} )
