@@ -20,6 +20,7 @@ use Para::Frame::Utils qw( throw );
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_webpage );
 use Rit::Base::Utils qw( is_undef parse_propargs );
+use Rit::Base::L10N qw( loc );
 
 sub handler
 {
