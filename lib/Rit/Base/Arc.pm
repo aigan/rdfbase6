@@ -3630,8 +3630,11 @@ sub init
 	}
     }
 
-    check_value(\$value);
-    unless( defined $value )
+    if( defined $value )
+    {
+	check_value(\$value);
+    }
+    else
     {
 	$value = is_undef;
     }
