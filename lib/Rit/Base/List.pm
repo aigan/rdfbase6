@@ -689,6 +689,8 @@ sub unique_arcs_prio
     my %points;
 
     my( $arc, $error ) = $list->get_first;
+    confess( "Not arc in unique_arcs_prio; $error - $arc" )
+      unless( $error or ($arc and $arc->is_arc) );
     while(! $error )
     {
 #	my $cid = $arc->common_id;
@@ -701,6 +703,10 @@ sub unique_arcs_prio
     {
 	( $arc, $error ) = $list->get_next;
     };
+
+#    debug "unique_arcs_prio";
+#    debug query_desig(\%points);
+#    debug "----------------";
 
     my @arcs;
     foreach my $group ( values %points )
