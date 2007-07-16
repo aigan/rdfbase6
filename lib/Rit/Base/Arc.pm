@@ -3588,8 +3588,15 @@ sub init
 	my $coltype;
 	if( $coltype_num == 6 )
 	{
-	    $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} }
-	      or confess "Couldn't find coltype for valtype $rec->{'valtype'}";
+	    if( $rec->{'valtype'} eq '0' )
+	    {
+		$coltype = 0;
+	    }
+	    else
+	    {
+		$coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} }
+		  or confess "Couldn't find coltype for valtype $rec->{'valtype'}";
+	    }
 	}
 	else
 	{
@@ -3605,6 +3612,10 @@ sub init
 	elsif( $coltype eq 'valdate')
 	{
 	    $value = Rit::Base::Time->get( $rec->{'valdate'} );
+	}
+	elsif( $coltype eq '0' )
+	{
+	    $value = is_undef;
 	}
 	else
 	{
