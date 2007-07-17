@@ -309,9 +309,14 @@ sub create
 	if( $pred->{'coltype'} == 6 )  # Value resource?
 	{
 	    ### Get valtype from subjs revarc
-	    my $revarc = $subj->revarc; # Should be only one on a value resource
+	    my $revarc = $subj->revarc(undef,undef,$args) # Should be only one on a value resource
+	      or confess("Couldn't get revarc for value resource: ". $subj->sysdesig);
+
 	    my $revpred = $revarc->pred;
 	    $rec->{'valtype'} = $revpred->valtype->id;
+
+	    debug("Setting valtype to ". $rec->{'valtype'} ." for value from revpred ".
+		  $revpred->name);
 
 	    confess("I won't make a value resource with a resource as value.")
 	      if( $props->{'obj_id'} );
@@ -319,8 +324,12 @@ sub create
 	else
 	{
 	    $rec->{'valtype'} = $pred->valtype->id;
+	    debug("Setting valtype to ". $rec->{'valtype'} ." from pred ".
+		  $pred->name);
 	}
     }
+#    confess("Missing valtype")
+#      unless( $rec->{'valtype'} );
     push @fields, 'valtype';
     push @values, $rec->{'valtype'};
 
