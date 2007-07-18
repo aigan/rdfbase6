@@ -346,22 +346,30 @@ sub has_root_access
 
 =head2 set_default_propargs
 
+For the current request
+
 =cut
 
 sub set_default_propargs
 {
-    return $_[0]->{'default_propargs'} = $_[1];
+
+    # Since subrequests from the same user may interlace with this
+    # request, it must be set for the request
+
+    return $Para::Frame::REQ->{'rb_default_propargs'} = $_[1];
 }
 
 #######################################################################
 
 =head2 default_propargs
 
+For the current request
+
 =cut
 
 sub default_propargs
 {
-    return $_[0]->{'default_propargs'} || {};
+    return $Para::Frame::REQ->{'rb_default_propargs'} || {};
 }
 
 #######################################################################
