@@ -344,4 +344,26 @@ sub has_root_access
 
 #######################################################################
 
+=head2 set_default_propargs
+
+=cut
+
+sub set_default_propargs
+{
+    return $_[0]->{'default_propargs'} = $_[1];
+}
+
+#######################################################################
+
+=head2 default_propargs
+
+=cut
+
+sub default_propargs
+{
+    return $_[0]->{'default_propargs'} || {};
+}
+
+#######################################################################
+
 1;

@@ -220,6 +220,9 @@ The supported args are:
   clean
   arclim
 
+unique_arcs_prio filter is NOT used here.  Do the filtering before or
+after this find.
+
 =head3 See also
 
 The combination of this and other methods creates a very powerful
@@ -294,7 +297,9 @@ sub find
 	confess datadump(\@_,2);
     }
 
-    my( $l, $tmpl, $args ) = @_;
+    my( $l, $tmpl, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
 
     my $DEBUG = debug();
     $DEBUG and $DEBUG --;
@@ -329,7 +334,10 @@ sub find
 
 
     # En empty tmpl matches the whole list (regardless of args)
-    return $l unless keys %$tmpl;
+    unless( keys %$tmpl )
+    {
+	return $l;
+    }
 
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.

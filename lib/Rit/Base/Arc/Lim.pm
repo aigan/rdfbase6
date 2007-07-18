@@ -116,27 +116,7 @@ sub parse
 
     unless( ref $arclim )
     {
-	if( $arclim eq 'auto' )
-	{
-	    if( $Para::Frame::REQ->user->has_root_access )
-	    {
-		$arclim = [8192]; # not_old
-	    }
-	    else
-	    {
-		# active or (not_old and created_by_me)
-		$arclim = [1, 8192+16384];
-	    }
-	}
-	elsif( $arclim eq 'relative' )
-	{
-	    # active or (not_old and created_by_me)
-	    $arclim = [1, 8192+16384];
-	}
-	else
-	{
-	    $arclim = [$arclim];
-	}
+	$arclim = [$arclim];
     }
 
     if( ref $arclim eq 'Rit::Base::Arc::Lim' )

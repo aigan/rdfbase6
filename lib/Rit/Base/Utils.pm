@@ -1143,7 +1143,9 @@ C<0> represents here a false argument, including undef or no
 argument. This will generate an empty C<\%props>.
 
 
-Returns: (C<$arg>, C<$arclim>)
+Returns in array context: (C<$arg>, C<$arclim>, C<$res>)
+
+Returns in scalar context: C<$arg>
 
 The returned C<arclim> is also found as the arclim named parameter in
 C<arg>, so that's just syntactic sugar. With no input, the return will
@@ -1157,17 +1159,53 @@ sub parse_propargs
 {
     my( $arg ) = @_;
 
-    $arg ||= {};
+    $arg ||= $Para::Frame::REQ->user->default_propargs;
     my $arclim;
 
     if( ref $arg and ref $arg eq 'HASH' )
     {
 	$arclim = $arg->{'arclim'};
     }
-    else
+    elsif( ref $arg )
     {
 	$arclim = $arg;
 	$arg = { arclim => $arclim };
+#	debug "parse_propargs ".datadump(\@_,3);
+    }
+    else
+    {
+	my $unique;
+	if( $arg eq 'auto' )
+	{
+	    if( $Para::Frame::REQ->user->has_root_access )
+	    {
+		$arclim = [8192]; # not_old
+		$unique = [1024, 256, 1]; # new, submitted, active
+	    }
+	    else # relative
+	    {
+		# active or (not_old and created_by_me)
+		$arclim = [1, 8192+16384];
+		$unique = [1024, 256, 1]; # new, submitted, active
+	    }
+	}
+	elsif( $arg eq 'relative' )
+	{
+	    # active or (not_old and created_by_me)
+	    $arclim = [1, 8192+16384];
+	    $unique = [1024, 256, 1]; # new, submitted, active
+	}
+	else
+	{
+	    $arclim = [$arg]
+	}
+
+	$arg = { arclim => $arclim };
+
+	if( $unique )
+	{
+	    $arg->{unique_arcs_prio} = $unique;
+	}
     }
 
     unless( UNIVERSAL::isa( $arclim, 'Rit::Base::Arc::Lim') )
@@ -1178,7 +1216,14 @@ sub parse_propargs
 
     my $res = $arg->{'res'} ||= Rit::Base::Resource::Change->new;
 
-    return( $arg, $arclim, $res );
+    if( wantarray )
+    {
+	return( $arg, $arclim, $res );
+    }
+    else
+    {
+	return $arg;
+    }
 }
 
 #########################################################################

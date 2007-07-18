@@ -866,7 +866,7 @@ sub modify
 
 sub execute
 {
-    my( $search ) = @_;
+    my( $search, $args ) = @_;
 
     my( $sql, $values, $min_prio ) = $search->build_sql;
     unless( $sql )
@@ -911,6 +911,14 @@ sub execute
     }
 
     $search->{'result'} = Rit::Base::List->new($result);
+
+
+    # TODO: Analyze this! -- may find the wrong nodes
+    # Only sane for searches on arcs
+    if( my $uap = $args->{unique_arcs_prio} )
+    {
+#	confess "Not implemented - ".datadump($result,1);
+    }
 
     debug(3, "Got result ".datadump($search->{'result'}));
 

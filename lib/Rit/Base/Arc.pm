@@ -328,10 +328,13 @@ sub create
 		  $pred->name);
 	}
     }
-#    confess("Missing valtype")
-#      unless( $rec->{'valtype'} );
+
+    confess("Missing valtype")
+      unless( defined $rec->{'valtype'} );
+
     push @fields, 'valtype';
     push @values, $rec->{'valtype'};
+
 
 
     ##################### updated_by

@@ -641,7 +641,7 @@ sub find
 					  Rit::Base::Search::TOPLIMIT,
 					});
     $search->modify($query, $args);
-    $search->execute();
+    $search->execute($args);
 
     my $result = $search->result;
     $result->set_type($class);
@@ -1436,6 +1436,9 @@ L<implicit|Rit::Base::Arc/implicit>, L<inactive|Rit::Base::Arc/inactive> and L<n
 Note that C<list> is a virtual method in L<Template>. Use it via
 autoload in TT.
 
+unique_arcs_prio filter is applied BEFORE proplim. That means that we
+choose among the versions that meets the proplim (and arclim).
+
 =cut
 
 sub list
@@ -1513,6 +1516,13 @@ sub list
 #		debug "  ".$arc->sysdesig;
 #	    }
 #	}
+
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    @arcs = Rit::Base::List->new(\@arcs)->
+	      unique_arcs_prio($uap)->as_array;
+	}
+
 
 	my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
 
@@ -1678,12 +1688,19 @@ sub revlist
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    @arcs = Rit::Base::List->new(\@arcs)->
+	      unique_arcs_prio($uap)->as_array;
+	}
+
 	my $vals = Rit::Base::List->new([ map $_->subj, @arcs ]);
 
 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
 	    $vals = $vals->find($proplim, $args);
 	}
+
 	return $vals;
     }
     else
@@ -1893,6 +1910,9 @@ sub revprop
 Returns the value of one of the properties with predicate
 C<$pred_name> or C<undef> if none found.
 
+unique_arcs_prio filter is applied BEFORE proplim. That means that we
+choose among the versions that meets the proplim (and arclim).
+
 =cut
 
 sub first_prop
@@ -1901,11 +1921,92 @@ sub first_prop
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    # TODO: We should make sure that if a relarc key exists, that the
+    $node->initiate_prop( $name, $proplim, $args );
+
+
+    # NOTTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
 
-    $node->initiate_prop( $name, $proplim, $args );
+    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    {
+	#
+	# optimized version of Rit::Base::List->unique_arcs_prio
+	#
+	my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
+
+	my $arcs = [];
+
+	if( $active and not $inactive )
+	{
+	    $arcs = $node->{'relarc'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $inactive and not $active )
+	{
+	    $arcs = $node->{'relarc_inactive'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $active and $inactive )
+	{
+	    if( defined $node->{'relarc'}{$name} )
+	    {
+		push @$arcs, @{$node->{'relarc'}{$name}};
+	    }
+
+	    if( defined $node->{'relarc_inactive'}{$name} )
+	    {
+		push @$arcs, @{$node->{'relarc_inactive'}{$name}};
+	    }
+	}
+
+	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+
+	for( $i=0; $i<=$#$arcs; $i++ )
+	{
+	    my $arc = $arcs->[$i];
+	    if( $arc->meets_arclim($arclim) and
+		$arc->value_meets_proplim($proplim, $args) )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $sortargs->sortorder($best_arc);
+		last;
+	    }
+	}
+
+	return is_undef unless $best_arc;
+
+	while( $i<=$#$arcs )
+	{
+	    my $arc = $arcs->[$i];
+	    unless( ($arc->common_id == $best_arc_cid) and
+		    $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim, $args)
+		  )
+	    {
+		next;
+	    }
+
+	    my $arc_order = $sortargs->sortorder($arc);
+	    if( $arc_order < $best_arc_order )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $arc_order;
+	    }
+	}
+	continue
+	{
+	    $i++;
+	}
+
+	return $best_arc->value;
+    }
+
+
+    # No unique filter
+
 
     if( $active )
     {
@@ -1914,7 +2015,7 @@ sub first_prop
 	    foreach my $arc (@{$node->{'relarc'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
+		    $arc->value_meets_proplim($proplim, $args) )
 		{
 		    return $arc->value;
 		}
@@ -1929,7 +2030,7 @@ sub first_prop
 	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
+		    $arc->value_meets_proplim($proplim, $args) )
 		{
 		    return $arc->value;
 		}
@@ -1950,6 +2051,9 @@ sub first_prop
 Returns the value of one of the reverse B<ACTIVE> properties with
 predicate C<$pred_name>
 
+unique_arcs_prio filter is applied BEFORE proplim. That means that we
+choose among the versions that meets the proplim (and arclim).
+
 =cut
 
 sub first_revprop
@@ -1959,11 +2063,92 @@ sub first_revprop
     my( $active, $inactive ) = $arclim->incl_act;
 
 
-    # TODO: We should make sure that if a relarc key exists, that the
+    # NOTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
 
     $node->initiate_revprop( $name, $proplim, $args );
+
+
+    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    {
+	#
+	# optimized version of Rit::Base::List->unique_arcs_prio
+	#
+	my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
+
+	my $arcs = [];
+
+	if( $active and not $inactive )
+	{
+	    $arcs = $node->{'revarc'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $inactive and not $active )
+	{
+	    $arcs = $node->{'revarc_inactive'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $active and $inactive )
+	{
+	    if( defined $node->{'revarc'}{$name} )
+	    {
+		push @$arcs, @{$node->{'revarc'}{$name}};
+	    }
+
+	    if( defined $node->{'revarc_inactive'}{$name} )
+	    {
+		push @$arcs, @{$node->{'revarc_inactive'}{$name}};
+	    }
+	}
+
+	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+
+	for( $i=0; $i<=$#$arcs; $i++ )
+	{
+	    my $arc = $arcs->[$i];
+	    if( $arc->meets_arclim($arclim) and
+		$arc->value_meets_proplim($proplim, $args) )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $sortargs->sortorder($best_arc);
+		last;
+	    }
+	}
+
+	return is_undef unless $best_arc;
+
+	while( $i<=$#$arcs )
+	{
+	    my $arc = $arcs->[$i];
+	    unless( ($arc->common_id == $best_arc_cid) and
+		    $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim, $args)
+		  )
+	    {
+		next;
+	    }
+
+	    my $arc_order = $sortargs->sortorder($arc);
+	    if( $arc_order < $best_arc_order )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $arc_order;
+	    }
+	}
+	continue
+	{
+	    $i++;
+	}
+
+	return $best_arc->value;
+    }
+
+
+    # No unique filter
+
 
     if( $active )
     {
@@ -1972,7 +2157,7 @@ sub first_revprop
 	    foreach my $arc (@{$node->{'revarc'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
+		    $arc->value_meets_proplim($proplim, $args) )
 		{
 		    return $arc->value;
 		}
@@ -1987,7 +2172,7 @@ sub first_revprop
 	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
+		    $arc->value_meets_proplim($proplim, $args) )
 		{
 		    return $arc->value;
 		}
@@ -3074,6 +3259,9 @@ If given C<$value> or C<\@values>, returns those arcs that has any of
 the given values. Similar to L</has_value> but returns a list instad
 of a single arc.
 
+unique_arcs_prio filter is applied BEFORE proplim. That means that we
+choose among the versions that meets the proplim (and arclim).
+
 =cut
 
 sub arc_list
@@ -3114,6 +3302,12 @@ sub arc_list
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	my $lr = Rit::Base::List->new(\@arcs);
+
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    $lr = $lr->unique_arcs_prio($uap);
+	}
+
 #	debug "List is now ".$lr->sysdesig;
 	if( defined $proplim ) # The Undef Literal is also an proplim
 	{
@@ -3194,7 +3388,15 @@ sub arc_list
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 #	debug "Returnig new list";
-	return Rit::Base::List->new(\@arcs);
+
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    return Rit::Base::List->new(\@arcs)->unique_arcs_prio($uap);
+	}
+	else
+	{
+	    return Rit::Base::List->new(\@arcs);
+	}
     }
 }
 
@@ -3254,6 +3456,12 @@ sub revarc_list
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	my $lr = Rit::Base::List->new(\@arcs);
+
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    $lr = $lr->unique_arcs_prio($uap);
+	}
+
 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
 	    $lr = $lr->find($proplim, $args);
@@ -3289,7 +3497,14 @@ sub revarc_list
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	return Rit::Base::List->new(\@arcs);
+	if( my $uap = $args->{unique_arcs_prio} )
+	{
+	    return Rit::Base::List->new(\@arcs)->unique_arcs_prio($uap);
+	}
+	else
+	{
+	    return Rit::Base::List->new(\@arcs);
+	}
     }
 }
 
@@ -3311,10 +3526,90 @@ sub first_arc
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    # TODO: We should make sure that if a relarc key exists, that the
+    # NOTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
     $node->initiate_prop( $name, $proplim, $args );
+
+    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    {
+	#
+	# optimized version of Rit::Base::List->unique_arcs_prio
+	#
+	my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
+
+	my $arcs = [];
+
+	if( $active and not $inactive )
+	{
+	    $arcs = $node->{'relarc'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $inactive and not $active )
+	{
+	    $arcs = $node->{'relarc_inactive'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $active and $inactive )
+	{
+	    if( defined $node->{'relarc'}{$name} )
+	    {
+		push @$arcs, @{$node->{'relarc'}{$name}};
+	    }
+
+	    if( defined $node->{'relarc_inactive'}{$name} )
+	    {
+		push @$arcs, @{$node->{'relarc_inactive'}{$name}};
+	    }
+	}
+
+	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+
+	for( $i=0; $i<=$#$arcs; $i++ )
+	{
+	    my $arc = $arcs->[$i];
+	    if( $arc->meets_arclim($arclim) and
+		$arc->value_meets_proplim($proplim, $args) )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $sortargs->sortorder($best_arc);
+		last;
+	    }
+	}
+
+	return is_undef unless $best_arc;
+
+	while( $i<=$#$arcs )
+	{
+	    my $arc = $arcs->[$i];
+	    unless( ($arc->common_id == $best_arc_cid) and
+		    $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim, $args)
+		  )
+	    {
+		next;
+	    }
+
+	    my $arc_order = $sortargs->sortorder($arc);
+	    if( $arc_order < $best_arc_order )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $arc_order;
+	    }
+	}
+	continue
+	{
+	    $i++;
+	}
+
+	return $best_arc;
+    }
+
+
+    # No unique filter
+
 
     if( $active )
     {
@@ -3372,6 +3667,86 @@ sub first_revarc
     # list never is empty
 
     $node->initiate_revprop( $name, $proplim, $args );
+
+    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    {
+	#
+	# optimized version of Rit::Base::List->unique_arcs_prio
+	#
+	my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
+
+	my $arcs = [];
+
+	if( $active and not $inactive )
+	{
+	    $arcs = $node->{'revarc'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $inactive and not $active )
+	{
+	    $arcs = $node->{'revarc_inactive'}{$name};
+	    return is_undef unless defined $arcs;
+	}
+	elsif( $active and $inactive )
+	{
+	    if( defined $node->{'revarc'}{$name} )
+	    {
+		push @$arcs, @{$node->{'revarc'}{$name}};
+	    }
+
+	    if( defined $node->{'revarc_inactive'}{$name} )
+	    {
+		push @$arcs, @{$node->{'revarc_inactive'}{$name}};
+	    }
+	}
+
+	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+
+	for( $i=0; $i<=$#$arcs; $i++ )
+	{
+	    my $arc = $arcs->[$i];
+	    if( $arc->meets_arclim($arclim) and
+		$arc->value_meets_proplim($proplim, $args) )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $sortargs->sortorder($best_arc);
+		last;
+	    }
+	}
+
+	return is_undef unless $best_arc;
+
+	while( $i<=$#$arcs )
+	{
+	    my $arc = $arcs->[$i];
+	    unless( ($arc->common_id == $best_arc_cid) and
+		    $arc->meets_arclim($arclim) and
+		    $arc->value_meets_proplim($proplim, $args)
+		  )
+	    {
+		next;
+	    }
+
+	    my $arc_order = $sortargs->sortorder($arc);
+	    if( $arc_order < $best_arc_order )
+	    {
+		$best_arc = $arc;
+		$best_arc_cid = $arc->common_id;
+		$best_arc_order = $arc_order;
+	    }
+	}
+	continue
+	{
+	    $i++;
+	}
+
+	return $best_arc;
+    }
+
+
+    # No unique filter
+
 
     if( $active )
     {
