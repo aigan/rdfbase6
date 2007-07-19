@@ -1699,7 +1699,7 @@ sub active_version
 
 =head2 versions
 
-  $a->versions( $proplim, $arcs )
+  $a->versions( $proplim, $args )
 
 Returns: A L<Rit::Base::list> of all versions of this arc
 
