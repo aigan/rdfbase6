@@ -44,6 +44,35 @@ These holds common methods. For getting specific types of
 presentations of the object. There are quite a lot of them for getting
 the value of an object.
 
+=head1 General syntax
+
+See the respektive method for examples. The respective method usually
+starts with a C<$pred> argument followed by a C<\%props> or
+C<\@values> argument.  We will describe the syntax based on the method
+C<$n-E<gt>list( $pred, @propargs )>.
+
+C<$value> is anything that's not a hash- or arrayref and that's the
+only (true) argument. It will return those nodes/arcs with a matching
+value. For L</list>, it will return the value of the node C<$n>
+property C<$pred> that equals C<$value>. That value may have to be
+converted to the right object type before a vomparsion.
+
+C<\@values> matches any value of the list. For example,
+C<$nE<gt>list($pred, [$alt1, $alt2])> will return a list with zero or
+more of the nodes C<$alt1> and C<$alt2> depending on if C<$n> has
+those properties with pred C<$pred>.
+
+C<\%props> holds key/value pairs of properties that the matches should
+have. L<Rit::Base::List/find> is used to filter out the nodes/arcs
+having those properties. For example, C<$n-E<gt>list('part_of', { name
+=E<gt> 'Turk' }> will give you the nodes that C<$n> are C<part_of>
+that has the C<name> C<Turk>.
+
+C<\%args> holds any extra arguments to the method as name/value
+pairs. The C<arclim> argument is always parsed and converted to a
+L<Rit::Base::Arc::Lim> object. This will modify the args variable in
+cases when arclim isn't already a valid object.
+
 =cut
 
 #######################################################################
