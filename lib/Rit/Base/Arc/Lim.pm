@@ -95,10 +95,6 @@ The second level arrayrefs are ANDed together. First lever are ORed
 together. [ [l1, l2], l3, [l4,l5] ] meens that the arc is accepted if
 it passes( (l1 and l2) or l3 or (l4 and l5) ).
 
-Special arclims, if not an arrayref, are:
-  auto
-  relative
-
 Returns:
 
   $arclim
