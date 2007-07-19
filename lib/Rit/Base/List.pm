@@ -677,6 +677,10 @@ sub sorted
 
   $list->unique_arcs_prio( \@arcproperties )
 
+Example:
+
+  $list->unique_arcs_prio( ['new','submitted','active'] )
+
 Returns:
 
 A List object with arc duplicates filtered out
