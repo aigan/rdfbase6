@@ -78,7 +78,10 @@ sub init
     Para::Frame->add_hook('on_error_detect', sub
 			  {
 			      Rit::Base::User->revert_from_temporary_user();
-			      $Para::Frame::REQ->user->set_default_propargs(undef);
+			      if( $Para::Frame::U )
+			      {
+				  $Para::Frame::U->set_default_propargs(undef);
+			      }
 			  });
 
     Para::Frame->add_hook('on_startup', sub

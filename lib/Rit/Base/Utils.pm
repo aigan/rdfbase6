@@ -1159,7 +1159,8 @@ sub parse_propargs
 {
     my( $arg ) = @_;
 
-    $arg ||= $Para::Frame::REQ->user->default_propargs;
+    $arg ||= $Para::Frame::U ?
+      $Para::Frame::U->default_propargs : undef;
     my $arclim;
 
     if( ref $arg and ref $arg eq 'HASH' )
@@ -1172,7 +1173,7 @@ sub parse_propargs
 	$arg = { arclim => $arclim };
 #	debug "parse_propargs ".datadump(\@_,3);
     }
-    else
+    elsif( defined $arg )
     {
 	my $unique;
 	if( $arg eq 'auto' )
@@ -1206,6 +1207,11 @@ sub parse_propargs
 	{
 	    $arg->{unique_arcs_prio} = $unique;
 	}
+    }
+    else
+    {
+	$arclim = Rit::Base::Arc::Lim->parse([]);
+	$arg = { arclim => $arclim };
     }
 
     unless( UNIVERSAL::isa( $arclim, 'Rit::Base::Arc::Lim') )
