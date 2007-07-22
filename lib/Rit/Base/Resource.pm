@@ -63,14 +63,7 @@ our %UNSAVED;
 
 ### Inherit
 #
-use base qw( Rit::Base::Node Rit::Base::Resource::Compatible Exporter );
-
-BEGIN
-{
-    @Rit::Base::Resource::EXPORT_OK
-
-      = qw( aais );
-}
+use base qw( Rit::Base::Node Rit::Base::Resource::Compatible );
 
 =head1 DESCRIPTION
 
@@ -964,14 +957,13 @@ sub set_one
 
     unless( $node )
     {
-	my $args = convert_query_prop_for_creation($query);
-
 	my $default = $args->{'default'} || {};
+	my $query_new = convert_query_prop_for_creation($query);
 	foreach my $pred ( keys %$default )
 	{
-	    $args->{$pred} ||= $default->{$pred};
+	    $query_new->{$pred} ||= $default->{$pred};
 	}
-	return $this->create($args);
+	return $this->create($query_new, $args);
     }
 
     return $node;
@@ -1181,6 +1173,31 @@ The unique node id.
 sub id {
 #    confess "not a object" unless ref $_[0]; ### DEBUG
  $_[0]->{'id'} }
+
+
+#######################################################################
+
+=head2 name
+
+  $n->name(...)
+
+Just an optimization for AUTOLOAD name (using L</prop> or L</list>).
+
+=cut
+
+sub name
+{
+    my $node = shift;
+#    warn "Called name...\n";
+    if( @_ )
+    {
+	return $node->list('name', @_);
+    }
+    else
+    {
+	return $node->prop('name');
+    }
+}
 
 
 #######################################################################
@@ -8034,6 +8051,15 @@ AUTOLOAD
 #    warn "Calling $method\n";
     confess "AUTOLOAD $node -> $method"
       unless UNIVERSAL::isa($node, 'Rit::Base::Resource');
+
+#    # May be a way for calling methods even if the is-arc is nonactive
+#    foreach my $eclass ( $node->class_list($args) )
+#    {
+#	if( UNIVERSAL::can($eclass,$method) )
+#	{
+#	    return &{"${eclass}::$method"}($node, @_);
+#	}
+#    }
 
 #    die "deep recurse" if $Rit::count++ > 200;
 
