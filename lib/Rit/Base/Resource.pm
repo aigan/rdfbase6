@@ -4491,6 +4491,22 @@ Returns: the number of changes
 
 Parameters beginning with arc_ or prop_
 
+=head4 select
+
+Used when there are several versions of an arc, to activate selected
+version (by value) and remove the rest.  Eg: arc_select => 1234567
+will activate arc 1234567 and remove all other versions of that arc.
+
+Example tt-code:
+[% hidden("version_${arc.id}", version.id);
+   radio("arc_${arc.id}__pred_${arc.pred.name}", version.id,
+         0,
+	 {
+	  id = version.id,
+	 })
+%]
+
+
 =head4 files / images
 
 Images are to be uploaded as a filefield, and are saved to the
@@ -6752,6 +6768,7 @@ sub handle_query_arc_value
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
     my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
+    my $select	  = $arg->{'select'};   # for version-selection
 
     # Switch node if subj is set
     if( $arg->{'subj'} and $arg->{'subj'} =~ /^\d+$/ )
@@ -6788,6 +6805,9 @@ sub handle_query_arc_value
 	$pred_name = $rev;
 	$rev = 1;
     }
+
+    return handle_select_version( $value, $arc_id, $q, $args )
+      if( $select and $select eq 'version' ); # activate arc-version and return
 
     my $pred = getpred( $pred_name )
       or die("Can't get pred '$pred_name' from $param");
@@ -7269,6 +7289,73 @@ sub handle_query_arc_value
 
     return $res->changes - $changes_prev;
 }
+
+###############################################################################
+
+sub handle_select_version
+{
+    my( $value, $arc_id, $q, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my $changes_prev = $res->changes;
+
+    my $arc = Rit::Base::Arc->get( $arc_id )
+      or confess("Couldn't get arc for selection from value: $value");
+    my @versions = $q->param( 'version_'. $arc_id );
+
+    debug "Selecting from arc: ". ($arc ? $arc->sysdesig : $value);
+    debug " selecting version: $value";
+
+    debug "List of versions: ". datadump( \@versions );
+
+    unless( $value eq 'deactivate' )
+    {
+	my $select_version = Rit::Base::Arc->get( $value );
+
+	if( $select_version->active )
+	{
+	    debug "Already active version selected.";
+	}
+	else
+	{
+	    debug "Activating version: ". $select_version->sysdesig;
+	    if( $select_version->pred->name eq 'value' ) # Value resource
+	    {
+		my $value_resource = $select_version->subj;
+		debug "...which is a value resource: ".
+		  $value_resource->sysdesig;
+
+		$value_resource->revarc( undef, undef,
+					 ['active','submitted'] )->
+					   activate( $args );
+		$value_resource->arc( 'is_of_language', undef,
+				      ['active','submitted'] )->
+					activate( $args );
+	    }
+	    $select_version->activate( $args );
+	}
+    }
+
+    foreach my $version_id (@versions)
+    {
+	my $version = Rit::Base::Arc->get( $version_id );
+	next
+	  if( $version->id eq $value );
+
+	if( $version->submitted )
+	{
+	    debug "Removing ". $version->sysdesig;
+	    $version->remove( $args );
+	}
+
+	#if( $version->pred->name eq 'value' ) # Value resource
+    }
+
+    debug "Selection done.";
+
+    return $res->changes - $changes_prev;
+}
+
+
 
 #########################################################################
 
