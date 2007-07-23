@@ -175,6 +175,19 @@ sub clone
 
   $arclim->add_intersect( $limit )
 
+Adds the given limit to each alternative in the arclim. If arclim is
+empty the limit is used as the only alternative.
+
+Example:
+
+  $arclim->add_intersect('direct')
+
+For the arclim C<['submitted','active']> this would give C<[['submitted','direct'],['active','direct']]>.
+
+For the arclim C<[]> this would give C<['direct']>.
+
+Returns: The same arclim, changed
+
 =cut
 
 sub add_intersect
@@ -187,11 +200,19 @@ sub add_intersect
 	die "Flag $_[1] not recognized" unless $limit;
     }
 
-    foreach(@$arclim)
+    if( @$arclim )
     {
-	$_ |= +$limit;
+	foreach(@$arclim)
+	{
+	    $_ |= +$limit;
+	}
+    }
+    else
+    {
+	$arclim->[0] = $limit;
     }
 
+#    debug "RETURNING ".$arclim->sysdesig;
     return $arclim;
 }
 
