@@ -884,6 +884,7 @@ Supported args:
 
   arclim
   res
+  implicit
 
 Returns: ---
 
@@ -894,15 +895,11 @@ sub find_remove
     my( $this, $props, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    # If called with 'implicit', only remove arc if it no longer can
-    # be infered and it's not explicitly declared.  All checks in
-    # remove method
-
     my $arcs = $this->find( $props, $args );
 
-    foreach my $arc ( @$arcs )
+    foreach my $arc ( $arcs->nodes )
     {
-	$arc->remove({ %$args, implicit => 1 });
+	$arc->remove( $args );
     }
 }
 
