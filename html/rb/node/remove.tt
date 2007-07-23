@@ -34,7 +34,7 @@
       [% ELSE %]
          <td>[% arc.value_sysdesig %]</td>
       [% END %]
-      <td>[% jump(arc.view_flags, 'update.tt', id=arc.id) %]</td>
+      <td>[% jump(arc.view_flags, 'arc/update.tt', id=arc.id) %]</td>
       </tr>
    [% END %]
 [% END %]
@@ -60,7 +60,7 @@
          <td>[% arc.subj.sysdesig %]</td>
       [% END %]
       <td valign="top">[% pred.name.loc %]</td>
-      <td>[% jump(arc.view_flags, 'update.tt', id=arc.id) %]</td>
+      <td>[% jump(arc.view_flags, 'arc/update.tt', id=arc.id) %]</td>
       </tr>
    [% END %]
 [% END %]
