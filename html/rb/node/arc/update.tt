@@ -195,6 +195,7 @@
 </table>
 
 <p>
+[% hidden('remove',0) %]
 [% IF arc.inactive %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
@@ -219,12 +220,16 @@
    [% END %]
    [% UNLESS arc.deactivated %]
       &nbsp;
-      [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+      [% go("Delete", arc.subj.form_url, 'arc_edit', remove=1) %]
    [% END %]
 [% ELSE %]
    [% step("Save as a new version") %]
    &nbsp;
-   [% go("Delete", arc.subj.form_url, 'arc_edit', pred='') %]
+   [% go("Delete", arc.subj.form_url, 'arc_edit', remove=1) %]
+[% END %]
+[% IF u.has_root_access %]
+   [% hidden('force',0) %]
+   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1) %]
 [% END %]
 </p>
 
