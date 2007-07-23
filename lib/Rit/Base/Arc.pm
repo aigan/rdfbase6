@@ -61,7 +61,7 @@ use base qw( Rit::Base::Resource );
 use overload 'bool' => sub{ ref $_[0] and $_[0]->subj };
 use overload 'cmp'  => sub{0};
 use overload 'ne'   => sub{1};
-use overload 'eq'   => sub{0};
+use overload 'eq'   => sub{0}; # Use method ->equals()
 
 =head1 DESCRIPTION
 
@@ -2142,9 +2142,9 @@ sub deactivate
     my( $arc, $narc ) = @_;
     my $class = ref($arc);
 
-    unless( $arc->active )
+    unless( $arc->active or $arc->submitted )
     {
-	throw('validation', "Arc $arc->{id} is not active");
+	throw('validation', "Arc $arc->{id} is not active or submitted");
     }
 
     if( $narc->is_removal )
@@ -3258,6 +3258,18 @@ sub activate
 	$arc->{'active'} = 0;
 	$arc->{'activated_by'} = $activated_by_id;
 	$arc->{'activated_by_obj'} = $activated_by;
+
+	# If this is a removal of a new or submitted arc, that arc
+	# should be deactivated
+	if( my $rarc = $arc->replaces )
+	{
+	    unless( $rarc->equals($aarc) )
+	    {
+		# rarc is not active. Assume we are allowed to
+		# deactivate it
+		$rarc->deactivate( $arc );
+	    }
+	}
     }
 
     # Reset caches
