@@ -16,31 +16,51 @@
 <p>Removes the selected arcs that has this node as it's subject</p>
 
 <table class='admin'>
-<tr><th>Del</th><th>Property</th> <th>Value</th></tr>
+<tr><th>Del</th><th>Property</th> <th>Value</th> <th>Status</th></tr>
 
-[% FOREACH pred = node.list.sorted %]
-   [% FOREACH arc = node.arc_list(pred).explicit %]
-      <tr>
+[% FOREACH pred = node.list_preds(undef, ['not_old']).sorted %]
+   [% FOREACH arc = node.arc_list(pred,undef,['not_old']).explicit %]
+      [% IF arc.active %]
+         <tr>
+      [% ELSE %]
+         <tr class="important">
+      [% END %]
       <td>[% checkbox('arc_delete', arc.id, 1) %]</td>
       <td valign="top">[% pred.name.loc %]</td>
-      <td>[% arc.value_sysdesig %]
-      </td>
+      [% IF arc.is_removal %]
+         <td style="text-decoration:line-through; color:red">
+         [% arc.replaces.value_sysdesig %]
+         </td>
+      [% ELSE %]
+         <td>[% arc.value_sysdesig %]</td>
+      [% END %]
+      <td>[% jump(arc.view_flags, 'update.tt', id=arc.id) %]</td>
       </tr>
    [% END %]
 [% END %]
 </table>
 
 
-<table border>
-<tr><th>Del</th><th>Value</th> <th>Property</th></tr>
+<table class="admin">
+<tr><th>Del</th><th>Value</th> <th>Property</th> <th>Status</th></tr>
 
-[% FOREACH pred = node.revlist.sorted %]
-   [% FOREACH arc = node.revarc_list(pred.name).explicit %]
-      <tr>
+[% FOREACH pred = node.revlist_preds(undef, ['not_old']).sorted %]
+   [% FOREACH arc = node.revarc_list(pred, undef, ['not_old']).explicit %]
+      [% IF arc.active %]
+         <tr>
+      [% ELSE %]
+         <tr class="important">
+      [% END %]
       <td>[% checkbox('arc_delete', arc.id, 1) %]</td>
-      <td>[% arc.subj.sysdesig %]
+      [% IF arc.is_removal %]
+         <td style="text-decoration:line-through; color:red">
+         [% arc.replaces.subj.sysdesig %]
+         </td>
+      [% ELSE %]
+         <td>[% arc.subj.sysdesig %]</td>
+      [% END %]
       <td valign="top">[% pred.name.loc %]</td>
-      </td>
+      <td>[% jump(arc.view_flags, 'update.tt', id=arc.id) %]</td>
       </tr>
    [% END %]
 [% END %]
