@@ -33,6 +33,8 @@ sub handler
     my $literal_arcs   = $q->param('literal_arcs');
     my $explicit       = $q->param('explicit');
     my $check_explicit = $q->param('check_explicit');
+    my $force          = $q->param('force');
+    my $remove         = $q->param('remove');
 
     clear_params qw(pred val literal_arcs explicit check_explicit);
 
@@ -40,6 +42,16 @@ sub handler
 
     my $res = Rit::Base::Resource::Change->new;
     my $args = { res => $res };
+
+    if( $force )
+    {
+	$args->{'force'} = 1;
+    }
+
+    if( $remove ) # Could also remove by setting pred_name to false
+    {
+	$pred_name = undef;
+    }
 
     # Indirect arc
     #
