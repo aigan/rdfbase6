@@ -282,7 +282,7 @@ sub create
     $pred or die "Pred missing";
     my $pred_id = $pred->id;
 
-    my $pred_name = $pred->name;
+    my $pred_name = $pred->plain;
 #    warn "PRED NAME: $pred_name\n";
 
     $rec->{'pred'} = $pred_id;
@@ -316,7 +316,7 @@ sub create
 	    $rec->{'valtype'} = $revpred->valtype->id;
 
 	    debug("Setting valtype to ". $rec->{'valtype'} ." for value from revpred ".
-		  $revpred->name);
+		  $revpred->plain);
 
 	    confess("I won't make a value resource with a resource as value.")
 	      if( $props->{'obj_id'} );
@@ -325,7 +325,7 @@ sub create
 	{
 	    $rec->{'valtype'} = $pred->valtype->id;
 	    debug("Setting valtype to ". $rec->{'valtype'} ." from pred ".
-		  $pred->name);
+		  $pred->plain);
 	}
     }
 
@@ -523,7 +523,7 @@ sub create
 
 	# Also returns new and submitted arcs, from the same user
 
-	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->name, query_desig($value_obj) ) if $DEBUG;
+	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->plain, query_desig($value_obj) ) if $DEBUG;
 
 #	debug "Getting arclist for ".$subj->sysdesig;
 	# $value_obj may be is_undef (but not literal undef)
@@ -1828,7 +1828,7 @@ sub desig
 {
     my( $arc ) = @_;
 
-    return sprintf("%s --%s--> %s", $arc->subj->desig, $arc->pred->name, $arc->value_desig);
+    return sprintf("%s --%s--> %s", $arc->subj->desig, $arc->pred->plain, $arc->value_desig);
 }
 
 
@@ -1847,7 +1847,7 @@ sub sysdesig
 {
     my( $arc ) = @_;
 
-    return sprintf("%d[%d]: %s --%s--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->name, $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
+    return sprintf("%d[%d]: %s --%s--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->plain, $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
 }
 
 
@@ -1869,7 +1869,7 @@ sub sysdesig_nosubj
 {
     my( $arc ) = @_;
 
-    return sprintf("%d: %s --%s--> %s (%d) #%d", $arc->{'id'}, $arc->subj->id, $arc->pred->name, $arc->value_sysdesig, $arc->{'disregard'}, $arc->{'ioid'});
+    return sprintf("%d: %s --%s--> %s (%d) #%d", $arc->{'id'}, $arc->subj->id, $arc->pred->plain, $arc->value_sysdesig, $arc->{'disregard'}, $arc->{'ioid'});
 }
 
 
@@ -2134,6 +2134,12 @@ sub explain
 
 Must give the new active arc as arg. This will be called by
 L</activate> or by L</remove>.
+
+Only active or submitted arcs can be deactivated.
+
+Submitted arcs are not active but will be handled here. It will be
+deactivated as is if it was active, since its been replaced by a new
+arc.
 
 =cut
 
@@ -2556,6 +2562,7 @@ without the creation of a removal arc.
 
 Supported args are:
 
+  force
   implicit
   res
 
@@ -2572,6 +2579,9 @@ longer infered.
 If called with a false value, it will remove the arc only if the arc
 can't be infered. If the arc can be infered, the arc will be changed
 from L</explicit> to L</implicit>.
+
+Removal of a value arc will instead remove all arcs to the value
+resource.
 
 
 Returns: the number of arcs removed.
@@ -2608,14 +2618,48 @@ sub remove
 
     unless( $force )
     {
+	# Remove arcs to value nod instead of the value arc
+	if( $arc->pred->plain eq 'value' )
+	{
+	    # Only there is no other active version
+	    if( $arc->active )
+	    {
+		debug "Removal of value arc removes ".
+		  "arcs to value node instead";
+		my $cnt = 0;
+		foreach my $varc ( $arc->subj->revarc_list(undef,undef,['not_old'])->nodes )
+		{
+		    $cnt += $varc->remove( $args );
+		}
+		return $cnt;
+	    }
+	    elsif( not $arc->active_version )
+	    {
+		# Everything should go
+		my $subj = $arc->subj;
+		foreach my $oarc ( $subj->arc_list(undef,undef,['not_old'])->nodes )
+		{
+		    next if $oarc->equals( $arc ); # Handled below
+		    $oarc->remove($args);
+		}
+
+		foreach my $oarc ( $subj->revarc_list(undef,undef,['not_old'])->nodes )
+		{
+		    $oarc->remove($args);
+		}
+	    }
+	}
+
+
 	if( $arc->is_removal and $arc->activated )
 	{
 	    debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
 	    return 0;
 	}
 
-	if( ($arc->active and not $implicit) or
-	    $arc->replaced_by->size
+	# Create removals for active explicit arcs
+	if( ($arc->active and not $implicit)
+#	    or $arc->replaced_by->size
 	  )
 	{
 	    debug "  Arc active but not flag implicit" if $DEBUG;
@@ -3037,7 +3081,7 @@ sub set_pred
 
     if( $new_pred_id != $old_pred_id )
     {
-	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->name."\n" if $DEBUG;
+	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->plain."\n" if $DEBUG;
 
 	my $narc = $arc->create({
 				 read_access => $arc->read_access->id,
@@ -3729,7 +3773,7 @@ sub init
     warn "Arc $arc->{id} $arc->{ioid} ($value) has disregard value $arc->{'disregard'}\n" if $DEBUG > 1;
     if( $DEBUG > 1 )
     {
-	my $pred_name = $pred->name->plain;
+	my $pred_name = $pred->plain;
 	warn "arcs for $subj->{id} $pred_name:\n";
 	foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
 	{
@@ -3769,7 +3813,7 @@ sub register_with_nodes
     my $id = $arc->{'id'};
     my $pred = $arc->pred;
     my $subj = $arc->{'subj'};
-    my $pred_name = $pred->name->plain;
+    my $pred_name = $pred->plain;
     my $coltype = $arc->real_coltype || ''; # coltype may be removal
 
 #    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
@@ -4073,7 +4117,7 @@ sub validate_check
     my $pred      = $arc->pred;
 
     warn( sprintf "$$:   Retrieve list C for pred %s in %s\n",
-	  $pred->name->plain, $arc->sysdesig) if $DEBUG;
+	  $pred->plain, $arc->sysdesig) if $DEBUG;
 
     $arc->{'explain'} = []; # Reset the explain list
 
