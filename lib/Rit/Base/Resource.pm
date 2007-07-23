@@ -7335,11 +7335,14 @@ sub handle_select_version
 	}
     }
 
-    foreach my $version_id (@versions)
+    # Must be removed in reverse order. Earlier arcs may be refered to
+    # by later arcs. They can't be removed before the later arcs
+    # refering to them
+    #
+    foreach my $version_id (reverse sort @versions)
     {
 	my $version = Rit::Base::Arc->get( $version_id );
-	next
-	  if( $version->id eq $value );
+	next if $version->equals( $value );
 
 	if( $version->submitted )
 	{
