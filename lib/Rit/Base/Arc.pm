@@ -2657,12 +2657,16 @@ sub remove
 	    return 0;
 	}
 
-	# Create removals for active explicit arcs
-	if( ($arc->active and not $implicit)
-#	    or $arc->replaced_by->size
-	  )
+	if( ($arc->active or $arc->replaced_by->size ) and not $implicit  )
 	{
-	    debug "  Arc active but not flag implicit" if $DEBUG;
+	    # Create removals for active explicit arcs
+
+	    # May be a submitted or new arc replaced by another
+	    # arc. That other arc should have been removed before this
+	    # one. But if this is asked to be removed, it must be done
+	    # by a removal arc
+
+	    debug "  Arc active or replaced but not flag implicit" if $DEBUG;
 	    $create_removal = 1;
 	}
 	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
@@ -2754,6 +2758,8 @@ sub remove
     debug "Removed arc id ".$arc->sysdesig;
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
+    $res->changes_add;
+
 
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
 
