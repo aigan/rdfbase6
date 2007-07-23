@@ -33,7 +33,7 @@ sub handler
     my $query = $q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
 
-    my $props = parse_arc_add_box( $query );
+    my $props = parse_arc_add_box( $query, $args );
 
     if( $subj_id )
     {
