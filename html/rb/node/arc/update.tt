@@ -269,7 +269,7 @@
   [% END %]
 
   [% IF varc.is_removal %]
-     REMOVAL
+     REMOVAL of [% jump(varc.replaces.id, varc.replaces.form_url) %]
      [% IF varc.activated %]
          accepted
         [%+ varc.activated %] by
