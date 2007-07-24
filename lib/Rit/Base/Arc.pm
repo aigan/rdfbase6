@@ -3311,12 +3311,9 @@ sub activate
 	# should be deactivated
 	if( my $rarc = $arc->replaces )
 	{
-	    unless( $rarc->equals($aarc) )
-	    {
-		# rarc is not active. Assume we are allowed to
-		# deactivate it
-		$rarc->deactivate( $arc );
-	    }
+	    # rarc is not active. Assume we are allowed to
+	    # deactivate it
+	    $rarc->deactivate( $arc );
 	}
     }
 
@@ -3333,7 +3330,10 @@ sub activate
 		      });
 
 
-    if( $aarc ) # Previously active arc
+    # If this is not a removal and we have another active arc, it must
+    # be deactivated
+    #
+    if( $aarc and $arc->{'valtype'} )
     {
 	$aarc->deactivate( $arc );
     }
