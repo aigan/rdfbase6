@@ -42,7 +42,6 @@ use Rit::Base::Pred;
 use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
-use Rit::Base::Constants qw( $C_ritguides $C_public $C_sysadmin_group $C_value );
 
 use Rit::Base::Utils qw( cache_update getpred valclean translate
                          is_undef truncstring send_cache_update
@@ -190,7 +189,8 @@ sub create
     }
     else
     {
-	$rec->{'source'}  = $C_ritguides->id;
+	# Method may be called before constants are set up
+	$rec->{'source'}  = Rit::Base::Resource->get_by_constant_label('ritguides')->id;
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
@@ -241,7 +241,8 @@ sub create
     }
     else
     {
-	$rec->{'read_access'}  = $C_public->id;
+	# Method may be called before constants are set up
+	$rec->{'read_access'}  = Rit::Base::Resource->get_by_constant_label('public')->id;
     }
     push @fields, 'read_access';
     push @values, $rec->{'read_access'};
@@ -254,7 +255,8 @@ sub create
     }
     else
     {
-	$rec->{'write_access'}  = $C_sysadmin_group->id;
+	# Method may be called before constants are set up
+	$rec->{'write_access'}  = Rit::Base::Resource->get_by_constant_label('sysadmin_group')->id;
     }
     push @fields, 'write_access';
     push @values, $rec->{'write_access'};
