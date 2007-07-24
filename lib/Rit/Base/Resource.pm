@@ -2495,10 +2495,16 @@ sub has_value
 
 
     # Check the dynamic properties (methods) for the node
-    if( $node->can($pred_name) )
+    # Special case for optimized name
+    if( $node->can($pred_name) and ($pred_name ne 'name') )
     {
 	debug 3, "  check method $pred_name";
 	my $prop_value = $node->$pred_name( {}, $args );
+
+	if( ref $prop_value )
+	{
+	    $prop_value = $prop_value->desig;
+	}
 
 	if( $clean )
 	{
