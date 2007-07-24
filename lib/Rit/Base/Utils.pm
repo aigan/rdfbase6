@@ -1089,7 +1089,7 @@ sub send_cache_update
 	return "remove_hook";
     };
 
-    $Para::Frame::REQ->add_background_job( $send_cache );
+    $Para::Frame::REQ->add_background_job( 'send_cache_update', $send_cache );
 
 }
 
