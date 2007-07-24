@@ -58,6 +58,12 @@ our %COLTYPE_num2name =
 );
 
 
+#########################################################################
+
+BEGIN
+{
+    $Para::Frame::HOOK{'on_ritbase_ready'} = [];
+}
 
 #########################################################################
 ################################  Constructors  #########################
@@ -87,6 +93,8 @@ sub init
     Para::Frame->add_hook('on_startup', sub
 			  {
  			      Rit::Base::Constants->init;
+			      Para::Frame->run_hook( $Para::Frame::REQ,
+						     'on_ritbase_ready');
 			  });
 
     Para::Frame->add_hook('before_db_commit', sub
