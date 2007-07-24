@@ -2177,13 +2177,14 @@ sub deactivate
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
 
-    my $st = "update arc set updated=?, deactivated=?, active='false' where ver=?";
+    my $st = "update arc set updated=?, deactivated=?, active='false', submitted='false' where ver=?";
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $date_db, $arc->id );
 
     $arc->{'arc_updated'} = $updated;
     $arc->{'arc_deactivated'} = $updated;
     $arc->{'active'} = 0;
+    $arc->{'submitted'} = 0;
 
     # Reset caches
     #
