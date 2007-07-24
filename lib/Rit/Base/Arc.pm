@@ -423,7 +423,7 @@ sub create
 		    throw('validation', "Malformed value given: $value");
 		}
 	    }
-	    else
+	    else # Value given as string. Parsing it
 	    {
 		# Find relative the callers arclims
 		$value = Rit::Base::Resource->get_by_label( $value,
