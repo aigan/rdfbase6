@@ -38,7 +38,7 @@ BEGIN
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( getpred valclean getnode );
+use Rit::Base::Utils qw( getpred valclean getnode query_desig );
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -606,7 +606,7 @@ sub modify
 
     $search->remove_node;
 
-    debug 3, shortmess "modify search ".datadump( $props, 3); ### DEBUG
+    debug 3, shortmess "modify search ".query_desig( $props ); ### DEBUG
     unless( ref $props eq 'HASH' )
     {
 	confess "modify called with faulty props: ".datadump($props);
