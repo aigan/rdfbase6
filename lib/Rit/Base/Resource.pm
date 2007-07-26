@@ -3893,6 +3893,11 @@ sub add
 {
     my( $node, $props, $args ) = @_;
 
+    unless( UNIVERSAL::isa($props, 'HASH') )
+    {
+	confess "Invalid parameter ".query_desig($props);
+    }
+
     foreach my $pred_name ( keys %$props )
     {
 	# Must be pred_name, not pred
