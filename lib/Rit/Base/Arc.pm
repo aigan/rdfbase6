@@ -2820,6 +2820,8 @@ sub create_removal
 {
     my( $arc, $args ) = @_;
 
+    # Should only create removals for submitted or active arcs
+
     return Rit::Base::Arc->create({
 				   common_id => $arc->common_id,
 				   replaces_id => $arc->id,
