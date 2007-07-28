@@ -54,7 +54,7 @@ sub handler
 	my $weight_in = $q->param("arc_${aid}_weight");
 	my $weight_new = Rit::Base::String->new($weight_in)||is_undef;
 
-	if( my $obj = $arc->obj )
+	if( my $obj = $arc->obj ) # value node (with lang or weight)
 	{
 	    unless( length $val_new ) # Remove?
 	    {
@@ -85,7 +85,7 @@ sub handler
 		}
 	    }
 	}
-	else
+	else # Not a value node
 	{
 	    unless( length $val_new ) # Remove?
 	    {
@@ -96,7 +96,6 @@ sub handler
 	    my $val_old = $arc->value;
 	    if( $val_new ne $val_old )
 	    {
-		confess "implement this";
 		$arc->set_value($val_new, $args);
 	    }
 
