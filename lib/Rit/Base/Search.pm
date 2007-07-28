@@ -662,25 +662,25 @@ sub modify
 	{
 	    $search->order_add( \@values );
 	}
-	elsif( $key =~ m/^(subj|pred|coltype|obj|value)$/ )
+	elsif( $key =~ m/^(subj|pred|obj|coltype|value)$/ )
 	{
 	    my $qarc = $search->{'query'}{'arc'} ||= {coltype=>undef};
 
 	    if( $key eq 'subj' )
 	    {
 		my $subjl = $qarc->{'subj'} ||= [];
-		foreach my $val ( @values )
+		foreach my $subj_id ( @values )
 		{
-		    push @$subjl, Rit::Base::Resource->resolve_obj_id( $val );
+		    push @$subjl, $subj_id;
 		}
 	    }
 	    elsif( $key eq 'pred' )
 	    {
 		my $predl = $qarc->{'pred'} ||= [];
 		my $ocoltype = $qarc->{'coltype'};
-		foreach my $val ( @values )
+		foreach my $pred_id ( @values )
 		{
-		    my $pred = Rit::Base::Pred->get_by_label( $val );
+		    my $pred = Rit::Base::Pred->get( $pred_id );
 		    my $coltype = $pred->coltype;
 		    if( $ocoltype and ($coltype ne $ocoltype) )
 		    {
@@ -688,7 +688,7 @@ sub modify
 		    }
 		    $qarc->{'coltype'} = $coltype;
 
-		    push @$predl, $pred->id;
+		    push @$predl, $pred_id;
 		}
 	    }
 	    elsif( $key eq 'coltype' )
@@ -2031,19 +2031,26 @@ sub elements_arc
     {
 	my $vals = $qarc->{$coltype};
 	my $part = join " or ", map "($coltype=?)", @$vals;
-	push @parts, "($part)";
-	push @values, @$vals;
-
-	if( $coltype eq 'obj' )
+	if( $part )
 	{
-	    $prio = min( $prio, 4 );
+	    push @parts, "($part)";
+	    push @values, @$vals;
+
+	    if( $coltype eq 'obj' )
+	    {
+		$prio = min( $prio, 4 );
+	    }
 	}
     }
 
     my $where = join " and ", @parts;
     if( length $where )
     {
-	$where .= " and " . $arclim->sql($args);
+	my $arclim_sql = $arclim->sql($args);
+	if( $arclim_sql )
+	{
+	    $where .= " and " . $arclim_sql;
+	}
     }
     else
     {
