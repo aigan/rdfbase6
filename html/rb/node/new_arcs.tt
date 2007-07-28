@@ -30,12 +30,29 @@
 
 [% FOREACH arc IN find({is='arc'},{arclim=[['[*state*]',lim]]}).sorted(order, direction) %]
    [% tr2 %]
-      <td>[% jump(arc.id, arc.form_url) %]</td>
-      <td>[% arc.created %]
-      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]
-      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]
-      <td>[% IF arc.obj; jump(arc.value_desig, arc.obj.form_url);
-             ELSE; arc.value_desig; END %]
+      <td>[% jump(arc.id, arc.form_url) %]</td></td>
+      <td>[% arc.created %]</td>
+      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
+      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
+      <td>
+      [% IF arc.is_removal %]
+         <span style="text-decoration:line-through; color:red">
+         [% oarc = arc.replaces %]
+         [% IF oarc.obj %]
+            [% jump(oarc.obj.sysdesig, me, id=oarc.obj.id) %]
+         [% ELSE %]
+            [% oarc.value | html %]
+         [% END %]
+         </style>
+      [% ELSE %]
+         [% IF arc.obj %]
+            [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+         [% ELSE %]
+            [% arc.value | html %]
+         [% END %]
+      [% END %]
+      </td>
+   </tr>
 [% END %]
 </table>
 
