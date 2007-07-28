@@ -132,6 +132,7 @@ sub parse
 	    my $res_lim = 0;
 	    foreach my $lim (@$_)
 	    {
+		next unless $lim;
 		unless( $lim =~ /^\d+$/ )
 		{
 		    $lim = $LIM{$lim};
