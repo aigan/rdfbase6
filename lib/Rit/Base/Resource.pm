@@ -1044,7 +1044,7 @@ sub create
 		Rit::Base::Arc->create({
 		    subj    => $val,
 		    pred    => $pred_name,
-		    obj_id  => $subj_id,
+		    obj     => $subj_id,
 		}, $args);
 	    }
 	}
@@ -1053,7 +1053,7 @@ sub create
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
-		    subj_id => $subj_id,
+		    subj    => $subj_id,
 		    pred    => $pred_name,
 		    value   => $val,
 		}, $args);
@@ -4086,7 +4086,9 @@ sub replace
     # - nonexisting specified arcs is created
     # - existing nonspecified arcs is removed
 
-    my( %del );
+    # Replace value where it can be done
+
+    my( %add, %del, %del_pred );
 
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
     my $changes_prev = $res->changes;
@@ -4102,7 +4104,7 @@ sub replace
 	my $val_str = valclean( $arc->value->syskey );
 
 	debug 3, "    old val: $val_str (".$arc->value.")";
-	$del{$val_str} = $arc;
+	$del{$arc->pred->plain}{$val_str} = $arc;
     }
 
     # go through the new values and remove existing values from the
@@ -4111,56 +4113,126 @@ sub replace
     foreach my $pred_name ( keys %$props )
     {
 	debug 3, "  pred: $pred_name";
-	my( %add );
 	my $pred = Rit::Base::Pred->get( $pred_name );
+
+	my $coltype = $pred->coltype;
+	if( $coltype eq 'value' )
+	{
+	    # Should only replace an existing value property
+	    my $varc = $node->first_arc('value', undef, $args );
+	    unless( $varc )
+	    {
+		confess "Node $node->{id} has no existing value arc to replace";
+	    }
+
+	    $coltype = $varc->coltype;
+	}
 
 	foreach my $val_in ( @{$props->{$pred_name}} )
 	{
 	    my $val  = Rit::Base::Resource->get_by_label( $val_in,
 							  {
 							   %$args,
-							   coltype => $pred->coltype,
+							   coltype => $coltype,
 							  });
 
 	    my $val_str = valclean( $val->syskey );
 
 	    debug 3, "    new val: '$val_str' (".$val.")";
 
-	    if( $del{$val_str} )
+	    if( $del{$pred_name}{$val_str} )
 	    {
 		debug 3, "    keep $val_str";
-		delete $del{$val_str};
+		delete $del{$pred_name}{$val_str};
 	    }
 	    elsif( defined $val_str )
 	    {
 		debug 3, "    add  '$val_str'";
-		$add{$val_str} = $val;
+		$add{$pred_name}{$val_str} = $val;
 	    }
 	    else
 	    {
 		debug 3, "    not add <undef>";
 	    }
 	}
+    }
 
-	# By first adding new arcs, some of the arcs shedueld for
-	# removal may become indirect (infered), and therefore not
-	# removed
+    # We should prefere to replace the values for properties
+    # with unique predicates. This is a must for value arcs,
+    # since removing value arcs are treated as a special case.
+    # The updating of the value also gives a better history
+    # recording.
 
-	foreach my $key ( keys %add )
+    # We are putting the arcs which should have its value replaced
+    # in %del_pred and keeps the arc that should be removed in
+    # %del
+
+    foreach my $pred_name ( keys %del )
+    {
+	foreach my $arc_key ( keys %{$del{$pred_name}} )
 	{
-	    debug 3, "    now adding $key";
-	    Rit::Base::Arc->create({
-		subj => $node,
-		pred => $pred,
-		value => $add{$key},
-	    }, $args );
+	    my $arc = $del{$pred_name}{$arc_key};
+	    $del_pred{$pred_name} ||= [];
+	    push @{$del_pred{$pred_name}}, $arc_key;
 	}
     }
 
-    foreach my $key ( keys %del )
+    # %del_pred holds a list of keys above. Below, we replaces it
+    # with unique arcs.
+
+    foreach my $pred_name (keys %del_pred)
     {
-	debug 3, "    now removing $key";
-	$del{$key}->remove( $args );
+	if( @{$del_pred{$pred_name}} > 1 )
+	{
+	    delete $del_pred{$pred_name};
+	}
+	else
+	{
+	    my $arc_key = $del_pred{$pred_name}[0];
+	    $del_pred{$pred_name} = delete $del{$pred_name}{$arc_key};
+	}
+    }
+
+    # By first adding new arcs, some of the arcs shedueld for
+    # removal may become indirect (infered), and therefore not
+    # removed
+
+    foreach my $pred_name ( keys %add )
+    {
+	foreach my $key ( keys %{$add{$pred_name}} )
+	{
+	    debug 3, "    now adding $key";
+	    my $value = $add{$pred_name}{$key};
+
+	    if( $del_pred{$pred_name} )
+	    {
+		$del_pred{$pred_name}->set_value($value, $args);
+		delete $del_pred{$pred_name};
+	    }
+	    else
+	    {
+		Rit::Base::Arc->create({
+					subj => $node,
+					pred => $pred_name,
+					value => $value,
+				       }, $args );
+	    }
+	}
+    }
+
+    foreach my $pred_name ( keys %del )
+    {
+	foreach my $key ( keys %{$del{$pred_name}} )
+	{
+	    debug 3, "    now removing $key";
+	    $del{$pred_name}{$key}->remove( $args );
+	}
+    }
+
+    foreach my $pred_name ( keys %del_pred )
+    {
+	debug 3, "    now removing other $pred_name";
+	$del_pred{$pred_name}->remove( $args );
     }
 
     debug 3, "  -- done";
@@ -7246,8 +7318,8 @@ sub handle_query_arc_value
 
 		    my $arc = Rit::Base::Arc->
 		      create({
-			      subj_id => $id,
-			      pred_id => $pred_id,
+			      subj    => $id,
+			      pred    => $pred_id,
 			      value   => $val,
 			     }, $args );
 
@@ -7278,8 +7350,8 @@ sub handle_query_arc_value
 					      is_of_language => $language,
 					     }, $args);
 		    Rit::Base::Arc->create({
-					    subj_id => $valnode,
-					    pred => 'value',
+					    subj    => $valnode,
+					    pred    => 'value',
 					    value   => $value,
 					    valtype => $pred->valtype,
 					   }, $args);
@@ -7289,8 +7361,8 @@ sub handle_query_arc_value
 		{
 		    my $arc = Rit::Base::Arc->
 		      create({
-			      subj_id => $id,
-			      pred_id => $pred_id,
+			      subj    => $id,
+			      pred    => $pred_id,
 			      value   => $value,
 			     }, $args );
 		}
@@ -7493,8 +7565,8 @@ sub handle_query_prop_value
 	}
 
 	my $arc = Rit::Base::Arc->create({
-	    subj_id => $id,
-	    pred_id => $pred_id,
+	    subj    => $id,
+	    pred    => $pred_id,
 	    value   => $objs->get_first_nos,
 	}, $args );
 
@@ -7608,7 +7680,7 @@ sub handle_query_row_value
 
 		my $subj = Rit::Base::Resource->find_set({
 		    subj    => $node,
-		    pred_id => $res->pred_id_by_row($rowno),
+		    pred    => $res->pred_id_by_row($rowno),
 		}, undef, $res );
 		$res->set_arc_id_by_row( $rowno, $subj_id );
 	    }
@@ -7634,8 +7706,8 @@ sub handle_query_row_value
 	# Find with arclim. Set if not found, as new
 	my $arc = Rit::Base::Arc->find_set(
 					   {
-					    subj_id => $subj_id,
-					    pred_id => $pred_id,
+					    subj    => $subj_id,
+					    pred    => $pred_id,
 					   },
 					   $args );
 
@@ -7737,8 +7809,8 @@ sub handle_query_check_row
 
     # Find with arclim. Set if not found, as new
     my $arcs = Rit::Base::Arc->find({
-				     subj_id => $subj_id,
-				     pred_id => $pred_id,
+				     subj    => $subj_id,
+				     pred    => $pred_id,
 				    }, $args );
     # Remove found arcs
     foreach my $arc ( $arcs->as_array )
@@ -7856,8 +7928,8 @@ sub handle_query_check_prop
 	if( $has_val{$val_key} and not $is_set{$val_key} )
 	{
 	    my $arcs = Rit::Base::Arc->find({
-		subj_id => $id,
-		pred_id => $pred_id,
+		subj    => $id,
+		pred    => $pred_id,
 		value   => $value,
 	    }, $args );
 
@@ -7870,8 +7942,8 @@ sub handle_query_check_prop
 	elsif( not $has_val{$val_key} and $is_set{$val_key} )
 	{
 	    my $arc = Rit::Base::Arc->create({
-		subj_id => $id,
-		pred_id => $pred_id,
+		subj    => $id,
+		pred    => $pred_id,
 		value   => $value,
 	    }, $args );
 	}
@@ -7936,9 +8008,9 @@ sub handle_query_check_revprop
 	if( $has_val{$val_key} and not $is_set{$val_key} )
 	{
 	    my $arcs = Rit::Base::Arc->find({
-		subj_id => $val_key,
-		pred_id => $pred_id,
-		obj_id  => $id,
+		subj    => $val_key,
+		pred    => $pred_id,
+		obj     => $id,
 	    }, $args);
 
 	    foreach my $arc ( $arcs->as_array )
@@ -7950,8 +8022,8 @@ sub handle_query_check_revprop
 	elsif( not $has_val{$val_key} and $is_set{$val_key} )
 	{
 	    my $arc = Rit::Base::Arc->create({
-		subj_id => $val_key,
-		pred_id => $pred_id,
+		subj    => $val_key,
+		pred    => $pred_id,
 		value   => $id,
 	    }, $args );
 	}
