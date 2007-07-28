@@ -110,11 +110,10 @@ sub init
 
     my $global_params =
     {
-     find            => sub{ Rit::Base::Resource->find($_[0]) },
+     find            => sub{ Rit::Base::Resource->find(@_) },
      get             => sub{ Rit::Base::Resource->get(@_) },
      new_search      => sub{ Rit::Base::Search->new(@_) },
      find_preds      => sub{ Rit::Base::Pred->find(@_) },
-     find_arcs       => sub{ Rit::Base::Arc->find(@_) },
      find_rules      => sub{ Rit::Base::Rule->find(@_) },
      find_constants  => sub{ Rit::Base::Constants->find(@_) },
      query_desig     => \&Rit::Base::Utils::query_desig,
