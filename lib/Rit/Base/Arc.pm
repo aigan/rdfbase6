@@ -113,6 +113,12 @@ The props:
 
   obj : Same as L<value>
 
+Special args:
+
+  activate_new_arcs
+
+  submit_new_arcs
+
 If value is a plain string, it's converted to an object based on L<Rit::Base::Pred/coltype>.
 
 C<subj>, C<pred> and C<value> must be given.
@@ -140,6 +146,23 @@ sub create
     # Start at level 3...
     my $DEBUG = debug();
 #    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+
+    if( $args->{'activate_new_arcs'} )
+    {
+	unless( defined $props->{'active'} )
+	{
+	    $props->{'active'} = $args->{'activate_new_arcs'};
+	}
+    }
+
+    if( $args->{'submit_new_arcs'} )
+    {
+	unless( defined $props->{'submitted'} )
+	{
+	    $props->{'submitted'} = $args->{'submit_new_arcs'};
+	}
+    }
+
 
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
 
@@ -194,44 +217,6 @@ sub create
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
-
-
-    ##################### active
-    push @fields, 'active';
-    unless( defined $props->{'active'} )
-    {
-	$props->{'active'} = 0;
-    }
-
-    if( $props->{'active'} )
-    {
-	$rec->{'active'} = 1;
-	push @values, 't';
-    }
-    else
-    {
-	$rec->{'active'} = 0;
-	push @values, 'f';
-    }
-
-
-    ##################### submitted
-    push @fields, 'submitted';
-    if( $props->{'submitted'} )
-    {
-	if( $rec->{'active'} )
-	{
-	    confess "Arc can't be both active and submitted: ".query_desig($props);
-	}
-
-	$rec->{'submitted'} = 1;
-	push @values, 't';
-    }
-    else
-    {
-	$rec->{'submitted'} = 0;
-	push @values, 'f';
-    }
 
 
     ##################### read_access
@@ -372,6 +357,52 @@ sub create
 	$rec->{'indirect'} = 0;
 
 	push @values, 'f', 'f';
+    }
+
+
+    ##################### active
+    push @fields, 'active';
+    unless( defined $props->{'active'} )
+    {
+	$props->{'active'} = 0;
+    }
+
+    if( $props->{'active'} )
+    {
+	$rec->{'active'} = 1;
+	push @values, 't';
+
+	$rec->{'activated'} = $rec->{'updated'};
+	push @fields, 'activated';
+	push @values, $dbix->format_datetime($rec->{'activated'});
+
+	$rec->{'activated_by'} = $rec->{'created_by'};
+	push @fields, 'activated_by';
+	push @values, $rec->{'activated_by'};
+    }
+    else
+    {
+	$rec->{'active'} = 0;
+	push @values, 'f';
+    }
+
+
+    ##################### submitted
+    push @fields, 'submitted';
+    if( $props->{'submitted'} )
+    {
+	if( $rec->{'active'} )
+	{
+	    confess "Arc can't be both active and submitted: ".query_desig($props);
+	}
+
+	$rec->{'submitted'} = 1;
+	push @values, 't';
+    }
+    else
+    {
+	$rec->{'submitted'} = 0;
+	push @values, 'f';
     }
 
 
@@ -583,7 +614,28 @@ sub create
 	    if( $arc->created_by->equals( $Para::Frame::REQ->user ) )
 	    {
 		debug $arc->desig. " already exist, but not active" if $DEBUG;
-		$res->add_newarc( $arc );
+
+		if( $props->{'active'} )
+		{
+		    unless( $arc->submitted )
+		    {
+			$arc->submit;
+		    }
+		    $arc->activate;
+		}
+		elsif( $arc->{'submitted'} )
+		{
+		    unless( $arc->submitted )
+		    {
+			$arc->submit;
+		    }
+		    $res->add_newarc( $arc );
+		}
+		else
+		{
+		    $res->add_newarc( $arc );
+		}
+
 		return $arc;
 	    }
 	}
@@ -1157,7 +1209,7 @@ sub is_owned_by
   $a->view_flags
 
   A = active
-  N = Not Active
+  N = New
   S = Submitted
   O = Old
   Di = direct
