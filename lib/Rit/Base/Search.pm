@@ -625,65 +625,8 @@ sub modify
     {
 	# Set up values supplied
 	#
-	my $valref = $props->{ $key };
-	my @values;
-
-	if( ref $valref eq 'ARRAY' )
-	{
-	    @values = @$valref;
-	}
-	elsif( ref $valref eq 'Rit::Base::List' )
-	{
-	    @values = $valref->nodes;
-	}
-	else
-	{
-	    @values = ($valref);
-	}
-
-	foreach( @values )
-	{
-	    if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource::Compatible') )
-	    {
-		# Getting node id
-		$_ = $_->id;
-	    }
-	    elsif( ref $_ eq 'HASH' )
-	    {
-		if( $_->{'id'} )
-		{
-		    $_ = $_->{'id'};
-		}
-		else
-		{
-		    # Sub-request
-		    $_ = Rit::Base::Resource->get_id( $_ );
-		}
-	    }
-
-	    # The string may have been octets in utf8 format but not
-	    # labled as utf8
-
-	    utf8::decode($_);
-	}
-
-#	### DEBUG
-#	use bytes ();
-#	foreach my $val (@values)
-#	{
-#	    next unless $val =~ /^Stockholms/;
-#	    if( defined $val )
-#	    {
-#		my $length1 = length $val;
-#		my $length2 = bytes::length $val;
-#		debug " * '$val'($length1/$length2)";
-#	    }
-#	    else
-#	    {
-#		debug ' * <undef>';
-#	    }
-#	}
-
+	my $valref = parse_values($props->{ $key });
+	my @values = @$valref;
 
 	confess datadump $props if $key =~ /^0x/; ### DEBUG
 
@@ -719,6 +662,50 @@ sub modify
 	{
 	    $search->order_add( \@values );
 	}
+	elsif( $key =~ m/^(subj|pred|coltype|obj|value)$/ )
+	{
+	    my $qarc = $search->{'query'}{'arc'} ||= {coltype=>undef};
+
+	    if( $key eq 'subj' )
+	    {
+		my $subjl = $qarc->{'subj'} ||= [];
+		foreach my $val ( @values )
+		{
+		    push @$subjl, Rit::Base::Resource->resolve_obj_id( $val );
+		}
+	    }
+	    elsif( $key eq 'pred' )
+	    {
+		my $predl = $qarc->{'pred'} ||= [];
+		my $ocoltype = $qarc->{'coltype'};
+		foreach my $val ( @values )
+		{
+		    my $pred = Rit::Base::Pred->get_by_label( $val );
+		    my $coltype = $pred->coltype;
+		    if( $ocoltype and ($coltype ne $ocoltype) )
+		    {
+			confess "Coltype mismatch: $coltype ne $ocoltype";
+		    }
+		    $qarc->{'coltype'} = $coltype;
+
+		    push @$predl, $pred->id;
+		}
+	    }
+	    elsif( $key eq 'coltype' )
+	    {
+		my $ocoltype = $qarc->{'coltype'};
+		foreach my $val ( @values )
+		{
+		    if( $ocoltype and ($val ne $ocoltype) )
+		    {
+			confess "Coltype mismatch: $val ne $ocoltype";
+		    }
+		    $qarc->{'coltype'} = $val;
+		}
+	    }
+
+	    # Parse obj and value after coltype established
+	}
 	elsif ($key =~ m/^(rev_)?(.*?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x)
 	{
 	    my $rev    = $1;
@@ -730,7 +717,13 @@ sub modify
 	    my $match  = $5 || 'eq';
 	    my $prio   = $6; #Low prio first (default later)
 
-	    if( $pred =~ s/^predor_// )
+	    if( $pred eq 'is' and $values[0] eq 'arc') # plain string
+	    {
+		# Set this up as a arc search
+		$search->{'query'}{'arc'} ||= {coltype=>undef};
+		next;
+	    }
+	    elsif( $pred =~ s/^predor_// )
 	    {
 		my( @prednames ) = split /_-_/, $pred;
 		my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
@@ -854,6 +847,41 @@ sub modify
     }
 
     $search->reset_sql;
+
+
+    # Is this an arc search?
+    if( my $qarc = $search->{'query'}{'arc'} )
+    {
+	my $values;
+	if( $props->{'obj'} )
+	{
+	    my $coltype = $qarc->{'coltype'} ||= 'obj';
+	    if( $coltype ne 'obj' )
+	    {
+		confess "Coltype mismatch: $coltype ne obj";
+	    }
+	    $values = parse_values($props->{'obj'});
+	}
+	elsif( $props->{'value'} )
+	{
+	    $values = parse_values($props->{'value'});
+	    my $coltype = $qarc->{'coltype'};
+
+	    if( $coltype )
+	    {
+		unless( $coltype =~ /^(obj|val.+)$/ )
+		{
+		    confess "Invalid coltype: $coltype";
+		}
+	    }
+	    else
+	    {
+		confess "Coltype must be indicated";
+	    }
+
+	    $qarc->{$coltype} = $values;
+	}
+    }
 
     return 1;
 }
@@ -1013,6 +1041,12 @@ sub build_sql
     {
 #	debug datadump($props); ### DEBUG
 	push @elements, @{ $search->elements_props( $props ) };
+    }
+
+    # arcs
+    if( my $qarc = $search->{'query'}{'arc'} )
+    {
+	push @elements, @{ $search->elements_arc( $qarc ) };
     }
 
     unless( @elements ) # Handle empty searches
@@ -1965,6 +1999,71 @@ sub build_main_select_price
 
 #######################################################################
 
+sub elements_arc
+{
+    my( $search, $qarc ) = @_;
+
+    my @element;
+    my $prio = 10;
+
+    my @values;
+    my @parts;
+
+    my $arclim = $qarc->{'arclim'} || $search->arclim;
+    my $args = {};
+
+    if( my $vals = $qarc->{'subj'} )
+    {
+	my $part = join " or ", map "(subj=?)", @$vals;
+	push @parts, "($part)";
+	push @values, @$vals;
+	$prio = min( $prio, 3 );
+    }
+
+    if( my $vals = $qarc->{'pred'} )
+    {
+	my $part = join " or ", map "(pred=?)", @$vals;
+	push @parts, "($part)";
+	push @values, @$vals;
+    }
+
+    if( my $coltype = $qarc->{'coltype'} )
+    {
+	my $vals = $qarc->{$coltype};
+	my $part = join " or ", map "($coltype=?)", @$vals;
+	push @parts, "($part)";
+	push @values, @$vals;
+
+	if( $coltype eq 'obj' )
+	{
+	    $prio = min( $prio, 4 );
+	}
+    }
+
+    my $where = join " and ", @parts;
+    if( length $where )
+    {
+	$where .= " and " . $arclim->sql($args);
+    }
+    else
+    {
+	$where = $arclim->sql($args);
+    }
+
+    push @element,
+    {
+     select => 'ver', # TODO: Also implement id select
+     where => $where,
+     values => \@values,
+     prio => $prio,
+    };
+
+    return( \@element );
+}
+
+
+#######################################################################
+
 sub elements_path
 {
     my( $search, $paths ) = @_;
@@ -2380,10 +2479,13 @@ See L<Rit::Base::Arc::Lim/limflag>
 
 sub set_arclim
 {
-    my( $search, $arclim ) = @_;
+    my( $search, $arclim_in ) = @_;
 
-    return $search->{'arclim'} =
-      Rit::Base::Arc::Lim->parse( $arclim );
+    my $arclim = Rit::Base::Arc::Lim->parse( $arclim_in );
+
+#    debug "Setting arclim to ".$arclim->sysdesig;
+
+    return $search->{'arclim'} = $arclim;
 }
 
 
@@ -2546,6 +2648,56 @@ sub matchpart
     $matchpart =~ s/begins/like/;
 
     return $matchpart;
+}
+
+
+#######################################################################
+
+sub parse_values
+{
+    my( $valref ) = @_;
+    my @values;
+
+    if( ref $valref eq 'ARRAY' )
+    {
+	@values = @$valref;
+    }
+    elsif( ref $valref eq 'Rit::Base::List' )
+    {
+	@values = $valref->nodes;
+    }
+    else
+    {
+	@values = ($valref);
+    }
+
+    foreach( @values )
+    {
+	if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource::Compatible') )
+	{
+	    # Getting node id
+	    $_ = $_->id;
+	}
+	elsif( ref $_ eq 'HASH' )
+	{
+	    if( $_->{'id'} )
+	    {
+		$_ = $_->{'id'};
+	    }
+	    else
+	    {
+		# Sub-request
+		$_ = Rit::Base::Resource->get_id( $_ );
+	    }
+	}
+
+	# The string may have been octets in utf8 format but not
+	# labled as utf8
+
+	utf8::decode($_);
+    }
+
+    return \@values;
 }
 
 
