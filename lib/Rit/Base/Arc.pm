@@ -2610,13 +2610,13 @@ sub create_removal
     # Should only create removals for submitted or active arcs
 
     return Rit::Base::Arc->create({
-				   common_id => $arc->common_id,
+				   common_id   => $arc->common_id,
 				   replaces_id => $arc->id,
-				   active => 0,
-				   subj_id => $arc->{'subj'},
-				   pred_id => $arc->{'pred'},
-				   value => is_undef,
-				   valtype => 0,
+				   active      => 0,
+				   subj        => $arc->{'subj'},
+				   pred        => $arc->{'pred'},
+				   value       => is_undef,
+				   valtype     => 0,
 				  }, $args);
 }
 
@@ -2742,12 +2742,12 @@ sub set_value
 	unless( $arc->is_new )
 	{
 	    my $new = Rit::Base::Arc->create({
-					      common_id => $arc->common_id,
+					      common_id   => $arc->common_id,
 					      replaces_id => $arc->id,
-					      active => 0,
-					      subj_id => $arc->{'subj'},
-					      pred_id => $arc->{'pred'},
-					      value => $value_new,
+					      active      => 0,
+					      subj        => $arc->{'subj'},
+					      pred        => $arc->{'pred'},
+					      value       => $value_new,
 					     }, $args );
 	    return $new;
 	}
@@ -2879,11 +2879,11 @@ sub set_pred
 	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->plain."\n" if $DEBUG;
 
 	my $narc = $arc->create({
-				 read_access => $arc->read_access->id,
+				 read_access  => $arc->read_access->id,
 				 write_access => $arc->write_access->id,
-				 subj_id => $arc->subj->id,
-				 pred => $new_pred,
-				 value => $arc->value,
+				 subj         => $arc->subj->id,
+				 pred         => $new_pred,
+				 value        => $arc->value,
 				}, $args);
 
 	$arc->remove( $args );
@@ -2971,13 +2971,13 @@ sub resubmit
     }
 
     my $new = Rit::Base::Arc->create({
-				      common_id => $arc->common_id,
+				      common_id   => $arc->common_id,
 				      replaces_id => $arc->id,
-				      active => 0,
-				      submitted => 1,
-				      subj_id => $arc->{'subj'},
-				      pred_id => $arc->{'pred'},
-				      value => $arc->{'value'},
+				      active      => 0,
+				      submitted   => 1,
+				      subj        => $arc->{'subj'},
+				      pred        => $arc->{'pred'},
+				      value       => $arc->{'value'},
 				     }, $args );
     return $new;
 }
