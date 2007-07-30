@@ -52,6 +52,10 @@ our $special_id =
  desig  => -4,
  'loc'   => -5,
  plain  => -6,
+ subj => -7,
+ pred => -8,
+ obj => -9,
+ coltype => -10,
 };
 
 our $special_label = { reverse %$special_id };
@@ -667,12 +671,14 @@ sub find_by_label
     $label = $label->literal if ref $label;
     $label or confess "get_by_label got empty label";
 
+
+    # TODO: Insert special predicates subj, pred, obj, coltype
+
     # Special properties
     if( $label =~ /^(id|score|random)$/ )
     {
 	return $class->get_by_rec({
 				   label   => $1,
-#				   valtype => $1,
 				   node    => $special_id->{$1},
 				   pred_coltype => 2, # valfloat
 				  });
@@ -681,7 +687,6 @@ sub find_by_label
     {
 	return $class->get_by_rec({
 				   label   => $1,
-#				   valtype => 'text',
 				   node    => $special_id->{$1},
 				   pred_coltype => 5, # valtext
 				  });
