@@ -289,12 +289,23 @@ Returns: The number of new arcs processed
 
 sub autocommit
 {
-    my $newarcs = $_[0]->newarcs;
+    my( $c, $args ) = @_;
+
+    my $newarcs = $c->newarcs;
     my $cnt = $newarcs->size;
     if( $cnt )
     {
-	my $root_access = $Para::Frame::REQ->user->has_root_access;
-	if( $root_access )
+	my $activate;
+	if( defined $args->{'activate'} )
+	{
+	    $activate = $args->{'activate'};
+	}
+	else
+	{
+	    $activate = $Para::Frame::REQ->user->has_root_access;
+	}
+
+	if( $activate )
 	{
 	    debug "Activating new arcs:";
 	}
@@ -302,6 +313,7 @@ sub autocommit
 	{
 	    debug "Submitting new arcs:";
 	}
+
 	my( $arc, $error ) = $newarcs->get_first;
 	while(! $error )
 	{
@@ -311,11 +323,14 @@ sub autocommit
 	    {
 		debug "  is removed...";
 	    }
-	    elsif( $arc->is_new )
+	    else
 	    {
-		$arc->submit;
+		if( $arc->is_new )
+		{
+		    $arc->submit;
+		}
 
-		if( $root_access )
+		if( $activate and $arc->submitted )
 		{
 		    $arc->activate;
 		}
