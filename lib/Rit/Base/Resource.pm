@@ -612,7 +612,10 @@ sub find
     my $default = $args->{'default'} || {};
     foreach my $key ( keys %$default )
     {
-	$query->{$key} ||= $default->{$key};
+	unless( defined $query->{$key} )
+	{
+	    $query->{$key} = $default->{$key};
+	}
     }
 
     if( ref $this )
@@ -634,6 +637,12 @@ sub find
 					  Rit::Base::Search::TOPLIMIT,
 					});
     $search->modify($query, $args);
+
+#    if( $query->{'subj'} )
+#    {
+#	debug "find arcst:\n".query_desig($query);
+#    }
+
     $search->execute($args);
 
     my $result = $search->result;
@@ -779,10 +788,46 @@ sub find_one
 	{
 	    # TODO: Explain 'kriterierna'
 
+	    my $req = $Para::Frame::REQ;
+	    my $uri = $req->page->url_path_slash;
+	    $req->session->route->bookmark;
+	    $req->set_error_response_path("/alternatives.tt");
+
+
 	    my $result = $Para::Frame::REQ->result;
 	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    throw('alternatives', "Flera noder matchar kriterierna");
+	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
+
+	    $result->{'info'}{'alternatives'}{'rowformat'} =
+	      sub
+	      {
+		  my( $item ) = @_;
+		  my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
+		  my $cstr = $item->list('scof',undef, 'direct')->name->loc;
+		  my $desig = $item->desig;
+		  my $desc = "$tstr $desig";
+		  if( $cstr )
+		  {
+		      $desc .= " ($cstr)";
+		  }
+		  my $link = Para::Frame::Widget::jump($desc, $uri,
+						       {
+							route_alternative => $item->id,
+							run => 'next_step',
+							step_replace_params => 'route_alternative',
+						       });
+		  return $link;
+	      };
+
+	    $result->{'info'}{'alternatives'}{'button'} =
+	      [
+	       ['Backa', $req->referer_path(), 'skip_step'],
+	      ];
+	    $req->q->delete_all();
+
+	    throw('alternatives', "More than one node matches the criterions");
 	}
 
 	$nodes = $new_nodes;
@@ -795,6 +840,7 @@ sub find_one
 	my $result = $req->result;
 	$result->{'info'}{'alternatives'}{'alts'} = undef;
 	$result->{'info'}{'alternatives'}{'query'} = $query;
+	$result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	$req->set_error_response_path('/node_query_error.tt');
 	throw('notfound', "No nodes matches query (1)");
@@ -810,8 +856,6 @@ sub find_one
 
   $n->find_set( $query, \%args )
 
-  $n->find_set( $query, \%args )
-
 Finds the nodes matching $query, as would L</find_one>.  But if no
 node are found, one is created using the C<$query> and C<$default> as
 properties.
@@ -819,12 +863,14 @@ properties.
 Supported args are
 
   default
+  default_create
   arclim
   res
 
-Properties specified in C<$defult> is used unless corresponding
+Properties specified in C<defult> is used unless corresponding
 properties i C<$query> is defined.  The resulting properties are
-passed to L</create>.
+passed to L</create>. C<default_create> does the same, but only for
+create. Not for L</find>.
 
 Returns:
 
@@ -845,6 +891,8 @@ sub find_set
     my( $this, $query, $args_in ) = @_;
 
     my( $args ) = parse_propargs($args_in);
+
+#    debug "find_set:\n".datadump($query,2);
 
     my $nodes = $this->find( $query, $args )->as_arrayref;
 
@@ -878,10 +926,45 @@ sub find_set
 
 	if( $new_nodes->[1] )
 	{
+	    my $req = $Para::Frame::REQ;
+	    my $uri = $req->page->url_path_slash;
+	    $req->session->route->bookmark;
+	    $req->set_error_response_path("/alternatives.tt");
+
 	    my $result = $Para::Frame::REQ->result;
 	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    throw('alternatives', "Flera noder matchar kriterierna");
+	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
+
+	    $result->{'info'}{'alternatives'}{'rowformat'} =
+	      sub
+	      {
+		  my( $item ) = @_;
+		  my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
+		  my $cstr = $item->list('scof',undef, 'direct')->name->loc;
+		  my $desig = $item->desig;
+		  my $desc = "$tstr $desig";
+		  if( $cstr )
+		  {
+		      $desc .= " ($cstr)";
+		  }
+		  my $link = Para::Frame::Widget::jump($desc, $uri,
+						       {
+							route_alternative => $item->id,
+							run => 'next_step',
+							step_replace_params => 'route_alternative',
+						       });
+		  return $link;
+	      };
+
+	    $result->{'info'}{'alternatives'}{'button'} =
+	      [
+	       ['Backa', $req->referer_path(), 'skip_step'],
+	      ];
+	    $req->q->delete_all();
+
+	    throw('alternatives', "More than one node matches the criterions");
 	}
 
 	$nodes = $new_nodes;
@@ -890,16 +973,67 @@ sub find_set
     my $node = $nodes->[0];
     unless( $node )
     {
-	my $default = $args->{'default'} || {};
 	my $query_new = convert_query_prop_for_creation($query);
+
+	my $default_create = $args->{'default_create'} || {};
+	foreach my $pred ( keys %$default_create )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default_create->{$pred};
+	    }
+	}
+
+	my $default = $args->{'default'} || {};
 	foreach my $pred ( keys %$default )
 	{
-	    $query_new->{$pred} ||= $default->{$pred};
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default->{$pred};
+	    }
 	}
+
 	return $this->create($query_new, $args);
     }
 
     return $node;
+}
+
+#######################################################################
+
+=head2 find_remove
+
+  $n->find_remove(\%props, \%args )
+
+Remove matching nodes if existing.
+
+Calls L</find> with the given props.
+
+Calls L</remove> for each found node.
+
+For arcs, the argument C<implicit>, if given, is passed on to
+L</remove>. This will only remove arc if it no longer can be infered
+and it's not explicitly declared
+
+Supported args:
+
+  arclim
+  res
+  implicit
+
+Returns: ---
+
+=cut
+
+sub find_remove
+{
+    my( $this, $props, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
+
+    foreach my $node ( $this->find( $props, $args )->nodes )
+    {
+	$node->remove( $args );
+    }
 }
 
 
@@ -957,12 +1091,26 @@ sub set_one
 
     unless( $node )
     {
-	my $default = $args->{'default'} || {};
 	my $query_new = convert_query_prop_for_creation($query);
+
+	my $default_create = $args->{'default_create'} || {};
+	foreach my $pred ( keys %$default_create )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default_create->{$pred};
+	    }
+	}
+
+	my $default = $args->{'default'} || {};
 	foreach my $pred ( keys %$default )
 	{
-	    $query_new->{$pred} ||= $default->{$pred};
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default->{$pred};
+	    }
 	}
+
 	return $this->create($query_new, $args);
     }
 
@@ -5665,6 +5813,7 @@ sub get_by_label
 	{
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
+	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($val);
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $req->set_error_response_path("/node_query_error.tt");
 	}
@@ -5697,7 +5846,7 @@ sub get_by_label
 	# Ask for which alternative; redo
 
 	$req->session->route->bookmark;
-	$req->set_page_path("/alternatives.tt");
+	$req->set_error_response_path("/alternatives.tt");
 	my $page = $req->page;
 	my $uri = $page->url_path_slash;
 	my $result = $req->result;
@@ -7250,7 +7399,7 @@ sub handle_query_arc_value
 			$req->session->route->bookmark;
 			my $home = $req->site->home_url_path;
 			my $uri = $page->url_path_slash;
-			$req->set_page_path("/alternatives.tt");
+			$req->set_error_response_path("/alternatives.tt");
 			my $result = $req->result;
 
 			$result->{'info'}{'alternatives'} =
@@ -7290,13 +7439,13 @@ sub handle_query_arc_value
 			 ],
 			};
 			$q->delete_all();
-			throw('alternatives', 'Specificera alternativ');
+			throw('alternatives', 'Specify an alternative');
 		    }
 		    elsif( not $objs->size )
 		    {
 			$req->session->route->bookmark;
 			my $home = $site->home_url_path;
-			$req->set_page_path('/confirm.tt');
+			$req->set_error_response_path('/confirm.tt');
 			my $result = $req->result;
 			$result->{'info'}{'confirm'} =
 			{
@@ -7313,7 +7462,7 @@ sub handle_query_arc_value
 				  arc___pred_name => $val,
 				  prop_is         => $type,
 				 });
-			throw('incomplete', "Nod saknas");
+			throw('incomplete', "Node missing");
 		    }
 
 		    my $arc = Rit::Base::Arc->
@@ -7526,7 +7675,7 @@ sub handle_query_prop_value
 	    my $home = $site->home_url_path;
 	    $req->session->route->bookmark;
 	    my $uri = $page->url_path_slash;
-	    $req->set_page_path("/alternatives.tt");
+	    $req->set_error_response_path("/alternatives.tt");
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'} =
 	    {
@@ -7557,7 +7706,7 @@ sub handle_query_prop_value
 	     ],
 	    };
 	    $q->delete_all();
-	    throw('alternatives', "Flera noder har namnet '$value'");
+	    throw('alternatives', loc("More than one node has the name '[_1]'", $value));
 	}
 	elsif( not $objs->size )
 	{
