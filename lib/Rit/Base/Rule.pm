@@ -513,13 +513,18 @@ sub create_infere_rev
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
 	next if disregard $arc2;
-	$arc2->find_set({
-			 pred => $rule->c,
-			 subj => $arc2->subj,
-			 obj  => $obj,
-			 implicit => 1,
-			 active => 1, # Activate directly
-			})->set_indirect;
+	Rit::Base::Arc->find_set({
+				  pred => $rule->c,
+				  subj => $arc2->subj,
+				  obj  => $obj,
+				 },
+				 {
+				  default_create =>
+				  {
+				   implicit => 1,
+				   active => 1, # Activate directly
+				  },
+				 })->set_indirect;
     }
 }
 
@@ -544,13 +549,18 @@ sub create_infere_rel
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
 	next if disregard $arc2;
-	$arc2->find_set({
-			 pred => $rule->c,
-			 subj => $subj,
-			 obj  => $arc2->obj,
-			 implicit => 1,
-			 active => 1, # Activate directly
-			})->set_indirect;
+	Rit::Base::Arc->find_set({
+				  pred => $rule->c,
+				  subj => $subj,
+				  obj  => $arc2->obj,
+				 },
+				 {
+				  default_create =>
+				  {
+				   implicit => 1,
+				   active => 1, # Activate directly
+				  },
+				 })->set_indirect;
     }
 }
 
@@ -575,12 +585,14 @@ sub remove_infered_rev
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
 #	next if disregard $arc2; # not
-	$arc2->find_remove({
-			    subj => $arc2->subj,
-			    pred => $rule->c,
-			    obj  => $obj,
-			    implicit => 1,
-			   });
+	Rit::Base::Arc->find_remove({
+				     subj => $arc2->subj,
+				     pred => $rule->c,
+				     obj  => $obj,
+				    },
+				    {
+				     implicit => 1,
+				    });
     }
 
 }
@@ -606,12 +618,14 @@ sub remove_infered_rel
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
 #	next if disregard $arc2; # not
-	$arc2->find_remove({
-			    subj => $subj,
-			    pred => $rule->c,
-			    obj  => $arc2->obj,
-			    implicit => 1,
-			   });
+	Rit::Base::Arc->find_remove({
+				     subj => $subj,
+				     pred => $rule->c,
+				     obj  => $arc2->obj,
+				    },
+				    {
+				     implicit => 1,
+				    });
     }
 
 }
