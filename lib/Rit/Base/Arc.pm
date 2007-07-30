@@ -97,16 +97,10 @@ The props:
 
   subj : Anything that L<Rit::Base::Resource/get> takes
 
-  subj_id : Same as C<subj>
-
   pred : Anything that L<Rit::Base::Resource/get> takes, called as
   L<Rit::Base::Pred>
 
-  pred_id : Same as C<pred>
-
   implicit : Makes the arc both C<implicit> and C<indirect>
-
-  obj_id : The id of the obj as a plain integer
 
   value : May be L<Rit::Base::Undef>, any L<Rit::Base::Literal> or a
   L<Rit::Base::Resource>
@@ -145,7 +139,24 @@ sub create
 
     # Start at level 3...
     my $DEBUG = debug();
-#    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+
+    # Clean props from array form
+
+    foreach my $key (qw(active submitted common id replaces source
+                        read_access write_access subj pred valtype
+                        implicit value obj ))
+    {
+	if( $props->{ $key } )
+	{
+	    if( UNIVERSAL::isa( $props->{ $key }, 'ARRAY') )
+	    {
+		$props->{ $key } = $props->{ $key }->[0];
+	    }
+	}
+    }
+
+
 
     if( $args->{'activate_new_arcs'} )
     {
@@ -165,15 +176,16 @@ sub create
 
 
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
+#    debug "About to create arc with props:\n".datadump($props,2) if $DEBUG;
 
     my( @fields, @values );
 
     my $rec = {};
 
     ##################### common_id == id
-    if( $props->{'common_id'} ) # used in block EXISTING
+    if( $props->{'common'} ) # used in block EXISTING
     {
-	$rec->{'id'}  = $props->{'common_id'};
+	$rec->{'id'}  = $props->{'common'};
     }
     else
     {
@@ -197,9 +209,9 @@ sub create
 
 
     ##################### replaces_id
-    if( $props->{'replaces_id'} )
+    if( $props->{'replaces'} )
     {
-	$rec->{'replaces'}  = $props->{'replaces_id'};
+	$rec->{'replaces'}  = $props->{'replaces'};
 	push @fields, 'replaces';
 	push @values, $rec->{'replaces'};
     }
@@ -247,9 +259,9 @@ sub create
     push @values, $rec->{'write_access'};
 
 
-    ##################### subj_id
+    ##################### subj
     my $subj;
-    if( my $subj_label = $props->{'subj_id'} || $props->{'subj'} )
+    if( my $subj_label = $props->{'subj'} )
     {
 	$subj = Rit::Base::Resource->get( $subj_label )
 	    or die "No node '$subj_label' found";
@@ -264,13 +276,10 @@ sub create
 
 
     ##################### pred_id
-    my $pred = Rit::Base::Pred->get( $props->{'pred_id'} ||
-					     $props->{'pred'} );
+    my $pred = Rit::Base::Pred->get( $props->{'pred'} );
     $pred or die "Pred missing";
     my $pred_id = $pred->id;
-
     my $pred_name = $pred->plain;
-#    warn "PRED NAME: $pred_name\n";
 
     $rec->{'pred'} = $pred_id;
 
@@ -306,7 +315,7 @@ sub create
 		  $revpred->plain);
 
 	    confess("I won't make a value resource with a resource as value.")
-	      if( $props->{'obj_id'} );
+	      if( $props->{'obj'} );
 	}
 	else
 	{
@@ -416,7 +425,7 @@ sub create
     debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
     debug "Coltype now: $coltype" if $DEBUG;
 
-    if( my $obj_id = $props->{'obj_id'} )
+    if( my $obj_id = $props->{'obj'} )
     {
 	$coltype = 'obj';
 	$value = $obj_id;
@@ -573,9 +582,9 @@ sub create
 		next unless $arc->replaces_id == $rec->{'replaces'};
 	    }
 
-	    if( $props->{'common_id'} ) # Explicitly defined
+	    if( $props->{'common'} ) # Explicitly defined
 	    {
-		next unless $arc->common_id == $props->{'common_id'};
+		next unless $arc->common_id == $props->{'common'};
 	    }
 
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
@@ -699,44 +708,6 @@ sub create
     return $arc;
 }
 
-#######################################################################
-
-=head2 find_remove
-
-  Rit::Base::Arc->find_remove(\%props, \%args )
-
-Remove matching arcs if existing.
-
-Calls L</find> with the given props.
-
-Calls L</remove> for each found arc.
-
-If the property C<implicit> is given, the value of it is passed on to
-L</remove>. This will only remove arc if it no longer can be infered
-and it's not explicitly declared
-
-Supported args:
-
-  arclim
-  res
-  implicit
-
-Returns: ---
-
-=cut
-
-sub find_remove
-{
-    my( $this, $props, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-
-    my $arcs = $this->find( $props, $args );
-
-    foreach my $arc ( $arcs->nodes )
-    {
-	$arc->remove( $args );
-    }
-}
 
 #########################################################################
 ################################  Accessors  ############################
