@@ -599,7 +599,16 @@ sub parse_query_pred
 	my $prio   = $6; #Low prio first (default later)
 	my $find   = undef;
 
-	if( $pred =~ s/^predor_// )
+	if( $pred =~ m/^(subj|pred|obj|coltype)$/ )
+	{
+	    # Special case !!!!!!!
+
+	    # TODO: Resolce conflict between pred obj and other
+	    # resource obj
+
+	    $type = 2;  # valfloat
+	}
+	elsif( $pred =~ s/^predor_// )
 	{
 	    my( @prednames ) = split /_-_/, $pred;
 	    my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
@@ -616,7 +625,9 @@ sub parse_query_pred
 		$pred = $1;
 	    }
 
+	    debug "pred is $pred";
 	    $pred = Rit::Base::Pred->get( $pred );
+	    debug "now pred is $pred";
 	    $type = $pred->coltype;
 	}
 
@@ -655,7 +666,7 @@ sub parse_query_pred
 
 =head2 parse_query_prop
 
-  parse_query_preds( \%props, \%args )
+  parse_query_prop( \%props, \%args )
 
 Internal use...
 
@@ -792,18 +803,33 @@ sub convert_query_prop_for_creation
 
 	my $pred_name;
 	my $pred = $rec->{'pred'};
-	unless( UNIVERSAL::isa($pred, 'Rit::Base::Pred') )
-	{
-	    confess "No predor valid here: ".datadump($pred);
-	}
 
-	if( $rec->{'rev'} )
+	unless( ref $pred ) ### SPECIAL CASE - TEMP SOLUTION
 	{
-	    $pred_name = 'rev_' . $pred->plain;
+	    if( $pred =~ /^(subj|pred|obj|value|coltype)$/ )
+	    {
+		$pred_name = $pred;
+	    }
+	    else
+	    {
+		confess "Invalid pred: $pred";
+	    }
 	}
 	else
 	{
-	    $pred_name = $pred->plain;
+	    unless( UNIVERSAL::isa($pred, 'Rit::Base::Pred') )
+	    {
+		confess "No predor valid here: ".datadump($pred);
+	    }
+
+	    if( $rec->{'rev'} )
+	    {
+		$pred_name = 'rev_' . $pred->plain;
+	    }
+	    else
+	    {
+		$pred_name = $pred->plain;
+	    }
 	}
 
 	$props{$pred_name} = $rec->{'values'};
