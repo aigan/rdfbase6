@@ -3207,7 +3207,8 @@ sub label
 
   $n->set_label($label)
 
-Sets the constant label. Crates the constant if not existing yet. Set to undef to remove the constant.
+Sets the constant label. Crates the constant if not existing yet. Set
+to undef to remove the constant.
 
 Returns:
 
@@ -3536,7 +3537,7 @@ sub arc_list
 
 	if( $proplim )
 	{
-	    die "proplim not implemented";
+	    confess "proplim not implemented";
 	}
 
 	my @arcs;
@@ -7556,12 +7557,15 @@ sub handle_select_version
 		debug "...which is a value resource: ".
 		  $value_resource->sysdesig;
 
-		$value_resource->revarc( undef, undef,
-					 ['active','submitted'] )->
-					   activate( $args );
-		$value_resource->arc( 'is_of_language', undef,
-				      ['active','submitted'] )->
-					activate( $args );
+		my $revarc = $value_resource->revarc( undef, undef,
+						      ['active','submitted'] );
+		$revarc->activate( $args )
+		  unless $revarc->active;
+
+		my $langarc = $value_resource->arc( 'is_of_language', undef,
+						    ['active','submitted'] );
+		$langarc->activate( $args )
+		  unless $langarc->active;
 	    }
 	    $select_version->activate( $args );
 	}
