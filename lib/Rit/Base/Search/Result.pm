@@ -56,6 +56,17 @@ sub DESTROY
 
 #######################################################################
 
+sub clone_props
+{
+    my( $l ) = @_;
+    my $args = $l->SUPER::clone_props;
+    $args->{'search'} = $l->{'search'};
+    return $args;
+}
+
+
+#######################################################################
+
 =head2 materialize
 
 =cut
