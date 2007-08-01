@@ -678,9 +678,9 @@ sub modify
 	    {
 		my $predl = $qarc->{'pred'} ||= [];
 		my $ocoltype = $qarc->{'coltype'};
-		foreach my $pred_id ( @values )
+		foreach my $pred_in ( @values )
 		{
-		    my $pred = Rit::Base::Pred->get( $pred_id );
+		    my $pred = Rit::Base::Pred->get( $pred_in );
 		    my $coltype = $pred->coltype;
 		    if( $ocoltype and ($coltype ne $ocoltype) )
 		    {
@@ -688,7 +688,7 @@ sub modify
 		    }
 		    $qarc->{'coltype'} = $coltype;
 
-		    push @$predl, $pred_id;
+		    push @$predl, $pred->id;
 		}
 	    }
 	    elsif( $key eq 'coltype' )
@@ -852,6 +852,7 @@ sub modify
     # Is this an arc search?
     if( my $qarc = $search->{'query'}{'arc'} )
     {
+	debug "This is an arc search";
 	my $values;
 	if( $props->{'obj'} )
 	{
@@ -860,7 +861,7 @@ sub modify
 	    {
 		confess "Coltype mismatch: $coltype ne obj";
 	    }
-	    $values = parse_values($props->{'obj'});
+	    $qarc->{$coltype} = parse_values($props->{'obj'});
 	}
 	elsif( $props->{'value'} )
 	{
@@ -928,12 +929,13 @@ sub execute
     {
 #	debug "MIN PRIO = $min_prio";
 	if( debug > 4 )
+#	if( $search->{'query'}{'arc'} )
 #	if(1)
 #	if( @{$search->{'query'}{'order_by'}} )
 	{
 #	    debug datadump($search->{'prop'}, 2);
-	    debug 2, $search->sysdesig;
-	    debug 0, $search->sql_sysdesig;
+	    debug 0, $search->sysdesig;
+	    debug 2, $search->sql_sysdesig;
 	}
 	$result = $search->get_result($sql, $values, 15); # 10
     }
@@ -2761,6 +2763,45 @@ sub sysdesig
 	    }
 	}
     }
+
+    if( my $qarc = $query->{'arc'} )
+    {
+	$txt .= "  QArc:\n";
+	foreach my $key ( keys %$qarc )
+	{
+	    $txt .= "    $key:\n";
+
+	    if( ref $qarc->{$key} )
+	    {
+		foreach my $val (@{$qarc->{$key}} )
+		{
+		    my $valout = $val;
+		    if( ref $val )
+		    {
+			if( UNIVERSAL::can($val, 'sysdesig') )
+			{
+			    $valout = $val->sysdesig;
+			}
+			else
+			{
+			    $valout = datadump( $val );
+			}
+		    }
+		    my $len1 = length($valout);
+		    my $len2 = bytes::length($valout);
+		    $txt .= sprintf "      $valout (%d/%d)\n", $len1, $len2;
+		}
+	    }
+	    else
+	    {
+		my $valout = $qarc->{$key};
+		my $len1 = length($valout);
+		my $len2 = bytes::length($valout);
+		$txt .= sprintf "      $valout (%d/%d)\n", $len1, $len2;
+	    }
+	}
+    }
+
     $txt .= "\n";
     return $txt;
 }
