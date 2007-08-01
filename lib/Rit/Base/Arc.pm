@@ -321,8 +321,8 @@ sub create
 	else
 	{
 	    $rec->{'valtype'} = $pred->valtype->id;
-	    debug("Setting valtype to ". $rec->{'valtype'} ." from pred ".
-		  $pred->plain);
+#	    debug("Setting valtype to ". $rec->{'valtype'} ." from pred ".
+#		  $pred->plain);
 	}
     }
 
@@ -2692,7 +2692,7 @@ sub set_value
     my $value_old = $arc->value          || is_undef; # Is object
 
     my $coltype_new = $coltype_old;
-    if( $value_new->is_value_node )
+    if( $value_new->is_value_node($args) )
     {
 	$coltype_new = 'obj';
     }
@@ -2703,9 +2703,9 @@ sub set_value
 
     if( $DEBUG )
     {
-	debug "  value_old: $value_old\n";
-	debug "  value_new: $value_new\n";
-	debug "  coltype  : $coltype_new\n";
+	debug "  value_old: $value_old";
+	debug "  value_new: ".$value_new->sysdesig($args);
+	debug "  coltype  : $coltype_new";
     }
 
 
