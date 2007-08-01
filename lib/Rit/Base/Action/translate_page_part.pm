@@ -66,7 +66,7 @@ sub handler
 				valtype => $pred->valtype,
 			       }, $args);
 
-	$n->add({$pred => $value}, $args);
+	$n->add({ $pred->plain => $value }, $args);
     }
 
     $res->autocommit;
