@@ -942,12 +942,14 @@ sub execute
 
     $search->{'result'} = Rit::Base::List->new($result);
 
-
-    # TODO: Analyze this! -- may find the wrong nodes
-    # Only sane for searches on arcs
+    # Filter out arcs?
     if( my $uap = $args->{unique_arcs_prio} )
     {
-#	confess "Not implemented - ".datadump($result,1);
+	if( $search->{'query'}{'arc'} )
+	{
+	    $search->{'result'} =
+	      $search->{'result'}->unique_arcs_prio($uap);
+	}
     }
 
     debug(3, "Got result ".datadump($search->{'result'}));
