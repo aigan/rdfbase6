@@ -611,12 +611,12 @@ sub sorted
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
 	    my $method = $sortargs->[$i]{'on'};
-	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
+#	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
 		$val = $val->$part;
-		debug sprintf("      -> %s", $val);
+#		debug sprintf("      -> %s", $val);
 	    }
 
 	    my $coltype = $sortargs->[$i]->{'coltype'} || '';
