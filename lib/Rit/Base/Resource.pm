@@ -1408,7 +1408,8 @@ Returns: boolean
 
 sub is_value_node
 {
-    if( shift->first_prop('value', @_) )
+    my( $node, $args ) = @_;
+    if( $node->first_prop('value', undef, $args) )
     {
 	return 1;
     }
@@ -3254,17 +3255,17 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if( $desig = $node->label )
-    {
-	# That's good
-    }
-    elsif( $node->first_prop('name',{},$args)->defined )
+    if( $node->first_prop('name',{},$args)->defined )
     {
 	$desig = $node->first_prop('name',{},$args)
     }
     elsif( $node->first_prop('name_short',{},$args)->defined )
     {
 	$desig = $node->first_prop('name_short',{},$args)
+    }
+    elsif( $desig = $node->label )
+    {
+	# That's good
     }
     elsif( $node->value->defined )
     {
@@ -4415,6 +4416,8 @@ sub remove
     my( $node, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
     my $changes_prev = $res->changes;
+
+    debug "Removing resource ".$node->sysdesig;
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
