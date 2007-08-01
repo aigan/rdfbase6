@@ -611,34 +611,44 @@ sub sorted
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
 	    my $method = $sortargs->[$i]{'on'};
-#	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
+	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
 		$val = $val->$part;
-#		debug sprintf("      -> %s", $val);
-	    }
-
-	    # Make it a string
-	    if( UNIVERSAL::isa $val, 'Rit::Base::List' )
-	    {
-		$val = $val->loc;
+		debug sprintf("      -> %s", $val);
 	    }
 
 	    my $coltype = $sortargs->[$i]->{'coltype'} || '';
 	    if( $coltype eq 'valfloat' )
 	    {
+		if( UNIVERSAL::isa $val, 'Rit::Base::List' )
+		{
+		    $val = List::Util::min( $val->as_array );
+		}
+
 		# Make it an integer
 		$val ||= 0;
 	    }
 	    elsif( $coltype eq 'valdate' )
 	    {
+		if( UNIVERSAL::isa $val, 'Rit::Base::List' )
+		{
+		    $val = List::Util::min( $val->as_array );
+		}
+
 		# Infinite future date
 		use DateTime::Infinite;
 		$val ||= DateTime::Infinite::Future->new;
+		debug "Date value is $val";
 	    }
 	    elsif( $coltype eq 'valtext' )
 	    {
+		if( UNIVERSAL::isa $val, 'Rit::Base::List' )
+		{
+		    $val = $val->loc;
+		}
+
 		$val ||= '';
 	    }
 
