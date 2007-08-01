@@ -182,7 +182,7 @@ sub create
 
     my $rec = {};
 
-    ##################### common_id == id
+    ##################### common == id
     if( $props->{'common'} ) # used in block EXISTING
     {
 	$rec->{'id'}  = $props->{'common'};
@@ -311,11 +311,12 @@ sub create
 	    my $revpred = $revarc->pred;
 	    $rec->{'valtype'} = $revpred->valtype->id;
 
-	    debug("Setting valtype to ". $rec->{'valtype'} ." for value from revpred ".
-		  $revpred->plain);
+#	    debug("Setting valtype to ". $rec->{'valtype'} .
+#		  " for value from revpred ".
+#		  $revpred->plain);
 
 	    confess("I won't make a value resource with a resource as value.")
-	      if( $props->{'obj'} );
+	      if $props->{'obj'};
 	}
 	else
 	{
@@ -2581,8 +2582,8 @@ sub create_removal
     # Should only create removals for submitted or active arcs
 
     return Rit::Base::Arc->create({
-				   common_id   => $arc->common_id,
-				   replaces_id => $arc->id,
+				   common      => $arc->common_id,
+				   replaces    => $arc->id,
 				   active      => 0,
 				   subj        => $arc->{'subj'},
 				   pred        => $arc->{'pred'},
@@ -2713,8 +2714,8 @@ sub set_value
 	unless( $arc->is_new )
 	{
 	    my $new = Rit::Base::Arc->create({
-					      common_id   => $arc->common_id,
-					      replaces_id => $arc->id,
+					      common      => $arc->common_id,
+					      replaces    => $arc->id,
 					      active      => 0,
 					      subj        => $arc->{'subj'},
 					      pred        => $arc->{'pred'},
@@ -2942,8 +2943,8 @@ sub resubmit
     }
 
     my $new = Rit::Base::Arc->create({
-				      common_id   => $arc->common_id,
-				      replaces_id => $arc->id,
+				      common      => $arc->common_id,
+				      replaces    => $arc->id,
 				      active      => 0,
 				      submitted   => 1,
 				      subj        => $arc->{'subj'},
@@ -3364,7 +3365,7 @@ sub init
 
 # NOTE:
 # $arc->{'id'}        == $rec->{'ver'}
-# $arc->{'common_id'} == $rec->{'id'}
+# $arc->{'common'}    == $rec->{'id'}
 
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
