@@ -45,6 +45,7 @@ WriteMakefile(
 	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
+	          'List::Util'                 => 1.18,
 	      },
 	      'dist'          =>
 	      {
