@@ -258,11 +258,13 @@ sub get_by_id
 
   6. $n->find_by_label( "#$id", \%args )
 
-  7. $n->find_by_label( $name, \%args );
+  7. $n->find_by_label( $label, \%args );
 
-  8. $n->find_by_label( $id, \%args );
+  8. $n->find_by_label( $name, \%args );
 
-  9. $n->find_by_label( $list );
+  9. $n->find_by_label( $id, \%args );
+
+ 10. $n->find_by_label( $list );
 
 C<$node> is a node object.
 
@@ -283,7 +285,7 @@ Supported args are
   arclim
 
 If C<$datatype> is defined and anyting other than C<obj>, the text
-value is returned for cases C<7> and C<8>.  The other cases is provided for
+value is returned for cases C<8> and C<9>.  The other cases is provided for
 supporting C<value> nodes.  This limits the possible content of a
 literal string if this method is called with a string as value.
 
@@ -382,7 +384,7 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # 9. obj as list
+    # 10. obj as list
     #
     elsif( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::List') )
     {
@@ -464,20 +466,27 @@ sub find_by_label
 	# Keep @new empty
     }
     #
-    # 7. obj as name of obj
+    # 7. obj as label of obj or 8. obj as name of obj
     #
     elsif( $val !~ /^\d+$/ )
     {
-	debug 3, "  obj as name of obj";
+	debug 3, "  obj as label or name of obj";
 	# TODO: Handle empty $val
 
-	# Used to use find_simple.  But this is a general find
-	# function and can not assume the simple case
+	eval # May throw exception
+	{
+	    @new = $this->get_by_constant_label($val);
+	};
 
-	@new = $this->find({ name_clean => $val }, $args)->as_array;
+	unless( @new )
+	{
+	    # Used to use find_simple.  But this is a general find
+	    # function and can not assume the simple case
+	    @new = $this->find({ name_clean => $val }, $args)->as_array;
+	}
     }
     #
-    # 8. obj as obj id
+    # 9. obj as obj id
     #
     else
     {
@@ -2518,7 +2527,7 @@ sub has_value
     my $clean = $args->{'clean'} || 0;
 
     my $pred;
-    if( ref $pred_name )
+    if( ref $pred_name ) # Not an option...
     {
 	if( UNIVERSAL::isa( $pred_name, 'Rit::Base::Literal') )
 	{
@@ -3015,7 +3024,7 @@ sub meets_proplim
 	    }
 	    else
 	    {
-		# debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
+#		debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
 		next PRED # Check next if this test pass
 		  if $node->has_value({$pred=>$target_value}, $args );
 	    }
