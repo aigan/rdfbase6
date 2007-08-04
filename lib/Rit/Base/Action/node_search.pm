@@ -28,7 +28,7 @@ sub handler
 
     my $query = $req->q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
-    length $query or throw('incomplete', "Nått får du väl skriva ändå va?");
+    length $query or throw('incomplete', "Query empty");
 
     my $props = {};
 
@@ -41,9 +41,20 @@ sub handler
 	$props->{$key} = $value;
     }
 
-    my $search = Rit::Base::Search->new();
-    $search->modify($props);
-    $search->execute;
+    my $args = {};
+    if( my $arclim_in = delete $props->{'arclim'} )
+    {
+	unless( $arclim_in =~ /^[\[\'\]\_a-z,]+$/ )
+	{
+	    throw('validation', "arclim format invalid");
+	}
+
+	$args->{'arclim'} = eval $arclim_in;
+    }
+
+    my $search = Rit::Base::Search->new($args);
+    $search->modify($props, $args);
+    $search->execute($args);
     $search_col->add($search);
 
 
