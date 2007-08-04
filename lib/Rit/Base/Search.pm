@@ -662,7 +662,11 @@ sub modify
 	{
 	    $search->order_add( \@values );
 	}
-	elsif( $key =~ m/^(subj|pred|obj|coltype|value)$/ )
+        elsif( $key =~ m/^(id|obj|value|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
+	{
+	    # Handled in second fase
+	}
+	elsif( $key =~ m/^(subj|pred|coltype)$/ )
 	{
 	    my $qarc = $search->{'query'}{'arc'} ||= {coltype=>undef};
 
@@ -852,7 +856,7 @@ sub modify
     # Is this an arc search?
     if( my $qarc = $search->{'query'}{'arc'} )
     {
-	debug "This is an arc search";
+#	debug "This is an arc search";
 	my $values;
 	if( $props->{'obj'} )
 	{
@@ -881,6 +885,35 @@ sub modify
 	    }
 
 	    $qarc->{$coltype} = $values;
+	}
+
+	if( $props->{'created_by'} )
+	{
+	    $qarc->{'created_by'} = parse_values($props->{'created_by'});
+	}
+
+	if( $props->{'id'} )
+	{
+	    $qarc->{'id'} = parse_values($props->{'id'});
+	}
+
+	foreach my $key (split /\|/, "created|updated|owned_by|read_access|write_access|updated_by")
+	{
+	    if( $props->{$key} )
+	    {
+		confess "Search key $key not implemented";
+	    }
+	}
+
+    }
+    else
+    {
+	foreach my $key (split /\|/, "id|created|updated|owned_by|read_access|write_access|created_by|updated_by")
+	{
+	    if( $props->{$key} )
+	    {
+		confess "Search key $key not implemented";
+	    }
 	}
     }
 
@@ -935,7 +968,7 @@ sub execute
 	{
 #	    debug datadump($search->{'prop'}, 2);
 	    debug 0, $search->sysdesig;
-	    debug 2, $search->sql_sysdesig;
+	    debug 0, $search->sql_sysdesig;
 	}
 	$result = $search->get_result($sql, $values, 15); # 10
     }
@@ -2016,6 +2049,14 @@ sub elements_arc
     my $arclim = $qarc->{'arclim'} || $search->arclim;
     my $args = {};
 
+    if( my $vals = $qarc->{'id'} )
+    {
+	my $part = join " or ", map "(ver=?)", @$vals;
+	push @parts, "($part)";
+	push @values, @$vals;
+	$prio = 1;
+    }
+
     if( my $vals = $qarc->{'subj'} )
     {
 	my $part = join " or ", map "(subj=?)", @$vals;
@@ -2029,6 +2070,15 @@ sub elements_arc
 	my $part = join " or ", map "(pred=?)", @$vals;
 	push @parts, "($part)";
 	push @values, @$vals;
+    }
+
+    if( my $vals = $qarc->{'created_by'} )
+    {
+	my $part = join " or ", map "(created_by=?)", @$vals;
+	push @parts, "($part)";
+	push @values, @$vals;
+
+	$prio = min( $prio, 5 );
     }
 
     if( my $coltype = $qarc->{'coltype'} )
@@ -2054,11 +2104,13 @@ sub elements_arc
 	if( $arclim_sql )
 	{
 	    $where .= " and " . $arclim_sql;
+	    $prio = min($prio, $arclim->sql_prio($args));
 	}
     }
     else
     {
 	$where = $arclim->sql($args);
+	$prio = min($prio, $arclim->sql_prio($args));
     }
 
     push @element,
@@ -2777,7 +2829,7 @@ sub sysdesig
 	    {
 		foreach my $val (@{$qarc->{$key}} )
 		{
-		    my $valout = $val;
+		    my $valout = $val||'';
 		    if( ref $val )
 		    {
 			if( UNIVERSAL::can($val, 'sysdesig') )
@@ -2796,7 +2848,7 @@ sub sysdesig
 	    }
 	    else
 	    {
-		my $valout = $qarc->{$key};
+		my $valout = $qarc->{$key}||'';
 		my $len1 = length($valout);
 		my $len2 = bytes::length($valout);
 		$txt .= sprintf "      $valout (%d/%d)\n", $len1, $len2;
