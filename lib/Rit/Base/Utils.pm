@@ -407,7 +407,7 @@ sub parse_query_props
     my $props = {};
 
     trim(\$prop_text);
-    foreach my $pair ( split /\s*,\s*/, $prop_text )
+    foreach my $pair ( split /\s*[,\n]\s*/, $prop_text )
     {
 	my($prop_name, $value) = split(/\s+/, $pair, 2);
 	trim(\$prop_name);
@@ -502,7 +502,6 @@ This would create a node with the properties
   {
     is_of_language => 'sv (code)',
     value    => 'Sverige',
-    datatype => $text,
   }
 
 And then return the hashref
