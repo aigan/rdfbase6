@@ -2030,60 +2030,60 @@ sub vacuum
 	    }
 	}
 
-	if( $arc->inactive and ( $arc->active_version
-				 or $arc->replaced_by->activated ) )
-	{
-	    if( $arc->replaced_by and
-		( not $arc->activated or
-		  not $arc->deactivated or
-		  not $arc->activated_by
-		) )
-	    {
-		my $updated = $arc->activated ||
-		  $arc->deactivated ||
-		    $arc->updated;
-		my $activated_by = $arc->activated_by;
-		unless( $activated_by )
-		{
-		    if( my $replaced_by = $arc->replaced_by->get_first_nos )
-		    {
-			$activated_by = $replaced_by->activated_by;
-		    }
-		}
-
-		unless( $activated_by )
-		{
-		    if( my $aarc = $arc->active_version )
-		    {
-			$activated_by = $aarc->activated_by;
-		    }
-		}
-
-		unless( $activated_by )
-		{
-		    $activated_by = $arc->created_by;
-		}
-
-		my $dbix = $Rit::dbix;
-		my $date_db = $dbix->format_datetime($updated);
-
-		my $st = "update arc set deactivated=?, activated=?, activated_by=? where ver=?";
-		my $sth = $dbix->dbh->prepare($st);
-		$sth->execute( $date_db, $date_db, $activated_by->id, $arc->id );
-
-		$arc->{'arc_deactivated'} = $updated;
-		$arc->{'arc_activated'} = $updated;
-		$arc->{'activated_by'} = $activated_by->id;
-		$arc->{'activated_by_obj'} = $activated_by;
-
-		cache_update;
-		send_cache_update({ change => 'arc_updated',
-				    arc_id => $arc->id,
-				  });
-
-		$res->changes_add;
-	    }
-	}
+#	if( $arc->inactive and ( $arc->active_version
+#				 or $arc->replaced_by->activated ) )
+#	{
+#	    if( $arc->replaced_by and
+#		( not $arc->activated or
+#		  not $arc->deactivated or
+#		  not $arc->activated_by
+#		) )
+#	    {
+#		my $updated = $arc->activated ||
+#		  $arc->deactivated ||
+#		    $arc->updated;
+#		my $activated_by = $arc->activated_by;
+#		unless( $activated_by )
+#		{
+#		    if( my $replaced_by = $arc->replaced_by->get_first_nos )
+#		    {
+#			$activated_by = $replaced_by->activated_by;
+#		    }
+#		}
+#
+#		unless( $activated_by )
+#		{
+#		    if( my $aarc = $arc->active_version )
+#		    {
+#			$activated_by = $aarc->activated_by;
+#		    }
+#		}
+#
+#		unless( $activated_by )
+#		{
+#		    $activated_by = $arc->created_by;
+#		}
+#
+#		my $dbix = $Rit::dbix;
+#		my $date_db = $dbix->format_datetime($updated);
+#
+#		my $st = "update arc set deactivated=?, activated=?, activated_by=? where ver=?";
+#		my $sth = $dbix->dbh->prepare($st);
+#		$sth->execute( $date_db, $date_db, $activated_by->id, $arc->id );
+#
+#		$arc->{'arc_deactivated'} = $updated;
+#		$arc->{'arc_activated'} = $updated;
+#		$arc->{'activated_by'} = $activated_by->id;
+#		$arc->{'activated_by_obj'} = $activated_by;
+#
+#		cache_update;
+#		send_cache_update({ change => 'arc_updated',
+#				    arc_id => $arc->id,
+#				  });
+#
+#		$res->changes_add;
+#	    }
+#	}
 
 
 	debug "  Reset clean";
