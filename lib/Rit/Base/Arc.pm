@@ -62,6 +62,30 @@ use overload 'cmp'  => sub{0};
 use overload 'ne'   => sub{1};
 use overload 'eq'   => sub{0}; # Use method ->equals()
 
+our %DYNAMIC_PRED =
+  (
+   subj => 'obj',
+   pred => 'obj',
+   value => 'value',
+   obj  => 'obj',
+   value_deisg => 'valtext',
+   created => 'valdate',
+   updated => 'valdate',
+   activated => 'valdate',
+   deactivated => 'valdate',
+   deactivated_by => 'obj',
+   unsubmitted => 'valdate',
+   updated_by => 'obj',
+   activated_by => 'obj',
+   created_by => 'obj',
+   version_id => 'valfloat',
+   replaces => 'obj',
+   source => 'obj',
+   read_access => 'obj',
+   write_access => 'obj',
+  );
+
+
 =head1 DESCRIPTION
 
 Represents arcs.
@@ -2006,6 +2030,61 @@ sub vacuum
 	    }
 	}
 
+	if( $arc->inactive and ( $arc->active_version
+				 or $arc->replaced_by->activated ) )
+	{
+	    if( $arc->replaced_by and
+		( not $arc->activated or
+		  not $arc->deactivated or
+		  not $arc->activated_by
+		) )
+	    {
+		my $updated = $arc->activated ||
+		  $arc->deactivated ||
+		    $arc->updated;
+		my $activated_by = $arc->activated_by;
+		unless( $activated_by )
+		{
+		    if( my $replaced_by = $arc->replaced_by->get_first_nos )
+		    {
+			$activated_by = $replaced_by->activated_by;
+		    }
+		}
+
+		unless( $activated_by )
+		{
+		    if( my $aarc = $arc->active_version )
+		    {
+			$activated_by = $aarc->activated_by;
+		    }
+		}
+
+		unless( $activated_by )
+		{
+		    $activated_by = $arc->created_by;
+		}
+
+		my $dbix = $Rit::dbix;
+		my $date_db = $dbix->format_datetime($updated);
+
+		my $st = "update arc set deactivated=?, activated=?, activated_by=? where ver=?";
+		my $sth = $dbix->dbh->prepare($st);
+		$sth->execute( $date_db, $date_db, $activated_by->id, $arc->id );
+
+		$arc->{'arc_deactivated'} = $updated;
+		$arc->{'arc_activated'} = $updated;
+		$arc->{'activated_by'} = $activated_by->id;
+		$arc->{'activated_by_obj'} = $activated_by;
+
+		cache_update;
+		send_cache_update({ change => 'arc_updated',
+				    arc_id => $arc->id,
+				  });
+
+		$res->changes_add;
+	    }
+	}
+
 
 	debug "  Reset clean";
 	$arc->reset_clean($args);
@@ -2117,13 +2196,90 @@ sub remove_duplicates
 
   $a->has_value( $val, \%args )
 
-Calls L</value_equals>
+  $a->has_value({ $pred => $value }, \%args )
+
+If given anything other than a hashref, calls L</value_equals> and returns the result.
+
+
 
 =cut
 
 sub has_value
 {
-    shift->value_equals(@_);
+    my( $arc, $val_in, $args_in ) = @_;
+
+    unless( ref $val_in and ref $val_in eq 'HASH' )
+    {
+	return $arc->value_equals($val_in, $args_in);
+    }
+
+    my( $args ) = parse_propargs($args_in);
+
+    my( $pred_name, $value ) = each( %$val_in );
+    my $target;
+
+    if( $DYNAMIC_PRED{ $pred_name } )
+    {
+	$target = $arc->$pred_name();
+
+#	debug "has_value TARGET is ".$target->sysdesig;
+    }
+
+    unless( $target )
+    {
+	return $arc->SUPER::has_value($val_in, $args);
+    }
+
+    my $coltype = $DYNAMIC_PRED{$pred_name};
+    $coltype = undef if $coltype eq 'value';
+    my $args_coltype =
+    {
+     %$args,
+     coltype => $coltype,
+    };
+    my $R = Rit::Base->Resource;
+
+    if( ref $value eq 'HASH' ) # Sub query
+    {
+	if( $target->find($value, $args)->size )
+	{
+	    return $arc;
+	}
+	return 0;
+    }
+
+    if( ref $value eq 'ARRAY' ) # $value holds alternative values
+    {
+	$value = Rit::Base::List->new($value);
+    }
+
+    if( UNIVERSAL::isa( $value, 'Para::Frame::List' ) )
+    {
+	my( $val_in, $error ) = $value->get_first;
+	while(! $error )
+	{
+	    my $val_parsed = $R->get_by_label($val_in, $args_coltype);
+	    if( $target->equals( $val_parsed, $args ) )
+	    {
+		return $arc;
+	    }
+	}
+	continue
+	{
+	    ( $val_in, $error ) = $value->get_next;
+	};
+	return 0;
+    }
+
+#    debug "CHECKS if target is equal to ".query_desig($value);
+
+    my $val_parsed = $R->get_by_label($value, $args_coltype);
+    if( $target->equals( $val_parsed, $args ) )
+    {
+	return $arc;
+    }
+
+    return 0;
 }
 
 #######################################################################
@@ -2203,7 +2359,16 @@ sub value_equals
 	    return 0;
 	}
 
-	$val2 = $val2->plain if ref $val2;
+	if( ref $val2 )
+	{
+	    debug "Calling plain for value $val2";
+	    if( ref $val2 eq 'HASH' )
+	    {
+		confess query_desig( $val2 );
+	    }
+
+	    $val2 = $val2->plain;
+	}
 
 	if( $clean )
 	{
@@ -2494,6 +2659,23 @@ sub remove
 	    {
 		$arc->set_implicit(1);
 		return 0;
+	    }
+	}
+
+	unless( $create_removal )
+	{
+	    foreach my $rarc ( $arc->replaced_by->nodes )
+	    {
+		if( $rarc->is_removal )
+		{
+		    unless( $rarc->replaced_by->size )
+		    {
+			$rarc->remove({%$args, force => 1});
+			next;
+		    }
+		}
+
+		$create_removal = 1;
 	    }
 	}
 
@@ -2886,19 +3068,21 @@ sub submit
 
     return 0 if $arc->is_removed;
 
+    my $aid = $arc->id;
+
     unless( $arc->inactive )
     {
-	throw('validation', "Arc is already active");
+	throw('validation', "Arc $aid is already active");
     }
 
     if( $arc->submitted )
     {
-	throw('validation', "Arc is already submitted");
+	throw('validation', "Arc $aid is already submitted");
     }
 
     if( $arc->old )
     {
-	throw('validation', "Arc is old");
+	throw('validation', "Arc $aid is old");
     }
 
     my $dbix = $Rit::dbix;
@@ -3016,16 +3200,18 @@ sub activate
 
     return 0 if $arc->is_removed;
 
+    my $aid = $arc->id;
+
     unless( $args->{'force'} )
     {
 	unless( $arc->inactive )
 	{
-	    throw('validation', "Arc is already active");
+	    throw('validation', "Arc $aid is already active");
 	}
 
 	unless( $arc->submitted )
 	{
-	    throw('validation', "Arc is not yet submittes");
+	    throw('validation', "Arc $aid is not yet submittes");
 	}
     }
 
@@ -3047,7 +3233,7 @@ sub activate
 
 	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $arc->id );
+	$sth->execute( $date_db, $date_db, $activated_by_id, $aid );
 
 	$arc->{'arc_updated'} = $updated;
 	$arc->{'arc_activated'} = $updated;
@@ -3058,9 +3244,19 @@ sub activate
     }
     else # This is a REMOVAL arc
     {
+	if( my $rarc = $arc->replaces )
+	{
+	    if( $rarc->old )
+	    {
+		debug "Target arc already removed";
+		$arc->remove($args);
+		return 0;
+	    }
+	}
+
 	my $st = "update arc set updated=?, activated=?, activated_by=?, deactivated=?, active='false', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $arc->id );
+	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $aid );
 
 	$arc->{'arc_updated'} = $updated;
 	$arc->{'arc_deactivated'} = $updated;
@@ -3089,7 +3285,7 @@ sub activate
     $arc->schedule_check_create;
     cache_update;
     send_cache_update({ change => 'arc_updated',
-			arc_id => $arc->id,
+			arc_id => $aid,
 		      });
 
 
