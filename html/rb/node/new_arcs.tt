@@ -2,39 +2,7 @@
 	menu="/admin/create.tt"
         level = 20
 %]
-
-[% all = q.param('all') %]
-
-[% order = q.param('order') || 'id' %]
-[% direction = q.param('direction') %]
-
-
-<p>[
-[% IF all %]
-   [% jump('View your own arcs', me, all=0) %]
-[% ELSE %]
-   [% lim = 'created_by_me' %]
-   [% jump('View all arcs', me, all=1) %]
-[% END %]
-]</p>
-
-[* FOREACH state IN 'new', 'submitted' *]
-
-<h2>[* state *] arcs</h2>
-<table class="admin">
-<tr><th>[% sort('id', 'id') %]
-    <th>[% sort('Created', 'created') %]
-    <th>[% sort('Subject', 'subj.desig') %]
-    <th>[% sort('Predicate', 'pred.desig') %]
-    <th>[% sort('Object', 'value_desig') %]
-
-[% FOREACH arc IN find({is='arc'},{arclim=[['[*state*]',lim]]}).sorted(order, direction) %]
-   [% tr2 %]
-      <td>[% jump(arc.id, arc.form_url) %]</td></td>
-      <td>[% arc.created %]</td>
-      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
-      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
-      <td>
+[* BLOCK value_field_html *]
       [% IF arc.is_removal %]
          <span style="text-decoration:line-through; color:red">
          [% oarc = arc.replaces %]
@@ -51,9 +19,87 @@
             [% arc.value | html %]
          [% END %]
       [% END %]
-      </td>
+[* END *]
+
+<p>Displays arcs with the status new or submitted
+
+[% tuid = q.param('tuid') %]
+[% DEFAULT tuid = u.id %]
+
+<p><select name="tuid">
+   <option value="-1">-- Select --</option>
+[% FOREACH person IN find({is='arc'},{arclim=['new','submitted']}).created_by.uniq.sorted %]
+   <option value="[% person.id %]" [% IF tuid==person.id;" selected";END %]>[% person.desig %]</option>
+[% END %]
+   <option value="-1" [% IF tuid==-1;" selected";END %]>All</option>
+</select>
+
+[% submit('Show') %]
+
+[% filter_expanded = 'none'; IF q.param('filter'); filter_expanded = 'block'; END  %]
+[% WRAPPER imgexpand label="Custom filter" paraframe_display=filter_expanded %]
+<p>[% textarea('filter', undef, rows=5, cols=40) %]</p>
+[% END %]
+
+[% IF tuid == -1; all=1; END %]
+[% order = q.param('order') || 'id' %]
+[% direction = q.param('direction') %]
+
+
+[* FOREACH state IN ['new', 'submitted'] *]
+
+<h2>[* state *] arcs</h2>
+<table class="admin">
+
+[% IF all %]
+<tr><th>Do
+    <th>[% sort('Created by', 'created_by') %]
+    <th>[% sort('id', 'id') %]
+    <th>[% sort('Created', 'created') %]
+    <th>[% sort('Subject', 'subj.desig') %]
+    <th>[% sort('Predicate', 'pred.desig') %]
+    <th>[% sort('Object', 'value_desig') %]
+
+[% FOREACH arc IN find({is='arc'},{arclim=['[*state*]']}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
+   [% tr2 %]
+      <td>[% checkbox("arc_$arc.id",1,1) %]
+      <td>[% jump(arc.created_by.desig, arc.created_by.form_url) %]</td>
+      <td>[% jump(arc.id, arc.form_url) %]</td>
+      <td>[% arc.created %]</td>
+      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
+      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
+      <td>[* PROCESS value_field_html *]</td>
    </tr>
+[% END %]
+[% ELSE %]
+<tr><th>Do
+    <th>[% sort('id', 'id') %]
+    <th>[% sort('Created', 'created') %]
+    <th>[% sort('Subject', 'subj.desig') %]
+    <th>[% sort('Predicate', 'pred.desig') %]
+    <th>[% sort('Object', 'value_desig') %]
+
+[% FOREACH arc IN find({is='arc', created_by=tuid},{arclim=['[*state*]']}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
+   [% tr2 %]
+      <td>[% checkbox("arc_$arc.id",1,1) %]
+      <td>[% jump(arc.id, arc.form_url) %]</td></td>
+      <td>[% arc.created %]</td>
+      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
+      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
+      <td>[* PROCESS value_field_html *]</td>
+   </tr>
+[% END %]
 [% END %]
 </table>
 
 [* END *]
+
+<div style="margin-top:2em">
+<p>Execute this action on all marked arcs above:</p>
+
+<div style="float:right">[% go('Delete',me, 'arc_list_delete') %]</div>
+<p>
+[% go('Activate',me, 'arc_list_activate') %]
+[% go('Vacuum',me, 'arc_list_vacuum') %]
+</p>
+</div>
