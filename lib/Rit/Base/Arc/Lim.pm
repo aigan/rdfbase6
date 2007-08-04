@@ -321,7 +321,7 @@ sub sql
 
 	if(  $_ & $LIM{'new'} )
 	{
-	    push @crit, "(${pf}active is false and ${pf}submitted is false and ${pf}activated is null )";
+	    push @crit, "(${pf}active is false and ${pf}submitted is false and ${pf}deactivated is null )";
 	}
 
 	if(  $_ & $LIM{'created_by_me'} )
