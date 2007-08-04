@@ -14,7 +14,7 @@
 
 [% input('query_row','', size=60) %]<br>
 
-[% textarea('query') %]
+[% textarea('query', undef, cols=60, rows=10) %]
 
 [% hidden("search_form", "$home/rb/node/search.tt") %]
 [% hidden("search_result", "$home/rb/node/list.tt") %]
@@ -24,4 +24,5 @@
 <p>Examples:
 
 <p>name_clean hotel<br>
-private_ne 1
+private_ne 1<br>
+arclim ['not_old']
