@@ -11,12 +11,15 @@
 [% id = arc_id %]
 [% arc = get(arc_id) %]
 [% node = arc %]
-[% hidden('id', arc.subj.id) %]
-[% hidden('arc_id', arc.id)  %]
 
 <h1>Arc [% arc.sysdesig | html %]</h1>
 
 <p>[% PROCESS node_menu.tt %]</p>
+
+[% IF arc.is_arc %]
+
+[% hidden('id', arc.subj.id) %]
+[% hidden('arc_id', arc.id)  %]
 
 [% IF arc.inactive %]
    [% IF arc.deactivated %]
@@ -307,6 +310,13 @@
 </tr>
 [% END %]
 </table>
+
+[% ELSE %]
+
+<p>This is <strong>not</strong> an arc!</p>
+
+[% END %]
+
 
 [%
 BLOCK flags;
