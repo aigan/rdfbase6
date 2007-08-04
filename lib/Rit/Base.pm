@@ -120,6 +120,7 @@ sub init
      C               => Rit::Base::Constants->new,
      timediff        => \&Para::Frame::Utils::timediff,
      timeobj         => sub{ Rit::Base::Time->get( @_ ) },
+     parse_query_props => \&Rit::Base::Utils::parse_query_props,
     };
     Para::Frame->add_global_tt_params( $global_params );
 
