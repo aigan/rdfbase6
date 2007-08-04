@@ -22,6 +22,7 @@ Rit::Base::Arc::Lim
 use strict;
 
 use Carp qw( cluck confess croak carp shortmess );
+use List::Util;
 
 BEGIN
 {
@@ -405,6 +406,66 @@ sub sql
     {
 	return "${pf}active is true";
     }
+}
+
+
+#######################################################################
+
+=head2 sql_prio
+
+  $this->sql_prio( $arclim, \%args )
+
+Returns: The sql prio for use in L<Rit::Base::Search>
+
+=cut
+
+sub sql_prio
+{
+    my( $arclim, $args ) = @_;
+
+    $args ||= {};
+
+    $arclim ||= [];
+
+    unless( @$arclim )
+    {
+	return 9;
+    }
+
+    my @alt;
+
+    foreach( @$arclim )
+    {
+	my $prio = 9;
+	if( $_ & $LIM{'submitted'} )
+	{
+	    $prio = List::Util::min( $prio, 3 );
+	}
+
+	if(  $_ & $LIM{'new'} )
+	{
+	    $prio = List::Util::min( $prio, 4 );
+	}
+
+	if(  $_ & $LIM{'created_by_me'} )
+	{
+	    $prio--;
+	}
+
+	if(  $_ & $LIM{'old'} )
+	{
+	    $prio = List::Util::min( $prio, 5 );
+	}
+
+	if( $_ & $LIM{'removal'} )
+	{
+	    $prio = List::Util::min( $prio, 5 );
+	}
+
+	push @alt, $prio;
+    }
+
+    return List::Util::max(@alt);
 }
 
 
