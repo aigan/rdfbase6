@@ -5011,7 +5011,8 @@ Supported args are:
 
 sub add_note
 {
-    my( $node, $note, $args ) = @_;
+    my( $node, $note, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     $note =~ s/\n+$//; # trim
     unless( length $note )
