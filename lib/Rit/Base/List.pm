@@ -1140,6 +1140,28 @@ sub nodes
 
 #######################################################################
 
+=head2 plain
+
+  $l->plain()
+
+Just as L</nodes>.
+
+=cut
+
+sub plain
+{
+    if( wantarray )
+    {
+	return @{shift->as_list(@_)};
+    }
+    else
+    {
+	return shift->as_list(@_);
+    }
+}
+
+#######################################################################
+
 =head2 is_true
 
   $l->is_true
