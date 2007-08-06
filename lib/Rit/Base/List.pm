@@ -640,7 +640,7 @@ sub sorted
 		# Infinite future date
 		use DateTime::Infinite;
 		$val ||= DateTime::Infinite::Future->new;
-		debug "Date value is $val";
+		#debug "Date value is $val";
 	    }
 	    elsif( $coltype eq 'valtext' )
 	    {
