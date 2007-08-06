@@ -908,7 +908,25 @@ sub modify
     }
     else
     {
-	foreach my $key (split /\|/, "id|created|updated|owned_by|read_access|write_access|created_by|updated_by")
+	my $values;
+	if( $props->{'id'} )
+	{
+	    $values = parse_values($props->{'id'});
+	    my $pred = Rit::Base::Pred->get('id');
+	    $search->add_prop({
+		rev => 0,
+		pred => Rit::Base::List->new([$pred]),
+		type => 'valfloat',
+		match => 'eq',
+		clean => 0,
+		values => $values,
+		prio => 1,   # Low prio first
+		private => 0,
+		arclim => undef,
+	    });
+	}
+
+	foreach my $key (split /\|/, "created|updated|owned_by|read_access|write_access|created_by|updated_by")
 	{
 	    if( $props->{$key} )
 	    {
