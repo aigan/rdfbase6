@@ -2,18 +2,26 @@
 package Rit::Base::Action::update_cache;
 
 use strict;
+
 use Para::Frame::Utils qw( debug );
+
+use Rit::Base::Resource;
 
 sub handler
 {
     my( $req, $params ) = @_;
 
-    debug "update cache!";
+#    debug "update cache!";
 
     if( $params->{'change'} eq 'arc_created' )
     {
 	my $id = $params->{'arc_id'};
-	my $arc = Rit::Base::Arc->get( $id );
+	my $arc = Rit::Base::Resource->get( $id );
+
+	unless( $arc->is_arc )
+	{
+	    return "Arc $id not found";
+	}
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
@@ -22,17 +30,22 @@ sub handler
     }
     elsif( $params->{'change'} eq 'arc_removed' )
     {
-	# also from remove_duplicates
+	if( $params->{'arc_id'} )
+	{
+	    my $arc = Rit::Base::Resource->get( $params->{'arc_id'} );
+
+	    unless( $arc->is_arc )
+	    {
+		return "Arc $params->{arc_id} not found";
+	    }
+
+	    $arc->initiate_cache;
+	}
+
 	if( $params->{'subj_id'} )
 	{
 	    my $subj = Rit::Base::Resource->get( $params->{'subj_id'} );
 	    $subj->initiate_cache;
-	}
-
-	if( $params->{'arc_id'} )
-	{
-	    my $arc = Rit::Base::Resource->get( $params->{'arc_id'} );
-	    $arc->initiate_cache;
 	}
 
 	if( $params->{'obj_id'} )
@@ -47,7 +60,12 @@ sub handler
     elsif( $params->{'change'} eq 'arc_updated' )
     {
 	my $arc_id = $params->{'arc_id'};
-	my $arc = Rit::Base::Arc->get( $arc_id );
+	my $arc = Rit::Base::Resource->get( $arc_id );
+
+	unless( $arc->is_arc )
+	{
+	    return "Arc $arc_id not found";
+	}
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
