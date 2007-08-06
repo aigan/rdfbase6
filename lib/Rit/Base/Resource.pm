@@ -5019,7 +5019,7 @@ sub add_note
 	confess "No note given";
     }
     debug $node->desig($args).">> $note";
-    $node->add({'note' => $note}, $args);
+    $node->add({'note' => $note}, {%$args, activate_new_arcs=>1});
 }
 
 
