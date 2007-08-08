@@ -2696,7 +2696,7 @@ sub remove
     $arc->SUPER::remove();  # Removes the arc node: the arcs properties
 
     my $arc_id = $arc->id;
-    debug "Removed arc id ".$arc->sysdesig;
+#    debug "Removed arc id ".$arc->sysdesig;
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
     $res->changes_add;
