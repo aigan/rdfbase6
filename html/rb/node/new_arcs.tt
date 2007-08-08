@@ -7,14 +7,14 @@
          <span style="text-decoration:line-through; color:red">
          [% oarc = arc.replaces %]
          [% IF oarc.obj %]
-            [% jump(oarc.obj.sysdesig, me, id=oarc.obj.id) %]
+            [% jump(oarc.obj.sysdesig, oarc.obj.form_url) %]
          [% ELSE %]
             [% oarc.value | html %]
          [% END %]
          </style>
       [% ELSE %]
          [% IF arc.obj %]
-            [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+            [% jump(arc.obj.sysdesig, arc.obj.form_url) %]
          [% ELSE %]
             [% arc.value | html %]
          [% END %]
