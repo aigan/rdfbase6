@@ -547,7 +547,7 @@ sub sysdesig
 	push @limpart, "(".join(' and ', @parts).")";
     }
 
-    return "Arclim ".join(' or ', @limpart).".";
+    return join(' or ', @limpart).".";
 }
 
 
