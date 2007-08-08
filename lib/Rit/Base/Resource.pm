@@ -38,7 +38,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
-			   package_to_module );
+			   package_to_module queue_clear_params );
 
 use Rit::Base::Node;
 use Rit::Base::Search;
@@ -4948,10 +4948,7 @@ sub update_by_query
 
     # Clear out used query params
     # TODO: Also remove revprop_has_member ...
-    foreach my $param ( @arc_params, @row_params, @check_params )
-    {
-	$q->delete( $param );
-    }
+    queue_clear_params( @arc_params, @row_params, @check_params );
 
     return $res->changes - $changes_prev;
 }
