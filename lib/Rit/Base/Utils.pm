@@ -1026,7 +1026,7 @@ sub query_desig
 		}
 	    }
 	}
-	else
+	elsif( UNIVERSAL::can($query, 'sysdesig') )
 	{
 	    my $val = $query->sysdesig( $args, $ident );
 #	    debug "Got val $val\n";
@@ -1043,6 +1043,10 @@ sub query_desig
 		$val =~ s/^\s+//g;
 		$out .= '  'x$ident . $val;
 	    }
+	}
+	else
+	{
+	    $out .= '  'x$ident . $query;
 	}
     }
     else
@@ -1235,6 +1239,7 @@ sub parse_propargs
     }
 
     my $res = $arg->{'res'} ||= Rit::Base::Resource::Change->new;
+
 
     if( wantarray )
     {
