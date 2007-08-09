@@ -52,12 +52,11 @@ use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Constants qw( $C_language );
 
-use Rit::Base::Utils qw( cache_sync valclean translate getnode getarc
-			 getpred parse_query_props cache_update
-			 parse_form_field_prop is_undef arc_lock
-			 arc_unlock truncstring query_desig
-			 convert_query_prop_for_creation
-			 parse_propargs aais );
+use Rit::Base::Utils qw( valclean translate getnode getarc getpred
+			 parse_query_props parse_form_field_prop
+			 is_undef arc_lock arc_unlock truncstring
+			 query_desig convert_query_prop_for_creation
+			 parse_propargs aais send_cache_update );
 
 our %UNSAVED;
 
@@ -5777,8 +5776,6 @@ sub new
 	'id' => $id,
     }, $class;
 
-
-#    debug "Caching node $id: $node";
     $Rit::Base::Cache::Resource{ $id } = $node;
 
     $node->initiate_cache;
@@ -6084,7 +6081,7 @@ sub mark_unsaved
 
 =head2 mark_updated
 
-IMPLEMENT ARGS
+TODO: implement args
 
 =cut
 
@@ -6235,6 +6232,12 @@ sub save
 
 	$sth->execute(@values) or die;
     }
+
+    $Rit::Base::Cache::Changes::Updated{$nid} ++;
+#    send_cache_update({ change => 'res_updated',
+#			res_id => $nid,
+#		      });
+
 
     delete $UNSAVED{$nid};
     return 1;
@@ -6627,7 +6630,7 @@ sub initiate_prop
 	my $stmts;
 	if( ($pred_id == 11) and not $inactive ) # Optimization...
 	{
-	    my $sth_init_subj_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=?)) UNION select * from arc where (subj=? and pred=?)");
+	    my $sth_init_subj_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where (subj=? and pred=? and active is true)");
 	    $sth_init_subj_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
 	    $stmts = $sth_init_subj_pred_name->fetchall_arrayref({});
 	    $sth_init_subj_pred_name->finish;
@@ -7280,14 +7283,15 @@ sub handle_query_arc_value
     if( debug > 3 )
     {
 	debug "We have arc_id: $arc_id";
-	my $arc = $node->get_by_id($arc_id);
+	my $arc = Rit::Base::Arc->get_by_id($arc_id);
 	debug "The arc_id got us $arc";
     }
 
-    if( $arc_id and $node->get_by_id($arc_id)->is_arc ) # check old value
+    # check old value
+    if( $arc_id and Rit::Base::Arc->get_by_id($arc_id)->is_arc )
     {
 	debug 3, "  Check old arc $arc_id";
-	my $arc = $node->get_by_id($arc_id);
+	my $arc = Rit::Base::Arc->get_by_id($arc_id);
 
 	########################################
 	# Authenticate change of arc
