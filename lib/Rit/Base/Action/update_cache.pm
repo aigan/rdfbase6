@@ -19,71 +19,44 @@ sub handler
 	{
 	    if( my $n = $Rit::Base::Cache::Resource{ $id } )
 	    {
-		##### HERE <<<<<<<----------- !!!!!!!!
+		if( $n->is_arc )
+		{
+		    $n->subj->initiate_cache;
+		    $n->value->initiate_cache($n);
+		}
+		$n->initiate_cache;
 	    }
 	}
     }
 
-
-
-    if( $params->{'change'} eq 'arc_created' )
+    if( $params->{'created'} )
     {
-	my $id = $params->{'arc_id'};
-	my $arc = Rit::Base::Resource->get( $id );
-
-	unless( $arc->is_arc )
+	foreach my $id ( split ',', $params->{'created'})
 	{
-	    return "Arc $id not found";
-	}
-
-	$arc->subj->initiate_cache;
-	$arc->initiate_cache;
-	$arc->value->initiate_cache($arc);
-	$arc->schedule_check_create;
-    }
-    elsif( $params->{'change'} eq 'arc_removed' )
-    {
-	if( $params->{'arc_id'} )
-	{
-	    my $arc = Rit::Base::Resource->get( $params->{'arc_id'} );
-
-	    unless( $arc->is_arc )
+	    my $n = Rit::Base::Resource->get( $id );
+	    if( $n->is_arc )
 	    {
-		return "Arc $params->{arc_id} not found";
+		# In case subj or obj is in memory
+		$n->subj->initiate_cache;
+		$n->value->initiate_cache($n);
 	    }
-
-	    $arc->initiate_cache;
 	}
-
-	if( $params->{'subj_id'} )
-	{
-	    my $subj = Rit::Base::Resource->get( $params->{'subj_id'} );
-	    $subj->initiate_cache;
-	}
-
-	if( $params->{'obj_id'} )
-	{
-	    my $obj = Rit::Base::Resource->get( $params->{'obj_id'} );
-	    $obj->initiate_cache;
-	}
-
-	#$arc->value->initiate_cache(undef);
-	#delete $Rit::Base::Cache::Resource{ $arc_id };
     }
-    elsif( $params->{'change'} eq 'arc_updated' )
+
+    if( $params->{'updated'} )
     {
-	my $arc_id = $params->{'arc_id'};
-	my $arc = Rit::Base::Resource->get( $arc_id );
-
-	unless( $arc->is_arc )
+	foreach my $id ( split ',', $params->{'updated'})
 	{
-	    return "Arc $arc_id not found";
+	    if( my $n = $Rit::Base::Cache::Resource{ $id } )
+	    {
+		if( $n->is_arc )
+		{
+		    $n->subj->initiate_cache;
+		    $n->value->initiate_cache($n);
+		}
+		$n->initiate_cache;
+	    }
 	}
-
-	$arc->subj->initiate_cache;
-	$arc->initiate_cache;
-	$arc->value->initiate_cache($arc);
-	$arc->schedule_check_create;
     }
 
     return "Update cache done";
