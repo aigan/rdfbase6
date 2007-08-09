@@ -34,6 +34,7 @@ BEGIN
 }
 
 use Para::Frame;
+use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
 use Rit::Base::Resource;
@@ -105,6 +106,10 @@ sub init
 			  {
 			      Rit::Base::Resource->rollback();
 			  });
+
+    Para::Frame->add_hook('done', \&on_done);
+
+    Para::Frame->add_hook('add_background_jobs', \&add_background_jobs);
 
 
 
@@ -198,6 +203,94 @@ sub on_done ()
 }
 
 ######################################################################
+
+=head2 add_background_jobs
+
+  Runs after each request
+
+=cut
+
+sub add_background_jobs
+{
+    my( $delta, $sysload ) = @_;
+
+    if( keys %Rit::Base::Cache::Changes::Added or
+	keys %Rit::Base::Cache::Changes::Updated or
+	keys %Rit::Base::Cache::Changes::Removed )
+    {
+	$Para::Frame::REQ->add_job('run_code', 'send_cache_change',
+				   \&send_cache_change);
+    }
+}
+
+######################################################################
+
+sub send_cache_change
+{
+    my( $req ) = @_;
+
+    my @added = keys %Rit::Base::Cache::Changes::Added;
+    my @removed = keys %Rit::Base::Cache::Changes::Removed;
+    my @updated;
+    foreach my $id ( keys %Rit::Base::Cache::Changes::Updated )
+    {
+	next if $Rit::Base::Cache::Changes::Added{$id};
+	next if $Rit::Base::Cache::Changes::Removed{$id};
+	push @updated, $id;
+    }
+
+    %Rit::Base::Cache::Changes::Added = ();
+    %Rit::Base::Cache::Changes::Updated = ();
+    %Rit::Base::Cache::Changes::Removed = ();
+
+    my $fork = $req->create_fork;
+    if( $fork->in_child )
+    {
+	my @daemons = @{$Para::Frame::CFG->{'daemons'}};
+
+	my @params;
+	if( @added )
+	{
+	    push @params, 'added='.join(',',@added);
+	}
+
+	if( @updated )
+	{
+	    push @params, 'updated='.join(',',@updated);
+	}
+
+	if( @removed )
+	{
+	    push @params, 'removed='.join(',',@removed);
+	}
+
+	my $request = "update_cache?" . join('&', @params);
+
+	foreach my $site (@daemons)
+	{
+	    my $daemon = $site->{'daemon'};
+	    next
+	      if( grep( /$site->{'site'}/, keys %Para::Frame::Site::DATA ));
+	    debug(0,"Sending update_cache to $daemon");
+
+	    eval
+	    {
+		$req->send_to_daemon( $daemon, 'RUN_ACTION',
+				      \$request );
+	    }
+		or do
+		{
+		    debug(0,"  failed: $@");
+		};
+	}
+
+	$fork->return();
+    }
+}
+
+######################################################################
+
+
 
 1;
 
