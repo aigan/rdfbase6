@@ -1282,7 +1282,7 @@ sub form_url
 
     $url->query_form([id=>$n->id]);
 
-    return $url;
+    return $url->path_query;
 }
 
 
