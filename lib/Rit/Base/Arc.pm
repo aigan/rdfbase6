@@ -2975,6 +2975,11 @@ sub set_value
 
 	$arc->schedule_check_create;
 	$Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+	if( $value_old->is_node )
+	{
+	    $Rit::Base::Cache::Changes::Updated{$value_old->id} ++;
+	}
+
 #	send_cache_update({ change => 'arc_updated',
 #			    arc_id => $arc->id,
 #			  });
