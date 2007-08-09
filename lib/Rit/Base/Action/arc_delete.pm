@@ -18,7 +18,7 @@ use Data::Dumper;
 
 use Para::Frame::Utils qw( trim );
 
-use Rit::Base::Utils qw( getarc getnode getpred cache_sync );
+use Rit::Base::Utils qw( getarc getnode getpred );
 use Rit::Base::Resource::Change;
 
 sub handler
