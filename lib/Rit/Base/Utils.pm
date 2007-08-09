@@ -38,13 +38,13 @@ BEGIN
 {
     @Rit::Base::Utils::EXPORT_OK
 
-	= qw( translate cache_sync cache_clear cache_update valclean
-	      format_phone format_zip getnode getarc getpred
-	      parse_query_props parse_form_field_prop
-	      parse_arc_add_box is_undef arc_lock arc_unlock
-	      truncstring string parse_query_pred parse_query_prop
-	      convert_query_prop_for_creation name2url query_desig
-	      send_cache_update parse_propargs aais );
+	= qw( translate cache_clear valclean format_phone format_zip
+	      getnode getarc getpred parse_query_props
+	      parse_form_field_prop parse_arc_add_box is_undef
+	      arc_lock arc_unlock truncstring string parse_query_pred
+	      parse_query_prop convert_query_prop_for_creation
+	      name2url query_desig send_cache_update parse_propargs
+	      aais );
 
 }
 
@@ -151,84 +151,6 @@ sub cache_clear
     # TODO: Clear %Rit::Guides::Organization::STATS_CHANGE
 
     Rit::Base::Arc->clear_queue;
-}
-
-
-#######################################################################
-
-=head2 cache_update
-
-TODO: Broken. FIXME
-
-=cut
-
-sub cache_update
-{
-    $Rit::Base::Cache::Changed = time;
-
-    ### TODO: let the caller modify find_simple cache, so that we
-    ### doesn't have to reset it every time anything changed
-
-    %Rit::Base::Cache::find_simple = ();
-}
-
-
-#######################################################################
-
-=head2 cache_sync
-
-TODO: Broken. FIXME
-
-=cut
-
-sub cache_sync
-{
-    my $dir_var = $Para::Frame::CFG->{'dir_var'};
-
-    # Should only be called at the end of the request
-
-    # Commit changes and discard cache if DB has been updated from
-    # another process
-
-    ## Export changes
-    if( $Rit::Base::Cache::Changed )
-    {
-	my $time = time;
-	$Rit::dbix->dbh->commit;
-	### TODO: Place cache in common dir for ritframe.  Use hgv2 as prefix
-	### .. because hg and tg uses the same db
-	my $filename = "$dir_var/cache";
-	open FILE, ">$filename" or die "Can't write to $filename: $!";
-	print FILE $time;
-	close FILE;
-	chmod_file( $filename );	## Chmod file
-	$Rit::Base::Cache::Changed = undef;
-	$Rit::Base::Cache::Created = $time;
-
-	debug ">>> Commit cache\n";
-
-	if( 1 ) ### DEBUG
-	{
-	    my($package, $filename, $line) = caller;
-	    debug "    called from $package, row $line\n";
-	}
-    }
-
-    ## Import changes
-    $Rit::Base::Cache::Created ||= time;
-    if( my $time = (stat("$dir_var/cache"))[9] )
-    {
-	if( $time > $Rit::Base::Cache::Created )
-	{
-	    # DB changed.  cache old
-	    cache_clear($time);
-	}
-    }
-
-
-    ## Report size
-    my $cache_size = scalar( keys %Rit::Base::Cache::Resource );
-    debug "--- Cache size: $cache_size\n";
 }
 
 
