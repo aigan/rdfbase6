@@ -1,6 +1,7 @@
 ﻿[% META title="New arcs"
 	menu="/admin/create.tt"
         level = 20
+	next_template = '-me'
 %]
 [* BLOCK value_field_html *]
       [% IF arc.is_removal %]
