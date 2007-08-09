@@ -13,6 +13,19 @@ sub handler
 
 #    debug "update cache!";
 
+    if( $params->{'removed'} )
+    {
+	foreach my $id ( split ',', $params->{'removed'})
+	{
+	    if( my $n = $Rit::Base::Cache::Resource{ $id } )
+	    {
+		##### HERE <<<<<<<----------- !!!!!!!!
+	    }
+	}
+    }
+
+
+
     if( $params->{'change'} eq 'arc_created' )
     {
 	my $id = $params->{'arc_id'};
