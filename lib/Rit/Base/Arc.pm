@@ -2979,6 +2979,10 @@ sub set_value
 	{
 	    $Rit::Base::Cache::Changes::Updated{$value_old->id} ++;
 	}
+	if( $value_new->is_node )
+	{
+	    $Rit::Base::Cache::Changes::Updated{$value_new->id} ++;
+	}
 
 #	send_cache_update({ change => 'arc_updated',
 #			    arc_id => $arc->id,
