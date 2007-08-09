@@ -33,7 +33,7 @@ use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::List;
-use Rit::Base::Utils qw( cache_update valclean translate is_undef );
+use Rit::Base::Utils qw( valclean translate is_undef );
 use Rit::Base::String;
 
 
@@ -244,17 +244,18 @@ sub create
 
     my( @fields, @values );
     my $rec = {};
-
+    my $nid;
 
     ##################### id
     if( $props->{'node'} )
     {
-	$rec->{'node'}  = $props->{'node'};
+	$nid = $props->{'node'};
     }
     else
     {
-	$rec->{'node'}  = $dbix->get_nextval('node_seq');
+	$nid = $dbix->get_nextval('node_seq');
     }
+    $rec->{'node'} = $nid;
     push @fields, 'node';
     push @values, $rec->{'node'};
 
@@ -318,9 +319,10 @@ sub create
 #						   });
 #    $pred->add({ is => $predicate_class });
 
-
-
-    cache_update;
+    $Rit::Base::Cache::Changes::Updated{$nid} ++;
+#   send_cache_update({ change => 'res_updated',
+#			res_id => $nid,
+#		      });
 
     return $pred;
 }

@@ -43,7 +43,7 @@ use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
 
-use Rit::Base::Utils qw( cache_update getpred valclean translate
+use Rit::Base::Utils qw( getpred valclean translate
                          is_undef truncstring send_cache_update
                          query_desig parse_propargs );
 
@@ -722,11 +722,10 @@ sub create
 
     $res->changes_add;
 
-    cache_update;
-
-    send_cache_update({ change => 'arc_created',
-			arc_id => $arc->common_id,
-		      });
+    $Rit::Base::Cache::Changes::Added{$arc->id} ++;
+#    send_cache_update({ change => 'arc_created',
+#			arc_id => $arc->id,
+#		      });
 
     $res->add_newarc( $arc );
 
@@ -1977,10 +1976,10 @@ sub deactivate
     $arc->subj->initiate_cache;
     $arc->initiate_cache;
     $arc->remove_check();
-    cache_update;
-    send_cache_update({ change => 'arc_updated',
-			arc_id => $arc->id,
-		      });
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $arc->id,
+#		      });
 
     return;
 }
@@ -2076,7 +2075,6 @@ sub vacuum
 #		$arc->{'activated_by'} = $activated_by->id;
 #		$arc->{'activated_by_obj'} = $activated_by;
 #
-#		cache_update;
 #		send_cache_update({ change => 'arc_updated',
 #				    arc_id => $arc->id,
 #				  });
@@ -2124,10 +2122,10 @@ sub reset_clean
 	    $sth->execute($cleaned, $arc->version_id);
 	    $arc->{'clean'} = $cleaned;
 
-	    cache_update;
-	    send_cache_update({ change => 'arc_updated',
-				arc_id => $arc->id,
-			      });
+	    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#	    send_cache_update({ change => 'arc_updated',
+#				arc_id => $arc->id,
+#			      });
 	    $res->changes_add;
 	}
     }
@@ -2710,19 +2708,11 @@ sub remove
     $arc->subj->initiate_cache;
     $arc->value->initiate_cache(undef);
 
-    if( $arc->obj )
-    {
-	send_cache_update({ change => 'arc_removed',
-			    subj_id => $arc->subj->id,
-			    obj_id => $arc->obj->id,
-			  });
-    }
-    else
-    {
-	send_cache_update({ change => 'arc_removed',
-			    subj_id => $arc->subj->id,
-			  });
-    }
+    $Rit::Base::Cache::Changes::Removed{$arc->id} ++;
+#    send_cache_update({ change => 'arc_removed',
+#			arcj_id => $arc->id,
+#		      });
+
 
     # Clear out data from arc (and arc in cache)
     #
@@ -2740,8 +2730,6 @@ sub remove
     # Remove arc from cache
     #
     delete $Rit::Base::Cache::Resource{ $arc_id };
-
-    cache_update;
 
     return 1; # One arc removed
 }
@@ -2986,10 +2974,10 @@ sub set_value
 	$value_new->set_arc($arc);
 
 	$arc->schedule_check_create;
-	cache_update;
-	send_cache_update({ change => 'arc_updated',
-			    arc_id => $arc->id,
-			  });
+	$Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#	send_cache_update({ change => 'arc_updated',
+#			    arc_id => $arc->id,
+#			  });
 
 	debug "Updated arc id $arc_id: ".$arc->desig."\n";
 
@@ -3097,8 +3085,12 @@ sub submit
     $arc->{'arc_updated'} = $updated;
     $arc->{'submitted'} = 1;
 
-    $arc->initiate_cache;
-    cache_update;
+#    $arc->initiate_cache; # not needed
+
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $arc->id,
+#		      });
 
     return 1;
 }
@@ -3173,8 +3165,12 @@ sub unsubmit
     $arc->{'arc_updated'} = $updated;
     $arc->{'submitted'} = 0;
 
-    $arc->initiate_cache;
-    cache_update;
+#    $arc->initiate_cache; # not needed
+
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $arc->id,
+#		      });
 
     return 1;
 }
@@ -3283,10 +3279,11 @@ sub activate
     $arc->initiate_cache;
 
     $arc->schedule_check_create;
-    cache_update;
-    send_cache_update({ change => 'arc_updated',
-			arc_id => $aid,
-		      });
+
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $aid,
+#		      });
 
 
     # If this is not a removal and we have another active arc, it must
@@ -3376,10 +3373,10 @@ sub set_implicit
     $arc->{'arc_updated'} = $now;
     $arc->{'implicit'} = $val;
 
-    cache_update;
-    send_cache_update({ change => 'arc_updated',
-			arc_id => $arc->id,
-		      });
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $arc->id,
+#		      });
 
     return $val;
 }
@@ -3466,10 +3463,10 @@ sub set_indirect
 	}
     }
 
-    cache_update;
-    send_cache_update({ change => 'arc_updated',
-			arc_id => $arc->id,
-		      });
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+#    send_cache_update({ change => 'arc_updated',
+#			arc_id => $arc->id,
+#		      });
 
     return $val;
 }
