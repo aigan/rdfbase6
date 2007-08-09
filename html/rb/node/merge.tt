@@ -6,9 +6,13 @@
 %]
 
 [%
-	hidden("id", q.param('id'));
-	node1 = get(q.param('id'));
+	id = q.param('id');
+	hidden("id", id);
+	node1 = get(id);
+        node=node1; # for the menu
 %]
+
+<p>[% PROCESS node_menu.tt %]</p>
 
 [% BLOCK merge_alternatives %]
 
