@@ -718,6 +718,9 @@ sub create
     $arc->subj->initiate_cache;
     $arc->value->initiate_cache($arc);
 
+    # TODO: Use register_with_nodes() instead!
+
+
     $arc->schedule_check_create;
 
     $res->changes_add;
@@ -2969,6 +2972,7 @@ sub set_value
 
 	$arc->subj->initiate_cache;
 	$arc->initiate_cache;
+	# $arc->obj->initiate_cache # IS CALLED ABOVE
 
 	$value_old->set_arc(undef);
 	$value_new->set_arc($arc);
@@ -3540,6 +3544,7 @@ sub get_by_rec_and_register
     }
 }
 
+
 #########################################################################
 
 =head2 init
@@ -3568,6 +3573,35 @@ sub init
 # NOTE:
 # $arc->{'id'}        == $rec->{'ver'}
 # $arc->{'common'}    == $rec->{'id'}
+
+
+    if( $arc->{'ioid'} )
+    {
+	# Arc aspect of node already initiated
+	return $arc;
+    }
+
+    return $arc->initiate_cache( $rec, $subj, $value_obj );
+}
+
+
+#########################################################################
+
+=head2 initiate_cache
+
+  $arc->initiate_cache
+
+Extends L<Rit::Base::Resource/initiate_cache>
+
+Takes the same params as L</init>.
+
+The caller must first initiate the subj and obj, if necessary.
+
+=cut
+
+sub initiate_cache
+{
+    my( $arc, $rec, $subj, $value_obj ) = @_;
 
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
@@ -3688,6 +3722,11 @@ sub init
     }
 
 
+    # INITIATES Resource part
+    #
+    $arc->SUPER::initiate_cache();
+
+
     my $clean = $rec->{'valclean'};
     my $implicit =  $rec->{'implicit'} || 0; # default
     my $indirect = $rec->{'indirect'}  || 0; # default
@@ -3787,7 +3826,7 @@ sub register_with_nodes
 
 #    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
 
-    # Register the arc hos the subj
+    # Register the arc with the subj
     unless( $subj->{'arc_id'}{$id}  )
     {
 	if( $arc->{'active'} )
@@ -3826,7 +3865,7 @@ sub register_with_nodes
 	check_value(\$value);
     }
 
-    # Register the arc hos the obj
+    # Register the arc with the obj
     if( $coltype eq 'obj' )
     {
 	if( UNIVERSAL::isa($value, "ARRAY") )
