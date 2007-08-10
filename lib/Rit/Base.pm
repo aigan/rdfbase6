@@ -269,9 +269,15 @@ sub send_cache_change
 	foreach my $site (@daemons)
 	{
 	    my $daemon = $site->{'daemon'};
-	    next
-	      if( grep( /$site->{'site'}/, keys %Para::Frame::Site::DATA ));
-	    debug(0,"Sending update_cache to $daemon");
+	    debug "Sending update to $site->{site}";
+
+	    if( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
+	    {
+		debug "  Skipping this site";
+		next;
+	    }
+
+	    debug "Sending update_cache to $daemon";
 
 	    eval
 	    {
