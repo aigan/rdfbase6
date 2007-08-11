@@ -224,33 +224,11 @@ sub find_by_label
 	debug 2, "  as guest";
 #	warn datadump($C_guest_access, 2);
 	my $class = ref($_[0]) || $_[0];
-	@new = @{ $class->find
-		    ({
-		      'name_short'       => 'guest',
-		      has_access_right   => $C_guest_access,
-		     }, $args )};
-    }
-    #
-    # obj is root
-    #
-    elsif( $val eq 'root' ) # root node
-    {
-	debug 2, "  as root";
-	Para::Frame::REQ->result->message("Login as root not permitted");
-	return undef;
-    }
-    #
-    # obj as name of obj
-    #
-    elsif( $val =~ /^h\d/i )
-    {
-	debug 2, "  as customer";
-	my $class = ref($_[0]) || $_[0];
-	@new = @{ $class->find
-	    ({
-	      'customer_id' => uc($val),
-	      is            => $C_login_account,
-	     }, $args)};
+#	@new = $C_guest;
+	@new = Rit::Base::Resource->get({
+					 'name_short'       => 'guest',
+					 has_access_right   => $C_guest_access,
+					});
     }
     elsif( $val !~ /^\d+$/ )
     {
