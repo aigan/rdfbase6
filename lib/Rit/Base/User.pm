@@ -304,7 +304,7 @@ sub verify_password
     $password_encrypted ||= '';
 
 #    debug "Retrieving password for $u->{id}";
-    my $n_password = $u->first_prop('password') || '';
+    my $n_password = $u->first_prop('has_password') || '';
     unless( $n_password )
     {
 	my $uname = $u->desig;
