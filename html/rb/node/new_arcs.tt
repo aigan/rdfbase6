@@ -3,7 +3,7 @@
         level = 20
 	next_template = '-me'
 %]
-[* BLOCK value_field_html *]
+[% BLOCK value_field_html %]
       [% IF arc.is_removal %]
          <span style="text-decoration:line-through; color:red">
          [% oarc = arc.replaces %]
@@ -20,7 +20,7 @@
             [% arc.value | html %]
          [% END %]
       [% END %]
-[* END *]
+[% END %]
 
 <p>Displays arcs with the status new or submitted
 
@@ -47,9 +47,9 @@
 [% direction = q.param('direction') %]
 
 
-[* FOREACH state IN ['new', 'submitted'] *]
+[% FOREACH state IN ['new', 'submitted'] %]
 
-<h2>[* state *] arcs</h2>
+<h2>[% state %] arcs</h2>
 <table class="admin">
 
 [% IF all %]
@@ -61,7 +61,7 @@
     <th>[% sort('Predicate', 'pred.desig') %]
     <th>[% sort('Object', 'value_desig') %]
 
-[% FOREACH arc IN find({is='arc'},{arclim=['[*state*]']}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
+[% FOREACH arc IN find({is='arc'},{arclim=[state]}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
    [% tr2 %]
       <td>[% checkbox("arc_$arc.id",1,1) %]
       <td>[% jump(arc.created_by.desig, arc.created_by.form_url) %]</td>
@@ -69,7 +69,7 @@
       <td>[% arc.created %]</td>
       <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
       <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
-      <td>[* PROCESS value_field_html *]</td>
+      <td>[% PROCESS value_field_html %]</td>
    </tr>
 [% END %]
 [% ELSE %]
@@ -80,20 +80,20 @@
     <th>[% sort('Predicate', 'pred.desig') %]
     <th>[% sort('Object', 'value_desig') %]
 
-[% FOREACH arc IN find({is='arc', created_by=tuid},{arclim=['[*state*]']}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
+[% FOREACH arc IN find({is='arc', created_by=tuid},{arclim=[state]}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
    [% tr2 %]
       <td>[% checkbox("arc_$arc.id",1,1) %]
       <td>[% jump(arc.id, arc.form_url) %]</td></td>
       <td>[% arc.created %]</td>
       <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
       <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
-      <td>[* PROCESS value_field_html *]</td>
+      <td>[% PROCESS value_field_html %]</td>
    </tr>
 [% END %]
 [% END %]
 </table>
 
-[* END *]
+[% END %]
 
 <div style="margin-top:2em">
 <p>Execute this action on all marked arcs above:</p>
