@@ -86,16 +86,6 @@ sub initialize_db
 
     ###
 
-    $P->find_set(
-		 {
-		  label => 'site_code',
-		  valtype => 'text',
-		 },
-		 {
-		  comment => "This is the site for ... whatever",
-		 },
-		);
-
     debug 1, "Adding/updating nodes and preds: done!";
 }
 
