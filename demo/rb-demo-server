@@ -46,7 +46,7 @@ use Para::Frame::DBIx;
 use Para::Frame::Time qw();
 use Para::Frame::Email;
 use Para::Frame::Email::Address;
-use Para::Frame::Utils qw( chmod_tree );
+use Para::Frame::Utils qw( chmod_tree datadump debug );
 use Para::Frame::Watchdog;
 use Para::Frame::Site;
 
@@ -62,6 +62,9 @@ use Rit::Base::Time;
 use Rit::Base::Site;
 use Rit::Base::L10N;
 
+use Rit::Base::User::Meta;
+use Rit::Base::Session;
+
 use Rit::Base::Demo;
 
 {
@@ -72,6 +75,8 @@ use Rit::Base::Demo;
     {
 	die "Configuration missing";
     }
+
+#    debug "Loaded config:\n".datadump($CFG);
 
     Rit::Base::Demo->store_cfg( $CFG );
 
@@ -113,9 +118,9 @@ use Rit::Base::Demo;
      'appbase'         => 'Rit::Base::Demo',
      'appfmly'         => 'Rit::Base',
 
+     'user_class'      => 'Rit::Base::User::Meta',
+     'session_class'   => 'Rit::Base::Session',
 #     'tt_plugins'      => 'Rit::Guides::Template::Plugin',
-#     'user_class'      => 'Rit::Guides::User::Meta',
-#     'session_class'   => 'Rit::Guides::Session',
 #     'resource_class'  => 'Rit::Guides::Resource',
 #     'search_collection_class' => 'Rit::Guides::Search',
 #     'search_result_class'     => 'Rit::Guides::Search::Result',
@@ -123,7 +128,7 @@ use Rit::Base::Demo;
      'l10n_class'      => 'Rit::Base::L10N',
      'site_class'      => 'Rit::Base::Site',
 
-     'bg_user_code'    => sub{ Rit::Base::Resource->get_by_id(1115) },
+#     'bg_user_code'    => sub{ Rit::Base::Resource->get_by_id(1115) },
      'logfile'         => "$demo_root/logs/ritguides.log",
      'pidfile'         => "$demo_root/var/ritguides.pid",
      'dir_var'         => "$demo_root/var",
@@ -198,10 +203,11 @@ use Rit::Base::Demo;
     $burner_plain->add_ext('htaccess');
 
 
-    if( $ARGV[0] eq 'upgrade' )
+    if( $ARGV[0] and not looks_like_number($ARGV[0]) )
     {
 	Para::Frame->startup;
-	Para::Frame::main_loop; #forever
+	print "Server stops";
+	exit;
     }
 
     if( $daemonize )

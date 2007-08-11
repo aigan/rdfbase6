@@ -6,6 +6,7 @@ use Para::Frame::Utils qw( debug datadump );
 
 use Rit::Base;
 use Rit::Base::Utils qw( string );
+use Rit::Base::Setup;
 
 our $CFG;
 
@@ -64,9 +65,9 @@ sub on_configure
 
 sub initialize_db
 {
-    if( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
+    if( $ARGV[0] and ($ARGV[0] eq 'setup_db') )
     {
-	Rit::Guides::Upgrade->upgrade();
+	Rit::Base::Setup->setup_db();
     }
 
 
