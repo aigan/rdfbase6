@@ -1,0 +1,183 @@
+NODES
+is	1
+scof	1
+has_member	1
+value	6
+obj	
+name	5
+description	5
+admin_comment	5
+name_short	5
+is_of_language	1
+code	5
+created	4
+updated	4
+note	5
+ritbase	
+sysadmin_group	
+public	
+resource	
+valbin	
+arc
+domain	1
+range	1
+domain_scof	1
+range_scof	1
+pred_1	1
+pred_2	1
+pred_3	1
+has_password	5
+has_access_right	1
+weight	2
+private	2
+datatype	1
+login_account	
+intelligent_agent
+system_access_right	
+full_access	
+language	
+swedish
+english	
+literal	
+valtext
+website_text	
+url
+valdate	
+valfloat	
+webpage	
+guest_access	
+class	
+class_perl_module
+class_handled_by_perl_module	1
+rule	
+syllogism	
+predicate	
+class_form_url	5
+has	1
+url_part	5
+site_code	5
+
+
+ARCS
+is	is	predicate
+scof	is	predicate
+has_member	is	predicate
+value	is	predicate
+name	range	text
+name	is	predicate
+description	range	textbox
+description	is	predicate
+admin_comment	range	textbox
+admin_comment	is	predicate
+name_short	range	text
+name_short	is	predicate
+is_of_language	is	predicate
+code	range	text
+code	is	predicate
+created	range	date
+created	is	predicate
+updated	range	date
+note	range	text
+note	is	predicate
+valbin	scof	literal
+domain	is	predicate
+domain	range	class
+domain	domain	predicate
+domain	admin_comment		Domain of predicate has this type
+range	is	predicate
+range	range	class
+range	domain	predicate
+range	admin_comment		Range of predicate has this type
+domain_scof	is	predicate
+domain_scof	range	class
+domain_scof	domain	predicate
+domain_scof	admin_comment		Domain of predicate has this scof
+range_scof	is	predicate
+range_scof	range	class
+range_scof	domain	predicate
+range_scof	admin_comment		Range of predicate has this scof
+pred_1	is	predicate
+pred_1	range	predicate
+pred_1	domain	rule
+pred_1	admin_comment		First predicate is
+pred_2	is	predicate
+pred_2	range	predicate
+pred_2	domain	rule
+pred_2	admin_comment		Second predicate is
+pred_3	is	predicate
+pred_3	range	predicate
+pred_3	domain	rule
+pred_3	admin_comment		Third predicate is
+has_password	range	password
+has_password	is	predicate
+has_access_right	is	predicate
+weight	range	int
+weight	is	predicate
+private	range	bool
+private	admin_comment		Not for public consumption
+private	is	predicate
+datatype	admin_comment		Type of literal, subtype of basic datatype
+datatype	is	predicate
+login_account	scof	intelligent_agent
+full_access	is	system_access_right
+swedish	code		sv
+swedish	is	language
+english	code		en
+english	is	language
+guest_access	is	system_access_right
+class_handled_by_perl_module	is	predicate
+class_handled_by_perl_module	admin_comment		Bless instances in this perl class
+class_handled_by_perl_module	domain 	class
+class_handled_by_perl_module	range	class_perl_module
+rule	is	class
+syllogism	scof	rule
+syllogism	class_handled_by_perl_module	101
+101	is	class_perl_module
+101	code		Rit::Base::Rule
+predicate	class_handled_by_perl_module	102
+102	is	class_perl_module
+102	code		Rit::Base::Pred
+login_account	class_handled_by_perl_module	103
+103	is	class_perl_module
+103	code		Rit::Base::User
+predicate	is	class
+class_form_url	is	predicate
+class_form_url	admin_comment 		HTML form relative site root
+class_form_url	range 	url
+has	is	predicate
+has	admin_comment 		General purpose
+url_part	is	predicate
+url_part	admin_comment		Part for constructing unique URLs
+url_part	range	url
+site_code	is	predicate
+site_code	range	text
+
+201	is	syllogism
+201	pred_1	is
+201	pred_2	scof
+201	pred_3	is
+
+202	is	syllogism
+202	pred_1	scof
+202	pred_2	scof
+202	pred_3	scof
+
+bool	scof	valfloat
+date	scof	valdate
+email	scof	text
+file	scof	text
+float	scof	valfloat
+int	scof	valfloat
+password	scof	text
+phone	scof	text
+text	scof	valtext
+textbox	scof	text
+url	scof	text
+zipcode	scof	text
+valfloat	scof	literal
+valbin	scof	literal
+valdate	scof	literal
+valtext	scof	literal
+
+
+EOF
