@@ -11,7 +11,6 @@ name_short	5
 is_of_language	1
 code	5
 created	4
-updated	4
 note	5
 ritbase	
 sysadmin_group	
@@ -42,6 +41,7 @@ class_form_url	5
 has	1
 url_part	5
 site_code	5
+has_translation	5
 
 
 ARCS
@@ -60,14 +60,16 @@ admin_comment	is	predicate
 name_short	range	text
 name_short	is	predicate
 is_of_language	is	predicate
+is_of_language	domain	text
+is_of_language	range	language
+has_translation	is	predicate
+has_translation	range	text
 code	range	text
 code	is	predicate
 created	range	date
 created	is	predicate
-updated	range	date
 note	range	text
 note	is	predicate
-valbin	scof	literal
 domain	is	predicate
 domain	range	class
 domain	domain	predicate
@@ -172,6 +174,7 @@ valtext	scof	literal
 root	has_access_right	full_access
 root	is	login_account
 root	has_password		admin
+root	name_short		root
 
 guest	has_access_right	guest_access
 guest	is	login_account
