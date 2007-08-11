@@ -448,7 +448,15 @@ sub valtype
 	    confess "Predicate 'value' has no valtype";
 	}
 
-	return Rit::Base::Constants->get( $Rit::Base::COLTYPE_num2name{ $pred->{'coltype'} } );
+	my $coltype = $Rit::Base::COLTYPE_num2name{ $pred->{'coltype'} };
+	if( $coltype eq 'obj' )
+	{
+	    return Rit::Base::Constants->get('resource');
+	}
+	else
+	{
+	    return Rit::Base::Constants->get( $coltype );
+	}
     }
 }
 
