@@ -71,7 +71,7 @@ END;
 <ol>[% INCLUDE superclass class=node.code_class %]</ol>
 [% END %]
 
-[% IF debug %]
+[% IF debug > 1 %]
 [% WRAPPER imgexpand label='Perl hashdump' %]
 <table>
 <tr><td><pre>[% dump(node,2) %]</pre></td></tr>
@@ -88,13 +88,13 @@ END;
       <td>
       [% IF node.created %]
          [% node.created %]
-         by [% jump(node.created_by.name.loc, node.created_by.form_url) %]
+         by [% jump(node.created_by.desig, node.created_by.form_url) %]
       [% END %]
       </td>
       <td>hard</td>
       <td rowspan="5">
       [% IF node.updated %]
-         by [% jump(node.updated_by.name.loc, node.updated_by.form_url) %]<br/>
+         by [% jump(node.updated_by.desig, node.updated_by.form_url) %]<br/>
 	 [% node.updated %]
       [% END %] 
       </td>
@@ -110,7 +110,7 @@ END;
       <td>owned_by</td>
       <td>
       [% IF node.owned_by %]
-         [% jump(node.owned_by.name.loc, node.owned_by.form_url) %]
+         [% jump(node.owned_by.desig, node.owned_by.form_url) %]
       [% END %]
       </td>
       <td>hard</td>

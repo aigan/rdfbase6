@@ -183,11 +183,11 @@
 
 <tr><td>Write access</td><td>[% jump(arc.write_access.desig, arc.write_access.form_url) %]</td></tr>
 
-<tr><td>Created</td><td>[% arc.created %] by [% jump(arc.created_by.name.loc, arc.created_by.form_url) %]</td></tr>
+<tr><td>Created</td><td>[% arc.created %] by [% jump(arc.created_by.desig, arc.created_by.form_url) %]</td></tr>
 
 <tr><td>Updated</td><td>[% arc.updated %]</td></tr>
 
-<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% jump(arc.activated_by.name.loc, arc.activated_by.form_url); END %]</td></tr>
+<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% jump(arc.activated_by.desig, arc.activated_by.form_url); END %]</td></tr>
 
 <tr><td>Deactivated</td><td>[% arc.deactivated %]</td></tr>
 
