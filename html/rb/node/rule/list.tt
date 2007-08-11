@@ -17,7 +17,7 @@
 
 [% FOREACH rule = find_rules.sorted(order, direction) %]
    [% tr2 %]
-      <td>[% rule.id %]</td>
+      <td>[% jump(rule.id, rule.form_url) %]</td>
       <td>[% rule.a.name.loc %]</td>
       <td>[% rule.b.name.loc %]</td>
       <td>[% rule.c.name.loc %]</td>
