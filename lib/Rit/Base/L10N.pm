@@ -37,7 +37,8 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 
-#use Rit::Base::Utils qw( query_desig );
+use Rit::Base::Constants qw( $C_language );
+
 
 use base qw(Para::Frame::L10N);
 
@@ -159,15 +160,17 @@ sub maketext
 #	debug "  ... in $langcode\n";
 	unless( $value = $TRANSLATION{$phrase}{$langcode} )
 	{
-	    $rec ||= $Rit::dbix->select_possible_record('from tr where c=?',$phrase) || {};
-	    if( defined $rec->{$langcode} and length $rec->{$langcode} )
+	    if( my $node = Rit::Base::Resource->find({ has_translation => $phrase })->get_first_nos )
 	    {
-#		### DECODE UTF8 from database
-#		utf8::decode( $rec->{$langcode} );
-
-#		debug "  Compiling $phrase in $langcode";
-		$value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($rec->{$langcode});
-		last;
+		my $lang = Rit::Base::Resource->get({
+						     code => $langcode,
+						     is => $C_language,
+						     });
+		if( my $trans = $node->has_translation({is_of_language=>$lang})->plain )
+		{
+		    $value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($trans);
+		    last;
+		}
 	    }
 	    next;
 	}
