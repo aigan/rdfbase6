@@ -834,15 +834,6 @@ sub modify
 		private => $private,
 		arclim => $arclim,
 	    });
-
-
-	    # Modify MAXLIMIT
-	    # - Change maxlimit if search on city
-	    if( UNIVERSAL::isa($pred, 'Rit::Base::Pred') and $pred->plain eq 'is' and getnode('city')->equals($values[0]) )
-	    {
-		debug "*** Maxlimit changed for search on city (FIXME)!";
-		$search->{'maxlimit'} = TOPLIMIT;
-	    }
 	}
 	else
 	{
