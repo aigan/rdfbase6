@@ -15,6 +15,7 @@
 #=====================================================================
 
 our $CFG;
+our $pf;
 
 BEGIN
 {
@@ -25,7 +26,7 @@ BEGIN
     my $configfile = $FindBin::Bin . "/site.conf";
 
     open PF_LOC, "<$FindBin::Bin/../.paraframe_location" or die $!;
-    my $pf = <PF_LOC>;
+    $pf = <PF_LOC>;
     chomp( $pf );
     push @INC, $pf.'/lib';
 
@@ -111,7 +112,7 @@ use Rit::Base::Demo;
 
     my $cfg =
     {
-     'paraframe'       => $CFG->{'paraframe'},
+     'paraframe'       => $pf,
      'paraframe_group' => 'staff',
 
      'appback'         => $appback,
@@ -177,10 +178,10 @@ use Rit::Base::Demo;
 			      $_[0]->before_user_logout;
 			  });
 
-    Para::Frame->add_hook('user_login', sub
-			  {
-			      $_[0]->after_user_login;
-			  });
+#    Para::Frame->add_hook('user_login', sub
+#			  {
+#			      $_[0]->after_user_login;
+#			  });
 
     Para::Frame->add_hook('done', \&Rit::Base::Demo::on_done);
 
@@ -192,7 +193,7 @@ use Rit::Base::Demo;
     {
      now             => \&Para::Frame::Time::now,
      date            => \&Para::Frame::Time::date,
-     favicon         => "favicon.ico",
+     favicon         => "pf/images/favicon.ico",
     };
     Para::Frame->add_global_tt_params( $global_params );
 
