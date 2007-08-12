@@ -520,7 +520,7 @@ sub parse_query_pred
 	my $prio   = $6; #Low prio first (default later)
 	my $find   = undef;
 
-	if( $pred =~ m/^(subj|pred|obj|coltype)$/ )
+	if( $pred =~ m/^(subj|pred|obj|coltype|label)$/ )
 	{
 	    # Special case !!!!!!!
 
@@ -727,7 +727,7 @@ sub convert_query_prop_for_creation
 
 	unless( ref $pred ) ### SPECIAL CASE - TEMP SOLUTION
 	{
-	    if( $pred =~ /^(subj|pred|obj|value|coltype)$/ )
+	    if( $pred =~ /^(subj|pred|obj|value|coltype|label)$/ )
 	    {
 		$pred_name = $pred;
 	    }
