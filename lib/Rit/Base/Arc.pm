@@ -249,7 +249,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'source'}  = Rit::Base::Resource->get_by_constant_label('ritguides')->id;
+	$rec->{'source'}  = $Para::Frame::CFG->{'rb_default_source'}->id;
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
@@ -263,7 +263,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'read_access'}  = Rit::Base::Resource->get_by_constant_label('public')->id;
+	$rec->{'read_access'}  = $Para::Frame::CFG->{'rb_default_read_access'}->id;
     }
     push @fields, 'read_access';
     push @values, $rec->{'read_access'};
@@ -277,7 +277,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'write_access'}  = Rit::Base::Resource->get_by_constant_label('sysadmin_group')->id;
+	$rec->{'write_access'}  = $Para::Frame::CFG->{'rb_default_write_access'}->id;
     }
     push @fields, 'write_access';
     push @values, $rec->{'write_access'};
