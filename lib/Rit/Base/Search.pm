@@ -666,6 +666,10 @@ sub modify
 	{
 	    # Handled in second fase
 	}
+	elsif( $key eq 'label' )
+	{
+	    $search->{'query'}{'label'} = \@values;
+	}
 	elsif( $key =~ m/^(subj|pred|coltype)$/ )
 	{
 	    my $qarc = $search->{'query'}{'arc'} ||= {coltype=>undef};
@@ -1082,10 +1086,15 @@ sub build_sql
 	push @elements, @{ $search->elements_path( $paths ) };
     }
 
+    # labels
+    if( my $lables = $search->{'query'}{'label'} )
+    {
+	push @elements, @{ $search->elements_lables( $lables ) };
+    }
+
     # props
     if( my $props = $search->{'query'}{'prop'} )
     {
-#	debug datadump($props); ### DEBUG
 	push @elements, @{ $search->elements_props( $props ) };
     }
 
@@ -1104,7 +1113,7 @@ sub build_sql
 
     my @outer_score = ();
     my @main_select = ();
-    my @main_where = ();
+    my @main_where  = ();
     my @outer_where = ();
     my @outer_order = ();
 
@@ -1807,7 +1816,13 @@ sub build_main_from
 	if( my $where = $part->{'where'} )
 	{
 	    my @where = ref $part->{'where'} ? @{$part->{'where'}} : $part->{'where'};
-	    $part_sql .= join " UNION ", map "select $part->{'select'} as node from arc where $_", @where;
+	    my $table = $part->{'table'} || 'arc';
+	    my $select = $part->{'select'};
+	    unless( $select eq 'node' )
+	    {
+		$select .= " as node";
+	    }
+	    $part_sql .= join " UNION ", map "select $select from $table where $_", @where;
 	}
 	else
 	{
@@ -1819,7 +1834,7 @@ sub build_main_from
 
 	    # TODO:
 	    # We save more time in the common case if we only use 'distinct'
-	    # in cases it relay cuts down the number of records
+	    # in cases it realy cuts down the number of records
 	    #
 	    $part_sql .= "select distinct $part->{'select'} from arc";
 	}
@@ -2040,6 +2055,33 @@ sub build_main_select_price
 ";
 
     return $sql;
+}
+
+
+#######################################################################
+
+sub elements_lables
+{
+    my( $search, $lables ) = @_;
+
+    my @element;
+    my $prio = 1;
+    my @values;
+
+
+    my $where = join " or ", map "(label=?)", @$lables;
+    push @values, @$lables;
+
+    push @element,
+    {
+     select => 'node', # TODO: Also implement id select
+     where => $where,
+     values => \@values,
+     prio => $prio,
+     table => 'node',
+    };
+
+    return( \@element );
 }
 
 
