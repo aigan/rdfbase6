@@ -113,6 +113,8 @@ sub find
     my( $this, $props_in, $args ) = @_;
     my $class = ref($this) || $this;
 
+    die "fixme";
+
     my $recs;
 
     $args ||= {};
@@ -208,125 +210,6 @@ sub find
 
     return Rit::Base::List->new( \@preds );
 }
-
-#######################################################################
-
-=head2 create
-
-  $p->create(\%props, \%args)
-
-Creates a new predicate and stores it in the DB.
-
-The supported properties are:
-
-id: Defaults to the next free node id value
-
-label: See L</label>. Mandatory
-
-valtype: See L</valtype>. Mandatory
-
-Returns: The created object.
-
-=cut
-
-sub create
-{
-    my( $this, $props, $args ) = @_;
-    my $class = ref($this) || $this;
-
-
-    die "not implemented";
-
-
-
-    my $req = $Para::Frame::REQ;
-    my $dbix = $Rit::dbix;
-
-    my( @fields, @values );
-    my $rec = {};
-    my $nid;
-
-    ##################### id
-    if( $props->{'node'} )
-    {
-	$nid = $props->{'node'};
-    }
-    else
-    {
-	$nid = $dbix->get_nextval('node_seq');
-    }
-    $rec->{'node'} = $nid;
-    push @fields, 'node';
-    push @values, $rec->{'node'};
-
-
-    ##################### label
-    if( $props->{'label'} )
-    {
-	$rec->{'label'}  = $props->{'label'};
-    }
-    else
-    {
-	throw('action', "Label missing");
-    }
-    push @fields, 'label';
-    push @values, $rec->{'label'};
-
-
-    ##################### valtype
-    if( $props->{'valtype'} )
-    {
-	$rec->{'valtype'}  = $props->{'valtype'};
-    }
-    else
-    {
-	throw('action', "valtype missing");
-    }
-    push @fields, 'valtype';
-    push @values, $rec->{'valtype'};
-
-
-    ##################### Optional properties
-    foreach my $key (qw(comment))
-    {
-	if( $props->{$key} )
-	{
-	    $rec->{$key}  = $props->{$key};
-	    $rec->{$key}  = $rec->{$key}->plain if ref $rec->{$key};
-
-	    push @fields, $key;
-	    push @values, $rec->{$key};
-	}
-    }
-
-    #####################
-
-    my $fields_part = join ",", @fields;
-    my $values_part = join ",", map "?", @fields;
-
-    my $st = "insert into reltype ($fields_part) values ($values_part)";
-    my $sth = $dbix->dbh->prepare($st);
-    $sth->execute( @values );
-
-
-
-    my $pred = $class->get_by_rec( $rec );
-
-#    # TODO: Make this a constant
-#    my $predicate_class = Rit::Base::Resource->get({
-#						    name => 'predicate',
-#						    is => 'class',
-#						   });
-#    $pred->add({ is => $predicate_class });
-
-    $Rit::Base::Cache::Changes::Updated{$nid} ++;
-#   send_cache_update({ change => 'res_updated',
-#			res_id => $nid,
-#		      });
-
-    return $pred;
-}
-
 
 
 #########################################################################
@@ -543,83 +426,6 @@ sub coltype
 =head1 Public methods
 
 =cut
-
-#######################################################################
-
-=head2 find_set
-
-  $Pred->find_set( \%criterions, \%args )
-
-Searches for a pred matching the criterions.
-
-If non is found; creates it.
-
-For each default, if the pred doesn't has the property, sets it with
-the given value.
-
-The counter is a scalar ref to a number that is incremented if there
-was a change made.
-
-Exceptions:
-
-  alternatives : Flera preds matchar kriterierna
-
-Returns:
-
-  The predicate object
-
-Example:
-
-  use Rit::Base::Constants qw( $C_business $C_certificate );
-  Rit::Base::Pred->find_set(
-    {
-      label => 'can_have_cert',
-    },
-    {
-      default =>
-      {
-         valtype => 'obj',
-         comment => "Business of this type can have certs of this type",
-         domain_scof => $C_business,
-         range_scof  => $C_certificate,
-      },
-    });
-
-
-=cut
-
-sub find_set  # Find the one matching pred or create one
-{
-    my( $this, $props, $args ) = @_;
-
-    my $DEBUG = 0;
-
-    $args ||= {};
-    my $default ||= $args->{'default'} || {};
-
-    my $preds = $this->find( $props );
-
-    if( $preds->[1] )
-    {
-	my $result = $Para::Frame::REQ->result;
-	$result->{'info'}{'alternatives'}{'alts'} = $preds;
-	$result->{'info'}{'alternatives'}{'query'} = $props;
-	throw('alternatives', "Flera preds matchar kriterierna");
-    }
-    unless( $preds->[0] )
-    {
-	foreach my $pred ( keys %$default )
-	{
-	    $props->{$pred} ||= $default->{$pred};
-	}
-	warn "Will now create pred with: ".datadump($props) if $DEBUG;
-	return $this->create($props, $args);
-    }
-
-    my $pred = $preds->[0];
-    return $pred;
-}
-
 
 #######################################################################
 
