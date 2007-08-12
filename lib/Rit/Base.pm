@@ -40,6 +40,9 @@ use Para::Frame::Reload;
 use Rit::Base::Resource;
 use Rit::Base::Arc;
 use Rit::Base::Pred;
+use Rit::Base::User;
+use Rit::Base::Session;
+use Rit::Base::L10N;
 
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
