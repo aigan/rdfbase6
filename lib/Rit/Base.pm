@@ -29,7 +29,7 @@ use vars qw( $VERSION );
 
 BEGIN
 {
-    $VERSION = "6.50";
+    $VERSION = "6.51";
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
@@ -81,7 +81,7 @@ These can be called with the class name
 
 sub init
 {
-    my( $this, $dbix ) = @_;
+    my( $this ) = @_;
 
     warn "Adding hooks for Rit::Base\n";
 
@@ -94,12 +94,7 @@ sub init
 			      }
 			  });
 
-    Para::Frame->add_hook('on_startup', sub
-			  {
- 			      Rit::Base::Constants->init;
-			      Para::Frame->run_hook( $Para::Frame::REQ,
-						     'on_ritbase_ready');
-			  });
+    Para::Frame->add_hook('on_startup', \&init_on_startup);
 
     Para::Frame->add_hook('before_db_commit', sub
 			  {
@@ -131,13 +126,38 @@ sub init
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
     };
     Para::Frame->add_global_tt_params( $global_params );
-
-#    Rit::Base::Resource->init( $dbix );
-#    Rit::Base::Arc->init( $dbix );
-#    Rit::Base::Pred->init( $dbix );
 }
 
 
+
+#######################################################################
+
+=head2 init_on_startup
+
+=cut
+
+sub init_on_startup
+{
+    Rit::Base::Constants->init;
+
+    my $cfg = $Para::Frame::CFG;
+
+    $cfg->{'rb_default_source'} ||= 'ritbase';
+    $cfg->{'rb_default_read_access'} ||= 'public';
+    $cfg->{'rb_default_write_access'} ||= 'sysadmin_group';
+
+    foreach my $key (qw(rb_default_source rb_default_read_access
+                        rb_default_write_access))
+    {
+	my $val = $cfg->{$key};
+	unless( ref $val )
+	{
+	    $cfg->{$key} = Rit::Base::Resource->get_by_constant_label($val);
+	}
+    }
+
+    Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
+}
 
 #######################################################################
 
