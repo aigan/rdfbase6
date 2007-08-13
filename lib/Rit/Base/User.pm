@@ -35,8 +35,8 @@ use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( is_undef );
-use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
+use Rit::Base::Utils qw( is_undef parse_propargs );
+use Rit::Base::Constants qw( $C_guest $C_login_account $C_full_access $C_guest_access );
 
 use base qw(Para::Frame::User);
 
@@ -224,11 +224,11 @@ sub find_by_label
 	debug 2, "  as guest";
 #	warn datadump($C_guest_access, 2);
 	my $class = ref($_[0]) || $_[0];
-#	@new = $C_guest;
-	@new = Rit::Base::Resource->get({
-					 'name_short'       => 'guest',
-					 has_access_right   => $C_guest_access,
-					});
+	@new = $C_guest;
+#	@new = Rit::Base::Resource->get({
+#					 'name_short'       => 'guest',
+#					 has_access_right   => $C_guest_access,
+#					});
     }
     elsif( $val !~ /^\d+$/ )
     {
@@ -334,7 +334,10 @@ sub set_default_propargs
     # Since subrequests from the same user may interlace with this
     # request, it must be set for the request
 
-    return $Para::Frame::REQ->{'rb_default_propargs'} = $_[1];
+    $Para::Frame::REQ->{'rb_default_propargs'} = undef;
+    my $args = parse_propargs( $_[1] );
+
+    return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
 }
 
 #######################################################################
@@ -347,7 +350,7 @@ For the current request
 
 sub default_propargs
 {
-    return $Para::Frame::REQ->{'rb_default_propargs'} || {};
+    return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
 }
 
 #######################################################################
