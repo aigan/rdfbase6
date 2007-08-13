@@ -546,9 +546,9 @@ sub parse_query_pred
 		$pred = $1;
 	    }
 
-	    debug "pred is $pred";
+#	    debug "pred is $pred";
 	    $pred = Rit::Base::Pred->get( $pred );
-	    debug "now pred is $pred";
+#	    debug "now pred is $pred";
 	    $type = $pred->coltype;
 	}
 
@@ -1082,6 +1082,8 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
+Arguments from L<Rit::Base::User/default_propargs> are used for any
+undefined argument given.
 
 Returns in array context: (C<$arg>, C<$arclim>, C<$res>)
 
@@ -1099,8 +1101,19 @@ sub parse_propargs
 {
     my( $arg ) = @_;
 
-    $arg ||= $Para::Frame::U ?
-      $Para::Frame::U->default_propargs : undef;
+    my $def_args;
+    if( $Para::Frame::U )
+    {
+	if( $def_args = $Para::Frame::U->default_propargs )
+	{
+	    unless( $arg )
+	    {
+		$arg = $def_args;
+		$def_args = undef;
+	    }
+	}
+    }
+
     my $arclim;
 
     if( ref $arg and ref $arg eq 'HASH' )
@@ -1161,6 +1174,16 @@ sub parse_propargs
     }
 
     my $res = $arg->{'res'} ||= Rit::Base::Resource::Change->new;
+
+    if( $def_args )
+    {
+	foreach my $key (keys %$def_args)
+	{
+	    $arg->{$key} ||= $def_args->{$key};
+	}
+    }
+
+
 
 
     if( wantarray )
