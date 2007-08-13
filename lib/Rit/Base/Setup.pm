@@ -39,8 +39,9 @@ use DateTime::Format::Pg;
 use Para::Frame::Utils qw( debug datadump throw );
 use Para::Frame::Time qw( now );
 
-use Rit::Base::Utils qw( valclean );
 use Rit::Base;
+use Rit::Base::Utils qw( valclean );
+use Rit::Base::Constants;
 
 our %NODE;
 our @ARC;
@@ -54,19 +55,22 @@ sub setup_db
     my $now = DateTime::Format::Pg->format_datetime(now);
 
 
-    $dbh->do("select setval('node_seq',1,false)");
-
 #    my $cnt = $dbix->get_lastval('node_seq');
 #    debug "First node will have number $cnt";
 
 
-    my $rb_root = $Rit::Base::Demo::CFG->{'rb_root'};
+    my $rb_root = $Para::Frame::CFG->{'rb_root'} or die "rb_root not given in CFG";
     open RBDATA, "$rb_root/data/base.data" or die $!;
     while(<RBDATA>)
     {
 	chomp;
 	last if $_ eq 'NODES';
     }
+
+    $dbh->do("delete from arc") or die;
+    $dbh->do("delete from node") or die;
+    $dbh->do("select setval('node_seq',1,false)");
+
 
     print "Reading Nodes\n";
     while(<RBDATA>)
@@ -228,6 +232,35 @@ sub setup_db
     }
 
     $dbh->commit;
+
+    print "Initiating constants\n";
+
+    Rit::Base::Constants->init;
+
+    my $req = Para::Frame::Request->new_bgrequest();
+
+    print "Infering arcs\n";
+
+    my $sth_arc_list = $dbh->prepare("select * from arc order by ver");
+    $sth_arc_list->execute();
+    my @arc_recs;
+    while( my $arc_rec = $sth_arc_list->fetchrow_hashref )
+    {
+	push @arc_recs, $arc_rec;
+    }
+    $sth_arc_list->finish;
+
+    foreach my $arc_rec (@arc_recs)
+    {
+	my $arc = Rit::Base::Arc->get_by_rec_and_register($arc_rec);
+	$arc->create_check;
+    }
+
+    $dbh->commit;
+
+    print "Initiating constants again\n";
+
+    Rit::Base::Constants->init;
 
     print "Done!\n";
 
