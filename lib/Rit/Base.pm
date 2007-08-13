@@ -61,6 +61,7 @@ our %COLTYPE_num2name =
  6 => 'value',
 );
 
+our %COLTYPE_valtype2name; # Initiated in Rit::Base::Constants
 
 #########################################################################
 
@@ -99,6 +100,7 @@ sub init
     Para::Frame->add_hook('before_db_commit', sub
 			  {
 			      Rit::Base::Resource->commit();
+			      Rit::Base::Arc->unlock_all();
 			  });
     Para::Frame->add_hook('after_db_rollback', sub
 			  {
@@ -221,7 +223,6 @@ sub Constants ()
 
 sub on_done ()
 {
-    # Releas arc locks
     Rit::Base::Arc->unlock_all();
 }
 
