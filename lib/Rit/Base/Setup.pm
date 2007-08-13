@@ -261,6 +261,7 @@ sub setup_db
     print "Initiating constants again\n";
 
     Rit::Base::Constants->init;
+    $Rit::Base::IN_STARTUP = 0;
 
     print "Done!\n";
 
