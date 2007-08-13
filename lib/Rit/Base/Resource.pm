@@ -139,7 +139,7 @@ sub get
     my $node;
     my $id;
 
-#    debug "Getting $id ($class)";
+#    debug "Getting $val_in ($class)";
 
     # Get the resource id
     #
@@ -1191,7 +1191,16 @@ sub create
 	    }
 	}
 
-	if( $pred_name =~ /^rev_(.*)$/ )
+	if( $pred_name eq 'label' )
+	{
+	    my $node = Rit::Base::Resource->get( $subj_id );
+	    if( $vals->size > 1 )
+	    {
+		confess "Can't give a node more than one label";
+	    }
+	    $node->set_label( $vals->get_first_nos );
+	}
+	elsif( $pred_name =~ /^rev_(.*)$/ )
 	{
 	    $pred_name = $1;
 
@@ -3229,13 +3238,12 @@ sub set_label
 {
     my( $node, $label_new ) = @_;
 
-#    debug "$node->{id}:  set_label to $label_new";
+    my $label_old = $node->label || '';
+    $label_new ||= '';
 
-    my $label_old = $node->label;
-
-    if( ($label_old||'') ne ($label_new||'') )
+    if( $label_old ne $label_new )
     {
-#	debug "  changed";
+	debug "Node $node->{id} label set to '$label_new'";
 	$node->{'label'} = $label_new;
 	$node->mark_updated;
     }
@@ -6074,6 +6082,7 @@ sub initiate_node
 sub mark_unsaved
 {
     $UNSAVED{$_[0]->{'id'}} = $_[0];
+#    debug "Node $_[0]->{id} marked as unsaved now";
 }
 
 
@@ -6108,10 +6117,13 @@ sub mark_updated
 
 sub commit
 {
+#    debug "Comitting Resource node changes";
+
     eval
     {
 	foreach my $node ( values %UNSAVED )
 	{
+	    debug "Saving node ".$node->sysdesig;
 	    $node->save;
 	}
     };
@@ -6377,9 +6389,11 @@ sub initiate_rel
     {
 	return if $_[0]->{'initiated_rel'};
 
+	my $p_name_id = Rit::Base::Resource->get_by_constant_label('name')->id;
+
 	# Optimized for also getting value nodes
-	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=11 and active is true)) UNION select * from arc where subj=? and active is true");
-	$sth_init_subj_name->execute($nid, $nid);
+	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
+	$sth_init_subj_name->execute($nid, $p_name_id, $nid);
 	my $stmts = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
 
@@ -6628,7 +6642,7 @@ sub initiate_prop
 	}
 
 	my $stmts;
-	if( ($pred_id == 11) and not $inactive ) # Optimization...
+	if( ($name eq 'name') and not $inactive ) # Optimization...
 	{
 	    my $sth_init_subj_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where (subj=? and pred=? and active is true)");
 	    $sth_init_subj_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
