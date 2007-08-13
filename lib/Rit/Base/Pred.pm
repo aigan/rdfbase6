@@ -345,42 +345,6 @@ sub valtype
 
 #######################################################################
 
-=head2 set_valtype
-
-  $p->set_valtype( $value )
-
-Sets the valtype of the predicate to C<$value> and updates the DB.
-
-The C<$value> must be a scalar string.
-
-Returns: The C<$value>
-
-=cut
-
-sub set_valtype
-{
-    my( $pred, $value ) = @_;
-
-    die "not implemented";
-
-    if( defined $value )
-    {
-	return $value if $value eq $pred->{'valtype'};
-
-	$pred->{'valtype'} = $value;
-
-	my $dbh = $Rit::dbix->dbh;
-
-	my $sth = $dbh->prepare("update reltype set valtype=? where id=?");
-	$sth->execute($value, $pred->id);
-    }
-
-    return $pred->{'valtype'};
-}
-
-
-#######################################################################
-
 =head2 objtype
 
   $p->objtype()
