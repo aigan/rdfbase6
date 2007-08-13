@@ -249,7 +249,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'source'}  = $Para::Frame::CFG->{'rb_default_source'}->id;
+	$rec->{'source'}  = $this->default_source->id;
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
@@ -263,7 +263,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'read_access'}  = $Para::Frame::CFG->{'rb_default_read_access'}->id;
+	$rec->{'read_access'}  = $this->default_read_access->id;
     }
     push @fields, 'read_access';
     push @values, $rec->{'read_access'};
@@ -277,7 +277,7 @@ sub create
     else
     {
 	# Method may be called before constants are set up
-	$rec->{'write_access'}  = $Para::Frame::CFG->{'rb_default_write_access'}->id;
+	$rec->{'write_access'}  = $this->default_write_access->id;
     }
     push @fields, 'write_access';
     push @values, $rec->{'write_access'};
@@ -359,14 +359,20 @@ sub create
 
 
     ##################### updated_by
-    if( $req->user )
+    if( $req and $req->user )
     {
 	$rec->{'created_by'} = $req->user->id;
-	push @fields, 'created_by';
-	push @values, $rec->{'created_by'};
     }
+    else
+    {
+	$rec->{'created_by'} =
+	  Rit::Base::Resource->get_by_constant_label('root')->id;
+    }
+    push @fields, 'created_by';
+    push @values, $rec->{'created_by'};
 
-   ##################### updated
+
+    ##################### updated
     $rec->{'updated'} = now();
     push @fields, 'updated';
     push @values, $dbix->format_datetime($rec->{'updated'});
@@ -3990,7 +3996,7 @@ sub schedule_check_create
     if( $Rit::Base::Arc::lock_check ||= 0 )
     {
 	push @Rit::Base::Arc::queue_check, $arc;
-	debug "Added ".$arc->sysdesig." to queue check";
+	debug 3, "Added ".$arc->sysdesig." to queue check";
     }
     else
     {
@@ -4015,7 +4021,7 @@ sub lock
     my $DEBUG = 0;
     if( $DEBUG )
     {
-	my($package, $filename, $line) = caller;
+	my($package, $filename, $line) = caller(1);
 	warn "  Arc lock up on level $cnt, called from $package, line $line\n";
     }
 }
@@ -4042,7 +4048,7 @@ sub unlock
     my $DEBUG = 0;
     if( $DEBUG )
     {
-	my($package, $filename, $line) = caller;
+	my($package, $filename, $line) = caller(1);
 	warn "  Arc lock on level $cnt, called from $package, line $line\n";
     }
 
@@ -4269,6 +4275,70 @@ sub remove_check
     $arc->{'in_remove_check'} --;
     warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 }
+
+
+###############################################################
+
+=head2 default_source
+
+=cut
+
+sub default_source
+{
+    # May be called before constants init
+    my $source = $Para::Frame::CFG->{'rb_default_source'};
+    if( ref $source )
+    {
+	return $source;
+    }
+    else
+    {
+	return Rit::Base::Resource->get_by_constant_label('ritbase');
+    }
+}
+
+
+###############################################################
+
+=head2 default_read_access
+
+=cut
+
+sub default_read_access
+{
+    # May be called before constants init
+    my $read_access = $Para::Frame::CFG->{'rb_default_read_access'};
+    if( ref $read_access )
+    {
+	return $read_access;
+    }
+    else
+    {
+	return Rit::Base::Resource->get_by_constant_label('public');
+    }
+}
+
+
+###############################################################
+
+=head2 default_write_access
+
+=cut
+
+sub default_write_access
+{
+    # May be called before constants init
+    my $write_access = $Para::Frame::CFG->{'rb_default_write_access'};
+    if( ref $write_access )
+    {
+	return $write_access;
+    }
+    else
+    {
+	return Rit::Base::Resource->get_by_constant_label('sysadmin_group');
+    }
+}
+
 
 ###################################################################
 
