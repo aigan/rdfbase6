@@ -101,8 +101,8 @@ sub init
     my $sth_child = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
     foreach my $colname (qw(valdate valfloat valtext valbin))
     {
-	$sth_label->execute($colname) or die;
-	my( $colid ) = $sth_label->fetchrow_array or die;
+	$sth_label->execute($colname) or die "could not get constant $colname";
+	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
 	$sth_label->finish;
 
 	debug "Caching colname $colname";
