@@ -131,13 +131,15 @@ sub result
     confess(datadump($search)) unless $res;
 
     my $limit = 10;
-    my $req = $Para::Frame::REQ;
-    my $user = $req->user;
-    if( $user and $req->is_from_client )
+    if( my $req = $Para::Frame::REQ )
     {
-	my $q = $req->q;
-	$limit = $q->param('limit') || 10;
-	$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+	my $user = $req->user;
+	if( $user and $req->is_from_client )
+	{
+	    my $q = $req->q;
+	    $limit = $q->param('limit') || 10;
+	    $limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+	}
     }
 
     $res->set_page_size( $limit );
@@ -1958,9 +1960,10 @@ sub build_outer_select_field
 	    {
 		confess "Not sane";
 	    }
+	    my $weight_id = Rit::Base::Resource->get_by_constant_label('weight')->id;
 
 	    # Sort by weight
-	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj $arclim_sql) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=302 and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
+	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj $arclim_sql) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=${weight_id} and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
 	}
 	elsif( $dir eq 'exists' )
 	{
@@ -2025,6 +2028,9 @@ sub build_main_select_group
 # rel1 is the has_subscription relation and rel2 is the weight
 # relation of the specific subscription object.
 
+# TODO: Remove this rg-specific sorting
+
+# pred=1 and obj=1111 => is subscription
 
 sub build_main_select_price
 {
@@ -2033,6 +2039,7 @@ sub build_main_select_price
     my $arclim_sql0 = $search->arclim_sql();
     my $arclim_sql1 = $search->arclim_sql({prefix => 'rel1.'});
     my $arclim_sql2 = $search->arclim_sql({prefix => 'rel2.'});
+    my $weight_id = Rit::Base::Resource->get_by_constant_label('weight')->id;
 
     my $sql =
 "
@@ -2040,7 +2047,7 @@ sub build_main_select_price
                select sum(rel2.valfloat)
                from arc as rel1, arc as rel2
                where
-                   rel1.subj=main.node and rel1.obj=rel2.subj and rel2.pred=302 and rel1.indirect is false and
+                   rel1.subj=main.node and rel1.obj=rel2.subj and rel2.pred=${weight_id} and rel1.indirect is false and
                    exists
                    (
                        select 1
