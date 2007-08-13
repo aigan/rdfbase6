@@ -63,6 +63,8 @@ our %COLTYPE_num2name =
 
 our %COLTYPE_valtype2name; # Initiated in Rit::Base::Constants
 
+our  $IN_STARTUP = 1; # Set to 0 after db init
+
 #########################################################################
 
 BEGIN
@@ -157,6 +159,8 @@ sub init_on_startup
 	    $cfg->{$key} = Rit::Base::Resource->get_by_constant_label($val);
 	}
     }
+
+    $Rit::Base::IN_STARTUP = 0;
 
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
 }
