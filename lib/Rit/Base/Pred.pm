@@ -254,7 +254,7 @@ sub name
     my( $pred ) = @_;
 
     confess "not an obj: $pred" unless ref $pred;
-    return new Rit::Base::String $pred->{'name'};
+    return new Rit::Base::String $pred->{'label'};
 }
 
 #######################################################################
@@ -284,7 +284,7 @@ Returns: The name as a scalar string
 
 sub plain
 {
-    $_[0]->{'name'};
+    $_[0]->{'label'};
 }
 
 #######################################################################
@@ -589,31 +589,91 @@ sub init
 {
     my( $pred, $rec ) = @_;
 
-    my $id = $pred->{'id'};
-    unless( $rec )
-    {
-	if( $id < 0 ) # Special pred not stored in db
-	{
-	    croak "Pred init misses a rec for negative id";
-	}
-
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from node where node = ?")
-	  or die;
-	$sth_id->execute($id);
-	$rec = $sth_id->fetchrow_hashref;
-	$sth_id->finish;
-	$rec or confess "Predicate '$id' not found";
-	$pred->{'id'}       = $rec->{'node'};
-    }
-
-    $pred->{'name'}         = $rec->{'label'};
-    $pred->{'coltype'}      = $rec->{'pred_coltype'};
-
-#    debug "--> Initiated pred $pred->{name}: ".datadump($pred);
-#    confess datadump($rec) if $id==14; ######## DEBUG
+    $pred->initiate_node;
 
     return $pred;
 }
+
+#######################################################################
+
+=head2 on_bless
+
+=cut
+
+sub on_bless
+{
+    my( $pred, $class_old ) = @_;
+
+    $pred->set_coltype_from_range;
+}
+
+#######################################################################
+
+=head2 on_arc_add
+
+=cut
+
+sub on_arc_add
+{
+    my( $pred, $arc, $pred_name, $args ) = @_;
+
+    if( $pred_name eq 'range' )
+    {
+	$pred->set_coltype_from_range;
+    }
+}
+
+#######################################################################
+
+=head2 set_coltype_from_range
+
+=cut
+
+sub set_coltype_from_range
+{
+    my( $pred ) = @_;
+
+    my %name2num = reverse %Rit::Base::COLTYPE_num2name;
+
+    if( my $range = $pred->range )
+    {
+	my $valtype_id = $range->id;
+	my $coltype = $Rit::Base::COLTYPE_valtype2name{ $valtype_id } || 'obj';
+	my $coltype_num = $name2num{ $coltype };
+	$pred->set_coltype( $coltype_num ) unless $Rit::Base::IN_STARTUP;
+    }
+}
+
+#######################################################################
+
+=head2 set_coltype
+
+  $n->set_coltype($coltype)
+
+=cut
+
+sub set_coltype
+{
+    my( $pred, $coltype_new ) = @_;
+
+    my $coltype_old = $pred->{'coltype'} || '';
+    $coltype_new ||= '';
+
+    if( $coltype_old ne $coltype_new )
+    {
+	if( $coltype_old )
+	{
+	    confess "Can't change a predicate from one coltype ($coltype_old) to another ($coltype_new)";
+	}
+
+	debug "Pred $pred->{id} coltype set to '$coltype_new'";
+	$pred->{'coltype'} = $coltype_new;
+	$pred->mark_updated;
+    }
+
+    return $coltype_new;
+}
+
 
 #######################################################################
 
