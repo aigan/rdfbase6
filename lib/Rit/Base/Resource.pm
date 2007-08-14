@@ -201,9 +201,9 @@ sub get
 
 #######################################################################
 
-=head2 get_by_rec
+=head2 get_by_node_rec
 
-  $n->get_by_rec( $rec, @extra )
+  $n->get_by_node_rec( $rec, @extra )
 
 Returns: a node
 
@@ -211,13 +211,15 @@ Exceptions: see L</init>.
 
 =cut
 
-sub get_by_rec
+sub get_by_node_rec
 {
-    my $this = shift;
+    my( $this, $rec ) = @_;
 
-    my $id = $_[0]->{'node'} or
-      confess "get_by_rec misses the node param: ".datadump($_[0],2);
-    return $Rit::Base::Cache::Resource{$id} || $this->new($id)->first_bless(@_);
+    my $id = $rec->{'node'} or
+      confess "get_by_node_rec misses the node param: ".datadump($rec,2);
+
+    return $Rit::Base::Cache::Resource{$id} ||
+      $this->new($id)->first_bless($rec);
 }
 
 
@@ -6024,19 +6026,28 @@ sub initiate_cache
 
 =head2 initiate_node
 
+  $node->initiate_node()
+
+  $node->initiate_node( $rec )
+
 =cut
 
 sub initiate_node
 {
-    my( $node ) = @_;
+    my( $node, $rec ) = @_;
     return $node if $node->{'initiated_node'};
 
     my $nid = $node->{'id'};
     my $class = ref $node;
-    my $sth_node = $Rit::dbix->dbh->prepare("select * from node where node = ?");
-    $sth_node->execute($nid);
-    my $rec = $sth_node->fetchrow_hashref;
-    $sth_node->finish;
+
+    unless( $rec )
+    {
+	my $sth_node = $Rit::dbix->dbh->prepare("select * from node where node = ?");
+	$sth_node->execute($nid);
+	$rec = $sth_node->fetchrow_hashref;
+	$sth_node->finish;
+    }
+
     if( $rec )
     {
 	if( my $pred_coltype = $rec->{'pred_coltype'} )
