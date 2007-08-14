@@ -209,23 +209,6 @@ sub create
 
 #######################################################################
 
-=head2 find
-
-List all rules. Returns a Rit::Base::List object
-
-=cut
-
-sub find
-{
-    my( $this ) = @_;
-    $INITIALIZED or $this->on_configure;
-    my $rules_listref =  [ values %Rules ];
-    return Rit::Base::List->new($rules_listref);
-}
-
-
-#######################################################################
-
 =head2 list_a
 
 Returns an array ref
