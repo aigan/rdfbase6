@@ -60,7 +60,6 @@ our $special_id =
 
 our $special_label = { reverse %$special_id };
 
-
 =head1 DESCRIPTION
 
 Represents preds.
@@ -70,146 +69,6 @@ Inherits from L<Rit::Base::Resource>.
 =cut
 
 
-
-
-#########################################################################
-################################  Constructors  #########################
-
-=head1 Constructors
-
-These can be called with the class name or any arc object.
-
-=cut
-
-#######################################################################
-
-=head2 find
-
-  $p->find()
-
-  $p->find( $label )
-
-  $p->find({ $key1 => $value1, $key2 => $value2, ... }, \%args)
-
-With no params, returns a L<Rit::Base::List> with all predicates.
-
-With one param, returns a L<Rit::Base::List> with the
-L<Rit::Base::Pred> object with that label.
-
-For the params as key/value pair, look up all predicates that matches
-all the given properties.  The only supported content for the keys are
-L</label> and L</valtype>.
-
-Supported args are:
-
-  default
-
-Returns: a L<Rit::Base::List>
-
-=cut
-
-sub find
-{
-    my( $this, $props_in, $args ) = @_;
-    my $class = ref($this) || $this;
-
-    die "fixme";
-
-    my $recs;
-
-    $args ||= {};
-    my $default = $args->{'default'};
-
-    if( $props_in )
-    {
-	unless( ref $props_in )
-	{
-	    $props_in = { 'label' => $props_in };
-	}
-
-	# Special case for label lookup
-	if( my $label = $props_in->{'label'} )
-	{
-	    my $pred = $Rit::Base::Cache::PredId{ $label };
-	    my $preds;
-	    if( $pred )
-	    {
-		$preds = Rit::Base::List->new([$pred]);
-	    }
-	    else
-	    {
-		$preds = $class->find_by_label( $label, $args );
-		$pred = $preds->[0];
-		unless( $pred )
-		{
-		    return $preds;
-		}
-		$Rit::Base::Cache::PredId{ $label } = $pred->id;
-	    }
-
-
-	    # Narrow the serach for the rest of the props
-	    if( scalar(keys %$props_in) > 2 )
-	    {
-		# Do not modify the $props_in given as argument
-		my %newprops = %$props_in;
-		delete $newprops{'label'};
-		return $preds->find(\%newprops, $args);
-	    }
-	    return $preds;
-	}
-
-	my $node_props = {};
-	my $props = {};
-
-	my( @values, @parts );
-
-	foreach my $key ( keys %$props )
-	{
-	    if( $key eq 'valtype' )
-	    {
-		push @parts, "valtype=?";
-		my $val = $props->{'valtype'};
-		$val = $val->literal;
-		push @values, $val;
-		die "not implemented: translate $val to number";
-	    }
-	    else
-	    {
-		die "not implemented: $key";
-	    }
-	}
-
-	if( scalar %$props )
-	{
-	    die "not implemented: ".join(', ', keys %$props);
-	}
-
-	if( $default )
-	{
-	    die "not implemented";
-	}
-
-	my $and_part = join " and ", @parts;
-	my $st = "select * from node where $and_part";
-	my $sth = $Rit::dbix->dbh->prepare($st);
-	$sth->execute(@values);
-	$recs = $sth->fetchall_arrayref({});
-	$sth->finish;
-    }
-    else
-    {
-	$recs = $Rit::dbix->select_list('from node where pred_coltype is not null order by label');
-    }
-
-    my @preds;
-    foreach my $rec (@$recs)
-    {
-	push @preds, $class->get_by_rec( $rec );
-    }
-
-    return Rit::Base::List->new( \@preds );
-}
 
 
 #########################################################################
@@ -380,6 +239,11 @@ Returns: A scalar string
 
 sub coltype
 {
+    unless( $_[0]->{'coltype'} )
+    {
+	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
+    }
+
     return $Rit::Base::COLTYPE_num2name{ $_[0]->{'coltype'} };
 }
 
@@ -457,19 +321,19 @@ sub find_by_label
     # Special properties
     if( $label =~ /^(id|score|random)$/ )
     {
-	return $class->get_by_rec({
-				   label   => $1,
-				   node    => $special_id->{$1},
-				   pred_coltype => 2, # valfloat
-				  });
+	return $class->get_by_node_rec({
+					label   => $1,
+					node    => $special_id->{$1},
+					pred_coltype => 2, # valfloat
+				       });
     }
     if( $label =~ /^(desig|loc|plain)$/ )
     {
-	return $class->get_by_rec({
-				   label   => $1,
-				   node    => $special_id->{$1},
-				   pred_coltype => 5, # valtext
-				  });
+	return $class->get_by_node_rec({
+					label   => $1,
+					node    => $special_id->{$1},
+					pred_coltype => 5, # valtext
+				       });
     }
 
     my $sql = 'select * from node where ';
@@ -498,7 +362,7 @@ sub find_by_label
     {
 	if( $rec )
 	{
-	    return $class->get_by_rec( $rec );
+	    return $class->get_by_node_rec( $rec );
 	}
 	else
 	{
@@ -509,7 +373,7 @@ sub find_by_label
     {
 	if( $rec )
 	{
-	    return Rit::Base::List->new([$class->get_by_rec( $rec )]);
+	    return Rit::Base::List->new([$class->get_by_node_rec( $rec )]);
 	}
 	else
 	{
@@ -551,9 +415,11 @@ sub get_by_label
 
 sub init
 {
-    my( $pred, $rec ) = @_;
+    my( $pred, $node_rec ) = @_;
 
-    $pred->initiate_node;
+    $pred->initiate_node( $node_rec );
+
+#    debug "Pred coltype of $pred->{label} is $pred->{coltype}";
 
     return $pred;
 }
