@@ -11,16 +11,16 @@
 
 <table>
 <tr><th>[% sort('ID','id') %]
-    <th>[% sort('A', 'a.name.loc') %]
-    <th>[% sort('B', 'b.name.loc') %]
-    <th>[% sort('C', 'c.name.loc') %]
+    <th>[% sort('A', 'a.desig') %]
+    <th>[% sort('B', 'b.desig') %]
+    <th>[% sort('C', 'c.desig') %]
 
-[% FOREACH rule = find_rules.sorted(order, direction) %]
+[% FOREACH rule IN find(is=C.syllogism).sorted(order, direction) %]
    [% tr2 %]
       <td>[% jump(rule.id, rule.form_url) %]</td>
-      <td>[% rule.a.name.loc %]</td>
-      <td>[% rule.b.name.loc %]</td>
-      <td>[% rule.c.name.loc %]</td>
+      <td>[% rule.a.desig %]</td>
+      <td>[% rule.b.desig %]</td>
+      <td>[% rule.c.desig %]</td>
    </td></tr>
 [% END %]
 </table>
