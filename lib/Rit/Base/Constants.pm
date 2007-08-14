@@ -153,27 +153,6 @@ sub new ()
 }
 
 
-#######################################################################
-
-=head2 new_by_rec
-
-=cut
-
-sub new_by_rec
-{
-    my $this = shift;
-    my $node = Rit::Base::Resource->get_by_rec(@_);
-    if( $node->label )
-    {
-	return $node;
-    }
-    else
-    {
-	confess sprintf "Node %d not a constant", $node->id;
-    }
-}
-
-
 ######################################################################
 
 =head2 find
