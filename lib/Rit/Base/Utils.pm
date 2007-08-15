@@ -44,7 +44,7 @@ BEGIN
 	      arc_lock arc_unlock truncstring string parse_query_pred
 	      parse_query_prop convert_query_prop_for_creation
 	      name2url query_desig send_cache_update parse_propargs
-	      aais );
+	      aais alfanum_to_id );
 
 }
 
@@ -1217,6 +1217,57 @@ sub aais
     my $arclim_new = $arclim->clone->add_intersect($lim);
 
     return({%$args, arclim=>$arclim_new});
+}
+
+#########################################################################
+
+=head2 alfanum_to_id
+
+  alfanum_to_id( $alfanum )
+
+=cut
+
+sub alfanum_to_id
+{
+    my( $alfanum_in ) = @_;
+
+    my $alfanum = uc($alfanum_in);
+
+    my @map = ((0..9),('A'..'Z'));
+    my $pow = scalar(@map);
+    my %num;
+    for(my$i=0;$i<=$#map;$i++)
+    {
+	$num{$map[$i]}=$i;
+    }
+
+    my $chkchar = substr $alfanum,-1,1,'';
+
+    my $chksum = 0;
+    my $id = 0;
+    my $len = length($alfanum)-1;
+
+    for(my $i=$len;$i>=0;$i--)
+    {
+	my $val = $num{substr($alfanum, $i, 1)};
+	$chksum += $val;
+	my $pos = $len-$i;
+#	print "  Pos $pos, pow $pow, val $val\n";
+	my $inc = $val * ($pow ** $pos);
+#	print "  --> $inc\n";
+	$id += $inc;
+    }
+
+    if( $map[$chksum%$pow] eq $chkchar )
+    {
+	return $id;
+    }
+    else
+    {
+	debug "Checksum mismatch for alfanum $alfanum; id=$id; checksum = ".$map[$chksum%$pow];
+
+	return undef;
+    }
 }
 
 #######################################################################
