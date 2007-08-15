@@ -249,6 +249,7 @@ sub incl_act
 	$active = 0;
 	foreach(@$arclim)
 	{
+	    $_||=0;
 	    if( $_ & FLAGS_ACTIVE )
 	    {
 		$active = 1;
