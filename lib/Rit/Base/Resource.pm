@@ -1333,13 +1333,44 @@ sub plain { $_[0] }
 
   $n->id
 
-The unique node id.
+The unique node id as a plain string.
 
 =cut
 
 sub id {
 #    confess "not a object" unless ref $_[0]; ### DEBUG
  $_[0]->{'id'} }
+
+
+#######################################################################
+
+=head2 id_alfanum
+
+  $n->id_alfanum
+
+The unique node id expressed with [0-9A-Z] as a plain string, with a
+one char checksum at the end.
+
+=cut
+
+sub id_alfanum
+{
+    my $id = $_[0]->{'id'};
+    my $str = "";
+    my @map = ((0..9),('A'..'Z'));
+    my $len = scalar(@map);
+    my $chksum = 0;
+    while( $id > 0 )
+    {
+	my $rest = $id % $len;
+	$id = int( $id / $len );
+
+	$str .= $map[$rest];
+	$chksum += $rest;
+    }
+
+    return reverse($str) . $map[$chksum % $len];
+}
 
 
 #######################################################################
@@ -5929,6 +5960,10 @@ sub get_by_constant_label
 
     unless( $Rit::Base::Constants::Label{$label} )
     {
+	if( ref $label )
+	{
+	    confess "label must be a plain string";
+	}
 	my $sth = $Rit::dbix->dbh->prepare(
 		  "select node from node where label=?");
 	$sth->execute( $label );
