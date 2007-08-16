@@ -30,6 +30,8 @@ BEGIN
 
 use Para::Frame::Utils qw( throw debug );
 
+use Rit::Base::Utils qw( is_undef );
+
 use base qw( Para::Frame::Time Rit::Base::Literal );
 
 
@@ -81,6 +83,19 @@ sub now
 sub date
 {
     return bless(Para::Frame::Time->get(@_),'Rit::Base::Time');
+}
+
+#######################################################################
+
+=head2 get
+
+Extension of L<Para::Frame::Time/get>
+
+=cut
+
+sub get
+{
+    return shift->SUPER::get(@_) || is_undef;
 }
 
 #######################################################################
