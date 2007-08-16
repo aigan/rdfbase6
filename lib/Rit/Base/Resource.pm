@@ -4768,6 +4768,7 @@ It sorts into 4 groups, depending on what the parameter begins with:
  2. Complemnt those props with second order atributes (row)
  3. Check if some props should be removed (check)
  4. Add new resources (newsubj)
+ 5. Let classes handle themselves
 
 Returns: the number of changes
 
@@ -4800,7 +4801,7 @@ The image can be scaled proportianally to fit within certain
 max-dimensions in pixels by having parameters maxw and maxh.  A
 typical image-parameter would be:
 
-arc_singular__file_image__pred_logo_small__maxw_400__maxh_300__row_12
+ arc_singular__file_image__pred_logo_small__maxw_400__maxh_300__row_12
 
 Filenames are made of name (or id) on subj and a counter (first free
 number).  Suffix is preserved.
@@ -4829,7 +4830,46 @@ main-parameter is supplied (no 1 above).  There can be several
 main-parameters.  If no main-parameter is set, the other
 newsubj-parameters with that number are ignored.
 
-Supported args are:
+=head3 5. Let classes handle themselves
+
+=head4 Existing resources
+
+Class-resources that wish to handle their own update_by_query can be
+specified with:
+
+ hidden('class_update_by_query', my_node.id)
+
+Then that resource will be called by:
+
+ my_node->class_update_by_query( $q );
+
+
+=head4 New class resources
+
+For new class-resources to be created, a key property can be specified
+with:
+
+ hidden('class_new_by_query', my_class.id)
+
+Then that class will be called by:
+
+ my_class->class_new_by_query( $q );
+
+The class then has to check for it's own parameters to see if a new
+resource is to be created or not etc.
+
+=head4 Parameter naming-convention
+
+To easily handle many classes etc at the same time, it is preferrable
+if you follow those naming conventions:
+
+ 1. For existing class resources, prefix all parameters with
+    class_[% class.id %]__subj_[% resource.id %]__
+ 2. For new class resources, prefix with
+    class_[% class.id %]__newsubj_[% key %]__
+
+
+=head3 Supported args are:
 
   res
 
@@ -7192,7 +7232,7 @@ sub handle_query_arc_value
 
     if( $file )
     {
-	debug "Got a fileupload, stated type: $file";
+	debug "Got a fileupload, stated type: $file, value: $value";
 	return $res->changes - $changes_prev
 	  unless( $value );
 
@@ -7211,15 +7251,16 @@ sub handle_query_arc_value
 
 	    if( $maxw < $w and $maxh < $h )
 	    {
-		($w, $h) = (($w/$h > $maxw/$maxh) ? ($maxw, $h/($w/$maxw)) : ($w/($h/$maxh), $maxh));
+		($w, $h) = (($w/$h > $maxw/$maxh) ?
+			    ($maxw, $h/($w/$maxw)) : ($w/($h/$maxh), $maxh));
 	    }
 	    elsif( $maxw < $w ) # $maxh might be undef
 	    {
-		($w, $h) = ($maxw, $h * $maxw / $w);
+		($w, $h) = ($maxw, $h/($w/$maxw));
 	    }
 	    elsif( $maxh < $h ) # $maxw might be undef
 	    {
-		($w, $h) = ($maxw * $maxh / $h, $maxh);
+		($w, $h) = ($w/($h/$maxh), $maxh);
 	    }
 
 	    $image->Scale( width => $w, height => $h );
