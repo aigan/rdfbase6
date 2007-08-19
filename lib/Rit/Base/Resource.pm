@@ -3329,7 +3329,7 @@ sub desig  # The designation of obj, meant for human admins
 	$desig = $node->id
     }
 
-    $desig = $desig->loc( $args ) if ref $desig; # Could be a Literal Resource
+    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
     utf8::upgrade($desig);
 #    debug "Returning desig $desig";
 
@@ -3379,7 +3379,7 @@ sub sysdesig  # The designation of obj, including node id
 	$desig = $node->id
     }
 
-    $desig = $desig->loc( $args ) if ref $desig; # Could be a Literal Resource
+    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
 
     if( $desig eq $node->{'id'} )
     {
@@ -4904,6 +4904,9 @@ sub update_by_query
 
     my $id = $node->id;
     $q->param('id', $id); # Just in case...
+
+    # Keep a history of updated nodes
+    $node->session_history_add('updated');
 
     # Sort params
     my @arc_params;
@@ -8376,6 +8379,23 @@ Called for literal resources. Ignored here but active for literal nodes
 sub set_arc
 {
     return $_[1]; # return the arc
+}
+
+
+#########################################################################
+
+=head2 session_history_add
+
+=cut
+
+sub session_history_add
+{
+    my( $node, $table ) = @_;
+    $table ||= 'visited';
+    my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
+      ||= Rit::Base::List->new();
+    $list->unshift_uniq($node);
+    return $list;
 }
 
 
