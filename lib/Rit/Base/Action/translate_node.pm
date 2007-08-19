@@ -40,6 +40,7 @@ sub handler
 
     my $p = Rit::Base::Pred->get( $pred_in );
 
+    $n->session_history_add('updated');
 
     foreach my $key ( $q->param )
     {

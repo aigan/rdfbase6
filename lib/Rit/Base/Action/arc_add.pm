@@ -42,6 +42,7 @@ sub handler
 	warn Dumper $props if $DEBUG;
 
 	$subj->add( $props, $args );
+	$subj->session_history_add('updated');
 	$res->autocommit;
 	return "Updated node $subj_id" if $res->changes;
 	return "No changes to node $subj_id";
@@ -49,6 +50,7 @@ sub handler
     else
     {
 	my $subj = Rit::Base::Resource->create( $props, $args );
+	$subj->session_history_add('updated');
 	$q->param('id', $subj->id);
 	$res->autocommit;
 

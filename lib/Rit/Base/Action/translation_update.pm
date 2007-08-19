@@ -17,6 +17,7 @@ use strict;
 
 use Data::Dumper;
 
+use Para::Frame::L10N qw( loc );
 use Para::Frame::Utils qw( throw );
 
 sub handler
@@ -59,7 +60,7 @@ sub handler
     # Reset cache
     delete $Rit::Base::L10N::TRANSLATION{ $c };
 
-    return "Översättning ändrad";
+    return loc("Translation updated");
 }
 
 1;

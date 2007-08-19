@@ -38,6 +38,7 @@ sub handler
     my $n = Rit::Base::Resource->get_by_id( $nid );
     my $l = Rit::Base::Resource->find_one({code=>$lc, is=>$C_language}, $args);
     my $tb = Rit::Base::Resource->find_one({name=>'textbox', scof=>'text'}, $args);
+    $n->session_history_add('updated');
 
     unless( $n->has_value({is=>$C_website_text}, $args) )
     {

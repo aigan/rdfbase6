@@ -68,6 +68,8 @@ sub handler
 
     $node1->merge( $node2, $args );
 
+    $node2->session_history_add('updated');
+
     $res->autocommit;
 
     $q->param('id', $node2->id );

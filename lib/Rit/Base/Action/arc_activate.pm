@@ -34,6 +34,8 @@ sub handler
     my $arc = getnode( $aid );
     my $desig = $arc->sysdesig;
 
+    $arc->subj->session_history_add('updated');
+
     if( $arc->activate )
     {
 	return "Activated arc";

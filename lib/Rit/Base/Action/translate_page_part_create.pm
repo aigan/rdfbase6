@@ -46,6 +46,7 @@ sub handler
 
     my( $args, $arclim, $res ) = parse_propargs('auto');
     my $n = Rit::Base::Resource->create( $props, $args );
+    $n->session_history_add('updated');
 
     $q->param('id' => $n->id );
 

@@ -36,6 +36,8 @@ sub handler
     $q->delete('pred');
     $q->delete('literal_arcs');
 
+    $arc->subj->session_history_add('updated');
+
     if( $arc->unsubmit )
     {
 	return "Unsubmitted arc";

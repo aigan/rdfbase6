@@ -30,6 +30,7 @@ sub handler
 
     my $node = Rit::Base::Resource->get( $id );
     $node->vacuum($args);
+    $node->session_history_add('updated');
 
     $res->autocommit;
 

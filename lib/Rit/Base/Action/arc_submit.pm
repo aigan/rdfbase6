@@ -37,6 +37,8 @@ sub handler
     $q->delete('pred');
     $q->delete('literal_arcs');
 
+    $arc->subj->session_history_add('updated');
+
     if( $arc->old )
     {
 	if( my $new = $arc->resubmit )

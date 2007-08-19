@@ -88,6 +88,8 @@ sub handler
 	    $arc->submit;
 	}
 
+	$arc->subj->session_history_add('updated');
+
 	$res->autocommit;
 
 	if( $res->changes )
