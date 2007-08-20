@@ -3198,9 +3198,13 @@ sub unsubmit
 
 =head2 activate
 
-  $a->activate
+  $a->activate( \%args )
 
-Activates the arc
+Activates the arc.
+
+Supported args:
+
+  updated - time of activation
 
 Returns: the number of changes
 
@@ -3230,7 +3234,7 @@ sub activate
 	}
     }
 
-    my $updated = now();
+    my $updated = $args->{'updated'} || now();
     my $activated_by = $Para::Frame::REQ->user;
 
     my $aarc = $arc->active_version;
