@@ -35,6 +35,7 @@ use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 
 use Rit::Base::Resource;
 use Rit::Base::Utils qw();
+use Rit::Base::Time qw( now );
 
 =head1 DESCRIPTION
 
@@ -277,11 +278,19 @@ sub sysdesig
 
 =head2 autocommit
 
-  $this->autocommit
+  $this->autocommit( \%args )
 
-This will submit all new arcs.
+This will submit/activate all new arcs.
+
+All arc subjects will be marked with
+L<Rit::Base::Resource/mark_updated> if they already has a node record.
 
 If the current user has root access; All submitted arcs will be activated.
+
+Supported args:
+
+  activate - tries to activate all arcs
+  update - the time of the update
 
 Returns: The number of new arcs processed
 
@@ -289,16 +298,23 @@ Returns: The number of new arcs processed
 
 sub autocommit
 {
-    my( $c, $args ) = @_;
+    my( $c, $args_in ) = @_;
 
     my $newarcs = $c->newarcs;
     my $cnt = $newarcs->size;
+
+    $args_in ||= {};
+    my %args = %$args_in;
+    $args{'updated'} ||= now(); # Make all updates the same time
+
+    my %subjs_changed;
+
     if( $cnt )
     {
 	my $activate;
-	if( defined $args->{'activate'} )
+	if( defined $args{'activate'} )
 	{
-	    $activate = $args->{'activate'};
+	    $activate = $args{'activate'};
 	}
 	else
 	{
@@ -333,12 +349,22 @@ sub autocommit
 		if( $activate and $arc->submitted )
 		{
 		    $arc->activate;
+		    my $subj = $arc->subj;
+		    $subjs_changed{ $subj->id } = $subj;
 		}
 	    }
 
 	    ( $arc, $error ) = $newarcs->get_next;
 	}
 	debug "- EOL";
+
+	foreach my $item ( values %subjs_changed )
+	{
+	    if( node_rec_exist )
+	    {
+		$item->mark_updated($args{'updated'});
+	    }
+	}
     }
 
     return $cnt;
