@@ -360,7 +360,7 @@ sub autocommit
 
 	foreach my $item ( values %subjs_changed )
 	{
-	    if( node_rec_exist )
+	    if( $item->node_rec_exist )
 	    {
 		$item->mark_updated($args{'updated'});
 	    }
