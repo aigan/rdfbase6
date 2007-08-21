@@ -43,6 +43,7 @@ use Rit::Base::Pred;
 use Rit::Base::User;
 use Rit::Base::Session;
 use Rit::Base::L10N;
+use Rit::Base::Widget;
 
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
@@ -130,6 +131,10 @@ sub init
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
     };
     Para::Frame->add_global_tt_params( $global_params );
+
+    Rit::Base::Widget->on_configure();
+
+    return 1;
 }
 
 
