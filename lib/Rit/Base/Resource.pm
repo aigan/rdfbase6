@@ -4760,8 +4760,6 @@ sub equals
 
   $n->update_by_query( \%args )
 
-Calls L</session_history_add>
-
 Setts query param id to node id.
 
 Calls L<Rit::Base::Widget::Handler/update_by_query> for the main work.
@@ -4774,9 +4772,6 @@ sub update_by_query
 {
     my( $node, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
-
-    # Keep a history of updated nodes
-    $node->session_history_add('updated');
 
     my $id = $node->id;
     my $q = $Para::Frame::REQ->q;
