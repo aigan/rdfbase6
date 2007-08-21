@@ -34,6 +34,17 @@ sub fetch
 	     return Rit::Base::Widget::wub($pred, $args);
 	 }
      },
+     wub_area => sub
+     {
+	 my( $context ) = shift;
+	 return sub
+	 {
+	     my( $pred, $args_in ) = @_;
+	     my( $args ) = parse_propargs($args_in);
+	     $args->{'context'} = $context;
+	     return Rit::Base::Widget::wub_area($pred, $args);
+	 }
+     },
     };
 
     my $factory = $self->{ FACTORY }{$name};
