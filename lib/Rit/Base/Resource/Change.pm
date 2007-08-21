@@ -55,10 +55,14 @@ sub new
     my $class = shift;
     return bless
     {
-     'deathrow' => {}, # arcs to remove
      'newarcs'  => [], # Arcs to submit and maby activate
      'changes'  => 0,  # Actual things changed
+
+     # These are for use in Rit::Base::Widget::Handler
+     'deathrow' => {}, # arcs to remove
      'row'      => {}, # Holds relating field info for row
+     'arc_field_handled' => {},
+     'new_key' => {},
     }, $class;
 }
 
@@ -209,6 +213,66 @@ Returns: a L<Rit::Base::List> of arcs
 sub newarcs
 {
     return Rit::Base::List->new($_[0]->{'newarcs'});
+}
+
+
+#########################################################################
+
+=head2 arc_params_count
+
+=cut
+
+sub arc_fields_count
+{
+    return scalar keys %{$_[0]->{'arc_field_handled'}};
+}
+
+
+#########################################################################
+
+=head2 field_handled
+
+=cut
+
+sub field_handled
+{
+    return $_[0]->{'arc_field_handled'}{$_[1]} ? 1 : 0;
+}
+
+
+#########################################################################
+
+=head2 set_field_handled
+
+=cut
+
+sub set_field_handled
+{
+    return $_[0]->{'arc_field_handled'}{$_[1]} ++;
+}
+
+
+#########################################################################
+
+=head2 new_key
+
+=cut
+
+sub new_key
+{
+    return $_[0]->{'new_key'};
+}
+
+
+#########################################################################
+
+=head2 set_new_key
+
+=cut
+
+sub set_new_key
+{
+    return $_[0]->{'new_key'} = $_[1];
 }
 
 
