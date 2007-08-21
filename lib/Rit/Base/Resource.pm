@@ -51,6 +51,7 @@ use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
 use Rit::Base::Utils qw( valclean translate getnode getarc getpred
@@ -4995,6 +4996,87 @@ sub link_paths
     return \@link_paths;
 }
 
+
+
+#######################################################################
+
+=head2 wu
+
+  $n->wu( $pred, \%args )
+
+Calls L<Rit::Base::Widget/prop> with subj => $n
+
+Stands for Widget for Updating
+
+Returns: a HTML widget for updating the value
+
+=cut
+
+sub wu
+{
+    my( $args ) = parse_propargs($_[2]);
+    $args->{'subj'} = $_[0];
+
+    debug "Calling Widget wu with pred $_[1] and:";
+    debug query_desig( $args );
+    return Rit::Base::Widget::wub($_[1], $args);
+}
+
+
+#######################################################################
+
+=head2 arcversions
+
+  $n->arcversions( $pred, \%args )
+
+Produces a list of all relevant common-arcs, with lists of their
+relevant versions, used for chosing version to activate/deactivate.
+
+  language (if applicable)
+    arc-list...
+
+=cut
+
+sub arcversions
+{
+    my( $node, $predname ) = @_;
+
+    debug "In arcversions for $predname for ".$node->sysdesig;
+
+    return #probably new...
+      unless( UNIVERSAL::isa($node, 'Rit::Base::Resource::Compatible') );
+
+
+    #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
+
+    my $arcs = $node->arc_list( $predname, undef, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+
+    my %arcversions;
+
+    while( my $arc = $arcs->get_next_nos )
+    {
+	my @versions;
+
+	if( $arc->realy_objtype ) # Value resource
+	{
+	    push @versions,
+	      $arc->obj->arc_list( 'value', undef, ['active','submitted'] )->as_array;
+	}
+	else
+	{
+	    push @versions,
+	      $arc->versions(undef, ['active','submitted'])->sorted('updated')->as_array;
+	    #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions(undef, ['active','submitted'])->size;
+	}
+
+	$arcversions{$arc->id} = \@versions;
+	#debug "Added arc ". $arc->sysdesig;
+    }
+
+    #debug datadump( \%arcversions, 2 );
+
+    return \%arcversions;
+}
 
 
 #######################################################################
