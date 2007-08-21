@@ -265,7 +265,7 @@ sub update_by_query
     {
 	foreach my $field (@arc_params)
 	{
-	    next if $res->handled_field( $field );
+	    next if $res->field_handled( $field );
 
 	    if( $field =~ /^arc_.*$/ )
 	    {
