@@ -50,7 +50,7 @@ use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Constants qw( $C_language $C_valtext );
 use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
@@ -153,6 +153,15 @@ sub get
 #	    debug "Got     $id";
 	    return $val_in;
 	}
+
+	if( $val_in eq 'new' ) # Minimal init for empty node
+	{
+	    $id = $Rit::dbix->get_nextval('node_seq');
+	    $node = $class->new( $id );
+	    $node->{'new'} = 1;
+	    return $node;
+	}
+
 
 	# $val_in could be a hashref, but those are not chached
 	unless( $id = $Rit::Base::Cache::Label{$class}{ $val_in } )
@@ -1231,6 +1240,11 @@ sub create
     }
 
     my $node = Rit::Base::Resource->get( $subj_id );
+    unless( @props_list )
+    {
+	$node->{'new'} = 1;
+    }
+
 
     arc_unlock;
 
@@ -1342,6 +1356,34 @@ The unique node id as a plain string.
 sub id {
 #    confess "not a object" unless ref $_[0]; ### DEBUG
  $_[0]->{'id'} }
+
+
+#######################################################################
+
+=head2 form_id
+
+  $n->form_id
+
+Special id for use in L<Rit::Base::Widget::Handler/update_by_query>.
+
+New/empty nodes are marked up with new_#. But only if they was created
+as an empty node with L</create>({}) or L</get>('new').
+
+Returns: If new, prepends 'new_' to the id.
+
+=cut
+
+sub form_id
+{
+    if( $_[0]->{'new'} )
+    {
+	return 'new_'.$_[0]->{'id'};
+    }
+    else
+    {
+	return $_[0]->{'id'};
+    }
+}
 
 
 #######################################################################
@@ -1468,6 +1510,54 @@ sub is_value_node
     else
     {
 	return 0;
+    }
+}
+
+
+#######################################################################
+
+=head2 empty
+
+  $n->empty()
+
+Returns true if this node has no properties.
+
+Returns: boolean
+
+=cut
+
+sub empty
+{
+    my( $node ) = @_;
+
+    if( $node->{'new'} )
+    {
+	return 1;
+    }
+    elsif( scalar keys(%{$node->{'arc_id'}}) )
+    {
+	return 0;
+    }
+    else
+    {
+	$node->initiate_node;
+	if( $node->{'initiated_node'} > 1 )
+	{
+	    return 0;
+	}
+
+	my $st = "select count(ver) from arc where subj=? or obj=? or ver=? or id=?";
+	my $dbh = $Rit::dbix->dbh;
+	my $sth = $dbh->prepare($st);
+	my $node_id = $node->id;
+	$sth->execute($node_id, $node_id, $node_id, $node_id);
+	my $res = 1;
+	if( $sth->fetchrow_array )
+	{
+	    $res = 0;
+	}
+	$sth->finish;
+	return $res;
     }
 }
 
@@ -5014,12 +5104,21 @@ Returns: a HTML widget for updating the value
 
 sub wu
 {
-    my( $args ) = parse_propargs($_[2]);
-    $args->{'subj'} = $_[0];
-
-    debug "Calling Widget wu with pred $_[1] and:";
-    debug query_desig( $args );
-    return Rit::Base::Widget::wub($_[1], $args);
+    my( $node, $pred_name, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+    $args->{'subj'} = $node;
+    my $pred = Rit::Base::Pred->get_by_constant_label($pred_name);
+    my $textbox = Rit::Base::Resource->get({name=>'textbox',
+					    scof=>$C_valtext});
+    if( $pred->range->equals($textbox) or
+	$pred->range->scof($textbox) )
+    {
+	return Rit::Base::Widget::wub_textarea($pred_name, $args);
+    }
+    else
+    {
+	return Rit::Base::Widget::wub($pred_name, $args);
+    }
 }
 
 
@@ -5924,6 +6023,7 @@ sub initiate_cache
     $node->{'created_by'}             = undef;
     $node->{'updated_by_obj'}         = undef;
     $node->{'updated_by'}             = undef;
+    $node->{'new'}                    = 0;
 
     return $node;
 }
