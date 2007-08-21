@@ -34,7 +34,7 @@ BEGIN
 {
     @Rit::Base::Widget::EXPORT_OK
 
-      = qw( wub wub_area aloc );
+      = qw( wub wub_textarea aloc );
 
 }
 
@@ -134,7 +134,7 @@ sub wub
 	{
 	    debug "Update widget for ".$subj->sysdesig; ### DEBUG
 
-	    my $subj_id = $subj->id;
+	    my $subj_id = $subj->form_id;
 	    if( $tdlabel )
 	    {
 		my $arc = $subj->arc_list($pred,undef,'auto')->get_first_nos;
@@ -244,7 +244,7 @@ sub wub
 		    }
 
 		    my $arc_pred_name = $arc->pred->name;
-		    my $arc_subj_id = $arc->subj->id;
+		    my $arc_subj_id = $arc->subj->form_id;
 
 		    $out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
 					  $arc->value,
@@ -273,8 +273,8 @@ sub wub
 	{
 	    debug "no arc";
 
-	    my $subj_id = $subj->id;
-	    $out .= &{$inputtype}("arc___pred_$[pred}__subj_${subj_id}__row_${IDCOUNTER}",
+	    my $subj_id = $subj->form_id;
+	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
 				  '',
 				  {
 				   size => $size,
@@ -290,13 +290,13 @@ sub wub
 
 #######################################################################
 
-=head2 wub_area
+=head2 wub_textarea
 
 Display field for updating a textblock property of a node
 
 =cut
 
-sub wub_area
+sub wub_textarea
 {
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -344,6 +344,18 @@ sub aloc
 
 
 #######################################################################
+#
+#=head2 next_row
+#
+#=cut
+#
+#sub next_row
+#{
+#    $IDCOUNTER++;
+#}
+#
+#
+#######################################################################
 
 sub on_configure
 {
@@ -352,9 +364,10 @@ sub on_configure
     my $params =
     {
 #     'wub'               => \&wub,
-     'wub_area'          => \&wub_area,
+#     'wub_textarea'      => \&wub_area,
 
      'aloc'               => \&aloc,
+#     'next_row'           => \&next_row,
     };
 
     Para::Frame->add_global_tt_params( $params );
