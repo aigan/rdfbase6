@@ -35,6 +35,8 @@ BEGIN
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
+use Para::Frame::Widget qw( jump );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Time qw( now );
 use Rit::Base::List;
@@ -4281,6 +4283,76 @@ sub remove_check
 }
 
 
+###############################################################
+###############################################################
+
+=head2 edit_link_html
+
+  $a->edit_link_html( \%args )
+
+Displays link for updating arc
+
+=cut
+
+sub edit_link_html
+{
+    my( $arc, $args ) = @_;
+
+    my $home = $Para::Frame::REQ->site->home_url_path;
+    my $arc_id = $arc->id;
+
+    return
+      (
+       "<a href=\"$home/rb/node/arc/update.tt?".
+       "id=$arc_id\" clas=\"edit_arc_link\" ".
+       "onmouseover=\"TagToTip('updated$arc_id')\">E</a>".
+       "<span id=\"updated$arc_id\">".
+       $arc->info_updated_html($args) .
+       "</span>"
+      );
+}
+
+
+###############################################################
+
+=head2 info_updated_html
+
+  $a->info_updated_html( \%args )
+
+Displays who and when arc was updated
+
+=cut
+
+sub info_updated_html
+{
+    my( $arc, $args ) = @_;
+
+    my $home = $Para::Frame::REQ->site->home_url_path;
+    my $arc_id = $arc->id;
+
+    my $out = "";
+
+    $out .= "<span class=\"small_note\">" . $arc->view_flags;
+
+    if( $arc->updated_by )
+    {
+	$out .= " ".loc("by")." ";
+	my $updated_by = $arc->updated_by;
+	$out .= jump($updated_by->desig, $updated_by->form_url);
+    }
+
+    if( $arc->updated )
+    {
+	$out .= " " . $arc->updated;
+    }
+
+    $out .= "</span>";
+
+    return $out;
+}
+
+
+###############################################################
 ###############################################################
 
 =head2 default_source
