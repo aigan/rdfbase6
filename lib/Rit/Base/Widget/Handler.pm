@@ -62,6 +62,8 @@ query.
 
   $class->update_by_query( \%args )
 
+Calls L</session_history_add> if base node is given.
+
 Overall plan:
 
 update_by_query maps through all parameters in the current request.
@@ -218,6 +220,17 @@ sub update_by_query
 
     my $q = $Para::Frame::REQ->q;
 
+    unless( $args->{'node'} )
+    {
+	if( my $id = $q->param('id') )
+	{
+	    $args->{'node'} = Rit::Base::Resource->get($id);
+
+	    # Keep a history of updated nodes
+	    $args->{'node'}->session_history_add('updated');
+	}
+    }
+
     # Sort params
     my @arc_params;
     my @row_params;
@@ -245,17 +258,30 @@ sub update_by_query
 	}
     }
 
-    foreach my $param (@arc_params)
+    # Parse the arcs in several passes, until all is done
+    my $fields_handled_delta = 0;
+    my $fields_handled_count = $res->arc_fields_count;
+    do
     {
-	if( $param =~ /^arc_.*$/ )
+	foreach my $field (@arc_params)
 	{
-	    $class->handle_query_arc( $param, $args );
+	    next if $res->handled_field( $field );
+
+	    if( $field =~ /^arc_.*$/ )
+	    {
+		$class->handle_query_arc( $field, $args );
+	    }
+	    # Was previously only be used for locations
+	    elsif($field =~ /^prop_(.*?)/)
+	    {
+		$class->handle_query_prop( $field, $args );
+	    }
 	}
-	elsif($param =~ /^prop_(.*?)/) # Was previously only be used for locations
-	{
-	    $class->handle_query_prop( $param, $args );
-	}
-    }
+
+	my $new_count = $res->arc_fields_count;
+	$fields_handled_delta = $new_count - $fields_handled_count;
+	$fields_handled_count = $new_count;
+    } while $fields_handled_delta > 0;
 
     foreach my $param (@row_params)
     {
@@ -341,13 +367,13 @@ Returns the number of changes
 
 sub handle_query_arc
 {
-    my( $class, $param, $args_in ) = @_;
+    my( $class, $field, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
     my $changes_prev = $res->changes;
 
-    foreach my $value ( $Para::Frame::REQ->q->param($param) )
+    foreach my $value ( $Para::Frame::REQ->q->param($field) )
     {
-	$class->handle_query_arc_value( $param, $value, $args );
+	$class->handle_query_arc_value( $field, $value, $args );
     }
 
     return $res->changes - $changes_prev;
@@ -359,7 +385,11 @@ sub handle_query_arc
 
   $n->handle_query_arc_value( $param, $value, \%args )
 
-Returns the number of changes
+Default subj is $args->{'node'} or 'new_node'.
+
+If this is a reverse arc, the subj will be handled as an obj.
+
+Returns: the number of changes
 
 =cut
 
@@ -380,6 +410,7 @@ sub handle_query_arc_value
 
     my $arg = parse_form_field_prop($param);
 
+    my $subj      = $arg->{'subj'};     # The subj of the prop
     my $pred_name = $arg->{'pred'};     # In case we should create the prop
     my $rev       = $arg->{'revpred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};      # arc to update. Create arc if undef
@@ -387,24 +418,56 @@ sub handle_query_arc_value
     my $type      = $arg->{'type'};     # desig obj must be of this type
     my $scof      = $arg->{'scof'};     # desig obj must be a scof of this type
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
+    my $if        = $arg->{'if'};       # Condition for update
 
     my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
     my $select	  = $arg->{'select'};   # for version-selection
 
-    # Set node
-    my( $node, $id );
-    if( $arg->{'subj'} )
+    unless( $subj )
     {
-	#debug "Switching subj in handle_query_arc_value for: $param";
-	$id = $arg->{'subj'};
-	$node = $R->get($id);
+	$subj = $args->{'node'} || 'new_node';
     }
-    else
+
+    if( $subj =~ /^new_(.*)/ )
     {
-	$node = $args->{'node'};
-	$id = $node->id;
+	if( my $new_node = $res->new_key($1) )
+	{
+	    $subj = $new_node;
+	}
     }
+
+    if( $value =~ /^new_(.*)/ )
+    {
+	if( my $new_node = $res->new_key($1) )
+	{
+	    $value = $new_node;
+	}
+    }
+
+
+    # Check conditions
+    if( $if )
+    {
+	if( $if eq 'subj' )
+	{
+	    if( $subj =~ /^new_/ )
+	    {
+		debug "Condition failed: $param";
+		return 0;
+	    }
+	}
+	elsif( $if eq 'obj' )
+	{
+	    if( $value =~ /^new_/ )
+	    {
+		debug "Condition failed: $param";
+		return 0;
+	    }
+	}
+    }
+
+    $res->set_field_handled($param);
 
 
     # Sanity check of value
@@ -428,27 +491,41 @@ sub handle_query_arc_value
 	debug "  desig: $desig\n";
     }
 
-    if( $rev ) # reverse arc
+
+    # reverse arc
+    if( $rev )
     {
 	$pred_name = $rev;
 	$rev = 1;
     }
+    elsif( $pred_name =~ /^rev_(.*)/ )
+    {
+	$pred_name = $1;
+	$rev = 1;
+    }
+
 
     return handle_select_version( $value, $arc_id, $q, $args )
       if( $select and $select eq 'version' ); # activate arc-version and return
+
 
     my $pred = getpred( $pred_name )
       or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
-#    my $valtype = $pred->valtype;
+    if( $rev )
+    {
+	$coltype = 'obj';
+    }
+
+
     if( $rowno )
     {
 	$res->set_pred_id_by_row( $rowno, $pred_id );
     }
 
     # Only one ACTIVE prop with this pred and of this type
-    if( $arc_id eq 'singular' )
+    if( $arc_id eq 'singular' and ref $subj ) # Skip if subj doesn't exist
     {
 	my $args_active = aais($args,'active');
 
@@ -456,11 +533,11 @@ sub handle_query_arc_value
 	my $arcs;
 	if( $rev )
 	{
-	    $arcs = $node->revarc_list($pred_name, undef, aais($args_active,'explicit'));
+	    $arcs = $subj->revarc_list($pred_name, undef, aais($args_active,'explicit'));
 	}
 	else
 	{
-	    $arcs = $node->arc_list($pred_name, undef, aais($args_active,'explicit'));
+	    $arcs = $subj->arc_list($pred_name, undef, aais($args_active,'explicit'));
 	}
 
 	if( $type and  $arcs->size )
@@ -496,13 +573,12 @@ sub handle_query_arc_value
 	    my $arc = shift @arclist;
 	    $arc_id = $arc->id;
 
-	    # TODO: Should remove extra arcs
 	    foreach my $arc ( @arclist )
 	    {
 		$arc->remove( $args );
 	    }
 	}
-	elsif( $arcs->size ) # Replace this
+	elsif( $arcs->size ) # Replace this arc
 	{
 	    $arc_id = $arcs->get_first_nos->id;
 	    debug 3, "Updating existing arc $arc_id";
@@ -513,7 +589,10 @@ sub handle_query_arc_value
 	}
     }
 
-    if( $file )
+
+    ############### File handling
+
+    if( $file and ref $subj ) # Skip if subj doesn't exist
     {
 	debug "Got a fileupload, stated type: $file, value: $value";
 	return $res->changes - $changes_prev
@@ -581,23 +660,23 @@ sub handle_query_arc_value
 	    my $scp = Net::SCP->new({host=>$host, user=>$username});
 	    debug "Connected to $host as $username";
 
-	    while( $scp->size( $dirbase ."/". join('.', $node->id, $index, $suffix)) )
+	    while( $scp->size( $dirbase ."/". join('.', $subj->id, $index, $suffix)) )
 	    {
-		debug "Found a file ". $dirbase ."/". join('.', $node->id, $index, $suffix);
+		debug "Found a file ". $dirbase ."/". join('.', $subj->id, $index, $suffix);
 		$index++;
 	    }
 	}
 	else
 	{
-	    while( stat( $dirbase ."/". join('.', $node->id, $index, $suffix)) )
+	    while( stat( $dirbase ."/". join('.', $subj->id, $index, $suffix)) )
 	    {
-		debug "Found a file ". $dirbase ."/". join('.', $node->id, $index, $suffix);
+		debug "Found a file ". $dirbase ."/". join('.', $subj->id, $index, $suffix);
 		$index++;
 	    }
 	}
 	debug "We got to index: $index";
 
-	my $filename_base = join( '.', $node->id, $index, $suffix );
+	my $filename_base = join( '.', $subj->id, $index, $suffix );
 
 	my $destfile = $dirbase .'/'. $filename_base;
 
@@ -606,12 +685,37 @@ sub handle_query_arc_value
 
 	$value = $filename_base;
     }
+    ###############
 
-    if( $rev ) # reverse arc
+
+    if( $desig and length( $value ) ) # replace $value with the node id
     {
-	$pred_name = $rev;
-	$rev = 1;
+	debug 3, "    Set value to a $type with $desig $value";
 
+	my $crit =
+	{
+	 $desig => $value,
+	};
+
+	if( $type )
+	{
+	    $crit->{'is'} = $type;
+	}
+
+	if( $scof )
+	{
+	    $crit->{'scof'} = $scof;
+	}
+
+	$value = $R->find_one($crit, $args )->id;
+	# Convert back to obj later. (We expect id)
+    }
+
+
+    # Switch subj and value if this is a reverse arc
+
+    if( $rev )
+    {
 	if(length $value )
 	{
 	    debug 3, "  Reversing arc update";
@@ -625,16 +729,13 @@ sub handle_query_arc_value
 	    {
 		$subjs = $subjs->find({ scof => $scof }, $args);
 	    }
-	    $subjs->materialize_all;
 
-
-	    $value = $node;
-	    $node = $subjs->find_one; # Expect only one value
-	    $id = $node->id;
+	    $value = $subj;
+	    $subj = $subjs->find_one; # Expect only one value
 
 	    if( debug > 3 )
 	    {
-		debug sprintf "  New node : %s", $node->sysdesig;
+		debug sprintf "  New node : %s", $subj->sysdesig;
 		debug sprintf "  New value: %s", $value->sysdesig;
 	    }
 
@@ -655,16 +756,6 @@ sub handle_query_arc_value
     }
 
 
-    if( $desig and length( $value ) ) # replace $value with the node id
-    {
-	debug 3, "    Set value to a $type with $desig $value";
-	$value = $R->find_one({
-			       $desig => $value,
-			       'is' => $type,
-			      }, $args )->id;
-	# Convert back to obj later. (We expect id)
-    }
-
     if( debug > 3 )
     {
 	debug "We have arc_id: $arc_id";
@@ -680,8 +771,8 @@ sub handle_query_arc_value
 
 	if( $arc->pred->id != $pred_id )
 	{
-	    debug "Arc is: ". $arc->sysdesig;
-	    $arc->set_pred( $pred_id, $args );
+	    die "Arcs pred differ from $param: ".$arc->sysdesig;
+#	    $arc = $arc->set_pred( $pred_id, $args );
 	}
 
 	my $present_value = $arc->value;
@@ -691,8 +782,16 @@ sub handle_query_arc_value
 	{
 	    if( $value )
 	    {
-		if( ref $value )
+		if( $value =~ /^new_(.*)/ )
 		{
+		    # Create a new node
+		    my $key = $1;
+		    $value = $R->create({}, $args);
+		    $res->set_new_key($key, $value);
+		}
+		elsif( ref $value )
+		{
+		    # Should already be ok...
 		    $value = $R->get( $value );
 		}
 		else
@@ -723,7 +822,11 @@ sub handle_query_arc_value
 	}
 	else
 	{
-	    if( length $value )
+	    if( $value =~ /^new_/ )
+	    {
+		die "This must be an object. But coltype is set to $coltype: $value";
+	    }
+	    elsif( length $value )
 	    {
 		$arc = $arc->set_value( $value, $args );
 	    }
@@ -745,6 +848,21 @@ sub handle_query_arc_value
     }
     else # create new arc
     {
+	if( $value =~ /^new_(.*)/ )
+	{
+	    # Create a new node
+	    my $key = $1;
+	    $value = $R->create({}, $args);
+	    $res->set_new_key($key, $value);
+	}
+
+	if( $subj =~ /^new_(.*)/ )
+	{
+	    # Create new node
+	    my $key = $1;
+	    $subj = $R->create({}, $args);
+	}
+
 	if( length $value )
 	{
 	    debug 3, "  Creating new property";
@@ -782,8 +900,6 @@ sub handle_query_arc_value
 			    $objs = $objs->find({ scof => $scof }, $args);
 			}
 		    }
-
-		    $objs->materialize_all;
 
 		    if( $objs->size > 1 )
 		    {
@@ -858,7 +974,7 @@ sub handle_query_arc_value
 
 		    my $arc = Rit::Base::Arc->
 		      create({
-			      subj    => $id,
+			      subj    => $subj->id,
 			      pred    => $pred_id,
 			      value   => $val,
 			     }, $args );
@@ -895,13 +1011,13 @@ sub handle_query_arc_value
 					    value   => $value,
 					    valtype => $pred->valtype,
 					   }, $args);
-		    $node->add({ $pred_name => $valnode }, $args);
+		    $subj->add({ $pred_name => $valnode }, $args);
 		}
 		else
 		{
 		    my $arc = Rit::Base::Arc->
 		      create({
-			      subj    => $id,
+			      subj    => $subj->id,
 			      pred    => $pred_id,
 			      value   => $value,
 			     }, $args );
@@ -1001,6 +1117,8 @@ sub handle_query_prop
     my( $class, $param, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
     my $changes_prev = $res->changes;
+
+    $res->set_field_handled( $param );
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
