@@ -395,15 +395,16 @@ sub autocommit
 
 	    ( $arc, $error ) = $newarcs->get_next;
 	}
-	debug "- EOL";
-
 	foreach my $item ( values %subjs_changed )
 	{
 	    if( $item->node_rec_exist )
 	    {
+		debug "+ ".$item->sysdesig;
 		$item->mark_updated($args{'updated'});
 	    }
 	}
+	debug "- EOL";
+
     }
 
     return $cnt;
