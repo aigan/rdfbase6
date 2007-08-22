@@ -34,15 +34,16 @@ BEGIN
 {
     @Rit::Base::Widget::EXPORT_OK
 
-      = qw( wub wub_textarea aloc );
+      = qw( wub aloc );
 
 }
 
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw );
-use Para::Frame::Widget qw( input textarea hidden radio jump );
 use Para::Frame::L10N qw( loc );
+use Para::Frame::Widget qw( input textarea hidden radio jump calendar
+filefield input_image );
 
 
 use Rit::Base;
@@ -53,6 +54,27 @@ use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
 our $IDCOUNTER = 0;
 
 =head1 DESCRIPTION
+
+
+REPLACED prop_fields.tt
+
+ * updated
+ * edit_arc     => Arc:: edit_link_html
+ * prop         => wub
+ * prop_area    => wub
+ * prop_image   => wub_image
+ * input_image  => PF:: input_image
+ * prop_date    => wub_date
+
+ * prop_concart --------------
+ * prop_tree    --------------
+ * prop_tree_wh --------------
+
+
+REPLACED rg_rg_components.tt
+
+ * aloc         => aloc
+
 
 =cut
 
@@ -79,14 +101,6 @@ sub wub
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    if( my $context = $args->{'context'} )
-    {
-	if( my $node = $context->stash->get('node') )
-	{
-	    $args->{'subj'} = $node;
-	}
-    }
-
     no strict 'refs';
     my $out = "";
     my $R = Rit::Base->Resource;
@@ -98,7 +112,7 @@ sub wub
 	$smallestsize = 3;
     }
 
-    my $subj = $args->{'subj'};
+    my $subj = $args->{'subj'} or confess "subj missing";
     my $inputtype = $args->{'inputtype'} || 'input';
 
     my $newsubj = $args->{'newsubj'};
@@ -271,7 +285,7 @@ sub wub
 	}
 	else # no arc
 	{
-	    debug "no arc";
+#	    debug "no arc";
 
 	    my $subj_id = $subj->id;
 	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
@@ -290,26 +304,188 @@ sub wub
 
 #######################################################################
 
-=head2 wub_textarea
+=head2 wub_date
 
-Display field for updating a textblock property of a node
+Display field for updating a date property of a node
+
+var node must be defined
+
+prop pred is required
+
+the query param "arc___pred_$pred__subj_$subjvarname" can be used for
+default new value
 
 =cut
 
-sub wub_textarea
+sub wub_date
 {
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    $args->{'rows'} ||= 0;
-    $args->{'cols'} ||= 57;
-    $args->{'size'} = $args->{'cols'};
-    $args->{'inputtype'} = 'textarea';
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $q = $Para::Frame::REQ->q;
 
-    return &wub($pred, $args);
+    my $size = $args->{'size'} || 18;
+    my $subj = $args->{'subj'} or confess "subj missing";
+
+    my $newsubj = $args->{'newsubj'};
+    my $tdlabel = $args->{'tdlabel'};
+    my $arc = $args->{'arc'};
+
+    my $subj_id = $subj->id;
+
+    if( $newsubj )
+    {
+	my $fieldname = "newsubj_${newsubj}__pred_${pred}";
+	$out .= &calendar($fieldname, "",
+			  {
+			   id => $fieldname,
+			   size => $size,
+			   tdlabel => $tdlabel,
+			   });
+    }
+    else
+    {
+	if( $subj->empty )
+	{
+	    my $arc_id = $arc ? $arc->id : '';
+	    my $fieldname = "arc_${arc_id}__pred_${pred}";
+	    $out .= &calendar($fieldname, '',
+			      {
+			       id => $fieldname,
+			       size => $size,
+			       tdlabel => $tdlabel,
+			      });
+	    $out .= $arc->edit_link_html;
+	}
+	elsif( $subj->list($pred)->size > 1 )
+	{
+	    if( $tdlabel )
+	    {
+		$out .= "<label>${tdlabel}</label></td><td>";
+	    }
+
+	    $out .= "<ul>";
+
+	    foreach my $arc ( $subj->arc_list($pred) )
+	    {
+		if( $arc->realy_objtype )
+		{
+		    $out .= "<li><em>This is not a date!!!</em></li>";
+		}
+		else
+		{
+		    $out .= "<li>";
+
+		    my $arc_id = $arc->id || '';
+		    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
+		    my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
+		    $out .= &calendar($fieldname, $value_new,
+				      {
+				       id => $fieldname,
+				       size => $size,
+				       tdlabel => $tdlabel,
+				      });
+		    $out .= $arc->edit_link_html;
+
+		    $out .= "</li>";
+		}
+	    }
+
+	    $out .= "</ul>";
+	}
+	else
+	{
+	    my $arc = $subj->first_arc($pred);
+	    if( $arc->realy_objtype )
+	    {
+		$out .= "<em>This is not a date!!!</em>";
+	    }
+	    else
+	    {
+		my $arc_id = $arc->id || '';
+		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
+		my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
+		$out .= &calendar($fieldname, $value_new,
+				  {
+				   id => $fieldname,
+				   size => $size,
+				   tdlabel => $tdlabel,
+				  });
+		$out .= $arc->edit_link_html;
+	    }
+	}
+    }
+
+    return $out;
 }
 
 
+#######################################################################
+
+=head2 wub_image
+
+Display field for updating images
+
+=cut
+
+sub wub_image
+{
+    my( $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $q = $Para::Frame::REQ->q;
+
+    my $subj = $args->{'subj'} or confess "subj missing";
+    my $multiple = $args->{'multiple'};
+
+    my $maxw = $args->{'maxw'} ||= 400;
+    my $maxh = $args->{'maxh'} ||= 300;
+    $args->{'inputtype'} = 'input_image';
+
+    $out .= wub($pred, $args);
+
+    if( $multiple )
+    {
+	if( $subj->list($pred, undef, ['active','submitted']) )
+	{
+	    my $subj_id = $subj->id;
+	    $out .= filefield("arc___file_image__pred_${pred}__subj_${subj_id}__maxw_${maxw}__maxh_${maxh}");
+	}
+    }
+
+    return $out;
+}
+
+
+#######################################################################
+#
+#=head2 wub_tree
+#
+#Create a ul of elements that are scof to n
+#
+#Creates a sub-ul for elements with their own scof's
+#
+#=cut
+#
+#sub wub_tree
+#{
+#    my( $pred, $args_in ) = @_;
+#    my( $args ) = parse_propargs($args_in);
+#
+#    my $out = "";
+#    my $R = Rit::Base->Resource;
+#    my $q = $Para::Frame::REQ->q;
+#
+#    my $subj = $args->{'subj'} or confess "subj missing";
+#
+#    return $out;
+#}
+#
+#
 #######################################################################
 
 =head2 aloc
@@ -364,7 +540,8 @@ sub on_configure
     my $params =
     {
 #     'wub'               => \&wub,
-#     'wub_textarea'      => \&wub_area,
+#     'wub_date'          => \&wub_date,
+#     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
 #     'next_row'           => \&next_row,
