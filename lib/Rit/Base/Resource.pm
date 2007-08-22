@@ -1362,6 +1362,8 @@ sub id {
 
 =head2 form_id
 
+Deprecated
+
   $n->form_id
 
 Special id for use in L<Rit::Base::Widget::Handler/update_by_query>.
@@ -1375,14 +1377,7 @@ Returns: If new, prepends 'new_' to the id.
 
 sub form_id
 {
-    if( $_[0]->{'new'} )
-    {
-	return 'new_'.$_[0]->{'id'};
-    }
-    else
-    {
-	return $_[0]->{'id'};
-    }
+    confess "deprecated";
 }
 
 
