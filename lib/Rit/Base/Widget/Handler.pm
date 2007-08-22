@@ -447,7 +447,8 @@ sub handle_query_arc_value
 	}
 	if( $if =~ /obj/ )
 	{
-	    if( $subj->empty )
+	    my $obj = $R->get( $value );
+	    if( $obj->empty )
 	    {
 		debug "Condition failed: $param";
 		return 0;
