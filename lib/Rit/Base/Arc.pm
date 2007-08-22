@@ -704,7 +704,7 @@ sub create
     $sth->execute( @values );
 
     my $arc = $this->get_by_rec($rec, $subj, $value_obj );
-    debug "Created arc id ".$arc->sysdesig."\n";
+    debug "Created arc id ".$arc->sysdesig;
 
     # Sanity check
     if( $subj and $subj->id != $arc->subj->id )
@@ -1992,6 +1992,8 @@ sub deactivate
 #			arc_id => $arc->id,
 #		      });
 
+    debug "Deactivated id ".$arc->sysdesig;
+
     return;
 }
 
@@ -2884,8 +2886,8 @@ sub set_value
 
     if( $DEBUG )
     {
-	debug "  value_old: $value_old";
-	debug "  value_new: ".$value_new->sysdesig($args);
+	debug "  value_old: ".$value_old->sysdesig();
+	debug "  value_new: ".$value_new->sysdesig();
 	debug "  coltype  : $coltype_new";
     }
 
@@ -3303,14 +3305,6 @@ sub activate
     $arc->subj->initiate_cache;
     $arc->initiate_cache;
 
-    $arc->schedule_check_create;
-
-    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
-#    send_cache_update({ change => 'arc_updated',
-#			arc_id => $aid,
-#		      });
-
-
     # If this is not a removal and we have another active arc, it must
     # be deactivated
     #
@@ -3318,6 +3312,13 @@ sub activate
     {
 	$aarc->deactivate( $arc );
     }
+
+    # Runs create_check AFTER deactivation of other arc version, since
+    # the new arc version may INFERE the old arc
+    #
+    $arc->schedule_check_create;
+
+    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
     return 1;
 }
