@@ -12,6 +12,8 @@ use Rit::Base::Utils qw( parse_propargs );
 
 sub new
 {
+    confess "deprecated";
+
     return bless {}, $_[0];
 }
 
