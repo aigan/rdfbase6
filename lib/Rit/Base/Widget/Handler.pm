@@ -426,43 +426,20 @@ sub handle_query_arc_value
 
     unless( $subj )
     {
-	$subj = $args->{'node'} || 'new_node';
-    }
-
-    if( $subj =~ /^new_(.*)/ )
-    {
-	if( my $new_node = $res->new_key($1) )
-	{
-	    $subj = $new_node;
-	}
-    }
-
-    if( $value =~ /^new_(.*)/ )
-    {
-	if( my $new_node = $res->new_key($1) )
-	{
-	    $value = $new_node;
-	}
+	$subj = $args->{'node'} || $R->get('new');
     }
 
     if( $subj =~ /^(\d+)$/ )
     {
-	debug "Switching subj to $subj";
 	$subj = $R->get($subj);
     }
-
-    unless( ref $subj )
-    {
-	debug "Subj is no node, rather '$subj'";
-    }
-
 
     # Check conditions
     if( $if )
     {
 	if( $if =~ /subj/ )
 	{
-	    if( $subj =~ /^new_/ )
+	    if( $subj->empty )
 	    {
 		debug "Condition failed: $param";
 		return 0;
@@ -470,7 +447,7 @@ sub handle_query_arc_value
 	}
 	if( $if =~ /obj/ )
 	{
-	    if( $value =~ /^new_/ )
+	    if( $subj->empty )
 	    {
 		debug "Condition failed: $param";
 		return 0;
@@ -598,6 +575,11 @@ sub handle_query_arc_value
 	    $arc_id = '';
 	}
     }
+    elsif( $arc_id eq 'singular' )
+    {
+	$arc_id = '';
+    }
+
 
 
     ############### File handling
@@ -792,14 +774,7 @@ sub handle_query_arc_value
 	{
 	    if( $value )
 	    {
-		if( $value =~ /^new_(.*)/ )
-		{
-		    # Create a new node
-		    my $key = $1;
-		    $value = $R->create({}, $args);
-		    $res->set_new_key($key, $value);
-		}
-		elsif( ref $value )
+		if( ref $value )
 		{
 		    # Should already be ok...
 		    $value = $R->get( $value );
@@ -832,7 +807,7 @@ sub handle_query_arc_value
 	}
 	else
 	{
-	    if( $value =~ /^new_/ )
+	    if( ref $value )
 	    {
 		die "This must be an object. But coltype is set to $coltype: $value";
 	    }
@@ -858,26 +833,8 @@ sub handle_query_arc_value
     }
     else # create new arc
     {
-	if( $value =~ /^new_(.*)/ )
-	{
-	    debug "Making new obj for $value, from param $param";
-	    # Create a new node
-	    my $key = $1;
-	    $value = $R->create({}, $args);
-	    $res->set_new_key($key, $value);
-	}
-
 	if( length $value )
 	{
-	    if( $subj =~ /^new_(.*)/ )
-	    {
-		debug "Making new subj for $subj, from param $param";
-		# Create new node
-		my $key = $1;
-		$subj = $R->create({}, $args);
-		$res->set_new_key($key, $subj);
-	    }
-
 	    debug 3, "  Creating new property";
 	    debug 3, "  Value is $value" if not ref $value;
 	    debug 3, sprintf "  Value is %s", $value->sysdesig if ref $value;
