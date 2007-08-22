@@ -50,7 +50,7 @@ use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language $C_valtext );
+use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate );
 use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
@@ -1706,7 +1706,7 @@ L</list_preds>.
   $n->list( $predname )
 
 Returns a L<Rit::Base::List> of all values of the propertis
-whith the preicate C<$predname>.
+whith the predicate C<$predname>.
 
   $n->list( $predname, $value );
 
@@ -1714,7 +1714,7 @@ Returns C<true> if $value is not a hash and no more params exist, and
 this node has a property with predicate C<$predname> and value
 C<$value>.  This construct, that uses the corresponding feature in
 L<Rit::Base::List/find>, enables you to say things like: C<if(
-$item->is($C_city) )>
+$item->is($C_city) )>. Otherwise, returns false.
 
   $n->list( $predname, $proplim );
 
@@ -2104,11 +2104,11 @@ sub revlist_preds
 
 =head2 prop
 
-  $n->prop( $predname )
-
-  $n->prop( $predname, $proplim )
+  $n->prop( $predname, undef, \%args )
 
   $n->prop( $predname, $proplim, \%args )
+
+  $n->prop( $predname, $value, \%args )
 
 Returns the values of the property with predicate C<$predname>.  See
 L</list> for explanation of the params.
@@ -2117,13 +2117,18 @@ For special predname C<id>, returns the id.
 
 Use L</first_prop> or L</list> instead if that's what you want!
 
+If given a value instead of a proplim, returns true/false based on if
+the node has a property with the specified $predname and $value.
+
 Returns:
 
 If more then one node found, returns a L<Rit::Base::List>.
 
 If one node found, returns the node.
 
-In no nodes found, returns C<undef>.
+In no nodes found, returns C<is_undef>.
+
+For C<$value>, returns the given $value, or C<is_undef>
 
 =cut
 
@@ -2141,6 +2146,11 @@ sub prop
     confess "This node is not an arc" if $name eq 'subj';
 
     my $values = $node->list($name, @_);
+
+    unless( $values )
+    {
+	return is_undef;
+    }
 
     if( $values->size > 1 ) # More than one element
     {
@@ -5105,10 +5115,19 @@ sub wu
     my $pred = Rit::Base::Pred->get_by_constant_label($pred_name);
     my $textbox = Rit::Base::Resource->get({name=>'textbox',
 					    scof=>$C_valtext});
-    if( $pred->range->equals($textbox) or
-	$pred->range->scof($textbox) )
+    my $range = $pred->range;
+    if( $range->equals($textbox) or
+	$range->scof($textbox) )
     {
-	return Rit::Base::Widget::wub_textarea($pred_name, $args);
+	$args->{'rows'} ||= 0;
+	$args->{'cols'} ||= 57;
+	$args->{'size'} = $args->{'cols'};
+	$args->{'inputtype'} = 'textarea';
+	return Rit::Base::Widget::wub($pred_name, $args);
+    }
+    elsif( $range->scof($C_valdate) )
+    {
+	return Rit::Base::Widget::wub_date($pred_name, $args);
     }
     else
     {
