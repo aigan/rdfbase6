@@ -134,7 +134,7 @@ sub wub
 	{
 	    debug "Update widget for ".$subj->sysdesig; ### DEBUG
 
-	    my $subj_id = $subj->form_id;
+	    my $subj_id = $subj->id;
 	    if( $tdlabel )
 	    {
 		my $arc = $subj->arc_list($pred,undef,'auto')->get_first_nos;
@@ -244,7 +244,7 @@ sub wub
 		    }
 
 		    my $arc_pred_name = $arc->pred->name;
-		    my $arc_subj_id = $arc->subj->form_id;
+		    my $arc_subj_id = $arc->subj->id;
 
 		    $out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
 					  $arc->value,
@@ -273,7 +273,7 @@ sub wub
 	{
 	    debug "no arc";
 
-	    my $subj_id = $subj->form_id;
+	    my $subj_id = $subj->id;
 	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
 				  '',
 				  {
