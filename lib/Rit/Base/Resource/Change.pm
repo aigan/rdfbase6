@@ -62,7 +62,6 @@ sub new
      'deathrow' => {}, # arcs to remove
      'row'      => {}, # Holds relating field info for row
      'arc_field_handled' => {},
-     'new_key' => {},
     }, $class;
 }
 
@@ -249,31 +248,6 @@ sub field_handled
 sub set_field_handled
 {
     return $_[0]->{'arc_field_handled'}{$_[1]} ++;
-}
-
-
-#########################################################################
-
-=head2 new_key
-
-=cut
-
-sub new_key
-{
-    return $_[0]->{'new_key'}{$_[1]};
-}
-
-
-#########################################################################
-
-=head2 set_new_key
-
-=cut
-
-sub set_new_key
-{
-    debug "Setting a new_key '$_[1]' to ". $_[2]->desig;
-    return $_[0]->{'new_key'}{$_[1]} = $_[2];
 }
 
 
