@@ -260,7 +260,7 @@ sub set_field_handled
 
 sub new_key
 {
-    return $_[0]->{'new_key'};
+    return $_[0]->{'new_key'}{$_[1]};
 }
 
 
@@ -272,7 +272,8 @@ sub new_key
 
 sub set_new_key
 {
-    return $_[0]->{'new_key'} = $_[1];
+    debug "Setting a new_key '$_[1]' to ". $_[2]->desig;
+    return $_[0]->{'new_key'}{$_[1]} = $_[2];
 }
 
 

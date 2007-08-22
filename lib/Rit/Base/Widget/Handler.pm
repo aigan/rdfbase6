@@ -445,11 +445,22 @@ sub handle_query_arc_value
 	}
     }
 
+    if( $subj =~ /^(\d+)$/ )
+    {
+	debug "Switching subj to $subj";
+	$subj = $R->get($subj);
+    }
+
+    unless( ref $subj )
+    {
+	debug "Subj is no node, rather '$subj'";
+    }
+
 
     # Check conditions
     if( $if )
     {
-	if( $if eq 'subj' )
+	if( $if =~ /subj/ )
 	{
 	    if( $subj =~ /^new_/ )
 	    {
@@ -457,7 +468,7 @@ sub handle_query_arc_value
 		return 0;
 	    }
 	}
-	elsif( $if eq 'obj' )
+	if( $if =~ /obj/ )
 	{
 	    if( $value =~ /^new_/ )
 	    {
@@ -469,17 +480,16 @@ sub handle_query_arc_value
 
     $res->set_field_handled($param);
 
-
     # Sanity check of value
     #
-    if( $value =~ /^Rit::Base::/ )
+    if( $value =~ /^Rit::Base::/ and not ref $value )
     {
 	throw('validation', "Form gave faulty value '$value' for $param\n");
     }
-    elsif( ref $value )
-    {
-	throw('validation', "Form gave faulty value '$value' for $param\n");
-    }
+#    elsif( ref $value )
+#    {
+#	throw('validation', "Form gave faulty value '$value' for $param\n");
+#    }
 
 
     if( debug > 3 )
@@ -850,21 +860,24 @@ sub handle_query_arc_value
     {
 	if( $value =~ /^new_(.*)/ )
 	{
+	    debug "Making new obj for $value, from param $param";
 	    # Create a new node
 	    my $key = $1;
 	    $value = $R->create({}, $args);
 	    $res->set_new_key($key, $value);
 	}
 
-	if( $subj =~ /^new_(.*)/ )
-	{
-	    # Create new node
-	    my $key = $1;
-	    $subj = $R->create({}, $args);
-	}
-
 	if( length $value )
 	{
+	    if( $subj =~ /^new_(.*)/ )
+	    {
+		debug "Making new subj for $subj, from param $param";
+		# Create new node
+		my $key = $1;
+		$subj = $R->create({}, $args);
+		$res->set_new_key($key, $subj);
+	    }
+
 	    debug 3, "  Creating new property";
 	    debug 3, "  Value is $value" if not ref $value;
 	    debug 3, sprintf "  Value is %s", $value->sysdesig if ref $value;
