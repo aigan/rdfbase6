@@ -424,14 +424,18 @@ sub handle_query_arc_value
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
     my $select	  = $arg->{'select'};   # for version-selection
 
-    unless( $subj )
+    if( $subj )
+    {
+	unless( $subj =~ /^(\d+)$/ )
+	{
+	    confess "Invalid subj part: $subj";
+	}
+
+	$subj = $R->get($subj);
+    }
+    else
     {
 	$subj = $args->{'node'} || $R->get('new');
-    }
-
-    if( $subj =~ /^(\d+)$/ )
-    {
-	$subj = $R->get($subj);
     }
 
     # Check conditions
@@ -441,16 +445,17 @@ sub handle_query_arc_value
 	{
 	    if( $subj->empty )
 	    {
-		debug "Condition failed: $param";
+#		debug "Condition failed: $param";
 		return 0;
 	    }
 	}
+
 	if( $if =~ /obj/ )
 	{
 	    my $obj = $R->get( $value );
 	    if( $obj->empty )
 	    {
-		debug "Condition failed: $param";
+#		debug "Condition failed: $param";
 		return 0;
 	    }
 	}
@@ -517,6 +522,8 @@ sub handle_query_arc_value
     {
 	my $args_active = aais($args,'active');
 
+#	debug "$pred_name SINGULAR";
+
 	# Sort out those of the specified type
 	my $arcs;
 	if( $rev )
@@ -561,8 +568,11 @@ sub handle_query_arc_value
 	    my $arc = shift @arclist;
 	    $arc_id = $arc->id;
 
+	    debug "  keeping ".$arc->sysdesig;
+
 	    foreach my $arc ( @arclist )
 	    {
+		debug "  removing ".$arc->sysdesig;
 		$arc->remove( $args );
 	    }
 	}
@@ -749,26 +759,32 @@ sub handle_query_arc_value
     }
 
 
-    if( debug > 3 )
+    # check old value
+    my $arc;
+    if( $arc_id )
     {
-	debug "We have arc_id: $arc_id";
-	my $arc = Rit::Base::Arc->get_by_id($arc_id);
-	debug "The arc_id got us $arc";
+	$arc = Rit::Base::Arc->get_by_id($arc_id);
     }
 
-    # check old value
-    if( $arc_id and Rit::Base::Arc->get_by_id($arc_id)->is_arc )
+    if( $arc and $arc->is_arc )
     {
-	debug 3, "  Check old arc $arc_id";
-	my $arc = Rit::Base::Arc->get_by_id($arc_id);
-
 	if( $arc->pred->id != $pred_id )
 	{
 	    die "Arcs pred differ from $param: ".$arc->sysdesig;
 #	    $arc = $arc->set_pred( $pred_id, $args );
 	}
 
-	my $present_value = $arc->value;
+
+	if( debug > 1 )
+	{
+	    debug "Will now update";
+	    debug $arc->sysdesig;
+
+	    debug "New value of arc will be $value";
+	    debug query_desig($value);
+	    debug "-----";
+	}
+
 
 	# set the value to obj id if obj
 	if( $coltype eq 'obj' )
