@@ -51,14 +51,14 @@ use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
 #use Rit::Base::Constants qw( );
 
-our $IDCOUNTER = 0;
+our $IDCOUNTER = 1;
 
 =head1 DESCRIPTION
 
 
 REPLACED prop_fields.tt
 
- * updated
+ * updated      => Arc:: info_updated_html
  * edit_arc     => Arc:: edit_link_html
  * prop         => wub
  * prop_area    => wub
@@ -115,6 +115,9 @@ sub wub
     my $subj = $args->{'subj'} or confess "subj missing";
     my $inputtype = $args->{'inputtype'} || 'input';
 
+    debug "wub $inputtype $pred for ".$subj->sysdesig;
+
+
     my $newsubj = $args->{'newsubj'};
     my $rows = $args->{'row'};
     my $tdlabel = $args->{'tdlabel'};
@@ -146,8 +149,6 @@ sub wub
 	}
 	elsif( $subj->list($pred,undef,['active','submitted'])->is_true )
 	{
-	    debug "Update widget for ".$subj->sysdesig; ### DEBUG
-
 	    my $subj_id = $subj->id;
 	    if( $tdlabel )
 	    {
@@ -165,7 +166,7 @@ sub wub
 
 	    foreach my $arc_id (keys %$arcversions)
 	    {
-		debug "Arc $arc_id";
+#		debug "Arc $arc_id";
 
 		my $arc = Rit::Base::Arc->get($arc_id);
 		if( my $lang = $arc->obj->is_of_language(undef,'auto') )
@@ -245,7 +246,7 @@ sub wub
 		}
 		else
 		{
-		    debug "  singular";
+#		    debug "  singular";
 
 		    if( scalar(keys %$arcversions) > 1 )
 		    {
@@ -276,7 +277,7 @@ sub wub
 		}
 	    }
 
-	    debug "after";
+#	    debug "after";
 
 	    if( scalar(keys %$arcversions) > 1 )
 	    {
@@ -357,7 +358,10 @@ sub wub_date
 			       size => $size,
 			       tdlabel => $tdlabel,
 			      });
-	    $out .= $arc->edit_link_html;
+	    if( $arc )
+	    {
+		$out .= $arc->edit_link_html;
+	    }
 	}
 	elsif( $subj->list($pred)->size > 1 )
 	{
@@ -387,7 +391,10 @@ sub wub_date
 				       size => $size,
 				       tdlabel => $tdlabel,
 				      });
-		    $out .= $arc->edit_link_html;
+		    if( $arc )
+		    {
+			$out .= $arc->edit_link_html;
+		    }
 
 		    $out .= "</li>";
 		}
@@ -413,7 +420,10 @@ sub wub_date
 				   size => $size,
 				   tdlabel => $tdlabel,
 				  });
-		$out .= $arc->edit_link_html;
+		if( $arc )
+		{
+		    $out .= $arc->edit_link_html;
+		}
 	    }
 	}
     }
@@ -520,17 +530,30 @@ sub aloc
 
 
 #######################################################################
-#
-#=head2 next_row
-#
-#=cut
-#
-#sub next_row
-#{
-#    $IDCOUNTER++;
-#}
-#
-#
+
+=head2 next_wu_row
+
+=cut
+
+sub next_wu_row
+{
+    $IDCOUNTER++;
+    return "";
+}
+
+
+#######################################################################
+
+=head2 wu_row
+
+=cut
+
+sub wu_row
+{
+    return $IDCOUNTER;
+}
+
+
 #######################################################################
 
 sub on_configure
@@ -544,7 +567,8 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
-#     'next_row'           => \&next_row,
+     'next_wu_row'        => \&next_wu_row,
+     'wu_row'             => \&wu_row,
     };
 
     Para::Frame->add_global_tt_params( $params );
