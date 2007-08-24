@@ -38,7 +38,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
-			   package_to_module queue_clear_params );
+			   package_to_module );
 
 use Rit::Base::Node;
 use Rit::Base::Search;
@@ -1169,6 +1169,11 @@ sub create
     my( $args ) = parse_propargs($args_in);
 
     my $subj_id = $Rit::dbix->get_nextval('node_seq');
+
+
+    # TODO: Handle creation with 'is' coupled to a class. Especially
+    # is $C_arc
+
 
 #    # Any value props should be added after datatype props
 #    my @props_list;
@@ -5154,7 +5159,7 @@ sub arcversions
 {
     my( $node, $predname ) = @_;
 
-    debug "In arcversions for $predname for ".$node->sysdesig;
+#    debug "In arcversions for $predname for ".$node->sysdesig;
 
     return #probably new...
       unless( UNIVERSAL::isa($node, 'Rit::Base::Resource::Compatible') );
