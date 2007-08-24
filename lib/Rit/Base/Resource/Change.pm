@@ -158,6 +158,32 @@ sub set_arc_id_by_row
 
 #########################################################################
 
+=head2 subj_id_by_row
+
+=cut
+
+sub subj_id_by_row
+{
+    my( $c, $rowno ) = @_;
+    return $c->{'row'}{$rowno}{'subj_id'};
+}
+
+
+#########################################################################
+
+=head2 set_subj_id_by_row
+
+=cut
+
+sub set_subj_id_by_row
+{
+    my( $c, $rowno, $subj_id ) = @_;
+    return $c->{'row'}{$rowno}{'subj_id'} = $subj_id;
+}
+
+
+#########################################################################
+
 =head2 changes
 
 =cut
