@@ -31,8 +31,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw catch trim debug datadump
-			   queue_clear_params );
+use Para::Frame::Utils qw( throw catch trim debug datadump );
 
 use Rit::Base::List;
 use Rit::Base::Arc;
@@ -40,7 +39,7 @@ use Rit::Base::Time qw( now );
 use Rit::Base::Pred;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Constants qw( $C_language $C_arc );
 
 use Rit::Base::Utils qw( valclean translate getnode getarc getpred
 			 parse_query_props parse_form_field_prop
@@ -349,7 +348,9 @@ sub update_by_query
 
     # Clear out used query params
     # TODO: Also remove revprop_has_member ...
-    queue_clear_params( @arc_params, @row_params, @check_params );
+    $Para::Frame::REQ->change->queue_clear_params( @arc_params,
+						   @row_params,
+						   @check_params );
 
     return $res->changes - $changes_prev;
 }
@@ -758,6 +759,11 @@ sub handle_query_arc_value
 	}
     }
 
+    # Store subj in row info
+    if( $rowno )
+    {
+	$res->set_subj_id_by_row( $rowno, $subj->id );
+    }
 
     # check old value
     my $arc;
@@ -1279,16 +1285,7 @@ sub handle_query_row_value
     my $lang	  = $arg->{'lang'};  # lang-code of value (set on value/obj)
 
 
-    # Set node
-    my $node;
-    if( $subj_id  and $subj_id =~ /^\d+$/ )
-    {
-	$node = Rit::Base::Resource->get($subj_id);
-    }
-    else
-    {
-	$node = $args->{'node'};
-    }
+    # Set node ... After checking $subj_id
 
     my $pred = getpred( $pred_name );
     my $pred_id = $pred->id;
@@ -1302,9 +1299,10 @@ sub handle_query_row_value
 #    warn "Modify row $rowno\n";
 
     if( $arc_id ){ die "Why is arc_id defined?" };
-    my $referer_arc_id = $res->arc_id_by_row($rowno); # Refering to existing arc
     if( $subj_id eq 'arc' )
     {
+	# Refering to existing arc
+	my $referer_arc_id = $res->arc_id_by_row($rowno);
 	$subj_id = $referer_arc_id;
 
 	## Creating arc for nonexisting arc?
@@ -1316,21 +1314,13 @@ sub handle_query_row_value
 		# us to setting the property for this arc, the arc
 		# must exist, even if the arc has an undef value.
 
-		########################################
-		# Authenticate change of arc
-		#
-		# (how do we determine what user can do?)
-		# Accept changes if the pred of the arc that is
-		# the subj is allowed, and if the pred for this
-		# arc also is allowed. (The later thing later)
-		#my $pred = Rit::Base::Pred->
-		#  get_id( $res->pred_id_by_row( $rowno ) );
-		#$class->authenticate_update( $pred );
-
-		my $subj = Rit::Base::Resource->find_set({
-		    subj    => $node,
-		    pred    => $res->pred_id_by_row($rowno),
-		}, undef, $res );
+		my $arc_subj = $res->subj_id_by_row($rowno);
+		my $arc_pred = $res->pred_id_by_row($rowno);
+		my $subj = Rit::Base::Arc->create({
+						   subj => $arc_subj,
+						   pred => $arc_pred,
+						  }, $args );
+		$subj_id = $subj->id;
 		$res->set_arc_id_by_row( $rowno, $subj_id );
 	    }
 	    else
@@ -1345,39 +1335,54 @@ sub handle_query_row_value
 	die "Not refering to arc?";
     }
 
-    eval
+    # Set node
+    my $node;
+    if( $subj_id  and $subj_id =~ /^\d+$/ )
     {
-	# Find with arclim. Set if not found, as new
-	my $arc = Rit::Base::Arc->find_set(
-					   {
-					    subj    => $subj_id,
-					    pred    => $pred_id,
-					   },
-					   $args );
+	$node = Rit::Base::Resource->get($subj_id);
+    }
+    else
+    {
+	confess "subj param not optional";
+    }
 
-	if( not length $value )
+
+    # Find with arclim. Set if not found, as new
+    my $arcs = Rit::Base::Resource->find({
+					  subj => $node,
+					  pred => $pred,
+					 },
+					 $args );
+
+    if( length $value )
+    {
+	my $arc;
+	if( $arc = pop @$arcs )
 	{
-	    $res->add_to_deathrow( $arc );
+	    $arc = $arc->set_value( $value, $args );
 	}
 	else
 	{
-	    $arc = $arc->set_value( $value, $args );
-	    $q->delete("check_$param");
-
-	    # Remove the subject (that is an arc) from deathrow
-	    $res->remove_from_deathrow( $arc->subj );
+	    $arc = Rit::Base::Arc->create({
+					   subj => $node,
+					   pred => $pred,
+					   value => $value,
+					  }, $args );
 	}
-    };
-    if( $@ )
+
+	# Remove the subject (that is an arc) from deathrow
+	$res->remove_from_deathrow( $arc->subj );
+
+	# This arc has been taken care of
+	debug  "Removing check_$param";
+	$q->delete("check_$param");
+
+    }
+
+    # Remove all other arcs
+    foreach my $arc (@$arcs )
     {
-	debug "  Don't bother?";
-#	    my $error = catch( $@ );
-#
-#	    if( $error->type eq 'notfound' )
-#	    {
-#
-#	    }
-	die $@; # don't bother
+	$res->add_to_deathrow( $arc );
     }
 
     return $res->changes - $changes_prev;
