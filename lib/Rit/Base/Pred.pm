@@ -353,10 +353,14 @@ sub find_by_label
 
     my $req = $Para::Frame::REQ;
 
-    my $sth = $Rit::dbix->dbh->prepare($sql);
-    $sth->execute($label);
-    my $rec = $sth->fetchrow_hashref;
-    $sth->finish;
+    my $rec;
+    eval
+    {
+	my $sth = $Rit::dbix->dbh->prepare($sql);
+	$sth->execute($label);
+	$rec = $sth->fetchrow_hashref;
+	$sth->finish;
+    } or return $Rit::dbix->report_error([$label]);
 
     if( $no_list )
     {
