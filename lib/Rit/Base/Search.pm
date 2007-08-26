@@ -38,7 +38,7 @@ BEGIN
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( getpred valclean getnode query_desig );
+use Rit::Base::Utils qw( valclean query_desig );
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -1960,7 +1960,7 @@ sub build_outer_select_field
 	    {
 		confess "Not sane";
 	    }
-	    my $weight_id = Rit::Base::Resource->get_by_constant_label('weight')->id;
+	    my $weight_id = Rit::Base::Resource->get_by_label('weight')->id;
 
 	    # Sort by weight
 	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj $arclim_sql) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=${weight_id} and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
@@ -2039,7 +2039,7 @@ sub build_main_select_price
     my $arclim_sql0 = $search->arclim_sql();
     my $arclim_sql1 = $search->arclim_sql({prefix => 'rel1.'});
     my $arclim_sql2 = $search->arclim_sql({prefix => 'rel2.'});
-    my $weight_id = Rit::Base::Resource->get_by_constant_label('weight')->id;
+    my $weight_id = Rit::Base::Resource->get_by_label('weight')->id;
 
     my $sql =
 "
@@ -2318,7 +2318,7 @@ sub elements_props
 	    {
 		foreach my $node_id ( @$invalues )
 		{
-		    getnode($node_id)->log_search;
+		    Rit::Base::Resource->get($node_id)->log_search;
 		}
 	    }
 	}
@@ -2439,7 +2439,7 @@ sub build_path_part
     {
 	foreach my $rec ( @$result )
 	{
-	    getnode($rec->{'subj'})->log_search;
+	    Rit::Base::Resource->get($rec->{'subj'})->log_search;
 	}
     }
 

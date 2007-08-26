@@ -17,7 +17,6 @@ use strict;
 
 use Para::Frame::Utils qw( debug );
 
-use Rit::Base::Utils qw( getnode );
 use Rit::Base::Resource::Change;
 
 
@@ -35,7 +34,7 @@ sub handler
 	my $aid = $1;
 
 	debug "Vacuum arc $aid";
-	my $arc = getnode( $aid );
+	my $arc = Rit::Base::Resource->get( $aid );
 
 	$arc->vacuum( { res => $res } );
     }

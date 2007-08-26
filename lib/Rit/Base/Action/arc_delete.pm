@@ -18,7 +18,7 @@ use Data::Dumper;
 
 use Para::Frame::Utils qw( trim );
 
-use Rit::Base::Utils qw( getarc getnode getpred );
+use Rit::Base::Utils qw( );
 use Rit::Base::Resource::Change;
 
 sub handler
@@ -28,7 +28,7 @@ sub handler
     my $q = $req->q;
 
     my $node_id = $q->param('id');
-    my $node = getnode( $node_id );
+    my $node = Rit::Base::Resource->get( $node_id );
     my $desig = $node->sysdesig;
 
 
@@ -37,10 +37,10 @@ sub handler
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
-    my $pred_value_id = getpred('value')->id;
+    my $pred_value_id = Rit::Base::Pred->get('value')->id;
     foreach my $arc_id (@arc_ids)
     {
-	my $arc = getarc( $arc_id ) or die "Can't find arc";
+	my $arc = Rit::Base::Arc->get( $arc_id ) or die "Can't find arc";
 	if( $arc->pred->id == $pred_value_id )
 	{
 	    $value_arc = $arc;

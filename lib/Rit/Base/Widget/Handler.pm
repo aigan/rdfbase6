@@ -41,10 +41,10 @@ use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Constants qw( $C_language $C_arc );
 
-use Rit::Base::Utils qw( valclean translate getnode getarc getpred
-			 parse_query_props parse_form_field_prop
-			 is_undef arc_lock arc_unlock truncstring
-			 query_desig convert_query_prop_for_creation
+use Rit::Base::Utils qw( valclean translate parse_query_props
+			 parse_form_field_prop is_undef arc_lock
+			 arc_unlock truncstring query_desig
+			 convert_query_prop_for_creation
 			 parse_propargs aais send_cache_update );
 
 =head1 DESCRIPTION
@@ -503,7 +503,7 @@ sub handle_query_arc_value
       if( $select and $select eq 'version' ); # activate arc-version and return
 
 
-    my $pred = getpred( $pred_name )
+    my $pred = Rit::Base::Pred->get( $pred_name )
       or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
@@ -594,8 +594,9 @@ sub handle_query_arc_value
 
 
 
-    ############### File handling
-
+    ############### File handling #####################################
+    #
+    #
     if( $file and ref $subj ) # Skip if subj doesn't exist
     {
 	debug "Got a fileupload, stated type: $file, value: $value";
@@ -689,7 +690,9 @@ sub handle_query_arc_value
 
 	$value = $filename_base;
     }
-    ###############
+    #
+    #
+    ###################################################################
 
 
     if( $desig and length( $value ) ) # replace $value with the node id
@@ -724,7 +727,7 @@ sub handle_query_arc_value
 	{
 	    debug 3, "  Reversing arc update";
 
-	    my $subjs = $R->find_by_label( $value, $args );
+	    my $subjs = $R->find_by_anything( $value, $args );
 	    if( $type )
 	    {
 		$subjs = $subjs->find({ is => $type }, $args);
@@ -746,7 +749,7 @@ sub handle_query_arc_value
 	}
 	elsif( $arc_id )
 	{
-	    $res->add_to_deathrow( getarc($arc_id) );
+	    $res->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
 	}
 	elsif( not $arc_id and not length $value )
 	{
@@ -804,7 +807,7 @@ sub handle_query_arc_value
 		}
 		else
 		{
-		    my $list = $R->find_by_label( $value, $args );
+		    my $list = $R->find_by_anything( $value, $args );
 
 		    my $props = {};
 		    if( $type )
@@ -879,7 +882,7 @@ sub handle_query_arc_value
 
 		foreach my $val ( @values )
 		{
-		    my $objs = $R->find_by_label($val, $args);
+		    my $objs = $R->find_by_anything($val, $args);
 
 		    unless( $rev )
 		    {
@@ -1154,7 +1157,7 @@ sub handle_query_prop_value
 
     if( my $value = $value ) # If value is true
     {
-	my $pred = getpred( $pred_name ) or die "Can't find pred $pred_name\n";
+	my $pred = Rit::Base::Pred->get( $pred_name ) or die "Can't find pred $pred_name\n";
 	my $pred_id = $pred->id;
 	my $coltype = $pred->coltype;
 #	my $valtype = $pred->valtype;
@@ -1167,7 +1170,7 @@ sub handle_query_prop_value
 	}
 	else
 	{
-	    $objs = Rit::Base::Resource->find_by_label($value, $args);
+	    $objs = Rit::Base::Resource->find_by_anything($value, $args);
 	}
 
 	if( $objs->size > 1 )
@@ -1287,7 +1290,7 @@ sub handle_query_row_value
 
     # Set node ... After checking $subj_id
 
-    my $pred = getpred( $pred_name );
+    my $pred = Rit::Base::Pred->get( $pred_name );
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
 #    my $valtype = $pred->valtype;
@@ -1453,7 +1456,7 @@ sub handle_query_check_row
 	die "Not refering to arc? (@_)";
     }
 
-    my $pred = getpred( $pred_name );
+    my $pred = Rit::Base::Pred->get( $pred_name );
     my $pred_id = $pred->id;
 
     # Find with arclim. Set if not found, as new
@@ -1485,7 +1488,7 @@ sub handle_query_check_arc
     my( $class, $param, $arc_id, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    $res->add_to_deathrow( getarc($arc_id) );
+    $res->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
 
     return 0;
 }
@@ -1538,7 +1541,7 @@ sub handle_query_check_prop
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
 
-    my $pred = getpred( $pred_in );
+    my $pred = Rit::Base::Pred->get( $pred_in );
     my $pred_name = $pred->name;
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
@@ -1618,7 +1621,7 @@ sub handle_query_check_revprop
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
 
-    my $pred = getpred( $pred_name );
+    my $pred = Rit::Base::Pred->get( $pred_name );
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
 

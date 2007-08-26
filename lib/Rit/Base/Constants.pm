@@ -247,7 +247,7 @@ croaks if constant doesn't exist
 sub get
 {
     my( $this, $label ) = @_;
-    return Rit::Base::Resource->get_by_constant_label( $label );
+    return Rit::Base::Resource->get_by_label( $label );
 }
 
 

@@ -15,9 +15,7 @@ package Rit::Base::Action::arc_unsubmit;
 
 use strict;
 
-use Para::Frame::Utils qw( );
-
-use Rit::Base::Utils qw( getarc getnode getpred );
+use Rit::Base::Arc;
 
 sub handler
 {
@@ -28,7 +26,7 @@ sub handler
     my $q = $req->q;
 
     my $aid = $q->param('arc_id');
-    my $arc = getnode( $aid );
+    my $arc = Rit::Base::Arc->get( $aid );
     my $desig = $arc->sysdesig;
 
     # ignored...

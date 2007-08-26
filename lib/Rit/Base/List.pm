@@ -228,7 +228,7 @@ after this find.
 The combination of this and other methods creates a very powerful
 query language. See L</AUTOLOAD>, L</contains>,
 L<Rit::Base::Resource/AUTOLOAD>, L<Rit::Base::Resource/has_value>,
-L<Rit::Base::Resource/find_by_label> and L</sorted> for some of the
+L<Rit::Base::Resource/find_by_anything> and L</sorted> for some of the
 methods you can combine.
 
 =head3 Example 1
@@ -572,7 +572,7 @@ sub sorted
 	my $cmp = 'cmp';
 
 	# Silently ignore dynamic props (that isn't preds)
-	if( my $pred = Rit::Base::Pred->find_by_label( $pred_str,
+	if( my $pred = Rit::Base::Pred->find_by_anything( $pred_str,
 						       {
 							%$args,
 							return_single_value=>1,
@@ -767,7 +767,7 @@ A L<Rit::Base::Resource> object.
 
 Exceptions:
 
-See L<Rit::Base::Resource/get_by_label>
+See L<Rit::Base::Resource/get_by_anything>
 
 =cut
 
@@ -775,7 +775,7 @@ sub get
 {
     my $list = shift->find(@_);
 
-    return Rit::Base::Resource->get_by_label($list);
+    return Rit::Base::Resource->get_by_anything($list);
 }
 
 

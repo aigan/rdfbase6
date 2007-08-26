@@ -271,9 +271,9 @@ sub is_pred { 1 };
 #########################################################################
 ################################  Private methods  ######################
 
-=head2 find_by_label
+=head2 find_by_anything
 
-  $this->find_by_label( $label, \%args )
+  $this->find_by_anything( $label, \%args )
 
 Supported args are:
 
@@ -281,7 +281,7 @@ Supported args are:
 
 =cut
 
-sub find_by_label
+sub find_by_anything
 {
     my( $this, $label, $args ) = @_;
     my $class = ref($this) || $this;
@@ -313,7 +313,7 @@ sub find_by_label
     }
 
     $label = $label->literal if ref $label;
-    $label or confess "get_by_label got empty label";
+    $label or confess "get_by_anything got empty label";
 
 
     # TODO: Insert special predicates subj, pred, obj, coltype
@@ -340,7 +340,7 @@ sub find_by_label
 
     if( $label =~ /^-\d+$/ )
     {
-	return $this->get_by_label( $special_label->{$label}, $args );
+	return $this->get_by_anything( $special_label->{$label}, $args );
     }
     elsif( $label =~ /^\d+$/ )
     {
@@ -389,19 +389,19 @@ sub find_by_label
 
 #######################################################################
 
-=head2 get_by_label
+=head2 get_by_anything
 
 =cut
 
-sub get_by_label
+sub get_by_anything
 {
     my $args = {'return_single_value' => 1};
 
-    my( $node ) = $_[0]->find_by_label($_[1], $args);
+    my( $node ) = $_[0]->find_by_anything($_[1], $args);
 
     if( $node )
     {
-#	debug "$_[0] -> get_by_label($_[1])";
+#	debug "$_[0] -> get_by_anything($_[1])";
 	return $node;
     }
     else

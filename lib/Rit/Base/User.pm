@@ -72,7 +72,7 @@ resource representing the user class.
 
 =head2 get
 
-This will call back to L</find_by_label>.
+This will call back to L</find_by_anything>.
 
 =cut
 
@@ -192,7 +192,7 @@ sub level
 
 #######################################################################
 
-=head2 find_by_label
+=head2 find_by_anything
 
 Called by L<Rit::Base::Resource/get> that gets called by
 L<Para::Frame::User/identify_user>.
@@ -203,7 +203,7 @@ Supported args are:
 
 =cut
 
-sub find_by_label
+sub find_by_anything
 {
     my( $this, $val, $args ) = @_;
     return is_undef unless defined $val;

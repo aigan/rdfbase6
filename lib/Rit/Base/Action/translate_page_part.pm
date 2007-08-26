@@ -53,7 +53,7 @@ sub handler
     }
     else
     {
-	my $pred = Rit::Base::Pred->get_by_label( 'description', $args );
+	my $pred = Rit::Base::Pred->get_by_anything( 'description', $args );
 	my $props =
 	{
 	 is_of_language => $l,

@@ -45,9 +45,9 @@ use Rit::Base::Literal;
 use Rit::Base::String;
 use Rit::Base::Rule;
 
-use Rit::Base::Utils qw( getpred valclean translate
-                         is_undef truncstring send_cache_update
-                         query_desig parse_propargs );
+use Rit::Base::Utils qw( valclean translate is_undef truncstring
+                         send_cache_update query_desig parse_propargs
+                         );
 
 ### Inherit
 #
@@ -368,7 +368,7 @@ sub create
     else
     {
 	$rec->{'created_by'} =
-	  Rit::Base::Resource->get_by_constant_label('root')->id;
+	  Rit::Base::Resource->get_by_label('root')->id;
     }
     push @fields, 'created_by';
     push @values, $rec->{'created_by'};
@@ -499,7 +499,7 @@ sub create
 	    else # Value given as string. Parsing it
 	    {
 		# Find relative the callers arclims
-		$value = Rit::Base::Resource->get_by_label( $value,
+		$value = Rit::Base::Resource->get_by_anything( $value,
 							    {
 							     %$args,
 							     coltype => $coltype,
@@ -2269,7 +2269,7 @@ sub has_value
 	my( $val_in, $error ) = $value->get_first;
 	while(! $error )
 	{
-	    my $val_parsed = $R->get_by_label($val_in, $args_coltype);
+	    my $val_parsed = $R->get_by_anything($val_in, $args_coltype);
 	    if( $target->equals( $val_parsed, $args ) )
 	    {
 		return $arc;
@@ -2284,7 +2284,7 @@ sub has_value
 
 #    debug "CHECKS if target is equal to ".query_desig($value);
 
-    my $val_parsed = $R->get_by_label($value, $args_coltype);
+    my $val_parsed = $R->get_by_anything($value, $args_coltype);
     if( $target->equals( $val_parsed, $args ) )
     {
 	return $arc;
@@ -2850,11 +2850,13 @@ sub set_value
     # is; If the previous value was an object: try to find a new
     # object.  Not a Literal.
     #
-    my $value_new_list = Rit::Base::Resource->find_by_label( $value_new_in,
-							     {
-							      %$args,
-							      coltype => $coltype_old,
-							     });
+    my $value_new_list = Rit::Base::Resource->find_by_anything
+      ( $value_new_in,
+	{
+	 %$args,
+	 coltype => $coltype_old,
+	});
+
     $value_new_list->defined or die "wrong input '$value_new_in'";
 
     if( $value_new_list->[1] ) # More than one
@@ -4370,7 +4372,7 @@ sub default_source
     }
     else
     {
-	return Rit::Base::Resource->get_by_constant_label('ritbase');
+	return Rit::Base::Resource->get_by_label('ritbase');
     }
 }
 
@@ -4391,7 +4393,7 @@ sub default_read_access
     }
     else
     {
-	return Rit::Base::Resource->get_by_constant_label('public');
+	return Rit::Base::Resource->get_by_label('public');
     }
 }
 
@@ -4412,7 +4414,7 @@ sub default_write_access
     }
     else
     {
-	return Rit::Base::Resource->get_by_constant_label('sysadmin_group');
+	return Rit::Base::Resource->get_by_label('sysadmin_group');
     }
 }
 

@@ -35,8 +35,8 @@ sub handler
     }
 
 
-    my $wst = Rit::Base::Resource->get_by_label('website_text');
-    my $pred = Rit::Base::Pred->get_by_label( 'description' );
+    my $wst = Rit::Base::Resource->get_by_anything('website_text');
+    my $pred = Rit::Base::Pred->get_by_anything( 'description' );
 
     my $props =
     {

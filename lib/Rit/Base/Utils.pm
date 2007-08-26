@@ -39,12 +39,11 @@ BEGIN
     @Rit::Base::Utils::EXPORT_OK
 
 	= qw( translate cache_clear valclean format_phone format_zip
-	      getnode getarc getpred parse_query_props
-	      parse_form_field_prop parse_arc_add_box is_undef
-	      arc_lock arc_unlock truncstring string parse_query_pred
-	      parse_query_prop convert_query_prop_for_creation
-	      name2url query_desig send_cache_update parse_propargs
-	      aais alfanum_to_id );
+	      parse_query_props parse_form_field_prop
+	      parse_arc_add_box is_undef arc_lock arc_unlock
+	      truncstring string parse_query_pred parse_query_prop
+	      convert_query_prop_for_creation name2url query_desig
+	      send_cache_update parse_propargs aais alfanum_to_id );
 
 }
 
@@ -63,59 +62,6 @@ TODO: Move most if not all of these functions to another place...
 Please think about _not_ using these...
 
 =cut
-
-
-#######################################################################
-
-=head2 getnode
-
-  getnode( $arg )
-
-Calls L<Rit::Base::Resource/get> with C<$arg>.
-
-Returns: See L<Rit::Base::Resource/get>
-
-=cut
-
-sub getnode
-{
-    return Rit::Base::Resource->get(@_);
-}
-
-#######################################################################
-
-=head2 getarc
-
-  getarc( $arg )
-
-Calls L<Rit::Base::Arc/get> with C<$arg>.
-
-Returns: See L<Rit::Base::Resource/get>
-
-=cut
-
-sub getarc
-{
-    return Rit::Base::Arc->get(@_);
-}
-
-
-#######################################################################
-
-=head2 getpred
-
-  getpred( $arg )
-
-Calls L<Rit::Base::Pred/get> with C<$arg>.
-
-Returns: See L<Rit::Base::Resource/get>
-
-=cut
-
-sub getpred
-{
-    return Rit::Base::Pred->get(@_);
-}
 
 
 #######################################################################
@@ -437,7 +383,7 @@ Note that the value node is created even if you don't use the returned
 hashref for creating the arcs using that value node.
 
 The C<sv (code)> part will be parsed by
-L<Rit::Base::Resource/find_by_label>, as will all the values.
+L<Rit::Base::Resource/find_by_anything>, as will all the values.
 
 =cut
 
@@ -462,7 +408,7 @@ sub parse_arc_add_box
 	{
 	    my $sprops = parse_query_props( $2, $args );
 	    my $svalue = $1;
-	    my $pred = Rit::Base::Pred->get_by_label( $pred_name, $args );
+	    my $pred = Rit::Base::Pred->get_by_anything( $pred_name, $args );
 	    $value = Rit::Base::Resource->create( $sprops, $args );
 	    Rit::Base::Arc->create({
 				    subj    => $value,
@@ -475,7 +421,7 @@ sub parse_arc_add_box
 	unless( ref $value )
 	{
 	    my $coltype = Rit::Base::Pred->get($pred_name)->coltype;
-	    $value = Rit::Base::Resource->get_by_label( $value,
+	    $value = Rit::Base::Resource->get_by_anything( $value,
 							{
 							 %$args,
 							 coltype => $coltype,

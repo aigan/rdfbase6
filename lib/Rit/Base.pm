@@ -161,7 +161,7 @@ sub init_on_startup
 	my $val = $cfg->{$key};
 	unless( ref $val )
 	{
-	    $cfg->{$key} = Rit::Base::Resource->get_by_constant_label($val);
+	    $cfg->{$key} = Rit::Base::Resource->get_by_label($val);
 	}
     }
 

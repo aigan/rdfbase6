@@ -54,10 +54,10 @@ use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate );
 use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
-use Rit::Base::Utils qw( valclean translate getnode getarc getpred
-			 parse_query_props parse_form_field_prop
-			 is_undef arc_lock arc_unlock truncstring
-			 query_desig convert_query_prop_for_creation
+use Rit::Base::Utils qw( valclean translate parse_query_props
+			 parse_form_field_prop is_undef arc_lock
+			 arc_unlock truncstring query_desig
+			 convert_query_prop_for_creation
 			 parse_propargs aais send_cache_update );
 
 our %UNSAVED;
@@ -102,11 +102,11 @@ These can be called with the class name or any node object.
 
 get() is the central method for getting things.  It expects node id,
 but also takes labels and searches.  It will call L</new> and
-L</init>.  Anything other than id is given to L</get_by_label>.  Those
+L</init>.  Anything other than id is given to L</get_by_anything>.  Those
 methods are reimplemented in the subclasses.  L</new> must only take
-the node id.  L</get_by_label> must take any form of identification,
+the node id.  L</get_by_anything> must take any form of identification,
 but expects and returns only ONE node.  The coresponding
-L</find_by_label> returns a List.
+L</find_by_anything> returns a List.
 
 You should call get() through the right class.  If not, it will look
 up the right class and bless itself into that class, and call thats
@@ -128,7 +128,7 @@ a node object
 
 Exceptions:
 
-See L</get_by_label> then called with anything but $id
+See L</get_by_anything> then called with anything but $id
 
 =cut
 
@@ -166,7 +166,7 @@ sub get
 	# $val_in could be a hashref, but those are not chached
 	unless( $id = $Rit::Base::Cache::Label{$class}{ $val_in } )
 	{
-	    $node = $class->get_by_label( $val_in ) or return is_undef;
+	    $node = $class->get_by_anything( $val_in ) or return is_undef;
 	    $id = $node->id;
 
 	    # Cache name lookups
@@ -256,50 +256,74 @@ sub get_by_id
 
 #######################################################################
 
-=head2 find_by_label
+=head2 find_by_anything
 
-  1. $n->find_by_label( $node, \%args )
+  1. $n->find_by_anything( $node, \%args )
 
-  2. $n->find_by_label( $query, \%args )
+  2. $n->find_by_anything( $query, \%args )
 
-  3. $n->find_by_label( "$any_name ($props)", \%args )
+  3. $n->find_by_anything( $list );
 
-  4. $n->find_by_label( "$called ($predname)", \%args )
+  4. $n->find_by_anything( $string, {%args, coltype=>$coltype} );
 
-  5. $n->find_by_label( "$id: $name", \%args )
+  5. $n->find_by_anything( "$any_name ($props)", \%args )
 
-  6. $n->find_by_label( "#$id", \%args )
+  6. $n->find_by_anything( "$called ($predname)", \%args )
 
-  7. $n->find_by_label( $label, \%args );
+  7. $n->find_by_anything( "$id: $name", \%args )
 
-  8. $n->find_by_label( $name, \%args );
+  8. $n->find_by_anything( "#$id", \%args )
 
-  9. $n->find_by_label( $id, \%args );
+  9. $n->find_by_anything();
 
- 10. $n->find_by_label( $list );
+ 10. $n->find_by_anything( $label, \%args );
+
+ 11. $n->find_by_anything( $name, \%args );
+
+ 12. $n->find_by_anything( $id, \%args );
 
 C<$node> is a node object.
 
 C<$query> is defined in L</find>.
 
-In case C<3>, C<$any_name> is either name, name_short or code.
-C<$props> is a list of criterions of the form "pred value" spearated
-by comma, there the value is everything after the first space and
-before the next comma or end of string.
-
-In case C<4>, we can identify a node by the predicate of our choosing.
-The node myst have a property C<$predname> with value C<$called>.
-
 A C<$list> returns itself.
+
+In case C<4>, the coltype is given in the arg. It will return objects
+of type L<Rit::Base::Literal>.  Objects will be returned
+unchanged. Strings will be parsed for object creation.  Especially
+handles C<valtext>, C<valfloat> and C<valdate>.
+
+In case C<5>, C<$any_name> is either name, name_short or code, with
+C<clean>.  C<$props> is a list of criterions of the form "pred value"
+spearated by comma, there the value is everything after the first
+space and before the next comma or end of string. Example: "Jonas (is
+person)".
+
+In case C<6>, we can identify a node by the predicate of our choosing.
+The node must have a property C<$predname> with value C<$called>.
+Example: "123 (code)".
+
+Case C<7> expects the node id followed by the node designation.
+
+Case C<8> is just for givin the node id following a C<#>.
+
+Case C<9> will result in an empty list.
+
+Case C<10> finds the node by L</get_by_label>
+
+Case C<11> finds nodes by the given name using C<clean>. This is the
+last resort for anything that doen't looks like a node id number.
+
+Case C<12> returns the node by the id given.
+
+Whitespace will be trimmed for all searches of existing nodes (usning
+L<Para::Frame::Utils/trim>). New Literals will not be trimmed. The
+caller will have to trime surrounding whitespace, if needed.
+
 
 Supported args are
   coltype
   arclim
-
-If C<$datatype> is defined and anyting other than C<obj>, the text
-value is returned for cases C<8> and C<9>.  The other cases is provided for
-supporting C<value> nodes.  This limits the possible content of a
-literal string if this method is called with a string as value.
 
 Returns:
 
@@ -313,15 +337,10 @@ See also L</find> if C<$query> or C<$props> is used.
 
 =cut
 
-sub find_by_label
+sub find_by_anything
 {
     my( $this, $val, $args_in ) = @_;
     return is_undef unless defined $val;
-
-    unless( ref $val )
-    {
-	trim(\$val);
-    }
 
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
@@ -329,7 +348,7 @@ sub find_by_label
     my( @new );
     my $coltype = $args->{'coltype'} || 'obj';
 
-#    debug 3, "find_by_label: $val ($coltype)";
+#    debug 3, "find_by_anything: $val ($coltype)";
 
     # 1. obj as object
     #
@@ -354,16 +373,20 @@ sub find_by_label
 	push @new, $objs->as_array;
     }
     #
-    # obj is not an obj.  Looking at coltype
+    # 3. obj is not an obj.  Looking at coltype
     #
     elsif( $coltype ne 'obj' )
     {
 	debug 3, "  obj as not an obj, It's a $coltype";
 	if( not ref $val )
 	{
-	    if( $coltype eq 'valtext' or
-		$coltype eq 'valfloat' )
+	    if( $coltype eq 'valtext' )
 	    {
+		$val = Rit::Base::String->new( $val );
+	    }
+	    elsif( $coltype eq 'valfloat' )
+	    {
+		trim(\$val);
 		$val = Rit::Base::String->new( $val );
 	    }
 	    elsif( $coltype eq 'valdate' )
@@ -396,7 +419,7 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # 10. obj as list
+    # 4. obj as list
     #
     elsif( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::List') )
     {
@@ -404,13 +427,13 @@ sub find_by_label
 	push @new, $val;
     }
     #
-    # 3/4. obj as name of obj with criterions
+    # 5/6. obj as name of obj with criterions
     #
     elsif( $val =~ /^\s*(.*?)\s*\(\s*(.*?)\s*\)\s*$/ )
     {
 	debug 3, "  obj as name of obj with criterions";
-	my $name = $1; #(trimmed)
-	my $spec = $2; #(trimmed)
+	my $name = trim($1);
+	my $spec = trim($2);
 	my $objs;
 	if( $spec !~ /\s/ ) # just one word
 	{
@@ -435,13 +458,13 @@ sub find_by_label
 	push @new, $objs->as_array;
     }
     #
-    # 5. obj as obj id and name
+    # 7. obj as obj id and name
     #
-    elsif( $val =~ /^(\d+):\s*(.*?)\s*$/ )
+    elsif( $val =~ /^\s*(\d+)\s*:\s*(.*?)\s*$/ )
     {
 	debug 3, "  obj as obj id and name";
-	my $id = $1;
-	my $name = $2;
+	my $id = trim($1);
+	my $name = trim($2);
 
 	my $obj = $this->get( $id );
 	my $desig = $obj->desig;
@@ -461,9 +484,9 @@ sub find_by_label
 	push @new, $obj;
     }
     #
-    # 6. obj as obj id with prefix '#'
+    # 8. obj as obj id with prefix '#'
     #
-    elsif( $val =~ /^#(\d+)$/ )
+    elsif( $val =~ /^\s*#(\d+)\s*$/ )
     {
 	debug 3, "  obj as obj id with prefix '#'";
 	my $id = $1;
@@ -471,23 +494,25 @@ sub find_by_label
 	push @new, $obj;
     }
     #
-    # no value
+    # 9. no value
     #
     elsif( not length $val )
     {
 	# Keep @new empty
     }
     #
-    # 7. obj as label of obj or 8. obj as name of obj
+    # 10. obj as label of obj or 11. obj as name of obj
     #
-    elsif( $val !~ /^\d+$/ )
+    elsif( $val !~ /^\s*\d+\s*$/ )
     {
 	debug 3, "  obj as label or name of obj";
 	# TODO: Handle empty $val
 
+	trim(\$val);
+
 	eval # May throw exception
 	{
-	    @new = $this->get_by_constant_label($val);
+	    @new = $this->get_by_label($val);
 	};
 
 	unless( @new )
@@ -498,12 +523,12 @@ sub find_by_label
 	}
     }
     #
-    # 9. obj as obj id
+    # 12. obj as obj id
     #
     else
     {
 	debug 3, "  obj as obj id";
-	push @new, $this->get_by_id( $val );
+	push @new, $this->get_by_id( trim($val) );
     }
 
 #    warn "  returning @new\n";
@@ -539,7 +564,7 @@ sub get_id
     my $id;
     unless( $id = $Rit::Base::Cache::Label{$class}{ $label } )
     {
-	my $node = $class->get_by_label( $label, $args ) or return is_undef;
+	my $node = $class->get_by_anything( $label, $args ) or return is_undef;
 	$id = $node->id;
 	# Cache name lookups
 	unless( ref $label ) # Do not cache searches
@@ -1938,7 +1963,7 @@ sub list_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_anything($_, $args), keys %preds_name;
 
     return Rit::Base::List->new([@preds]);
 }
@@ -2099,7 +2124,7 @@ sub revlist_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_anything($_, $args), keys %preds_name;
 
     return Rit::Base::List->new([@preds]);
 }
@@ -4431,7 +4456,7 @@ sub replace
 
 	foreach my $val_in ( @{$props->{$pred_name}} )
 	{
-	    my $val  = Rit::Base::Resource->get_by_label( $val_in,
+	    my $val  = Rit::Base::Resource->get_by_anything( $val_in,
 							  {
 							   %$args,
 							   coltype => $coltype,
@@ -4572,7 +4597,7 @@ sub remove
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
-    my $pred_value_id = getpred('value')->id;
+    my $pred_value_id = Rit::Base::Pred->get('value')->id;
 
     foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes )
     {
@@ -4650,7 +4675,7 @@ sub find_arcs
 	}
 	elsif( $crit =~ /^\d+$/ )
 	{
-	    push @$arcs, getarc($crit);
+	    push @$arcs, Rit::Base::Arc->get($crit);
 	}
 	else
 	{
@@ -5117,7 +5142,7 @@ sub wu
     my( $node, $pred_name, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
     $args->{'subj'} = $node;
-    my $pred = Rit::Base::Pred->get_by_constant_label($pred_name);
+    my $pred = Rit::Base::Pred->get_by_label($pred_name);
     my $textbox = Rit::Base::Resource->get({name=>'textbox',
 					    scof=>$C_valtext});
     my $range = $pred->range;
@@ -5819,15 +5844,15 @@ sub new
 
 #########################################################################
 
-=head2 get_by_label
+=head2 get_by_anything
 
-  Rit::Base::Resource->get_by_label( $val, \%args )
+  Rit::Base::Resource->get_by_anything( $val, \%args )
 
-Same as L</find_by_label>, but returns ONE node
+Same as L</find_by_anything>, but returns ONE node
 
 =cut
 
-sub get_by_label
+sub get_by_anything
 {
     my( $class, $val, $args ) = @_;
 
@@ -5840,7 +5865,7 @@ sub get_by_label
 	}
     }
 
-    my $list = $class->find_by_label($val, $args);
+    my $list = $class->find_by_anything($val, $args);
 
     my $req = $Para::Frame::REQ;
     confess "No REQ" unless $req;
@@ -5938,13 +5963,13 @@ sub get_by_label
 
 #########################################################################
 
-=head2 get_by_constant_label
+=head2 get_by_label
 
-  $n->get_by_constant_label( $label )
+  $n->get_by_label( $label )
 
 =cut
 
-sub get_by_constant_label
+sub get_by_label
 {
     my( $this, $label ) = @_;
 
@@ -6453,7 +6478,7 @@ sub initiate_rel
     {
 	return if $_[0]->{'initiated_rel'};
 
-	my $p_name_id = Rit::Base::Resource->get_by_constant_label('name')->id;
+	my $p_name_id = Rit::Base::Resource->get_by_label('name')->id;
 
 	# Optimized for also getting value nodes
 	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
@@ -7035,13 +7060,13 @@ sub populate_rev
 
 =head2 resolve_obj_id
 
-Same as get_by_label, but returns the node id
+Same as get_by_anything, but returns the node id
 
 =cut
 
 sub resolve_obj_id
 {
-    return map $_->id, shift->get_by_label( @_ );
+    return map $_->id, shift->get_by_anything( @_ );
 }
 
 #########################################################################

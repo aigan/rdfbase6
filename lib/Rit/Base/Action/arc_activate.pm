@@ -15,7 +15,8 @@ package Rit::Base::Action::arc_activate;
 
 use strict;
 
-use Rit::Base::Utils qw( getnode );
+use Rit::Base::Utils qw( );
+use Rit::Base::Resource;
 
 sub handler
 {
@@ -31,7 +32,7 @@ sub handler
     $q->delete('literal_arcs');
 
     my $aid = $q->param('arc_id');
-    my $arc = getnode( $aid );
+    my $arc = Rit::Base::Resource->get( $aid );
     my $desig = $arc->sysdesig;
 
     $arc->subj->session_history_add('updated');

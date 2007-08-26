@@ -17,7 +17,6 @@ use strict;
 
 use Para::Frame::Utils qw( debug );
 
-use Rit::Base::Utils qw( getnode );
 use Rit::Base::Resource::Change;
 
 sub handler
@@ -41,7 +40,7 @@ sub handler
     foreach my $aid ( sort @arc_id_list )
     {
 	debug "Handling arc $aid";
-	my $arc = getnode( $aid );
+	my $arc = Rit::Base::Resource->get( $aid );
 
 	next unless $arc->is_arc;
 
