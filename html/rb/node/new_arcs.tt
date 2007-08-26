@@ -8,14 +8,14 @@
          <span style="text-decoration:line-through; color:red">
          [% oarc = arc.replaces %]
          [% IF oarc.obj %]
-            [% jump(oarc.obj.sysdesig, oarc.obj.form_url) %]
+            [% oarc.obj.wu_jump %]
          [% ELSE %]
             [% oarc.value | html %]
          [% END %]
          </style>
       [% ELSE %]
          [% IF arc.obj %]
-            [% jump(arc.obj.sysdesig, arc.obj.form_url) %]
+            [% arc.obj.wu_jump %]
          [% ELSE %]
             [% arc.value | html %]
          [% END %]
@@ -64,11 +64,11 @@
 [% FOREACH arc IN find({is='arc'},{arclim=[state]}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
    [% tr2 %]
       <td>[% checkbox("arc_$arc.id",1,1) %]
-      <td>[% jump(arc.created_by.desig, arc.created_by.form_url) %]</td>
+      <td>[% arc.created_by.wu_jump %]</td>
       <td>[% jump(arc.id, arc.form_url) %]</td>
       <td>[% arc.created %]</td>
-      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
-      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
+      <td>[% arc.subj.wu_jump %]</td>
+      <td>[% arc.pred.wu_jump %]</td>
       <td>[% PROCESS value_field_html %]</td>
    </tr>
 [% END %]
@@ -85,8 +85,8 @@
       <td>[% checkbox("arc_$arc.id",1,1) %]
       <td>[% jump(arc.id, arc.form_url) %]</td></td>
       <td>[% arc.created %]</td>
-      <td>[% jump(arc.subj.desig, arc.subj.form_url) %]</td>
-      <td>[% jump(arc.pred.desig, arc.pred.form_url) %]</td>
+      <td>[% arc.subj.wu_jump %]</td>
+      <td>[% arc.pred.wu_jump %]</td>
       <td>[% PROCESS value_field_html %]</td>
    </tr>
 [% END %]

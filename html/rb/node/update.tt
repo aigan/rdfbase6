@@ -88,13 +88,13 @@ END;
       <td>
       [% IF node.created %]
          [% node.created %]
-         by [% jump(node.created_by.desig, node.created_by.form_url) %]
+         by [% node.created_by.wu_jump %]
       [% END %]
       </td>
       <td>hard</td>
       <td rowspan="5">
       [% IF node.updated %]
-         by [% jump(node.updated_by.desig, node.updated_by.form_url) %]<br/>
+         by [% node.updated_by.wu_jump %]<br/>
 	 [% node.updated %]
       [% END %] 
       </td>
@@ -110,7 +110,7 @@ END;
       <td>owned_by</td>
       <td>
       [% IF node.owned_by %]
-         [% jump(node.owned_by.desig, node.owned_by.form_url) %]
+         [% node.owned_by.wu_jump %]
       [% END %]
       </td>
       <td>hard</td>
@@ -120,7 +120,7 @@ END;
       <td>read_access</td>
       <td>
       [% IF node.read_access %]
-         [% jump(node.read_access.desig, node.read_access.form_url) %]
+         [% node.read_access.wu_jump %]
       [% END %]
       </td>
       <td>hard</td>
@@ -130,7 +130,7 @@ END;
       <td>write_access</td>
       <td>
       [% IF node.write_access %]
-         [% jump(node.write_access.desig, node.write_access.form_url) %]
+         [% node.write_access.wu_jump %]
       [% END %]
       </td>
       <td>hard</td>
@@ -147,7 +147,7 @@ END;
    <tr>
       <td>[% jump('E', node.form_url ) %]</td>
       <td>pred</td>
-      <td>[% jump(node.pred.label, node.pred.form_url) %]</td>
+      <td>[% node.pred.wu_jump %]</td>
       <td>hard</td>
       <td>-</td>
    </tr>

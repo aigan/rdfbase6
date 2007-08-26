@@ -5168,6 +5168,24 @@ sub wu
 
 #######################################################################
 
+=head2 wu_jump
+
+  $n->wu_jump( \%args )
+
+Returns: a HTML link to a form form updating the node
+
+=cut
+
+sub wu_jump
+{
+    my( $node, $args_in ) = @_;
+    return Para::Frame::Widget::jump($node->desig,
+				     $node->form_url($args_in));
+}
+
+
+#######################################################################
+
 =head2 arcversions
 
   $n->arcversions( $pred, \%args )

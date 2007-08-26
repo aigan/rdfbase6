@@ -77,11 +77,11 @@
 [% ELSE %]
 <tr>
    [% IF arc.valtype.desig == 'textbox' %]
-      <td colspan="2">[% jump(arc.valtype.desig, arc.valtype.form_url) %]:<br>
+      <td colspan="2">[% arc.valtype.wu_jump %]:<br>
          [% arc.value | html | html_br %]
       </td>
    [% ELSE %]
-      <td>[% jump(arc.valtype.desig, arc.valtype.form_url) %]</td>
+      <td>[% arc.valtype.wu_jump %]</td>
       <td>[% arc.value | html %]</td>
    [% END %]
 </tr>
@@ -138,11 +138,11 @@
 [% ELSE %]
 <tr>
    [% IF arc.valtype.desig == 'textbox' %]
-      <td colspan="2">[% jump(arc.valtype.desig, arc.valtype.form_url) %]:<br>
+      <td colspan="2">[% arc.valtype.wu_jump %]:<br>
          [% textarea('val', arc.value) %]
       </td>
    [% ELSE %]
-      <td>[% jump(arc.valtype.desig, arc.valtype.form_url) %]</td>
+      <td>[% arc.valtype.wu_jump %]</td>
       <td>[% input('val', arc.value) %]</td>
    [% END %]
 </tr>
@@ -177,17 +177,17 @@
 [% END %]
 </td></tr>
 
-<tr><td>Source</td><td>[% jump(arc.source.desig, arc.source.form_url) %]</td></tr>
+<tr><td>Source</td><td>[% arc.source.wu_jump %]</td></tr>
 
-<tr><td>Read access</td><td>[% jump(arc.read_access.desig, arc.read_access.form_url) %]</td></tr>
+<tr><td>Read access</td><td>[% arc.read_access.wu_jump %]</td></tr>
 
-<tr><td>Write access</td><td>[% jump(arc.write_access.desig, arc.write_access.form_url) %]</td></tr>
+<tr><td>Write access</td><td>[% arc.write_access.wu_jump %]</td></tr>
 
-<tr><td>Created</td><td>[% arc.created %] by [% jump(arc.created_by.desig, arc.created_by.form_url) %]</td></tr>
+<tr><td>Created</td><td>[% arc.created %] by [% arc.created_by.wu_jump %]</td></tr>
 
 <tr><td>Updated</td><td>[% arc.updated %]</td></tr>
 
-<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% jump(arc.activated_by.desig, arc.activated_by.form_url); END %]</td></tr>
+<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% arc.activated_by.wu_jump; END %]</td></tr>
 
 <tr><td>Deactivated</td><td>[% arc.deactivated %]</td></tr>
 
@@ -264,7 +264,7 @@
   [% END %]
   <td>
      [% varc.created %] by
-     [%+ jump(varc.created_by.desig, varc.created_by.form_url) %]
+     [%+ varc.created_by.wu_jump %]
   </td>
   <td>
   [% IF varc.active %]
@@ -276,7 +276,7 @@
      [% IF varc.activated %]
          accepted
         [%+ varc.activated %] by
-        [%+ jump(varc.activated_by.desig, varc.activated_by.form_url) %]
+        [%+ varc.activated_by.wu_jump %]
      [% ELSIF varc.submitted %]     
         submitted
         [%+ varc.updated %]
@@ -292,7 +292,7 @@
   [% IF varc.activated %]
      activated
      [%+ varc.activated %] by
-     [%+ jump(varc.activated_by.desig, varc.activated_by.form_url) %]
+     [%+ varc.activated_by.wu_jump %]
   [% ELSIF varc.submitted %]     
      submitted
      [%+ varc.updated %]
@@ -302,7 +302,7 @@
   [% IF varc.deactivated %]
      deactivated
      [%+ varc.deactivated %] by
-     [%+ jump(varc.deactivated_by.desig, varc.deactivated_by.form_url) %]
+     [%+ varc.deactivated.wu_jump %]
   [% END %]
   [% END %]
 
