@@ -464,7 +464,8 @@ sub wub_image
     my $maxw = $args->{'maxw'} ||= 400;
     my $maxh = $args->{'maxh'} ||= 300;
     $args->{'inputtype'} = 'input_image';
-    $args->{'image_url'} = $Para::Frame::CFG->{'guides'}{'logos_published'};
+    $args->{'image_url'} = $Para::Frame::CFG->{'images_uploaded_url'} ||
+      '/images';
 
 
     $out .= wub($pred, $args);
