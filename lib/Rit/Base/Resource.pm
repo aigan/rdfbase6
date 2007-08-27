@@ -5829,15 +5829,21 @@ sub on_arc_del
 
 =head2 new
 
+  Class->new( $id, @args )
+
 The caller must take care of using the cache
 C<$Rit::Base::Cache::Resource{$id}> before calling this constructor!
+
+The C<@args> differs for diffrent classes. Specially implemented in
+L<Rit::Base::Arc> and maby other classes. Will call L</initiate_cache>
+with the given args in the given class.
 
 =cut
 
 sub new
 {
-    my( $this, $id ) = @_;
-    my $class = ref($this) || $this;
+    my $class = shift;
+    my $id    = shift;
 
     # Resources not stored in DB can have negative numbers
     unless( $id =~ /^-?\d+$/ )
@@ -5852,7 +5858,7 @@ sub new
 
     $Rit::Base::Cache::Resource{ $id } = $node;
 
-    $node->initiate_cache;
+    $node->initiate_cache(@_);
 
 #    warn("Set up new node $node for -->$id<--\n");
 
