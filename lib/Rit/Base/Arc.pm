@@ -3849,7 +3849,7 @@ sub initiate_cache
 
     if( $bless_subj )
     {
-	debug "Calling first_bless for $subj->{id}";
+	debug 2, "Calling first_bless for $subj->{id}";
 	$subj->first_bless;
     }
 
