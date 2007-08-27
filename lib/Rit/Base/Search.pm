@@ -1028,6 +1028,9 @@ sub get_result
     {
 	if( $Rit::dbix->state->is('query_canceled') )
 	{
+	    debug "Database search took to long";
+	    debug $@;
+	    debug sprintf "Took %.2f seconds", (time - $time);
 	    debug $search->sysdesig;
 	    debug $search->sql_sysdesig;
 	    throw('dbi', "Database search took to long");
@@ -1046,16 +1049,16 @@ sub get_result
     }
 
     my( @result, %found );
-    while( my( $sub, $score ) = $sth->fetchrow_array )
+    while( my( $subj_id, $score ) = $sth->fetchrow_array )
     {
 	# We save execution time by not eliminating all duplicates
-	if( $found{ $sub } ++ )
+	if( $found{ $subj_id } ++ )
 	{
 	    # Duplicate found. Subtract number of hits
 	    next;
 	}
 
-	push @result, $sub;
+	push @result, $subj_id;
 	last if $#result >= $search->{'maxlimit'} -1;
     }
     $sth->finish;
@@ -1824,10 +1827,25 @@ sub build_main_from
 	    {
 		$select .= " as node";
 	    }
-	    $part_sql .= join " UNION ", map "select $select from $table where $_", @where;
+
+	    if( $part->{'negate'} )
+	    {
+		debug "WARNING! VERY BIG SEARCH!";
+		$part_sql .= join " INTERSECT ", map "select $select from $table where not($_)", @where;
+	    }
+	    else
+	    {
+		$part_sql .= join " UNION ", map "select $select from $table where $_", @where;
+	    }
 	}
 	else
 	{
+	    if( $part->{'negate'} )
+	    {
+		confess "not implemented: ".datadump($parts);
+	    }
+
+
 	    ### DEBUG
 	    unless($part->{'select'})
 	    {
@@ -2497,13 +2515,32 @@ sub set_prio
 	{
 	    return 5;
 	}
-	return 7;
+	elsif( $match eq 'exist' )
+	{
+	    if( $vals->[0] )
+	    {
+		$prio = 2;
+	    }
+	    else
+	    {
+		return 9;
+	    }
+	}
+	else
+	{
+	    return 7;
+	}
     }
     elsif( scalar(@$vals) > 5 )
     {
 	return 8;
     }
-    elsif( $preds->size > 1 ) #alternative preds
+    else
+    {
+	$prio = 1;
+    }
+
+    if( $preds->size > 1 ) #alternative preds
     {
 	$key = join('-', map $_->plain, $preds->as_array);
 	if( $key eq 'name-name_short-code' ){ return 3 }
@@ -2533,7 +2570,7 @@ sub set_prio
 	}
 	($cnt) = $sth->fetchrow_array;
 	$sth->finish;
-	$prio = 2;
+	$prio += 1;
     }
     else
     {
@@ -2544,17 +2581,25 @@ sub set_prio
 	if( $coltype eq 'valtext'      ){ return  3 }
 
 	$key = $first_pred->plain;
-	$key .= '='.join ',', @$vals;
+
+	my @svals = @$vals;
+	if( $match eq 'exist' )
+	{
+	    pop @svals;
+	}
+
+	$key .= '='.join ',', @svals;
 	return $DBSTAT{$key} if defined $DBSTAT{$key};
 
-	my $valor = join " or ", map "$coltype=?", @$vals;
+	my $valor = join " or ", map "$coltype=?", @svals;
 	my $sql = "select count(subj) from arc where (pred=?)";
 	if( $valor )
 	{
 	    $sql .= " and ($valor)";
 	}
+
 	my $sth = $Rit::dbix->dbh->prepare( $sql );
-	my @values = ($first_pred->id, @$vals);
+	my @values = ($first_pred->id, @svals);
 
 	eval
 	{
@@ -2566,7 +2611,6 @@ sub set_prio
 	}
 	($cnt) = $sth->fetchrow_array;
 	$sth->finish;
-	$prio = 1;
     }
 
     $prio++ if scalar(@$vals) > 1;
