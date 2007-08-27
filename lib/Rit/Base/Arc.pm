@@ -24,6 +24,7 @@ use utf8;
 use Carp qw( cluck confess carp croak shortmess );
 use strict;
 use Time::HiRes qw( time );
+use Scalar::Util qw( refaddr );
 
 BEGIN
 {
@@ -57,12 +58,28 @@ use base qw( Rit::Base::Resource );
 # Move from implicit to explicit then updating implicit properties
 # explicitly
 
-# This will make "if($arc)" false if the arc is 'removed'
-#
-use overload 'bool' => sub{ ref $_[0] and $_[0]->subj };
 use overload 'cmp'  => sub{0};
 use overload 'ne'   => sub{1};
 use overload 'eq'   => sub{0}; # Use method ->equals()
+use overload 'fallback' => 1;
+
+## This will make "if($arc)" false if the arc is 'removed'
+## but you should use $arc->is_true or $arc->defined instead!
+#
+#
+#use overload 'bool' => sub
+#{
+#    if( ref $_[0] and $_[0]->subj )
+#    {
+#	return 1;
+#    }
+#    else
+#    {
+#	return 0;
+#    }
+#};
+
+
 
 our %DYNAMIC_PRED =
   (
@@ -665,7 +682,7 @@ sub create
 		    }
 		    $arc->activate;
 		}
-		elsif( $arc->{'submitted'} )
+		elsif( $props->{'submitted'} )
 		{
 		    unless( $arc->submitted )
 		    {
@@ -3518,7 +3535,7 @@ sub get_by_rec
     my $id = $_[0]->{'ver'} or
       confess "get_by_rec misses the ver param: ".datadump($_[0],2);
     return $Rit::Base::Cache::Resource{$id}
-      || $this->new($id)->first_bless(@_);
+      || $this->new($id, @_)->first_bless(@_);
 }
 
 
@@ -3612,6 +3629,10 @@ Takes the same params as L</init>.
 
 The caller must first initiate the subj and obj, if necessary.
 
+This may be called either from new(), if caleld as an Arc, or from
+first_bless(), via init(). In both cases, we may have passed along rec
+to speed up things.
+
 =cut
 
 sub initiate_cache
@@ -3621,7 +3642,7 @@ sub initiate_cache
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
 
-#    debug "Init arc $id with value_obj $value_obj";
+#    debug "Init arc $id with value_obj $value_obj with addr".refaddr($value_obj);
 
     if( $rec )
     {
@@ -3785,7 +3806,6 @@ sub initiate_cache
 
     # Store arc in cache (if not yet done)
     #
-#    debug "Caching node $id: $arc";
     $Rit::Base::Cache::Resource{ $id } = $arc;
 
 
@@ -3839,7 +3859,7 @@ sub register_with_nodes
     my $pred_name = $pred->plain;
     my $coltype = $arc->real_coltype || ''; # coltype may be removal
 
-#    debug "--> Registring arc $id with subj $arc->{subj}{id} and obj";
+#    debug "--> Registring arc $id pred $pred_name with subj $arc->{subj}{id} and obj";
 
     # Register the arc with the subj
     unless( $subj->{'arc_id'}{$id}  )
