@@ -1852,6 +1852,10 @@ sub real_coltype
 {
     my( $arc ) = @_;
     return 'obj' if UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' );
+    unless( defined $arc->{'valtype'} )
+    {
+	confess "arc valtype not defined: ".datadump($arc,2);
+    }
     return $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} };
 }
 
@@ -3054,7 +3058,7 @@ sub set_pred
 
     my $DEBUG = 0;
 
-    my $new_pred = getpred( $pred );
+    my $new_pred = Rit::Base::Pred->get( $pred );
     my $new_pred_id = $new_pred->id;
     my $old_pred_id = $arc->pred->id;
 
@@ -3572,7 +3576,7 @@ sub get_by_rec_and_register
     else
     {
 #	debug "Calling firstbless for $id, with stmt"; ### DEBUG
-	return $this->new($id)->first_bless(@_);
+	return $this->new($id, @_)->first_bless(@_);
     }
 }
 
@@ -3639,8 +3643,8 @@ sub initiate_cache
 {
     my( $arc, $rec, $subj, $value_obj ) = @_;
 
-
     my $id = $arc->{'id'} or die "no id"; # Yes!
+    my $bless_subj = 0; # For initiating subj
 
 #    debug "Init arc $id with value_obj $value_obj with addr".refaddr($value_obj);
 
@@ -3679,7 +3683,20 @@ sub initiate_cache
 
     unless( $subj )  # This will use CACHE
     {
-	$subj = Rit::Base::Resource->get( $rec->{'subj'} );
+	# Take care of recursive definition loop
+
+	# A $n->revlist('is') will try to get the is-arcs (in
+	# find_class()) in the middle of setting up the is-arcs from
+	# the revlist.
+	#
+	# That's why we are doing the first_bless thing AFTER this arc
+	# is initiated!
+
+	unless( $subj = $Rit::Base::Cache::Resource{ $rec->{'subj'} } )
+	{
+	    $subj = Rit::Base::Resource->new( $rec->{'subj'} );
+	    $bless_subj = 1;
+	}
     }
 
 
@@ -3828,6 +3845,12 @@ sub initiate_cache
 	{
 	    warn "- ".$revarc->id."\n";
 	}
+    }
+
+    if( $bless_subj )
+    {
+	debug "Calling first_bless for $subj->{id}";
+	$subj->first_bless;
     }
 
     # The node sense of the arc should NOT be resetted. It must have
