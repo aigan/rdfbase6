@@ -124,8 +124,8 @@ sub handler
     trim(\$new_val);
     if( length $new_val ) # Create new translation
     {
-	my $lit = Rit::Base::String->new($new_val);
-	$n->add({ $p->plain => $lit }, $args );
+	my $arc = $n->add_arc({ $p->plain => $new_val }, $args );
+	# The arc may already exist
 
 	my $props = {};
 	if( my $lc = $q->param("new_is_of_language") )
@@ -143,7 +143,7 @@ sub handler
 	    $props->{'weight'} = $weight_new;
 	}
 
-	$lit->update($props, $args);
+	$arc->value->update($props, $args);
     }
 
     $q->delete('new_val');
