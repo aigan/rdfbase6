@@ -17,7 +17,6 @@ use strict;
 
 use Para::Frame::Utils qw( debug );
 
-use Rit::Base::Utils qw( getarc );
 use Rit::Base::Resource::Change;
 
 
@@ -40,7 +39,7 @@ sub handler
 
     foreach my $arc_id ( reverse sort @arc_id_list )
     {
-	getarc($arc_id)->remove( { res => $res } );
+	Rit::Base::Arc->get($arc_id)->remove( { res => $res } );
     }
 
     $res->autocommit;
