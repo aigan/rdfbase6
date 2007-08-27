@@ -5145,6 +5145,8 @@ sub wu
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
     my $textbox = Rit::Base::Resource->get({name=>'textbox',
 					    scof=>$C_valtext});
+    my $image = Rit::Base::Resource->get({label=>'image',
+					  scof=>'file'});
     my $range = $pred->range;
     if( $range->equals($textbox) or
 	$range->scof($textbox) )
@@ -5154,6 +5156,15 @@ sub wu
 	$args->{'size'} = $args->{'cols'};
 	$args->{'inputtype'} = 'textarea';
 	return Rit::Base::Widget::wub($pred_name, $args);
+    }
+#    elsif( $pred->coltype eq 'obj' )
+#    {
+#	return $pred->range->wus($node, $pred, $args);
+#    }
+    if( $range->equals($image) or
+	$range->scof($image) )
+    {
+	return Rit::Base::Widget::wub_image($pred_name, $args);
     }
     elsif( $range->scof($C_valdate) )
     {
@@ -5182,6 +5193,80 @@ sub wu_jump
     return Para::Frame::Widget::jump($node->desig,
 				     $node->form_url($args_in));
 }
+
+
+#######################################################################
+
+=head wus
+
+  $pred->range->wus($subj, $pred, $args);
+
+Returns: a HTML widget for updating subj when a pred's range is a
+Resource..
+
+Use args:
+  arc_type => singular
+    if there should be only one arc with that pred from that subj.
+
+#  inputtype => select
+#    to get a select of all $n->rev_scof's.
+
+  inputtype => select_tree
+    to get a select of all $n->rev_scof_direct, and then another etc.
+
+  inputtype => text
+    to get a text-input.
+
+=cut
+
+# sub wus
+# {
+#     my( $range, $pred, $args_in ) = @_;
+#     my( $args ) = parse_propargs($args_in);
+# 
+#     my $subj = $args->{'subj'} or confess "subj missing";
+#     my $inputtype = $args->{'inputtype'};
+# 
+#     my $out = "";
+# 
+#     my $tdlabel = $args->{'tdlabel'};
+# 
+# 
+#     # Select inputtype depending on size of possible targets
+#     $inputtype = ( $range->rev_scof->size > 25 ) ?
+#       'select_tree' : 'text'
+# 	unless( $inputtype );
+# 
+#     if( $tdlabel )
+#     {
+# 	
+#     }
+# 
+# 
+#     # show existing arcs with checkboxes to remove
+#     if( $inputtype eq 'text' or $arc_type ne 'singular' )
+#     {
+# 	my $arcs = $subj->arc_list( $pred->name, { is => $range } );
+# 
+# 	while( my $arc = $arcs->get_next_nos )
+# 	{
+# 	    $out .=
+# 	      Para::Frame::Widget::hidden("check_arc_${arc->id}", 1);
+# 	    $out .=
+# 	      Para::Frame::Widget::checkbox("arc_${arc->id}__subj_${subj->id}__pred_${pred->name}",
+# 					    $arc->value->id, 1,
+# 					    { label => $arc->value->desig });
+# 	}
+#     }
+# 
+#     if( $inputtype eq 'select_tree' )
+#     {
+# 	if( $arc_type eq 'singular' )
+# 	{
+# 	    
+# 	}
+#     }
+# }
 
 
 #######################################################################

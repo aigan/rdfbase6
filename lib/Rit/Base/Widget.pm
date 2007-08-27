@@ -119,8 +119,9 @@ sub wub
 
 
     my $newsubj = $args->{'newsubj'};
-    my $rows = $args->{'row'};
+    my $rows = $args->{'rows'};
     my $tdlabel = $args->{'tdlabel'};
+    my $label = $args->{'label'};
 
     if( $newsubj )
     {
@@ -130,7 +131,8 @@ sub wub
 			{
 			 size => $size,
 			 rows => $rows,
-			 tdlabel => $tdlabel,
+			 tdlabel => $tdlabel, label => $label,
+			 image_url => $args->{'image_url'}
 			});
     }
     else
@@ -143,7 +145,8 @@ sub wub
 			    {
 			     size => $size,
 			     rows => $rows,
-			     tdlabel => $tdlabel,
+			     tdlabel => $tdlabel, label => $label,
+			     image_url => $args->{'image_url'}
 			    });
 	    $out .= "<br/>";
 	}
@@ -219,6 +222,8 @@ sub wub
 						   class => "suggestion_field",
 						   size => $smallestsize,
 						   rows => $rows,
+						   version => $version,
+						   image_url => $args->{'image_url'}
 						  });
 			}
 
@@ -256,6 +261,7 @@ sub wub
 		    if( $arc->obj->is_value_node )
 		    {
 			$arc = $arc->obj->first_arc('value');
+			$arc_id = $arc->id;
 		    }
 
 		    my $arc_pred_name = $arc->pred->name;
@@ -266,6 +272,7 @@ sub wub
 					  {
 					   size => $size,
 					   rows => $rows,
+					   image_url => $args->{'image_url'}
 					  });
 
 		    $out .= $arc->edit_link_html;
@@ -294,7 +301,8 @@ sub wub
 				  {
 				   size => $size,
 				   rows => $rows,,
-				   tdlabel => $tdlabel,
+				   tdlabel => $tdlabel, label => $label,
+				   image_url => $args->{'image_url'}
 				  });
 	}
     }
@@ -332,6 +340,7 @@ sub wub_date
 
     my $newsubj = $args->{'newsubj'};
     my $tdlabel = $args->{'tdlabel'};
+    my $label = $args->{'label'};
     my $arc = $args->{'arc'};
 
     my $subj_id = $subj->id;
@@ -343,7 +352,7 @@ sub wub_date
 			  {
 			   id => $fieldname,
 			   size => $size,
-			   tdlabel => $tdlabel,
+			   tdlabel => $tdlabel, label => $label
 			   });
     }
     else
@@ -356,7 +365,7 @@ sub wub_date
 			      {
 			       id => $fieldname,
 			       size => $size,
-			       tdlabel => $tdlabel,
+			       tdlabel => $tdlabel, label => $label
 			      });
 	    if( $arc )
 	    {
@@ -389,7 +398,7 @@ sub wub_date
 				      {
 				       id => $fieldname,
 				       size => $size,
-				       tdlabel => $tdlabel,
+				       tdlabel => $tdlabel, label => $label
 				      });
 		    if( $arc )
 		    {
@@ -418,7 +427,7 @@ sub wub_date
 				  {
 				   id => $fieldname,
 				   size => $size,
-				   tdlabel => $tdlabel,
+				   tdlabel => $tdlabel, label => $label
 				  });
 		if( $arc )
 		{
@@ -455,6 +464,8 @@ sub wub_image
     my $maxw = $args->{'maxw'} ||= 400;
     my $maxh = $args->{'maxh'} ||= 300;
     $args->{'inputtype'} = 'input_image';
+    $args->{'image_url'} = $Para::Frame::CFG->{'guides'}{'logos_published'};
+
 
     $out .= wub($pred, $args);
 
