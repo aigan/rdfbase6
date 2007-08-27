@@ -6461,13 +6461,13 @@ sub initiate_rel
 #	debug "Initiating node $nid with $sql";
 	my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_subj->execute($nid);
-	my $stmts = $sth_init_subj->fetchall_arrayref({});
+	my $recs = $sth_init_subj->fetchall_arrayref({});
 	$sth_init_subj->finish;
 
 	my $cnt = 0;
-	foreach my $stmt ( @$stmts )
+	foreach my $rec ( @$recs )
 	{
-	    $node->populate_rel( $stmt );
+	    $node->populate_rel( $rec );
 
 	    # Handle long lists
 	    unless( ++$cnt % 25 )
@@ -6507,21 +6507,21 @@ sub initiate_rel
 	# Optimized for also getting value nodes
 	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
 	$sth_init_subj_name->execute($nid, $p_name_id, $nid);
-	my $stmts = $sth_init_subj_name->fetchall_arrayref({});
+	my $recs = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
 
 	my @extra_nodes_initiated;
 	my $cnt = 0;
-	foreach my $stmt ( @$stmts )
+	foreach my $rec ( @$recs )
 	{
-	    if( $stmt->{'subj'} == $nid )
+	    if( $rec->{'subj'} == $nid )
 	    {
-		$node->populate_rel( $stmt );
+		$node->populate_rel( $rec );
 	    }
 	    else # A literal resource for pred name
 	    {
-		my $subjnode = $node->get( $stmt->{'subj'} );
-		$subjnode->populate_rel( $stmt );
+		my $subjnode = $node->get( $rec->{'subj'} );
+		$subjnode->populate_rel( $rec );
 		push @extra_nodes_initiated, $subjnode;
 	    }
 
@@ -6643,13 +6643,13 @@ sub initiate_rev
 
     my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
     $sth_init_subj->execute($nid);
-    my $stmts = $sth_init_subj->fetchall_arrayref({});
+    my $recs = $sth_init_subj->fetchall_arrayref({});
     $sth_init_subj->finish;
 
     my $cnt = 0;
-    foreach my $stmt ( @$stmts )
+    foreach my $rec ( @$recs )
     {
-	$node->populate_rev( $stmt, undef );
+	$node->populate_rev( $rec, undef );
 
 	# Handle long lists
 	unless( ++$cnt % 25 )
@@ -6754,12 +6754,12 @@ sub initiate_prop
 	    $Rit::Base::timestamp = time;
 	}
 
-	my $stmts;
+	my $recs;
 	if( ($name eq 'name') and not $inactive ) # Optimization...
 	{
 	    my $sth_init_subj_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where (subj=? and pred=? and active is true)");
 	    $sth_init_subj_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
-	    $stmts = $sth_init_subj_pred_name->fetchall_arrayref({});
+	    $recs = $sth_init_subj_pred_name->fetchall_arrayref({});
 	    $sth_init_subj_pred_name->finish;
 	}
 	else
@@ -6777,24 +6777,24 @@ sub initiate_prop
 
 	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
 	    $sth_init_subj_pred->execute( $nid, $pred_id );
-	    $stmts = $sth_init_subj_pred->fetchall_arrayref({});
+	    $recs = $sth_init_subj_pred->fetchall_arrayref({});
 	    $sth_init_subj_pred->finish;
 	}
 
 
 	my @extra_nodes_initiated;
-	foreach my $stmt ( @$stmts )
+	foreach my $rec ( @$recs )
 	{
-	    debug "  populating with ".datadump($stmt,4)
+	    debug "  populating with ".datadump($rec,4)
 	      if debug > 4;
-	    if( $stmt->{'subj'} == $nid )
+	    if( $rec->{'subj'} == $nid )
 	    {
-		$node->populate_rel( $stmt, $args );
+		$node->populate_rel( $rec, $args );
 	    }
 	    else
 	    {
-		my $subnode = $node->get_by_id( $stmt->{'subj'} );
-		$subnode->populate_rel( $stmt, $args );
+		my $subnode = $node->get_by_id( $rec->{'subj'} );
+		$subnode->populate_rel( $rec, $args );
 		push @extra_nodes_initiated, $subnode;
 	    }
 	}
@@ -6957,10 +6957,10 @@ sub initiate_revprop
 
 	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_obj_pred->execute( $node->id, $pred_id );
-	my $stmts = $sth_init_obj_pred->fetchall_arrayref({});
+	my $recs = $sth_init_obj_pred->fetchall_arrayref({});
 	$sth_init_obj_pred->finish;
 
-	my $num_of_arcs = scalar( @$stmts );
+	my $num_of_arcs = scalar( @$recs );
 	if( debug > 1 )
 	{
 	    my $ts = $Rit::Base::timestamp;
@@ -6972,9 +6972,9 @@ sub initiate_revprop
 	my $cnt = 0;
 	my $ts = time;
 
-	foreach my $stmt ( @$stmts )
+	foreach my $rec ( @$recs )
 	{
-	    $node->populate_rev( $stmt, $args );
+	    $node->populate_rev( $rec, $args );
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
@@ -7018,21 +7018,21 @@ Insert data from a rel record into node
 
 sub populate_rel
 {
-    my( $node, $stmt ) = @_;
+    my( $node, $rec ) = @_;
 
     my $class = ref($node);
 
     # Oh, yeah? Like I care?!?
-    my $pred_name = Rit::Base::Pred->get( $stmt->{'pred'} )->name;
+    my $pred_name = Rit::Base::Pred->get( $rec->{'pred'} )->plain;
 #    debug "Populating node $node->{id} prop $pred_name"; ### DEBUG
-    if( $stmt->{'active'} and (($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1))
+    if( $rec->{'active'} and (($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1))
     {
 	debug 4, "NOT creating arc";
 	return;
     }
 
-#    debug "Creating arc for $node with $stmt";
-    my $arc = Rit::Base::Arc->get_by_rec_and_register( $stmt, $node );
+#    debug "Creating arc for $node with $rec";
+    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec, $node );
 #    debug "  Created";
 
 #    debug "**Add prop $pred_name to $node->{id}";
@@ -7050,14 +7050,14 @@ Insert data from a rev record into node
 
 sub populate_rev
 {
-    my( $node, $stmt ) = @_;
+    my( $node, $rec ) = @_;
 
     my $class = ref($node);
 
     # Oh, yeah? Like I care?!?
     debug 3, timediff("populate_rev");
-    my $pred_name = Rit::Base::Pred->get( $stmt->{'pred'} )->name;
-    if( $stmt->{'active'} and (($node->{'initiated_revprop'}{$pred_name} ||= 1) > 1))
+    my $pred_name = Rit::Base::Pred->get( $rec->{'pred'} )->plain;
+    if( $rec->{'active'} and (($node->{'initiated_revprop'}{$pred_name} ||= 1) > 1))
     {
 	debug 4, "NOT creating arc";
 	return;
@@ -7065,10 +7065,10 @@ sub populate_rev
 
     if( debug > 3 )
     {
-	debug "Creating arc for $node->{id} with ".datadump($stmt,4);
+	debug "Creating arc for $node->{id} with ".datadump($rec,4);
 #	debug timediff("new arc");
     }
-    my $arc = Rit::Base::Arc->get_by_rec_and_register( $stmt, undef, $node );
+    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec, undef, $node );
     if( debug > 3 )
     {
 	debug "  Created";
