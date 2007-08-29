@@ -120,6 +120,8 @@ sub wub
 
     my $newsubj = $args->{'newsubj'};
     my $rows = $args->{'rows'};
+    my $maxw = $args->{'maxw'};
+    my $maxh = $args->{'maxh'};
     my $tdlabel = $args->{'tdlabel'};
     my $label = $args->{'label'};
 
@@ -270,6 +272,7 @@ sub wub
 		    $out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
 					  $arc->value,
 					  {
+					   arc => $arc_id,
 					   size => $size,
 					   rows => $rows,
 					   image_url => $args->{'image_url'}
@@ -300,7 +303,9 @@ sub wub
 				  '',
 				  {
 				   size => $size,
-				   rows => $rows,,
+				   rows => $rows,
+				   maxw => $maxw,
+				   maxh => $maxh,
 				   tdlabel => $tdlabel, label => $label,
 				   image_url => $args->{'image_url'}
 				  });
@@ -464,8 +469,9 @@ sub wub_image
     my $maxw = $args->{'maxw'} ||= 400;
     my $maxh = $args->{'maxh'} ||= 300;
     $args->{'inputtype'} = 'input_image';
-    $args->{'image_url'} = $Para::Frame::CFG->{'images_uploaded_url'} ||
-      '/images';
+    $args->{'image_url'} = $Para::Frame::CFG->{'guides'}{'logos_published'} ||
+      $Para::Frame::CFG->{'images_uploaded_url'} ||
+	'/images';
 
 
     $out .= wub($pred, $args);

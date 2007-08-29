@@ -112,6 +112,16 @@ number).  Suffix is preserved.
 
 TODO: Add possibility of using a row to set other filename.
 
+=head4 parameter_in_value
+
+The parameter_in_value is a way to to extract parameters from values.
+Eg in select, you could use:
+
+<select name="parameter_in_value">
+  <option value="arc___subj_12335__pred_is=5412354">Set is for 12345</option>
+  <option value="arc___subj_54321__pred_is=5412354">Set is for 54321</option>
+</select>
+
 
 =head3 2. Complemnt those props with second order atributes (row)
 
@@ -235,6 +245,15 @@ sub update_by_query
     my @row_params;
     my @check_params;
     my @newsubj_params;
+
+    foreach my $param_in_value ($q->param('parameter_in_value'))
+    {
+	if( $param_in_value =~ /^(.*)=(.*)$/ )
+	{
+	    debug "Extracting parameter: $1 = $2";
+	    $q->param($1, $2);
+	}
+    }
 
     foreach my $param ($q->param)
     {

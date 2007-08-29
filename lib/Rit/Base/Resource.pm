@@ -5190,8 +5190,31 @@ Returns: a HTML link to a form form updating the node
 sub wu_jump
 {
     my( $node, $args_in ) = @_;
+
     return Para::Frame::Widget::jump($node->desig,
 				     $node->form_url($args_in));
+}
+
+
+#######################################################################
+
+=head2 wun_jump
+
+  $n->wun_jump( \%args )
+
+Returns: a HTML link to node-updating page
+
+=cut
+
+sub wun_jump
+{
+    my( $node, $args_in ) = @_;
+
+    my $base = $Para::Frame::REQ->site->home->url;
+    my $url = URI->new('rb/node/update.tt')->abs($base);
+    $url->query_form([id=>$node->id]);
+
+    return Para::Frame::Widget::jump('(Node)', $url);
 }
 
 
