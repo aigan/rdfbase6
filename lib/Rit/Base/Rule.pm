@@ -22,6 +22,7 @@ Rit::Base::Rule
 use Carp qw( cluck confess );
 use strict;
 use vars qw( $INITIALIZED );
+use List::Uniq qw( uniq );
 
 
 BEGIN
@@ -180,7 +181,6 @@ sub create
 
     if( $vacuum )
     {
-	use Array::Uniq;
 	my $dbh = $Rit::dbix->dbh;
 	my $sth = $dbh->prepare( "select * from arc where pred=?" );
 	foreach my $pred_id ( uniq sort $a->id, $b->id, $c->id )
