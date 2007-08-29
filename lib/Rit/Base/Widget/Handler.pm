@@ -673,6 +673,7 @@ sub handle_query_arc_value
 	if( $dirbase =~ m{^//([^/]+)(.+)} )
 	{
 	    my $host = $1;
+	    my $localdir = $2;
 	    my $username;
 	    if( $host =~ /^([^@]+)@(.+)/ )
 	    {
@@ -684,11 +685,13 @@ sub handle_query_arc_value
 	    my $scp = Net::SCP->new({host=>$host, user=>$username});
 	    debug "Connected to $host as $username";
 
-	    while( $scp->size( $dirbase ."/". join('.', $subj->id, $index, $suffix)) )
+
+	    while( $scp->size( $localdir ."/". join('.', $subj->id, $index, $suffix)) )
 	    {
 		debug "Found a file ". $dirbase ."/". join('.', $subj->id, $index, $suffix);
 		$index++;
 	    }
+	    debug "SCP errstr: ". $scp->{errstr};
 	}
 	else
 	{
