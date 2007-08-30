@@ -5157,10 +5157,24 @@ sub wu
 	$args->{'inputtype'} = 'textarea';
 	return Rit::Base::Widget::wub($pred_name, $args);
     }
-#    elsif( $pred->coltype eq 'obj' )
-#    {
-#	return $pred->range->wus($node, $pred, $args);
-#    }
+    elsif( $pred->coltype eq 'obj' )
+    {
+	debug "Redirecting to range->wuirc";
+	debug "Range: ". datadump($range, 1);
+	if( $range->class_handled_by_perl_module )
+	{
+	    my $module = $range->class_handled_by_perl_module->code->plain;
+	    require(package_to_module($module));
+	    debug "We have a perl_module: ". $module;
+
+	    if( $module->can('wuirc') )
+	    {
+		return $module->wuirc($pred, $args);
+	    }
+	}
+
+	return $pred->range->wuirc($pred, $args);
+    }
     if( $range->equals($image) or
 	$range->scof($image) )
     {
@@ -5220,9 +5234,11 @@ sub wun_jump
 
 #######################################################################
 
-=head wus
+=head wuirc
 
-  $pred->range->wus($subj, $pred, $args);
+  Widget for Updating Instance of Range Class
+
+  $pred->range->wuirc($subj, $pred, $args);
 
 Returns: a HTML widget for updating subj when a pred's range is a
 Resource..
@@ -5242,10 +5258,68 @@ Use args:
 
 =cut
 
-# sub wus
-# {
-#     my( $range, $pred, $args_in ) = @_;
-#     my( $args ) = parse_propargs($args_in);
+sub wuirc
+{
+    my( $class, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $subj = $args->{'subj'} or confess "subj missing";
+
+    my $out = '';
+
+    debug "Default wuirc for Resource. Pred: ". $pred->desig;
+    debug "Class: ". datadump( $class, 1 );
+
+    my $list = $subj->arc_list( $pred->name );
+
+    if( $list )
+    {
+	$out .= '<ul>'
+	  if( $list->size > 1);
+
+	foreach my $arc (@$list)
+	{
+	    $out .= '<li>'
+	      if( $list->size > 1);
+
+	    my $item = $arc->value;
+
+	    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+
+	    $out .= Para::Frame::Widget::checkbox('arc_'. $arc->id .'__subj_'.
+						  $subj->id .'__pred_'.
+						  $pred->name,
+						  $item->id, 1);
+	    $out .= $item->wu_jump;
+	    $out .= $arc->edit_link_html;
+
+	    if( $list->size > 1)
+	    {
+		$out .= '</li>';
+	    }
+	    else
+	    {
+		$out .= '<br/>';
+	    }
+	}
+    }
+
+    if( $args->{'multiple'} or not $list )
+    {
+	$out .=
+	  Para::Frame::Widget::input('arc___subj_'. $subj->id .'__pred_'.
+				     $pred->name, '',
+				     {
+				      tdlabel     => $args->{'tdlabel'},
+				      label       => $args->{'label'},
+				      label_class => $args->{'label_class'},
+				      separator   => $args->{'separator'},
+				      id          => $args->{'id'},
+				     });
+    }
+
+    return $out;
+
 # 
 #     my $subj = $args->{'subj'} or confess "subj missing";
 #     my $inputtype = $args->{'inputtype'};
@@ -5289,7 +5363,7 @@ Use args:
 # 	    
 # 	}
 #     }
-# }
+}
 
 
 #######################################################################
