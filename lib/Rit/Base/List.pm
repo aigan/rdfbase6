@@ -75,13 +75,17 @@ These can be called with the class name or any List object.
 
 =head2 new
 
-  $l->new( \@list )
+  $l->new( \@list, \%args )
 
 This constructor takes an array ref, a L<Rit::Base::List> object or a
 L<Para::Frame::List> object.  The Rit::Base::List object will be
 returned unchanged. The Para::Frame::List object will be used for
 extracting the elements and creating a new separate Rit::Base::List
 object.
+
+The special arg C<initiate_rel> will cause the materialization of the
+arc to initialize all rel properties directly
+
 
 Returns the object.
 
@@ -127,6 +131,7 @@ sub init
     my( $l, $args ) = @_;
     # Add the materializer to the args
     $args->{'materializer'} ||= \&materialize;
+    $l->{'rb_initiate_rel'} = $args->{'initiate_rel'};
 }
 
 
@@ -1481,7 +1486,11 @@ sub materialize
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
 	}
 
-	my $obj = Rit::Base::Resource->get( $elem );
+	my $obj = Rit::Base::Resource->get( $elem,
+					    {
+					     initiate_rel =>
+					     $l->{'rb_initiate_rel'},
+					    });
 	if( debug > 1 )
 	{
 	    debug "Materializing element $i -> ".$obj->sysdesig;
