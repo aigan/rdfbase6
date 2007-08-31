@@ -27,7 +27,9 @@ use List::Util qw( min );
 
 use constant TOPLIMIT   => 100000;
 use constant MAXLIMIT   => 80;
-use constant PAGELIMIT  =>  20;
+use constant PAGELIMIT  => 20;
+use constant BINDVALS   =>  0;
+
 
 BEGIN
 {
@@ -988,7 +990,7 @@ sub execute
 	$result = $search->get_result($sql, $values, 15); # 10
     }
 
-    $search->{'result'} = Rit::Base::List->new($result);
+    $search->{'result'} = Rit::Base::List->new($result, $args);
 
     # Filter out arcs?
     if( my $uap = $args->{unique_arcs_prio} )
@@ -1013,6 +1015,26 @@ sub get_result
     my( $search, $sql, $values, $timeout ) = @_;
 
     my $dbh = $Rit::dbix->dbh;
+
+
+#    if( utf8::is_utf8($sql) )
+#    {
+#	if( utf8::valid($_) )
+#	{
+#	    debug "SQL is valid UTF8";
+#	}
+#	else
+#	{
+#	    debug "SQL is INVALID UTF8";
+#	}
+#    }
+#    else
+#    {
+#	debug "SQL is NOT UTF8";
+#    }
+
+
+#    my $sth = $dbh->prepare_cached( $sql );
     my $sth = $dbh->prepare( $sql );
 
     $timeout ||= 20;
@@ -1021,7 +1043,10 @@ sub get_result
     eval
     {
 	$dbh->do(sprintf "set statement_timeout = %d", $timeout*1000);
+#	warn "Executing stmt at $time\n";
 	$sth->execute(@$values);
+#	warn sprintf "Done at           %s\n",time;
+
 	$dbh->do("set statement_timeout = 0000");
     };
     if( $@ )
@@ -1185,8 +1210,16 @@ sub build_sql
 
     if( my $limit = $search->{'maxlimit'} )
     {
-	$sql .= " limit ?";
-	push @values, $limit;
+	if( BINDVALS )
+	{
+	    $sql .= " limit ?";
+	    push @values, $limit;
+	}
+	else
+	{
+	    my $dbh = $Rit::dbix->dbh;
+	    $sql .= sprintf " limit %s", $dbh->quote($limit);
+	}
     }
 
 
@@ -1907,6 +1940,7 @@ sub build_outer_select_field
 
     my( $search, $field_in ) = @_;
 
+    my $dbh = $Rit::dbix->dbh;
     my $fieldpart = $field_in or confess "Param field missing";
 
     # Keep first part (exclude asc/desc)
@@ -2000,7 +2034,15 @@ sub build_outer_select_field
 	    $sql = "select $coltype from arc where $where and pred=? $arclim_sql limit 1";
 	}
 
-	push @values, $pred->id;
+	if( BINDVALS )
+	{
+	    push @values, $pred->id;
+	}
+	else
+	{
+	    my $id = $pred->id;
+	    $sql =~ s/\?/$id/;
+	}
     }
 
     $sql = "($sql) as $sortkey";
@@ -2094,8 +2136,18 @@ sub elements_lables
     my @values;
 
 
-    my $where = join " or ", map "(label=?)", @$lables;
-    push @values, @$lables;
+    my $where;
+    if( BINDVALS )
+    {
+	$where = join " or ", map "(label=?)", @$lables;
+	push @values, @$lables;
+    }
+    else
+    {
+	my $dbh = $Rit::dbix->dbh;
+	$where = join " or ", map sprintf("(label=%s)", $dbh->quote($_)),
+	  @$lables;
+    }
 
     push @element,
     {
@@ -2118,6 +2170,7 @@ sub elements_arc
 
     my @element;
     my $prio = 10;
+    my $dbh = $Rit::dbix->dbh;
 
     my @values;
     my @parts;
@@ -2125,50 +2178,94 @@ sub elements_arc
     my $arclim = $qarc->{'arclim'} || $search->arclim;
     my $args = {};
 
-    if( my $vals = $qarc->{'id'} )
+    if( BINDVALS )
     {
-	my $part = join " or ", map "(ver=?)", @$vals;
-	push @parts, "($part)";
-	push @values, @$vals;
-	$prio = 1;
-    }
-
-    if( my $vals = $qarc->{'subj'} )
-    {
-	my $part = join " or ", map "(subj=?)", @$vals;
-	push @parts, "($part)";
-	push @values, @$vals;
-	$prio = min( $prio, 3 );
-    }
-
-    if( my $vals = $qarc->{'pred'} )
-    {
-	my $part = join " or ", map "(pred=?)", @$vals;
-	push @parts, "($part)";
-	push @values, @$vals;
-    }
-
-    if( my $vals = $qarc->{'created_by'} )
-    {
-	my $part = join " or ", map "(created_by=?)", @$vals;
-	push @parts, "($part)";
-	push @values, @$vals;
-
-	$prio = min( $prio, 5 );
-    }
-
-    if( my $coltype = $qarc->{'coltype'} )
-    {
-	my $vals = $qarc->{$coltype};
-	my $part = join " or ", map "($coltype=?)", @$vals;
-	if( $part )
+	if( my $vals = $qarc->{'id'} )
 	{
+	    my $part = join " or ", map "(ver=?)", @$vals;
 	    push @parts, "($part)";
 	    push @values, @$vals;
+	    $prio = 1;
+	}
 
-	    if( $coltype eq 'obj' )
+	if( my $vals = $qarc->{'subj'} )
+	{
+	    my $part = join " or ", map "(subj=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 3 );
+	}
+
+	if( my $vals = $qarc->{'pred'} )
+	{
+	    my $part = join " or ", map "(pred=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	}
+
+	if( my $vals = $qarc->{'created_by'} )
+	{
+	    my $part = join " or ", map "(created_by=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 5 );
+	}
+
+	if( my $coltype = $qarc->{'coltype'} )
+	{
+	    my $vals = $qarc->{$coltype};
+	    my $part = join " or ", map "($coltype=?)", @$vals;
+	    if( $part )
 	    {
-		$prio = min( $prio, 4 );
+		push @parts, "($part)";
+		push @values, @$vals;
+		if( $coltype eq 'obj' )
+		{
+		    $prio = min( $prio, 4 );
+		}
+	    }
+	}
+    }
+    else
+    {
+	if( my $vals = $qarc->{'id'} )
+	{
+	    my $part = join " or ", map sprintf("(ver=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = 1;
+	}
+
+	if( my $vals = $qarc->{'subj'} )
+	{
+	    my $part = join " or ", map sprintf("(subj=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 3 );
+	}
+
+	if( my $vals = $qarc->{'pred'} )
+	{
+	    my $part = join " or ", map sprintf("(pred=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	}
+
+	if( my $vals = $qarc->{'created_by'} )
+	{
+	    my $part = join " or ", map sprintf("(created_by=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 5 );
+	}
+
+	if( my $coltype = $qarc->{'coltype'} )
+	{
+	    my $vals = $qarc->{$coltype};
+	    my $part = join " or ", map sprintf("($coltype=%s)",$dbh->quote($_)), @$vals;
+	    if( $part )
+	    {
+		push @parts, "($part)";
+		if( $coltype eq 'obj' )
+		{
+		    $prio = min( $prio, 4 );
+		}
 	    }
 	}
     }
@@ -2231,6 +2328,8 @@ sub elements_props
 {
     my( $search, $props ) = @_;
 
+    my $dbh = $Rit::dbix->dbh;
+
     my @element;
     foreach my $cond ( values %$props )
     {
@@ -2270,8 +2369,15 @@ sub elements_props
 		}
 		else
 		{
-		    push @parts, "pred=?";
-		    push @pred_ids, $pred->id;
+		    if( BINDVALS )
+		    {
+			push @parts, "pred=?";
+			push @pred_ids, $pred->id;
+		    }
+		    else
+		    {
+			push @parts, "pred=".$pred->id;
+		    }
 		}
 	    }
 	    $pred_part = "(".join(" or ", @parts).")";
@@ -2280,8 +2386,15 @@ sub elements_props
 	{
 #	    debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
 
-	    @pred_ids = $preds->get_first_nos->id;
-	    $pred_part = "pred=?";
+	    if( BINDVALS )
+	    {
+		@pred_ids = $preds->get_first_nos->id;
+		$pred_part = "pred=?";
+	    }
+	    else
+	    {
+		$pred_part = "pred=".$preds->get_first_nos->id;
+	    }
 	}
 
 
@@ -2297,9 +2410,16 @@ sub elements_props
 	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->name->plain eq 'id') )
 	{
-	    $where = join(" or ", map "subj = ?", @$invalues);
+	    if( BINDVALS )
+	    {
+		$where = join(" or ", map "subj = ?", @$invalues);
+		@outvalues = @$invalues; # value should be numeric
+	    }
+	    else
+	    {
+		$where = join(" or ", map "subj = $_", @$invalues);
+	    }
 	    $where .= " " . $arclim_sql;
-	    @outvalues = @$invalues; # value should be numeric
 	    $prio = 1;
 	}
 	else
@@ -2307,8 +2427,16 @@ sub elements_props
 	    confess "In elements_props: ".datadump $cond unless $type; ### DEBUG
 
 	    my $matchpart = matchpart( $match );
-	    $matchpart = join(" or ", map "$type $matchpart ?", @$invalues);
-	    my @matchvalues =  @{ searchvals($cond) };
+	    my @matchvalues;
+	    if( BINDVALS )
+	    {
+		$matchpart = join(" or ", map "$type $matchpart ?", @$invalues);
+		@matchvalues =  @{ searchvals($cond) };
+	    }
+	    else
+	    {
+		$matchpart = join(" or ", map "$type $matchpart ".$dbh->quote($_), @$invalues);
+	    }
 
 	    ### Support matching valuenodes
 	    if( $type ne 'obj' )
@@ -2382,6 +2510,7 @@ sub build_path_part
     # that we have two alternatives for the pred for that step. Just
     # OR them together.
 
+    my $dbh = $Rit::dbix->dbh;
     my $path = $path_rec->{'path'};
     my $values = $path_rec->{'values'};
     my $clean = $path_rec->{'clean'};
@@ -2409,10 +2538,22 @@ sub build_path_part
 	$values = \@cleanvals;
     }
 
-    my $value_part = join " or ", map "$coltype=?", @$values;
-    my $where = "pred=? and ($value_part) $arclim_sql";
-    my @path_values = $pred->id;
-    push @path_values, @$values;
+    my $where;
+    my @path_values;
+
+    if( BINDVALS )
+    {
+	my $value_part = join " or ", map "$coltype=?", @$values;
+	$where = "pred=? and ($value_part) $arclim_sql";
+	@path_values = $pred->id;
+	push @path_values, @$values;
+    }
+    else
+    {
+	my $value_part = join " or ", map "$coltype= ".$dbh->quote($_), @$values;
+	my $pred_id = $pred->id;
+	$where = "pred=$pred_id and ($value_part) $arclim_sql";
+    }
 
 
     #### MIDDLE STEPS
@@ -2421,8 +2562,15 @@ sub build_path_part
     {
 	my $pred_id = Rit::Base::Pred->get_id($step);
 
-	$where = "pred=? and obj in (select subj from arc where $where) $arclim_sql";
-	unshift @path_values, $pred_id;
+	if( BINDVALS )
+	{
+	    $where = "pred=? and obj in (select subj from arc where $where) $arclim_sql";
+	    unshift @path_values, $pred_id;
+	}
+	else
+	{
+	    $where = "pred=$pred_id and obj in (select subj from arc where $where) $arclim_sql";
+	}
     }
 
     my $sql = "select subj from arc where $where";
@@ -2442,15 +2590,30 @@ sub build_path_part
 	my( @preds ) = split /_-_/, $first_step;
 	( @pred_ids ) = map Rit::Base::Pred->get_id($_), @preds;
 
-	$pred_part = join " or ", map "pred=?", @pred_ids;
+	if( BINDVALS )
+	{
+	    $pred_part = join " or ", map "pred=?", @pred_ids;
+	    unshift @path_values, @pred_ids;
+	}
+	else
+	{
+	    $pred_part = join " or ", map "pred=$_", @pred_ids;
+	}
+
 	$pred_part = "($pred_part)";
-	unshift @path_values, @pred_ids;
     }
     else
     {
-	$pred_part = "pred=?";
 	( @pred_ids ) = Rit::Base::Pred->get_id($first_step);
-	unshift @path_values, @pred_ids;
+	if( BINDVALS )
+	{
+	    $pred_part = "pred=?";
+	    unshift @path_values, @pred_ids;
+	}
+	else
+	{
+	    $pred_part = "pred=".$pred_ids[0];
+	}
     }
 
     if( $search->add_stats )
@@ -2469,7 +2632,14 @@ sub build_path_part
     elsif( @$result )
     {
 	my $value = $result->[0]->{'subj'};
-	return( "$pred_part and obj=?", [@pred_ids, $value], 2);
+	if( BINDVALS )
+	{
+	    return( "$pred_part and obj=?", [@pred_ids, $value], 2);
+	}
+	else
+	{
+	    return( "$pred_part and obj=$value", [], 2);
+	}
     }
     else
     {
@@ -2550,15 +2720,26 @@ sub set_prio
 
 	$coltype = $first_pred->coltype();
 	my @predid = map $_->id, $preds->as_array;
-	my $sqlor = join " or ", map "pred=?", @predid;
-	my $valor = join " or ", map "$coltype=?", @$vals;
+	my( $sqlor, $valor, @values );
+	if( BINDVALS )
+	{
+	    $sqlor = join " or ", map "pred=?", @predid;
+	    $valor = join " or ", map "$coltype=?", @$vals;
+	    @values = (@predid, @$vals);
+	}
+	else
+	{
+	    my $dbh = $Rit::dbix->dbh;
+	    $sqlor = join " or ", map "pred=$_", @predid;
+	    $valor = join " or ", map "$coltype = ".$dbh->quote($_), @$vals;
+	}
+
 	my $sql = "select count(subj) from arc where ($sqlor)";
 	if( $valor )
 	{
 	    $sql .= " and ($valor)";
 	}
 	my $sth = $Rit::dbix->dbh->prepare( $sql );
-	my @values = (@predid, @$vals);
 
 	eval
 	{
@@ -2591,15 +2772,27 @@ sub set_prio
 	$key .= '='.join ',', @svals;
 	return $DBSTAT{$key} if defined $DBSTAT{$key};
 
-	my $valor = join " or ", map "$coltype=?", @svals;
-	my $sql = "select count(subj) from arc where (pred=?)";
+	my( $sql, $valor, @values );
+	if( BINDVALS )
+	{
+	    $valor = join " or ", map "$coltype=?", @svals;
+	    $sql = "select count(subj) from arc where (pred=?)";
+	    @values = ($first_pred->id, @svals);
+	}
+	else
+	{
+	    my $dbh = $Rit::dbix->dbh;
+	    my $pred_id = $first_pred->id;
+	    $valor = join " or ", map "$coltype =  ".$dbh->quote($_), @svals;
+	    $sql = "select count(subj) from arc where (pred=$pred_id)";
+	}
+
 	if( $valor )
 	{
 	    $sql .= " and ($valor)";
 	}
 
 	my $sth = $Rit::dbix->dbh->prepare( $sql );
-	my @values = ($first_pred->id, @svals);
 
 	eval
 	{
@@ -2860,6 +3053,9 @@ sub parse_values
 	# labled as utf8
 
 	utf8::decode($_);
+
+
+	utf8::upgrade($_)
     }
 
     return \@values;
