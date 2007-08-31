@@ -96,9 +96,9 @@ These can be called with the class name or any node object.
 
 =head2 get
 
-  $n->get( $id )
+  $n->get( $id, \%args )
 
-  $n->get( $anything )
+  $n->get( $anything, \%args )
 
 get() is the central method for getting things.  It expects node id,
 but also takes labels and searches.  It will call L</new> and
@@ -122,6 +122,10 @@ for. This is initiated to:
 NB! If you call get() from a class other than these, you must make
 sure that the object will never also be of another class.
 
+Supported args are:
+
+  initiate_rel: initiates all rel arcs BEFORE L</first_bless>
+
 Returns:
 
 a node object
@@ -134,7 +138,7 @@ See L</get_by_anything> then called with anything but $id
 
 sub get
 {
-    my( $this, $val_in ) = @_;
+    my( $this, $val_in, $args_in ) = @_;
     my $class = ref($this) || $this;
 
     return undef unless $val_in;
@@ -201,6 +205,12 @@ sub get
 
     $node = $class->new( $id );
     # The node will be cached by the new()
+
+    $args_in ||= {};
+    if( $args_in->{'initiate_rel'} ) # Optimization
+    {
+	$node->initiate_rel;
+    }
 
     $node->first_bless;
 
@@ -6566,6 +6576,8 @@ sub initiate_rel
 
     if( $arclim->size )
     {
+#	debug "Initiating node $nid rel with arclim";
+
 	my( $active, $inactive ) = $arclim->incl_act();
 
 	my $sql = "select * from arc where subj=?";
@@ -6683,6 +6695,8 @@ sub initiate_rel
     else
     {
 	return if $_[0]->{'initiated_rel'};
+
+#	debug "Initiating node $nid rel WITHOUT arclim";
 
 	my $p_name_id = Rit::Base::Resource->get_by_label('name')->id;
 
@@ -6946,7 +6960,8 @@ sub initiate_prop
 	}
 	else
 	{
-	    my $sql = "select * from arc where subj=? and pred=?";
+	    my $sql = "select * from arc where subj=$nid and pred=$pred_id";
+#	    my $sql = "select * from arc where subj=? and pred=?";
 	    if( $inactive and not $active )
 	    {
 		$sql .= " and active is false";
@@ -6958,7 +6973,8 @@ sub initiate_prop
 	    }
 
 	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
-	    $sth_init_subj_pred->execute( $nid, $pred_id );
+	    $sth_init_subj_pred->execute();
+#	    $sth_init_subj_pred->execute( $nid, $pred_id );
 	    $recs = $sth_init_subj_pred->fetchall_arrayref({});
 	    $sth_init_subj_pred->finish;
 	}
@@ -7032,6 +7048,7 @@ sub initiate_revprop
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
     my $extralim = 0;
+    my $nid = $node->id;
 
     if( $inactive and not $active )
     {
@@ -7070,7 +7087,7 @@ sub initiate_revprop
     }
 
 
-    debug 3, "Initiating revprop $name for $node->{id}";
+    debug 3, "Initiating revprop $name for $nid";
 
     # Keep $node->{'revarc'}{ $name } nonexistant if no such arcs,
     # since we use the list of preds as meaning that there exists
@@ -7085,7 +7102,8 @@ sub initiate_revprop
 	    $Rit::Base::timestamp = time;
 	}
 
-	my $sql = "select * from arc where obj=? and pred=?";
+	my $sql = "select * from arc where obj=$nid and pred=$pred_id";
+#	my $sql = "select * from arc where obj=? and pred=?";
 
 	if( $inactive and not $active )
 	{
@@ -7138,7 +7156,8 @@ sub initiate_revprop
 #	}
 
 	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare($sql);
-	$sth_init_obj_pred->execute( $node->id, $pred_id );
+	$sth_init_obj_pred->execute();
+#	$sth_init_obj_pred->execute( $nid, $pred_id );
 	my $recs = $sth_init_obj_pred->fetchall_arrayref({});
 	$sth_init_obj_pred->finish;
 
