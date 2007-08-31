@@ -2435,7 +2435,7 @@ sub elements_props
 	    }
 	    else
 	    {
-		$matchpart = join(" or ", map "$type $matchpart ".$dbh->quote($_), @$invalues);
+		$matchpart = join(" or ", map "$type $matchpart ".$dbh->quote($_), @{ searchvals($cond) });
 	    }
 
 	    ### Support matching valuenodes
