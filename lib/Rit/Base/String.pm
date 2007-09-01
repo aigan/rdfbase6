@@ -135,6 +135,36 @@ sub new
 
 #######################################################################
 
+=head3 new_from_db
+
+=cut
+
+sub new_from_db
+{
+    my( $class, $val, $arc ) = @_;
+    if( $val =~ /Ã./ )
+    {
+	debug "UNDECODED UTF8 in DB: $val)";
+	unless( utf8::decode( $val ) )
+	{
+	    $Para::Frame::REQ->result->message("Failed to convert to UTF8!");
+	}
+    }
+    else
+    {
+	utf8::upgrade( $val );
+    }
+
+    return bless
+    {
+     'arc' => undef,
+     'value' => $val,
+    }, $class;
+}
+
+
+#######################################################################
+
 =head3 new_if_length
 
 =cut
@@ -392,6 +422,20 @@ Returns the clean version of the value as a Literal obj
 sub clean
 {
     return $_[0]->new( valclean( $_[0]->{'value'} ) );
+}
+
+
+#######################################################################
+
+=head3 clean_plain
+
+Returns the clean version of the value as a plain string
+
+=cut
+
+sub clean_plain
+{
+    return valclean( $_[0]->{'value'} );
 }
 
 
