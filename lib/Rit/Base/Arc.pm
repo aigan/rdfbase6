@@ -1923,7 +1923,7 @@ sub explain
 
 =head2 deactivate
 
-  $a->deactivate( $arc )
+  $a->deactivate( $arc, $args )
 
 Must give the new active arc as arg. This will be called by
 L</activate> or by L</remove>.
@@ -1938,7 +1938,7 @@ arc.
 
 sub deactivate
 {
-    my( $arc, $narc ) = @_;
+    my( $arc, $narc, $args ) = @_;
     my $class = ref($arc);
 
     unless( $arc->active or $arc->submitted )
@@ -1954,7 +1954,7 @@ sub deactivate
 	}
 
 	# Can this arc be infered?
-	if( $arc->validate_check )
+	if( $arc->validate_check( $args ) )
 	{
 	    # Arc was explicit but is now indirect implicit
 	    debug "Arc infered; set implicit";
@@ -1987,8 +1987,10 @@ sub deactivate
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
     $arc->initiate_cache;
-    $arc->remove_check();
+    $arc->remove_check($args);
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+
+    $args->{'res'}->changes_add;
 
     debug "Deactivated id ".$arc->sysdesig;
 
@@ -2316,7 +2318,7 @@ sub value_equals
     my( $arc, $val2, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
@@ -2332,7 +2334,13 @@ sub value_equals
 
     if( $arc->obj )
     {
-	warn "  Compare object with $val2\n" if $DEBUG;
+	if( $DEBUG )
+	{
+	    debug "Comparing values:";
+	    debug "1. ".$arc->obj->sysdesig;
+	    debug "2. ".query_desig($val2);
+	}
+
 	if( $match eq 'eq' )
 	{
 	    return $arc->obj->equals( $val2, $args );
@@ -2834,7 +2842,7 @@ sub set_value
 
     my $coltype_old  = $arc->real_coltype;
     my $valtype;
-    if( $coltype_old == 6 ) # value node
+    if( $coltype_old eq 'value' ) # value node
     {
 	$valtype = $arc->valtype;
     }
@@ -3286,7 +3294,7 @@ sub activate
 	{
 	    # rarc is not active. Assume we are allowed to
 	    # deactivate it
-	    $rarc->deactivate( $arc );
+	    $rarc->deactivate( $arc, $args );
 	}
     }
 
@@ -3301,7 +3309,7 @@ sub activate
     #
     if( $aarc and $arc->{'valtype'} )
     {
-	$aarc->deactivate( $arc );
+	$aarc->deactivate( $arc, $args );
     }
 
     # Runs create_check AFTER deactivation of other arc version, since
@@ -4099,7 +4107,7 @@ sub clear_queue
 
 =head2 validate_check
 
-  $a->validate_check
+  $a->validate_check( \%args )
 
 Check if we should infere
 
@@ -4112,7 +4120,7 @@ Returns: true if this arc can be infered from other arcs
 
 sub validate_check
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
 
     my $DEBUG = 0;
 
@@ -4135,7 +4143,7 @@ sub validate_check
     {
 	foreach my $rule ( @$list_c )
 	{
-	    $validated += $rule->validate_infere( $arc );
+	    $validated += $rule->validate_infere( $arc, $args );
 	}
     }
     warn( "$$:   List C done\n") if $DEBUG;
@@ -4177,7 +4185,7 @@ sub create_check
     {
 	foreach my $rule ( @$list_a )
 	{
-	    $rule->create_infere_rel($arc);
+	    $rule->create_infere_rel($arc, $args);
 	}
     }
 
@@ -4185,7 +4193,7 @@ sub create_check
     {
 	foreach my $rule ( @$list_b )
 	{
-	    $rule->create_infere_rev($arc);
+	    $rule->create_infere_rev($arc, $args);
 	}
     }
 
@@ -4196,7 +4204,7 @@ sub create_check
 
     if( $pred_name eq 'is' )
     {
-	$subj->rebless;
+	$subj->rebless( $args );
     }
 
     $subj->on_arc_add($arc, $pred_name, $args);
@@ -4240,7 +4248,7 @@ sub remove_check
     {
 	foreach my $rule ( @$list_a )
 	{
-	    $rule->remove_infered_rel($arc);
+	    $rule->remove_infered_rel($arc, $args);
 	}
     }
 
@@ -4248,7 +4256,7 @@ sub remove_check
     {
 	foreach my $rule ( @$list_b )
 	{
-	    $rule->remove_infered_rev($arc);
+	    $rule->remove_infered_rev($arc, $args);
 	}
     }
 
@@ -4260,7 +4268,7 @@ sub remove_check
 
     if( $pred_name eq 'is' )
     {
-	$subj->rebless;
+	$subj->rebless($args);
     }
 
     $subj->on_arc_del($arc, $pred_name, $args);
@@ -4401,6 +4409,18 @@ sub default_write_access
     {
 	return Rit::Base::Resource->get_by_label('sysadmin_group');
     }
+}
+
+
+###############################################################
+
+=head2 find_class
+
+=cut
+
+sub find_class
+{
+    return "Rit::Base::Arc";
 }
 
 
