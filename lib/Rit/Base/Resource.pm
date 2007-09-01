@@ -401,13 +401,19 @@ sub find_by_anything
     elsif( $coltype ne 'obj' )
     {
 	debug 3, "  obj as not an obj, It's a $coltype";
-	if( not ref $val )
+
+	my $valref;
+	if( ref $val )
 	{
-	    $val = \$val;
+	    $valref = $val;
+	}
+	else
+	{
+	    $valref = \$val;
 	}
 
 	$valtype ||= $this->get_by_label( $coltype );
-	$val = $valtype->literal_class->parse( $$val,
+	$val = $valtype->literal_class->parse( $valref,
 					       {
 						valtype => $valtype,
 					       }

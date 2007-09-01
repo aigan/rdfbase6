@@ -65,13 +65,16 @@ sub new
 {
     my( $class, $in_value ) = @_;
 
-    return $class->parse($in_value);
+    return $class->Para::Frame::Email::Address::parse($in_value);
 }
 
 
 #######################################################################
 
 =head3 parse
+
+Wrapper for L<Para::Frame::Email::Address/parse> that reimplements
+L<Rit::Base::Literal::String/parse>. (Avoid recursion)
 
 =cut
 
@@ -84,7 +87,7 @@ sub parse
 
     if( ref $val eq 'SCALAR' )
     {
-	return $class->SUPER::parse($$val);
+	return $class->Para::Frame::Email::Address::parse($$val);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Email::Address" )
     {
@@ -96,7 +99,7 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Mail::Address" )
     {
-	return $class->SUPER::parse($val);
+	return $class->Para::Frame::Email::Address::parse($val);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {

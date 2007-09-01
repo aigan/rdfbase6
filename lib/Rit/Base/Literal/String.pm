@@ -83,13 +83,18 @@ sub new
 	 'value' => undef,
 	}, $class;
     }
-    confess "Got a ref to value: $in_value\n" if ref $in_value;
 
     my $val; # The actual string
-
     if( ref $in_value )
     {
-	$val = $$in_value;
+	if( ref $in_value eq 'SCALAR' )
+	{
+	    $val = $$in_value;
+	}
+	else
+	{
+	    confess "Invalid value: $in_value";
+	}
     }
     else
     {
