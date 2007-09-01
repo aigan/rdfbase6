@@ -53,7 +53,7 @@ use Para::Frame::Site;
 
 use Rit::Base;
 use Rit::Base::Constants;
-use Rit::Base::Utils qw( cache_sync cache_clear translate );
+use Rit::Base::Utils;
 use Rit::Base::Resource;
 use Rit::Base::Arc;
 use Rit::Base::Search;
