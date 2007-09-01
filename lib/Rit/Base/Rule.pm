@@ -102,13 +102,6 @@ sub build_lists
 }
 
 
-#########################################################################
-################################  Constructors  #########################
-
-=head1 Constructors
-
-=cut
-
 #######################################################################
 
 =head2 init
@@ -118,6 +111,8 @@ sub build_lists
 sub init
 {
     my( $rule, $rec ) = @_;
+
+    debug "Initiated rule $rule->{id}";
 
     $rule->{'a'} = $rule->first_prop('pred_1');
     $rule->{'b'} = $rule->first_prop('pred_2');
@@ -129,7 +124,28 @@ sub init
 
 #######################################################################
 
+=head2 on_bless
+
+=cut
+
+sub on_bless
+{
+    return $_[0]->init;
+}
+
+
+#########################################################################
+################################  Constructors  #########################
+
+=head1 Constructors
+
+=cut
+
+#######################################################################
+
 =head2 create
+
+  $class->create( $a, $b, $c, $vacuum)
 
 Create a new rule.  Implement the rule in the DB.
 
@@ -181,6 +197,8 @@ sub create
 
     if( $vacuum )
     {
+	debug "Vacuuming DB for new rule";
+
 	my $dbh = $Rit::dbix->dbh;
 	my $sth = $dbh->prepare( "select * from arc where pred=?" );
 	foreach my $pred_id ( uniq sort $a->id, $b->id, $c->id )
@@ -193,6 +211,7 @@ sub create
 	    }
 	    $sth->finish;
 	}
+	debug "Vacuuming DB for new rule - DONE";
     }
 
     return $rule;

@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::String;
+package Rit::Base::Literal::String;
 #=====================================================================
 #
 # DESCRIPTION
@@ -15,7 +15,7 @@ package Rit::Base::String;
 
 =head1 NAME
 
-Rit::Base::String
+Rit::Base::Literal::String
 
 =cut
 
@@ -24,6 +24,7 @@ use utf8;
 
 use Carp qw( cluck confess longmess );
 use Digest::MD5 qw( md5_base64 );
+use Scalar::Util qw( looks_like_number );
 
 BEGIN
 {
@@ -32,9 +33,9 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug trim throw );
 
-use Rit::Base::Utils qw( is_undef valclean truncstring);
+use Rit::Base::Utils qw( is_undef valclean truncstring );
 
 use base qw( Rit::Base::Literal );
 
@@ -42,8 +43,9 @@ use base qw( Rit::Base::Literal );
 use overload
   'cmp'  => 'cmp_string',
   '<=>'  => 'cmp_numeric',
-  '0+'   => sub{+($_[0]->{'value'})},
-  '+'    => sub{$_[0]->{'value'} + $_[1]},
+  '0+'   => sub{+($_[0]->literal)},
+  '+'    => sub{$_[0]->literal + $_[1]},
+  fallback => 1,
   ;
 
 =head1 DESCRIPTION
@@ -71,14 +73,17 @@ These can be called with the class name or any List object.
 sub new
 {
     my( $this, $in_value ) = @_;
+    my $class = ref($this) || $this;
 
     unless( defined $in_value )
     {
-	return new Rit::Base::Undef;
+	return bless
+	{
+	 'arc' => undef,
+	 'value' => undef,
+	}, $class;
     }
     confess "Got a ref to value: $in_value\n" if ref $in_value;
-
-    my $class = ref($this) || $this;
 
     my $val; # The actual string
 
@@ -141,18 +146,22 @@ sub new
 
 sub new_from_db
 {
-    my( $class, $val, $arc ) = @_;
-    if( $val =~ /Ã./ )
+    my( $class, $val ) = @_;
+
+    if( defined $val )
     {
-	debug "UNDECODED UTF8 in DB: $val)";
-	unless( utf8::decode( $val ) )
+	if( $val =~ /Ã./ )
 	{
-	    $Para::Frame::REQ->result->message("Failed to convert to UTF8!");
+	    debug "UNDECODED UTF8 in DB: $val)";
+	    unless( utf8::decode( $val ) )
+	    {
+		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
+	    }
 	}
-    }
-    else
-    {
-	utf8::upgrade( $val );
+	else
+	{
+	    utf8::upgrade( $val );
+	}
     }
 
     return bless
@@ -160,6 +169,73 @@ sub new_from_db
      'arc' => undef,
      'value' => $val,
     }, $class;
+}
+
+
+#######################################################################
+
+=head3 parse
+
+  $class->parse( \$value, \%args )
+
+For parsing any type of input. Expecially as given by html forms.
+
+Supported args are:
+  valtype
+  coltype
+  arclim
+
+Will use L<Rit::Base::Resource/get_by_anything> for lists and queries.
+
+The valtype may be given for cases there the class handles several
+valtypes.
+
+=cut
+
+sub parse
+{
+    my( $class, $val_in, $args_in ) = @_;
+    my( $val, $coltype, $valtype, $args ) =
+      $class->extract_string($val_in, $args_in);
+
+
+    if( ref $val eq 'SCALAR' )
+    {
+	if( $coltype eq 'valtext' )
+	{
+	    return $class->new($val);
+	}
+	elsif( $coltype eq 'valfloat' )
+	{
+	    trim($val);
+	    unless( looks_like_number( $$val ) )
+	    {
+		throw 'validation', "String $$val is not a number";
+	    }
+	    return $class->new($val);
+	}
+	else
+	{
+	    confess "coltype $coltype not handled by this class";
+	}
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+    {
+	# Still parsing it
+	if( $coltype eq 'valfloat' )
+	{
+	    unless( looks_like_number( $val->plain ) )
+	    {
+		throw 'validation', "String $val is not a number";
+	    }
+	}
+
+	return $val;
+    }
+    else
+    {
+	confess "Can't parse $val";
+    }
 }
 
 
@@ -222,8 +298,15 @@ debugging.  This version of desig indludes the node id.
 
 sub sysdesig  # The designation of obj, including node id
 {
-    my $value  = truncstring( shift->{'value'} );
-    return "Literal '$value'";
+    if( defined $_[0]->{'value'} )
+    {
+	my $value  = truncstring( shift->{'value'} );
+	return "Literal '$value'";
+    }
+    else
+    {
+	return "Literal undef";
+    }
 }
 
 
@@ -237,13 +320,20 @@ Returns a unique predictable id representing this object
 
 sub syskey
 {
-    if( utf8::is_utf8( $_[0]->{'value'} ) )
+    if( defined $_[0]->{'value'} )
     {
-	my $encoded = $_[0]->{'value'};
-	utf8::encode( $encoded );
-	return sprintf("lit:%s", md5_base64($encoded));
+	if( utf8::is_utf8( $_[0]->{'value'} ) )
+	{
+	    my $encoded = $_[0]->{'value'};
+	    utf8::encode( $encoded );
+	    return sprintf("lit:%s", md5_base64($encoded));
+	}
+	return sprintf("lit:%s", md5_base64(shift->{'value'}));
     }
-    return sprintf("lit:%s", md5_base64(shift->{'value'}));
+    else
+    {
+	return "lit:undef";
+    }
 }
 
 
@@ -273,29 +363,36 @@ sub literal
 
 sub cmp_string
 {
-    my $val = "";
-    if( ref $_[1] )
+    my $val1 = $_[0]->plain;
+    my $val2 = $_[1];
+
+    unless( defined $val1 )
     {
-	if( $_[1]->defined )
+	$val1 = is_undef;
+    }
+
+    if( ref $val2 )
+    {
+	if( $val2->defined )
 	{
-	    $val = $_[1]->desig;
+	    $val2 = $val2->desig;
 	}
     }
     else
     {
-	if( defined $_[1] )
+	unless( defined $val2 )
 	{
-	    $val = $_[1];
+	    $val2 = is_undef;
 	}
     }
 
     if( $_[2] )
     {
-	return $val cmp $_[0]->{'value'};
+	return $val2 cmp $val1;
     }
     else
     {
-	return $_[0]->{'value'} cmp $val;
+	return $val1 cmp $val2;
     }
 }
 
@@ -308,29 +405,33 @@ sub cmp_string
 
 sub cmp_numeric
 {
-    my $val = 0;
-    if( ref $_[1] )
+    my $val1 = $_[0]->plain || 0;
+    my $val2 = $_[1]        || 0;
+
+    unless( defined $val1 )
     {
-	if( $_[1]->defined )
-	{
-	    $val = $_[1]->desig;
-	}
+	$val1 = is_undef;
     }
-    else
+
+    if( ref $val2 )
     {
-	if( defined $_[1] )
+	if( $val2->defined )
 	{
-	    $val = $_[1];
+	    $val2 = $val2->desig;
+	}
+	else
+	{
+	    $val2 = 0;
 	}
     }
 
     if( $_[2] )
     {
-	return( $val <=> ($_[0]->{'value'}||0));
+	return( $val2 <=> $val1 );
     }
     else
     {
-	return( ($_[0]->{'value'}||0) <=> $val );
+	return( $val1 <=> $val2 );
     }
 }
 
@@ -352,6 +453,11 @@ Uses the args in L<Para::Frame::L10N/compile>.
 sub loc
 {
     my $lit = shift;
+
+    unless( defined $lit->{'value'} )
+    {
+	return is_undef;
+    }
 
     if( @_ )
     {
@@ -451,7 +557,23 @@ Returns true if the string begins with $substr.
 
 sub begins
 {
+    unless( defined $_[0]->{'value'} )
+    {
+	return is_undef;
+    }
+
     return $_[0]->{'value'} =~ /^$_[1]/;
+}
+
+#######################################################################
+
+=head3 coltype
+
+=cut
+
+sub coltype
+{
+    return "valtext";
 }
 
 #######################################################################

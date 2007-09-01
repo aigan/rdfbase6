@@ -35,7 +35,7 @@ use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 
 use Rit::Base::Resource;
 use Rit::Base::Utils qw();
-use Rit::Base::Time qw( now );
+use Rit::Base::Literal::Time qw( now );
 
 =head1 DESCRIPTION
 

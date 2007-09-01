@@ -96,6 +96,6 @@ L<Rit::Base::Arc>,
 L<Rit::Base::Pred>,
 L<Rit::Base::List>,
 L<Rit::Base::Search>,
-L<Rit::Base::Time>
+L<Rit::Base::Literal::Time>
 
 =cut

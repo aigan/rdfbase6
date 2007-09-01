@@ -21,7 +21,7 @@ use Para::Frame::L10N qw( loc );
 
 
 use Rit::Base::Resource;
-use Rit::Base::String;
+use Rit::Base::Literal::String;
 use Rit::Base::Utils qw( is_undef parse_propargs );
 
 use Rit::Base::Constants qw( $C_language );
@@ -53,7 +53,7 @@ sub handler
 	my $val_new = $q->param("arc_${aid}_val");
 	trim(\$val_new);
 	my $weight_in = $q->param("arc_${aid}_weight");
-	my $weight_new = Rit::Base::String->new($weight_in)||is_undef;
+	my $weight_new = Rit::Base::Literal::String->new($weight_in)||is_undef;
 
 	if( my $obj = $arc->obj ) # value node (with lang or weight)
 	{

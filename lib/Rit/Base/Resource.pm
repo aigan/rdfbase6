@@ -45,12 +45,13 @@ use Rit::Base::Search;
 use Rit::Base::List;
 use Rit::Base::Arc;
 use Rit::Base::Literal;
-use Rit::Base::Time qw( now );
+use Rit::Base::Literal::Time qw( now );
+use Rit::Base::Literal::String;
 use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate );
+use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate $C_class );
 use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
@@ -58,7 +59,7 @@ use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_form_field_prop is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
-			 parse_propargs aais send_cache_update );
+			 parse_propargs aais );
 
 our %UNSAVED;
 
@@ -333,6 +334,7 @@ caller will have to trime surrounding whitespace, if needed.
 
 Supported args are
   coltype
+  valtype
   arclim
 
 Returns:
@@ -356,7 +358,18 @@ sub find_by_anything
 
 
     my( @new );
-    my $coltype = $args->{'coltype'} || 'obj';
+    my $valtype = $args->{'valtype'};
+    my $coltype = $args->{'coltype'};
+    if( not $coltype and $valtype )
+    {
+	$coltype = $valtype->coltype;
+    }
+    $args->{'coltype'} ||= $coltype ||= 'obj';
+
+    # For arcs pointing to valuenodes: The coltype would be 'obj' and
+    # the valtype would be the value of the value property.
+
+
 
 #    debug 3, "find_by_anything: $val ($coltype)";
 
@@ -390,51 +403,35 @@ sub find_by_anything
 	debug 3, "  obj as not an obj, It's a $coltype";
 	if( not ref $val )
 	{
-	    if( $coltype eq 'valtext' )
-	    {
-		$val = Rit::Base::String->new( $val );
-	    }
-	    elsif( $coltype eq 'valfloat' )
-	    {
-		trim(\$val);
-		$val = Rit::Base::String->new( $val );
-	    }
-	    elsif( $coltype eq 'valdate' )
-	    {
-		$val = Rit::Base::Time->get( $val );
-	    }
-	    else
-	    {
-		confess "not implemented; coltype $coltype. Value $val";
-	    }
-	}
-	elsif( ( $coltype eq 'valtext' or
-		 $coltype eq 'valfloat'
-		 ) and
-	       ( ref $val eq 'Rit::Base::String' or
-		 ref $val eq 'Rit::Base::Undef'
-	       ))
-	{
-	    # OK
-	}
-	elsif( $coltype eq 'valdate' )
-	{
-	    $val = Rit::Base::Time->get($val);
-	}
-	else
-	{
-	    confess "Value should be of $coltype type but is: $val";
+	    $val = \$val;
 	}
 
+	$valtype ||= $this->get_by_label( $coltype );
+	$val = $valtype->literal_class->parse( $$val,
+					       {
+						valtype => $valtype,
+					       }
+					     );
 	push @new, $val;
     }
     #
     # 4. obj as list
     #
-    elsif( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::List') )
+    elsif( ref $val and UNIVERSAL::isa( $val, 'Para::Frame::List') )
     {
 	debug 3, "  obj as list";
-	push @new, $val;
+	foreach my $elem ( $val->as_array )
+	{
+	    push @new, $this->find_by_anything($elem)->as_array;
+	}
+    }
+    elsif( (ref $val) and (ref $val eq 'ARRAY') )
+    {
+	debug 3, "  obj as list";
+	foreach my $elem ( @$val )
+	{
+	    push @new, $this->find_by_anything($elem)->as_array;
+	}
     }
     #
     # 5/6. obj as name of obj with criterions
@@ -1209,6 +1206,8 @@ sub create
     # TODO: Handle creation with 'is' coupled to a class. Especially
     # is $C_arc
 
+    confess "invalid props: $props" unless ref $props; ### DEBUG
+
 
 #    # Any value props should be added after datatype props
 #    my @props_list;
@@ -1603,7 +1602,7 @@ sub empty
 
   $n->created
 
-Returns: L<Rit::Base::Time> object
+Returns: L<Rit::Base::Literal::Time> object
 
 =cut
 
@@ -1619,7 +1618,7 @@ sub created
 
   $n->updated
 
-Returns: L<Rit::Base::Time> object
+Returns: L<Rit::Base::Literal::Time> object
 
 =cut
 
@@ -3089,7 +3088,7 @@ sub meets_proplim
 		    elsif( $match eq 'begins' )
 		    {
 			confess "Matchtype 'begins' only allowed for strings, not ". ref $value
-			  unless( ref $value eq 'Rit::Base::String' );
+			  unless( ref $value eq 'Rit::Base::Literal::String' );
 
 			if( $value->begins( $target_value, $args ) )
 			{
@@ -5533,6 +5532,10 @@ sub tree_select_data
 
   $n->find_class()
 
+TODO: HAndle the class for value nodes based on the value-arcs
+valtype.
+
+
 Checks if the resource has a property C<is> to a class that has the
 property C<class_handled_by_perl_module>.
 
@@ -5765,8 +5768,8 @@ sub rebless
     my $class_new = $node->find_class;
     if( $class_old ne $class_new )
     {
-#	debug "Reblessing ".$node->sysdesig;
-#	debug "  from $class_old\n    to $class_new";
+	debug "Reblessing ".$node->sysdesig;
+	debug "  from $class_old\n    to $class_new";
 	unless($class_new =~ /^Rit::Base::Metaclass::/ )
 	{
 	    require(package_to_module($class_new));
@@ -6334,9 +6337,9 @@ sub initiate_node
 	$node->{'owned_by'} = $rec->{'owned_by'};
 	$node->{'read_access'} = $rec->{'read_access'};
 	$node->{'write_access'} = $rec->{'write_access'};
-	$node->{'created'} = Rit::Base::Time->get( $rec->{'created'} );
+	$node->{'created'} = Rit::Base::Literal::Time->get( $rec->{'created'} );
 	$node->{'created_by'} = $rec->{'created_by'};
-	$node->{'updated'} = Rit::Base::Time->get( $rec->{'updated'} );
+	$node->{'updated'} = Rit::Base::Literal::Time->get( $rec->{'updated'} );
 	$node->{'updated_by'} = $rec->{'updated_by'};
 #	debug "  Created $node->{created} by $node->{created_by}";
 
@@ -6394,6 +6397,23 @@ sub mark_unsaved
 #########################################################################
 
 =head2 mark_updated
+
+  $node->mark_updated( $time, $user )
+
+This will update info about the nodes update-time and who did the
+updating.
+
+Default user is the request user
+
+Default time is now
+
+For not creating a node rec, consider using:
+
+  $node->mark_updated if $node->node_rec_exist;
+
+The changes will be saved after the request, or by calling L</commit>.
+
+Returns: a time obj
 
 TODO: implement args
 
@@ -6551,10 +6571,6 @@ sub save
     }
 
     $Rit::Base::Cache::Changes::Updated{$nid} ++;
-#    send_cache_update({ change => 'res_updated',
-#			res_id => $nid,
-#		      });
-
 
     delete $UNSAVED{$nid};
     return 1;
@@ -6705,6 +6721,11 @@ sub initiate_rel
 	$sth_init_subj_name->execute($nid, $p_name_id, $nid);
 	my $recs = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
+
+
+	# TODO: Maby it woule be a litle mor efficient to start by the
+	# extra name-nodes and after that initiate the arcs from this
+	# node. Then, the name arcs will already be defined.
 
 	my @extra_nodes_initiated;
 	my $cnt = 0;
@@ -7339,6 +7360,97 @@ sub session_history_add
 
 
 #########################################################################
+
+=head2 literal_class
+
+  $n->literal_class()
+
+This should be a resource class. Get the perl class name that handles
+instances of this class.
+
+It will be retrieved by the class_handled_by_perl_module property, or
+for Literals, by the corresponding coltype.
+
+Literals, arcs and preds must only have ONE class. Other resoruces may
+have multiple classses.
+
+Returns: the class name as a plain string
+
+=cut
+
+sub literal_class
+{
+    my( $node ) = @_;
+
+    my $id = $node->id;
+    my $classname = $Rit::Base::Cache::Class{ $id };
+    unless( $classname )
+    {
+	if( my $class = $node->first_prop('class_handled_by_perl_module') )
+	{
+	    $classname = $class->first_prop('code')->plain
+	      or confess "No classname found for class $class->{id}";
+	    no strict "refs";
+	    require(package_to_module($classname));
+	}
+	else
+	{
+	    my $coltype = $node->coltype;
+
+	    if( $coltype eq 'valtext' )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    elsif( $coltype eq 'valdate' )
+	    {
+		$classname = "Rit::Base::Literal::Time";
+	    }
+	    elsif( $coltype eq "valfloat" )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    else
+	    {
+		confess "Coltype $coltype not supported";
+	    }
+	}
+
+	$Rit::Base::Cache::Class{ $id } = $classname;
+    }
+
+    return $classname;
+}
+
+
+#########################################################################
+
+=head2 coltype
+
+  $n->coltype()
+
+For getting the coltype corresponding to this valtype.
+
+Will throw an exception if the node isn't a class.
+
+=cut
+
+sub coltype
+{
+    my( $node ) = @_;
+
+    my $id = $node->id;
+
+# Fix DB first...
+#    unless( $node->has_value({is => $C_class }) )
+#    {
+#	confess "The node $id is not a class";
+#    }
+
+    return $Rit::Base::COLTYPE_valtype2name{ $id } || 'obj';
+}
+
+
+#########################################################################
 ################################ misc functions #########################
 
 =head1 Functions
@@ -7562,6 +7674,6 @@ L<Rit::Base::Arc>,
 L<Rit::Base::Pred>,
 L<Rit::Base::List>,
 L<Rit::Base::Search>,
-L<Rit::Base::Time>
+L<Rit::Base::Literal::Time>
 
 =cut

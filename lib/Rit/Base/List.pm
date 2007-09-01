@@ -1642,7 +1642,7 @@ returned.  But if the list only has one value, it's returned without
 any convertion.
 
 For the element types L<Rit::Base::Arc>, L<Rit::Base::Resource> and
-L<Rit::Base::Time>, we retun a new L<Rit::Base::List> with the
+L<Rit::Base::Literal::Time>, we retun a new L<Rit::Base::List> with the
 elements.
 
 TODO: Msake it work with the new subclass strutcture with subclasses

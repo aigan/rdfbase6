@@ -670,8 +670,19 @@ sub modify
 	{
 	    # Handled in second fase
 	}
-	elsif( $key eq 'label' )
+	elsif( $key =~ /^label(_exist)?$/ )
 	{
+	    if( ($1||'') eq '_exist' )
+	    {
+		if( $values[0] )
+		{
+		    $values[0] = '*';
+		}
+		else
+		{
+		    $values[0] = '';
+		}
+	    }
 	    $search->{'query'}{'label'} = \@values;
 	}
 	elsif( $key =~ m/^(subj|pred|coltype)$/ )
@@ -756,7 +767,7 @@ sub modify
 	    }
 
 	    if( (not ref $values[0] or
-		 UNIVERSAL::isa($values[0],'Rit::Base::String') ) and
+		 UNIVERSAL::isa($values[0],'Rit::Base::Literal::String') ) and
 		($values[0] eq '*') )
 	    {
 		$match = 'exist';
@@ -1326,7 +1337,7 @@ sub add_prop
     my $rev = $rec->{'rev'}||'';
     my $match = $rec->{'match'}||'';
     my $key = join('-', $pred_key, $rev, $match);
-    $key .= '='.join '+', map{ref $_ ? $_->syskey : Rit::Base::Literal->new($_)->syskey} @{$rec->{'values'}};
+    $key .= '='.join '+', map{ref $_ ? $_->syskey : Rit::Base::Literal::String->new($_)->syskey} @{$rec->{'values'}};
 
     $rec->{'key'} = $key;
     my $pred_name = "";
@@ -2134,19 +2145,33 @@ sub elements_lables
     my @element;
     my $prio = 1;
     my @values;
-
-
+    my $negate = 0;
     my $where;
-    if( BINDVALS )
+
+    if( $lables->[0] eq '*' )
     {
-	$where = join " or ", map "(label=?)", @$lables;
-	push @values, @$lables;
+	$where = "(label is not null)";
+	$prio = 3;
+    }
+    elsif( not $lables->[0] )
+    {
+	$where = "(label is not null)";
+	$negate = 1;
+	$prio = 8;
     }
     else
     {
-	my $dbh = $Rit::dbix->dbh;
-	$where = join " or ", map sprintf("(label=%s)", $dbh->quote($_)),
-	  @$lables;
+	if( BINDVALS )
+	{
+	    $where = join " or ", map "(label=?)", @$lables;
+	    push @values, @$lables;
+	}
+	else
+	{
+	    my $dbh = $Rit::dbix->dbh;
+	    $where = join " or ", map sprintf("(label=%s)", $dbh->quote($_)),
+	      @$lables;
+	}
     }
 
     push @element,
@@ -2156,6 +2181,7 @@ sub elements_lables
      values => \@values,
      prio => $prio,
      table => 'node',
+     negate => $negate,
     };
 
     return( \@element );

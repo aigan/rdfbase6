@@ -34,7 +34,7 @@ use Para::Frame::Reload;
 
 use Rit::Base::List;
 use Rit::Base::Utils qw( valclean translate is_undef );
-use Rit::Base::String;
+use Rit::Base::Literal::String;
 
 
 ### Inherit
@@ -104,7 +104,7 @@ sub id
 
   $p->name
 
-Returns: The name of the predicate as a L<Rit::Base::String> object
+Returns: The name of the predicate as a L<Rit::Base::Literal::String> object
 
 =cut
 
@@ -113,7 +113,7 @@ sub name
     my( $pred ) = @_;
 
     confess "not an obj: $pred" unless ref $pred;
-    return new Rit::Base::String $pred->{'label'};
+    return new Rit::Base::Literal::String $pred->{'label'};
 }
 
 #######################################################################
@@ -172,6 +172,8 @@ sub syskey
 Find the valtype of a predicate.  This will use the range or the coltype.
 
 Returns: A C<valtype> node to use as the valtype for arcs with this pred.
+
+Exceptions: Will confess if trying to get a valtype from the value pred.
 
 =cut
 

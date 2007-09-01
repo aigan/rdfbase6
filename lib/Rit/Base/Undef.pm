@@ -152,7 +152,22 @@ See L<Rit::Base::Literal/clean>
 
 sub clean
 {
-    return Rit::Base::String->new("");
+    return Rit::Base::Literal::String->new("");
+}
+
+
+
+#######################################################################
+
+=head2 clean_plain
+
+See L<Rit::Base::Literal/clean_plain>
+
+=cut
+
+sub clean_plain
+{
+    return "";
 }
 
 

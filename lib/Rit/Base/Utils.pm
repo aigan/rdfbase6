@@ -9,7 +9,7 @@ package Rit::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -48,8 +48,8 @@ BEGIN
 }
 
 use Rit::Base::Undef;
-use Rit::Base::Time qw( now );
-use Rit::Base::String;
+use Rit::Base::Literal::Time qw( now );
+use Rit::Base::Literal::String;
 
 
 
@@ -824,13 +824,13 @@ sub truncstring
 
   string($string)
 
-Calls L<Rit::Base::String/new> with C<$string>.
+Calls L<Rit::Base::Literal::String/new> with C<$string>.
 
 =cut
 
 sub string
 {
-    return Rit::Base::String->new(@_);
+    return Rit::Base::Literal::String->new(@_);
 }
 
 

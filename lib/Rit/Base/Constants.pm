@@ -157,45 +157,25 @@ sub new ()
 
 =head2 find
 
-  Rit::Base::Constants->find()
+  Rit::Base::Constants->find(\%query, \%args)
 
-Currently doesn't take any params.
-
-Returns all constants.
-
-Returns:
-
-a L<Rit::Base::List> of L<Rit::Base::Constant> elements
+Adds the criterion { label_exist => 1 } and calls
+L<Rit::Base::Resource/find>
 
 =cut
 
 sub find
 {
-    my( $this ) = @_;
+    my( $this, $query, $args ) = @_;
 
-#    debug "Looking up all constants";
-
-    my @list;
-    my $sth = $Rit::dbix->dbh->prepare(
-	      "select * from node where label is not null");
-    $sth->execute();
-    while( my $rec = $sth->fetchrow_hashref )
+    unless( UNIVERSAL::isa $query, 'HASH' )
     {
-	my $label = $rec->{'label'};
-	my $id    = $rec->{'node'};
-
-#	debug "Found $id: $label";
-	unless( $Label{$label} )
-	{
-	    my $node = Rit::Base::Resource->get( $id );
-	    $Label{$label} = $node;
-	}
-
-	push @list, $Label{$label};
+	confess "Query must be a hashref";
     }
-    $sth->finish;
 
-    return Rit::Base::List->new(\@list);
+    $query->{'label_exist'} = 1;
+
+    return Rit::Base::Resource->find($query, $args);
 }
 
 

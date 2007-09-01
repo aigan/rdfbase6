@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::Time;
+package Rit::Base::Literal::Time;
 #=====================================================================
 #
 # DESCRIPTION
@@ -15,12 +15,12 @@ package Rit::Base::Time;
 
 =head1 NAME
 
-Rit::Base::Time
+Rit::Base::Literal::Time
 
 =cut
 
 use strict;
-use Carp qw( cluck carp );
+use Carp qw( cluck carp confess );
 
 BEGIN
 {
@@ -49,6 +49,75 @@ Subclass of L<Para::Frame::Time> and L<Rit::Base::Literal>.
 
 #######################################################################
 
+=head2 parse
+
+  $class->parse( \$value, \%args )
+
+
+Supported args are:
+  valtype
+  coltype
+  arclim
+
+=cut
+
+sub parse
+{
+    my( $class, $val_in, $args_in ) = @_;
+    my( $val, $coltype, $valtype, $args ) =
+      $class->extract_string($val_in, $args_in);
+
+    if( ref $val eq 'SCALAR' )
+    {
+	return $class->get($$val);
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Time" )
+    {
+	return $val;
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+    {
+	return $class->get($val->plain);
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
+    {
+	confess "Implement undef dates";
+    }
+    else
+    {
+	confess "Can't parse $val";
+    }
+}
+
+#######################################################################
+
+=head2 new_from_db
+
+=cut
+
+sub new_from_db
+{
+    # Should parse faster since we know this is a PostgreSQL type
+    # timestamp with time zone...
+
+    return $Rit::dbix->parse_datetime($_[1], $_[0]);
+}
+
+#######################################################################
+
+=head2 get
+
+Extension of L<Para::Frame::Time/get>
+
+=cut
+
+sub get
+{
+    return shift->SUPER::get(@_) || is_undef;
+}
+
+#######################################################################
+
 =head2 literal
 
 =cut
@@ -70,8 +139,8 @@ NOTE: Exported via Para::Frame::Time
 
 sub now
 {
-#    carp "Rit::Base::Time::now called";
-    return bless(DateTime->now,'Rit::Base::Time')->init;
+#    carp "Rit::Base::Literal::Time::now called";
+    return bless(DateTime->now,'Rit::Base::Literal::Time')->init;
 }
 
 #######################################################################
@@ -82,34 +151,18 @@ sub now
 
 sub date
 {
-    return bless(Para::Frame::Time->get(@_),'Rit::Base::Time');
+    return bless(Para::Frame::Time->get(@_),'Rit::Base::Literal::Time');
 }
 
 #######################################################################
 
-=head2 get
-
-Extension of L<Para::Frame::Time/get>
+=head2 coltype
 
 =cut
 
-sub get
+sub coltype
 {
-    return shift->SUPER::get(@_) || is_undef;
-}
-
-#######################################################################
-
-=head2 new_from_db
-
-=cut
-
-sub new_from_db
-{
-    # Should parse faster since we know this is a PostgreSQL type
-    # timestamp with time zone...
-
-    return $Rit::dbix->parse_datetime($_[1], $_[0]);
+    return "valdate";
 }
 
 #######################################################################

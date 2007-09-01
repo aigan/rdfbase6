@@ -42,7 +42,7 @@ sub handler
     my $b = $Pred->get( $b_str ) or throw('validation', "B är inte ett existerande predikat");
     my $c = $Pred->get( $c_str ) or throw('validation', "C är inte ett existerande predikat");
 
-    my $rule = Rit::Base::Rule->add($a, $b, $c );
+    my $rule = Rit::Base::Rule->create($a, $b, $c );
 
     return sprintf "Created rule %s", $rule->sysdesig;
 }

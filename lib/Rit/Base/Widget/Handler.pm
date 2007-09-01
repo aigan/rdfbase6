@@ -35,7 +35,7 @@ use Para::Frame::Utils qw( throw catch trim debug datadump );
 
 use Rit::Base::List;
 use Rit::Base::Arc;
-use Rit::Base::Time qw( now );
+use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Pred;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
@@ -1019,7 +1019,7 @@ sub handle_query_arc_value
 					    is   => $C_language,
 					   })
 		      or die("Erronuous lang-code $lang");
-		    my $value_str = Rit::Base::String->new( $value );
+		    my $value_str = Rit::Base::Literal::String->new( $value );
 		    my $valnode = $R->create({
 					      is_of_language => $language,
 					     }, $args);
@@ -1767,6 +1767,6 @@ L<Rit::Base::Arc>,
 L<Rit::Base::Pred>,
 L<Rit::Base::List>,
 L<Rit::Base::Search>,
-L<Rit::Base::Time>
+L<Rit::Base::Literal::Time>
 
 =cut

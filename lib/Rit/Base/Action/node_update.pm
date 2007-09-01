@@ -17,7 +17,7 @@ use strict;
 
 use Para::Frame::L10N qw( loc );
 
-use Rit::Base::Time qw( now );
+use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Utils qw( parse_propargs );
 
 sub handler

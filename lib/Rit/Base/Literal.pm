@@ -32,7 +32,7 @@ use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef valclean truncstring );
-use Rit::Base::String;
+use Rit::Base::Literal::String;
 
 ### Inherit
 #
@@ -40,6 +40,7 @@ use base qw( Rit::Base::Node );
 
 use overload
   '""'   => 'literal',
+  fallback => 1,
   ;
 
 =head1 DESCRIPTION
@@ -48,7 +49,7 @@ Represents a Literal.
 
 A literal can only exist in one arc.
 
-L<Rit::Base::String>, L<Rit::Base::Time> and L<Rit::Base::Undef> are
+L<Rit::Base::Literal::String>, L<Rit::Base::Literal::Time> and L<Rit::Base::Undef> are
 Literals.
 
 Inherits from L<Rit::Base::Object>.
@@ -77,6 +78,8 @@ sub new
 {
     my( $this, $val_in ) = @_;
 
+    confess "TODO: Develope Literal->new";
+
     # Assume its string or undef
 
     if( not defined $val_in )
@@ -89,8 +92,32 @@ sub new
     }
     else
     {
-	return Rit::Base::String->new( $val_in );
+	return Rit::Base::Literal::String->new( $val_in );
     }
+}
+
+
+#######################################################################
+
+=head2 new_from_db
+
+=cut
+
+sub new_from_db
+{
+    confess "implement this";
+}
+
+
+#######################################################################
+
+=head2 parse
+
+=cut
+
+sub parse
+{
+    confess "implement this";
 }
 
 
@@ -188,15 +215,15 @@ sub is_true
 
   $literal->equals( $val )
 
-If C<$val> is a scalar, converts it to a L<Rit::Base::String>
+If C<$val> is a scalar, converts it to a L<Rit::Base::Literal::String>
 object. (Undefs will become a L<Rit::Base::Undef> via
-L<Rit::Base::String>.)
+L<Rit::Base::Literal::String>.)
 
 Returns true if both are L<Rit::Base::Literal> and has the same
 L<Rit::Base::Object/syskey>.
 
 C<syskey> is implemented in the subclasses to this class. For example,
-L<Rit::Base::String>, L<Rit::Base::Time> and L<Rit::Base::Undef>.
+L<Rit::Base::Literal::String>, L<Rit::Base::Literal::Time> and L<Rit::Base::Undef>.
 
 =cut
 
@@ -204,7 +231,7 @@ sub equals
 {
     my( $lit, $val, $args ) = @_;
 
-    $val = Rit::Base::String->new($val)
+    $val = Rit::Base::Literal::String->new($val)
       unless( ref $val );
 
     if( ref $val and UNIVERSAL::isa($val, 'Rit::Base::Literal') )
@@ -296,6 +323,104 @@ sub initiate_cache
     $literal->set_arc( $arc );
 
     return $literal;
+}
+
+
+#######################################################################
+
+=head2 coltype
+
+=cut
+
+sub coltype
+{
+    confess "implement this";
+}
+
+
+#######################################################################
+
+=head2 extract_string
+
+  $class->extract_string( \$val, \%args )
+
+
+Supported args are:
+  valtype
+  coltype
+  arclim
+
+For use in L</parse> methods.
+
+Thre C<$retval> will either be a scalar ref of the plain value to
+parse, or a L<Rit::Base::Literal> object.
+
+Returns: The list ( $retval, $coltype, $valtype, $args )
+
+=cut
+
+sub extract_string
+{
+    my( $class, $val, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $valtype = $args->{'valtype'};
+    my $coltype = $args->{'coltype'};
+    if( not $coltype and $valtype )
+    {
+	$coltype = $valtype->coltype;
+    }
+    $coltype ||= $class->coltype;
+    unless( $coltype )
+    {
+	confess "Can't determine coltype ";
+    }
+
+    unless( ref $val )
+    {
+	$val = \$val;
+    }
+
+    if( ref $val eq 'SCALAR' )
+    {
+	return( $val, $coltype, $valtype, $args );
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal" )
+    {
+	# Validate below
+    }
+    elsif( (ref $val eq 'HASH') or
+	   (ref $val eq 'ARRAY') or
+	   (UNIVERSAL::isa $val, "Para::Frame::List")
+	 )
+    {
+	$val = Rit::Base::Resource->get_by_anything( $val,
+						     {
+						      %$args,
+						      valtype => $valtype,
+						      coltype => $coltype,
+						     });
+	return( $val, $coltype, $valtype, $args );
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Resource" )
+    {
+	if( my $arc = $val->first_arc('value', $args) )
+	{
+	    $val = $arc->value;
+	}
+	else
+	{
+	    confess "$val->{id} is not a value node";
+	}
+    }
+    else
+    {
+	confess "Can't parse $val";
+    }
+
+    debug "TODO: check for compatible valtype";
+    return( $val, $coltype, $valtype, $args );
+
 }
 
 
