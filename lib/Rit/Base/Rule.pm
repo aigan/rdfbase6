@@ -134,6 +134,18 @@ sub on_bless
 }
 
 
+###############################################################
+
+=head2 find_class
+
+=cut
+
+sub find_class
+{
+    return "Rit::Base::Rule";
+}
+
+
 #########################################################################
 ################################  Constructors  #########################
 
@@ -505,7 +517,7 @@ Make inference on the B part on create
 
 sub create_infere_rev
 {
-    my( $rule, $arc ) = @_;
+    my( $rule, $arc, $args ) = @_;
 
     # Check subj and obj
     my $subj = $arc->subj;
@@ -526,6 +538,7 @@ sub create_infere_rev
 				   implicit => 1,
 				   active => 1, # Activate directly
 				  },
+				  res => $args->{'res'},
 				 })->set_indirect;
     }
 }
@@ -537,11 +550,13 @@ sub create_infere_rev
 
 Make inference on the A part on create
 
+args res must be defined
+
 =cut
 
 sub create_infere_rel
 {
-    my( $rule, $arc ) = @_;
+    my( $rule, $arc, $args ) = @_;
 
     # Check subj and obj
     my $subj = $arc->subj;
@@ -562,6 +577,7 @@ sub create_infere_rel
 				   implicit => 1,
 				   active => 1, # Activate directly
 				  },
+				  res => $args->{'res'},
 				 })->set_indirect;
     }
 }
@@ -577,7 +593,7 @@ Remove implicit arcs infered from this arc, part B
 
 sub remove_infered_rev
 {
-    my( $rule, $arc ) = @_;
+    my( $rule, $arc, $args ) = @_;
 
     # Check subj and obj
     my $subj = $arc->subj;
@@ -594,6 +610,7 @@ sub remove_infered_rev
 				    },
 				    {
 				     implicit => 1,
+				     res => $args->{'res'},
 				    });
     }
 
@@ -610,7 +627,7 @@ Remove implicit arcs infered from this arc, part A
 
 sub remove_infered_rel
 {
-    my( $rule, $arc ) = @_;
+    my( $rule, $arc, $args ) = @_;
 
     # Check subj and obj
     my $subj = $arc->subj;
@@ -627,6 +644,7 @@ sub remove_infered_rel
 				    },
 				    {
 				     implicit => 1,
+				     res => $args->{'res'},
 				    });
     }
 
