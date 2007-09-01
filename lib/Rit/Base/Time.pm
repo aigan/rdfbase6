@@ -100,6 +100,20 @@ sub get
 
 #######################################################################
 
+=head2 new_from_db
+
+=cut
+
+sub new_from_db
+{
+    # Should parse faster since we know this is a PostgreSQL type
+    # timestamp with time zone...
+
+    return $Rit::dbix->parse_datetime($_[1], $_[0]);
+}
+
+#######################################################################
+
 1;
 
 =head1 SEE ALSO
