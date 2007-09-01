@@ -31,7 +31,7 @@ BEGIN
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( is_undef valclean truncstring );
+use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs );
 use Rit::Base::Literal::String;
 
 ### Inherit
