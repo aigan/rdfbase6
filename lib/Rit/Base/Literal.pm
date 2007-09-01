@@ -361,7 +361,7 @@ Returns: The list ( $retval, $coltype, $valtype, $args )
 
 sub extract_string
 {
-    my( $class, $val, $args_in ) = @_;
+    my( $class, $val_in, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
     my $valtype = $args->{'valtype'};
@@ -376,9 +376,14 @@ sub extract_string
 	confess "Can't determine coltype ";
     }
 
-    unless( ref $val )
+    my $val;
+    if( ref $val_in )
     {
-	$val = \$val;
+	$val = $val_in;
+    }
+    else
+    {
+	$val = \$val_in;
     }
 
     if( ref $val eq 'SCALAR' )
