@@ -123,11 +123,10 @@ sub init
      set_one         => sub{ Rit::Base::Resource->set_one(@_) },
      find_set        => sub{ Rit::Base::Resource->find_set(@_) },
      new_search      => sub{ Rit::Base::Search->new(@_) },
-     find_constants  => sub{ Rit::Base::Constants->find(@_) },
      query_desig     => \&Rit::Base::Utils::query_desig,
      C               => Rit::Base::Constants->new,
      timediff        => \&Para::Frame::Utils::timediff,
-     timeobj         => sub{ Rit::Base::Time->get( @_ ) },
+     timeobj         => sub{ Rit::Base::Literal::Time->get( @_ ) },
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
     };
     Para::Frame->add_global_tt_params( $global_params );
