@@ -5,7 +5,12 @@
 [% order = q.param('order') || 'id' %]
 [% direction = q.param('direction') %]
 
-<p>Predicate constants not showed.
+[% lables = find(label='*', is_ne=C.predicate).sorted(order, direction) %]
+
+<p>Predicate constants not showed.<br/>
+[% loc("[quant,_1,hit]", lables.size) %]<br/>
+[% lables.pagelist %]
+</p>
 
 <table>
 <tr><th>[% sort('ID','id') %]
@@ -14,7 +19,7 @@
     <th>[% sort('is', 'is.desig') %]
     <th>[% sort('scof', 'scof.desig') %]
 
-[% FOREACH c IN find_constants.find(is_ne=C.predicate).sorted(order, direction) %]
+[% FOREACH c IN lables.from_page %]
    [% tr2 %]
       <td>[% c.id %]</td>
       <td>[% jump(c.label, "$home/rb/node/update.tt", id=c.id) %]</td>
