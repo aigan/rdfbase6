@@ -2121,7 +2121,7 @@ sub reset_clean
     if( $arc->real_coltype eq 'valtext' )
     {
 	my $cleaned = valclean( $arc->{'value'} );
-	if( $arc->{'clean'} ne $cleaned )
+	if( ($arc->{'clean'}||'') ne ($cleaned||'') )
 	{
 	    debug "Updating valclean";
 	    my $dbh = $Rit::dbix->dbh;
