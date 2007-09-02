@@ -371,7 +371,14 @@ sub find_by_anything
 
 
 
-#    debug 3, "find_by_anything: $val ($coltype)";
+    if( debug )
+    {
+	debug "find_by_anything: $val ($coltype)";
+	if( $valtype )
+	{
+	    debug "  valtype ".$valtype->sysdesig;
+	}
+    }
 
     # 1. obj as object
     #
@@ -6075,6 +6082,9 @@ sub new
 
 Same as L</find_by_anything>, but returns ONE node
 
+If input is undef, will return a L<Rit::Base::Undef> rather than
+throwing an exception for an empty list.
+
 =cut
 
 sub get_by_anything
@@ -6097,6 +6107,14 @@ sub get_by_anything
 
     unless( $list->size )
     {
+	if( $args->{'coltype'} eq 'obj' )
+	{
+	    unless( $val )
+	    {
+		return is_undef;
+	    }
+	}
+
 	my $msg = "";
 	if( $req->is_from_client )
 	{
