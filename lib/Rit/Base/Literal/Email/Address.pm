@@ -22,6 +22,7 @@ Rit::Base::Email::Address
 use strict;
 use Carp qw( cluck confess longmess );
 use Mail::Address;
+use CGI;
 
 BEGIN
 {
@@ -122,10 +123,7 @@ Assumes that the value from DB is correct
 
 sub new_from_db
 {
-    my( $class, $val ) = @_;
-
-    my( $addr ) = Mail::Address->parse( $val );
-    return bless { addr => $addr }, $class;
+    return $_[0]->Para::Frame::Email::Address::new($_[1]);
 }
 
 
@@ -135,6 +133,40 @@ sub new_from_db
 =head1 Accessors
 
 =cut
+
+#######################################################################
+
+=head2 as_html
+
+  $a->as_html
+
+  $a->as_html($label_method)
+
+=cut
+
+sub as_html
+{
+    my( $a, $method ) = @_;
+    if( $a->broken )
+    {
+	my $str = $a->format;
+	return "<span style=\"color:red\">$str</a>";
+    }
+
+    my $label;
+    if( $method and $a->can($method) )
+    {
+	$label = $a->$method();
+    }
+    $label ||= $a->format;
+
+
+    my $adr = $a->address;
+    my $full = CGI->escapeHTML($label);
+
+    return "<a href=\"mailto:$adr\">$full</a>";
+}
+
 
 #######################################################################
 
@@ -151,6 +183,23 @@ sub sysdesig
 {
     my $value  = shift->format;
     return "email_address:$value";
+}
+
+
+#######################################################################
+
+=head2 desig
+
+  $a->desig()
+
+The designation of an object, to be used for node administration or
+debugging. Uses L<Para::Frame::Email::Address/desig>
+
+=cut
+
+sub desig
+{
+    return $_[0]->Para::Frame::Email::Address::desig();
 }
 
 
