@@ -894,6 +894,21 @@ sub query_desig
 		}
 	    }
 	}
+	elsif( ref $query eq 'SCALAR' )
+	{
+	    my $val = query_desig($$query, $args, $ident+1);
+	    if( $val =~ /\n.*?\n/s )
+	    {
+		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+	    }
+	    else
+	    {
+		$val =~ s/\n*$/\n/;
+		$val =~ s/\s+/ /g;
+		$val =~ s/^\s+//g;
+		$out .= '  'x$ident . $val."\n";
+	    }
+	}
 	elsif( UNIVERSAL::can($query, 'sysdesig') )
 	{
 	    my $val = $query->sysdesig( $args, $ident );
