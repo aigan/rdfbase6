@@ -35,7 +35,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim throw );
 
-use Rit::Base::Utils qw( is_undef valclean truncstring );
+use Rit::Base::Utils qw( is_undef valclean truncstring query_desig );
 
 use base qw( Rit::Base::Literal );
 
@@ -202,6 +202,16 @@ sub parse
     my( $class, $val_in, $args_in ) = @_;
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
+
+    if( $coltype eq 'obj' ) # Is this a value node?
+    {
+	if( $valtype )
+	{
+	    $coltype = $valtype->coltype;
+	}
+
+	debug "Parsing as $coltype: ".query_desig($val_in);
+    }
 
 
     if( ref $val eq 'SCALAR' )
