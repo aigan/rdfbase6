@@ -5289,7 +5289,7 @@ Use args:
 
 sub wuirc
 {
-    my( $class, $pred, $args_in ) = @_;
+    my( $range, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
     my $subj = $args->{'subj'} or confess "subj missing";
@@ -5297,7 +5297,7 @@ sub wuirc
     my $out = '';
 
     debug "Default wuirc for Resource. Pred: ". $pred->desig;
-    debug "Class: ". datadump( $class, 1 );
+    debug "Class: ". datadump( $range, 1 );
 
     my $list = $subj->arc_list( $pred->name );
 
@@ -5333,18 +5333,30 @@ sub wuirc
 	}
     }
 
+    # TODO: Skapa label/tdlabel-funktion
+    # Skapa select_in_a_tree i RB::Widget
+    # Välj inmatningstyp utefter antal rev_is.
+
     if( $args->{'multiple'} or not $list )
     {
-	$out .=
-	  Para::Frame::Widget::input('arc___subj_'. $subj->id .'__pred_'.
-				     $pred->name, '',
-				     {
-				      tdlabel     => $args->{'tdlabel'},
-				      label       => $args->{'label'},
-				      label_class => $args->{'label_class'},
-				      separator   => $args->{'separator'},
-				      id          => $args->{'id'},
-				     });
+	my $inputtype = $args->{'inputtype'} ||
+	  ( $range->rev_is->size < 25 ) ?
+	    'select' : 'text';
+
+	if( $inputtype eq 'text' )
+	{
+	    $out .=
+	      Para::Frame::Widget::input('arc___subj_'. $subj->id .'__pred_'.
+					 $pred->name, '', {});
+	}
+	elsif( $inputtype eq 'select' )
+	{
+	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range, $args );
+	}
+	else
+	{
+	    confess "Unknown input type: $inputtype";
+	}
     }
 
     return $out;
