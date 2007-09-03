@@ -100,7 +100,7 @@ sub new_from_db
     # Should parse faster since we know this is a PostgreSQL type
     # timestamp with time zone...
 
-    return $Rit::dbix->parse_datetime($_[1], $_[0]);
+    return $Rit::dbix->parse_datetime($_[1], $_[0])->init;
 }
 
 #######################################################################
