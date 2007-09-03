@@ -459,9 +459,9 @@ sub cmp_numeric
 
   $lit->loc(@args)
 
-Return the value, since only one exists.
-
 Uses the args in L<Para::Frame::L10N/compile>.
+
+Returns: the value as a plain string
 
 =cut
 

@@ -877,7 +877,7 @@ Params are given to L<Para::Frame::L10N/compute>.
 The language priority should have been set by
 L<Para::Frame::Resource/set_language> for the request.
 
-Returns: A string
+Returns: A plain string
 
 =cut
 

@@ -15,7 +15,7 @@ package Rit::Base::Literal::Email::Address;
 
 =head1 NAME
 
-Rit::Base::Email::Address
+Rit::Base::Literal::Email::Address
 
 =cut
 
