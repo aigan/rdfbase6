@@ -33,6 +33,9 @@ use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs );
 use Rit::Base::Literal::String;
+use Rit::Base::Literal::Time;
+use Rit::Base::Literal::URL;
+use Rit::Base::Literal::Email::Address;
 
 ### Inherit
 #
