@@ -430,7 +430,10 @@ sub create
 	$props->{'active'} = 0;
     }
 
-    if( $props->{'active'} )
+    # Always handle activation of replacing arcs after the creation
+    # This includes removal arcs
+    #
+    if( $props->{'active'} and not $props->{'replaces'} )
     {
 	$rec->{'active'} = 1;
 	push @values, 't';
@@ -454,7 +457,11 @@ sub create
     push @fields, 'submitted';
     if( $props->{'submitted'} )
     {
-	if( $rec->{'active'} )
+	# Checking for props instead of $rec->{active} since we may be
+	# planning to activate after creation in case of
+	# $props->{'replaces'}
+	#
+	if( $props->{'active'} )
 	{
 	    confess "Arc can't be both active and submitted: ".query_desig($props);
 	}
@@ -699,7 +706,15 @@ sub create
     $sth->execute( @values );
 
     my $arc = $this->get_by_rec($rec, $subj, $value_obj );
-    debug "Created arc id ".$arc->sysdesig;
+
+    # If the arc was requested to be cerated active, but wasn't
+    # becasue it was replacing another arc, we will activate it now
+
+    if( $props->{'active'} and not $arc->active )
+    {
+	$arc->activate;
+    }
+
 
     # Sanity check
     if( $subj and $subj->id != $arc->subj->id )
@@ -710,6 +725,10 @@ sub create
     {
 	confess "Creation of arc arc->{id} resulted in confused value: ".datadump($value_obj,2).datadump($arc->value,2);
     }
+
+
+    debug "Created arc id ".$arc->sysdesig;
+
 
     ######## Has not been done by get_by_rec.
     ##
@@ -2908,7 +2927,6 @@ sub set_value
 	    my $new = Rit::Base::Arc->create({
 					      common      => $arc->common_id,
 					      replaces    => $arc->id,
-					      active      => 0,
 					      subj        => $arc->{'subj'},
 					      pred        => $arc->{'pred'},
 					      value       => $value_new,
