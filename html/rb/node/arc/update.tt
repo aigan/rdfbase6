@@ -18,7 +18,8 @@
 
 [% IF arc.is_arc %]
 
-[% hidden('id', arc.subj.id) %]
+[% subj = arc.subj %]
+[% hidden('id', subj.id) %]
 [% hidden('arc_id', arc.id)  %]
 
 [% IF arc.inactive %]
@@ -39,9 +40,10 @@
 
 <table class='admin'>
 <tr>
-   <td>[% jump('Subj', '../update.tt', id=arc.subj.id) %]</td>
-[%# warn(dump(arc.subj)) %]
-   <td><code>[% arc.subj.sysdesig | html %]</code></td>
+   <td>[% jump('Subj', '../update.tt', id=subj.id) %]
+</td>
+
+   <td><code>[% subj.wu_jump(label=subj.sysdesig) %]</code></td>
 </tr>
 
 [% IF arc.indirect %]
@@ -223,12 +225,12 @@
    [% END %]
    [% UNLESS arc.deactivated %]
       &nbsp;
-      [% go("Delete", arc.subj.form_url, 'arc_edit', remove=1) %]
+      [% go("Delete", subj.form_url, 'arc_edit', remove=1) %]
    [% END %]
 [% ELSE %]
    [% step("Save as a new version") %]
    &nbsp;
-   [% go("Delete", arc.subj.form_url, 'arc_edit', remove=1) %]
+   [% go("Delete", subj.form_url, 'arc_edit', remove=1) %]
 [% END %]
 [% IF u.has_root_access %]
    [% hidden('force',0) %]
