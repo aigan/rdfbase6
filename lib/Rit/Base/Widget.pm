@@ -461,7 +461,6 @@ sub wub_image
 
     my $out = "";
     my $R = Rit::Base->Resource;
-    my $q = $Para::Frame::REQ->q;
 
     my $subj = $args->{'subj'} or confess "subj missing";
     my $multiple = $args->{'multiple'};
@@ -484,6 +483,99 @@ sub wub_image
 	    $out .= filefield("arc___file_image__pred_${pred}__subj_${subj_id}__maxw_${maxw}__maxh_${maxh}");
 	}
     }
+
+    return $out;
+}
+
+
+#######################################################################
+
+=head2 wub_select_tree
+
+Display a select for a resource; a new select for its rev_scof and so
+on until you've chosen one that has no scofs.
+
+To be used for preds with range_scof.
+
+=cut
+
+sub wub_select_tree
+{
+    my( $pred_name, $type, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+
+    my $subj = $args->{'subj'} or confess "subj missing";
+    my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
+
+    $out .= '<select name="parameter_in_value"><option rel="nop-'.
+      $type->id .'"/>';
+
+    my $subtypes = $type->revlist('scof', undef, 'direct');
+    while( my $subtype = $subtypes->get_next_nos )
+    {
+	$out .= '<option rel="'. $subtype->id .'"';
+
+	$out .= ' value="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
+	  $pred_name .'='. $subtype->id .'"'
+	    unless( $subtype->rev_scof );
+
+	$out .= ' selected="selected"'
+	  if( $subj->prop( $pred_name, $subtype ) );
+
+	$out .= '>'. ( $subtype->name_short->loc || $subtype->name->loc ) .'</option>';
+    }
+    $out .= '</select>';
+
+    # TODO: Recurse for all subtypes, make rel-divs etc...
+
+    return $out;
+}
+
+
+#######################################################################
+
+=head2 wub_select
+
+Display a select of everything that is -> $type
+
+=cut
+
+sub wub_select
+{
+    my( $pred_name, $type, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+
+    my $subj = $args->{'subj'} or confess "subj missing";
+    my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
+    my $arc = ( $args->{'arc_id'} ? get($args->{'arc_id'}) : undef );
+    my $header = $args->{'header'};
+
+    $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
+      $pred_name .'">';
+
+    $out .= '<option value "">'. $header .'</option>'
+      if( $header );
+
+    my $items = $type->revlist('is', undef, 'direct');
+    confess( "Trying to make a select of ". $items->size .".  That's not wise." )
+      if( $items->size > 60 );
+
+    while( my $item = $items->get_next_nos )
+    {
+	$out .= '<option value="'. $item->id .'"';
+
+	$out .= ' selected="selected"'
+	  if( $subj->prop( $pred_name, $item ) );
+
+	$out .= '>'. ( $item->name_short->loc || $item->name->loc || $item->label ) .'</option>';
+    }
+    $out .= '</select>';
 
     return $out;
 }
