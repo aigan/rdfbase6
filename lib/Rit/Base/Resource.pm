@@ -131,6 +131,8 @@ Returns:
 
 a node object
 
+If called with undef value, returns undef without exception
+
 Exceptions:
 
 See L</get_by_anything> then called with anything but $id
@@ -3597,6 +3599,8 @@ probably a lone literal resource.
 
 Used by L<Rit::Base::List/loc>.
 
+Returns: A plain string
+
 =cut
 
 sub loc
@@ -5226,8 +5230,11 @@ Returns: a HTML link to a form form updating the node
 sub wu_jump
 {
     my( $node, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
-    return Para::Frame::Widget::jump($node->desig,
+    my $label = $args->{'label'} || $node->desig;
+
+    return Para::Frame::Widget::jump($label,
 				     $node->form_url($args_in));
 }
 
@@ -5250,7 +5257,7 @@ sub wun_jump
     my $url = URI->new('rb/node/update.tt')->abs($base);
     $url->query_form([id=>$node->id]);
 
-    return Para::Frame::Widget::jump('(Node)', $url);
+    return Para::Frame::Widget::jump('Node', $url);
 }
 
 
