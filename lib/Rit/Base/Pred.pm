@@ -455,6 +455,11 @@ sub on_arc_add
 
     if( $pred_name eq 'range' )
     {
+	# Update cache first
+	#$Rit::Base::COLTYPE_valtype2name{ $valtype_id }
+
+
+
 	$pred->set_coltype_from_range;
     }
 }
@@ -484,7 +489,7 @@ sub set_coltype_from_range
 
 =head2 set_coltype
 
-  $n->set_coltype($coltype)
+  $n->set_coltype( $coltype_id )
 
 =cut
 
