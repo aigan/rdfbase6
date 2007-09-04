@@ -5363,7 +5363,7 @@ sub wuirc
 
     my $list = $subj->arc_list( $pred->name );
     my $arc_type = $args->{'arc_type'};
-    my $singular = ($arc_type eq 'singular') ? 1 : undef;
+    my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
 
     debug "Singular." if $singular;
 

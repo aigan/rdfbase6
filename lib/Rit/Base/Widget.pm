@@ -579,7 +579,7 @@ sub wub_select
 
     my $header = $args->{'header'};
     my $subj = $args->{'subj'} or confess "subj missing";
-    my $singular = ($args->{'arc_type'} eq 'singular') ? 1 : undef;
+    my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
       $singular ? 'singular' : '';
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
