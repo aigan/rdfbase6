@@ -44,6 +44,7 @@ use Rit::Base::Node;
 use Rit::Base::Search;
 use Rit::Base::List;
 use Rit::Base::Arc;
+use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
 use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Literal::String;
@@ -51,9 +52,11 @@ use Rit::Base::Pred;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate $C_class );
 use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
+
+use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
+                             $C_class $C_literal_class );
 
 use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_form_field_prop is_undef arc_lock
@@ -676,7 +679,7 @@ sub find
 
     my( $args ) = parse_propargs($args_in);
 
-    ## Default attrs
+    ## Default criterions
     my $default = $args->{'default'} || {};
     foreach my $key ( keys %$default )
     {
@@ -706,10 +709,10 @@ sub find
 					});
     $search->modify($query, $args);
 
-#    if( $query->{'subj'} )
-#    {
-#	debug "find arcst:\n".query_desig($query);
-#    }
+    if( $query->{'label'} )
+    {
+	debug "find label:\n".query_desig($query);
+    }
 
     $search->execute($args);
 
@@ -925,8 +928,8 @@ sub find_one
   $n->find_set( $query, \%args )
 
 Finds the nodes matching $query, as would L</find_one>.  But if no
-node are found, one is created using the C<$query> and C<$default> as
-properties.
+node are found, one is created using the C<$query> and
+C<default_create> as properties.
 
 Supported args are
 
@@ -2291,7 +2294,7 @@ sub first_prop
     $node->initiate_prop( $name, $proplim, $args );
 
 
-    # NOTTE: We should make sure that if a relarc key exists, that the
+    # NOTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
 
@@ -4759,10 +4762,10 @@ sub construct_proplist
 
     my $props_out = {};
 
-    foreach my $pred ( keys %$props_in )
+    foreach my $pred_name ( keys %$props_in )
     {
 	# Not only objs
-	my $vals = Para::Frame::List->new_any( $props_in->{$pred} );
+	my $vals = Para::Frame::List->new_any( $props_in->{$pred_name} );
 
 	# Only those alternatives. Not other objects based on ARRAY,
 
@@ -4795,11 +4798,12 @@ sub construct_proplist
 	    }
 	    else
 	    {
-		$val = Rit::Base::Literal->new( $val );
+		$val = Rit::Base::Pred->get_by_label($pred_name)->valtype->literal_class->new( $val );
+#		$val = Rit::Base::Literal->new( $val );
 	    }
 	}
 
-	$props_out->{$pred} = $vals;
+	$props_out->{$pred_name} = $vals;
     }
 
     return $props_out;
@@ -4890,7 +4894,8 @@ sub equals
 	else
 	{
 #	    die "not implemented: $node2";
-	    die "not implemented: ".datadump($node2);
+	    debug "While comparing $node->{id} with other";
+	    confess "not implemented: ".datadump($node2);
 	}
     }
 
@@ -5595,6 +5600,10 @@ valtype.
 Checks if the resource has a property C<is> to a class that has the
 property C<class_handled_by_perl_module>.
 
+The classes C<literal_class>, C<arc> and C<pred> and C<Rule> are
+handled as special cases in order to avoid bootstrap problems. Of
+these, handling of C<literal_class> is needed in this method.
+
 This tells that the resource object should be blessd into the class
 represented bu the object pointed to by
 C<class_handled_by_perl_module>.  The package name is given by the
@@ -5632,6 +5641,11 @@ sub find_class
     my @classes;
     foreach my $elem ($islist->as_array)
     {
+	if( $elem->{'id'} == $Rit::Base::Literal::Class::id )
+	{
+	    return "Rit::Base::Literal::Class";
+	}
+
 #	debug "Looking at is ".$elem->sysdesig;
 	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
@@ -5664,8 +5678,12 @@ sub find_class
     elsif( $classes[0] )
     {
 	no strict "refs";
-	my $classname = $classes[0]->first_prop('code')->plain
-	  or confess "No classname found for class $classes[0]->{id}";
+	my $classname = $classes[0]->first_prop('code')->plain;
+	unless( $classname )
+	{
+	    debug datadump($classes[0],2);
+	    confess "No classname found for class $classes[0]->{id}";
+	}
 	require(package_to_module($classname));
 
 	my $metaclass = "Rit::Base::Metaclass::$classname";
@@ -5792,7 +5810,7 @@ sub code_class_desig
 
 =head2 rebless
 
-  $node->rebless()
+  $node->rebless( \%args )
 
 Called by L<Rit::Base::Arc/create_check> and
 L<Rit::Base::Arc/remove_check> for updating the blessing of the
@@ -5818,7 +5836,7 @@ Returns: the resource object
 
 sub rebless
 {
-    my( $node ) = @_;
+    my( $node, $args_in ) = @_;
 
     my $class_old = ref $node;
     my $class_new = $node->find_class;
@@ -5850,7 +5868,7 @@ sub rebless
 
 			if( my $method = $class_old->can("on_unbless") )
 			{
-			    &{$method}($node, $class_new);
+			    &{$method}($node, $class_new, $args_in);
 			}
 		    }
 		}
@@ -5864,7 +5882,7 @@ sub rebless
 		    {
 			if( my $method = $class_old_real->can("on_unbless") )
 			{
-			    &{$method}($node, $class_new);
+			    &{$method}($node, $class_new, $args_in);
 			}
 		    }
 		}
@@ -5887,13 +5905,13 @@ sub rebless
 
 		    if( my $method = $class_old->can("on_unbless") )
 		    {
-			&{$method}($node, $class_new);
+			&{$method}($node, $class_new, $args_in);
 		    }
 		}
 	    }
 	    else
 	    {
-		$node->on_unbless( $class_new );
+		$node->on_unbless( $class_new, $args_in );
 	    }
 	}
 
@@ -5922,7 +5940,7 @@ sub rebless
 
 			if( my $method = $class_new_real->can("on_bless") )
 			{
-			    &{$method}($node, $class_old);
+			    &{$method}($node, $class_old, $args_in);
 			}
 		    }
 		}
@@ -5936,7 +5954,7 @@ sub rebless
 		    {
 			if( my $method = $class_new->can("on_bless") )
 			{
-			    &{$method}($node, $class_old);
+			    &{$method}($node, $class_old, $args_in);
 			}
 		    }
 		}
@@ -5953,14 +5971,14 @@ sub rebless
 		    {
 			if( my $method = $class_new_real->can("on_bless") )
 			{
-			    &{$method}($node, $class_old);
+			    &{$method}($node, $class_old, $args_in);
 			}
 		    }
 		}
 	    }
 	    else
 	    {
-		$node->on_bless( $class_old );
+		$node->on_bless( $class_old, $args_in );
 	    }
 	}
     }
@@ -5973,7 +5991,7 @@ sub rebless
 
 =head2 on_unbless
 
-  $node->on_unbless( $class_new )
+  $node->on_unbless( $class_new, \%args )
 
 See L</rebless>
 
@@ -5995,7 +6013,7 @@ sub on_unbless
 
 =head2 on_bless
 
-  $node->on_bless( $class_old )
+  $node->on_bless( $class_old, \%args )
 
 See L</rebless>
 
@@ -6017,7 +6035,7 @@ sub on_bless
 
 =head2 on_arc_add
 
-  $node->on_arc_add( $arc, $pred_name )
+  $node->on_arc_add( $arc, $pred_name, \%args )
 
 Called by L<Rit::Base::Arc/create_check>. This is called after the arc
 has been created and after other arcs has been created by inference
@@ -6043,7 +6061,7 @@ sub on_arc_add
 
 =head2 on_arc_del
 
-  $node->on_arc_del( $arc, $pred_name )
+  $node->on_arc_del( $arc, $pred_name, \%args )
 
 Called by L<Rit::Base::Arc/remove_check> that is called by
 L<Rit::Base::Arc/remove> just after we know that the arc is going to
@@ -6657,6 +6675,13 @@ sub initiate_rel
 
     my $nid = $node->id;
 
+    debug "initiating $nid";
+    if( $nid == 5129647 )
+    {
+	confess "Initiating rel for 5129647";
+    }
+
+
     if( $arclim->size )
     {
 #	debug "Initiating node $nid rel with arclim";
@@ -6979,6 +7004,7 @@ sub initiate_prop
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
+
     unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource::Compatible' )
     {
 	confess "Not a resource: ".datadump($node);
@@ -7018,6 +7044,11 @@ sub initiate_prop
     if( $active )
     {
 	$node->{'initiated_relprop'}{$name} = 1;
+    }
+
+    if( $node->{'id'} == 5129647 )
+    {
+	debug "***** Initiating 5129647 prop $name";
     }
 
 #    debug "Initiating(2) prop $name for $node->{id}";
@@ -7100,6 +7131,11 @@ sub initiate_prop
     else
     {
 	debug "* prop $name does not exist!";
+    }
+
+    if( $node->{'id'} == 5129647 )
+    {
+	debug "***** Initiating 5129647 prop $name - DONE";
     }
 
     # Keeps key nonexistent if nonexistent
@@ -7513,7 +7549,7 @@ sub coltype
 #	confess "The node $id is not a class";
 #    }
 
-    return $Rit::Base::COLTYPE_valtype2name{ $id } || 'obj';
+    return Rit::Base::Literal::Class->coltype_by_valtype_id( $id ) || 'obj';
 }
 
 
