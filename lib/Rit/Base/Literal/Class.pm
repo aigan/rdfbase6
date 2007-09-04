@@ -49,7 +49,7 @@ our %COLTYPE_num2name =
 
 our %COLTYPE_name2num;
 
-our %COLTYPE_valtype2name; # Initiated in Rit::Base::Constants
+our %COLTYPE_valtype2name;
 
 our $id; # Node id
 
@@ -125,15 +125,16 @@ sub on_startup
 
 #######################################################################
 
-=head2 on_bless
+=head2 set_valtype2name
 
 =cut
 
-sub on_bless
+sub set_valtype2name
 {
-    my( $node, $class_old, $args_in ) = @_;
+    my( $node ) = @_;
 
     my $scofs = $node->list('scof');
+    my $found = 0;
     while( my $parent = $scofs->get_next_nos )
     {
 	my $label = $parent->label;
@@ -147,10 +148,49 @@ sub on_bless
 		debug sprintf "Adding valtype %d -> %s in coltype cache",
 		  $node->id, $label;
 	    }
+	    $found ++;
 	    last;
 	}
     }
+
+    unless( $found )
+    {
+	if( my $label = $node->label )
+	{
+	    if( $COLTYPE_name2num{$label} )
+	    {
+		$COLTYPE_valtype2name{ $node->id } = $label;
+		if( debug )
+		{
+		    debug sprintf "Adding valtype %d -> %s in coltype cache",
+		      $node->id, $label;
+		}
+		$found ++;
+	    }
+	}
+    }
+
+    unless( $found )
+    {
+	debug sprintf "Removing valtype %d -> %s in coltype cache",
+	  $node->id, $COLTYPE_valtype2name{ $node->id };
+	delete $COLTYPE_valtype2name{ $node->id };
+    }
 }
+
+
+#######################################################################
+
+=head2 on_bless
+
+=cut
+
+sub on_bless
+{
+    my( $node, $class_old, $args_in ) = @_;
+    $node->set_valtype2name();
+}
+
 
 #######################################################################
 
@@ -161,15 +201,43 @@ sub on_bless
 sub on_unbless
 {
     my( $node, $class_new, $args_in ) = @_;
+    $node->set_valtype2name();
+}
 
-    delete $COLTYPE_valtype2name{ $node->id };
 
-    if( debug )
+#######################################################################
+
+=head2 on_arc_add
+
+=cut
+
+sub on_arc_add
+{
+    my( $node, $arc, $pred_name, $args_in ) = @_;
+
+    if( $pred_name eq 'scof' )
     {
-	debug sprintf "Removing valtype %d from coltype cache",
-	  $node->id;
+	$node->set_valtype2name();
     }
 }
+
+
+#######################################################################
+
+=head2 on_arc_del
+
+=cut
+
+sub on_arc_del
+{
+    my( $node, $arc, $pred_name, $args_in ) = @_;
+
+    if( $pred_name eq 'scof' )
+    {
+	$node->set_valtype2name();
+    }
+}
+
 
 ######################################################################
 
@@ -210,6 +278,24 @@ Rit::Base::Literal::Class->coltype_id_by_coltype( $id )
 sub coltype_id_by_coltype
 {
     return $COLTYPE_name2num{ $_[1] };
+}
+
+
+#########################################################################
+
+=head2 coltype
+
+  $n->coltype()
+
+For getting the coltype corresponding to this valtype.
+
+Defaults to C<obj>.
+
+=cut
+
+sub coltype
+{
+    return $COLTYPE_valtype2name{ $_[0]->id } || 'obj';
 }
 
 
