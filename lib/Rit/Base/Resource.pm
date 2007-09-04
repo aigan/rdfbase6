@@ -5322,6 +5322,14 @@ sub wuirc
 
     debug "Singular." if $singular;
 
+    $out .= Para::Frame::Widget::label_from_params({
+			       label       => delete $args->{'label'},
+			       tdlabel     => delete $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => delete $args->{'label_class'},
+			      });
+
     if( $list and not $singular )
     {
 	$out .= '<ul>'
@@ -5354,11 +5362,7 @@ sub wuirc
 	}
     }
 
-    # TODO: Skapa label/tdlabel-funktion
-    # Skapa select_in_a_tree i RB::Widget
-    # Välj inmatningstyp utefter antal rev_is.
-
-    if( $singular or not $list )
+    if( not $singular or not $list )
     {
 	my $is_pred = ( $is_scof ? 'scof' : 'is' );
 	my $inputtype = $args->{'inputtype'} ||

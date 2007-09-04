@@ -122,8 +122,6 @@ sub wub
     my $rows = $args->{'rows'};
     my $maxw = $args->{'maxw'};
     my $maxh = $args->{'maxh'};
-    my $tdlabel = $args->{'tdlabel'};
-    my $label = $args->{'label'};
 
     $out .= label_from_params({
 			       label       => $args->{'label'},
