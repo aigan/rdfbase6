@@ -68,7 +68,7 @@ our %UNSAVED;
 
 ### Inherit
 #
-use base qw( Rit::Base::Node Rit::Base::Resource::Compatible );
+use base qw( Rit::Base::Node );
 
 =head1 DESCRIPTION
 
@@ -157,7 +157,7 @@ sub get
     #
     if( $val_in !~ /^\d+$/ )
     {
-	if( ref $val_in and UNIVERSAL::isa($val_in, 'Rit::Base::Resource::Compatible') )
+	if( ref $val_in and UNIVERSAL::isa($val_in, 'Rit::Base::Resource') )
 	{
 	    # This already is a (node?) obj
 #	    debug "Got     $id";
@@ -376,7 +376,7 @@ sub find_by_anything
 
 
 
-    if( debug )
+    if( debug > 1 )
     {
 	debug "find_by_anything: $val ($coltype)";
 	if( $valtype )
@@ -387,7 +387,7 @@ sub find_by_anything
 
     # 1. obj as object
     #
-    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource::Compatible') )
+    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource') )
     {
 	debug 3, "  obj as object";
 	push @new, $val;
@@ -691,7 +691,7 @@ sub find
 
     if( ref $this )
     {
-	if( UNIVERSAL::isa($this, 'Rit::Base::Resource::Compatible') )
+	if( UNIVERSAL::isa($this, 'Rit::Base::Resource') )
 	{
 	    $this = Rit::Base::List->new([$this]);
 	}
@@ -709,10 +709,10 @@ sub find
 					});
     $search->modify($query, $args);
 
-    if( $query->{'label'} )
-    {
-	debug "find label:\n".query_desig($query);
-    }
+#    if( $query->{'label'} )
+#    {
+#	debug "find label:\n".query_desig($query);
+#    }
 
     $search->execute($args);
 
@@ -1806,7 +1806,7 @@ sub list
     my( $node, $name, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource::Compatible' )
+    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
     {
 	confess "Not a resource: ".datadump($node);
     }
@@ -4386,7 +4386,7 @@ sub update
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
-	my $old = $node->arc_list( $pred_name, undef, $args );
+	my $old = $node->arc_list( $pred_name, undef, aais($args,'explicit') );
 	push @arcs_old, $old->as_array;
     }
 
@@ -4456,9 +4456,10 @@ sub replace
 
     foreach my $arc ( $oldarcs->as_array )
     {
-	my $val_str = valclean( $arc->value->syskey );
+#	my $val_str = valclean( $arc->value->syskey );
+	my $val_str = $arc->value->syskey;
 
-	debug 3, "    old val: $val_str (".$arc->value.")";
+	debug 3, "  old val: $val_str (".$arc->sysdesig.")";
 	$del{$arc->pred->plain}{$val_str} = $arc;
     }
 
@@ -4491,7 +4492,8 @@ sub replace
 							   coltype => $coltype,
 							  });
 
-	    my $val_str = valclean( $val->syskey );
+#	    my $val_str = valclean( $val->syskey );
+	    my $val_str = $val->syskey;
 
 	    debug 3, "    new val: '$val_str' (".$val.")";
 
@@ -4522,6 +4524,10 @@ sub replace
     # in %del_pred and keeps the arc that should be removed in
     # %del
 
+    # But the new value may also infere the old value. If the old
+    # value is going to be infered, we should not replace it, but
+    # rather add the new value.
+
     foreach my $pred_name ( keys %del )
     {
 	foreach my $arc_key ( keys %{$del{$pred_name}} )
@@ -4535,15 +4541,20 @@ sub replace
     # %del_pred holds a list of keys above. Below, we replaces it
     # with unique arcs.
 
+    debug 3, "See if existing arc should be replaced";
+
     foreach my $pred_name (keys %del_pred)
     {
+	debug 3, "  $pred_name";
 	if( @{$del_pred{$pred_name}} > 1 )
 	{
+	    debug 3, "    had more than one arc";
 	    delete $del_pred{$pred_name};
 	}
 	else
 	{
 	    my $arc_key = $del_pred{$pred_name}[0];
+	    debug "  Considering $pred_name arc $arc_key";
 	    $del_pred{$pred_name} = delete $del{$pred_name}{$arc_key};
 	}
     }
@@ -4556,12 +4567,46 @@ sub replace
     {
 	foreach my $key ( keys %{$add{$pred_name}} )
 	{
-	    debug 3, "    now adding $key";
+	    debug 3, "  now adding $key";
 	    my $value = $add{$pred_name}{$key};
 
 	    if( $del_pred{$pred_name} )
 	    {
-		$del_pred{$pred_name}->set_value($value, $args);
+		# See if the new value is going to infere the old
+		# value. Do this by first creating the new arc. And IF
+		# the old arc gets infered, keep it. If not, we make
+		# the new arc be a replacement of the old arc.
+
+		my $arc = $del_pred{$pred_name};
+
+
+		my $new = Rit::Base::Arc->
+		  create({
+			  subj        => $arc->subj->id,
+			  pred        => $arc->pred->id,
+			  value       => $value,
+			  active      => 0, # Activate later
+			 }, $args );
+
+
+		debug 3, "  should we replace $arc->{id}?";
+		if( $arc->direct )
+		{
+		    debug 3, "    yes!";
+		    $new->set_replaces( $arc, $args );
+		}
+		else
+		{
+		    debug 3, "    no!";
+		}
+
+		if( $args->{'activate_new_arcs'} )
+		{
+		    # Will deactivate replaced arc
+		    $new->submit($args) unless $new->submitted;
+		    $new->activate( $args );
+		}
+
 		delete $del_pred{$pred_name};
 	    }
 	    else
@@ -4579,18 +4624,18 @@ sub replace
     {
 	foreach my $key ( keys %{$del{$pred_name}} )
 	{
-	    debug 3, "    now removing $key";
+	    debug 3, "  now removing $key";
 	    $del{$pred_name}{$key}->remove( $args );
 	}
     }
 
     foreach my $pred_name ( keys %del_pred )
     {
-	debug 3, "    now removing other $pred_name";
+	debug 3, "  now removing other $pred_name";
 	$del_pred{$pred_name}->remove( $args );
     }
 
-    debug 3, "  -- done";
+    debug 3, "-- done";
     return $res->changes - $changes_prev;
 }
 
@@ -4786,7 +4831,7 @@ sub construct_proplist
 		{
 		    # OK
 		}
-		elsif( UNIVERSAL::isa($val, 'Rit::Base::Resource::Compatible') )
+		elsif( UNIVERSAL::isa($val, 'Rit::Base::Resource') )
 		{
 		    # OK
 		}
@@ -4859,7 +4904,7 @@ sub equals
 
     if( ref $node2 )
     {
-	if( UNIVERSAL::isa $node2, 'Rit::Base::Resource::Compatible' )
+	if( UNIVERSAL::isa $node2, 'Rit::Base::Resource' )
 	{
 	    return( ($node->id == $node2->id) ? 1 : 0 );
 	}
@@ -5461,7 +5506,7 @@ sub arcversions
 #    debug "In arcversions for $predname for ".$node->sysdesig;
 
     return #probably new...
-      unless( UNIVERSAL::isa($node, 'Rit::Base::Resource::Compatible') );
+      unless( UNIVERSAL::isa($node, 'Rit::Base::Resource') );
 
 
     #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
@@ -5712,7 +5757,7 @@ sub find_class
 
   $node->first_bless( @init_params )
 
-Used by L</get> and L<Rit::Base::Lazy::AUTOLOAD>.
+Used by L</get>
 
 Uses C<%Rit::Base::LOOKUP_CLASS_FOR>
 
@@ -7009,7 +7054,7 @@ sub initiate_prop
     my( $active, $inactive ) = $arclim->incl_act;
 
 
-    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource::Compatible' )
+    unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
     {
 	confess "Not a resource: ".datadump($node);
     }
