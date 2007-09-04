@@ -510,6 +510,14 @@ sub wub_select_tree
     my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
     my $arc;
 
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
 
@@ -580,6 +588,14 @@ sub wub_select
 
     $arc ||= $subj->arc( $pred_name )
       if( $singular );
+
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
       $pred_name .'__if_subj">';
