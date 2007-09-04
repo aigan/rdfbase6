@@ -33,7 +33,7 @@ use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Constants;
 use Rit::Base::Resource;
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( is_undef parse_propargs );
 
 use base qw( Rit::Base::Resource );
 
@@ -107,17 +107,15 @@ sub on_startup
     #################### CREATION
     unless( $id )
     {
-	Rit::Base::Resource->create
-	    ({
-	      label => 'literal_class',
-	      scof => $class,
-	      is => $class,
-	     });
+	my( $args, $arclim, $res ) = parse_propargs('auto');
+	my $req = Para::Frame::Request->new_bgrequest();
+	$req->user->set_default_propargs({activate_new_arcs => 1 });
+
+	my $lc = Rit::Base::Resource->get('new');
+	$id = $lc->id;
+	$lc->set_label('literal_class');
+	Rit::Base::Resource->commit;
     }
-
-
-
-
 
 
     $Rit::Base::Constants::Label{'literal_class'} =
