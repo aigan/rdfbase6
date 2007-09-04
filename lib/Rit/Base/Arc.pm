@@ -2015,7 +2015,7 @@ sub deactivate
     #
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
-    $arc->initiate_cache;
+#    $arc->initiate_cache; ### not needed
     $arc->remove_check($args);
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -3016,7 +3016,7 @@ sub set_value
 	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
 	$arc->subj->initiate_cache;
-	$arc->initiate_cache;
+#	$arc->initiate_cache; # not needed
 	# $arc->obj->initiate_cache # IS CALLED ABOVE
 
 	$value_old->set_arc(undef);
@@ -3328,7 +3328,7 @@ sub activate
     #
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
-    $arc->initiate_cache;
+#    $arc->initiate_cache;  ### Not needed. And reads from DB...
 
     # If this is not a removal and we have another active arc, it must
     # be deactivated
