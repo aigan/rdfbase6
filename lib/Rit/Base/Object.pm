@@ -33,8 +33,6 @@ use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Undef;
 
-use base qw( Rit::Base::Object::Compatible );
-
 
 =head1 DESCRIPTION
 

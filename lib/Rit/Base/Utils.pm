@@ -563,7 +563,7 @@ sub parse_query_prop
 
 	foreach( @values )
 	{
-	    if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource::Compatible') )
+	    if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource') )
 	    {
 		# Getting node id
 		$_ = $_->id;
@@ -596,7 +596,7 @@ sub parse_query_prop
 	    my @new;
 	    foreach my $val ( @values )
 	    {
-		if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Object::Compatible' ) )
+		if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Object' ) )
 		{
 		    unless( $val->defined )
 		    {
@@ -606,7 +606,7 @@ sub parse_query_prop
 
 		if( defined $val and length $val )
 		{
-		    push @new, Rit::Base::Resource->resolve_obj_id( $val );
+		    push @new, Rit::Base::Resource->get( $val )->id;
 		}
 		else
 		{
