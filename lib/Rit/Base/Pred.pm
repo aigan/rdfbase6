@@ -474,13 +474,18 @@ sub set_coltype_from_range
 {
     my( $pred ) = @_;
 
+    debug "Setting coltype from range for pred $pred->{id}";
     if( my $range = $pred->range )
     {
+	debug "  Range is $range->{id}";
 	my $valtype_id = $range->id;
 	my $coltype = Rit::Base::Literal::Class->
-	  coltype_by_valtype_id( $valtype_id ) || 'obj';
+	  coltype_by_valtype_id( $valtype_id );
+	debug "  found coltype $coltype";
+	$coltype ||= 'obj';
 	my $coltype_id = Rit::Base::Literal::Class->
 	  coltype_id_by_coltype( $coltype );
+	debug "  setting coltype id to $coltype_id";
 	$pred->set_coltype( $coltype_id );
     }
 }
