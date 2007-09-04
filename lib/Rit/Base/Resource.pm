@@ -5698,6 +5698,16 @@ sub find_class
 #	debug "Looking at is ".$elem->sysdesig;
 	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
+	    # Let confident classes handle themself
+	    if( UNIVERSAL::can($class, 'use_class') )
+	    {
+		# Should only be for classes that never should be
+		# metaclasses
+		#
+		return $class->use_class;
+	    }
+
+
 #	    debug "  Handled by $class";
 	    push @classes, $class;
 	}
