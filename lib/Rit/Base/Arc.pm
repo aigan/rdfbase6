@@ -38,6 +38,7 @@ use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
+use Para::Frame::Logging;
 
 use Rit::Base::List;
 use Rit::Base::Pred;
@@ -181,9 +182,8 @@ sub create
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
 
-    # Start at level 3...
-    my $DEBUG = debug();
-    $DEBUG and $DEBUG --; $DEBUG and $DEBUG --;
+#    Para::Frame::Logging->this_level(1);
+    my $DEBUG = Para::Frame::Logging->at_level(3);
 
     # Clean props from array form
 
@@ -536,7 +536,7 @@ sub create
 
 	    if( $coltype eq 'obj' )
 	    {
-		if( UNIVERSAL::isa($value, 'Rit::Base::Resource::Compatible' ) )
+		if( UNIVERSAL::isa($value, 'Rit::Base::Resource' ) )
 		{
 		    # All good
 		}
@@ -547,7 +547,7 @@ sub create
 	    }
 	    else
 	    {
-		if( UNIVERSAL::isa($value, 'Rit::Base::Resource::Compatible' ) )
+		if( UNIVERSAL::isa($value, 'Rit::Base::Resource' ) )
 		{
 		    confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
 		}
@@ -563,7 +563,7 @@ sub create
 	    if( $coltype eq 'obj' )
 	    {
 		debug "Getting the id for the object by the name '$value'\n" if $DEBUG;
-		( $value ) = $this->resolve_obj_id( $value );
+		( $value ) = $this->get( $value )->id;
 	    }
 	    elsif( $coltype eq 'valdate' )
 	    {
@@ -842,7 +842,7 @@ sub obj
 {
     my( $arc ) = @_;
 
-    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' ) )
+    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource' ) )
     {
 	return $arc->{'value'};
     }
@@ -1800,7 +1800,7 @@ L<Rit::Base::Resource/is_value_node>.
 
 sub realy_objtype
 {
-    return 1 if UNIVERSAL::isa( $_[0]->{'value'}, 'Rit::Base::Resource::Compatible' );
+    return 1 if UNIVERSAL::isa( $_[0]->{'value'}, 'Rit::Base::Resource' );
 
     unless( defined $_[0]->{'value'} and $_[0]->{'value'}->defined )
     {
@@ -1854,7 +1854,7 @@ L<Rit::Base::Resource/is_value_node>.
 sub real_coltype
 {
     my( $arc ) = @_;
-    return 'obj' if UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource::Compatible' );
+    return 'obj' if UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource' );
     unless( defined $arc->{'valtype'} )
     {
 	confess "arc valtype not defined: ".datadump($arc,2);
@@ -3261,7 +3261,7 @@ sub activate
 
 	unless( $arc->submitted )
 	{
-	    throw('validation', "Arc $aid is not yet submittes");
+	    throw('validation', "Arc $aid is not yet submitted");
 	}
     }
 
@@ -3348,6 +3348,45 @@ sub activate
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
     return 1;
+}
+
+#######################################################################
+
+=head2 set_replaces
+
+  $a->set_replaces( $arc2, \%args )
+
+=cut
+
+sub set_replaces
+{
+    my( $arc, $arc2, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
+
+    my $common_id_old = $arc->common_id;
+    my $common_id     = $arc2->common_id;
+
+    if( $Rit::Base::Cache::Resource{ $common_id } )
+    {
+	confess "Too late for changing arcs common_id";
+    }
+
+    if( $arc->active )
+    {
+	confess "Can't set replaces for active arc";
+    }
+
+    my $arc2_id = $arc2->id;
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("update arc set id=?, replaces=? where ver=?");
+    $sth->execute($common_id, $arc2_id, $arc->id);
+
+    $arc->{'common_id'} = $common_id;
+    delete $arc->{'common'};
+    $arc->{'replaces'} = $arc2_id;
+
+    return $arc;
 }
 
 #########################################################################
@@ -4476,89 +4515,6 @@ sub timediff
     return sprintf "%20s: %2.3f\n", $_[0], time - $ts;
 }
 
-
-
-###############################################################
-
-=head2 check_value
-
-  check_value( \$val )
-
-Checks that the value is a L<Rit::Base::Resource> or a
-L<Rit::Base::Literal>.
-
-If the value is a L<Rit::Base::List> with only one element; replaces
-the value with that element.
-
-Exceptions:
-
-Dies with stacktrace if the value doesn't checks out.
-
-Returns: ---
-
-=cut
-
-sub check_value
-{
-    my( $valref ) = @_;
-
-    confess "REPLACE THIS CALL";
-
-    my $val = $$valref;
-#    debug "Checking value";
-
-    if( UNIVERSAL::isa($val, "Rit::Base::List" ) )
-    {
-	if( $val->size > 1 )
-	{
-	    confess "Multiple values in value list: ".datadump($val,2);
-	}
-	elsif( $val->size == 0 )
-	{
-	    confess "Empty value list: ".datadump($val,2);
-	}
-	else
-	{
-	    $$valref = $val->get_first_nos;
-	}
-    }
-    elsif( UNIVERSAL::isa($val, "Rit::Base::Resource::Compatible" ) )
-    {
-	# all good
-    }
-    elsif( UNIVERSAL::isa($val, "Rit::Base::Literal" ) )
-    {
-	if( UNIVERSAL::isa($val, "Rit::Base::Literal::String" ) )
-	{
-	    my $value = $val->literal;
-
-	    if( utf8::is_utf8($value) )
-	    {
-		if( utf8::valid($value) )
-		{
-		    if( $value =~ /Ã./ )
-		    {
-			debug "Value '$value' DOUBLE ENCODED!!!";
-		    }
-		}
-		else
-		{
-		    confess "Value '$value' marked as INVALID utf8";
-		}
-	    }
-	    else
-	    {
-		debug "Value '$value' NOT Marked as utf8; upgrading";
-		utf8::upgrade( $val->{'value'} );
-	    }
-	}
-	# all good
-    }
-    else
-    {
-	confess "Strange value: ".datadump($val,2);
-    }
-}
 
 #######################################################################
 
