@@ -52,18 +52,6 @@ our %LOOKUP_CLASS_FOR =
      Rit::Base::User::Meta => 1,
     );
 
-our %COLTYPE_num2name =
-(
- 1 => 'obj',
- 2 => 'valfloat',
- 3 => 'valbin',
- 4 => 'valdate',
- 5 => 'valtext',
- 6 => 'value',
-);
-
-our %COLTYPE_valtype2name; # Initiated in Rit::Base::Constants
-
 our  $IN_STARTUP = 1; # Set to 0 after db init
 
 #########################################################################
@@ -146,7 +134,8 @@ sub init
 
 sub init_on_startup
 {
-    Rit::Base::Constants->init;
+    Rit::Base::Literal::Class->on_startup();
+    Rit::Base::Constants->on_startup();
 
     my $cfg = $Para::Frame::CFG;
 

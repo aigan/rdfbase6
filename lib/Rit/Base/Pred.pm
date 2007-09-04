@@ -192,7 +192,8 @@ sub valtype
 	    confess "Predicate 'value' has no valtype";
 	}
 
-	my $coltype = $Rit::Base::COLTYPE_num2name{ $pred->{'coltype'} };
+	my $coltype = Rit::Base::Literal::Class->
+	  coltype_by_coltype_id( $pred->{'coltype'} );
 	if( $coltype eq 'obj' )
 	{
 	    return Rit::Base::Constants->get('resource');
@@ -246,7 +247,8 @@ sub coltype
 	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
     }
 
-    return $Rit::Base::COLTYPE_num2name{ $_[0]->{'coltype'} };
+    return Rit::Base::Literal::Class->
+      coltype_by_coltype_id( $_[0]->{'coltype'} );
 }
 
 #########################################################################
@@ -455,9 +457,7 @@ sub on_arc_add
 
     if( $pred_name eq 'range' )
     {
-	# Update cache first
-	#$Rit::Base::COLTYPE_valtype2name{ $valtype_id }
-
+	# Update cache first # <- HERE !!
 
 
 	$pred->set_coltype_from_range;
@@ -474,14 +474,14 @@ sub set_coltype_from_range
 {
     my( $pred ) = @_;
 
-    my %name2num = reverse %Rit::Base::COLTYPE_num2name;
-
     if( my $range = $pred->range )
     {
 	my $valtype_id = $range->id;
-	my $coltype = $Rit::Base::COLTYPE_valtype2name{ $valtype_id } || 'obj';
-	my $coltype_num = $name2num{ $coltype };
-	$pred->set_coltype( $coltype_num ) unless $Rit::Base::IN_STARTUP;
+	my $coltype = Rit::Base::Literal::Class->
+	  coltype_by_valtype_id( $valtype_id ) || 'obj';
+	my $coltype_id = Rit::Base::Literal::Class->
+	  coltype_id_by_coltype( $coltype );
+	$pred->set_coltype( $coltype_id );
     }
 }
 
