@@ -39,11 +39,12 @@ use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
 
-use Rit::Base::Literal::Time qw( now );
 use Rit::Base::List;
 use Rit::Base::Pred;
+use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
 use Rit::Base::Literal::String;
+use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Rule;
 
 use Rit::Base::Utils qw( valclean translate is_undef truncstring
@@ -448,6 +449,13 @@ sub create
     }
     else
     {
+	if( $props->{'active'} )
+	{
+	    # Submit now. Activate later. Since we are replacing arc
+
+	    $props->{'submitted'} = 1;
+	}
+
 	$rec->{'active'} = 0;
 	push @values, 'f';
     }
@@ -461,7 +469,7 @@ sub create
 	# planning to activate after creation in case of
 	# $props->{'replaces'}
 	#
-	if( $props->{'active'} )
+	if( $props->{'active'} and not $props->{'replaces'} )
 	{
 	    confess "Arc can't be both active and submitted: ".query_desig($props);
 	}
@@ -481,7 +489,7 @@ sub create
     my $value_obj;
     # Find out the *real* coltype
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
-    my $coltype = $Rit::Base::COLTYPE_valtype2name{ $rec->{'valtype'} } || 'obj';
+    my $coltype = Rit::Base::Literal::Class->coltype_by_valtype_id( $rec->{'valtype'} ) || 'obj';
 
     debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
     debug "Coltype now: $coltype" if $DEBUG;
@@ -712,6 +720,7 @@ sub create
 
     if( $props->{'active'} and not $arc->active )
     {
+	# Arc should have been submitted instead.
 	$arc->activate;
     }
 
@@ -1823,7 +1832,7 @@ sub coltype
     # The arc value may be undefined.
     # Assume that all valtypes not in the COLTYPE hash are objs
 
-    return $Rit::Base::COLTYPE_valtype2name{ $_[0]->{'valtype'} } || 'obj';
+    return Rit::Base::Literal::Class->coltype_by_valtype_id( $_[0]->{'valtype'} ) || 'obj';
 }
 
 
@@ -1850,7 +1859,8 @@ sub real_coltype
     {
 	confess "arc valtype not defined: ".datadump($arc,2);
     }
-    return $Rit::Base::COLTYPE_valtype2name{ $arc->{'valtype'} };
+    return Rit::Base::Literal::Class->
+      coltype_by_valtype_id( $arc->{'valtype'} );
 }
 
 
@@ -3697,21 +3707,6 @@ sub initiate_cache
     unless( $value )
     {
 	### Bootstrap coltype
-	my $coltype_id = $pred->{'coltype'} or confess datadump($pred,1);
-	my $coltype;
-	if( $valtype_id == 0 ) # For removal nodes
-	{
-	    $coltype_id = $coltype = 0;
-	}
-	elsif( $coltype_id == 6 )
-	{
-	    $coltype = $Rit::Base::COLTYPE_valtype2name{ $valtype_id }
-	      or confess "Couldn't find coltype for valtype $valtype_id";
-	}
-	else
-	{
-	    $coltype = $Rit::Base::COLTYPE_num2name{ $coltype_id };
-	}
 
 	if( $rec->{'obj'} )
 	{
@@ -3719,15 +3714,34 @@ sub initiate_cache
 	    # could be a value node
 	    $value = Rit::Base::Resource->get_by_id( $rec->{'obj'} );
 	}
-	elsif( $coltype eq '0' ) # Removal arc
+	elsif( $valtype_id == 0 ) # Removal arc
 	{
 	    $value = is_undef;
 	}
 	else
 	{
+	    my $coltype_id = $pred->{'coltype'} or confess datadump($pred,1);
+	    my $coltype;
+
+	    if( $coltype_id == 6 ) # value node
+	    {
+		$coltype = Rit::Base::Literal::Class->
+		  coltype_by_valtype_id( $valtype_id )
+		    or confess "Couldn't find coltype for valtype $valtype_id";
+	    }
+	    else
+	    {
+#		debug "Getting coltype name for id $coltype_id";
+		$coltype = Rit::Base::Literal::Class->
+		  coltype_by_coltype_id( $coltype_id );
+	    }
+
 	    my $valtype = Rit::Base::Resource->get($valtype_id)
 	      or confess "Couldn't find the valtype $valtype_id ".
 		"for arc $id";
+
+#	    debug "Getting value for literal_class ".
+#	      "for $coltype by parsing $rec->{$coltype}";
 
 	    $value = $valtype->literal_class->
 	      new_from_db( $rec->{$coltype} );
