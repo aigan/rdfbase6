@@ -518,11 +518,11 @@ sub set_coltype
 
 #######################################################################
 
-=head2 find_class
+=head2 use_class
 
 =cut
 
-sub find_class
+sub use_class
 {
     return "Rit::Base::Pred";
 }
