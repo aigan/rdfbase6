@@ -104,6 +104,22 @@ sub on_startup
     $id = $sth->fetchrow_array; # Store in GLOBAL id
     $sth->finish;
 
+    #################### CREATION
+    unless( $id )
+    {
+	Rit::Base::Resource->create
+	    ({
+	      label => 'literal_class',
+	      scof => $class,
+	      is => $class,
+	     });
+    }
+
+
+
+
+
+
     $Rit::Base::Constants::Label{'literal_class'} =
       Rit::Base::Resource->get($id);
 }
