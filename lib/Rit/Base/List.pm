@@ -895,7 +895,7 @@ sub loc
     foreach my $item ( @$list )
     {
 	# TODO: correct?
-	if( ref $item and UNIVERSAL::isa($item, 'Rit::Base::Resource::Compatible') )
+	if( ref $item and UNIVERSAL::isa($item, 'Rit::Base::Resource') )
 	{
 	    my $langs = $item->list('is_of_language');
 	    if( @$langs )
@@ -1029,7 +1029,7 @@ sub loc_by_lang
     while( my $prop = $list->get_next_nos )
     {
 	if( ref $prop and
-	    UNIVERSAL::isa($prop, 'Rit::Base::Resource::Compatible') )
+	    UNIVERSAL::isa($prop, 'Rit::Base::Resource') )
 	{
 	    my $propweight = $prop->first_prop('weight', {}, $args) || 0;
 	    my $lprio = $lang{ $prop->first_prop('is_of_language', {}, $args)->first_prop('code', {}, $args)->plain } || 0;
@@ -1694,7 +1694,7 @@ AUTOLOAD
     foreach( @templist )
     {
 	next unless defined;
-	if( UNIVERSAL::isa( $_, 'Rit::Base::Object::Compatible' ) )
+	if( UNIVERSAL::isa( $_, 'Rit::Base::Object' ) )
 	{
 	    next unless $_->defined;
 	}
@@ -1769,7 +1769,7 @@ AUTOLOAD
 	    return $list[0];
 	}
     }
-    elsif( UNIVERSAL::isa($eltype, 'Rit::Base::Resource::Compatible' ) )
+    elsif( UNIVERSAL::isa($eltype, 'Rit::Base::Resource' ) )
     {
 	debug 3, "  Return list of resources";
 	return $self->new(\@list);
