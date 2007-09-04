@@ -481,7 +481,7 @@ sub set_coltype_from_range
 	my $valtype_id = $range->id;
 	my $coltype = Rit::Base::Literal::Class->
 	  coltype_by_valtype_id( $valtype_id );
-	debug "  found coltype $coltype";
+	debug "  found coltype $coltype" if $coltype;
 	$coltype ||= 'obj';
 	my $coltype_id = Rit::Base::Literal::Class->
 	  coltype_id_by_coltype( $coltype );
