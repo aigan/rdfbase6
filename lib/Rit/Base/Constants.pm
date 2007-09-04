@@ -48,6 +48,10 @@ our @Initlist; # Constants to export then the DB is online
 
 =head2 import
 
+  use Constants qw( $C_class ... )
+
+The use statement calls C<import()>
+
 =cut
 
 sub import
@@ -88,53 +92,20 @@ sub import
 
 ######################################################################
 
-=head2 init
+=head2 on_startup
 
 =cut
 
-sub init
+sub on_startup
 {
     my( $class ) = @_;
 
-    my $dbh = $Rit::dbix->dbh;
-    my $sth_label = $dbh->prepare("select node from node where label=?") or die;
-    my $sth_child = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
-    foreach my $colname (qw(valdate valfloat valtext valbin))
-    {
-	$sth_label->execute($colname) or die "could not get constant $colname";
-	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
-	$sth_label->finish;
-
-	debug "Caching colname $colname";
-	$sth_child->execute($colid) or die;
-	while(my( $nid ) = $sth_child->fetchrow_array)
-	{
-	    $Rit::Base::COLTYPE_valtype2name{$nid} = $colname;
-	    debug "Valtype $nid = $colname";
-	}
-	$sth_child->finish;
-
-	$Rit::Base::COLTYPE_valtype2name{$colid} = $colname;
-    }
-    $Rit::Base::COLTYPE_valtype2name{5} = 'obj';
-
-
-    #################################
-
-#    # Bootstrap the 'is' Pred
-#    debug "Bootstrapping is";
-#    Rit::Base::Pred->new(1)->init();
-#    debug "Bootstrapping class_handled_by_perl_module ";
-#    $sth_label->execute('class_handled_by_perl_module');
-#    Rit::Base::Pred->new($sth_label->fetchrow_array)->init();
-#    $sth_label->finish;
-#    debug "Bootstrapping done";
-
-    #################################
+    debug "Initiating constants";
 
     no strict 'refs'; # Symbolic refs
     foreach my $export (@Initlist)
     {
+	debug " * $export->[1]";
 	my $obj = $class->get($export->[1]);
 	*{$export->[0]} = \ $obj;
     }
