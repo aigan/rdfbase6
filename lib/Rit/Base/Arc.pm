@@ -2869,16 +2869,14 @@ sub set_value
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
+    # Works also for valtype, but not for removals
+    my $valtype = $arc->valtype;
+    unless( $valtype )
+    {
+	confess "Can't set the value of a removal ($value_new_in)";
+    }
+
     my $coltype_old  = $arc->real_coltype;
-    my $valtype;
-    if( $coltype_old eq 'value' ) # value node
-    {
-	$valtype = $arc->valtype;
-    }
-    else # We may choose a another valtype within the predicate range
-    {
-	$valtype = $arc->pred->valtype;
-    }
 
     # Get the value alternatives based on the current coltype.  That
     # is; If the previous value was an object: try to find a new
@@ -4485,11 +4483,11 @@ sub default_write_access
 
 ###############################################################
 
-=head2 find_class
+=head2 use_class
 
 =cut
 
-sub find_class
+sub use_class
 {
     return "Rit::Base::Arc";
 }
