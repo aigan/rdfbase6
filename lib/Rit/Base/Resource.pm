@@ -3433,7 +3433,10 @@ sub set_label
     if( $label_old ne $label_new )
     {
 	debug "Node $node->{id} label set to '$label_new'";
+
+	delete $Rit::Base::Constants::Label{$label_old};
 	$node->{'label'} = $label_new;
+	$Rit::Base::Constants::Label{$label_new} = $node;
 	$node->mark_updated;
     }
 
