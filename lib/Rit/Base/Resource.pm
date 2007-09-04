@@ -361,6 +361,8 @@ sub find_by_anything
 
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
+#    Para::Frame::Logging->this_level(3);
+
 
     my( @new );
     my $valtype = $args->{'valtype'};
@@ -4443,6 +4445,9 @@ sub replace
 
     # Replace value where it can be done
 
+    Para::Frame::Logging->this_level(3);
+
+
     my( %add, %del, %del_pred );
 
     my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
@@ -4554,7 +4559,7 @@ sub replace
 	else
 	{
 	    my $arc_key = $del_pred{$pred_name}[0];
-	    debug "  Considering $pred_name arc $arc_key";
+	    debug 3, "  Considering $pred_name arc $arc_key";
 	    $del_pred{$pred_name} = delete $del{$pred_name}{$arc_key};
 	}
     }
@@ -5642,7 +5647,7 @@ sub tree_select_data
 
   $n->find_class()
 
-TODO: HAndle the class for value nodes based on the value-arcs
+TODO: Handle the class for value nodes based on the value-arcs
 valtype.
 
 
@@ -5695,16 +5700,20 @@ sub find_class
 	    return "Rit::Base::Literal::Class";
 	}
 
-#	debug "Looking at is ".$elem->sysdesig;
+#	debug "Looking at is $elem->{id}";
 	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
 	{
+	    my $pkg = $class->code->plain;
+#	    debug "  found $pkg";
+
 	    # Let confident classes handle themself
-	    if( UNIVERSAL::can($class, 'use_class') )
+	    if( UNIVERSAL::can($pkg, 'use_class') )
 	    {
+#		debug "    using a custom class";
 		# Should only be for classes that never should be
 		# metaclasses
 		#
-		return $class->use_class;
+		return $pkg->use_class;
 	    }
 
 
@@ -7527,6 +7536,8 @@ sub session_history_add
 
   $n->literal_class()
 
+TODO: MOVE TO Literal::Class
+
 This should be a resource class. Get the perl class name that handles
 instances of this class.
 
@@ -7588,27 +7599,19 @@ sub literal_class
 
 =head2 coltype
 
+TEMPORARY BOOTSTRAP METHOD
+
   $n->coltype()
 
 For getting the coltype corresponding to this valtype.
 
-Will throw an exception if the node isn't a class.
+Defaults to C<obj>.
 
 =cut
 
 sub coltype
 {
-    my( $node ) = @_;
-
-    my $id = $node->id;
-
-# Fix DB first...
-#    unless( $node->has_value({is => $C_class }) )
-#    {
-#	confess "The node $id is not a class";
-#    }
-
-    return Rit::Base::Literal::Class->coltype_by_valtype_id( $id ) || 'obj';
+    return $Rit::Base::Literal::Class::COLTYPE_valtype2name{ $_[0]->id } || 'obj';
 }
 
 
