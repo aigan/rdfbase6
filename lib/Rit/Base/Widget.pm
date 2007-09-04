@@ -43,7 +43,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Widget qw( input textarea hidden radio jump calendar
-filefield input_image );
+filefield input_image label_from_params );
 
 
 use Rit::Base;
@@ -125,6 +125,15 @@ sub wub
     my $tdlabel = $args->{'tdlabel'};
     my $label = $args->{'label'};
 
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+
     if( $newsubj )
     {
 	$out .=
@@ -133,7 +142,6 @@ sub wub
 			{
 			 size => $size,
 			 rows => $rows,
-			 tdlabel => $tdlabel, label => $label,
 			 image_url => $args->{'image_url'}
 			});
     }
@@ -147,7 +155,6 @@ sub wub
 			    {
 			     size => $size,
 			     rows => $rows,
-			     tdlabel => $tdlabel, label => $label,
 			     image_url => $args->{'image_url'}
 			    });
 	    $out .= "<br/>";
@@ -155,13 +162,6 @@ sub wub
 	elsif( $subj->list($pred,undef,['active','submitted'])->is_true )
 	{
 	    my $subj_id = $subj->id;
-	    if( $tdlabel )
-	    {
-		my $arc = $subj->arc_list($pred,undef,'auto')->get_first_nos;
-		my $arc_id = $arc->id;
-		my $tdlabel_html =  CGI->escapeHTML($tdlabel);
-		$out .= "<label for=\"arc_${arc_id}__pred_${pred}__row_${IDCOUNTER}__subj_${subj_id}\">${tdlabel_html}</label></td><td>";
-	    }
 
 	    my $arcversions =  $subj->arcversions($pred);
 	    if( scalar(keys %$arcversions) > 1 )
@@ -306,7 +306,6 @@ sub wub
 				   rows => $rows,
 				   maxw => $maxw,
 				   maxh => $maxh,
-				   tdlabel => $tdlabel, label => $label,
 				   image_url => $args->{'image_url'}
 				  });
 	}
@@ -509,6 +508,7 @@ sub wub_select_tree
 
     my $subj = $args->{'subj'} or confess "subj missing";
     my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
+    my $arc;
 
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
@@ -522,12 +522,32 @@ sub wub_select_tree
 	  $pred_name .'='. $subtype->id .'"'
 	    unless( $subtype->rev_scof );
 
-	$out .= ' selected="selected"'
-	  if( $subj->prop( $pred_name, $subtype ) );
+	if( $subj->has_value({ $pred_name => $subtype }) or
+	    $subj->has_value({ $pred_name => { scof => $subtype } }))
+	{
+	    $out .= ' selected="selected"';
+	    $arc = $subj->arc( $pred_name, $subtype );
+	}
 
 	$out .= '>'. ( $subtype->name_short->loc || $subtype->name->loc ) .'</option>';
     }
     $out .= '</select>';
+
+    $out .= $arc->edit_link_html
+      if( $arc );
+
+    $out .= '<div rel="nop-'. $type->id .'" style="display: none"></div>'; # usableforms quirk...
+
+    $subtypes->reset;
+    while( my $subtype = $subtypes->get_next_nos )
+    {
+	$out .= '<div rel="'. $subtype->id .'" style="display: inline">';
+
+	$out .= wub_select_tree( $pred_name, $subtype, $args )
+	  if( $subtype->has_revpred( 'scof' ) );
+
+	$out .= '</div>';
+    }
 
     # TODO: Recurse for all subtypes, make rel-divs etc...
 
@@ -551,13 +571,18 @@ sub wub_select
     my $out = "";
     my $R = Rit::Base->Resource;
 
-    my $subj = $args->{'subj'} or confess "subj missing";
-    my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
-    my $arc = ( $args->{'arc_id'} ? get($args->{'arc_id'}) : undef );
     my $header = $args->{'header'};
+    my $subj = $args->{'subj'} or confess "subj missing";
+    my $singular = ($args->{'arc_type'} eq 'singular') ? 1 : undef;
+    my $arc_id = $args->{'arc_id'} ||
+      $singular ? 'singular' : '';
+    my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
+
+    $arc ||= $subj->arc( $pred_name )
+      if( $singular );
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
-      $pred_name .'">';
+      $pred_name .'__if_subj">';
 
     $out .= '<option value "">'. $header .'</option>'
       if( $header );
@@ -576,6 +601,8 @@ sub wub_select
 	$out .= '>'. ( $item->name_short->loc || $item->name->loc || $item->label ) .'</option>';
     }
     $out .= '</select>';
+    $out .= $arc->edit_link_html
+      if( $arc );
 
     return $out;
 }
