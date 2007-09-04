@@ -5168,12 +5168,15 @@ sub wu
     my( $node, $pred_name, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
     $args->{'subj'} = $node;
+    my $R = Rit::Base->Resource;
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
-    my $textbox = Rit::Base::Resource->get({name=>'textbox',
-					    scof=>$C_valtext});
-    my $image = Rit::Base::Resource->get({label=>'image',
-					  scof=>'file'});
-    my $range = $pred->range;
+    my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
+    my $image = $R->get({label=>'image', scof=>'file'});
+
+    my $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->range );
+    my $range_scof = ( $args->{'range_scof'} ?
+		       $R->get($args->{'range_scof'}) : $pred->range_scof );
+
     if( $range->equals($textbox) or
 	$range->scof($textbox) )
     {
@@ -5183,10 +5186,17 @@ sub wu
 	$args->{'inputtype'} = 'textarea';
 	return Rit::Base::Widget::wub($pred_name, $args);
     }
-    elsif( $pred->coltype eq 'obj' )
+    elsif( $pred->coltype eq 'obj' and ($range or $range_scof) )
     {
+	my $is_scof = ( $range_scof ? 1 : 0 );
+
+	$range ||= $range_scof;
+	$args->{'range_is_scof'} = 1
+	  if( $is_scof );
+
 	debug "Redirecting to range->wuirc";
-	debug "Range: ". datadump($range, 1);
+	debug "Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
+
 	if( $range->class_handled_by_perl_module )
 	{
 	    my $module = $range->class_handled_by_perl_module->code->plain;
@@ -5195,11 +5205,12 @@ sub wu
 
 	    if( $module->can('wuirc') )
 	    {
+		debug "Wuirc gotten from perl_module";
 		return $module->wuirc($pred, $args);
 	    }
 	}
 
-	return $pred->range->wuirc($pred, $args);
+	return $range->wuirc($pred, $args);
     }
     if( $range->equals($image) or
 	$range->scof($image) )
@@ -5295,13 +5306,18 @@ sub wuirc
     my $subj = $args->{'subj'} or confess "subj missing";
 
     my $out = '';
+    my $is_scof = $args->{'range_is_scof'};
 
     debug "Default wuirc for Resource. Pred: ". $pred->desig;
-    debug "Class: ". datadump( $range, 1 );
+    debug "Class". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
 
     my $list = $subj->arc_list( $pred->name );
+    my $arc_type = $args->{'arc_type'};
+    my $singular = ($arc_type eq 'singular') ? 1 : undef;
 
-    if( $list )
+    debug "Singular." if $singular;
+
+    if( $list and not $singular )
     {
 	$out .= '<ul>'
 	  if( $list->size > 1);
@@ -5320,7 +5336,7 @@ sub wuirc
 						  $pred->name,
 						  $item->id, 1);
 	    $out .= $item->wu_jump;
-	    $out .= $arc->edit_link_html;
+	    $out .= '&nbsp;'. $arc->edit_link_html;
 
 	    if( $list->size > 1)
 	    {
@@ -5337,21 +5353,29 @@ sub wuirc
     # Skapa select_in_a_tree i RB::Widget
     # Välj inmatningstyp utefter antal rev_is.
 
-    if( $args->{'multiple'} or not $list )
+    if( $singular or not $list )
     {
+	my $is_pred = ( $is_scof ? 'scof' : 'is' );
 	my $inputtype = $args->{'inputtype'} ||
-	  ( $range->rev_is->size < 25 ) ?
-	    'select' : 'text';
+	  ( $range->revarc($is_pred)->size < 25 ) ?
+	    ( $is_scof ? 'select_tree' : 'select' ) : 'text';
 
 	if( $inputtype eq 'text' )
 	{
+	    debug "Drawing a text-input for ". $range->desig;
 	    $out .=
 	      Para::Frame::Widget::input('arc___subj_'. $subj->id .'__pred_'.
 					 $pred->name, '', {});
 	}
 	elsif( $inputtype eq 'select' )
 	{
+	    debug "Drawing a select for ". $range->desig;
 	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range, $args );
+	}
+	elsif( $inputtype eq 'select_tree' )
+	{
+	    debug "Drawing a select_tree for ". $range->desig;
+	    $out .= Rit::Base::Widget::wub_select_tree( $pred->name, $range, $args );
 	}
 	else
 	{
