@@ -44,7 +44,6 @@ use Rit::Base::Utils qw( valclean query_desig );
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
-use Rit::Base::Lazy;
 use Rit::Base::Arc::Lim;
 
 use base 'Clone'; # gives method clone()
@@ -803,7 +802,7 @@ sub modify
 		my @new;
 		foreach my $val ( @values )
 		{
-		    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Object::Compatible' ) )
+		    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Object' ) )
 		    {
 			unless( $val->defined )
 			{
@@ -813,7 +812,7 @@ sub modify
 
 		    if( defined $val and length $val )
 		    {
-			push @new, Rit::Base::Resource->resolve_obj_id( $val );
+			push @new, Rit::Base::Resource->get( $val )->id;
 		    }
 		    else
 		    {
@@ -1440,7 +1439,7 @@ sub rev_query
 
 		foreach my $val ( @$values )
 		{
-		    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource::Compatible') )
+		    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource') )
 		    {
 			$val = $val->name->loc;  # Changes val i array
 		    }
@@ -1488,7 +1487,7 @@ sub rev_query
 			$str .= 'prop_';
 		    }
 
-		    if( ref $p and UNIVERSAL::isa( $p, 'Rit::Base::Resource::Compatible') )
+		    if( ref $p and UNIVERSAL::isa( $p, 'Rit::Base::Resource') )
 		    {
 			$str .= $p->name;
 		    }
@@ -3057,7 +3056,7 @@ sub parse_values
 
     foreach( @values )
     {
-	if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource::Compatible') )
+	if( ref $_ and UNIVERSAL::isa($_, 'Rit::Base::Resource') )
 	{
 	    # Getting node id
 	    $_ = $_->id;
