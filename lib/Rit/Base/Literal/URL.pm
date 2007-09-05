@@ -45,11 +45,6 @@ Represents an URL (or URI). This is a wrapper for L<URI> that
 redirects calls to that class. It's extended as a
 L<Rit::Base::Literal::String>.
 
-Methods not encapsulated are:
-
-  as_string : use plain()
-  eq        : use equals()
-
 =cut
 
 
