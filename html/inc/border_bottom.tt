@@ -15,6 +15,6 @@ Ritbase:
 </form>
 
 [% PROCESS menu_admin_pf.tt %]
-[% IF debug %]
+[% IF debug_level %]
    [% PROCESS debug.tt %]
 [% END %]

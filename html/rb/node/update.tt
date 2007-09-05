@@ -71,7 +71,7 @@ END;
 <ol>[% INCLUDE superclass class=node.code_class %]</ol>
 [% END %]
 
-[% IF debug > 1 %]
+[% IF debug_level > 1 %]
 [% WRAPPER imgexpand label='Perl hashdump' %]
 <table>
 <tr><td><pre>[% dump(node,2) %]</pre></td></tr>
