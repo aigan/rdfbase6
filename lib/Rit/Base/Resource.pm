@@ -2277,7 +2277,7 @@ sub revprop
 
 =head2 first_prop
 
-  $n->first_prop( $pred_name, ... )
+  $n->first_prop( $pred_name, $proplim, \%args )
 
 Returns the value of one of the properties with predicate
 C<$pred_name> or C<undef> if none found.
@@ -2418,7 +2418,7 @@ sub first_prop
 
 =head2 first_revprop
 
-  $n->first_revprop( $pred_name )
+  $n->first_revprop( $pred_name, $proplim, \%args )
 
 Returns the value of one of the reverse B<ACTIVE> properties with
 predicate C<$pred_name>
@@ -2480,7 +2480,7 @@ sub first_revprop
 	{
 	    my $arc = $arcs->[$i];
 	    if( $arc->meets_arclim($arclim) and
-		$arc->value_meets_proplim($proplim, $args) )
+		$arc->subj->meets_proplim($proplim, $args) )
 	    {
 		$best_arc = $arc;
 		$best_arc_cid = $arc->common_id;
@@ -2496,7 +2496,7 @@ sub first_revprop
 	    my $arc = $arcs->[$i];
 	    unless( ($arc->common_id == $best_arc_cid) and
 		    $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args)
+		    $arc->subj->meets_proplim($proplim, $args)
 		  )
 	    {
 		next;
@@ -2515,7 +2515,7 @@ sub first_revprop
 	    $i++;
 	}
 
-	return $best_arc->value;
+	return $best_arc->subj;
     }
 
 
@@ -2529,9 +2529,9 @@ sub first_revprop
 	    foreach my $arc (@{$node->{'revarc'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args) )
+		    $arc->subj->meets_proplim($proplim, $args) )
 		{
-		    return $arc->value;
+		    return $arc->subj;
 		}
 	    }
 	}
@@ -2544,9 +2544,9 @@ sub first_revprop
 	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
 	    {
 		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args) )
+		    $arc->subj->meets_proplim($proplim, $args) )
 		{
-		    return $arc->value;
+		    return $arc->subj;
 		}
 	    }
 	}
