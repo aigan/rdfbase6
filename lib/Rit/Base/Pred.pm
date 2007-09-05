@@ -427,6 +427,11 @@ sub init
 
     $pred->initiate_node( $node_rec );
 
+    unless( $pred->{coltype} )
+    {
+	confess "Node $pred->{id} is not a predicate";
+    }
+
 #    debug "Pred coltype of $pred->{label} is $pred->{coltype}";
 
     return $pred;
