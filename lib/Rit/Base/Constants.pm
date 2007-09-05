@@ -105,7 +105,7 @@ sub on_startup
     no strict 'refs'; # Symbolic refs
     foreach my $export (@Initlist)
     {
-	debug " * $export->[1]";
+	debug 2, " * $export->[1]";
 	my $obj = $class->get($export->[1]);
 	*{$export->[0]} = \ $obj;
     }
