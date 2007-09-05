@@ -5257,14 +5257,19 @@ sub wu
 
 	if( $range->class_handled_by_perl_module )
 	{
-	    my $module = $range->class_handled_by_perl_module->code->plain;
-	    require(package_to_module($module));
-	    debug "We have a perl_module: ". $module;
+	    my $modules = $range->list('class_handled_by_perl_module');
 
-	    if( $module->can('wuirc') )
+	    while( my $module = $modules->get_next_nos )
 	    {
-		debug "Wuirc gotten from perl_module";
-		return $module->wuirc($pred, $args);
+		my $code = $module->code->plain;
+		require(package_to_module($code));
+		debug "We have a perl_module: ". $code;
+
+		if( $code->can('wuirc') )
+		{
+		    debug "Wuirc gotten from perl_module";
+		    return $code->wuirc($pred, $args);
+		}
 	    }
 	}
 
@@ -5365,15 +5370,25 @@ sub wuirc
 
     my $out = '';
     my $is_scof = $args->{'range_is_scof'};
-
-    debug "Default wuirc for Resource. Pred: ". $pred->desig;
-    debug "Class". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
-
     my $list = $subj->arc_list( $pred->name );
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
+    my $is_pred = ( $is_scof ? 'scof' : 'is' );
 
+    debug "Default ". ( $singular ? '(singular) ' : '')
+      ."wuirc for Resource. Pred: ". $pred->desig;
+    debug "Class". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
     debug "Singular." if $singular;
+
+    debug "Checking size..."
+      unless( $args->{'inputtype'} );
+
+    my $inputtype = $args->{'inputtype'} ||
+      ( $range->revcount($is_pred) < 25 ) ?
+	( $is_scof ? 'select_tree' : 'select' ) : 'text';
+
+    debug "...done"
+      unless( $args->{'inputtype'} );
 
     $out .= Para::Frame::Widget::label_from_params({
 			       label       => delete $args->{'label'},
@@ -5383,7 +5398,8 @@ sub wuirc
 			       label_class => delete $args->{'label_class'},
 			      });
 
-    if( $list and not $singular )
+    if( $list and
+	( $inputtype eq 'text' or not $singular ) )
     {
 	$out .= '<ul>'
 	  if( $list->size > 1);
@@ -5415,13 +5431,8 @@ sub wuirc
 	}
     }
 
-    if( not $singular or not $list )
+    if( not $singular or not $list or ( $singular and $inputtype ne 'text' ))
     {
-	my $is_pred = ( $is_scof ? 'scof' : 'is' );
-	my $inputtype = $args->{'inputtype'} ||
-	  ( $range->revarc($is_pred)->size < 25 ) ?
-	    ( $is_scof ? 'select_tree' : 'select' ) : 'text';
-
 	if( $inputtype eq 'text' )
 	{
 	    debug "Drawing a text-input for ". $range->desig;
