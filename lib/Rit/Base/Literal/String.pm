@@ -33,7 +33,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug trim throw );
+use Para::Frame::Utils qw( debug datadump trim throw );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig );
 
@@ -218,7 +218,8 @@ sub parse
     {
 	if( $coltype eq 'valtext' )
 	{
-	    return $class->new($val);
+	    # Implementing class may not take scalarref
+	    return $class->new($$val);
 	}
 	elsif( $coltype eq 'valfloat' )
 	{
@@ -227,7 +228,8 @@ sub parse
 	    {
 		throw 'validation', "String $$val is not a number";
 	    }
-	    return $class->new($val);
+	    # Implementing class may not take scalarref
+	    return $class->new($$val);
 	}
 	else
 	{
