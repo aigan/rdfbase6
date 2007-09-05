@@ -2942,8 +2942,6 @@ sub set_value
 	    return $new;
 	}
 
-
-
 	debug "    Changing value\n" if $DEBUG;
 
 	$arc->remove_check( $args );
