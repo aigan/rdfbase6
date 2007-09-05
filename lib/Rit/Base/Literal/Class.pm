@@ -61,7 +61,7 @@ Inherits from L<Rit::Base::Resource>
 =cut
 
 
-######################################################################
+#######################################################################
 
 =head2 on_startup
 
@@ -239,7 +239,46 @@ sub on_arc_del
 }
 
 
-######################################################################
+#######################################################################
+
+=head2 coltype
+
+  $n->coltype()
+
+For getting the coltype corresponding to this valtype.
+
+Defaults to C<obj>.
+
+=cut
+
+sub coltype
+{
+    return $COLTYPE_valtype2name{ $_[0]->id } || 'obj';
+}
+
+
+#######################################################################
+
+=head2 coltype_id
+
+  $n->coltype_id()
+
+For getting the coltype_id corresponding to this valtype.
+
+Defaults to C<obj> id.
+
+=cut
+
+sub coltype_id
+{
+    return $COLTYPE_name2num{ $COLTYPE_valtype2name{ $_[0]->id } || 'obj' };
+}
+
+
+#######################################################################
+#######################################################################
+#######################################################################
+
 
 =head2 coltype_by_valtype_id
 
@@ -253,7 +292,7 @@ sub coltype_by_valtype_id
 }
 
 
-######################################################################
+#######################################################################
 
 =head2 coltype_by_coltype_id
 
@@ -278,24 +317,6 @@ Rit::Base::Literal::Class->coltype_id_by_coltype( $id )
 sub coltype_id_by_coltype
 {
     return $COLTYPE_name2num{ $_[1] };
-}
-
-
-#########################################################################
-
-=head2 coltype
-
-  $n->coltype()
-
-For getting the coltype corresponding to this valtype.
-
-Defaults to C<obj>.
-
-=cut
-
-sub coltype
-{
-    return $COLTYPE_valtype2name{ $_[0]->id } || 'obj';
 }
 
 
