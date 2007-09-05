@@ -73,6 +73,10 @@ These can be called with the class name or any List object.
 
 =head2 new
 
+  $class->new( \$val )
+
+Implement in subclasses!
+
 Identifies the format and makes the apropriate literal object of it.
 
 =cut
