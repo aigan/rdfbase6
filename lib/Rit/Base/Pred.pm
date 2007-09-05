@@ -33,7 +33,7 @@ use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::List;
-use Rit::Base::Utils qw( valclean translate is_undef );
+use Rit::Base::Utils qw( valclean translate is_undef parse_propargs );
 use Rit::Base::Literal::String;
 
 
@@ -440,7 +440,20 @@ sub init
 
 sub on_bless
 {
-    my( $pred, $class_old ) = @_;
+    my( $pred, $class_old, $args_in ) = @_;
+
+    $pred->set_coltype_from_range;
+}
+
+#######################################################################
+
+=head2 on_unbless
+
+=cut
+
+sub on_unbless
+{
+    my( $pred, $class_new, $args_new ) = @_;
 
     $pred->set_coltype_from_range;
 }
@@ -457,9 +470,22 @@ sub on_arc_add
 
     if( $pred_name eq 'range' )
     {
-	# Update cache first # <- HERE !!
+	$pred->set_coltype_from_range;
+    }
+}
 
+#######################################################################
 
+=head2 on_arc_del
+
+=cut
+
+sub on_arc_del
+{
+    my( $pred, $arc, $pred_name, $args ) = @_;
+
+    if( $pred_name eq 'range' )
+    {
 	$pred->set_coltype_from_range;
     }
 }
@@ -468,25 +494,21 @@ sub on_arc_add
 
 =head2 set_coltype_from_range
 
+  $pred->set_coltype_from_range( \%args )
+
 =cut
 
 sub set_coltype_from_range
 {
-    my( $pred ) = @_;
+    my( $pred, $args_in ) = @_;
 
     debug "Setting coltype from range for pred $pred->{id}";
     if( my $range = $pred->range )
     {
 	debug "  Range is $range->{id}";
-	my $valtype_id = $range->id;
-	my $coltype = Rit::Base::Literal::Class->
-	  coltype_by_valtype_id( $valtype_id );
+	my $coltype = $range->coltype;
 	debug "  found coltype $coltype" if $coltype;
-	$coltype ||= 'obj';
-	my $coltype_id = Rit::Base::Literal::Class->
-	  coltype_id_by_coltype( $coltype );
-	debug "  setting coltype id to $coltype_id";
-	$pred->set_coltype( $coltype_id );
+	$pred->set_coltype( $coltype, $args_in );
     }
 }
 
@@ -494,30 +516,81 @@ sub set_coltype_from_range
 
 =head2 set_coltype
 
-  $n->set_coltype( $coltype_id )
+  $n->set_coltype( $coltype_id, \%args )
+
+  $n->set_coltype( $coltype, \%args )
+
+returns: The new coltype id
 
 =cut
 
 sub set_coltype
 {
-    my( $pred, $coltype_new ) = @_;
+    my( $pred, $coltype_new_id, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $coltype_old = $pred->{'coltype'} || '';
-    $coltype_new ||= '';
+    my $coltype_old_id = $pred->{'coltype'} || 0;
+    $coltype_new_id ||= 0;
 
-    if( $coltype_old ne $coltype_new )
+    if( $coltype_new_id !~ /^\d+$/ )
     {
-	if( $coltype_old )
-	{
-	    confess "Can't change a predicate from one coltype ($coltype_old) to another ($coltype_new)";
-	}
-
-	debug "Pred $pred->{id} coltype set to '$coltype_new'";
-	$pred->{'coltype'} = $coltype_new;
-	$pred->mark_updated;
+	$coltype_new_id = Rit::Base::Literal::Class->
+	  coltype_id_by_coltype( $coltype_new_id );
     }
 
-    return $coltype_new;
+    if( $coltype_old_id != $coltype_new_id )
+    {
+	my $pred_id = $pred->id;
+
+	debug "Pred $pred_id coltype set to '$coltype_new_id'";
+	$pred->{'coltype'} = $coltype_new_id;
+	$pred->mark_updated;
+	$res->changes_add();
+
+	if( $coltype_old_id )
+	{
+	    my $coltype_old = Rit::Base::Literal::Class->
+	      coltype_by_coltype_id( $coltype_old_id );
+
+	    my $coltype_new = Rit::Base::Literal::Class->
+	      coltype_by_coltype_id( $coltype_new_id );
+
+	    debug "Changing coltype from $coltype_old to $coltype_new!!!";
+
+	    my $st = "select * from arc where pred=$pred_id and $coltype_old is not null";
+	    my $sth = $Rit::dbix->dbh->prepare($st);
+	    $sth->execute();
+	    while( my($rec) = $sth->fetchrow_array )
+	    {
+		my( $val ) = $rec->{ $coltype_old };
+		if( defined $val )
+		{
+		    confess "I would have to transform $coltype_old value $val to $coltype_new";
+		}
+	    }
+	    $sth->finish;
+	}
+
+    }
+
+    return $coltype_new_id;
+}
+
+
+#######################################################################
+
+=head2 vacuum
+
+  $pred->vacuum( \%args )
+
+=cut
+
+sub vacuum
+{
+    my( $pred, $args_in ) = @_;
+
+    $pred->set_coltype_from_range( $args_in );
+    return $pred->SUPER::vacuum( $args_in );
 }
 
 
