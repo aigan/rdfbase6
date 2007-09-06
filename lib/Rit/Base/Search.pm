@@ -951,11 +951,17 @@ sub modify
 
 =head2 execute
 
+  $s->execute(\%args)
+
+Args MUST be a hashref.
+
 =cut
 
 sub execute
 {
     my( $search, $args ) = @_;
+
+
 
     my( $sql, $values, $min_prio ) = $search->build_sql;
     unless( $sql )
@@ -999,6 +1005,8 @@ sub execute
 	}
 	$result = $search->get_result($sql, $values, 15); # 10
     }
+
+    $args->{'materializer'} ||= \&Rit::Base::List::materialize;
 
     $search->{'result'} = Rit::Base::List->new($result, $args);
 
@@ -1441,7 +1449,7 @@ sub rev_query
 		{
 		    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource') )
 		    {
-			$val = $val->name->loc;  # Changes val i array
+			$val = $val->desig;  # Changes val i array
 		    }
 		}
 
