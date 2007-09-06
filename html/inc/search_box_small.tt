@@ -12,7 +12,7 @@
          <span class="search_box_small_item">
          [% FOREACH groupname = crit.group.keys %]
             [% FOREACH val = crit.group.$groupname %]
-               [% val.name.loc %]<br>
+               [% val.desig %]<br>
                [% UNLESS loop.last %]
                   [* loc('or') *]
                [% END %]
@@ -29,9 +29,9 @@
             [% END %]
             [% FOREACH val = foo.values %]
                [% IF firstpred.objtype %]
-                  [% get(val).name.loc %]<br>
+                  [% get(val).desig %]<br>
                [% ELSIF firstpred.plain == 'id' %]
-                  [% get(val).name.loc %]<br>
+                  [% get(val).desig %]<br>
                [% ELSE %]
                   [% val %]<br>
                [% END %]

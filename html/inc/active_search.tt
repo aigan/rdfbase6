@@ -51,7 +51,7 @@
          [% loc(group.desig) %]</td><td valign="top">
 
          [% FOREACH val = crit.group.$groupname %]
-            <b>[% val.name.loc %]</b>
+            <b>[% val.desig %]</b>
             [% UNLESS loop.last %]
                [% loc('or') %]
             [% END %]
@@ -100,8 +100,8 @@
          [% ELSE %]
             [% IF firstpred.objtype %]
                [% val1 = get(foo.values.0) %]
-               [% val1.arc_list('scof').direct.obj.find(private_ne = 1).name.loc %]
-               [% val1.arc_list('is').direct.obj.find(private_ne = 1).name.loc %]
+               [% val1.arc_list('scof').direct.obj.find(private_ne = 1).desig %]
+               [% val1.arc_list('is').direct.obj.find(private_ne = 1).desig %]
             [% ELSE %]
                <em>[% loc(foo.match) %]</em>
             [% END %]
@@ -109,9 +109,9 @@
          </td><td valign="top">
          [% FOREACH val = foo.values %]
             [% IF firstpred.objtype %]
-               <b>[% get(val).name.loc %]</b>
+               <b>[% get(val).desig %]</b>
             [% ELSIF firstpred.plain == 'id' %]
-               <b>[% get(val).name.loc %]</b>
+               <b>[% get(val).desig %]</b>
             [% ELSE %]
                <b>[% val %]</b>
             [% END %]

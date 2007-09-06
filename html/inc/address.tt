@@ -52,7 +52,7 @@
      [% IF municipitality %]
         <tr><td>Kommun</td> <td>[% municipitality.name %]</td></tr>
         [% county = municipitality.in_region(is=C.county) %]
-        <tr><td>Län</td> <td>[% county.name.loc %]</td></tr>
+        <tr><td>Län</td> <td>[% county.desig %]</td></tr>
      [% END %]
   [% END %]
 
