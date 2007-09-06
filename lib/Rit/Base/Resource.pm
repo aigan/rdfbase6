@@ -7595,16 +7595,11 @@ sub session_history_add
 
 Only for classes used as range of predicates.
 
-Literal classes handled by L<Rit::Base::Literal::Class>. All other are
-coltype C<obj>.
-
-returns: the plain string of table column name
-
 =cut
 
-sub coltype
+sub valtype
 {
-    return 'obj';
+    return Rit::Base::Resource->get_by_label('resource');
 }
 
 
