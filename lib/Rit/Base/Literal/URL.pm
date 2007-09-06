@@ -50,7 +50,32 @@ L<Rit::Base::Literal::String>.
 
 #######################################################################
 
+=head3 new
+
+  $this->new( $value, $valtype )
+
+=cut
+
+sub new
+{
+    my( $this, $value, $valtype ) = @_;
+    my $class = ref $this || $this;
+
+    my $uri = URI->new($value);
+
+    return bless
+    {
+     value => $uri,
+     valtype => $valtype,
+    }, $class;
+}
+
+
+#######################################################################
+
 =head3 new_from_db
+
+  $this->new_from_db( $value, $valtype )
 
 Assumes that the value from DB is correct
 
@@ -58,13 +83,15 @@ Assumes that the value from DB is correct
 
 sub new_from_db
 {
-    my( $class ) = shift;
+    my( $this, $value, $valtype ) = @_;
+    my $class = ref $this || $this;
 
-    my $uri = URI->new(@_);
+    my $uri = URI->new($value);
 
     return bless
     {
      value => $uri,
+     valtype => $valtype,
     }, $class;
 }
 
@@ -186,6 +213,17 @@ sub getset_query
     return "";
 }
 
+
+#######################################################################
+
+=head3 default_valtype
+
+=cut
+
+sub default_valtype
+{
+    return Rit::Base::Literal::Class->get_by_label('url');
+}
 
 #######################################################################
 

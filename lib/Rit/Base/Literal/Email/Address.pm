@@ -58,15 +58,21 @@ These can be called with the class name or any List object.
 
 =head3 new
 
+  $this->new( $value, $valtype )
+
 Calls L<Para::Frame::Email::Address/parse>
 
 =cut
 
 sub new
 {
-    my( $class, $in_value ) = @_;
+    my( $class, $in_value, $valtype ) = @_;
 
-    return $class->Para::Frame::Email::Address::parse($in_value);
+    my $a = $class->Para::Frame::Email::Address::parse($in_value);
+
+    $a->{'valtype'} = $valtype;
+
+    return $a;
 }
 
 
@@ -85,10 +91,9 @@ sub parse
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
 
-
     if( ref $val eq 'SCALAR' )
     {
-	return $class->Para::Frame::Email::Address::parse($$val);
+	return $class->new( $$val, $valtype );
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Email::Address" )
     {
@@ -96,11 +101,11 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Para::Frame::Email::Address" )
     {
-	return bless $val, $class;
+	return $class->new($val, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Mail::Address" )
     {
-	return $class->Para::Frame::Email::Address::parse($val);
+	return $class->new($val, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
@@ -123,7 +128,9 @@ Assumes that the value from DB is correct
 
 sub new_from_db
 {
-    return $_[0]->Para::Frame::Email::Address::new($_[1]);
+    my $a = $_[0]->Para::Frame::Email::Address::new($_[1]);
+    $a->{'valtype'} = $_[2];
+    return $a;
 }
 
 
@@ -264,6 +271,17 @@ sub plain
     return $_[0]->format;
 }
 
+
+#######################################################################
+
+=head3 default_valtype
+
+=cut
+
+sub default_valtype
+{
+    return Rit::Base::Literal::Class->get_by_label('email_address');
+}
 
 #######################################################################
 

@@ -69,40 +69,21 @@ sub parse
 {
     my( $class, $val_in, $args_in ) = @_;
 
-#    my $valclass_in = ref $val_in;
-#    debug "Input value is $val_in ($valclass_in)";
-#    debug datadump($val_in, 3);
-
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
     my $url;
 
-#    my $valclass = ref $val;
-#    debug "preparsed value is $val ($valclass)";
-#    debug datadump($val, 3);
-
-
     if( ref $val eq 'SCALAR' )
     {
-#	debug "val SCALAR: ".datadump($val_in, 3);
-
-	$url = $class->new( $$val_in );
+	$url = $class->new( $$val_in, $valtype );
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::URL::Website" )
     {
-#	debug "val URL: ".datadump($val_in, 3);
-
 	$url = $val_in;
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {
-#	debug "val String: ".datadump($val_in, 3);
-
-	my $plain = $val_in->plain;
-
-#	debug "  -> $plain";
-
-	$url = $class->new( $val_in->plain );
+	$url = $class->new( $val_in->plain, $valtype );
     }
     else
     {
@@ -152,7 +133,7 @@ sub parse
 
     if( my $path = $url->path )
     {
-	debug "PAth is now $path";
+	debug "Path is now $path";
 	unless( $path =~ /^\// )
 	{
 	    throw 'validation', loc "Malformed path in website URL $url";
@@ -176,9 +157,20 @@ sub parse
 	throw 'validation', loc "Hostname missing from website URL $url";
     }
 
-    return $url->canonical;
+    return $class->new( $url->canonical, $valtype );
 }
 
+
+#######################################################################
+
+=head3 default_valtype
+
+=cut
+
+sub default_valtype
+{
+    return Rit::Base::Literal::Class->get_by_label('website_url');
+}
 
 #######################################################################
 

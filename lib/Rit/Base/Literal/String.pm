@@ -72,7 +72,7 @@ These can be called with the class name or any List object.
 
 sub new
 {
-    my( $this, $in_value ) = @_;
+    my( $this, $in_value, $valtype ) = @_;
     my $class = ref($this) || $this;
 
     unless( defined $in_value )
@@ -81,6 +81,7 @@ sub new
 	{
 	 'arc' => undef,
 	 'value' => undef,
+	 'valtype' => $valtype,
 	}, $class;
     }
 
@@ -139,6 +140,7 @@ sub new
     {
      'arc' => undef,
      'value' => $val,
+     'valtype' => $valtype,
     }, $class;
 }
 
@@ -151,7 +153,7 @@ sub new
 
 sub new_from_db
 {
-    my( $class, $val ) = @_;
+    my( $class, $val, $valtype ) = @_;
 
     if( defined $val )
     {
@@ -173,6 +175,7 @@ sub new_from_db
     {
      'arc' => undef,
      'value' => $val,
+     'valtype' => $valtype,
     }, $class;
 }
 
@@ -205,21 +208,16 @@ sub parse
 
     if( $coltype eq 'obj' ) # Is this a value node?
     {
-	if( $valtype )
-	{
-	    $coltype = $valtype->coltype;
-	}
-
+	$coltype = $valtype->coltype;
 	debug "Parsing as $coltype: ".query_desig($val_in);
     }
-
 
     if( ref $val eq 'SCALAR' )
     {
 	if( $coltype eq 'valtext' )
 	{
 	    # Implementing class may not take scalarref
-	    return $class->new($$val);
+	    return $class->new( $$val, $valtype );
 	}
 	elsif( $coltype eq 'valfloat' )
 	{
@@ -229,7 +227,7 @@ sub parse
 		throw 'validation', "String $$val is not a number";
 	    }
 	    # Implementing class may not take scalarref
-	    return $class->new($$val);
+	    return $class->new( $$val, $valtype );
 	}
 	else
 	{
@@ -264,15 +262,15 @@ sub parse
 
 sub new_if_length
 {
-    my( $this, $in_value ) = @_;
+    my( $this, $in_value, $valtype ) = @_;
 
     if( length $in_value )
     {
-	return $this->new($in_value);
+	return $this->new( $in_value, $valtype);
     }
     else
     {
-	return new Rit::Base::Undef;
+	return is_undef;
     }
 }
 
@@ -544,7 +542,7 @@ Returns the clean version of the value as a Literal obj
 
 sub clean
 {
-    return $_[0]->new( valclean( $_[0]->{'value'} ) );
+    return $_[0]->new( valclean( $_[0]->plain ) );
 }
 
 
@@ -558,7 +556,7 @@ Returns the clean version of the value as a plain string
 
 sub clean_plain
 {
-    return valclean( $_[0]->{'value'} );
+    return valclean( $_[0]->plain );
 }
 
 
@@ -584,13 +582,37 @@ sub begins
 
 #######################################################################
 
-=head3 coltype
+=head3 valtype
 
 =cut
 
-sub coltype
+sub valtype
 {
-    return "valtext";
+    if( ref $_[0] )
+    {
+	if( my $valtype = $_[0]->{'valtype'} )
+	{
+	    return $valtype;
+	}
+
+	if( looks_like_number($_[0]->{'value'}) )
+	{
+	    return Rit::Base::Literal::Class->get_by_label('valfloat');
+	}
+    }
+
+    return Rit::Base::Literal::Class->get_by_label('valtext');
+}
+
+#######################################################################
+
+=head3 default_valtype
+
+=cut
+
+sub default_valtype
+{
+    return Rit::Base::Literal::Class->get_by_label('valtext');
 }
 
 #######################################################################

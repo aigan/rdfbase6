@@ -28,6 +28,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+
 use Para::Frame::Utils qw( throw debug );
 
 use Rit::Base::Utils qw( is_undef );
@@ -69,7 +70,7 @@ sub parse
 
     if( ref $val eq 'SCALAR' )
     {
-	return $class->get($$val);
+	return $class->get($$val, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Time" )
     {
@@ -77,7 +78,7 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {
-	return $class->get($val->plain);
+	return $class->get($val->plain, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
@@ -93,6 +94,8 @@ sub parse
 
 =head2 new_from_db
 
+  $this->new_from_db( $value, $valtype )
+
 =cut
 
 sub new_from_db
@@ -100,12 +103,18 @@ sub new_from_db
     # Should parse faster since we know this is a PostgreSQL type
     # timestamp with time zone...
 
-    return $Rit::dbix->parse_datetime($_[1], $_[0])->init;
+    my $time = $Rit::dbix->parse_datetime($_[1], $_[0])->init;
+    $time->{'valtype'} = $_[2];
+    return $time;
 }
 
 #######################################################################
 
 =head2 get
+
+  $this->get( $time, $valtype )
+
+TODO: Implement undef time!
 
 Extension of L<Para::Frame::Time/get>
 
@@ -113,7 +122,13 @@ Extension of L<Para::Frame::Time/get>
 
 sub get
 {
-    return shift->SUPER::get(@_) || is_undef;
+    my( $this, $value, $valtype ) = @_;
+    my $time = $this->SUPER::get($value)
+      or return is_undef;
+
+    $time->{'valtype'} = $valtype;
+
+    return $time;
 }
 
 #######################################################################
@@ -156,13 +171,13 @@ sub date
 
 #######################################################################
 
-=head2 coltype
+=head3 default_valtype
 
 =cut
 
-sub coltype
+sub default_valtype
 {
-    return "valdate";
+    return Rit::Base::Literal::Class->get_by_label('valdate');
 }
 
 #######################################################################
