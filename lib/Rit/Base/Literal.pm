@@ -28,8 +28,8 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
+use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs );
 use Rit::Base::Literal::String;
@@ -215,6 +215,20 @@ sub is_true
 }
 
 
+#######################################################################
+
+=head2 is_literal
+
+See L</Rit::Base::Object/is_literal>
+
+=cut
+
+sub is_literal
+{
+    return 1;
+}
+
+
 #########################################################################
 ################################  Public methods  #######################
 
@@ -335,15 +349,35 @@ sub initiate_cache
 
 #######################################################################
 
-=head2 coltype
+=head3 valtype
+
+=cut
+
+sub valtype
+{
+    unless( ref $_[0] )
+    {
+	return $_[0]->default_valtype;
+    }
+
+    if( my $valtype = $_[0]->{'valtype'} )
+    {
+	return $valtype;
+    }
+
+    return $_[0]->default_valtype();
+}
+
+#######################################################################
+
+=head3 coltype
 
 =cut
 
 sub coltype
 {
-    confess "implement this";
+    return $_[0]->valtype->coltype;
 }
-
 
 #######################################################################
 
@@ -371,13 +405,9 @@ sub extract_string
     my( $class, $val_in, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    my $valtype = $args->{'valtype'};
-    my $coltype = $args->{'coltype'};
-    if( not $coltype and $valtype )
-    {
-	$coltype = $valtype->coltype;
-    }
-    $coltype ||= $class->coltype;
+    my $valtype = $args->{'valtype'} || $class->default_valtype;
+    my $coltype = $args->{'coltype'} || $valtype->coltype;
+
     unless( $coltype )
     {
 	confess "Can't determine coltype ";
