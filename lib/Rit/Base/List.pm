@@ -230,6 +230,9 @@ L<Rit::Base::List> or L<Para::Frame::List> object.
 The actual comparsion for the C<eq> and C<ne> matchtypes are done by
 the L<Rit::Base::Resource/has_value> method.
 
+If an element in the list is a L<Rit::Base::List>, it will be searchd
+in teh same way.
+
 The supported args are:
 
   private?
@@ -360,22 +363,26 @@ sub find
 
     my @newlist;
     my $cnt = 0;
+    my( $node, $error ) = $l->get_first;
 
   NODE:
-    foreach my $node ( $l->nodes )
+    while(! $error )
     {
-	$cnt ++;
-	debug "Resource $cnt: ".$node->id if $DEBUG;
-
 	# Check each prop in the template.  All must match.  One
 	# failed match and this $node in not placed in @newlist
 
-	if( $node->meets_proplim( $tmpl, $args ) )
+	if( $node->is_list )
 	{
-	    debug "  Add node to list" if $DEBUG;
+	    push @newlist, $node->find( $tmpl, $args )->as_array;
+	}
+	elsif( $node->meets_proplim( $tmpl, $args ) )
+	{
 	    push @newlist, $node;
 	}
+
+	( $node, $error ) = $l->get_next;
     }
+
     debug "Return ".(scalar @newlist)." results for ".
       query_desig($tmpl) if $DEBUG;
 
@@ -588,11 +595,10 @@ sub sorted
 	my $cmp = 'cmp';
 
 	# Silently ignore dynamic props (that isn't preds)
-	if( my $pred = Rit::Base::Pred->find_by_anything( $pred_str,
-						       {
-							%$args,
-							return_single_value=>1,
-						       }))
+	if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
+							 {
+							  %$args,
+							 }))
 	{
 	    my $coltype = $pred->coltype;
 	    $sortargs->[$i]->{'coltype'} = $coltype;
@@ -1021,7 +1027,14 @@ sub loc
     if( defined $default )
     {
 	debug 3, "  Returning default";
-	return $default->loc(@_);
+	if( ref $default and UNIVERSAL::isa $default, "Rit::Base::Object" )
+	{
+	    return $default->loc(@_);
+	}
+	else
+	{
+	    return $default;
+	}
     }
     else
     {
@@ -1566,6 +1579,35 @@ sub materialize
 
 #######################################################################
 
+=head2 materialize_by_rec
+
+=cut
+
+sub materialize_by_rec
+{
+    my( $l, $i ) = @_;
+
+    my $rec = $l->{'_DATA'}[$i];
+
+    # Handle long lists
+    unless( $i % 25 )
+    {
+	$Para::Frame::REQ->may_yield;
+	die "cancelled" if $Para::Frame::REQ->cancelled;
+    }
+
+    my $node = Rit::Base::Arc->get_by_rec( $rec );
+
+    if( debug > 1 )
+    {
+	debug "Materializing element $i -> ".$node->sysdesig;
+    }
+
+    return $node;
+}
+
+#######################################################################
+
 =head2 initiate_rel
 
   $l->initiate_rel
@@ -1673,6 +1715,31 @@ sub get_next_nos
 }
 
 #######################################################################
+
+=head2 concatenate_by_overload
+
+implemented concatenate_by_overload()
+
+=cut
+
+sub concatenate_by_overload
+{
+    my( $l, $str, $is_rev ) = @_;
+#    carp "* OVERLOAD concatenate for list obj used";
+
+    my $lstr = $l->desig;
+    if( $is_rev )
+    {
+	return $str.$lstr;
+    }
+    else
+    {
+	return $lstr.$str;
+    }
+}
+
+
+#######################################################################
 ################################  Private methods  ####################
 
 =head1 AUTOLOAD
@@ -1743,11 +1810,25 @@ AUTOLOAD
 	    next unless $elem->defined;
 
 	    # Add a undef to force list context in Resource AUTOLOAD
-	    push @list, $elem->$propname(@_,undef);
-	}
-	else
-	{
-	    push @list, $elem;
+	    my $res = $elem->$propname(@_,undef);
+	    if( UNIVERSAL::isa( $res, 'Rit::Base::Object' ) )
+	    {
+		if( $res->is_list )
+		{
+		    if( $res->size )
+		    {
+			push @list, $res;
+		    }
+		}
+		elsif( $res->defined )
+		{
+		    push @list, $res;
+		}
+	    }
+	    else
+	    {
+		push @list, $res;
+	    }
 	}
     }
     continue
@@ -2085,31 +2166,6 @@ sub meets_arclim
 
     return $l->new(\@arcs);
 }
-
-#######################################################################
-
-=head2 concatenate_by_overload
-
-implemented concatenate_by_overload()
-
-=cut
-
-sub concatenate_by_overload
-{
-    my( $l, $str, $is_rev ) = @_;
-#    carp "* OVERLOAD concatenate for list obj used";
-
-    my $lstr = $l->desig;
-    if( $is_rev )
-    {
-	return $str.$lstr;
-    }
-    else
-    {
-	return $lstr.$str;
-    }
-}
-
 
 #######################################################################
 
