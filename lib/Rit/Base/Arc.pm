@@ -2121,11 +2121,102 @@ sub vacuum
 #	    }
 #	}
 
+	$arc->check_valtype( $args );
 
 #	debug "  Reset clean";
 	$arc->reset_clean($args);
 #	debug "  Create check";
 	$arc->create_check( $args );
+    }
+}
+
+#######################################################################
+
+=head2 check_valtype
+
+  $a->check_valtype( \%args )
+
+Compares the arc valtype with the pred valtype
+
+=cut
+
+sub check_valtype
+{
+    my( $arc, $args_in ) = @_;
+
+    my $pred = $arc->pred;
+    if( $pred->plain eq 'value' )
+    {
+	$pred = $arc->subj->revlist_preds->get_first_nos;
+	unless( $pred )
+	{
+	    my $subj_id = $arc->subj->id;
+	    debug "Valuenode $subj_id is disconnected";
+	    return;
+	}
+    }
+
+    my $arc_valtype = $arc->valtype;
+    my $pred_valtype = $pred->valtype;
+
+    if( $arc_valtype->equals( $pred_valtype ) )
+    {
+	return;
+    }
+    elsif( $arc_valtype->scof( $pred_valtype ) )
+    {
+	# Valtype in valid range
+	return;
+    }
+
+    my $pred_coltype = $pred->coltype;
+
+    my $old_val = $arc->value;
+
+    debug "TRANSLATION OF VALTYPE";
+    debug " from ".$arc_valtype->sysdesig;
+    debug "   to ".$pred_valtype->sysdesig;
+
+    if( $arc->coltype eq 'obj' )
+    {
+	my $c_resource = Rit::Base::Constants->get('resource');
+	if( $pred_valtype->equals( $c_resource ) )
+	{
+	    # Valtype in valid range
+	    return;
+	}
+
+	if( $pred_coltype eq 'obj' )
+	{
+	    confess "FIXME";
+	}
+	else
+	{
+	    my $val = $pred_valtype->literal_class->parse($old_val);
+	    $arc->set_value( $val,
+			     {
+			      'activate_new_arcs' => $arc->active,
+			      'force_set_value'   => 1,
+			      'force_set_value_same_version' => 1,
+			     });
+	}
+    }
+    else
+    {
+	if( $pred_coltype eq 'obj' )
+	{
+	    confess "FIXME";
+	}
+	else
+	{
+	    my $val = $pred_valtype->literal_class->parse($old_val);
+	    $arc->set_value( $val,
+			     {
+			      'activate_new_arcs' => $arc->active,
+			      'force_set_value'   => 1,
+			      'force_set_value_same_version' => 1,
+			     });
+	}
     }
 }
 
@@ -2856,6 +2947,10 @@ Old and/or new value could be a value node.  Fail if old value
 is obj and new value isn't.  If old is value and new is obj,
 just accept that.
 
+Supported args are:
+
+  force_set_value
+
 Returns: the arc changed, or the same arc
 
 =cut
@@ -2869,47 +2964,56 @@ sub set_value
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
-    # Works also for valtype, but not for removals
-    my $valtype = $arc->valtype;
-    unless( $valtype )
-    {
-	confess "Can't set the value of a removal ($value_new_in)";
-    }
-
     my $coltype_old  = $arc->real_coltype;
 
-    # Get the value alternatives based on the current coltype.  That
-    # is; If the previous value was an object: try to find a new
-    # object.  Not a Literal.
-    #
-    my $value_new_list = Rit::Base::Resource->find_by_anything
-      ( $value_new_in,
-	{
-	 %$args,
-	 coltype => $coltype_old,
-	 valtype => $valtype,
-	});
-
-    $value_new_list->defined or die "wrong input '$value_new_in'";
-
-    if( $value_new_list->[1] ) # More than one
+    my $value_new;
+    if( $args->{'force_set_value'} )
     {
+	$value_new = $value_new_in;
+    }
+    else
+    {
+	# Works also for valtype, but not for removals
+	my $valtype = $arc->valtype;
+	unless( $valtype )
+	{
+	    confess "Can't set the value of a removal ($value_new_in)";
+	}
+
+	# Get the value alternatives based on the current coltype.  That
+	# is; If the previous value was an object: try to find a new
+	# object.  Not a Literal.
+	#
+	my $value_new_list = Rit::Base::Resource->find_by_anything
+	  ( $value_new_in,
+	    {
+	     %$args,
+	     coltype => $coltype_old,
+	     valtype => $valtype,
+	    });
+
+	$value_new_list->defined or die "wrong input '$value_new_in'";
+
+	if( $value_new_list->[1] ) # More than one
+	{
 	    # TODO: Explain 'kriterierna'
 	    my $result = $Para::Frame::REQ->result;
 	    $result->{'info'}{'alternatives'}{'alts'} = $value_new_list;
 	    $result->{'info'}{'alternatives'}{'query'} = $value_new_in;
 	    throw('alternatives', "More than one node matches the criterions");
+	}
+
+	$value_new = $value_new_list->get_first_nos;
+	unless( defined $value_new ) # Avoids using list overload
+	{
+	    $value_new = is_undef;
+	}
     }
 
-    my $value_new = $value_new_list->get_first_nos;
-    unless( defined $value_new ) # Avoids using list overload
-    {
-	$value_new = is_undef;
-    }
 
     my $value_old = $arc->value          || is_undef; # Is object
 
-    my $coltype_new = $coltype_old;
+    my $coltype_new = $value_new->coltype;
     if( $value_new->is_value_node($args) )
     {
 	$coltype_new = 'obj';
@@ -2917,20 +3021,25 @@ sub set_value
 
 #    # TODO: Should also verify the type of the new value
 #    # Should be done by find_by_anything()
-#    check_value(\$value_new);
+
+    my $valtype_old = $arc->valtype;
+    my $valtype_new = $value_new->valtype;
 
 
     if( $DEBUG )
     {
 	debug "  value_old: ".$value_old->sysdesig();
+	debug "   type old: ".$valtype_old->sysdesig;
 	debug "  value_new: ".$value_new->sysdesig();
+	debug "   type new: ".$valtype_new->sysdesig;
 	debug "  coltype  : $coltype_new";
     }
 
-
-    unless( $value_new->equals( $value_old, $args ) )
+    unless( $value_new->equals( $value_old, $args ) and
+	    $valtype_new->equals( $valtype_old )
+	  )
     {
-	unless( $arc->is_new )
+	unless( $arc->is_new or $args->{'force_set_value_same_version'} )
 	{
 	    my $new = Rit::Base::Arc->create({
 					      common      => $arc->common_id,
@@ -2953,10 +3062,20 @@ sub set_value
 	my $dbh         = $dbix->dbh;
 	my $value_db;
 
+	my @dbvalues;
+	my @dbparts;
+
+	if( $coltype_old ne $coltype_new )
+	{
+	    push @dbparts, "$coltype_old=null";
+	    $arc->{$coltype_old} = undef;
+	}
+
 	if( $coltype_new eq 'obj' )
 	{
 	    $value_db = $value_new->id;
 	    $arc->obj->initiate_cache;
+	    # $arc->subj->initiate_cache # IS CALLED BELOW
 	}
 	elsif( $coltype_new eq 'valdate' )
 	{
@@ -2969,12 +3088,10 @@ sub set_value
 	elsif( $coltype_new eq 'valtext' )
 	{
 	    $value_db = $value_new;
-
-	    my $sth = $dbh->prepare
-		("update arc set valclean=? where ver=?");
 	    my $clean = $value_new->clean_plain;
-#	    die if $clean =~ /^ritbase/;
-	    $sth->execute($clean, $arc_id);
+
+	    push @dbparts, "valclean=?";
+	    push @dbvalues, $clean;
 
 	    $arc->{'clean'} = $clean;
 	}
@@ -2985,31 +3102,41 @@ sub set_value
 	    $value_db = $value_new;
 	}
 
-	my $sth = $dbh->prepare("update arc set $coltype_new=?, ".
-				       "created=?, created_by=?, updated=? ".
-				       "where ver=?");
-
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
 	# Assume that ->plain() always returns charstring
 	utf8::upgrade( $value_db );
 
-	if( $coltype_new eq 'valtext' ) ### DEBUG
-	{
-	    my $len1 = length($value_db);
-	    my $len2 = bytes::length($value_db);
-	    debug "Setting value to: $value_db ($len2/$len1)";
-	}
-
 	my $now_db = $dbix->format_datetime($now);
-	$sth->execute($value_db, $now_db, $u_node->id, $now_db, $arc_id);
 
-	$arc->{'value'}      = $value_new;
-	$arc->{$coltype_new} = $value_new;
-	$arc->{'arc_updated'}    = $now;
-	$arc->{'arc_created'}    = $now;
-	$arc->{'arc_created_by'} = $u_node->id;
+	push( @dbparts,
+	      "$coltype_new=?",
+	      "valtype=?",
+	      "created=?",
+	      "created_by=?",
+	      "updated=?"
+	    );
+
+	push( @dbvalues,
+	      $value_db,
+	      $valtype_new->id,
+	      $now_db,
+	      $u_node->id,
+	      $now_db,
+	    );
+
+	my $sql_set = join ",",@dbparts;
+	my $st = "update arc set $sql_set where ver=?";
+	my $sth = $dbh->prepare($st);
+	$sth->execute(@dbvalues, $arc_id);
+
+	$arc->{'value'}              = $value_new;
+	$arc->{$coltype_new}         = $value_new;
+	$arc->{'arc_updated'}        = $now;
+	$arc->{'arc_created'}        = $now;
+	$arc->{'arc_created_by'}     = $u_node->id;
 	$arc->{'arc_created_by_obj'} = $u_node;
+	$arc->{'valtype'}            = $valtype_new;
 
 	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
@@ -3022,11 +3149,11 @@ sub set_value
 
 	$arc->schedule_check_create;
 	$Rit::Base::Cache::Changes::Updated{$arc->id} ++;
-	if( $value_old->is_node )
+	if( $value_old->is_resource )
 	{
 	    $Rit::Base::Cache::Changes::Updated{$value_old->id} ++;
 	}
-	if( $value_new->is_node )
+	if( $value_new->is_resource )
 	{
 	    $Rit::Base::Cache::Changes::Updated{$value_new->id} ++;
 	}
