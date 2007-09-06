@@ -34,6 +34,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump  );
 use Para::Frame::List;
+use Para::Frame::Logging;
 
 use Rit::Base::Arc::Lim;
 use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs );
@@ -44,10 +45,15 @@ use base qw( Para::Frame::List Rit::Base::Object );
 
 # Can't overload stringification. It's called in some stage of the
 # process before it should.
-# use overload '""'   => 'desig'; # Too much trouble...
+
+use overload
+  '""'         => 'desig',
+  '.'          => 'concatenate_by_overload',
+  'fallback'   => 0; # This and NOTHING else!
 
 #use overload 'cmp'  => 'cmp';
 #use overload 'bool' => sub{ scalar @{$_[0]} };
+
 
 =head1 DESCRIPTION
 
@@ -129,8 +135,13 @@ sub new
 sub init
 {
     my( $l, $args ) = @_;
+
+    ### CHANGED: now explicitly adding materializer in
+    ###          in Rit::Base::Search->execute
+    #
     # Add the materializer to the args
-    $args->{'materializer'} ||= \&materialize;
+    #$args->{'materializer'} ||= \&materialize;
+
     $l->{'rb_initiate_rel'} = $args->{'initiate_rel'};
 }
 
@@ -885,6 +896,12 @@ sub loc
 {
     my $list = shift;
 
+    # TODO: Check if the next argument is a hashref. Take that as
+    # args.
+
+
+#    Para::Frame::Logging->this_level(3);
+
     my $req = $Para::Frame::REQ;
 
     my %alts;
@@ -892,30 +909,47 @@ sub loc
 
 #    debug 2,"Choosing among ".(scalar @$list)." values";
 
+    # If we get a list of lists, do a loc for each sublist. Even if
+    # one of the elements in this list is a sublist
+    #
+    my $is_nested_list = 0;
+
     foreach my $item ( @$list )
     {
-	# TODO: correct?
-	if( ref $item and UNIVERSAL::isa($item, 'Rit::Base::Resource') )
+	if( ref $item )
 	{
-	    my $langs = $item->list('is_of_language');
-	    if( @$langs )
+	    if( UNIVERSAL::isa($item, 'Rit::Base::Resource') )
 	    {
-		foreach my $lang ( @$langs )
+		my $langs = $item->list('is_of_language');
+		if( @$langs )
 		{
-		    next unless $lang;
-		    my $code = $lang->code->plain;
-		    push @{$alts{$code}}, $item;
-		    unless( $code )
+		    foreach my $lang ( @$langs )
 		    {
-			throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
+			next unless $lang;
+			my $code = $lang->code->plain;
+			push @{$alts{$code}}, $item;
+			unless( $code )
+			{
+			    throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
+			}
+			debug 4,"Lang $code: $item->{'id'}";
 		    }
-		    debug 4,"Lang $code: $item->{'id'}";
 		}
+		else
+		{
+		    push @{$alts{'c'}}, $item;
+		    #		debug 4,"Lang c: $item->{'id'} ($langs)";
+		}
+	    }
+	    elsif( UNIVERSAL::isa($item, 'Rit::Base::List') )
+	    {
+		$is_nested_list++;
+		last;
 	    }
 	    else
 	    {
-		push @{$alts{'c'}}, $item;
-#		debug 4,"Lang c: $item->{'id'} ($langs)";
+		$default = $item;
+		debug 3,"No translation";
 	    }
 	}
 	else
@@ -925,16 +959,29 @@ sub loc
 	}
     }
 
+    if( $is_nested_list++ )
+    {
+	debug 3, "This is a nested list. Returning a list.";
+	my @new;
+	foreach my $item ( @$list )
+	{
+	    push @new, $item->loc(@_);
+	}
+	return $list->new(\@new);
+    }
+
+
     # TODO: Chose value even with no language priority
 
     foreach my $lang ( $req->language->alternatives, 'c' )
     {
-#	debug "Checking lang $lang";
+	debug 3, "Checking lang $lang";
 	# Try to handle the cases in order of commonality
 	next unless $alts{$lang} and @{$alts{$lang}};
 	unless( $alts{$lang}[1] )
 	{
 	    # Not using ->value, since this may be a Literal
+	    debug 3, "  Returning only alternative";
 	    return $alts{$lang}[0]->loc(@_);
 	}
 
@@ -973,16 +1020,8 @@ sub loc
 
     if( defined $default )
     {
-	# Special handling of Literal just to catch some errors
-	if( UNIVERSAL::isa($default, 'Rit::Base::Literal' ) )
-	{
-	    return $default->loc(@_);
-	}
-	else
-	{
-	    # Not using ->value, since this may be a Literal
-	    return $default->loc(@_);
-	}
+	debug 3, "  Returning default";
+	return $default->loc(@_);
     }
     else
     {
@@ -1074,8 +1113,27 @@ See L<Rit::Base::Object/desig>
 
 sub desig
 {
-#    warn "Stringifies object ".ref($_[0])."\n"; ### DEBUG
-    return join ' / ', map $_->desig($_[1]), $_[0]->nodes;
+    my( $list, $args_in ) = @_;
+    my @part;
+
+    my( $elem, $error ) = $list->get_first;
+    while(! $error )
+    {
+	if( (ref $elem) and ( UNIVERSAL::isa $elem, 'Rit::Base::Object' ) )
+	{
+	    push @part, $elem->desig($args_in);
+	}
+	else
+	{
+	    push @part, "$elem"; # stringify
+	}
+    }
+    continue
+    {
+	( $elem, $error ) = $list->get_next;
+    };
+
+    return join ' / ', @part;
 }
 
 #######################################################################
@@ -1464,6 +1522,9 @@ sub has_pred
 
 =head2 materialize
 
+Primarly used by L<Rit::Base::Search/execute> given to L</new> as
+argument C<materializer>.
+
 =cut
 
 sub materialize
@@ -1660,128 +1721,62 @@ AUTOLOAD
 	or confess "Wrong class: ".ref($self)."\n";
     my $thingtype = ref $self;
 
-    debug 3, "List autoloading $propname for $thingtype";
-    if( debug>3 )
-    {
-	debug "LIST params ".datadump(\@_,2);
-	debug "LIST IN ".datadump($self,2);
-    }
+    #Logging mark don't work in AUTOLOAD
+    #Para::Frame::Logging->this_level(3);
+    my $DEBUG = 0;
 
-    my @templist = ();
-    foreach my $elem ( @$self )
+    debug "List autoloading $propname for $thingtype" if $DEBUG>1;
+    if( $DEBUG>3 )
     {
-	next unless defined $elem;
-	if( ref $elem )
-	{
-	    my $res = $elem->$propname(@_);
-	    if( UNIVERSAL::isa( $res, 'Rit::Base::List' ) )
-	    {
-		push @templist, @$res;
-	    }
-	    else
-	    {
-		push @templist, $res;
-	    }
-	}
-	else
-	{
-	    push @templist, $elem;
-	}
+	debug "LIST params ".query_desig(\@_);
+	debug "LIST IN ".query_desig($self);
+	debug "Got ".$self->size." elements";
     }
-
 
     my @list = ();
-    foreach( @templist )
+    my( $elem, $error ) = $self->get_first;
+    while(! $error )
     {
-	next unless defined;
-	if( UNIVERSAL::isa( $_, 'Rit::Base::Object' ) )
+	next unless defined $elem;
+	if( UNIVERSAL::isa( $elem, 'Rit::Base::Object' ) )
 	{
-	    next unless $_->defined;
-	}
-	push @list, $_;
-    }
+	    next unless $elem->defined;
 
-
-#    my @list = (
-#		grep{ defined and ((ref and $_->defined) or not ref ) }
-#		map{ ref $_ ? $_->$propname(@_) : $_ }
-#		grep defined,
-#		@$self
-#		);
-
-    if( debug > 3 )
-    {
-	debug( "LIST WASHED ".datadump(\@list,2) );
-    }
-    elsif( debug > 2 )
-    {
-	debug( "LIST WASHED: @list" );
-    }
-
-
-    unless( @list )
-    {
-	debug 3, "  No value returned";
-	return is_undef;
-    }
-
-
-    # determine type of elements returned
-    my $eltype = ref $list[0];
-
-    unless( $eltype )
-    {
-	# Literal strings
-	$eltype = 'Rit::Base::Literal';
-    }
-
-    if( $eltype eq 'Rit::Base::List' )
-    {
-	if( $list[1] )
-	{
-	    debug 1, "  Returned a list of lists: flattening";
-	    return $self->new( flatten_list( \@list ) );
+	    # Add a undef to force list context in Resource AUTOLOAD
+	    push @list, $elem->$propname(@_,undef);
 	}
 	else
 	{
-	    debug 3, "  Return the one node";
-	    return $list[0];
+	    push @list, $elem;
 	}
     }
-    elsif( UNIVERSAL::isa($eltype, 'Rit::Base::Literal' ) )
+    continue
     {
-	# Asume all elements is literals (or maby valuenodes)
+	( $elem, $error ) = $self->get_next;
+    }
 
-	if( $list[1] )
+
+    if( $DEBUG > 2 )
+    {
+	debug( "LIST WASHED ".query_desig(\@list) );
+    }
+
+    if( my $size = scalar @list )
+    {
+	if( $size == 1 )
 	{
-	    debug 3, "  About to create list of literals";
-	    foreach( @list )
-	    {
-		### CHANGE THE LIST DIRECTLY
-		$_ = Rit::Base::Literal->new( $_ ) unless ref;
-	    }
-	    debug 3,"  Return list of literals";
+	    return $list[0];
+	}
+	else
+	{
 	    return $self->new(\@list);
 	}
-	else
-	{
-	    debug 3, "  Return the one literal";
-	    return $list[0];
-	}
-    }
-    elsif( UNIVERSAL::isa($eltype, 'Rit::Base::Resource' ) )
-    {
-	debug 3, "  Return list of resources";
-	return $self->new(\@list);
     }
     else
     {
-	confess "Autoloaded $propname returned a list of $eltype (may need to fix this code)".datadump(\@list,2);
+	debug "  No value returned" if $DEBUG>2;
+	return is_undef;
     }
-
-
-#    my $item = $self->[0];
-#    return( ref $item ? $item->$propname(@_) : $item );
 }
 
 sub flatten_list
@@ -2092,6 +2087,28 @@ sub meets_arclim
 }
 
 #######################################################################
+
+=head2 concatenate_by_overload
+
+implemented concatenate_by_overload()
+
+=cut
+
+sub concatenate_by_overload
+{
+    my( $l, $str, $is_rev ) = @_;
+#    carp "* OVERLOAD concatenate for list obj used";
+
+    my $lstr = $l->desig;
+    if( $is_rev )
+    {
+	return $str.$lstr;
+    }
+    else
+    {
+	return $lstr.$str;
+    }
+}
 
 
 #######################################################################
