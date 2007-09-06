@@ -785,7 +785,7 @@ sub find_simple
 {
     my( $this, $pred_in, $value_in ) = @_;
 
-    my $pred = Rit::Base::Pred->get( $pred_in );
+    my $pred = Rit::Base::Pred->get_by_label( $pred_in );
     my $pred_id = $pred->id;
 
     my $value = valclean($value_in);
@@ -1376,7 +1376,7 @@ sub form_url
     }
     else
     {
-	if( my $path_node = $n->is->class_form_url->get_first )
+	if( my $path_node = $n->is->class_form_url->get_first_nos )
 	{
 	    $path = $path_node->plain;
 	}
@@ -1530,7 +1530,11 @@ TODO: Remove
 
 =cut
 
-sub score { $_[0]->{'score'}||0 } ## Used by Seach class
+sub score
+{
+    cluck "REMOVE ME";
+    $_[0]->{'score'}||0;
+} ## Used by Seach class
 
 
 #######################################################################
@@ -1548,7 +1552,11 @@ TODO: Remove
 
 =cut
 
-sub random { $_[0]->{'random'}||0 } ## Used by Seach class
+sub random
+{
+    cluck "REMOVE ME";
+    $_[0]->{'random'}||0;
+} ## Used by Seach class
 
 
 #######################################################################
@@ -1571,6 +1579,9 @@ sub is_resource { 1 };
   $n->is_value_node( \%args )
 
 Returns true if this node is a Literal Resource (aka value node).
+
+TODO: All value nodes should be handled as literals
+
 
 Returns: boolean
 
@@ -2014,9 +2025,9 @@ sub list_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_anything($_, $args), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
-    return Rit::Base::List->new([@preds]);
+    return Rit::Base::List->new(\@preds);
 }
 
 
@@ -2175,9 +2186,9 @@ sub revlist_preds
 	}
     }
 
-    my @preds = map Rit::Base::Pred->get_by_anything($_, $args), keys %preds_name;
+    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
-    return Rit::Base::List->new([@preds]);
+    return Rit::Base::List->new(\@preds);
 }
 
 
@@ -3355,7 +3366,7 @@ sub count
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
-    my $pred_id = Rit::Base::Pred->get_id( $tmpl );
+    my $pred_id = Rit::Base::Pred->get_by_label( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
 
@@ -3398,7 +3409,7 @@ sub revcount
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
-    my $pred_id = Rit::Base::Pred->get_id( $tmpl );
+    my $pred_id = Rit::Base::Pred->get_by_label( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
 
@@ -4500,7 +4511,7 @@ sub replace
     foreach my $pred_name ( keys %$props )
     {
 	debug 3, "  pred: $pred_name";
-	my $pred = Rit::Base::Pred->get( $pred_name );
+	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 
 	my $coltype = $pred->coltype;
 	if( $coltype eq 'value' )
@@ -4702,7 +4713,7 @@ sub remove
 
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
-    my $pred_value_id = Rit::Base::Pred->get('value')->id;
+    my $pred_value_id = Rit::Base::Pred->get_by_label('value')->id;
 
     foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes )
     {
@@ -4819,6 +4830,8 @@ sub find_arcs
 
 Checks that the values has the right format. If a value is a hashref;
 looks up an object with those properties using L</find_set>.
+
+TODO: REMOVE THE NEED FOR THIS!
 
 Used by L</replace>.
 
@@ -6374,7 +6387,11 @@ sub get_by_anything
 
 =head2 get_by_label
 
-  $n->get_by_label( $label )
+  $class->get_by_label( $label )
+
+Looks for a label WITH THE SPECIFIED CLASS.
+
+If called fro L<Rit::Base::Pred> it will assume it's a predicate
 
 =cut
 
@@ -6389,17 +6406,19 @@ sub get_by_label
 	    confess "label must be a plain string";
 	}
 	my $sth = $Rit::dbix->dbh->prepare(
-		  "select node from node where label=?");
+		  "select * from node where label=?");
 	$sth->execute( $label );
-	my( $id ) = $sth->fetchrow_array;
+	my( $rec ) = $sth->fetchrow_hashref;
 	$sth->finish;
+	my $id = $rec->{'node'};
 
 	unless( $id )
 	{
 	    confess "Constant $label doesn't exist";
 	}
 
-	$Rit::Base::Constants::Label{$label} = Rit::Base::Resource->get( $id );
+	$Rit::Base::Constants::Label{$label} = $this->get( $id );
+	$Rit::Base::Constants::Label{$label}->initiate_node($rec);
     }
 
     return $Rit::Base::Constants::Label{$label};
@@ -7168,7 +7187,7 @@ sub initiate_prop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get_id( $name ) )
+    if( my $pred_id = Rit::Base::Pred->get_by_label( $name )->id )
     {
 	if( debug > 3 )
 	{
@@ -7325,7 +7344,7 @@ sub initiate_revprop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get_id( $name ) )
+    if( my $pred_id = Rit::Base::Pred->get_by_label( $name )->id )
     {
 	if( debug > 1 )
 	{
@@ -7570,66 +7589,22 @@ sub session_history_add
 
 #########################################################################
 
-=head2 literal_class
+=head2 valtype
 
-  $n->literal_class()
+  $node->valtype()
 
-TODO: MOVE TO Literal::Class
+Only for classes used as range of predicates.
 
-This should be a resource class. Get the perl class name that handles
-instances of this class.
+Literal classes handled by L<Rit::Base::Literal::Class>. All other are
+coltype C<obj>.
 
-It will be retrieved by the class_handled_by_perl_module property, or
-for Literals, by the corresponding coltype.
-
-Literals, arcs and preds must only have ONE class. Other resoruces may
-have multiple classses.
-
-Returns: the class name as a plain string
+returns: the plain string of table column name
 
 =cut
 
-sub literal_class
+sub coltype
 {
-    my( $node ) = @_;
-
-    my $id = $node->id;
-    my $classname = $Rit::Base::Cache::Class{ $id };
-    unless( $classname )
-    {
-	if( my $class = $node->first_prop('class_handled_by_perl_module') )
-	{
-	    $classname = $class->first_prop('code')->plain
-	      or confess "No classname found for class $class->{id}";
-	    no strict "refs";
-	    require(package_to_module($classname));
-	}
-	else
-	{
-	    my $coltype = $node->coltype;
-
-	    if( $coltype eq 'valtext' )
-	    {
-		$classname = "Rit::Base::Literal::String";
-	    }
-	    elsif( $coltype eq 'valdate' )
-	    {
-		$classname = "Rit::Base::Literal::Time";
-	    }
-	    elsif( $coltype eq "valfloat" )
-	    {
-		$classname = "Rit::Base::Literal::String";
-	    }
-	    else
-	    {
-		confess "Coltype $coltype not supported";
-	    }
-	}
-
-	$Rit::Base::Cache::Class{ $id } = $classname;
-    }
-
-    return $classname;
+    return 'obj';
 }
 
 
@@ -7637,19 +7612,20 @@ sub literal_class
 
 =head2 coltype
 
-TEMPORARY BOOTSTRAP METHOD
+  $node->coltype()
 
-  $n->coltype()
+Only for classes used as range of predicates.
 
-For getting the coltype corresponding to this valtype.
+Literal classes handled by L<Rit::Base::Literal::Class>. All other are
+coltype C<obj>.
 
-Defaults to C<obj>.
+returns: the plain string of table column name
 
 =cut
 
 sub coltype
 {
-    return $Rit::Base::Literal::Class::COLTYPE_valtype2name{ $_[0]->id } || 'obj';
+    return 'obj';
 }
 
 
