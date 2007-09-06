@@ -174,7 +174,7 @@ sub wub
 		my $arc = Rit::Base::Arc->get($arc_id);
 		if( my $lang = $arc->obj->is_of_language(undef,'auto') )
 		{
-		    $out .= "(".$lang->name->loc.")";
+		    $out .= "(".$lang->desig.")";
 		}
 
 		if( (@{$arcversions->{$arc_id}} > 1) or

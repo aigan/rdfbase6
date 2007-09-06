@@ -952,7 +952,7 @@ sub handle_query_arc_value
 			      run => 'next_step',
 			     };
 			     my $link = Para::Frame::Widget::forward( $label, $uri, $args );
-			     my $tstr = $item->list('is', undef, aais($args,'direct'))->name->loc;
+			     my $tstr = $item->list('is', undef, aais($args,'direct'))->desig;
 			     my $view = Para::Frame::Widget::jump('visa',
 								  $item->form_url->as_string,
 								 );
