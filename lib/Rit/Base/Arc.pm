@@ -2143,6 +2143,7 @@ Compares the arc valtype with the pred valtype
 sub check_valtype
 {
     my( $arc, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
     my $pred = $arc->pred;
     if( $pred->plain eq 'value' )
@@ -2177,6 +2178,8 @@ sub check_valtype
     debug " from ".$arc_valtype->sysdesig;
     debug "   to ".$pred_valtype->sysdesig;
 
+    $res->changes_add;
+
     if( $arc->coltype eq 'obj' )
     {
 	my $c_resource = Rit::Base::Constants->get('resource');
@@ -2188,7 +2191,20 @@ sub check_valtype
 
 	if( $pred_coltype eq 'obj' )
 	{
-	    confess "FIXME";
+	    if( $old_val->is($pred_valtype) )
+	    {
+		# Old value in range
+		$arc->set_value( $old_val,
+				 {
+				  'activate_new_arcs' => $arc->active,
+				  'force_set_value'   => 1,
+				  'force_set_value_same_version' => 1,
+				 });
+	    }
+	    else
+	    {
+		confess "FIXME";
+	    }
 	}
 	else
 	{
@@ -2960,7 +2976,7 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
 
@@ -3023,7 +3039,15 @@ sub set_value
 #    # Should be done by find_by_anything()
 
     my $valtype_old = $arc->valtype;
-    my $valtype_new = $value_new->valtype;
+    my $valtype_new;
+    if( $value_new->is_literal )
+    {
+	$valtype_new = $value_new->valtype;
+    }
+    else
+    {
+	$valtype_new = $arc->pred->valtype;
+    }
 
 
     if( $DEBUG )
@@ -3136,7 +3160,7 @@ sub set_value
 	$arc->{'arc_created'}        = $now;
 	$arc->{'arc_created_by'}     = $u_node->id;
 	$arc->{'arc_created_by_obj'} = $u_node;
-	$arc->{'valtype'}            = $valtype_new;
+	$arc->{'valtype'}            = $valtype_new->id;
 
 	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
