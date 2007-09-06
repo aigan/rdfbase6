@@ -442,7 +442,18 @@ sub find_by_anything
 	debug 3, "  obj as list";
 	foreach my $elem ( $val->as_array )
 	{
-	    push @new, $this->find_by_anything($elem)->as_array;
+	    my $subl = $this->find_by_anything($elem);
+	    if( my $size = $subl->size )
+	    {
+		if( $size == 1 )
+		{
+		    push @new, $subl->get_first_nos;
+		}
+		else
+		{
+		    push @new, $subl;
+		}
+	    }
 	}
     }
     elsif( (ref $val) and (ref $val eq 'ARRAY') )
@@ -450,7 +461,18 @@ sub find_by_anything
 	debug 3, "  obj as list";
 	foreach my $elem ( @$val )
 	{
-	    push @new, $this->find_by_anything($elem)->as_array;
+	    my $subl = $this->find_by_anything($elem);
+	    if( my $size = $subl->size )
+	    {
+		if( $size == 1 )
+		{
+		    push @new, $subl->get_first_nos;
+		}
+		else
+		{
+		    push @new, $subl;
+		}
+	    }
 	}
     }
     #
@@ -877,8 +899,8 @@ sub find_one
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
-		  my $cstr = $item->list('scof',undef, 'direct')->name->loc;
+		  my $tstr = $item->list('is', undef, 'direct')->desig || '';
+		  my $cstr = $item->list('scof',undef, 'direct')->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -1014,8 +1036,8 @@ sub find_set
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
-		  my $cstr = $item->list('scof',undef, 'direct')->name->loc;
+		  my $tstr = $item->list('is', undef, 'direct')->desig || '';
+		  my $cstr = $item->list('scof',undef, 'direct')->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -3339,6 +3361,7 @@ sub count
 
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql" );
+    debug "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql; ($pred_id, $node->{id})";
     $sth->execute( $pred_id, $node->id );
     my( $cnt ) =  $sth->fetchrow_array;
     return $cnt;
@@ -3463,13 +3486,13 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if( $node->first_prop('name',{},$args)->defined )
+    if( $node->has_pred('name',{},$args) )
     {
-	$desig = $node->first_prop('name',{},$args)
+	$desig = $node->list('name',{},$args)->loc();
     }
-    elsif( $node->first_prop('name_short',{},$args)->defined )
+    elsif( $node->has_pred('name_short',{},$args) )
     {
-	$desig = $node->first_prop('name_short',{},$args)
+	$desig = $node->list('name_short',{},$args)->loc();
     }
     elsif( $desig = $node->label )
     {
@@ -3479,9 +3502,9 @@ sub desig  # The designation of obj, meant for human admins
     {
 	$desig = $node->value
     }
-    elsif( $node->first_prop('code',{},$args)->defined )
+    elsif( $node->has_pred('code',{},$args) )
     {
-	$desig = $node->first_prop('code',{},$args)
+	$desig = $node->list('code',{},$args)->loc;
     }
     else
     {
@@ -6308,8 +6331,8 @@ sub get_by_anything
 	 rowformat => sub
 	 {
 	     my( $item ) = @_;
-	     my $tstr = $item->list('is', undef, 'direct')->name->loc || '';
-	     my $cstr = $item->list('scof',undef, 'direct')->name->loc;
+	     my $tstr = $item->list('is', undef, 'direct')->desig || '';
+	     my $cstr = $item->list('scof',undef, 'direct')->desig;
 	     my $desig = $item->desig;
 	     my $desc = "$tstr $desig";
 	     if( $cstr )
@@ -6635,6 +6658,7 @@ sub commit
 
 sub rollback
 {
+    debug "ROLLBACK NODES";
     foreach my $node ( values %UNSAVED )
     {
 	$node->initiate_cache;
