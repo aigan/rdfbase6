@@ -133,7 +133,7 @@ sub valclean
 
     $value = $$origvalue if ref $origvalue eq 'SCALAR';
 
-    if( ref $value )
+    if( UNIVERSAL::can $value, 'plain' )
     {
 	$value = $value->plain;
     }
