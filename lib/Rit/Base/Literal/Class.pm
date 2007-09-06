@@ -29,7 +29,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug package_to_module );
 
 use Rit::Base::Constants;
 use Rit::Base::Resource;
@@ -49,7 +49,7 @@ our %COLTYPE_num2name =
 
 our %COLTYPE_name2num;
 
-our %COLTYPE_valtype2name;
+our %COLTYPE_valtype2name; # For bootstrapping
 
 our $id; # Node id
 
@@ -140,9 +140,10 @@ sub set_valtype2name
 	my $label = $parent->label;
 	next unless $label;
 
-	if( $COLTYPE_name2num{$label} )
+	if( $COLTYPE_name2num{$label} ) #not expecting 6
 	{
-	    $COLTYPE_valtype2name{ $node->id } = $label;
+	    $node->{'lit_coltype'} =
+	      $COLTYPE_valtype2name{ $node->id } = $label;
 	    if( debug )
 	    {
 		debug sprintf "Adding valtype %d -> %s in coltype cache",
@@ -159,7 +160,8 @@ sub set_valtype2name
 	{
 	    if( $COLTYPE_name2num{$label} )
 	    {
-		$COLTYPE_valtype2name{ $node->id } = $label;
+		$node->{'lit_coltype'} =
+		  $COLTYPE_valtype2name{ $node->id } = $label;
 		if( debug )
 		{
 		    debug sprintf "Adding valtype %d -> %s in coltype cache",
@@ -174,6 +176,7 @@ sub set_valtype2name
     {
 	debug sprintf "Removing valtype %d -> %s in coltype cache",
 	  $node->id, $COLTYPE_valtype2name{ $node->id };
+	delete $node->{'lit_coltype'};
 	delete $COLTYPE_valtype2name{ $node->id };
     }
 }
@@ -247,13 +250,17 @@ sub on_arc_del
 
 For getting the coltype corresponding to this valtype.
 
-Defaults to C<obj>.
+Will not return C<obj>
 
 =cut
 
 sub coltype
 {
-    return $COLTYPE_valtype2name{ $_[0]->id } || 'obj';
+    return(
+	   ( $_[0]->{'lit_coltype'}
+	     ||= $COLTYPE_valtype2name{ $_[0]->id } )
+	   || confess("coltype missing")
+	  );
 }
 
 
@@ -265,20 +272,82 @@ sub coltype
 
 For getting the coltype_id corresponding to this valtype.
 
-Defaults to C<obj> id.
+Will not return the C<obj> id.
 
 =cut
 
 sub coltype_id
 {
-    return $COLTYPE_name2num{ $COLTYPE_valtype2name{ $_[0]->id } || 'obj' };
+    return $COLTYPE_name2num{ $_[0]->coltype };
+}
+
+
+#########################################################################
+
+=head2 literal_class
+
+  $n->literal_class()
+
+This should be a resource class. Get the perl class name that handles
+instances of this class.
+
+It will be retrieved by the class_handled_by_perl_module property, or
+for Literals, by the corresponding coltype.
+
+Literals, arcs and preds must only have ONE class. Other resoruces may
+have multiple classses.
+
+Returns: the class name as a plain string
+
+=cut
+
+sub literal_class
+{
+    my( $node ) = @_;
+
+    my $id = $node->id;
+    my $classname = $Rit::Base::Cache::Class{ $id };
+    unless( $classname )
+    {
+	if( my $class = $node->first_prop('class_handled_by_perl_module') )
+	{
+	    $classname = $class->first_prop('code')->plain
+	      or confess "No classname found for class $class->{id}";
+	    no strict "refs";
+	    require(package_to_module($classname));
+	}
+	else
+	{
+	    my $coltype = $node->coltype;
+
+	    if( $coltype eq 'valtext' )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    elsif( $coltype eq 'valdate' )
+	    {
+		$classname = "Rit::Base::Literal::Time";
+	    }
+	    elsif( $coltype eq "valfloat" )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    else
+	    {
+		confess "Coltype $coltype not supported";
+	    }
+	}
+
+	$Rit::Base::Cache::Class{ $id } = $classname;
+    }
+
+    return $classname;
 }
 
 
 #######################################################################
 #######################################################################
 #######################################################################
-
 
 =head2 coltype_by_valtype_id
 
@@ -288,7 +357,8 @@ Rit::Base::Literal::Class->coltype_by_valtype_id( $id )
 
 sub coltype_by_valtype_id
 {
-    return $COLTYPE_valtype2name{ $_[1] };
+    return $COLTYPE_valtype2name{ $_[1] }
+      or confess "coltype not found for valtype id $_[1]";
 }
 
 
