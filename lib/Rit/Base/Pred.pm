@@ -42,6 +42,9 @@ use Rit::Base::Literal::String;
 use base qw( Rit::Base::Resource );
 
 
+use constant R => 'Rit::Base::Resource';
+
+
 #### INIT
 
 our $special_id =
@@ -72,13 +75,6 @@ Inherits from L<Rit::Base::Resource>.
 
 
 #########################################################################
-################################  Accessors  ############################
-
-=head1 Accessors
-
-=cut
-
-#######################################################################
 
 =head2 id
 
@@ -252,14 +248,6 @@ sub coltype
 }
 
 #########################################################################
-################################  Public methods  #######################
-
-
-=head1 Public methods
-
-=cut
-
-#######################################################################
 
 =head2 is_pred
 
@@ -273,7 +261,6 @@ sub is_pred { 1 };
 
 
 #########################################################################
-################################  Private methods  ######################
 
 =head2 find_by_anything
 
@@ -291,8 +278,7 @@ sub find_by_anything
     my $class = ref($this) || $this;
 
     $args ||= {};
-
-    my $no_list = $args->{'return_single_value'} || 0;
+    my( @new );
 
 #    warn "New pred $label\n"; ### DEBUG
 
@@ -304,7 +290,7 @@ sub find_by_anything
 	}
 	elsif( UNIVERSAL::isa( $label, 'Rit::Base::Pred') )
 	{
-	    return $label;
+	    return Rit::Base::List->new([$label]);
 	}
 	else
 	{
@@ -316,102 +302,58 @@ sub find_by_anything
 	}
     }
 
-    $label = $label->literal if ref $label;
     $label or confess "get_by_anything got empty label";
 
 
     # TODO: Insert special predicates subj, pred, obj, coltype
 
+    if( $label =~ /^-\d+$/ )
+    {
+	$label = $special_label->{$label};
+    }
+
+
     # Special properties
     if( $label =~ /^(id|score|random)$/ )
     {
-	return $class->get_by_node_rec({
-					label   => $1,
-					node    => $special_id->{$1},
-					pred_coltype => 2, # valfloat
-				       });
+	push @new, $class->get_by_node_rec({
+					    label   => $1,
+					    node    => $special_id->{$1},
+					    pred_coltype => 2, # valfloat
+					   });
     }
-    if( $label =~ /^(desig|loc|plain)$/ )
+    elsif( $label =~ /^(desig|loc|plain)$/ )
     {
-	return $class->get_by_node_rec({
-					label   => $1,
-					node    => $special_id->{$1},
-					pred_coltype => 5, # valtext
-				       });
-    }
-
-    my $sql = 'select * from node where ';
-
-    if( $label =~ /^-\d+$/ )
-    {
-	return $this->get_by_anything( $special_label->{$label}, $args );
+	push @new, $class->get_by_node_rec({
+					    label   => $1,
+					    node    => $special_id->{$1},
+					    pred_coltype => 5, # valtext
+					   });
     }
     elsif( $label =~ /^\d+$/ )
     {
-	$sql .= 'node = ?';
+	# Check that this is a pred is done in init()
+	push @new, $this->get($label);
+    }
+    elsif( ref $label )
+    {
+	my $list = $this->SUPER::find_by_anything($label);
+	foreach my $pred ( $list->as_array )
+	{
+	    unless( $pred->is_pred )
+	    {
+		confess "$pred is not a predicate";
+	    }
+	}
+	return $list;
     }
     else
     {
-	$sql .= 'label = ?';
+	# Check that this is a pred is done in init()
+	push @new, $this->get_by_label($label);
     }
 
-    my $req = $Para::Frame::REQ;
-
-    my $rec;
-    eval
-    {
-	my $sth = $Rit::dbix->dbh->prepare($sql);
-	$sth->execute($label);
-	$rec = $sth->fetchrow_hashref;
-	$sth->finish;
-    } or return $Rit::dbix->report_error([$label]);
-
-    if( $no_list )
-    {
-	if( $rec )
-	{
-	    return $class->get_by_node_rec( $rec );
-	}
-	else
-	{
-	    return is_undef;
-	}
-    }
-    else
-    {
-	if( $rec )
-	{
-	    return Rit::Base::List->new([$class->get_by_node_rec( $rec )]);
-	}
-	else
-	{
-	    return Rit::Base::List->new([]);
-	}
-    }
-}
-
-
-#######################################################################
-
-=head2 get_by_anything
-
-=cut
-
-sub get_by_anything
-{
-    my $args = {'return_single_value' => 1};
-
-    my( $node ) = $_[0]->find_by_anything($_[1], $args);
-
-    if( $node )
-    {
-#	debug "$_[0] -> get_by_anything($_[1])";
-	return $node;
-    }
-    else
-    {
-	confess "No such predicate $_[1] in DB\n";
-    }
+    return Rit::Base::List->new(\@new);
 }
 
 
@@ -447,7 +389,7 @@ sub on_bless
 {
     my( $pred, $class_old, $args_in ) = @_;
 
-    $pred->set_coltype_from_range;
+    $pred->set_coltype_from_range($args_in);
 }
 
 #######################################################################
@@ -458,9 +400,14 @@ sub on_bless
 
 sub on_unbless
 {
-    my( $pred, $class_new, $args_new ) = @_;
+    my( $pred, $class_new, $args_in ) = @_;
 
-    $pred->set_coltype_from_range;
+    if( $pred->has_arcs )
+    {
+	confess "You can't remove a pred used in arcs";
+    }
+
+    $pred->set_coltype_from_range($args_in);
 }
 
 #######################################################################
@@ -471,11 +418,11 @@ sub on_unbless
 
 sub on_arc_add
 {
-    my( $pred, $arc, $pred_name, $args ) = @_;
+    my( $pred, $arc, $pred_name, $args_in ) = @_;
 
     if( $pred_name eq 'range' )
     {
-	$pred->set_coltype_from_range;
+	$pred->update_arcs_for_new_range($arc, $args_in);
     }
 }
 
@@ -487,12 +434,89 @@ sub on_arc_add
 
 sub on_arc_del
 {
-    my( $pred, $arc, $pred_name, $args ) = @_;
+    my( $pred, $arc, $pred_name, $args_in ) = @_;
 
     if( $pred_name eq 'range' )
     {
-	$pred->set_coltype_from_range;
+	$pred->update_arcs_for_new_range($arc, $args_in);
     }
+}
+
+#######################################################################
+
+=head2 update_arcs_for_new_range
+
+  $pred->update_arcs_for_new_range( \%args )
+
+=cut
+
+sub update_arcs_for_new_range
+{
+    my( $pred, $arc, $args_in ) = @_;
+
+    $pred->set_coltype_from_range($args_in);
+
+    unless( $arc->replaces_id )
+    {
+	# No previous value
+	return;
+    }
+
+    my $range_old = $arc->replaces->value;
+    my $range_new = $pred->valtype; # may fall back on default
+
+    # was the old range more specific?
+    if( $range_old->scof($range_new) )
+    {
+	# This is compatible with all existing arcs
+	return;
+    }
+
+    # All active existing arcs must be upgraded
+
+    unless( $pred->has_active_arcs )
+    {
+	# No active existing arcs to worry about
+	return;
+    }
+
+    # This is a big change. Make sure this is what is wanted
+    die "Is this realy what you want?";
+
+    $pred->vacuum_pred_arcs( $args_in );
+
+    return;
+}
+
+#######################################################################
+
+=head2 vacuum_pred_arcs
+
+  $pred->vacuum_pred_arcs( \%args )
+
+=cut
+
+sub vacuum_pred_arcs
+{
+    my( $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $arcs = $pred->active_arcs;
+
+    my $size = $arcs->size;
+    debug "Vacuuming $size arcs";
+
+    my( $arc, $error ) = $arcs->get_first;
+    while(! $error )
+    {
+	$arc->vacuum( $args );
+    }
+    continue
+    {
+	( $arc, $error ) = $arcs->get_next;
+    };
+
+    return;
 }
 
 #######################################################################
@@ -562,10 +586,12 @@ sub set_coltype
 
 	    debug "Changing coltype from $coltype_old to $coltype_new!!!";
 
-	    my $st = "select * from arc where pred=$pred_id and $coltype_old is not null";
+	    # TODO: now just checks for existance (limit 1)
+	    #
+	    my $st = "select * from arc where pred=$pred_id and $coltype_old is not null limit 1";
 	    my $sth = $Rit::dbix->dbh->prepare($st);
 	    $sth->execute();
-	    while( my($rec) = $sth->fetchrow_array )
+	    while( my($rec) = $sth->fetchrow_hashref )
 	    {
 		my( $val ) = $rec->{ $coltype_old };
 		if( defined $val )
@@ -608,6 +634,97 @@ sub vacuum
 sub use_class
 {
     return "Rit::Base::Pred";
+}
+
+
+#######################################################################
+
+=head2 has_arcs
+
+  $p->has_arcs
+
+Retruns: true, if there is any arc that uses the pred
+
+=cut
+
+sub has_arcs
+{
+    # Any arcs with this pred?
+    my $pred_id = $_[0]->id;
+    my $st = "select 1 from arc where pred=$pred_id limit 1";
+    my $sth = $Rit::dbix->dbh->prepare($st);
+    $sth->execute();
+    my($exist) = $sth->fetchrow_array;
+    $sth->finish;
+
+    return $exist ? 1 : 0;
+}
+
+
+#######################################################################
+
+=head2 has_active_arcs
+
+  $p->has_active_arcs
+
+Retruns: true, if there is any active arc that uses the pred
+
+=cut
+
+sub has_active_arcs
+{
+    # Any arcs with this pred?
+    my $pred_id = $_[0]->id;
+    my $st = "select 1 from arc where pred=$pred_id and active is true limit 1";
+    my $sth = $Rit::dbix->dbh->prepare($st);
+    $sth->execute();
+    my($exist) = $sth->fetchrow_array;
+    $sth->finish;
+
+    return $exist ? 1 : 0;
+}
+
+
+#######################################################################
+
+=head2 active_arcs
+
+  $p->active_arcs
+
+Retruns: a L<Rit::Base::List> of arcs
+
+=cut
+
+sub active_arcs
+{
+    my( $pred, $args_in ) = @_;
+
+    my $largs =
+    {
+     'materializer' => \&Rit::Base::List::materialize_by_rec,
+    };
+
+    my $pred_id = $pred->id;
+    my $st = "select * from arc where pred=$pred_id and active is ture";
+    my $sth = $Rit::dbix->dbh->prepare($st);
+    $sth->execute();
+
+    my @list;
+    my $i=0;
+    while( my($rec) = $sth->fetchrow_hashref )
+    {
+	push @list, $rec;
+
+	# Handle long lists
+	unless( ++$i % 250 )
+	{
+	    $Para::Frame::REQ->may_yield;
+	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	}
+    }
+    $sth->finish;
+
+    return Rit::Base::List->new( \@list, $largs );
 }
 
 
