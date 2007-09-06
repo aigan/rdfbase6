@@ -26,7 +26,7 @@
          <tr class="important">
       [% END %]
       <td>[% checkbox('arc_delete', arc.id, 1) %]</td>
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       [% IF arc.is_removal %]
          <td style="text-decoration:line-through; color:red">
          [% arc.replaces.value_sysdesig %]
@@ -59,7 +59,7 @@
       [% ELSE %]
          <td>[% arc.subj.sysdesig %]</td>
       [% END %]
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       <td>[% jump(arc.view_flags, 'arc/update.tt', id=arc.id) %]</td>
       </tr>
    [% END %]

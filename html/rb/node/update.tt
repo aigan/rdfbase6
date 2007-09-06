@@ -74,7 +74,7 @@ END;
 [% IF debug_level > 1 %]
 [% WRAPPER imgexpand label='Perl hashdump' %]
 <table>
-<tr><td><pre>[% dump(node,2) %]</pre></td></tr>
+<tr><td><pre>[% dump(node,4) %]</pre></td></tr>
 </table>
 [% END %]
 [% END %]
@@ -196,7 +196,7 @@ END;
          [% jump('-', 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       <td>
       [% IF arc.obj %]
          [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
@@ -221,7 +221,7 @@ END;
          [% jump('-', 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       <td>
       [% IF arc.is_removal %]
          <span style="text-decoration:line-through; color:red">
@@ -266,7 +266,7 @@ END;
       <td>
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
@@ -287,7 +287,7 @@ END;
       <td>
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
-      <td valign="top">[% pred.name.loc %]</td>
+      <td valign="top">[% pred.plain %]</td>
       <td style="white-space: nowrap">[% arc.view_flags %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
