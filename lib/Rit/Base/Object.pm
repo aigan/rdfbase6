@@ -156,6 +156,19 @@ sub is_resource { 0 };
 
 #######################################################################
 
+=head2 is_literal
+
+  $o->is_literal
+
+Returns true if object is a L<Rit::Base::Literal>
+
+=cut
+
+sub is_literal { 0 };
+
+
+#######################################################################
+
 =head2 is_node
 
   $o->is_node
