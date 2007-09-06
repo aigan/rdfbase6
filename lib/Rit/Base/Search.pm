@@ -1627,7 +1627,7 @@ sub criterions
     }
     else
     {
-	debug "  No criterions found";
+	debug 3, "  No criterions found";
 	return undef;
     }
 }
