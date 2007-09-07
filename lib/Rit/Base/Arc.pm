@@ -519,6 +519,8 @@ sub create
 							%$args,
 							coltype => $coltype,
 							valtype => $valtype,
+							subj_new => $subj,
+							pred_new => $pred,
 						       });
 
 	$value_obj = $value;
