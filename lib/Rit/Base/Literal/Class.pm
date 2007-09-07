@@ -80,12 +80,12 @@ sub on_startup
 	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
 	$sth_label->finish;
 
-	debug "Caching colname $colname";
+#	debug "Caching colname $colname";
 	$sth_child->execute($colid) or die;
 	while(my( $nid ) = $sth_child->fetchrow_array)
 	{
 	    $COLTYPE_valtype2name{$nid} = $colname;
-	    debug "Valtype $nid = $colname";
+#	    debug "Valtype $nid = $colname";
 	}
 	$sth_child->finish;
 
@@ -96,7 +96,7 @@ sub on_startup
     %COLTYPE_name2num = reverse %COLTYPE_num2name;
 
 
-    debug "Initiating literal_class";
+#    debug "Initiating literal_class";
 
     my $sth = $Rit::dbix->dbh->
       prepare("select node from node where label=?");
