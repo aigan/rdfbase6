@@ -29,7 +29,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug datadump );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs );
 use Rit::Base::Literal::String;
@@ -112,7 +112,7 @@ sub new
 
 sub new_from_db
 {
-    confess "implement this";
+    confess "implement this ".datadump(\@_,2);
 }
 
 
@@ -124,7 +124,7 @@ sub new_from_db
 
 sub parse
 {
-    confess "implement this";
+    confess "implement this".datadump(\@_,2);
 }
 
 
