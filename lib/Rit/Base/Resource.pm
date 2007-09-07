@@ -4482,7 +4482,7 @@ sub replace
 
     # Replace value where it can be done
 
-    Para::Frame::Logging->this_level(3);
+#    Para::Frame::Logging->this_level(3);
 
 
     my( %add, %del, %del_pred );
@@ -5267,7 +5267,7 @@ sub wu
     my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
     my $image = $R->get({label=>'image', scof=>'file'});
 
-    my $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->range );
+    my $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->valtype );
     my $range_scof = ( $args->{'range_scof'} ?
 		       $R->get($args->{'range_scof'}) : $pred->range_scof );
 
@@ -5876,6 +5876,45 @@ sub first_bless
 #    debug sprintf "Node %d initiated as $node", $node->id;
 
     return $node;
+}
+
+
+#########################################################################
+
+=head2 on_class_perl_module_change
+
+  $node->on_class_perl_module_change()
+
+Blesses the childs
+
+=cut
+
+sub on_class_perl_module_change
+{
+    my( $node, $arc, $pred_name, $args_in ) = @_;
+
+    debug "on_class_perl_module_change for ".$node->sysdesig;
+
+    # Check out new module
+    my $modules = $node->list('class_handled_by_perl_module',undef,'relative');
+    while( my $module = $modules->get_next_nos )
+    {
+	my $code = $module->code->plain;
+	require(package_to_module($code));
+    }
+
+    if( $node->isa('Rit::Base::Literal::Class') )
+    {
+	debug "TODO: rebless literals for ".$node->sysdesig;
+    }
+    else
+    {
+	my $childs = $node->revlist('is');
+	while( my $child = $childs->get_next_nos )
+	{
+	    $child->rebless($args_in);
+	}
+    }
 }
 
 
@@ -7803,7 +7842,7 @@ AUTOLOAD
 	}
 	debug datadump $err;
 	my $desc = "";
-	if( $node->defined )
+	if( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
 	{
 	    foreach my $isnode ( $node->list('is')->as_array )
 	    {
