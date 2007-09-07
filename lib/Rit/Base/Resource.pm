@@ -7226,7 +7226,7 @@ sub initiate_prop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get_by_label( $name )->id )
+    if( my $pred_id = Rit::Base::Pred->get( $name )->id )
     {
 	if( debug > 3 )
 	{
@@ -7383,7 +7383,7 @@ sub initiate_revprop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get_by_label( $name )->id )
+    if( my $pred_id = Rit::Base::Pred->get( $name )->id )
     {
 	if( debug > 1 )
 	{
