@@ -2175,6 +2175,7 @@ sub check_valtype
     my $old_val = $arc->value;
 
     debug "TRANSLATION OF VALTYPE";
+    debug "  for ".$arc->sysdesig;
     debug " from ".$arc_valtype->sysdesig;
     debug "   to ".$pred_valtype->sysdesig;
 
@@ -3929,8 +3930,15 @@ sub initiate_cache
 #	    debug "Getting value for literal_class ".
 #	      "for $coltype by parsing $rec->{$coltype}";
 
-	    $value = $valtype->literal_class->
-	      new_from_db( $rec->{$coltype} );
+	    if( $coltype eq 'obj' )
+	    {
+		$value = Rit::Base::Resource->get($rec->{'obj'});
+	    }
+	    else
+	    {
+		$value = $valtype->literal_class->
+		  new_from_db( $rec->{$coltype} );
+	    }
 	}
     }
 
@@ -4424,6 +4432,11 @@ sub create_check
     {
 	$subj->rebless( $args );
     }
+    elsif( $pred_name eq 'class_handled_by_perl_module' )
+    {
+	# TODO: Place this in Rit::Base::Class
+	$subj->on_class_perl_module_change($arc, $pred_name, $args);
+    }
 
     $subj->on_arc_add($arc, $pred_name, $args);
  }
@@ -4487,6 +4500,11 @@ sub remove_check
     if( $pred_name eq 'is' )
     {
 	$subj->rebless($args);
+    }
+    elsif( $pred_name eq 'class_handled_by_perl_module' )
+    {
+	# TODO: Place this in Rit::Base::Class
+	$subj->on_class_perl_module_change($arc, $pred_name, $args);
     }
 
     $subj->on_arc_del($arc, $pred_name, $args);
