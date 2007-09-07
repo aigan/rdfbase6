@@ -57,6 +57,14 @@ Literals.
 
 Inherits from L<Rit::Base::Object>.
 
+Supported args:
+
+  subj_new
+  pred_new
+  coltype
+  valtype
+
+
 =cut
 
 
@@ -377,6 +385,50 @@ sub valtype
 sub coltype
 {
     return $_[0]->valtype->coltype;
+}
+
+#######################################################################
+
+=head3 subj
+
+Get existing or planned subj
+
+=cut
+
+sub subj
+{
+    my( $lit, $args_in ) = @_;
+    if( my $arc = $lit->arc )
+    {
+	return $arc->subj;
+    }
+    else
+    {
+	my( $args ) = parse_propargs($args_in);
+	return $args->{'subj_new'} || is_undef;
+    }
+}
+
+#######################################################################
+
+=head3 pred
+
+Get existing or planned pred
+
+=cut
+
+sub pred
+{
+    my( $lit, $args_in ) = @_;
+    if( my $arc = $lit->arc )
+    {
+	return $arc->pred;
+    }
+    else
+    {
+	my( $args ) = parse_propargs($args_in);
+	return $args->{'pred_new'} || is_undef;
+    }
 }
 
 #######################################################################
