@@ -481,7 +481,6 @@ sub update_arcs_for_new_range
     }
 
     # This is a big change. Make sure this is what is wanted
-    die "Is this realy what you want?";
 
     $pred->vacuum_pred_arcs( $args_in );
 
@@ -705,22 +704,15 @@ sub active_arcs
     };
 
     my $pred_id = $pred->id;
-    my $st = "select * from arc where pred=$pred_id and active is ture";
-    my $sth = $Rit::dbix->dbh->prepare($st);
-    $sth->execute();
+    my $st = "select * from arc where pred=$pred_id and active is true";
+    my $sth = $Rit::dbix->dbh->prepare($st) or die;
+    $sth->execute() or die;
 
     my @list;
     my $i=0;
-    while( my($rec) = $sth->fetchrow_hashref )
+    while( my $rec = $sth->fetchrow_hashref )
     {
 	push @list, $rec;
-
-	# Handle long lists
-	unless( ++$i % 250 )
-	{
-	    $Para::Frame::REQ->may_yield;
-	    die "cancelled" if $Para::Frame::REQ->cancelled;
-	}
     }
     $sth->finish;
 
