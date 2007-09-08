@@ -522,7 +522,7 @@ sub handle_query_arc_value
       if( $select and $select eq 'version' ); # activate arc-version and return
 
 
-    my $pred = Rit::Base::Pred->get( $pred_name )
+    my $pred = Rit::Base::Pred->get_by_label( $pred_name )
       or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
@@ -861,7 +861,16 @@ sub handle_query_arc_value
 	    }
 	    elsif( length $value )
 	    {
-		$arc = $arc->set_value( $value, $args );
+		# Give the valtype of the pred. We want to use the
+		# current valtype rather than the previous one that
+		# maight not be the same.
+
+		my $valtype = $arc->pred->valtype;
+		$arc = $arc->set_value( $value,
+					{
+					 %$args,
+					 valtype => $valtype,
+					});
 	    }
 	    else
 	    {
