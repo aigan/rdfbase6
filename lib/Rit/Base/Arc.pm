@@ -2969,6 +2969,8 @@ just accept that.
 Supported args are:
 
   force_set_value
+  force_set_value_same_version
+  valtype
 
 Returns: the arc changed, or the same arc
 
@@ -2993,7 +2995,7 @@ sub set_value
     else
     {
 	# Works also for valtype, but not for removals
-	my $valtype = $arc->valtype;
+	my $valtype = $args->{'valtype'} || $arc->valtype;
 	unless( $valtype )
 	{
 	    confess "Can't set the value of a removal ($value_new_in)";
@@ -3009,6 +3011,7 @@ sub set_value
 	     %$args,
 	     coltype => $coltype_old,
 	     valtype => $valtype,
+	     arc     => $arc,
 	    });
 
 	$value_new_list->defined or die "wrong input '$value_new_in'";
