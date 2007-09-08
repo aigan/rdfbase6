@@ -397,16 +397,25 @@ Get existing or planned subj
 
 sub subj
 {
-    my( $lit, $args_in ) = @_;
-    if( my $arc = $lit->arc )
+    my( $this, $args_in ) = @_;
+
+    if( ref $this )
+    {
+	my $lit = $this;
+	if( my $arc = $lit->arc )
+	{
+	    return $arc->subj;
+	}
+    }
+
+    my $class = $this;
+    my( $args ) = parse_propargs($args_in);
+    if( my $arc = $args->{'arc'} )
     {
 	return $arc->subj;
     }
-    else
-    {
-	my( $args ) = parse_propargs($args_in);
-	return $args->{'subj_new'} || is_undef;
-    }
+
+    return $args->{'subj_new'} || is_undef;
 }
 
 #######################################################################
@@ -419,16 +428,25 @@ Get existing or planned pred
 
 sub pred
 {
-    my( $lit, $args_in ) = @_;
-    if( my $arc = $lit->arc )
+    my( $this, $args_in ) = @_;
+
+    if( ref $this )
+    {
+	my $lit = $this;
+	if( my $arc = $lit->arc )
+	{
+	    return $arc->pred;
+	}
+    }
+
+    my $class = $this;
+    my( $args ) = parse_propargs($args_in);
+    if( my $arc = $args->{'arc'} )
     {
 	return $arc->pred;
     }
-    else
-    {
-	my( $args ) = parse_propargs($args_in);
-	return $args->{'pred_new'} || is_undef;
-    }
+
+    return $args->{'pred_new'} || is_undef;
 }
 
 #######################################################################
