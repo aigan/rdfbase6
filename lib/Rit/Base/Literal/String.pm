@@ -212,44 +212,57 @@ sub parse
 	debug "Parsing as $coltype: ".query_desig($val_in);
     }
 
+    my $val_mod;
     if( ref $val eq 'SCALAR' )
     {
-	if( $coltype eq 'valtext' )
-	{
-	    # Implementing class may not take scalarref
-	    return $class->new( $$val, $valtype );
-	}
-	elsif( $coltype eq 'valfloat' )
-	{
-	    trim($val);
-	    unless( looks_like_number( $$val ) )
-	    {
-		throw 'validation', "String $$val is not a number";
-	    }
-	    # Implementing class may not take scalarref
-	    return $class->new( $$val, $valtype );
-	}
-	else
-	{
-	    confess "coltype $coltype not handled by this class";
-	}
+	$val_mod = $$val;
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {
-	# Still parsing it
-	if( $coltype eq 'valfloat' )
-	{
-	    unless( looks_like_number( $val->plain ) )
-	    {
-		throw 'validation', "String $val is not a number";
-	    }
-	}
-
-	return $val;
+	$val_mod = $val->plain;
     }
     else
     {
 	confess "Can't parse $val";
+    }
+
+
+    if( $coltype eq 'valtext' )
+    {
+	unless( length $val_mod )
+	{
+	    $class->new( undef, $valtype );
+	}
+
+	$val_mod =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
+	$val_mod =~ s/^\s*\n//; # Leading empty lines
+	$val_mod =~ s/\n\s+$/\n/; # Trailing empty lines
+
+	if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+	{
+	    if( $val_mod eq $val->plain )
+	    {
+		return $val;
+	    }
+	}
+
+	# Implementing class may not take scalarref
+	return $class->new( $val_mod, $valtype );
+    }
+    elsif( $coltype eq 'valfloat' )
+    {
+	trim($val_mod);
+	unless( looks_like_number( $val_mod ) )
+	{
+	    throw 'validation', "String $val_mod is not a number";
+	}
+
+	# Implementing class may not take scalarref
+	return $class->new( $val_mod, $valtype );
+    }
+    else
+    {
+	confess "coltype $coltype not handled by this class";
     }
 }
 
