@@ -6321,7 +6321,6 @@ sub get_by_anything
     my $list = $class->find_by_anything($val, $args);
 
     my $req = $Para::Frame::REQ;
-    confess "No REQ" unless $req;
 
     unless( $list->size )
     {
@@ -6334,7 +6333,7 @@ sub get_by_anything
 	}
 
 	my $msg = "";
-	if( $req->is_from_client )
+	if( $req and $req->is_from_client )
 	{
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
@@ -6356,7 +6355,7 @@ sub get_by_anything
 
 	# TODO: Handle situations with multipple choices (in sequence (nested))
 
-	unless( $req->is_from_client )
+	unless( $req and $req->is_from_client )
 	{
 	    confess "We got a list: ".datadump( $list,4 );
 	}
