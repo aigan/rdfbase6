@@ -57,6 +57,8 @@ our %LIM =
    created_by_me    => 16384,
    removal          => 32768,
    not_removal      => 65536,
+
+   adirect          =>     5, # active + direct
   );
 
 our %REVLIM = reverse %LIM;
@@ -281,7 +283,16 @@ Supported args are
 
   prefix
 
-Returns: The sql string to insert, NOT beginning with "and ..."
+
+C<$extralim> is the number of limitations other than active and
+inactive as the second argument. Used in L<Rit::Base::Resource> in
+order to find out the cache status.
+
+
+Returns in scalar context:  The sql string to insert, NOT beginning with "and ..."
+
+Returns in list context: ( $sql, $extralim )
+
 
 =cut
 
@@ -300,6 +311,7 @@ sub sql
 	return "${pf}active is true";
     }
 
+    my $extralim = 0;
     my @alt;
     foreach( @$arclim )
     {
@@ -313,27 +325,32 @@ sub sql
 	if( $_ & $LIM{'direct'} )
 	{
 	    push @crit, "${pf}indirect is false";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'submitted'} )
 	{
 	    push @crit, "${pf}submitted is true";
+	    $extralim++;
 	}
 
 	if(  $_ & $LIM{'new'} )
 	{
 	    push @crit, "(${pf}active is false and ${pf}submitted is false and ${pf}deactivated is null )";
+	    $extralim++;
 	}
 
 	if(  $_ & $LIM{'created_by_me'} )
 	{
 	    my $uid = $Para::Frame::REQ->user->id;
 	    push @crit, "${pf}created_by=$uid";
+	    $extralim++;
 	}
 
 	if(  $_ & $LIM{'old'} )
 	{
 	    push @crit, "${pf}deactivated is not null";
+	    $extralim++;
 	}
 
 	if(  $_ & $LIM{'inactive'} )
@@ -344,41 +361,49 @@ sub sql
 	if( $_ & $LIM{'indirect'} )
 	{
 	    push @crit, "${pf}indirect is true";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'not_submitted'} )
 	{
 	    push @crit, "${pf}submitted is false";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'explicit'} )
 	{
 	    push @crit, "${pf}implicit is false";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'implicit'} )
 	{
 	    push @crit, "${pf}implicit is true";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'removal'} )
 	{
 	    push @crit, "${pf}valtype=0";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'not_removal'} )
 	{
 	    push @crit, "${pf}valtype<>0";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'not_new'} )
 	{
 	    push @crit, "not (${pf}active is false and ${pf}submitted is false and ${pf}activated is null )";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'not_old'} )
 	{
 	    push @crit, "${pf}deactivated is null";
+	    $extralim++;
 	}
 
 	if( $_ & $LIM{'not_disregarded'} )
@@ -394,18 +419,28 @@ sub sql
 	push @alt, join " and ", @crit;
     }
 
+    my $sql;
     if( @alt == 1 )
     {
-	return $alt[0];
+	$sql = $alt[0];
     }
     elsif( @alt > 1 )
     {
 	my $joined = join " or ", map "($_)", @alt;
-	return "($joined)";
+	$sql = "($joined)";
     }
     else
     {
-	return "${pf}active is true";
+	$sql = "${pf}active is true";
+    }
+
+    if( wantarray )
+    {
+	return( $sql, $extralim );
+    }
+    else
+    {
+	return $sql;
     }
 }
 
@@ -606,7 +641,9 @@ Supported lables are:
 
   created_by_me
 
-Returns the corresponding limit as a number to be used for
+  adirect = active + direct
+
+Returns: the corresponding limit as a number to be used for
 arclim. Additional limits are added together.
 
 =cut
