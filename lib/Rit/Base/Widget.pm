@@ -48,7 +48,7 @@ filefield input_image label_from_params );
 
 use Rit::Base;
 use Rit::Base::Arc;
-use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
+use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais );
 #use Rit::Base::Constants qw( );
 
 our $IDCOUNTER = 1;
@@ -519,7 +519,7 @@ sub wub_select_tree
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
 
-    my $subtypes = $type->revlist('scof', undef, 'direct');
+    my $subtypes = $type->revlist('scof', undef, aaid($args,'direct'));
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'"';
@@ -601,7 +601,7 @@ sub wub_select
     $out .= '<option value "">'. $header .'</option>'
       if( $header );
 
-    my $items = $type->revlist('is', undef, 'direct');
+    my $items = $type->revlist('is', undef, aais($args,'direct'));
     confess( "Trying to make a select of ". $items->size .".  That's not wise." )
       if( $items->size > 60 );
 
