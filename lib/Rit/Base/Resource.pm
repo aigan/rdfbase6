@@ -429,7 +429,8 @@ sub find_by_anything
 	$valtype ||= $this->get_by_label( $coltype );
 	$val = $valtype->literal_class->parse( $valref,
 					       {
-						valtype => $valtype,
+						%$args,
+						aclim => 'active',
 					       }
 					     );
 	push @new, $val;
@@ -899,8 +900,8 @@ sub find_one
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'direct')->desig || '';
-		  my $cstr = $item->list('scof',undef, 'direct')->desig;
+		  my $tstr = $item->list('is', undef, 'adirect')->desig || '';
+		  my $cstr = $item->list('scof',undef, 'adirect')->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -1036,8 +1037,8 @@ sub find_set
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'direct')->desig || '';
-		  my $cstr = $item->list('scof',undef, 'direct')->desig;
+		  my $tstr = $item->list('is', undef, 'adirect')->desig || '';
+		  my $cstr = $item->list('scof',undef, 'adirect')->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -5205,7 +5206,7 @@ sub link_paths
 
     # TODO:  ----> merge arclim with 'direct' with a method
     my @parents = $node->list('scof', {inactive_ne=>1},
-			      aais($args,'direct'))->nodes;
+			      aais($args,'adirect'))->nodes;
 
     foreach my $parent ( @parents )
     {
@@ -5664,7 +5665,7 @@ sub tree_select_data
      value  => $id,
     };
 
-    my $childs = $node->revlist('scof', undef, aais($args,'direct'));
+    my $childs = $node->revlist('scof', undef, aais($args,'adirect'));
 
     if( $childs->size )
     {
@@ -6382,8 +6383,8 @@ sub get_by_anything
 	 rowformat => sub
 	 {
 	     my( $item ) = @_;
-	     my $tstr = $item->list('is', undef, 'direct')->desig || '';
-	     my $cstr = $item->list('scof',undef, 'direct')->desig;
+	     my $tstr = $item->list('is', undef, 'adirect')->desig || '';
+	     my $cstr = $item->list('scof',undef, 'adirect')->desig;
 	     my $desig = $item->desig;
 	     my $desc = "$tstr $desig";
 	     if( $cstr )
@@ -6872,56 +6873,12 @@ sub initiate_rel
 	    }
 	}
 
+	# TODO:
 	# Here we have to make an intelligent guess if it's faster to
 	# initiate all the arcs or just the ones that are asked for.
+	# (using $arclim->sql )
 
 	my $extralim = 0;
-#	if( $arclim->size == 1 )
-#	{
-#	    # Start over with the sql part
-#	    $sql = "select * from arc where subj=?";
-#
-#	    $sql .= $arclim->sql;
-#
-#	    my $lim = $arclim->[0];
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
-#	    {
-#		$sql .= " and indirect is false";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
-#	    {
-#		$sql .= " and indirect is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-#	    {
-#		$sql .= " and implicit is false";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
-#	    {
-#		$sql .= " and implicit is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
-#	    {
-#		$sql .= " and submitted is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
-#	    {
-#		$sql .= " and submitted is false";
-#		$extralim++;
-#	    }
-#	}
-
 
 #	debug "Initiating node $nid with $sql";
 	my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
@@ -7050,12 +7007,10 @@ sub initiate_rev
     if( $active and not $inactive )
     {
 	return if $_[0]->{'initiated_rev'};
-	$sql .= " and active is true";
     }
     elsif( $inactive and not $active )
     {
 	return if $_[0]->{'initiated_rev_inactive'};
-	$sql .= " and active is false";
     }
     elsif( $active and $inactive )
     {
@@ -7066,52 +7021,17 @@ sub initiate_rev
 	}
     }
 
+    # TODO:
     # Here we have to make an intelligent guess if it's faster to
     # initiate all the arcs or just the ones that are asked for.
 
-    my $extralim = 0;
-#    if( @$arclim == 1 )
-#    {
-#	my $lim = $arclim->[0];
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'direct'} )
-#	{
-#	    $sql .= " and indirect is false";
-#	    $extralim++;
-#	}
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'indirect'} )
-#	{
-#	    $sql .= " and indirect is true";
-#	    $extralim++;
-#	}
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-#	{
-#	    $sql .= " and implicit is false";
-#	    $extralim++;
-#	}
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'implicit'} )
-#	{
-#	    $sql .= " and implicit is true";
-#	    $extralim++;
-#	}
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'submitted'} )
-#	{
-#	    $sql .= " and submitted is true";
-#	    $extralim++;
-#	}
-#
-#	if( $lim & $Rit::Base::Arc::LIM{'not_submitted'} )
-#	{
-#	    $sql .= " and submitted is false";
-#	    $extralim++;
-#	}
-#    }
+    # The revarc list may be much larger than the relarc list
 
-#    debug "SQL $sql";
+    my( $arclim_sql, $extralim ) = $arclim->sql;
+    if( $arclim_sql )
+    {
+	$sql .= " and ".$arclim_sql;
+    }
 
     my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
     $sth_init_subj->execute($nid);
@@ -7209,12 +7129,6 @@ sub initiate_prop
 	$node->{'initiated_relprop'}{$name} = 1;
     }
 
-    if( $node->{'id'} == 5129647 )
-    {
-	debug "***** Initiating 5129647 prop $name";
-    }
-
-#    debug "Initiating(2) prop $name for $node->{id}";
 
     my $nid = $node->id;
     confess "Node id missing: ".datadump($node,3) unless $nid;
@@ -7390,61 +7304,17 @@ sub initiate_revprop
 	}
 
 	my $sql = "select * from arc where obj=$nid and pred=$pred_id";
-#	my $sql = "select * from arc where obj=? and pred=?";
 
-	if( $inactive and not $active )
+	my $arclim_sql;
+	( $arclim_sql, $extralim ) = $arclim->sql;
+	if( $arclim_sql )
 	{
-	    $sql .= " and active is false";
-	}
-	elsif( $active and not $inactive )
-	{
-	    $sql .= " and active is true";
+	    $sql .= " and ".$arclim_sql;
 	}
 
-#	if( @$arclim == 1 )
-#	{
-#	    my $lim = $arclim->[0];
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'direct'} )
-#	    {
-#		$sql .= " and indirect is false";
-#		$extralim++;
-#	    }
-#
-#	    if( $arclim & $Rit::Base::Arc::LIM{'indirect'} )
-#	    {
-#		$sql .= " and indirect is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $lim & $Rit::Base::Arc::LIM{'explicit'} )
-#	    {
-#		$sql .= " and implicit is false";
-#		$extralim++;
-#	    }
-#
-#	    if( $arclim & $Rit::Base::Arc::LIM{'implicit'} )
-#	    {
-#		$sql .= " and implicit is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $arclim & $Rit::Base::Arc::LIM{'submitted'} )
-#	    {
-#		$sql .= " and submitted is true";
-#		$extralim++;
-#	    }
-#
-#	    if( $arclim & $Rit::Base::Arc::LIM{'not_submitted'} )
-#	    {
-#		$sql .= " and submitted is false";
-#		$extralim++;
-#	    }
-#	}
 
 	my $sth_init_obj_pred = $Rit::dbix->dbh->prepare($sql);
 	$sth_init_obj_pred->execute();
-#	$sth_init_obj_pred->execute( $nid, $pred_id );
 	my $recs = $sth_init_obj_pred->fetchall_arrayref({});
 	$sth_init_obj_pred->finish;
 
@@ -7463,6 +7333,14 @@ sub initiate_revprop
 	foreach my $rec ( @$recs )
 	{
 	    $node->populate_rev( $rec, $args );
+
+	    # Handle long lists
+	    unless( ++$cnt % 25 )
+	    {
+		debug "Populated $cnt";
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
