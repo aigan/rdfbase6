@@ -183,7 +183,7 @@ END;
 [% IF include_indirect %]
    [% arclim = '' %]
 [% ELSE %]
-   [% arclim = 'direct' %]
+   [% arclim = 'adirect' %]
 [% END %]
 
 [% FOREACH pred IN node.list_preds('',arclim).sorted %]
