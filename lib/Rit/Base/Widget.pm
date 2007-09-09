@@ -115,7 +115,7 @@ sub wub
     my $subj = $args->{'subj'} or confess "subj missing";
     my $inputtype = $args->{'inputtype'} || 'input';
 
-    debug "wub $inputtype $pred for ".$subj->sysdesig;
+    debug 2, "wub $inputtype $pred for ".$subj->sysdesig;
 
 
     my $newsubj = $args->{'newsubj'};
