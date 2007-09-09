@@ -18,8 +18,8 @@
 <table class='admin'>
 <tr><th>Del</th><th>Property</th> <th>Value</th> <th>Status</th></tr>
 
-[% FOREACH pred = node.list_preds(undef, ['not_old']).sorted %]
-   [% FOREACH arc = node.arc_list(pred,undef,['not_old']).explicit %]
+[% FOREACH pred = node.list_preds(undef, [['not_old','explicit']]).sorted %]
+   [% FOREACH arc = node.arc_list(pred,undef,[['not_old','explicit']]) %]
       [% IF arc.active %]
          <tr>
       [% ELSE %]
@@ -44,8 +44,8 @@
 <table class="admin">
 <tr><th>Del</th><th>Value</th> <th>Property</th> <th>Status</th></tr>
 
-[% FOREACH pred = node.revlist_preds(undef, ['not_old']).sorted %]
-   [% FOREACH arc = node.revarc_list(pred, undef, ['not_old']).explicit %]
+[% FOREACH pred = node.revlist_preds(undef, [['not_old','explicit']]).sorted %]
+   [% FOREACH arc = node.revarc_list(pred, undef, [['not_old','explicit']]) %]
       [% IF arc.active %]
          <tr>
       [% ELSE %]
