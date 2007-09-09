@@ -3963,9 +3963,16 @@ sub initiate_cache
 	    my $valtype = Rit::Base::Resource->get($valtype_id)
 	      or confess "Couldn't find the valtype $valtype_id ".
 		"for arc $id";
+
 	    my $coltype = $valtype->coltype;
 	    if( $coltype eq 'obj' )
 	    {
+		if( $rec->{'valtext'} or
+		    $rec->{'valdate'} or
+		    $rec->{'valfloat'} )
+		{
+		    throw 'dbi', "Corrupt DB. valtype $valtype->{id} should have been a literal_class";
+		}
 		$value = Rit::Base::Resource->get($rec->{'obj'});
 	    }
 	    else
