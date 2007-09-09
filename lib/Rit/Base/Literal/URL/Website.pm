@@ -121,19 +121,19 @@ sub parse
     unless( $url->host )
     {
 	my $path = $url->path || '';
-	debug "Initial path is $path";
+	debug 3, "Initial path is $path";
 	if( $path =~ s/^([a-z\-\.]+\.[a-z]{2,5}\b)//i )
 	{
 	    my $host = $1;
 	    $url->host($host);
 	    $url->path($path);
-	    debug "Host is now $host";
+	    debug 3, "Host is now $host";
 	}
     }
 
     if( my $path = $url->path )
     {
-	debug "Path is now $path";
+	debug 3, "Path is now $path";
 	unless( $path =~ /^\// )
 	{
 	    throw 'validation', loc "Malformed path in website URL $url";
@@ -146,7 +146,7 @@ sub parse
 
     if( my $host = $url->host )
     {
-	debug "Host is now $host";
+	debug 3, "Host is now $host";
 	unless( $host =~ /^[a-z\-\.]+\.[a-z]{2,5}$/ )
 	{
 	    throw 'validation', loc "Malformed hostname in website URL $url";
