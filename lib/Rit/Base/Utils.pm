@@ -420,12 +420,13 @@ sub parse_arc_add_box
 
 	unless( ref $value )
 	{
-	    my $coltype = Rit::Base::Pred->get($pred_name)->coltype;
-	    $value = Rit::Base::Resource->get_by_anything( $value,
-							{
-							 %$args,
-							 coltype => $coltype,
-							});
+	    my $valtype = Rit::Base::Pred->get($pred_name)->valtype;
+	    $value = Rit::Base::Resource->
+	      get_by_anything( $value,
+			       {
+				%$args,
+				valtype => $valtype,
+			       });
 	}
 
 	debug "  $pred_name: ".$value->sysdesig."\n" if $DEBUG;
