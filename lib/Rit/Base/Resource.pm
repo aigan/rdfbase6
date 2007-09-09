@@ -898,7 +898,7 @@ sub find_one
 	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
+	    $result->{'info'}{'alternatives'}{'args'} = $args;
 
 	    $result->{'info'}{'alternatives'}{'rowformat'} =
 	      sub
@@ -940,7 +940,7 @@ sub find_one
 	my $result = $req->result;
 	$result->{'info'}{'alternatives'}{'alts'} = undef;
 	$result->{'info'}{'alternatives'}{'query'} = $query;
-	$result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
+	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	$req->set_error_response_path('/node_query_error.tt');
 	throw('notfound', "No nodes matches query (1)");
@@ -1035,7 +1035,7 @@ sub find_set
 	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($query);
+	    $result->{'info'}{'alternatives'}{'args'} = $args;
 
 	    $result->{'info'}{'alternatives'}{'rowformat'} =
 	      sub
@@ -6337,11 +6337,14 @@ sub get_by_anything
 
     unless( $list->size )
     {
-	if( $args->{'coltype'} eq 'obj' )
+	if( $args->{'valtype'} )
 	{
-	    unless( $val )
+	    if( $args->{'valtype'}->coltype eq 'obj' )
 	    {
-		return is_undef;
+		unless( $val )
+		{
+		    return is_undef;
+		}
 	    }
 	}
 
@@ -6350,9 +6353,10 @@ sub get_by_anything
 	{
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
-	    $result->{'info'}{'alternatives'}{'query_desig'} = query_desig($val);
+	    $result->{'info'}{'alternatives'}{'args'} = $args;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    $req->set_error_response_path("/node_query_error.tt");
+#	    debug datadump($result,5);
 	}
 	else
 	{
@@ -6893,6 +6897,14 @@ sub initiate_rel
 	my $recs = $sth_init_subj->fetchall_arrayref({});
 	$sth_init_subj->finish;
 
+	my $rowcount = $sth_init_subj->rows;
+	if( $rowcount > 100 )
+	{
+	    debug "initiate_rel $node->{id}";
+	    debug "Populating $rowcount arcs";
+	    debug "ARGS: ".query_desig($args);
+	}
+
 	my $cnt = 0;
 	foreach my $rec ( @$recs )
 	{
@@ -7040,10 +7052,18 @@ sub initiate_rev
 	$sql .= " and ".$arclim_sql;
     }
 
-    my $sth_init_subj = $Rit::dbix->dbh->prepare($sql);
-    $sth_init_subj->execute($nid);
-    my $recs = $sth_init_subj->fetchall_arrayref({});
-    $sth_init_subj->finish;
+    my $sth_init_obj = $Rit::dbix->dbh->prepare($sql);
+    $sth_init_obj->execute($nid);
+    my $recs = $sth_init_obj->fetchall_arrayref({});
+    $sth_init_obj->finish;
+
+    my $rowcount = $sth_init_obj->rows;
+    if( $rowcount > 100 )
+    {
+	debug "initiate_rev $node->{id}";
+	debug "Populating $rowcount arcs";
+	debug "ARGS: ".query_desig($args);
+    }
 
     my $cnt = 0;
     foreach my $rec ( @$recs )
@@ -7180,13 +7200,11 @@ sub initiate_prop
 	    $recs = $sth_init_subj_pred->fetchall_arrayref({});
 	    $sth_init_subj_pred->finish;
 
-	    my $count = $sth_init_subj_pred->rows;
-	    if( $count > 20 )
+	    my $rowcount = $sth_init_subj_pred->rows;
+	    if( $rowcount > 20 )
 	    {
 		if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 		{
-		    debug "WARNING: initially got $count rows";
-		    debug "ARCLIM: ".query_desig($arclim);
 		    my $obj_id = $proplim->id;
 		    $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
 		    $sql = join " and ", $sql, scalar($arclim->sql);
@@ -7195,16 +7213,16 @@ sub initiate_prop
 		    $recs = $sth->fetchall_arrayref({});
 		    $sth->finish;
 		    $extralim ++;
-		}
-		else
-		{
-		    # Try using proplims and arclims
-		    debug "WARNING: populating $count rows";
-		    debug "PROPLIM: ".query_desig($proplim);
-		    debug "ARCLIM: ".query_desig($arclim);
+		    $rowcount = $sth->rows;
 		}
 	    }
 
+	    if( $rowcount > 100 )
+	    {
+		debug "initiate_prop $node->{id} $name";
+		debug "Populating $rowcount arcs";
+		debug "ARGS: ".query_desig($args);
+	    }
 	}
 
 
@@ -7364,6 +7382,14 @@ sub initiate_revprop
 
 	my $cnt = 0;
 	my $ts = time;
+
+	my $rowcount = $sth_init_obj_pred->rows;
+	if( $rowcount > 100 )
+	{
+	    debug "initiate_revprop $node->{id} $name";
+	    debug "Populating $rowcount arcs";
+	    debug "ARGS: ".query_desig($args);
+	}
 
 	foreach my $rec ( @$recs )
 	{
