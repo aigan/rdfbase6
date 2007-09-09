@@ -539,7 +539,8 @@ sub extract_string
 	confess "Can't parse $val";
     }
 
-    debug "TODO: check for compatible valtype";
+    # TODO: check for compatible valtype
+
     return( $val, $coltype, $valtype, $args );
 
 }

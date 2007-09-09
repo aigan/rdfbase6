@@ -2179,10 +2179,13 @@ sub check_valtype
 
     my $old_val = $arc->value;
 
-    debug "TRANSLATION OF VALTYPE";
-    debug "  for ".$arc->sysdesig;
-    debug " from ".$arc_valtype->sysdesig;
-    debug "   to ".$pred_valtype->sysdesig;
+    if( debug > 1)
+    {
+	debug "TRANSLATION OF VALTYPE";
+	debug "  for ".$arc->sysdesig;
+	debug " from ".$arc_valtype->sysdesig;
+	debug "   to ".$pred_valtype->sysdesig;
+    }
 
     my $newargs =
     {
@@ -3216,7 +3219,7 @@ sub set_value
 	$arc->{'arc_created_by_obj'} = $u_node;
 	$arc->{'valtype'}            = $valtype_new->id;
 
-	debug "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
+	debug 2, "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
 	$arc->subj->initiate_cache;
 #	$arc->initiate_cache; # not needed
@@ -3236,7 +3239,7 @@ sub set_value
 	    $Rit::Base::Cache::Changes::Updated{$value_new->id} ++;
 	}
 
-	debug "Updated arc id $arc_id: ".$arc->desig."\n";
+	debug 3, "Updated arc id $arc_id: ".$arc->desig."\n";
 
 	$res->changes_add;
 	$res->add_newarc($arc);
