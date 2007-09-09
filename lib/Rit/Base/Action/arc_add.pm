@@ -14,7 +14,6 @@ package Rit::Base::Action::arc_add;
 #=====================================================================
 
 use strict;
-use Data::Dumper;
 
 use Para::Frame::Utils qw( trim );
 
@@ -25,21 +24,17 @@ sub handler
     my( $req ) = @_;
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
-    my $DEBUG = 0;
-
     my $q = $req->q;
     my $subj_id = $q->param('id');
 
     my $query = $q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
 
-    my $props = parse_arc_add_box( $query, $args );
-
     if( $subj_id )
     {
 	my $subj = Rit::Base::Arc->get( $subj_id ); # Arc or node
-
-	warn Dumper $props if $DEBUG;
+	$args->{'subj_new'} = $subj;
+	my $props = parse_arc_add_box( $query, $args );
 
 	$subj->add( $props, $args );
 	$subj->session_history_add('updated');
@@ -49,6 +44,7 @@ sub handler
     }
     else
     {
+	my $props = parse_arc_add_box( $query, $args );
 	my $subj = Rit::Base::Resource->create( $props, $args );
 	$subj->session_history_add('updated');
 	$q->param('id', $subj->id);
