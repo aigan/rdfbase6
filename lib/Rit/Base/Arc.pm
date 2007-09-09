@@ -484,7 +484,6 @@ sub create
 
 
     ##################### obj thingy
-    my $value;
     my $value_obj;
     # Find out the *real* coltype
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
@@ -496,12 +495,15 @@ sub create
     if( my $obj_id = $props->{'obj'} )
     {
 	$coltype = 'obj';
-	$value = $obj_id;
-	$rec->{$coltype} = $value;
+	$rec->{$coltype} = $obj_id;
 	push @fields, $coltype;
 	push @values, $rec->{$coltype};
 
 	$value_obj = Rit::Base::Resource->get_by_id( $obj_id );
+    }
+    elsif( $rec->{'valtype'} == 0 ) # Special valtype for removals
+    {
+	$value_obj = is_undef;
     }
     else
     {
@@ -513,18 +515,19 @@ sub create
 	    $props->{'value'} = $props->{'obj'};
 	}
 
-	$value = Rit::Base::Resource->get_by_anything( $props->{'value'},
-						       {
-							%$args,
-							valtype => $valtype,
-							subj_new => $subj,
-							pred_new => $pred,
-						       });
+	# Returns is_undef if value undef and coltype is obj
+	$value_obj = Rit::Base::Resource->
+	  get_by_anything( $props->{'value'},
+			   {
+			    %$args,
+			    valtype => $valtype,
+			    subj_new => $subj,
+			    pred_new => $pred,
+			   });
 
-	$value_obj = $value;
 	debug "value_obj is now '$value_obj'" if $DEBUG;
 
-	if( $value->defined )
+	if( $value_obj->defined )
 	{
 	    # Coltype says how the value should be stored.  The predicate
 	    # specifies the coltype.  But it is possible that the value is
@@ -532,24 +535,29 @@ sub create
 	    # happen if the value is a value node.  In that case, the
 	    # coltype will be set as obj.
 
-	    $coltype = 'obj' if UNIVERSAL::isa( $value, 'Rit::Base::Resource' );
+	    if( UNIVERSAL::isa $value_obj, 'Rit::Base::Resource' )
+	    {
+		$coltype = 'obj';
+	    }
 
 	    if( $coltype eq 'obj' )
 	    {
-		if( UNIVERSAL::isa($value, 'Rit::Base::Resource' ) )
+		if( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
 		{
 		    # All good
 		}
 		else
 		{
-		    confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+		    confess "Value incompatible with coltype $coltype: ".
+		      datadump($props, 2);
 		}
 	    }
 	    else
 	    {
-		if( UNIVERSAL::isa($value, 'Rit::Base::Resource' ) )
+		if( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
 		{
-		    confess "Value incompatible with coltype $coltype: ".datadump($props, 2);
+		    confess "Value incompatible with coltype $coltype: ".
+		      datadump($props, 2);
 		}
 		else
 		{
@@ -559,24 +567,30 @@ sub create
 
 
 	    # Handle the coltypes in the table
+	    my $value;
 
 	    if( $coltype eq 'obj' )
 	    {
 		debug "Getting the id for the object by the name '$value'\n" if $DEBUG;
-		( $value ) = $this->get( $value )->id;
+		$value = $this->get( $value_obj )->id;
 	    }
 	    elsif( $coltype eq 'valdate' )
 	    {
-		$value = $dbix->format_datetime($value);
+		$value = $dbix->format_datetime($value_obj);
 	    }
 	    else
 	    {
-		$value = $value->literal;
+		$value = $value_obj->literal;
 
 		if( $coltype eq 'valtext' )
 		{
 		    $rec->{'valclean'} = valclean( $value );
-		    die "Object stringification ".datadump($rec, 2) if $rec->{'valclean'} =~ /^ritbase.*hash/;
+
+		    if( $rec->{'valclean'} =~ /^ritbase.*hash/ )
+		    {
+			die "Object stringification ".datadump($rec, 2);
+		    }
+
 		    push @fields, 'valclean';
 		    push @values, $rec->{'valclean'};
 		}
@@ -610,7 +624,7 @@ sub create
 
 	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->plain, query_desig($value_obj) ) if $DEBUG;
 
-	debug "Getting arclist for ".$subj->sysdesig;
+#	debug "Getting arclist for ".$subj->sysdesig;
 	# $value_obj may be is_undef (but not literal undef)
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 
@@ -2021,7 +2035,7 @@ sub deactivate
 
     $args->{'res'}->changes_add;
 
-    debug "Deactivated id ".$arc->sysdesig;
+    debug 2, "Deactivated id ".$arc->sysdesig;
 
     return;
 }
