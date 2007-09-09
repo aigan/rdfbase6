@@ -71,6 +71,8 @@ sub on_startup
 {
     my( $class ) = @_;
 
+    debug "Initiating valtypes";
+
     my $dbh = $Rit::dbix->dbh;
     my $sth_label = $dbh->prepare("select node from node where label=?") or die;
     my $sth_child = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
