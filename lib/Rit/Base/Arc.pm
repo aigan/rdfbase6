@@ -82,28 +82,27 @@ use overload 'fallback' => 1;
 #};
 
 
-
 our %DYNAMIC_PRED =
   (
-   subj => 'obj',
-   pred => 'obj',
+   subj => 'resource',
+   pred => 'predicate',
    value => 'value',
-   obj  => 'obj',
-   value_deisg => 'valtext',
-   created => 'valdate',
-   updated => 'valdate',
-   activated => 'valdate',
-   deactivated => 'valdate',
-   deactivated_by => 'obj',
-   unsubmitted => 'valdate',
-   updated_by => 'obj',
-   activated_by => 'obj',
-   created_by => 'obj',
-   version_id => 'valfloat',
-   replaces => 'obj',
-   source => 'obj',
-   read_access => 'obj',
-   write_access => 'obj',
+   obj  => 'resource',
+   value_desig => 'text',
+   created => 'date',
+   updated => 'date',
+   activated => 'date',
+   deactivated => 'date',
+   deactivated_by => 'resource', # should be agent
+   unsubmitted => 'date',
+   updated_by => 'resource',     # should be agent
+   activated_by => 'resource',   # should be agent
+   created_by => 'resource',     # should be agent
+   version_id => 'int',
+   replaces => 'arc',
+   source => 'resource',         # should be source
+   read_access => 'resource',    # should be agent
+   write_access => 'resource',   # should be agent
   );
 
 
@@ -182,7 +181,7 @@ sub create
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
 
-#    Para::Frame::Logging->this_level(1);
+#    Para::Frame::Logging->this_level(3);
     my $DEBUG = Para::Frame::Logging->at_level(3);
 
     # Clean props from array form
@@ -517,7 +516,6 @@ sub create
 	$value = Rit::Base::Resource->get_by_anything( $props->{'value'},
 						       {
 							%$args,
-							coltype => $coltype,
 							valtype => $valtype,
 							subj_new => $subj,
 							pred_new => $pred,
@@ -612,11 +610,11 @@ sub create
 
 	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->plain, query_desig($value_obj) ) if $DEBUG;
 
-#	debug "Getting arclist for ".$subj->sysdesig;
+	debug "Getting arclist for ".$subj->sysdesig;
 	# $value_obj may be is_undef (but not literal undef)
 	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 
-#	debug "Existing arcs: ".query_desig($existing_arcs) if $DEBUG;
+	debug "Existing arcs: ".query_desig($existing_arcs) if $DEBUG;
 #	debug "value_obj: '$value_obj'";
 
       EXISTING:
@@ -624,12 +622,12 @@ sub create
 	{
 	    if( $rec->{'replaces'} )
 	    {
-		next unless $arc->replaces_id == $rec->{'replaces'};
+		next unless ($arc->replaces_id||0) == $rec->{'replaces'};
 	    }
 
 	    if( $props->{'common'} ) # Explicitly defined
 	    {
-		next unless $arc->common_id == $props->{'common'};
+		next unless ($arc->common_id||0) == $props->{'common'};
 	    }
 
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
@@ -2123,7 +2121,10 @@ sub vacuum
 #	    }
 #	}
 
-	$arc->check_valtype( $args );
+	unless( $arc->check_valtype( $args ) )
+	{
+	    $arc->check_value( $args );
+	}
 
 #	debug "  Reset clean";
 	$arc->reset_clean($args);
@@ -2154,8 +2155,8 @@ sub check_valtype
 	unless( $pred )
 	{
 	    my $subj_id = $arc->subj->id;
-	    debug "Valuenode $subj_id is disconnected";
-	    return;
+#	    debug "Valuenode $subj_id is disconnected";
+	    return 0;
 	}
     }
 
@@ -2164,12 +2165,14 @@ sub check_valtype
 
     if( $arc_valtype->equals( $pred_valtype ) )
     {
-	return;
+#	debug "  same valtype";
+	return 0;
     }
     elsif( $arc_valtype->scof( $pred_valtype ) )
     {
 	# Valtype in valid range
-	return;
+#	debug "  arc valtype more specific";
+	return 0;
     }
 
     my $pred_coltype = $pred->coltype;
@@ -2181,7 +2184,14 @@ sub check_valtype
     debug " from ".$arc_valtype->sysdesig;
     debug "   to ".$pred_valtype->sysdesig;
 
-    $res->changes_add;
+    my $newargs =
+    {
+     'activate_new_arcs' => $arc->active,
+     'force_set_value'   => 1,
+     'force_set_value_same_version' => $arc->active,
+     'valtype' => $pred_valtype,
+    };
+
 
     if( $arc->coltype eq 'obj' )
     {
@@ -2189,20 +2199,18 @@ sub check_valtype
 	if( $pred_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
-	    return;
+	    debug "  pred takes any obj";
+	    return 0;
 	}
+
+	$res->changes_add;
 
 	if( $pred_coltype eq 'obj' )
 	{
 	    if( $old_val->is($pred_valtype) )
 	    {
 		# Old value in range
-		$arc->set_value( $old_val,
-				 {
-				  'activate_new_arcs' => $arc->active,
-				  'force_set_value'   => 1,
-				  'force_set_value_same_version' => 1,
-				 });
+		$arc->set_value( $old_val, $newargs );
 	    }
 	    else
 	    {
@@ -2211,32 +2219,51 @@ sub check_valtype
 	}
 	else
 	{
-	    my $val = $pred_valtype->literal_class->parse($old_val);
-	    $arc->set_value( $val,
-			     {
-			      'activate_new_arcs' => $arc->active,
-			      'force_set_value'   => 1,
-			      'force_set_value_same_version' => 1,
-			     });
+	    my $val = $pred_valtype->instance_class->
+	      parse($old_val, {
+			       arc => $arc,
+			       valtype => $pred_valtype,
+			      });
+	    $arc->set_value( $val, $newargs );
 	}
     }
     else
     {
+	$res->changes_add;
+
 	if( $pred_coltype eq 'obj' )
 	{
 	    confess "FIXME";
 	}
 	else
 	{
-	    my $val = $pred_valtype->literal_class->parse($old_val);
-	    $arc->set_value( $val,
-			     {
-			      'activate_new_arcs' => $arc->active,
-			      'force_set_value'   => 1,
-			      'force_set_value_same_version' => 1,
-			     });
+	    my $val = $pred_valtype->instance_class->
+	      parse($old_val, {
+			       arc => $arc,
+			       valtype => $pred_valtype,
+			      });
+	    $arc->set_value( $val, $newargs );
 	}
     }
+
+    return 1;
+}
+
+#######################################################################
+
+=head2 check_value
+
+  $a->check_value( \%args )
+
+=cut
+
+sub check_value
+{
+    my( $arc, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
+
+    # TODO: Implement this
+    return 0;
 }
 
 #######################################################################
@@ -2374,12 +2401,20 @@ sub has_value
 	return $arc->SUPER::has_value($val_in, $args);
     }
 
-    my $coltype = $DYNAMIC_PRED{$pred_name};
-    $coltype = undef if $coltype eq 'value';
-    my $args_coltype =
+    my $valtype_name = $DYNAMIC_PRED{$pred_name};
+    my $valtype;
+    if( $valtype_name eq 'value' )
+    {
+	$valtype = undef;
+    }
+    else
+    {
+	$valtype = Rit::Base::Resource->get_by_label($valtype_name);
+    }
+    my $args_valtype =
     {
      %$args,
-     coltype => $coltype,
+     valtype => $valtype,
     };
     my $R = Rit::Base->Resource;
 
@@ -2402,7 +2437,7 @@ sub has_value
 	my( $val_in, $error ) = $value->get_first;
 	while(! $error )
 	{
-	    my $val_parsed = $R->get_by_anything($val_in, $args_coltype);
+	    my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
 	    if( $target->equals( $val_parsed, $args ) )
 	    {
 		return $arc;
@@ -2417,7 +2452,7 @@ sub has_value
 
 #    debug "CHECKS if target is equal to ".query_desig($value);
 
-    my $val_parsed = $R->get_by_anything($value, $args_coltype);
+    my $val_parsed = $R->get_by_anything($value, $args_valtype);
     if( $target->equals( $val_parsed, $args ) )
     {
 	return $arc;
@@ -2981,12 +3016,11 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $DEBUG = 0;
+#    Para::Frame::Logging->this_level(3);
 
-    debug "Set value of arc $arc->{'id'} to '$value_new_in'\n" if $DEBUG;
+    debug 3, "Set value of arc $arc->{'id'} to '$value_new_in'\n";
 
     my $coltype_old  = $arc->real_coltype;
-
     my $value_new;
     if( $args->{'force_set_value'} )
     {
@@ -3001,6 +3035,8 @@ sub set_value
 	    confess "Can't set the value of a removal ($value_new_in)";
 	}
 
+	debug 4, "Given valtype is ".$valtype->sysdesig;
+
 	# Get the value alternatives based on the current coltype.  That
 	# is; If the previous value was an object: try to find a new
 	# object.  Not a Literal.
@@ -3009,7 +3045,6 @@ sub set_value
 	  ( $value_new_in,
 	    {
 	     %$args,
-	     coltype => $coltype_old,
 	     valtype => $valtype,
 	     arc     => $arc,
 	    });
@@ -3035,7 +3070,14 @@ sub set_value
 
     my $value_old = $arc->value          || is_undef; # Is object
 
-    my $coltype_new = $value_new->coltype;
+    debug 4, "got new value ".$value_new->sysdesig;
+    if( $value_new_in and not $value_new )
+    {
+	confess "We should have got a value";
+    }
+
+
+    my $coltype_new = $value_new->this_coltype;
     if( $value_new->is_value_node($args) )
     {
 	$coltype_new = 'obj';
@@ -3045,18 +3087,20 @@ sub set_value
 #    # Should be done by find_by_anything()
 
     my $valtype_old = $arc->valtype;
-    my $valtype_new;
-    if( $value_new->is_literal )
-    {
-	$valtype_new = $value_new->valtype;
-    }
-    else
-    {
-	$valtype_new = $arc->pred->valtype;
-    }
+    my $valtype_new = $value_new->this_valtype;
+
+#    my $valtype_new;
+#    if( $value_new->is_literal )
+#    {
+#	$valtype_new = $value_new->valtype;
+#    }
+#    else
+#    {
+#	$valtype_new = $arc->pred->valtype;
+#    }
 
 
-    if( $DEBUG )
+    if( debug > 2 )
     {
 	debug "  value_old: ".$value_old->sysdesig();
 	debug "   type old: ".$valtype_old->sysdesig;
@@ -3081,7 +3125,7 @@ sub set_value
 	    return $new;
 	}
 
-	debug "    Changing value\n" if $DEBUG;
+	debug 3, "    Changing value\n";
 
 	$arc->remove_check( $args );
 
@@ -3117,6 +3161,11 @@ sub set_value
 	}
 	elsif( $coltype_new eq 'valtext' )
 	{
+	    unless( UNIVERSAL::isa $value_new, "Rit::Base::Literal::String")
+	    {
+		confess "type mismatch for ".datadump($value_new,2);
+	    }
+
 	    $value_db = $value_new;
 	    my $clean = $value_new->clean_plain;
 
@@ -3127,8 +3176,7 @@ sub set_value
 	}
 	else
 	{
-	    debug "We do not specificaly handle coltype $coltype_new\n"
-	      if $DEBUG;
+	    debug 3, "We do not specificaly handle coltype $coltype_new\n";
 	    $value_db = $value_new;
 	}
 
@@ -3195,7 +3243,7 @@ sub set_value
     }
     else
     {
-	debug "    Same value\n" if $DEBUG;
+	debug 3, "    Same value\n";
     }
 
     return $arc;
@@ -3941,7 +3989,7 @@ sub initiate_cache
 	    }
 	    else
 	    {
-		$value = $valtype->literal_class->
+		$value = $valtype->instance_class->
 		  new_from_db( $rec->{$coltype} );
 	    }
 	}
