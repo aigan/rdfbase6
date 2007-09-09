@@ -169,7 +169,11 @@ Find the valtype of a predicate.  This will use the range or the coltype.
 
 Returns: A C<valtype> node to use as the valtype for arcs with this pred.
 
-Exceptions: Will confess if trying to get a valtype from the value pred.
+If this is the predicate C<value>, it will return the literal class
+C<literal>.
+
+Note: Previously, we would die if there was a request for the valtype
+of value.
 
 =cut
 
@@ -183,16 +187,15 @@ sub valtype
     }
     else
     {
-	if( $pred->{'coltype'} == 6 )
-	{
-	    confess "Predicate 'value' has no valtype";
-	}
-
 	my $coltype = Rit::Base::Literal::Class->
 	  coltype_by_coltype_id( $pred->{'coltype'} );
 	if( $coltype eq 'obj' )
 	{
 	    return Rit::Base::Constants->get('resource');
+	}
+	elsif( $coltype eq 'value' )
+	{
+	    return Rit::Base::Constants->get('literal');
 	}
 	else
 	{
@@ -493,6 +496,10 @@ sub update_arcs_for_new_range
 
   $pred->vacuum_pred_arcs( \%args )
 
+For now, we just ignore failed vacuums...
+
+TODO: Handle failed vacuums
+
 =cut
 
 sub vacuum_pred_arcs
@@ -508,7 +515,14 @@ sub vacuum_pred_arcs
     my( $arc, $error ) = $arcs->get_first;
     while(! $error )
     {
-	$arc->vacuum( $args );
+	eval
+	{
+	    $arc->vacuum( $args );
+	};
+	if( $@ )
+	{
+	    debug 1, $@;
+	}
     }
     continue
     {
