@@ -248,7 +248,8 @@ sub on_arc_del
 
   $n->coltype()
 
-For getting the coltype corresponding to this valtype.
+This will give the coltype that instances of the literal will
+have. (instance instance coltype).
 
 Will not return C<obj>
 
@@ -270,7 +271,8 @@ sub coltype
 
   $n->coltype_id()
 
-For getting the coltype_id corresponding to this valtype.
+This will give the coltype id that instances of the literal will
+have. (instance instance coltype).
 
 Will not return the C<obj> id.
 
@@ -284,12 +286,11 @@ sub coltype_id
 
 #########################################################################
 
-=head2 literal_class
+=head2 instance_class
 
-  $n->literal_class()
+  $n->instance_class()
 
-This should be a resource class. Get the perl class name that handles
-instances of this class.
+Get the perl class name that handles instances of this class.
 
 It will be retrieved by the class_handled_by_perl_module property, or
 for Literals, by the corresponding coltype.
@@ -301,7 +302,7 @@ Returns: the class name as a plain string
 
 =cut
 
-sub literal_class
+sub instance_class
 {
     my( $node ) = @_;
 
