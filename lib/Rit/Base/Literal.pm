@@ -357,11 +357,18 @@ sub initiate_cache
 
 #######################################################################
 
-=head3 valtype
+=head3 this_valtype
+
+  $lit->this_valtype()
+
+This is like this C<is> property for literals. Defaults to
+L</default_valtype>.
+
+See also: L<Rit::Base::Resource/this_valtype>
 
 =cut
 
-sub valtype
+sub this_valtype
 {
     unless( ref $_[0] )
     {
@@ -378,13 +385,21 @@ sub valtype
 
 #######################################################################
 
-=head3 coltype
+=head3 this_coltype
+
+  $lit->this_coltype()
+
+This gives the coltype of the value of this literal.
+
+returns: the plain string of table column name
+
+See also: L<Rit::Base::Resource/this_coltype>
 
 =cut
 
-sub coltype
+sub this_coltype
 {
-    return $_[0]->valtype->coltype;
+    return $_[0]->this_valtype->coltype;
 }
 
 #######################################################################
@@ -476,12 +491,7 @@ sub extract_string
     my( $args ) = parse_propargs($args_in);
 
     my $valtype = $args->{'valtype'} || $class->default_valtype;
-    my $coltype = $args->{'coltype'} || $valtype->coltype;
-
-    unless( $coltype )
-    {
-	confess "Can't determine coltype ";
-    }
+    my $coltype = $valtype->coltype;
 
     my $val;
     if( ref $val_in )
@@ -510,7 +520,6 @@ sub extract_string
 						     {
 						      %$args,
 						      valtype => $valtype,
-						      coltype => $coltype,
 						     });
 	return( $val, $coltype, $valtype, $args );
     }
