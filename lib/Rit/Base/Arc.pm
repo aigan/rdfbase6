@@ -3958,31 +3958,12 @@ sub initiate_cache
 	{
 	    $value = is_undef;
 	}
-	else
+	else # Literal or undef obj
 	{
-	    my $coltype_id = $pred->{'coltype'} or confess datadump($pred,1);
-	    my $coltype;
-
-	    if( $coltype_id == 6 ) # value node
-	    {
-		$coltype = Rit::Base::Literal::Class->
-		  coltype_by_valtype_id( $valtype_id )
-		    or confess "Couldn't find coltype for valtype $valtype_id";
-	    }
-	    else
-	    {
-#		debug "Getting coltype name for id $coltype_id";
-		$coltype = Rit::Base::Literal::Class->
-		  coltype_by_coltype_id( $coltype_id );
-	    }
-
 	    my $valtype = Rit::Base::Resource->get($valtype_id)
 	      or confess "Couldn't find the valtype $valtype_id ".
 		"for arc $id";
-
-#	    debug "Getting value for literal_class ".
-#	      "for $coltype by parsing $rec->{$coltype}";
-
+	    my $coltype = $valtype->coltype;
 	    if( $coltype eq 'obj' )
 	    {
 		$value = Rit::Base::Resource->get($rec->{'obj'});
