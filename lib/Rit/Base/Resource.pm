@@ -338,7 +338,6 @@ caller will have to trime surrounding whitespace, if needed.
 
 
 Supported args are
-  coltype
   valtype
   arclim
 
@@ -363,15 +362,20 @@ sub find_by_anything
 
 #    Para::Frame::Logging->this_level(3);
 
+#    debug "fins args:\n".query_desig($args); ### DEBUG
 
     my( @new );
     my $valtype = $args->{'valtype'};
-    my $coltype = $args->{'coltype'};
-    if( not $coltype and $valtype )
-    {
-	$coltype = $valtype->coltype;
-    }
-    $args->{'coltype'} ||= $coltype ||= 'obj';
+#    my $coltype = $args->{'coltype'};
+#    if( not $coltype and $valtype )
+#    {
+#	$coltype = $valtype->coltype;
+#    }
+#    $args->{'coltype'} ||= $coltype ||= 'obj';
+
+    $valtype ||= Rit::Base::Resource->get_by_label('resource');
+    my $coltype = $valtype->coltype;
+
 
     # For arcs pointing to valuenodes: The coltype would be 'obj' and
     # the valtype would be the value of the value property.
@@ -427,7 +431,7 @@ sub find_by_anything
 	}
 
 	$valtype ||= $this->get_by_label( $coltype );
-	$val = $valtype->literal_class->parse( $valref,
+	$val = $valtype->instance_class->parse( $valref,
 					       {
 						%$args,
 						aclim => 'active',
@@ -3697,7 +3701,7 @@ sub arc_list
 
 	my @arcs;
 
-#	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, datadump($arclim));
+#	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, query_desig($arclim));
 
 	if( $node->initiate_prop( $name, $proplim, $args ) )
 	{
@@ -3717,6 +3721,7 @@ sub arc_list
 	    return Rit::Base::List->new_empty();
 	}
 
+#	debug "  applying arclim";
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
 	my $lr = Rit::Base::List->new(\@arcs);
@@ -3730,6 +3735,7 @@ sub arc_list
 	if( defined $proplim ) # The Undef Literal is also an proplim
 	{
 #	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
+#	    debug "  Sorting out the nodes matching proplim\n";
 
 	    if( ref $proplim and ref $proplim eq 'HASH' )
 	    {
@@ -3750,9 +3756,9 @@ sub arc_list
 		    $proplim = [$proplim];
 		}
 
-#		debug "proplim: ".datadump($proplim);
+#		debug "proplim: ".query_desig($proplim);
 		my $proplist = Rit::Base::List->new($proplim);
-#		debug "Proplist contains ".datadump($proplist);
+#		debug "Proplist contains:\n".query_desig($proplist);
 
 		my @newlist;
 		my( $arc, $error ) = $lr->get_first;
@@ -4514,6 +4520,7 @@ sub replace
 	debug 3, "  pred: $pred_name";
 	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 
+	my $valtype;
 	my $coltype = $pred->coltype;
 	if( $coltype eq 'value' )
 	{
@@ -4524,16 +4531,21 @@ sub replace
 		confess "Node $node->{id} has no existing value arc to replace";
 	    }
 
-	    $coltype = $varc->coltype;
+	    $valtype = $varc->valtype;
+	}
+	else
+	{
+	    $valtype = $pred->valtype;
 	}
 
 	foreach my $val_in ( @{$props->{$pred_name}} )
 	{
-	    my $val  = Rit::Base::Resource->get_by_anything( $val_in,
-							  {
-							   %$args,
-							   coltype => $coltype,
-							  });
+	    my $val  = Rit::Base::Resource->
+	      get_by_anything( $val_in,
+			       {
+				%$args,
+				valtype => $valtype,
+			       });
 
 #	    my $val_str = valclean( $val->syskey );
 	    my $val_str = $val->syskey;
@@ -4888,7 +4900,7 @@ sub construct_proplist
 	    }
 	    else
 	    {
-		$val = Rit::Base::Pred->get_by_label($pred_name)->valtype->literal_class->new( $val );
+		$val = Rit::Base::Pred->get_by_label($pred_name)->valtype->instance_class->new( $val );
 #		$val = Rit::Base::Literal->new( $val );
 	    }
 	}
@@ -6839,12 +6851,7 @@ sub initiate_rel
 
     my $nid = $node->id;
 
-    debug "initiating $nid";
-    if( $nid == 5129647 )
-    {
-	confess "Initiating rel for 5129647";
-    }
-
+    debug 2, "initiating $nid";
 
     if( $arclim->size )
     {
@@ -7124,6 +7131,7 @@ sub initiate_prop
 	}
     }
 
+    my $extralim = 0; # Getting less than all?
     if( $active )
     {
 	$node->{'initiated_relprop'}{$name} = 1;
@@ -7141,6 +7149,7 @@ sub initiate_prop
 
     if( my $pred_id = Rit::Base::Pred->get( $name )->id )
     {
+#	debug "initiate_prop $node->{id} $name";
 	if( debug > 3 )
 	{
 	    $Rit::Base::timestamp = time;
@@ -7157,12 +7166,10 @@ sub initiate_prop
 	else
 	{
 	    my $sql = "select * from arc where subj=$nid and pred=$pred_id";
-#	    my $sql = "select * from arc where subj=? and pred=?";
 	    if( $inactive and not $active )
 	    {
 		$sql .= " and active is false";
 	    }
-
 	    if( $active and not $inactive )
 	    {
 		$sql .= " and active is true";
@@ -7170,9 +7177,34 @@ sub initiate_prop
 
 	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
 	    $sth_init_subj_pred->execute();
-#	    $sth_init_subj_pred->execute( $nid, $pred_id );
 	    $recs = $sth_init_subj_pred->fetchall_arrayref({});
 	    $sth_init_subj_pred->finish;
+
+	    my $count = $sth_init_subj_pred->rows;
+	    if( $count > 20 )
+	    {
+		if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
+		{
+		    debug "WARNING: initially got $count rows";
+		    debug "ARCLIM: ".query_desig($arclim);
+		    my $obj_id = $proplim->id;
+		    $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
+		    $sql = join " and ", $sql, scalar($arclim->sql);
+		    my $sth = $Rit::dbix->dbh->prepare($sql);
+		    $sth->execute();
+		    $recs = $sth->fetchall_arrayref({});
+		    $sth->finish;
+		    $extralim ++;
+		}
+		else
+		{
+		    # Try using proplims and arclims
+		    debug "WARNING: populating $count rows";
+		    debug "PROPLIM: ".query_desig($proplim);
+		    debug "ARCLIM: ".query_desig($arclim);
+		}
+	    }
+
 	}
 
 
@@ -7210,15 +7242,19 @@ sub initiate_prop
 	debug "* prop $name does not exist!";
     }
 
-    if( $node->{'id'} == 5129647 )
+    if( $extralim )
     {
-	debug "***** Initiating 5129647 prop $name - DONE";
+	$node->{'initiated_relprop'}{$name} = 0;
     }
+    elsif( $active )
+    {
+	$node->{'initiated_relprop'}{$name} = 2;
+    }
+
 
     # Keeps key nonexistent if nonexistent
     if( $active and not $inactive )
     {
-	$node->{'initiated_relprop'}{$name} = 2;
 	return $node->{'relarc'}{ $name };
     }
     elsif( $inactive and not $active )
@@ -7227,7 +7263,6 @@ sub initiate_prop
     }
     else
     {
-	$node->{'initiated_relprop'}{$name} = 2;
 	return $node->{'relarc'}{ $name } ||
 	  $node->{'relarc_inactive'}{ $name };
     }
@@ -7505,15 +7540,46 @@ sub session_history_add
 
 #########################################################################
 
-=head2 valtype
+=head2 coltype
 
-  $node->valtype()
+  $node->coltype()
 
-Only for classes used as range of predicates.
+C<$node> must be a class (used as a range of a predicate).
+
+Literal classes handled by L<Rit::Base::Literal::Class>. All other are
+coltype C<obj>.
+
+returns: the plain string of table column name
+
+See also: L<Rit::Base::Pred/coltype>, L<Rit::Base::Arc/coltype>,
+L<Rit::Base::Literal::Class/coltype>
+
+TODO: Move this to L<Rit::Base::Resource::Class>
 
 =cut
 
-sub valtype
+sub coltype
+{
+    return 'obj';
+}
+
+
+#########################################################################
+
+=head2 this_valtype
+
+  $node->this_valtype()
+
+This would be the same as the C<is> property of this resource. But it
+must only have ONE value. It's important for literal values.
+
+This method will always return the C<resource> resource.
+
+See also: L<Rit::Base::Literal/this_valtype>
+
+=cut
+
+sub this_valtype
 {
     return Rit::Base::Resource->get_by_label('resource');
 }
@@ -7521,20 +7587,19 @@ sub valtype
 
 #########################################################################
 
-=head2 coltype
+=head2 this_coltype
 
-  $node->coltype()
+  $node->this_coltype()
 
-Only for classes used as range of predicates.
-
-Literal classes handled by L<Rit::Base::Literal::Class>. All other are
-coltype C<obj>.
+This is a resource. It has tha C<obj> coltype.
 
 returns: the plain string of table column name
 
+See also: L<Rit::Base::Literal/this_coltype>
+
 =cut
 
-sub coltype
+sub this_coltype
 {
     return 'obj';
 }
