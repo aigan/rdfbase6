@@ -40,9 +40,11 @@
 [% END %]
 
 <h2>Query</h2>
-<pre>
-[% query_desig(a.query) %]
-</pre>
+<pre>[% query_desig(a.query) | html %]</pre>
+
+<p>With args:
+<pre>[% query_desig(a.query) | html %]</pre>
+</p>
 
 [% BLOCK querypart %]
 
