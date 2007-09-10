@@ -59,6 +59,7 @@ our $special_id =
  pred => -8,
  obj => -9,
  coltype => -10,
+ label => -11,
 };
 
 our $special_label = { reverse %$special_id };
@@ -325,7 +326,7 @@ sub find_by_anything
 					    pred_coltype => 2, # valfloat
 					   });
     }
-    elsif( $label =~ /^(desig|loc|plain)$/ )
+    elsif( $label =~ /^(desig|loc|plain|label)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,
