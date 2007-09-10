@@ -82,6 +82,7 @@ use overload 'fallback' => 1;
 #};
 
 
+# Dynamic preds for ARCS
 our %DYNAMIC_PRED =
   (
    subj => 'resource',
@@ -103,6 +104,7 @@ our %DYNAMIC_PRED =
    source => 'resource',         # should be source
    read_access => 'resource',    # should be agent
    write_access => 'resource',   # should be agent
+   label => 'text',
   );
 
 
