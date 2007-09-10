@@ -5455,8 +5455,8 @@ Use args:
   arc_type => singular
     if there should be only one arc with that pred from that subj.
 
-#  inputtype => select
-#    to get a select of all $n->rev_scof's.
+  inputtype => select
+    to get a select of all $n->rev_scof's.
 
   inputtype => select_tree
     to get a select of all $n->rev_scof_direct, and then another etc.
