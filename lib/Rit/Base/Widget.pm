@@ -296,9 +296,10 @@ sub wub
 	{
 #	    debug "no arc";
 
+	    my $default = $args->{'default'} || '';
 	    my $subj_id = $subj->id;
 	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
-				  '',
+				  $default,
 				  {
 				   size => $size,
 				   rows => $rows,
@@ -601,7 +602,9 @@ sub wub_select
     $out .= '<option value "">'. $header .'</option>'
       if( $header );
 
-    my $items = $type->revlist('is', undef, aais($args,'direct'));
+    my $items = $type->revlist('is', undef, aais($args,'direct'))->
+      sorted(['name_short', 'name.loc', 'label']);
+
     confess( "Trying to make a select of ". $items->size .".  That's not wise." )
       if( $items->size > 60 );
 
@@ -610,7 +613,8 @@ sub wub_select
 	$out .= '<option value="'. $item->id .'"';
 
 	$out .= ' selected="selected"'
-	  if( $subj->prop( $pred_name, $item ) );
+	  if( $args->{'default'} eq $item->id or
+	      $subj->prop( $pred_name, $item ) );
 
 	$out .= '>'. ( $item->name_short->loc || $item->name->loc || $item->label ) .'</option>';
     }
