@@ -274,6 +274,23 @@ sub plain
 
 #######################################################################
 
+=head3 as_string
+
+Used in L<Para::Frame::Email::Address>. Overrides
+L<Rit::Base::Object/as_string>.
+
+Same as L</plain>.
+
+=cut
+
+sub as_string
+{
+    return $_[0]->format;
+}
+
+
+#######################################################################
+
 =head3 default_valtype
 
 =cut
