@@ -296,7 +296,7 @@ sub wub
 	{
 #	    debug "no arc";
 
-	    my $default = $args->{'default'} || '';
+	    my $default = $args->{'default_value'} || '';
 	    my $subj_id = $subj->id;
 	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
 				  $default,
@@ -613,7 +613,7 @@ sub wub_select
 	$out .= '<option value="'. $item->id .'"';
 
 	$out .= ' selected="selected"'
-	  if( $args->{'default'} eq $item->id or
+	  if( $args->{'default_value'} eq $item->id or
 	      $subj->prop( $pred_name, $item ) );
 
 	$out .= '>'. ( $item->name_short->loc || $item->name->loc || $item->label ) .'</option>';
