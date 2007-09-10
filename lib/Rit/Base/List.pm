@@ -1341,6 +1341,10 @@ sub contains
 
     foreach my $node ( @{$list->as_list} )
     {
+	unless( UNIVERSAL::isa $node, "Rit::Base::Object" )
+	{
+	    confess "List element not a RB object: ".query_desig($node);
+	}
 	return $node if $node->equals($tmpl, $args);
     }
     return undef;
