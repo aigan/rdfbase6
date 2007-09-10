@@ -4759,6 +4759,62 @@ sub remove
 
 #######################################################################
 
+=head2 copy_props
+
+ $n->copy_props( $from_obj, \@preds, \%args )
+
+Copies all properties with listed C<@preds> from C<$from_obj>.
+
+Returns: 
+
+=cut
+
+sub copy_props
+{
+    my( $to_obj, $from_obj, $props, $args_in ) = @_;
+
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
+    my $R = Rit::Base->Resource;
+
+    foreach my $pred ( @$props )
+    {
+	my $list = $from_obj->list( $pred, undef, $args );
+	$to_obj->add({ $pred => $list }, $args )
+	  if( $list );
+    }
+}
+
+
+#######################################################################
+
+=head2 copy_revprops
+
+ $n->copy_revprops( $from_obj, \@preds, \%args )
+
+Copies all rev-properties with listed C<@preds> from C<$from_obj>.
+
+Returns: 
+
+=cut
+
+sub copy_revprops
+{
+    my( $to_obj, $from_obj, $props, $args_in ) = @_;
+
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
+    my $R = Rit::Base->Resource;
+
+    foreach my $pred ( @$props )
+    {
+	my $list = $from_obj->revlist( $pred, undef, $args );
+	$list->add({ $pred => $to_obj }, $args )
+	  if( $list );
+    }
+}
+
+
+#######################################################################
+
 =head2 find_arcs
 
   $n->find_arcs( [ @crits ], \%args )
@@ -5297,7 +5353,7 @@ sub wu
     {
 	my $is_scof = ( $range_scof ? 1 : 0 );
 
-	$range ||= $range_scof;
+	$range = ( $is_scof ? $range_scof : $range );
 	$args->{'range_is_scof'} = 1
 	  if( $is_scof );
 
