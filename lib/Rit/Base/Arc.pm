@@ -3048,7 +3048,17 @@ sub set_value
     else
     {
 	# Works also for valtype, but not for removals
-	my $valtype = $args->{'valtype'} || $arc->valtype;
+
+	# Get valtype from arg unless it's a value node
+	my $valtype;
+	if( $valtype = $args->{'valtype'} )
+	{
+	    if( $valtype->equals('literal') )
+	    {
+		undef $valtype;
+	    }
+	}
+	$valtype ||= $arc->valtype;
 	unless( $valtype )
 	{
 	    confess "Can't set the value of a removal ($value_new_in)";
