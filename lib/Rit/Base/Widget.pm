@@ -519,7 +519,7 @@ sub wub_select_tree
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
 
-    my $subtypes = $type->revlist('scof', undef, aaid($args,'direct'));
+    my $subtypes = $type->revlist('scof', undef, aais($args,'direct'));
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'"';
