@@ -355,7 +355,7 @@ Not used. Please be more specific. What kind of string?
 
 sub as_string
 {
-    croak "wrong turn";
+    confess "wrong turn";
 }
 
 
