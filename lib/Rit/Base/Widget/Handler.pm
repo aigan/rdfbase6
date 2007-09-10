@@ -863,9 +863,19 @@ sub handle_query_arc_value
 	    {
 		# Give the valtype of the pred. We want to use the
 		# current valtype rather than the previous one that
-		# maight not be the same.
+		# maight not be the same.  ... unless for value
+		# nodes. But take care of that in set_value()
 
 		my $valtype = $arc->pred->valtype;
+		if( $valtype->equals('literal') )
+		{
+		    debug "arc is $arc->{id}";
+		    debug "valtype is ".$valtype->desig;
+		    debug "pred is ".$pred->desig;
+		    debug "setting value to $value"
+		}
+
+
 		$arc = $arc->set_value( $value,
 					{
 					 %$args,
