@@ -601,16 +601,12 @@ sub set_coltype
 
 	    # TODO: now just checks for existance (limit 1)
 	    #
-	    my $st = "select * from arc where pred=$pred_id and $coltype_old is not null limit 1";
-	    my $sth = $Rit::dbix->dbh->prepare($st);
-	    $sth->execute();
-	    while( my($rec) = $sth->fetchrow_hashref )
+	    my $st = "select id from arc where pred=$pred_id and $coltype_old is not null limit 1";
+	    my $sth = $Rit::dbix->dbh->prepare($st) or die;
+	    $sth->execute() or die;
+	    if( $sth->rows )
 	    {
-		my( $val ) = $rec->{ $coltype_old };
-		if( defined $val )
-		{
-		    confess "I would have to transform $coltype_old value $val to $coltype_new";
-		}
+		confess "There is existing arcs with $coltype_old defined";
 	    }
 	    $sth->finish;
 	}
