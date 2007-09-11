@@ -32,7 +32,7 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( );
 
 use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
 # Parent overloads some operators!
@@ -109,7 +109,7 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
-	confess "Implement undef addresses";
+	return $class->new(undef, $valtype);
     }
     else
     {

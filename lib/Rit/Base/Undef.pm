@@ -30,7 +30,7 @@ BEGIN
 }
 
 
-use base qw( Rit::Base::Literal );
+use base qw( Rit::Base::Node );
 
 use Para::Frame::Reload;
 

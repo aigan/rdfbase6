@@ -20,7 +20,7 @@ Rit::Base::Literal
 =cut
 
 use strict;
-use Carp qw( cluck confess carp );
+use Carp qw( cluck confess carp shortmess );
 
 BEGIN
 {
@@ -31,11 +31,16 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
-use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs );
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time;
 use Rit::Base::Literal::URL;
 use Rit::Base::Literal::Email::Address;
+use Rit::Base::Arc::Lim;
+use Rit::Base::Pred;
+use Rit::Base::List;
+
+use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs
+                         convert_query_prop_for_creation );
 
 ### Inherit
 #
@@ -91,24 +96,23 @@ Identifies the format and makes the apropriate literal object of it.
 
 sub new
 {
-    my( $this, $val_in ) = @_;
+    my( $this, $val_in, $valtype_in ) = @_;
 
-    confess "TODO: Develope Literal->new";
+    unless( $valtype_in )
+    {
+	confess "valtype missing";
+    }
 
-    # Assume its string or undef
+    my $valtype = Rit::Base::Resource->get($valtype_in);
+    unless( $valtype->UNIVERSAL::isa('Rit::Base::Literal::Class') )
+    {
+	my $valtype_desig = $valtype->desig;
+	confess "valtype $valtype_desig is not a literal class";
+    }
 
-    if( not defined $val_in )
-    {
-	return is_undef;
-    }
-    elsif( ref $val_in )
-    {
-	die "Valformed value: $val_in";
-    }
-    else
-    {
-	return Rit::Base::Literal::String->new( $val_in );
-    }
+    my $class_name = $valtype->instance_class;
+
+    return $class_name->new( $val_in, $valtype );
 }
 
 
@@ -132,7 +136,13 @@ sub new_from_db
 
 sub parse
 {
-    confess "implement this".datadump(\@_,2);
+    my( $this, $val_in, $args_in ) = @_;
+    my( $val, $coltype, $valtype, $args ) =
+      $this->extract_string($val_in, $args_in);
+
+    my $class_name = $valtype->instance_class;
+
+    return $class_name->new( $val_in, $args );
 }
 
 
@@ -174,20 +184,6 @@ sub nodes
 
 #######################################################################
 
-=head2 id
-
-Literals has no id.  Retuns undef.
-
-=cut
-
-sub id
-{
-    return undef;
-}
-
-
-#######################################################################
-
 =head2 arc
 
 =head2 revarc
@@ -197,11 +193,6 @@ sub id
 Return the arc for this literal
 
 =cut
-
-sub arc
-{
-    $_[0]->{'arc'} || is_undef;
-}
 
 sub revarc
 {
@@ -291,26 +282,60 @@ Example:
 
 sub update
 {
-    my( $literal, $props, $args ) = @_;
+    my( $lit, $props, $args ) = @_;
 
     # Just convert to value node and forward the call.
     # But check if we realy have props to add
 
+    if( my $new_val = $props->{'value'} )
+    {
+	delete $props->{'value'};
+	if( my $arc = $lit->revarc )
+	{
+	    my $newarc = $arc->set_value($new_val, $args );
+	    $lit = $newarc->value;
+	}
+	else
+	{
+	    $lit = Rit::Base::Resource->get_by_anything($new_val, $args);
+	}
+
+	return $lit->update($props, $args);
+    }
+
     if( keys %$props )
     {
-	my $arc = $literal->arc or die "Literal has no defined arc";
-	my $node = Rit::Base::Resource->create( $props, $args );
+	my $node;
+	if( my $id = $lit->{'id'} )
+	{
+	    # Transform to value resource
+	    delete $Rit::Base::Cache::Resource{ $id };
+	    $node = Rit::Base::Resource->get( $id );
+	}
+	else
+	{
+	    $node =  Rit::Base::Resource->get( 'new' );
+	}
+
+	$node->add( $props, $args );
+
+	my $valtype = $lit->valtype;
 	Rit::Base::Arc->create({
 				subj    => $node,
 				pred    => 'value',
-				value   => $literal,
-				valtype => $arc->valtype,
+				value   => $lit,
+				valtype => $valtype,
 			       }, $args);
 
-	$arc = $arc->set_value( $node, $args );
+	if( my $arc = $lit->revarc )
+	{
+	    $arc->set_value( $node, $args );
+	}
+
+	return $node;
     }
 
-    return $literal;
+    return $lit;
 }
 
 
@@ -417,7 +442,7 @@ sub subj
     if( ref $this )
     {
 	my $lit = $this;
-	if( my $arc = $lit->arc )
+	if( my $arc = $lit->revarc )
 	{
 	    return $arc->subj;
 	}
@@ -448,7 +473,7 @@ sub pred
     if( ref $this )
     {
 	my $lit = $this;
-	if( my $arc = $lit->arc )
+	if( my $arc = $lit->revarc )
 	{
 	    return $arc->pred;
 	}
@@ -546,8 +571,914 @@ sub extract_string
 }
 
 
+#######################################################################
+
+=head3 id
+
+=cut
+
+sub id
+{
+    my( $lit ) = @_;
+    unless( $lit->{'id'} )
+    {
+	my $id = $lit->{'id'} = $Rit::dbix->get_nextval('node_seq');
+	$Rit::Base::Cache::Resource{ $id } = $lit;
+        debug shortmess "Created Literal id ".$lit->sysdesig;
+    }
+    return $lit->{'id'};
+}
+
+
 #########################################################################
-################################  Private methods  ######################
+#########################  Value resource methods  ######################
+
+=head3 find
+
+=cut
+
+sub find
+{
+    my( $lit, $query, $args_in ) = @_;
+
+    unless( ref $query )
+    {
+	return Rit::Base::List->new_empty();
+    }
+    unless( ref $lit )
+    {
+	return Rit::Base::List->new_empty();
+    }
+    my( $args ) = parse_propargs($args_in);
+
+    ## Default criterions
+    my $default = $args->{'default'} || {};
+    foreach my $key ( keys %$default )
+    {
+	unless( defined $query->{$key} )
+	{
+	    $query->{$key} = $default->{$key};
+	}
+    }
+
+    my $list = Rit::Base::List->new([$lit]);
+    return $list->find($query, $args);
+}
+
+
+#######################################################################
+
+=head3 find_one
+
+=cut
+
+sub find_one
+{
+    return shift->find(@_)->get_first_nos;
+}
+
+
+#######################################################################
+
+=head3 find_set
+
+=cut
+
+sub find_set
+{
+    my( $this, $query, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $nodes = $this->find( $query, $args )->as_arrayref;
+    my $node = $nodes->[0];
+    unless( $node )
+    {
+	my $query_new = convert_query_prop_for_creation($query);
+
+	my $default_create = $args->{'default_create'} || {};
+	foreach my $pred ( keys %$default_create )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default_create->{$pred};
+	    }
+	}
+
+	my $default = $args->{'default'} || {};
+	foreach my $pred ( keys %$default )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default->{$pred};
+	    }
+	}
+
+	return $this->create($query_new, $args);
+    }
+
+    return $node;
+}
+
+
+#######################################################################
+
+=head3 set_one
+
+=cut
+
+sub set_one
+{
+    my( $this, $query, $args_in ) = @_;
+
+    my( $args ) = parse_propargs($args_in);
+
+    my $nodes = $this->find( $query, $args );
+    my $node = $nodes->get_first_nos;
+
+    while( my $enode = $nodes->get_next_nos )
+    {
+	confess "not possible";
+    }
+
+    unless( $node )
+    {
+	my $query_new = convert_query_prop_for_creation($query);
+
+	my $default_create = $args->{'default_create'} || {};
+	foreach my $pred ( keys %$default_create )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default_create->{$pred};
+	    }
+	}
+
+	my $default = $args->{'default'} || {};
+	foreach my $pred ( keys %$default )
+	{
+	    unless( defined $query_new->{$pred} )
+	    {
+		$query_new->{$pred} = $default->{$pred};
+	    }
+	}
+
+	return $this->create($query_new, $args);
+    }
+
+    return $node;
+}
+
+
+#######################################################################
+
+=head3 form_url
+
+=cut
+
+sub form_url
+{
+    confess "fixme";
+}
+
+
+#######################################################################
+
+=head3 page_url_path_slash
+
+=cut
+
+sub page_url_path_slash
+{
+    confess "fixme";
+}
+
+
+#######################################################################
+
+=head3 empty
+
+=cut
+
+sub empty
+{
+    return 1;
+}
+
+
+#######################################################################
+
+=head3 created
+
+=cut
+
+sub created
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->created;
+    }
+
+    return Rit::Base::Literal::Time->new();
+}
+
+
+#######################################################################
+
+=head3 updated
+
+=cut
+
+sub updated
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->updated;
+    }
+
+    return Rit::Base::Literal::Time->new();
+}
+
+
+#######################################################################
+
+=head3 owned_by
+
+=cut
+
+sub owned_by
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->subj->owned_by;
+    }
+
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 read_access
+
+=cut
+
+sub read_access
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->read_access;
+    }
+
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 write_access
+
+=cut
+
+sub write_access
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->write_access;
+    }
+
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 created_by
+
+=cut
+
+sub created_by
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->created_by;
+    }
+
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 updated_by
+
+=cut
+
+sub updated_by
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	return $arc->updated_by;
+    }
+
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 list
+
+=cut
+
+sub list
+{
+    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+    if( $name )
+    {
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->plain;
+	}
+
+	my $target;
+
+	if( $name eq 'value' )
+	{
+	    $target = $node;
+	}
+	else
+	{
+	    return Rit::Base::List->new_empty();
+	}
+
+	unless( Rit::Base::Arc::Lim::literal_meets_lim($target, $arclim ) )
+	{
+	    return Rit::Base::List->new_empty();
+	}
+
+	# Don't call find if proplim is empty
+	if( $proplim and (ref $proplim eq 'HASH' ) and not keys %$proplim )
+	{
+	    undef $proplim;
+	}
+
+	if( $proplim ) # May be a value or anything taken by find
+	{
+	    # Proplim may be in negative form, and thus valid
+
+	    $target = $target->find($proplim, $args)->get_first_nos;
+	}
+
+	return $target;
+    }
+    else
+    {
+	return $node->list_preds( $proplim, $args );
+    }
+}
+
+
+#######################################################################
+
+=head3 list_preds
+
+=cut
+
+sub list_preds
+{
+    my $pred = Rit::Base::Pred->get_by_label('value');
+    return Rit::Base::List->new([$pred]);
+}
+
+
+#######################################################################
+
+=head3 revlist
+
+=cut
+
+sub revlist
+{
+    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+    my $arc = $node->revarc;
+    unless( $arc )
+    {
+	return Rit::Base::List->new_empty();
+    }
+
+    if( $name )
+    {
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->plain;
+	}
+
+	unless( $arc->pred->plain eq $name )
+	{
+	    return Rit::Base::List->new_empty();
+	}
+
+	unless( $arc->meets_arclim($arclim) )
+	{
+	    return Rit::Base::List->new_empty();
+	}
+
+
+	my $vals = Rit::Base::List->new([$arc->subj]);
+
+	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+	{
+	    $vals = $vals->find($proplim, $args);
+	}
+
+	return $vals;
+    }
+    else
+    {
+	return $node->revlist_preds( $proplim, $args );
+    }
+}
+
+
+#######################################################################
+
+=head3 revlist_preds
+
+=cut
+
+sub revlist_preds
+{
+    my $arc = $_[0]->revarc;
+    unless( $arc )
+    {
+	return Rit::Base::List->new_empty();
+    }
+
+    my $pred = $arc->pred;
+    return Rit::Base::List->new([$pred]);
+}
+
+
+#######################################################################
+
+=head3 first_prop
+
+=cut
+
+sub first_prop
+{
+    return shift->list(@_)->get_first_nos;
+}
+
+
+#######################################################################
+
+=head3 first_revprop
+
+=cut
+
+sub first_revprop
+{
+    return shift->revlist(@_)->get_first_nos;
+}
+
+
+#######################################################################
+
+=head3 has_pred
+
+=cut
+
+sub has_pred
+{
+    my( $node ) = shift;
+
+    if( $node->list(@_)->size )
+    {
+	return $node;
+    }
+    else
+    {
+	return is_undef;
+    }
+}
+
+
+#######################################################################
+
+=head3 has_value
+
+=cut
+
+sub has_value
+{
+    my( $node, $preds, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+    confess "Not a hashref" unless ref $preds;
+
+    my( $pred_name, $value ) = each( %$preds );
+
+    my $match = $args->{'match'} || 'eq';
+    my $clean = $args->{'clean'} || 0;
+
+    my $pred = Rit::Base::Pred->get( $pred_name );
+    $pred_name = $pred->plain;
+
+
+    # Sub query
+    if( ref $value eq 'HASH' )
+    {
+	unless( $match eq 'eq' )
+	{
+	    confess "subquery not implemented for matchtype $match";
+	}
+
+	if( $node->find($value, $args)->size )
+	{
+	    return 1;
+	}
+	return 0;
+    }
+
+    # $value holds alternative values
+    elsif( ref $value eq 'ARRAY' )
+    {
+	foreach my $val (@$value )
+	{
+	    my $res = $node->has_value({$pred_name=>$val},  $args);
+	    return $res if $res;
+	}
+	return 0;
+    }
+
+
+    # Check the dynamic properties (methods) for the node
+    if( $node->can($pred_name) )
+    {
+	debug 3, "  check method $pred_name";
+	my $prop_value = $node->$pred_name( {}, $args );
+
+	if( ref $prop_value )
+	{
+	    $prop_value = $prop_value->desig;
+	}
+
+	if( $clean )
+	{
+	    $prop_value = valclean(\$prop_value);
+	    $value = valclean(\$value);
+	}
+
+	if( $match eq 'eq' )
+	{
+	    return -1 if $prop_value eq $value;
+	}
+	elsif( $match eq 'begins' )
+	{
+	    return -1 if $prop_value =~ /^\Q$value/;
+	}
+	elsif( $match eq 'like' )
+	{
+	    return -1 if $prop_value =~ /\Q$value/;
+	}
+	else
+	{
+	    confess "Matchtype $match not implemented";
+	}
+    }
+
+
+    if( $pred_name eq 'value' )
+    {
+	return $node->equals( $value, $args );
+    }
+
+    return 0;
+}
+
+
+#######################################################################
+
+=head3 count
+
+=cut
+
+sub count
+{
+    my( $node, $tmpl, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+    if( ref $tmpl and ref $tmpl eq 'HASH' )
+    {
+	throw('action',"count( \%tmpl, ... ) not implemented");
+    }
+
+    my $pred_name = Rit::Base::Pred->get_by_label( $tmpl )->plain;
+
+    if( $pred_name eq 'value' )
+    {
+	if( Rit::Base::Arc::Lim::literal_meets_lim($node, $arclim ) )
+	{
+	    return 1;
+	}
+    }
+
+    return 0;
+}
+
+
+#######################################################################
+
+=head3 revcount
+
+=cut
+
+sub revcount
+{
+    my( $node, $tmpl, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+
+    my $arc = $node->revarc;
+    unless( $arc )
+    {
+	return 0;
+    }
+
+    if( ref $tmpl and ref $tmpl eq 'HASH' )
+    {
+	throw('action',"count( \%tmpl, ... ) not implemented");
+    }
+    my $pred = Rit::Base::Pred->get_by_label( $tmpl );
+
+    if( $pred->equals( $arc->pred )  )
+    {
+	if( $arc->meets_arclim( $arclim ) )
+	{
+	    return 1;
+	}
+    }
+
+    return 0;
+}
+
+
+#######################################################################
+
+=head3 label
+
+=cut
+
+sub label
+{
+    return undef;
+}
+
+
+#######################################################################
+
+=head3 set_label
+
+=cut
+
+sub set_label
+{
+    confess "Setting a label on a literal is not allowed";
+}
+
+
+#######################################################################
+
+=head3 arc_list
+
+NOTE: May have expected to get the 'value' arc. But we should not
+pretend to have one...
+
+=cut
+
+sub arc_list
+{
+    return Rit::Base::List->new_empty();
+}
+
+
+#######################################################################
+
+=head3 revarc_list
+
+=cut
+
+sub revarc_list
+{
+    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
+    my( $active, $inactive ) = $arclim->incl_act;
+
+    my $arc = $node->revarc;
+    unless( $arc )
+    {
+	return Rit::Base::List->new_empty();
+    }
+
+    if( $name )
+    {
+	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	{
+	    $name = $name->plain;
+	}
+
+	unless( $name eq $arc->pred->plain )
+	{
+	    return Rit::Base::List->new_empty();
+	}
+    }
+
+    unless( $arc->meets_arclim($arclim) )
+    {
+	return Rit::Base::List->new_empty();
+    }
+
+    my $vals = Rit::Base::List->new([$arc]);
+
+    if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+    {
+	$vals = $vals->find($proplim, $args);
+    }
+
+    return $vals;
+}
+
+
+#######################################################################
+
+=head3 first_arc
+
+=cut
+
+sub first_arc
+{
+    return Rit::Base::List->new_empty();
+}
+
+
+#######################################################################
+
+=head3 first_revarc
+
+=cut
+
+sub first_revarc
+{
+    return shift->revarc_list(@_)->get_first_nos;
+}
+
+
+#######################################################################
+
+=head3 arc
+
+=cut
+
+sub arc
+{
+    return is_undef;
+}
+
+
+#######################################################################
+
+=head3 add
+
+=cut
+
+sub add
+{
+    return shift->update(@_);
+}
+
+
+#######################################################################
+
+=head3 vacuum
+
+=cut
+
+sub vacuum
+{
+    if( my $arc = $_[0]->revarc )
+    {
+	$arc->vacuum;
+    }
+    return $_[0];
+}
+
+
+#######################################################################
+
+=head3 merge
+
+=cut
+
+sub merge
+{
+    confess "merging a literal?!";
+}
+
+
+#######################################################################
+
+=head3 link_paths
+
+=cut
+
+sub link_paths
+{
+    return [];
+}
+
+
+#######################################################################
+
+=head3 wu
+
+=cut
+
+sub wu
+{
+    confess "not implemented";
+}
+
+
+#######################################################################
+
+=head3 arcversions
+
+=cut
+
+sub arcversions
+{
+    return {};
+}
+
+
+#######################################################################
+
+=head3 tree_select_widget
+
+=cut
+
+sub tree_select_widget
+{
+    return "";
+}
+
+
+#######################################################################
+
+=head2 sysdesig
+
+  $n->sysdesig()
+
+The designation of an object, to be used for node administration or
+debugging.  This version of desig indludes the node id, if existing.
+
+=cut
+
+sub sysdesig  # The designation of obj, including node id
+{
+    my( $lit, $args_in ) = @_;
+
+    my $out;
+
+    if( my $id = $lit->{'id'} )
+    {
+	$out .= "$id: ";
+    }
+
+    my $classname = ref $lit;
+
+    $out .= $classname . " ";
+
+    my $plain = $lit->plain;
+
+    if( defined $plain )
+    {
+	my $value  = truncstring( shift->{'value'} );
+	return $out . "'$value'";
+    }
+    else
+    {
+	return $out . "undef";
+    }
+}
+
+
+#########################################################################
+
 
 1;
 

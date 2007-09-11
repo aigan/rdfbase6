@@ -32,7 +32,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
 use Para::Frame::L10N qw( loc );
 
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( );
 
 use base qw( Rit::Base::Literal::URL );
 # Parents overloads some operators!

@@ -9,7 +9,7 @@ package Rit::Base::Literal::Time;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -21,6 +21,7 @@ Rit::Base::Literal::Time
 
 use strict;
 use Carp qw( cluck carp confess );
+use DateTime::Incomplete;
 
 BEGIN
 {
@@ -29,9 +30,9 @@ BEGIN
 }
 
 
-use Para::Frame::Utils qw( throw debug );
+use Para::Frame::Utils qw( throw debug datadump );
 
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( );
 
 use base qw( Para::Frame::Time Rit::Base::Literal );
 
@@ -70,7 +71,7 @@ sub parse
 
     if( ref $val eq 'SCALAR' )
     {
-	return $class->get($$val, $valtype);
+	return $class->new($$val, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Time" )
     {
@@ -78,11 +79,11 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {
-	return $class->get($val->plain, $valtype);
+	return $class->new($val->plain, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
-	confess "Implement undef dates";
+	return $class->new(undef, $valtype);
     }
     else
     {
@@ -110,11 +111,44 @@ sub new_from_db
 
 #######################################################################
 
+=head2 new
+
+  $this->new( $time, $valtype )
+
+Extension of L<Para::Frame::Time/get>
+
+=cut
+
+sub new
+{
+    my $this = shift;
+
+    my( $time, $valtype);
+    if( scalar @_ > 2 )
+    {
+	$time = $this->SUPER::new(@_);
+    }
+    else
+    {
+	$time = $this->SUPER::get($_[0]);
+	$valtype = $_[1];
+    }
+
+    unless( $time )
+    {
+	$time = DateTime::Incomplete->new( time_zone => 'floating' );
+    }
+
+    $time->{'valtype'} = $valtype;
+
+    return $time;
+}
+
+#######################################################################
+
 =head2 get
 
   $this->get( $time, $valtype )
-
-TODO: Implement undef time!
 
 Extension of L<Para::Frame::Time/get>
 
@@ -122,13 +156,7 @@ Extension of L<Para::Frame::Time/get>
 
 sub get
 {
-    my( $this, $value, $valtype ) = @_;
-    my $time = $this->SUPER::get($value)
-      or return is_undef;
-
-    $time->{'valtype'} = $valtype;
-
-    return $time;
+    return shift->new(@_);
 }
 
 #######################################################################
@@ -166,7 +194,7 @@ sub now
 
 sub date
 {
-    return bless(Para::Frame::Time->get(@_),'Rit::Base::Literal::Time');
+    return bless(Para::Frame::Time->new(@_),'Rit::Base::Literal::Time');
 }
 
 #######################################################################

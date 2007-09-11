@@ -33,7 +33,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
 
-use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Utils qw( );
 
 use base qw( Para::Frame::URI Rit::Base::Literal::String );
 # Parent overloads some operators!
