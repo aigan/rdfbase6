@@ -419,6 +419,8 @@ sub handle_query_arc_value
     my( $args, $arclim, $res ) = parse_propargs($args_in);
     my $changes_prev = $res->changes;
 
+#    Para::Frame::Logging->this_level(4);
+
     die "missing value" unless defined $value;
 
     my $R = Rit::Base->Resource;
@@ -444,6 +446,18 @@ sub handle_query_arc_value
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
     my $select	  = $arg->{'select'};   # for version-selection
 
+
+    if( debug > 3 )
+    {
+	debug "handle_query_arc $arc_id";
+	debug "  param $param = $value";
+	debug "  subj : ".($subj||'');
+	debug "  type : ".($type||'');
+	debug "  scof : ".($scof||'');
+	debug "  desig: ".($desig||'');
+    }
+
+
     if( $subj )
     {
 	unless( $subj =~ /^(\d+)$/ )
@@ -452,6 +466,7 @@ sub handle_query_arc_value
 	}
 
 	$subj = $R->get($subj);
+	debug 2, "subj gave ".$subj->sysdesig;
     }
     else
     {
@@ -493,16 +508,6 @@ sub handle_query_arc_value
 #    {
 #	throw('validation', "Form gave faulty value '$value' for $param\n");
 #    }
-
-
-    if( debug > 3 )
-    {
-	debug "handle_query_arc $arc_id\n";
-	debug "  param $param = $value\n";
-	debug "  type : $type\n";
-	debug "  scof : $scof\n";
-	debug "  desig: $desig\n";
-    }
 
 
     # reverse arc
@@ -844,7 +849,6 @@ sub handle_query_arc_value
 
 		    $value = $list->get($props);
 		}
-
 
 		$arc = $arc->set_value( $value, $args );
 	    }

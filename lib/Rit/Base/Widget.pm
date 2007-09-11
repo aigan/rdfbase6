@@ -101,6 +101,8 @@ sub wub
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+#    Para::Frame::Logging->this_level(5);
+
     no strict 'refs';
     my $out = "";
     my $R = Rit::Base->Resource;
