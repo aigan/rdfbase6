@@ -262,7 +262,7 @@ sub coltype
     return(
 	   ( $_[0]->{'lit_coltype'}
 	     ||= $COLTYPE_valtype2name{ $_[0]->id } )
-	   || confess("coltype missing")
+	   || confess("coltype missing for $_[0]->{id}")
 	  );
 }
 
