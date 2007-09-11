@@ -5506,13 +5506,14 @@ sub wuirc
       ."wuirc for Resource. Pred: ". $pred->desig;
     debug "Class". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
     debug "Singular." if $singular;
+    debug "Given inputtype: ". ( $args->{'inputtype'} || '' );
 
     debug "Checking size..."
       unless( $args->{'inputtype'} );
 
     my $inputtype = $args->{'inputtype'} ||
-      ( $range->revcount($is_pred) < 25 ) ?
-	( $is_scof ? 'select_tree' : 'select' ) : 'text';
+      ( ( $range->revcount($is_pred) < 25 ) ?
+	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
 
     debug "...done"
       unless( $args->{'inputtype'} );
@@ -5582,7 +5583,12 @@ sub wuirc
 	elsif( $inputtype eq 'select' )
 	{
 	    debug "Drawing a select for ". $range->desig;
-	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range, $args );
+	    my $header = $args->{'header'} || Para::Frame::L10N::loc('Select');
+	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range,
+						   {
+						    %$args,
+						    header => $header,
+						   });
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{

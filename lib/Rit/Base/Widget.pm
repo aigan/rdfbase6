@@ -523,7 +523,9 @@ sub wub_select_tree
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
 
-    my $subtypes = $type->revlist('scof', undef, aais($args,'direct'));
+    my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
+      sorted(['name_short', 'desig', 'label']);
+
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'"';
@@ -539,7 +541,7 @@ sub wub_select_tree
 	    $arc = $subj->arc( $pred_name, $subtype );
 	}
 
-	$out .= '>'. ( $subtype->name_short->loc || $subtype->name->loc ) .'</option>';
+	$out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
     }
     $out .= '</select>';
 
@@ -588,6 +590,7 @@ sub wub_select
     my $arc_id = $args->{'arc_id'} ||
       $singular ? 'singular' : '';
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
+    my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
 
     $arc ||= $subj->arc( $pred_name )
       if( $singular );
@@ -601,27 +604,28 @@ sub wub_select
 			      });
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-      .'pred_'. $pred_name .'__if_subj">';
+      .'pred_'. $pred_name . $if .'">';
 
     my $default_value = $args->{'default_value'} || '';
     $out .= '<option value "'. $default_value .'">'. $header .'</option>'
       if( $header );
 
-    my $items = $type->revlist('is', undef, aais($args,'direct'))->
-      sorted(['name_short', 'name.loc', 'label']);
+    my $is_pred = ( $args->{'range_is_scof'} ? 'scof' : 'is' );
+    my $items = $type->revlist($is_pred, undef, aais($args,'direct'))->
+      sorted(['name_short', 'desig', 'label']);
 
     confess( "Trying to make a select of ". $items->size .".  That's not wise." )
-      if( $items->size > 60 );
+      if( $items->size > 500 );
 
     while( my $item = $items->get_next_nos )
     {
 	$out .= '<option value="'. $item->id .'"';
 
 	$out .= ' selected="selected"'
-	  if( $args->{'default_value'} eq $item->id or
+	  if( $default_value eq $item->id or
 	      $subj->prop( $pred_name, $item ) );
 
-	$out .= '>'. ( $item->name_short->loc || $item->name->loc || $item->label ) .'</option>';
+	$out .= '>'. ( $item->name_short->loc || $item->desig || $item->label ) .'</option>';
     }
     $out .= '</select>';
     $out .= $arc->edit_link_html
