@@ -533,8 +533,6 @@ sub sorted
 {
     my( $list, $sortargs, $dir ) = @_;
 
-    my $DEBUG = 0;
-
     my $args = {};
 
     $sortargs ||= 'desig';
@@ -1862,42 +1860,6 @@ AUTOLOAD
 	debug "  No value returned" if $DEBUG>2;
 	return is_undef;
     }
-}
-
-sub flatten_list
-{
-    my( $list_in, $seen ) = @_;
-
-    $list_in  ||= [];
-    $seen     ||= {};
-
-    my @list_out;
-
-    foreach my $elem ( @$list_in )
-    {
-	if( ref $elem )
-	{
-	    if( ref $elem eq 'Rit::Base::List' )
-	    {
-		push @list_out, @{ flatten_list($elem, $seen) };
-	    }
-	    else
-	    {
-		unless( $seen->{ $elem->syskey } ++ )
-		{
-		    push @list_out, $elem;
-		}
-	    }
-	}
-	else
-	{
-	    unless( $seen->{ $elem } ++ )
-	    {
-		push @list_out, $elem;
-	    }
-	}
-    }
-    return \@list_out;
 }
 
 
