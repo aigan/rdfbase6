@@ -123,6 +123,8 @@ sub wub
     my $maxw = $args->{'maxw'};
     my $maxh = $args->{'maxh'};
 
+    $args->{'id'} ||= "arc___pred_${pred}__subj_". $subj->id ."__row_${IDCOUNTER}";
+
     $out .= label_from_params({
 			       label       => $args->{'label'},
 			       tdlabel     => $args->{'tdlabel'},
@@ -505,6 +507,7 @@ sub wub_select_tree
     my $out = "";
     my $R = Rit::Base->Resource;
 
+    my $rev = $args->{'is_rev'} || '';
     my $subj = $args->{'subj'} or confess "subj missing";
     my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
     my $arc;
@@ -525,8 +528,8 @@ sub wub_select_tree
     {
 	$out .= '<option rel="'. $subtype->id .'"';
 
-	$out .= ' value="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
-	  $pred_name .'='. $subtype->id .'"'
+	$out .= ' value="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+	  .'pred_'. $pred_name .'='. $subtype->id .'"'
 	    unless( $subtype->rev_scof );
 
 	if( $subj->has_value({ $pred_name => $subtype }) or
@@ -578,6 +581,7 @@ sub wub_select
     my $out = "";
     my $R = Rit::Base->Resource;
 
+    my $rev = $args->{'is_rev'} || '';
     my $header = $args->{'header'};
     my $subj = $args->{'subj'} or confess "subj missing";
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
@@ -596,10 +600,11 @@ sub wub_select
 			       label_class => $args->{'label_class'},
 			      });
 
-    $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__pred_'.
-      $pred_name .'__if_subj">';
+    $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+      .'pred_'. $pred_name .'__if_subj">';
 
-    $out .= '<option value "">'. $header .'</option>'
+    my $default_value = $args->{'default_value'} || '';
+    $out .= '<option value "'. $default_value .'">'. $header .'</option>'
       if( $header );
 
     my $items = $type->revlist('is', undef, aais($args,'direct'))->
