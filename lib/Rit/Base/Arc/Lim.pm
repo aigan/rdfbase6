@@ -763,6 +763,111 @@ sub arc_meets_lim
 }
 
 
+#######################################################################
+
+=head2 literal_meets_lim
+
+  literal_meets_lim( $arc, $lim )
+
+Returns: boolean
+
+=cut
+
+sub literal_meets_lim
+{
+    my( $lit, $lim ) = @_;
+
+    if( $lim & $LIM{'active'} )
+    {
+	# Always active
+    }
+
+    if( $lim & $LIM{'direct'} )
+    {
+	# Always direct
+    }
+
+    if( $lim & $LIM{'submitted'} )
+    {
+	return 0; # Never submitted
+    }
+
+    if(  $lim & $LIM{'new'} )
+    {
+	return 0; # Never new
+    }
+
+    if(  $lim & $LIM{'created_by_me'} )
+    {
+	return 0 unless $lit->created_by->equals($Para::Frame::REQ->user);
+    }
+
+    if(  $lim & $LIM{'old'} )
+    {
+	return 0; # never old
+    }
+
+    if(  $lim & $LIM{'inactive'} )
+    {
+	return 0; # never inactive
+    }
+
+    if( $lim & $LIM{'indirect'} )
+    {
+	return 0; # never indirect
+    }
+
+    if( $lim & $LIM{'not_submitted'} )
+    {
+	# Always not submitted
+    }
+
+    if( $lim & $LIM{'explicit'} )
+    {
+	# Always explicit
+    }
+
+    if( $lim & $LIM{'implicit'} )
+    {
+	return 0; # Never implicit
+    }
+
+    if( $lim & $LIM{'removal'} )
+    {
+	# TODO: May this be a removal literal?
+	return 0; # Never removal
+    }
+
+    if( $lim & $LIM{'not_removal'} )
+    {
+	# TODO: May this be a removal literal?
+	# Always not removal
+    }
+
+    if( $lim & $LIM{'not_new'} )
+    {
+	# Always not new
+    }
+
+    if( $lim & $LIM{'not_old'} )
+    {
+	# Always not old
+    }
+
+    if( $lim & $LIM{'not_disregarded'} )
+    {
+	# Always not_disregarded
+    }
+
+    if( $lim & $LIM{'disregarded'} )
+    {
+	return 0; # Never disregarded
+    }
+
+    return 1;
+}
+
+
 #########################################################################
 
 1;
