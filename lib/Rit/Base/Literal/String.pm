@@ -267,27 +267,6 @@ sub parse
 }
 
 
-#######################################################################
-
-=head3 new_if_length
-
-=cut
-
-sub new_if_length
-{
-    my( $this, $in_value, $valtype ) = @_;
-
-    if( length $in_value )
-    {
-	return $this->new( $in_value, $valtype);
-    }
-    else
-    {
-	return is_undef;
-    }
-}
-
-
 #########################################################################
 ################################  Accessors  ############################
 
@@ -310,31 +289,6 @@ sub desig  # The designation of obj, meant for human admins
     my( $val ) = @_;
 
     return $val->{'value'};
-}
-
-
-#######################################################################
-
-=head2 sysdesig
-
-  $n->sysdesig()
-
-The designation of an object, to be used for node administration or
-debugging.  This version of desig indludes the node id.
-
-=cut
-
-sub sysdesig  # The designation of obj, including node id
-{
-    if( defined $_[0]->{'value'} )
-    {
-	my $value  = truncstring( shift->{'value'} );
-	return "Literal '$value'";
-    }
-    else
-    {
-	return "Literal undef";
-    }
 }
 
 
@@ -484,7 +438,7 @@ sub loc
 
     unless( defined $lit->{'value'} )
     {
-	return is_undef;
+	return "";
     }
 
     if( @_ )
@@ -587,7 +541,7 @@ sub begins
 {
     unless( defined $_[0]->{'value'} )
     {
-	return is_undef;
+	return 0;
     }
 
     return $_[0]->{'value'} =~ /^$_[1]/;
@@ -595,11 +549,11 @@ sub begins
 
 #######################################################################
 
-=head3 valtype
+=head3 this_valtype
 
 =cut
 
-sub valtype
+sub this_valtype
 {
     if( ref $_[0] )
     {
