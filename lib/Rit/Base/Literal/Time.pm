@@ -136,7 +136,11 @@ sub new
 
     unless( $time )
     {
-	$time = DateTime::Incomplete->new( time_zone => 'floating' );
+#	$time = DateTime::Incomplete->new();
+#	my $class = ref $this || $this;
+#	bless($time, $class)->init;
+	use Rit::Base::Undef;
+	return Rit::Base::Undef->new(); ### FIXME!
     }
 
     $time->{'valtype'} = $valtype;
@@ -208,6 +212,53 @@ sub default_valtype
     return Rit::Base::Literal::Class->get_by_label('valdate');
 }
 
+#######################################################################
+#
+#=head3 defined
+#
+#=cut
+#
+#sub defined
+#{
+#    if( UNIVERSAL::isa $_[0], 'DateTime::Incomplete' )
+#    {
+#	if( $_[0]->is_undef )
+#	{
+#	    return 0;
+#	}
+#    }
+#
+#    return 1;
+#}
+#
+#######################################################################
+#
+#=head2 format_datetime
+#
+#  $t->format_datetime()
+#
+#Returns a string using the format given by L<Para::Frame/configure>.
+#
+#=cut
+#
+#sub format_datetime
+#{
+#    if( UNIVERSAL::isa $_[0], 'DateTime::Incomplete' )
+#    {
+#	if( $_[0]->is_undef )
+#	{
+#	    return "";
+#	}
+#	else
+#	{
+#	    return $_[0]->iso8601;
+#	}
+#    }
+#
+#    return $Para::Frame::Time::FORMAT->format_datetime($_[0]);
+#}
+#
+#
 #######################################################################
 
 1;
