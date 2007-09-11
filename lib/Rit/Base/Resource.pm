@@ -367,12 +367,6 @@ sub find_by_anything
 
     my( @new );
     my $valtype = $args->{'valtype'};
-#    my $coltype = $args->{'coltype'};
-#    if( not $coltype and $valtype )
-#    {
-#	$coltype = $valtype->coltype;
-#    }
-#    $args->{'coltype'} ||= $coltype ||= 'obj';
 
     $valtype ||= Rit::Base::Resource->get_by_label('resource');
     my $coltype = $valtype->coltype;
@@ -421,24 +415,48 @@ sub find_by_anything
     {
 	debug 3, "  obj as not an obj, It's a $coltype";
 
-	my $valref;
+	my( $valref, $obj );
 	if( ref $val )
 	{
 	    $valref = $val;
 	}
-	else
+	elsif( $val =~ /^\d+$/ )
 	{
-	    $valref = \$val;
+	    debug "  may this be a value node?";
+	    # Look for value resources
+	    $obj = $Rit::Base::Cache::Resource{ $val };
+	    if( defined $obj )
+	    {
+		debug "  Found $val in cache as a ".ref($obj);
+		if( UNIVERSAL::isa $obj, "Rit::Base::Literal" )
+		{
+		    debug "Value $val is ".$obj->sysdesig;
+		    push @new, $obj;
+		}
+		elsif( $obj->has_pred('value',undef,
+				      {
+				       %$args,
+				       arclim => [['active'],['not_old','created_by_me']],
+				      }))
+		{
+		    debug "Value $val is ".$obj->sysdesig;
+		    push @new, $obj;
+		}
+	    }
 	}
 
-	$valtype ||= $this->get_by_label( $coltype );
-	$val = $valtype->instance_class->parse( $valref,
-					       {
-						%$args,
-						aclim => 'active',
-					       }
-					     );
-	push @new, $val;
+	unless( $obj )
+	{
+	    $valref ||= \$val;
+	    $valtype ||= $this->get_by_label( $coltype );
+	    $val = $valtype->instance_class->parse( $valref,
+						    {
+						     %$args,
+						     aclim => 'active',
+						    }
+						  );
+	    push @new, $val;
+	}
     }
     #
     # 4. obj as list
