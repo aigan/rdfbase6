@@ -628,7 +628,7 @@ sub create
 
 	    if( $coltype eq 'obj' )
 	    {
-		debug "Getting the id for the object by the name '$value'\n" if $DEBUG;
+		debug "Getting the id for the object by the name ".($value||'') if $DEBUG;
 		$value = $this->get( $value_obj )->id;
 	    }
 	    elsif( $coltype eq 'valdate' )
