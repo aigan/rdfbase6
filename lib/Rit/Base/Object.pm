@@ -32,6 +32,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Undef;
+use Rit::Base::Utils qw(  );
 
 
 =head1 DESCRIPTION
@@ -436,6 +437,34 @@ sub as_list
 
 #######################################################################
 
+=head2 as_listobj
+
+  $o->as_listobj()
+
+Returns a L<Rit::Base::List>
+
+=cut
+
+sub as_listobj
+{
+    return Rit::Base::List->new([$_[0]]);
+}
+
+#######################################################################
+
+=head2 as_array
+
+  $literal->as_array()
+
+=cut
+
+sub as_array
+{
+    return( $_[0] );
+}
+
+#######################################################################
+
 =head2 nodes
 
   $literal->nodes()
@@ -556,6 +585,26 @@ Returns: false
 sub has_value
 {
     return Rit::Base::Undef->new();
+}
+
+
+########################################################################
+
+=head2 sorted
+
+  $n->sorted
+
+This is not a list. Just give back the object!
+
+Returns:
+
+C<$n>
+
+=cut
+
+sub sorted
+{
+    return $_[0];
 }
 
 
