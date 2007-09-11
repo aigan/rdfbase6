@@ -304,22 +304,6 @@ sub create
     push @values, $rec->{'write_access'};
 
 
-    ##################### subj
-    my $subj;
-    if( my $subj_label = $props->{'subj'} )
-    {
-	$subj = Rit::Base::Resource->get( $subj_label )
-	    or die "No node '$subj_label' found";
-    }
-    else
-    {
-	confess "Subj missing\n";
-    }
-    $rec->{'subj'} = $subj->id or confess "id missing".datadump($props, 2);
-    push @fields, 'subj';
-    push @values, $rec->{'subj'};
-
-
     ##################### pred_id
     my $pred = Rit::Base::Pred->get( $props->{'pred'} );
     $pred or die "Pred missing";
@@ -330,6 +314,56 @@ sub create
 
     push @fields, 'pred';
     push @values, $rec->{'pred'};
+
+
+    ##################### subj
+    my $subj;
+    if( my $subj_label = $props->{'subj'} )
+    {
+	$subj = Rit::Base::Resource->get( $subj_label );
+
+	unless( defined $subj )
+	{
+	    confess "No node '$subj_label' found";
+	}
+
+	if( UNIVERSAL::isa $subj, "Rit::Base::Literal" )
+	{
+	    # Transform to a value resource
+	    my $lit = $subj;
+	    my $lit_id = $lit->id;
+	    my $lit_valtype = $lit->this_valtype;
+
+	    debug "Transforming $lit_id to a value resource";
+
+	    delete $Rit::Base::Cache::Resource{ $lit_id };
+	    $subj = Rit::Base::Resource->get( $lit_id );
+
+	    if( $pred_name eq 'value' )
+	    {
+		# Replacing old literal
+	    }
+	    else
+	    {
+		Rit::Base::Arc->create({
+					subj    => $subj,
+					pred    => 'value',
+					value   => $lit,
+					valtype => $lit_valtype,
+				       }, $args);
+	    }
+
+	    # Should never be a removal...
+	    $props->{'valtype'} = $lit_valtype;
+	}
+    }
+    else
+    {
+	confess "Subj missing\n";
+    }
+    $rec->{'subj'} = $subj->id or confess "id missing".datadump($props, 2);
+    push @fields, 'subj';
+    push @values, $rec->{'subj'};
 
 
     ##################### valtype
@@ -350,13 +384,34 @@ sub create
     {
 	if( $pred->{'coltype'} == 6 )  # Value resource?
 	{
-	    ### Get valtype from subjs revarc
-	    # Should be only one on a value resource
-	    my $revarc = $subj->revarc(undef,undef,$args)
-	      or confess("Couldn't get revarc for value resource: ". $subj->sysdesig);
+	    debug "this is a valtype";
+	    debug "Subj is a $subj";
 
-	    my $revpred = $revarc->pred;
-	    $valtype = $revpred->valtype;
+
+	    if( $rec->{'replaces'} )
+	    {
+		my $repl = $this->get( $rec->{'replaces'} );
+		if( $repl->{'valtype'} )
+		{
+		    $valtype = Rit::Base::Resource->get( $repl->{'valtype'} );
+		}
+	    }
+	    elsif( UNIVERSAL::isa $subj, "Rit::Base::Literal" )
+	    {
+		$valtype = $subj->this_valtype;
+	    }
+	    else
+	    {
+		### Get valtype from subjs revarc
+		# Should be only one on a value resource
+		my $revarc = $subj->revarc(undef,undef,$args)
+		  or confess("Couldn't get revarc for value resource: ".
+			     $subj->sysdesig);
+
+		my $revpred = $revarc->pred;
+		$valtype = $revpred->valtype;
+	    }
+
 	    $rec->{'valtype'} = $valtype->id;
 
 #	    debug("Setting valtype to ". $rec->{'valtype'} .
@@ -3035,7 +3090,7 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-#    Para::Frame::Logging->this_level(3);
+#    Para::Frame::Logging->this_level(4);
 
     debug 3, "Set value of arc $arc->{'id'} to '$value_new_in'\n";
 
@@ -3116,17 +3171,16 @@ sub set_value
 #    # Should be done by find_by_anything()
 
     my $valtype_old = $arc->valtype;
-    my $valtype_new = $value_new->this_valtype;
-
-#    my $valtype_new;
-#    if( $value_new->is_literal )
-#    {
-#	$valtype_new = $value_new->valtype;
-#    }
-#    else
-#    {
-#	$valtype_new = $arc->pred->valtype;
-#    }
+    my $valtype_new;
+    if( $value_new->is_literal )
+    {
+	$valtype_new = $value_new->this_valtype;
+    }
+    else
+    {
+	# Since $value_new->valtype always is 'resource'.
+	$valtype_new = $arc->pred->valtype;
+    }
 
 
     if( debug > 2 )
