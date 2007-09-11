@@ -5332,6 +5332,14 @@ sub wu
     my( $args ) = parse_propargs($args_in);
     $args->{'subj'} = $node;
     my $R = Rit::Base->Resource;
+
+    my $is_rev = 0;
+
+    if( $pred_name =~ /^rev_(.*)$/ )
+    {
+	$pred_name = $1;
+	$is_rev = 'rev';
+    }
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
     my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
     my $image = $R->get({label=>'image', scof=>'file'});
@@ -5340,24 +5348,28 @@ sub wu
     my $range_scof = ( $args->{'range_scof'} ?
 		       $R->get($args->{'range_scof'}) : $pred->range_scof );
 
-    if( $range->equals($textbox) or
-	$range->scof($textbox) )
-    {
-	$args->{'rows'} ||= 0;
-	$args->{'cols'} ||= 57;
-	$args->{'size'} = $args->{'cols'};
-	$args->{'inputtype'} = 'textarea';
-	return Rit::Base::Widget::wub($pred_name, $args);
-    }
-    elsif( $pred->coltype eq 'obj' and ($range or $range_scof) )
+
+    if( ( $pred->coltype eq 'obj' and ($range or $range_scof) ) or
+	$is_rev )
     {
 	my $is_scof = ( $range_scof ? 1 : 0 );
 
 	$range = ( $is_scof ? $range_scof : $range );
 	$args->{'range_is_scof'} = 1
 	  if( $is_scof );
+	$args->{'is_rev'} = 'rev'
+	  if( $is_rev );
 
 	debug "Redirecting to range->wuirc";
+
+	if( $is_rev )
+	{
+	    $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->domain );
+	    $range_scof = ( $args->{'range_scof'} ?
+			    $R->get($args->{'range_scof'}) : $pred->domain );
+	    debug "REV Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
+	}
+
 	debug "Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
 
 	if( $range->class_handled_by_perl_module )
@@ -5380,7 +5392,16 @@ sub wu
 
 	return $range->wuirc($pred, $args);
     }
-    if( $range->equals($image) or
+    elsif( $range->equals($textbox) or
+	   $range->scof($textbox) )
+    {
+	$args->{'rows'} ||= 0;
+	$args->{'cols'} ||= 57;
+	$args->{'size'} = $args->{'cols'};
+	$args->{'inputtype'} = 'textarea';
+	return Rit::Base::Widget::wub($pred_name, $args);
+    }
+    elsif( $range->equals($image) or
 	$range->scof($image) )
     {
 	return Rit::Base::Widget::wub_image($pred_name, $args);
@@ -5475,7 +5496,8 @@ sub wuirc
 
     my $out = '';
     my $is_scof = $args->{'range_is_scof'};
-    my $list = $subj->arc_list( $pred->name );
+    my $is_rev = $args->{'is_rev'} || '';
+    my $list = ( $is_rev ? $subj->revarc_list( $pred->name ) : $subj->arc_list( $pred->name ) );
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
     my $is_pred = ( $is_scof ? 'scof' : 'is' );
@@ -5514,16 +5536,24 @@ sub wuirc
 	    $out .= '<li>'
 	      if( $list->size > 1);
 
+	    my $check_subj = $arc->subj;
 	    my $item = $arc->value;
+	    my $label = ( $is_rev ? $check_subj->desig : $item->desig );
+	    my $field = 'arc_'. $arc->id .'__subj_'. $check_subj->id
+	      .'__pred_'. $pred->name;
 
 	    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
 
-	    $out .= Para::Frame::Widget::checkbox('arc_'. $arc->id .'__subj_'.
-						  $subj->id .'__pred_'.
-						  $pred->name,
-						  $item->id, 1);
-	    $out .= $item->wu_jump;
-	    $out .= '&nbsp;'. $arc->edit_link_html;
+	    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1,
+						  {
+						   label => $label,
+						  });
+	    $out .= ( $is_rev ? $check_subj->wu_jump({ label => '(Node)' }) :
+		      $item->wu_jump({ label => '(Node)' }) ) .'&nbsp;'.
+			$arc->edit_link_html;
+
+	    debug "ID: ". $check_subj->id;
+	    debug "Desig: ". $check_subj->desig;
 
 	    if( $list->size > 1)
 	    {
@@ -5541,9 +5571,13 @@ sub wuirc
 	if( $inputtype eq 'text' )
 	{
 	    debug "Drawing a text-input for ". $range->desig;
+	    my $type_str = ( $is_scof ? 'scof_' : 'type_' ) . $range->label .'__';
+
 	    $out .=
-	      Para::Frame::Widget::input('arc___subj_'. $subj->id .'__pred_'.
-					 $pred->name, '', {});
+	      Para::Frame::Widget::input('arc___'. $type_str .'subj_'.
+					 $subj->id .'__'. $is_rev .'pred_'.
+					 $pred->name,
+					 $args->{'default_value'}, {});
 	}
 	elsif( $inputtype eq 'select' )
 	{
@@ -5562,50 +5596,6 @@ sub wuirc
     }
 
     return $out;
-
-# 
-#     my $subj = $args->{'subj'} or confess "subj missing";
-#     my $inputtype = $args->{'inputtype'};
-# 
-#     my $out = "";
-# 
-#     my $tdlabel = $args->{'tdlabel'};
-# 
-# 
-#     # Select inputtype depending on size of possible targets
-#     $inputtype = ( $range->rev_scof->size > 25 ) ?
-#       'select_tree' : 'text'
-# 	unless( $inputtype );
-# 
-#     if( $tdlabel )
-#     {
-# 	
-#     }
-# 
-# 
-#     # show existing arcs with checkboxes to remove
-#     if( $inputtype eq 'text' or $arc_type ne 'singular' )
-#     {
-# 	my $arcs = $subj->arc_list( $pred->name, { is => $range } );
-# 
-# 	while( my $arc = $arcs->get_next_nos )
-# 	{
-# 	    $out .=
-# 	      Para::Frame::Widget::hidden("check_arc_${arc->id}", 1);
-# 	    $out .=
-# 	      Para::Frame::Widget::checkbox("arc_${arc->id}__subj_${subj->id}__pred_${pred->name}",
-# 					    $arc->value->id, 1,
-# 					    { label => $arc->value->desig });
-# 	}
-#     }
-# 
-#     if( $inputtype eq 'select_tree' )
-#     {
-# 	if( $arc_type eq 'singular' )
-# 	{
-# 	    
-# 	}
-#     }
 }
 
 
