@@ -420,30 +420,30 @@ sub find_by_anything
 	{
 	    $valref = $val;
 	}
-	elsif( $val =~ /^\d+$/ )
-	{
-	    debug "  may this be a value node?";
-	    # Look for value resources
-	    $obj = $Rit::Base::Cache::Resource{ $val };
-	    if( defined $obj )
-	    {
-		debug "  Found $val in cache as a ".ref($obj);
-		if( UNIVERSAL::isa $obj, "Rit::Base::Literal" )
-		{
-		    debug "Value $val is ".$obj->sysdesig;
-		    push @new, $obj;
-		}
-		elsif( $obj->has_pred('value',undef,
-				      {
-				       %$args,
-				       arclim => [['active'],['not_old','created_by_me']],
-				      }))
-		{
-		    debug "Value $val is ".$obj->sysdesig;
-		    push @new, $obj;
-		}
-	    }
-	}
+#	elsif( $val =~ /^\d+$/ )
+#	{
+#	    debug "  may this be a value node?";
+#	    # Look for value resources
+#	    $obj = $Rit::Base::Cache::Resource{ $val };
+#	    if( defined $obj )
+#	    {
+#		debug "  Found $val in cache as a ".ref($obj);
+#		if( UNIVERSAL::isa $obj, "Rit::Base::Literal" )
+#		{
+#		    debug "Value $val is ".$obj->sysdesig;
+#		    push @new, $obj;
+#		}
+#		elsif( $obj->has_pred('value',undef,
+#				      {
+#				       %$args,
+#				       arclim => [['active'],['not_old','created_by_me']],
+#				      }))
+#		{
+#		    debug "Value $val is ".$obj->sysdesig;
+#		    push @new, $obj;
+#		}
+#	    }
+#	}
 
 	unless( $obj )
 	{
