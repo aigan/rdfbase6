@@ -5184,8 +5184,14 @@ sub get_by_label
 	    confess "Constant $label doesn't exist";
 	}
 
-	$Rit::Base::Constants::Label{$label} =
-	  Rit::Base::Resource->get( $id );
+	# We have to trust that the label is of the class given with
+	# $this. Otherwise, we would have to look up the class, which
+	# would result in infinite recursion during startup on the
+	# first use of pred 'is'.
+
+	# Each class init should validate the node...
+
+	$Rit::Base::Constants::Label{$label} = $this->get( $id );
 	$Rit::Base::Constants::Label{$label}->initiate_node($rec);
     }
 
