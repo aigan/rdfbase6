@@ -5184,12 +5184,27 @@ sub get_by_label
 	    confess "Constant $label doesn't exist";
 	}
 
-	$Rit::Base::Constants::Label{$label} = $this->get( $id );
+	$Rit::Base::Constants::Label{$label} =
+	  Rit::Base::Resource->get( $id );
 	$Rit::Base::Constants::Label{$label}->initiate_node($rec);
     }
 
-    return $Rit::Base::Constants::Label{$label};
+    my $class = ref $this || $this;
+    if( $class ne 'Rit::Base::Resource' )
+    {
+	if( my $obj = $Rit::Base::Constants::Label{$label} )
+	{
+	    unless( UNIVERSAL::isa $obj, $class )
+	    {
+		confess "Constant $label is not a $class";
+	    }
 
+	    return $obj;
+	}
+	return undef;
+    }
+
+    return $Rit::Base::Constants::Label{$label};
 }
 
 
