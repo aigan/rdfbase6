@@ -198,7 +198,7 @@ sub now
 
 sub date
 {
-    return bless(Para::Frame::Time->new(@_),'Rit::Base::Literal::Time');
+    return bless(Para::Frame::Time->get(@_),'Rit::Base::Literal::Time');
 }
 
 #######################################################################
