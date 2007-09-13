@@ -106,6 +106,20 @@ sub wub
     no strict 'refs';
     my $out = "";
     my $R = Rit::Base->Resource;
+    my $req = $Para::Frame::REQ;
+    my $root_access = $req->user->has_root_access; # BOOL
+
+    unless( $req->user->has_root_access )
+    { ### FIXME: Not ready to use for non-admins...
+	$args =
+	  parse_propargs({
+			  %$args,
+			  unique_arcs_prio => ['submitted','active'],
+			  arclim => [['submitted','created_by_me'],'active'],
+			 });
+    }
+
+
 
     my $size = $args->{'size'} || 30;
     my $smallestsize = $size - 10;
@@ -511,7 +525,8 @@ sub wub_select_tree
 
     my $rev = $args->{'is_rev'} || '';
     my $subj = $args->{'subj'} or confess "subj missing";
-    my $arc_id = $args->{'arc_id'} || ( $args->{'singular'} ? 'singular' : '' );
+    my $arc_id = $args->{'arc_id'} ||
+      ( $args->{'arc_type'} eq 'singular' ? 'singular' : '' );
     my $arc;
 
     $out .= label_from_params({

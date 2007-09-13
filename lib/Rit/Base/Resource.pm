@@ -1879,7 +1879,7 @@ sub list_preds
 
     if( $proplim )
     {
-	die "proplim not implemented";
+	confess "proplim not implemented";
     }
 
     my( $active, $inactive ) = $arclim->incl_act;
@@ -4038,6 +4038,24 @@ sub wu
     my $R = Rit::Base->Resource;
 
     my $is_rev = 0;
+
+    if( $args->{'disabled'} eq 'disabled' )
+    { ### FIXME: Let other types display themselves?  ...as_html or WASH?
+	my $out =
+	  Para::Frame::Widget::label_from_params({
+						  label       => delete $args->{'label'},
+						  tdlabel     => delete $args->{'tdlabel'},
+						  separator   => $args->{'separator'},
+						  label_class => delete $args->{'label_class'},
+						 });
+	my $arc_list = $node->arc_list( $pred_name, undef, aais($args, 'direct') );
+	while( my $arc = $arc_list->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'.
+	      $arc->edit_link_html;
+	}
+	return $out;
+    }
 
     if( $pred_name =~ /^rev_(.*)$/ )
     {
