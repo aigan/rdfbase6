@@ -439,6 +439,7 @@ sub handle_query_arc_value
     my $desig     = $arg->{'desig'};    # look up obj that has $value as $desig
     my $type      = $arg->{'type'};     # desig obj must be of this type
     my $scof      = $arg->{'scof'};     # desig obj must be a scof of this type
+    my $parse     = $arg->{'parse'};    # how to parse the value
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
     my $if        = $arg->{'if'};       # Condition for update
 
@@ -455,6 +456,7 @@ sub handle_query_arc_value
 	debug "  type : ".($type||'');
 	debug "  scof : ".($scof||'');
 	debug "  desig: ".($desig||'');
+	debug "  parse: ".($parse||'');
     }
 
 
@@ -535,6 +537,22 @@ sub handle_query_arc_value
     {
 	$coltype = 'obj';
     }
+
+    # Value-resources given by literal id handled here
+    #
+    if( $parse )
+    {
+	if( $parse eq 'id' )
+	{
+	    $coltype = 'obj';
+	    $value = $R->get($value);
+	}
+	else
+	{
+	    confess "Parsetype $parse not recognized";
+	}
+    }
+
 
 
     if( $rowno )
