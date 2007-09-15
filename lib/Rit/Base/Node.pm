@@ -366,7 +366,15 @@ sub meets_proplim
     my( $node, $proplim, $args_in_in ) = @_;
     my( $args_in, $arclim_in ) = parse_propargs($args_in_in);
 
-    my $DEBUG = 0;
+
+#    Para::Frame::Logging->this_level(4);
+    my $DEBUG = Para::Frame::Logging->at_level(3);
+
+    if( $DEBUG )
+    {
+	debug "Node ".$node->sysdesig;
+	debug "Arclim ".$arclim_in->sysdesig;
+    }
 
   PRED:
     foreach my $pred_part ( keys %$proplim )

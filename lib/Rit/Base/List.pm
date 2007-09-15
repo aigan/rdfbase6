@@ -319,10 +319,9 @@ sub find
     my( $l, $tmpl, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+#    Para::Frame::Logging->this_level(4);
 
-    my $DEBUG = debug();
-    $DEBUG and $DEBUG --;
-    $DEBUG and $DEBUG --;
+    my $DEBUG = Para::Frame::Logging->at_level(3);
 
 #    # either name/value pairs in props, or one name/value
 #    if( not(ref $tmpl) and $args )
