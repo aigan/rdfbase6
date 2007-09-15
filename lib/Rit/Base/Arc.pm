@@ -2600,7 +2600,7 @@ sub value_equals
     }
     elsif( ref $val2 eq 'Rit::Base::Resource' )
     {
-	warn "  A value node is compared with a plain Literal\n" if $DEBUG;
+	debug "  A value node is compared with a plain Literal" if $DEBUG;
 
 	# It seems that the value of the arc is a literal.  val2 is a
 	# node, probably a value node. They are not equal.
@@ -2610,10 +2610,10 @@ sub value_equals
     else
     {
 	my $val1 = $arc->value->plain;
-	warn "  See if $val1 $match($clean) $val2\n" if $DEBUG;
+	debug "  See if $val1 $match($clean) $val2" if $DEBUG;
 	unless( defined $val1 )
 	{
-	    warn "  val1 is not defined\n" if $DEBUG;
+	    debug "  val1 is not defined" if $DEBUG;
 	    return 1 unless defined $val2;
 	    return 0;
 	}
