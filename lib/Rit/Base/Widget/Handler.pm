@@ -39,7 +39,7 @@ use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Pred;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Constants qw( $C_language $C_arc );
+use Rit::Base::Constants qw( $C_language $C_arc $C_class );
 
 use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_form_field_prop is_undef arc_lock
@@ -553,6 +553,16 @@ sub handle_query_arc_value
 	}
     }
 
+    if( $type )
+    {
+	$type = $R->get($type)->find({is=>$C_class});
+    }
+
+    if( $scof )
+    {
+	$scof = $R->get($scof)->find({is=>$C_class});
+    }
+
 
 
     if( $rowno )
@@ -594,11 +604,11 @@ sub handle_query_arc_value
 	{
 	    if( $rev )
 	    {
-		$arcs = $arcs->find({ subj => { scof => $type } }, $args_active);
+		$arcs = $arcs->find({ subj => { scof => $scof } }, $args_active);
 	    }
 	    else
 	    {
-		$arcs = $arcs->find({ obj => { scof => $type } }, $args_active);
+		$arcs = $arcs->find({ obj => { scof => $scof } }, $args_active);
 	    }
 	}
 
