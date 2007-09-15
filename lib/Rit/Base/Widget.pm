@@ -624,7 +624,7 @@ sub wub_select
       .'pred_'. $pred_name . $if .'">';
 
     my $default_value = $args->{'default_value'} || '';
-    $out .= '<option value "'. $default_value .'">'. $header .'</option>'
+    $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if( $header );
 
     my $is_pred = ( $args->{'range_is_scof'} ? 'scof' : 'is' );
@@ -642,7 +642,7 @@ sub wub_select
 	  if( $default_value eq $item->id or
 	      $subj->prop( $pred_name, $item ) );
 
-	$out .= '>'. ( $item->name_short->loc || $item->desig || $item->label ) .'</option>';
+	$out .= '>'. ( $item->name_short->loc || $item->desig ) .'</option>';
     }
     $out .= '</select>';
     $out .= $arc->edit_link_html
