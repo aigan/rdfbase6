@@ -420,30 +420,6 @@ sub find_by_anything
 	{
 	    $valref = $val;
 	}
-#	elsif( $val =~ /^\d+$/ )
-#	{
-#	    debug "  may this be a value node?";
-#	    # Look for value resources
-#	    $obj = $Rit::Base::Cache::Resource{ $val };
-#	    if( defined $obj )
-#	    {
-#		debug "  Found $val in cache as a ".ref($obj);
-#		if( UNIVERSAL::isa $obj, "Rit::Base::Literal" )
-#		{
-#		    debug "Value $val is ".$obj->sysdesig;
-#		    push @new, $obj;
-#		}
-#		elsif( $obj->has_pred('value',undef,
-#				      {
-#				       %$args,
-#				       arclim => [['active'],['not_old','created_by_me']],
-#				      }))
-#		{
-#		    debug "Value $val is ".$obj->sysdesig;
-#		    push @new, $obj;
-#		}
-#	    }
-#	}
 
 	unless( $obj )
 	{
@@ -2465,6 +2441,8 @@ sub has_value
 
     confess "Not a hashref" unless ref $preds;
 
+#    Para::Frame::Logging->this_level(4);
+
     my( $pred_name, $value ) = each( %$preds );
 
     my $match = $args->{'match'} || 'eq';
@@ -3824,11 +3802,16 @@ sub equals
     {
 	return( ($node->id == $node2) ? 1 : 0 );
     }
-    else
+    elsif( $node2 = Rit::Base::Resource->get_by_label( $node2 ) )
     {
-	my $nodes = Rit::Base::Resource->find_simple( name => $node2 );
-	return $node->equals( $nodes, $args );
+	return $node->equals( $node2, $args );
     }
+    elsif( $node2 = Rit::Base::Resource->get( $node2 ) )
+    {
+	return $node->equals( $node2, $args );
+    }
+
+    return 0;
 }
 
 
