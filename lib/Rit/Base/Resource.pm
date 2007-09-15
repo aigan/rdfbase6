@@ -4039,7 +4039,7 @@ sub wu
 
     my $is_rev = 0;
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( ($args->{'disabled'}||'') eq 'disabled' )
     { ### FIXME: Let other types display themselves?  ...as_html or WASH?
 	my $out =
 	  Para::Frame::Widget::label_from_params({
