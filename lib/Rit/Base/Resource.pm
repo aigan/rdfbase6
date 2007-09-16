@@ -3803,10 +3803,6 @@ sub equals
     {
 	return( ($node->id == $node2) ? 1 : 0 );
     }
-    elsif( $node2 = Rit::Base::Resource->get_by_label( $node2 ) )
-    {
-	return $node->equals( $node2, $args );
-    }
     elsif( $node2 = Rit::Base::Resource->get( $node2 ) )
     {
 	return $node->equals( $node2, $args );
