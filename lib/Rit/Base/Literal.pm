@@ -70,6 +70,26 @@ Supported args:
   valtype
 
 
+TODO: For handling value resoruces and be clean and consistent we will
+have to, for the example String:
+
+  @{"Rit::Base::Metaclass::Literal::Rit::Base::Literal::String::ISA"} =
+   ("Rit::Base::String", "Rit::Base::Literal");
+
+And for value resources of String type:
+
+  @{"Rit::Base::Metaclass::Rit::Base::Literal::String::ISA"} =
+   ("Rit::Base::String", "Rit::Base::Literal::Resource");
+
+And Rit::Base::Literal::Resource will implement its version of
+Rit::Base::Literal and inherit from Rit::Base::Resource
+
+
+This makes it behave more like other speical classes handled by
+L<Rit::Base::Resource/find_class>. And we will bless all valuenodes in
+this way and can then access the literal methods and still get the
+other properties.
+
 =cut
 
 
