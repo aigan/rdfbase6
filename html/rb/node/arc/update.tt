@@ -304,7 +304,7 @@
   [% IF varc.deactivated %]
      deactivated
      [%+ varc.deactivated %] by
-     [%+ varc.deactivated.wu_jump %]
+     [%+ varc.deactivated_by.wu_jump %]
   [% END %]
   [% END %]
 
