@@ -233,6 +233,20 @@ sub id
 
 #######################################################################
 
+=head2 id_alfanum
+
+returns: plain undef
+
+=cut
+
+sub id_alfanum
+{
+    return undef;
+}
+
+
+#######################################################################
+
 =head2 defined
 
 Returns 0. (false)
@@ -401,6 +415,31 @@ TODO: CHECK if not used anywhere...
 sub as_array
 {
     return ();
+}
+
+#######################################################################
+
+=head2 list
+
+=cut
+
+sub list
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 revlist
+
+TODO: Rewrite code for handling undef objects in arcs. Those will have
+a relvist in the same manner as literal nodes.
+
+=cut
+
+sub revlist
+{
+    return Rit::Base::List->new_empty();
 }
 
 #########################################################################
