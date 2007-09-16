@@ -1946,6 +1946,8 @@ Valtype 0: Removal arcs
 The valtypes are nodes. Coltypes are not, and there id's doesn't match
 the valtype ids.
 
+TODO: Handle removal arcs transparently
+
 Returns: the C<valtype> node for this arc.
 
 =cut
@@ -2278,6 +2280,11 @@ sub check_valtype
 	}
 
 	$res->changes_add;
+
+	# TODO: this whole part could be replaced with just the nonobj
+	# part, since it will also handle objs. At least if literal
+	# parse can take value nodes.
+
 
 	if( $pred_coltype eq 'obj' )
 	{
@@ -4046,6 +4053,11 @@ sub initiate_cache
 	    my $valtype = Rit::Base::Resource->get($valtype_id)
 	      or confess "Couldn't find the valtype $valtype_id ".
 		"for arc $id";
+
+	    # TODO: this whole part could be replaced with just
+	    #
+	    # $value = $valtype->instance_class->new_from_db(
+	    # $rec->{$coltype} );
 
 	    my $coltype = $valtype->coltype;
 	    if( $coltype eq 'obj' )
