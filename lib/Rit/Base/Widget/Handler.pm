@@ -1623,24 +1623,30 @@ sub handle_query_check_prop
     my $node = $args->{'node'};
     my $id = $node->id;
 
+    debug 3, "Checking param $param ($pred_name)";
+
+
     # Remember the values this node has for the pred
     my %has_val;
     foreach my $val ( $node->list($pred_name, undef, $args)->as_array )
     {
-	my $val_str = $val->id ? $val->id : $val->literal;
+	my $val_str = $val->is_literal ? $val->literal : $val->id;
 	$has_val{$val_str} ++;
+	debug 3, "  has previous value $val_str";
     }
 
     my %is_set;
     foreach my $value ( $q->param("prop_${pred_name}") )
     {
 	$is_set{$value} ++;
+	debug 3, "  has new value $value";
     }
 
 
     foreach my $val_key ( $q->param($param) )
     {
 	my $value = $val_key;
+	debug 3, "  handling check $value";
 	if( $coltype eq 'obj' )
 	{
 	    $value = Rit::Base::Resource->get( $val_key );
@@ -1705,7 +1711,7 @@ sub handle_query_check_revprop
     my %has_val;
     foreach my $val ( $node->revlist($pred_name, undef, $args)->as_array )
     {
-	my $val_str = $val->id ? $val->id : $val->literal;
+	my $val_str = $val->is_literal ? $val->literal : $val->id;
 	$has_val{$val_str} ++;
     }
 
