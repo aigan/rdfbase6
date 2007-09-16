@@ -1492,8 +1492,9 @@ Returns true if this node is a Literal Resource (aka value node).
 
 TODO: All value nodes should be handled as literals
 
-
 Returns: boolean
+
+See also: L</this_valtype>
 
 =cut
 
@@ -6328,20 +6329,30 @@ sub coltype
 
 =head2 this_valtype
 
-  $node->this_valtype()
+  $node->this_valtype( \%args )
 
 This would be the same as the C<is> property of this resource. But it
 must only have ONE value. It's important for literal values.
 
-This method will always return the C<resource> resource.
+This method will return the literal valtype for value resoruces and
+return the C<resource> resource for other resources.
 
-See also: L<Rit::Base::Literal/this_valtype>
+See also: L<Rit::Base::Literal/this_valtype>, L</is_value_node>.
 
 =cut
 
 sub this_valtype
 {
-    return Rit::Base::Resource->get_by_label('resource');
+    my( $node, $args_in ) = @_;
+
+    if( my $arc = $_[0]->first_arc('value',undef, $args_in) )
+    {
+	return $arc->valtype;
+    }
+    else
+    {
+	return Rit::Base::Resource->get_by_label('resource');
+    }
 }
 
 
@@ -6362,6 +6373,25 @@ See also: L<Rit::Base::Literal/this_coltype>
 sub this_coltype
 {
     return 'obj';
+}
+
+
+#########################################################################
+
+=head2 instance_class
+
+  $node->instance_class
+
+Compatible with L<Rit::Base::Literal::Class/instance_class>. This will
+always return C<Rit::Base::Resource>. Even for value resources.
+
+TODO: make value ersources literal objects
+
+=cut
+
+sub instance_class
+{
+    return 'Rit::Base::Resource';
 }
 
 
