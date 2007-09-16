@@ -9,7 +9,7 @@ package Rit::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -109,7 +109,7 @@ sub new
 	    if( $val =~ /Ã./ )
 	    {
 		debug longmess "Value '$val' DOUBLE ENCODED!!!";
-		$Para::Frame::REQ->result->message("Some text double encoded!");
+#		$Para::Frame::REQ->result->message("Some text double encoded!");
 	    }
 	}
 	else
@@ -124,7 +124,8 @@ sub new
 	    debug "HANDLE THIS (apparent undecoded UTF8: $val)";
 	    unless( utf8::decode( $val ) )
 	    {
-		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
+		debug 0, "Failed to convert to UTF8!";
+#		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
 	    }
 	}
 	else
@@ -162,7 +163,8 @@ sub new_from_db
 	    debug "UNDECODED UTF8 in DB: $val)";
 	    unless( utf8::decode( $val ) )
 	    {
-		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
+		debug 0, "Failed to convert to UTF8!";
+#		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
 	    }
 	}
 	else
