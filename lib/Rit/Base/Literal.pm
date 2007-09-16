@@ -9,7 +9,7 @@ package Rit::Base::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -124,7 +124,23 @@ sub new
 
 sub new_from_db
 {
-    confess "implement this ".datadump(\@_,2);
+    my( $this, $val_in, $valtype_in ) = @_;
+
+    unless( $valtype_in )
+    {
+	confess "valtype missing";
+    }
+
+    my $valtype = Rit::Base::Resource->get($valtype_in);
+    unless( $valtype->UNIVERSAL::isa('Rit::Base::Literal::Class') )
+    {
+	my $valtype_desig = $valtype->desig;
+	confess "valtype $valtype_desig is not a literal class";
+    }
+
+    my $class_name = $valtype->instance_class;
+
+    return $class_name->new_from_db( $val_in, $valtype );
 }
 
 
@@ -142,7 +158,7 @@ sub parse
 
     my $class_name = $valtype->instance_class;
 
-    return $class_name->new( $val_in, $args );
+    return $class_name->new( $val_in, $valtype );
 }
 
 
@@ -184,17 +200,18 @@ sub nodes
 
 #######################################################################
 
-=head2 arc
+=head2 lit_revarc
 
-=head2 revarc
+  $literal->lit_revarc
 
-  $literal->arc
+Return the arc this literal is a part of. For value resources, this
+will return the value arc.
 
-Return the arc for this literal
+See also: L</arc> and L</revarc>
 
 =cut
 
-sub revarc
+sub lit_revarc
 {
     $_[0]->{'arc'} || is_undef;
 }
@@ -290,7 +307,7 @@ sub update
     if( my $new_val = $props->{'value'} )
     {
 	delete $props->{'value'};
-	if( my $arc = $lit->revarc )
+	if( my $arc = $lit->lit_revarc )
 	{
 	    my $newarc = $arc->set_value($new_val, $args );
 	    $lit = $newarc->value;
@@ -327,7 +344,7 @@ sub update
 				valtype => $valtype,
 			       }, $args);
 
-	if( my $arc = $lit->revarc )
+	if( my $arc = $lit->lit_revarc )
 	{
 	    $arc->set_value( $node, $args );
 	}
@@ -442,7 +459,7 @@ sub subj
     if( ref $this )
     {
 	my $lit = $this;
-	if( my $arc = $lit->revarc )
+	if( my $arc = $lit->lit_revarc )
 	{
 	    return $arc->subj;
 	}
@@ -473,7 +490,7 @@ sub pred
     if( ref $this )
     {
 	my $lit = $this;
-	if( my $arc = $lit->revarc )
+	if( my $arc = $lit->lit_revarc )
 	{
 	    return $arc->pred;
 	}
@@ -553,6 +570,9 @@ sub extract_string
 	if( my $arc = $val->first_arc('value', $args) )
 	{
 	    $val = $arc->value;
+
+	    # Is arc always set?
+	    $val->set_arc($arc) unless $val->{'arc'};
 	}
 	else
 	{
@@ -773,7 +793,7 @@ sub empty
 
 sub created
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->created;
     }
@@ -790,7 +810,7 @@ sub created
 
 sub updated
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->updated;
     }
@@ -807,7 +827,7 @@ sub updated
 
 sub owned_by
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->subj->owned_by;
     }
@@ -824,7 +844,7 @@ sub owned_by
 
 sub read_access
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->read_access;
     }
@@ -841,7 +861,7 @@ sub read_access
 
 sub write_access
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->write_access;
     }
@@ -858,7 +878,7 @@ sub write_access
 
 sub created_by
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->created_by;
     }
@@ -875,7 +895,7 @@ sub created_by
 
 sub updated_by
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	return $arc->updated_by;
     }
@@ -964,7 +984,7 @@ sub revlist
     my( $node, $name, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    my $arc = $node->revarc;
+    my $arc = $node->lit_revarc;
     unless( $arc )
     {
 	return Rit::Base::List->new_empty();
@@ -1012,7 +1032,7 @@ sub revlist
 
 sub revlist_preds
 {
-    my $arc = $_[0]->revarc;
+    my $arc = $_[0]->lit_revarc;
     unless( $arc )
     {
 	return Rit::Base::List->new_empty();
@@ -1203,7 +1223,7 @@ sub revcount
     my( $node, $tmpl, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    my $arc = $node->revarc;
+    my $arc = $node->lit_revarc;
     unless( $arc )
     {
 	return 0;
@@ -1278,7 +1298,7 @@ sub revarc_list
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    my $arc = $node->revarc;
+    my $arc = $node->lit_revarc;
     unless( $arc )
     {
 	return Rit::Base::List->new_empty();
@@ -1351,6 +1371,18 @@ sub arc
 
 #######################################################################
 
+=head3 revarc
+
+=cut
+
+sub revarc
+{
+    return shift->lit_revarc(@_);
+}
+
+
+#######################################################################
+
 =head3 add
 
 =cut
@@ -1369,7 +1401,7 @@ sub add
 
 sub vacuum
 {
-    if( my $arc = $_[0]->revarc )
+    if( my $arc = $_[0]->lit_revarc )
     {
 	$arc->vacuum;
     }
