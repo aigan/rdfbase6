@@ -94,6 +94,49 @@ sub is_node { 1 };
 
 #######################################################################
 
+=head2 parse
+
+  $n->parse( $value, \%args )
+
+Compatible with L<Rit::Base::Literal/parse>. This just calls
+L<Rit::Base::Resource/get_by_anything> with the same args.
+
+Supported args:
+
+  valtype
+  arc
+
+Returns: the value as a literal or resource node
+
+=cut
+
+sub parse
+{
+    return shift->get_by_anything( @_ );
+}
+
+
+#######################################################################
+
+=head2 new_from_db
+
+  $n->parse( $value )
+
+Compatible with L<Rit::Base::Literal/new_from_db>. This just calls
+L<Rit::Base::Resource/get> the given C<$value>
+
+Returns: the value as a resource node
+
+=cut
+
+sub new_from_db
+{
+    return $_[0]->get( $_[1] );
+}
+
+
+#######################################################################
+
 =head2 find_remove
 
   $n->find_remove(\%props, \%args )
@@ -143,7 +186,7 @@ one char checksum at the end.
 
 sub id_alfanum
 {
-    my $id = $_[0]->{'id'};
+    my $id = $_[0]->id;
     my $str = "";
     my @map = ((0..9),('A'..'Z'));
     my $len = scalar(@map);
@@ -201,7 +244,7 @@ sub prop
     $name or confess "No name param given";
     return  $node->id if $name eq 'id';
 
-    debug 3, "!!! get ".$node->id."-> $name";
+    debug 3, "!!! get ".($node->id||'<undef>')."-> $name";
 
     confess "loc is a reserved dynamic property" if $name eq 'loc';
     confess "This node is not an arc" if $name eq 'subj';
@@ -783,7 +826,7 @@ sub replace
 
     # Replace value where it can be done
 
-#    Para::Frame::Logging->this_level(3);
+    Para::Frame::Logging->this_level(4);
 
 
     my( %add, %del, %del_pred );
@@ -1214,6 +1257,10 @@ sub construct_proplist
 
     my $props_out = {};
 
+
+#    debug "Normalized props ".query_desig($props_in);
+#    debug "With args ".query_desig($args);
+
     foreach my $pred_name ( keys %$props_in )
     {
 	# Not only objs
@@ -1246,8 +1293,21 @@ sub construct_proplist
 	    }
 	    else
 	    {
-		$val = Rit::Base::Pred->get_by_label($pred_name)->valtype->instance_class->new( $val );
-#		$val = Rit::Base::Literal->new( $val );
+		my $valtype;
+		if( $pred_name eq 'value' )
+		{
+		    $valtype = $node->this_valtype( $args );
+		}
+		else
+		{
+		    $valtype = Rit::Base::Pred->get_by_label($pred_name)->valtype;
+		}
+
+		$val = $valtype->instance_class->
+		  parse( $val,
+			 {
+			  valtype => $valtype,
+			 });
 	    }
 	}
 
