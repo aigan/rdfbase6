@@ -4273,7 +4273,7 @@ sub wuirc
 
 =head2 arcversions
 
-  $n->arcversions( $pred, \%args )
+  $n->arcversions( $pred, $proplim, \%args )
 
 Produces a list of all relevant common-arcs, with lists of their
 relevant versions, used for chosing version to activate/deactivate.
@@ -4285,7 +4285,7 @@ relevant versions, used for chosing version to activate/deactivate.
 
 sub arcversions
 {
-    my( $node, $predname ) = @_;
+    my( $node, $predname, $proplim ) = @_;
 
 #    debug "In arcversions for $predname for ".$node->sysdesig;
 
@@ -4295,7 +4295,7 @@ sub arcversions
 
     #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
 
-    my $arcs = $node->arc_list( $predname, undef, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    my $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
 
     my %arcversions;
 
@@ -4306,13 +4306,13 @@ sub arcversions
 	if( $arc->realy_objtype ) # Value resource
 	{
 	    push @versions,
-	      $arc->obj->arc_list( 'value', undef, ['active','submitted'] )->as_array;
+	      $arc->obj->arc_list( 'value', $proplim, ['active','submitted'] )->as_array;
 	}
 	else
 	{
 	    push @versions,
-	      $arc->versions(undef, ['active','submitted'])->sorted('updated')->as_array;
-	    #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions(undef, ['active','submitted'])->size;
+	      $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
+	    #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
 	}
 
 	$arcversions{$arc->id} = \@versions;

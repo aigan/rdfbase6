@@ -245,7 +245,7 @@ sub wub
 						  });
 			}
 
-			$out .= $arc->edit_link_html;
+			$out .= $version->edit_link_html;
 
 			$out .= "</td></tr>";
 		    }

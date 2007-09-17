@@ -1155,7 +1155,7 @@ sub handle_select_version
     foreach my $version_id (reverse sort @versions)
     {
 	my $version = Rit::Base::Arc->get( $version_id );
-	next if $version->equals( $value );
+	next if( $value ne 'deactivate' and $version->equals( $value ) );
 
 	if( $version->submitted )
 	{
