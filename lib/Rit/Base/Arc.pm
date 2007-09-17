@@ -544,7 +544,7 @@ sub create
     my $value_obj;
     # Find out the *real* coltype
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
-    my $coltype = Rit::Base::Literal::Class->coltype_by_valtype_id( $rec->{'valtype'} ) || 'obj';
+    my $coltype = Rit::Base::Literal::Class->coltype_by_valtype_id( $rec->{'valtype'} );
 
     debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
     debug "Coltype now: $coltype" if $DEBUG;
@@ -567,10 +567,6 @@ sub create
 	# It's possible we are creating an arc with an undef value.
 	# That is allowed!
 
-	unless( defined $props->{'value'} )
-	{
-	    $props->{'value'} = $props->{'obj'};
-	}
 
 	# Returns is_undef if value undef and coltype is obj
 	$value_obj = Rit::Base::Resource->
