@@ -5944,7 +5944,12 @@ sub initiate_prop
 		{
 		    my $obj_id = $proplim->id;
 		    $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
-		    $sql = join " and ", $sql, scalar($arclim->sql);
+		    my( $arclim_sql, $extralim ) = $arclim->sql;
+		    if( $arclim_sql )
+		    {
+			$sql .= " and ".$arclim_sql;
+		    }
+
 		    my $sth = $Rit::dbix->dbh->prepare($sql);
 		    $sth->execute();
 		    $recs = $sth->fetchall_arrayref({});
