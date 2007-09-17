@@ -1188,6 +1188,12 @@ value is either a node or a array(ref) of nodes or a
 L<List|Rit::Base::List> of nodes.  And the nodes can be given
 as anything that L</get> will accept.
 
+Special args:
+
+  activate_new_arcs
+
+  submit_new_arcs
+
 Returns:
 
 a node
