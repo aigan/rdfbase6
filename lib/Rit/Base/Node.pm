@@ -1201,11 +1201,11 @@ sub find_arcs
 	}
 	else
 	{
-	    die "not implemented".query_desig($props);
+	    confess "not implemented".query_desig($props);
 	}
     }
 
-    if( debug > 3 )
+#    if( debug > 3 )
     {
 	debug "Finding arcs: ".query_desig($props);
 
