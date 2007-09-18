@@ -2804,35 +2804,21 @@ sub remove
 
     unless( $force )
     {
-	# Remove arcs to value nod instead of the value arc
-	if( $arc->pred->plain eq 'value' )
+	# Remove arcs to value resource too
+	# ..if there are no other values at all (not even submitted)
+	if( $arc->pred->plain eq 'value' and
+	    $arc->subj->arc_list( 'value', undef, ['not_old'] )->size == 1 )
 	{
-	    # Only there is no other active version
-	    if( $arc->active )
+	    debug "There is just 1 not-old value.  Removing value-resource.";
+	    my $subj = $arc->subj;
+	    foreach my $oarc ( $subj->arc_list(undef,undef,['not_old'])->nodes )
 	    {
-		debug "Removal of value arc removes ".
-		  "arcs to value node instead";
-		my $cnt = 0;
-		foreach my $varc ( $arc->subj->revarc_list(undef,undef,['not_old'])->nodes )
-		{
-		    $cnt += $varc->remove( $args );
-		}
-		return $cnt;
+		next if $oarc->equals( $arc ); # Handled below
+		$oarc->remove($args);
 	    }
-	    elsif( not $arc->active_version )
+	    foreach my $oarc ( $subj->revarc_list(undef,undef,['not_old'])->nodes )
 	    {
-		# Everything should go
-		my $subj = $arc->subj;
-		foreach my $oarc ( $subj->arc_list(undef,undef,['not_old'])->nodes )
-		{
-		    next if $oarc->equals( $arc ); # Handled below
-		    $oarc->remove($args);
-		}
-
-		foreach my $oarc ( $subj->revarc_list(undef,undef,['not_old'])->nodes )
-		{
-		    $oarc->remove($args);
-		}
+		$oarc->remove($args);
 	    }
 	}
 
