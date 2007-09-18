@@ -688,7 +688,7 @@ sub handle_query_arc_value
 	    debug "Scaled to ". $image->Get('width') ." × ".
 	      $image->Get('height');
 	    my $error = $image->Write($img_file);
-	    die "Failed to save image $img_file" if $error;
+	    die "Failed to save image $img_file: $error" if $error;
 	}
 
 	my $filename_in = $value;
