@@ -370,7 +370,11 @@ sub find
 	# Check each prop in the template.  All must match.  One
 	# failed match and this $node in not placed in @newlist
 
-	if( $node->is_list )
+	if( not $node )
+	{
+	    # just drop it
+	}
+	elsif( $node->is_list )
 	{
 	    push @newlist, $node->find( $tmpl, $args )->as_array;
 	}

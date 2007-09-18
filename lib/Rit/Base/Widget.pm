@@ -192,7 +192,7 @@ sub wub
 		my $arc = Rit::Base::Arc->get($arc_id);
 		if( my $lang = $arc->obj->is_of_language(undef,'auto') )
 		{
-		    $out .= "(".$lang->desig.")";
+		    $out .= "(".$lang->desig."): ";
 		}
 
 		if( (@{$arcversions->{$arc_id}} > 1) or
@@ -202,7 +202,7 @@ sub wub
 
 		    $out .=
 		      (
-		       ": <li><table class=\"wide suggestion nopad\">".
+		       "<li><table class=\"wide suggestion nopad\">".
 		       "<tr><th colspan=\"2\">".
 		       &aloc("Choose one").
 		       "</th></tr>"
