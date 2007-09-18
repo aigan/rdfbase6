@@ -4315,7 +4315,8 @@ sub arcversions
 	    #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
 	}
 
-	$arcversions{$arc->id} = \@versions;
+	$arcversions{$arc->id} = \@versions
+	  if( @versions );
 	#debug "Added arc ". $arc->sysdesig;
     }
 
