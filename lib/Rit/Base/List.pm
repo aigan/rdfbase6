@@ -1754,32 +1754,42 @@ sub concatenate_by_overload
 For all method calls not catched by defined methods in this class,
 this AUTOLOAD is used.
 
-All undefined values and L<Rit::Base::Undef> objects are filtered out.
-All nonobjects are copied to the result list but ignored. For all
-other objects, the C<$method> are called and given the C<@args> and
-the result are placed in a resulting list.
+The method is called for each element in the source list. Elements
+that are not L<Rit::Base::Object> objects are silently
+ignored. L<Rit::Base::Undef> objects are also ignored.
 
-If no elements comes through, a L<Rit::Base::Undef> is returned.
+A result list is prepared for the return values of each method call.
+The C<$method> are called in scalar context and given the C<@args>.
 
-We guess the content of the list by the first element, defining the
-element type. If it's not a type of object, its taken to be
-L<Rit::Base::Literal>.
+1.  Results that isn't L<Rit::Base::Object> objects are appended to
+the result list.
 
-If the element type is L<Rit::Base::List> we flatten the list as much
-as possible to just get a single list of values rather than a list of
-lists.
+2. L<Rit::Base::Undef> objects are ignored. Not placed in the result
+list.
 
-If the element type is L<Rit::Base::Literal>, all elements in the
-resulting list are converted to L<Rit::Base::Literal> objects and
-returned.  But if the list only has one value, it's returned without
-any convertion.
+3. L<Rit::Base::List> objects are appended to the result list, only if
+they contain one or more elements. The lists are B<NOT> flattened.
+The content of the returned lists are not altered. Undef value inside
+the lists are thus also left in place. We are just checking for the
+size of the list. Empty lists are not appended to the result list.
 
-For the element types L<Rit::Base::Arc>, L<Rit::Base::Resource> and
-L<Rit::Base::Literal::Time>, we retun a new L<Rit::Base::List> with the
-elements.
+4. All other L<Rit::Base::Object> objects are appended to the result
+list.
 
-TODO: Msake it work with the new subclass strutcture with subclasses
-of L<Rit::Base::Object>.
+The B<return> value depends on the size of the result list:
+
+1. For an empty result list, we will return an empty
+L<Rit::Base::List>.
+
+2. For a result list with just B<one> element, that element will be
+used as a return value, no matter what that value is. (It may, for
+example, be a L<Rit::Base::List> object returned from one of the
+method calls.)
+
+3. For a result list with more than one element, a L<Rit::Base::List>
+containing the result list will be returned.
+
+No exceptions are cathed.
 
 =cut
 
@@ -1861,7 +1871,7 @@ AUTOLOAD
     else
     {
 	debug "  No value returned" if $DEBUG>2;
-	return is_undef;
+	return $self->new_empty();
     }
 }
 
