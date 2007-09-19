@@ -3679,7 +3679,7 @@ Supported args are:
 
 Returns:
 
-The number of arcs created or removed.
+  The updated node. For literals, it may be a new object.
 
 Exceptions:
 
@@ -3691,7 +3691,6 @@ sub update
 {
     my( $node, $props, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
 
     # Update specified props to their values
 
@@ -3712,7 +3711,7 @@ sub update
 
     $node->replace(\@arcs_old, $props, $args);
 
-    return $res->changes - $changes_prev;
+    return $node;
 }
 
 
@@ -3795,7 +3794,10 @@ sub equals
 	}
 	elsif( ref $node2 and UNIVERSAL::isa($node2, 'Rit::Base::Literal') )
 	{
-	    $node2 = $node2->literal;
+
+	    # We will not try totransform a literal node into a
+	    # resource node. They are not considered equals
+	    return 0;
 	}
 	else
 	{
