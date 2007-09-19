@@ -1073,17 +1073,13 @@ sub handle_query_arc_value
 					    is   => $C_language,
 					   })
 		      or die("Erronuous lang-code $lang");
-		    my $value_str = Rit::Base::Literal::String->new( $value );
-		    my $valnode = $R->create({
-					      is_of_language => $language,
-					     }, $args);
-		    Rit::Base::Arc->create({
-					    subj    => $valnode,
-					    pred    => 'value',
-					    value   => $value,
-					    valtype => $pred->valtype,
-					   }, $args);
-		    $subj->add({ $pred_name => $valnode }, $args);
+
+		    my $value_node = Rit::Base::Literal::String->new( $value );
+		    $subj->add({ $pred_name => $value_node }, $args);
+		    $value_node->add({
+				      is_of_language => $language,
+				     }, $args);
+
 		}
 		else
 		{
