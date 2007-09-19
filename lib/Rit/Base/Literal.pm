@@ -20,7 +20,7 @@ Rit::Base::Literal
 =cut
 
 use strict;
-use Carp qw( cluck confess carp shortmess );
+use Carp qw( cluck confess carp shortmess longmess );
 
 BEGIN
 {
@@ -311,6 +311,10 @@ The API is the same as for L<Rit::Base::Resource/update>.
 
 This converts the literal to a value node.
 
+Returns:
+
+  The value node created for representing the literal
+
 Example:
 
   $node->name->update({ is_of_language => $C_swedish });
@@ -356,7 +360,8 @@ sub update
 
 	$node->add( $props, $args );
 
-	my $valtype = $lit->valtype;
+	my $arc = $lit->lit_revarc; # Before updating literal
+	my $valtype = $lit->this_valtype;
 	Rit::Base::Arc->create({
 				subj    => $node,
 				pred    => 'value',
@@ -364,7 +369,7 @@ sub update
 				valtype => $valtype,
 			       }, $args);
 
-	if( my $arc = $lit->lit_revarc )
+	if( $arc )
 	{
 	    $arc->set_value( $node, $args );
 	}
@@ -390,7 +395,7 @@ sub set_arc
 {
     my( $literal, $arc ) = @_;
 
-#    carp "set_arc to $arc for $literal called by";
+#    debug "set_arc to $arc->{id} for $literal";
     $literal->{'arc'} = $arc;
 
     return $arc;
