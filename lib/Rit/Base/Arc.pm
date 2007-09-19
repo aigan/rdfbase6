@@ -547,7 +547,7 @@ sub create
     my $coltype = Rit::Base::Literal::Class->coltype_by_valtype_id( $rec->{'valtype'} );
 
     debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
-    debug "Coltype now: $coltype" if $DEBUG;
+    debug "Coltype now: ".($coltype||'') if $DEBUG;
 
     if( my $obj_id = $props->{'obj'} )
     {
@@ -566,6 +566,8 @@ sub create
     {
 	# It's possible we are creating an arc with an undef value.
 	# That is allowed!
+
+	debug "parsing value ".$props->{'value'} if $DEBUG;
 
 
 	# Returns is_undef if value undef and coltype is obj
