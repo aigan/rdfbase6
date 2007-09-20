@@ -1778,8 +1778,7 @@ list.
 
 The B<return> value depends on the size of the result list:
 
-1. For an empty result list, we will return an empty
-L<Rit::Base::List>.
+1. For an empty result list, we will return L<Rit::Base::Undef>
 
 2. For a result list with just B<one> element, that element will be
 used as a return value, no matter what that value is. (It may, for
@@ -1871,7 +1870,7 @@ AUTOLOAD
     else
     {
 	debug "  No value returned" if $DEBUG>2;
-	return $self->new_empty();
+	return is_undef;
     }
 }
 
