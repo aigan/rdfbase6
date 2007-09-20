@@ -459,6 +459,7 @@ sub meets_proplim
 		}
 	    }
 
+	    debug "Node ". $node->id ." failed." if $DEBUG;
 	    return 0; # test failed
 	}
 
@@ -485,6 +486,8 @@ sub meets_proplim
 	my $clean  = $4 || $args_in->{'clean'} || 0;
 	my $match  = $5 || 'eq';
 	my $prio   = $6; #not used
+
+	debug "  Match is '$match'" if $DEBUG;
 
 	my $args =
 	{
@@ -538,11 +541,18 @@ sub meets_proplim
 			    next PRED; # Passed test
 			}
 		    }
+		    elsif( $match eq 'exist' )
+		    {
+			debug "Checking exist, target_value: $target_value" if $DEBUG;
+			next PRED
+			  unless( $target_value ); # no props exist on the value
+		    }
 		    else
 		    {
 			confess "Matchtype not implemented: $match";
 		    }
 
+		    debug "Node ". $node->id ." failed on arc value." if $DEBUG;
 		    return 0; # Failed test
 		}
 		else
@@ -560,6 +570,7 @@ sub meets_proplim
 		}
 		else
 		{
+		    debug "Node ". $node->id ." failed." if $DEBUG;
 		    return 0; # Failed test
 		}
 	    }
@@ -695,7 +706,8 @@ sub meets_proplim
 		}
 		else
 		{
-		    debug "Checking rel exist false" if $DEBUG;
+		    debug "Checking rel exist false: unless has_pred( $pred, {}, ".
+		      $arclim_in->sysdesig .")" if $DEBUG;
 		    next PRED
 		      unless( $node->has_pred( $pred, {}, $args ) );
 		}
@@ -718,10 +730,12 @@ sub meets_proplim
 	}
 
 	# This node failed the test
+	debug "Node ". $node->id ." failed." if $DEBUG;
 	return 0;
     }
 
     # All properties good
+    debug "Node ". $node->id ." passed." if $DEBUG;
     return 1;
 }
 
