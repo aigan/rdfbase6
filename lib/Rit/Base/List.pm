@@ -376,11 +376,11 @@ sub find
 	}
 	elsif( $node->is_list )
 	{
-	    push @newlist, $node->find( $tmpl, $args )->as_array;
+	    CORE::push @newlist, $node->find( $tmpl, $args )->as_array;
 	}
 	elsif( $node->meets_proplim( $tmpl, $args ) )
 	{
-	    push @newlist, $node;
+	    CORE::push @newlist, $node;
 	}
 
 	( $node, $error ) = $l->get_next;
@@ -614,13 +614,13 @@ sub sorted
 
 	if( $sortargs->[$i]->{'dir'} eq 'desc')
 	{
-#	    push @sort, "\$b->[$i] cmp \$a->[$i]";
-	    push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
+#	    CORE::push @sort, "\$b->[$i] cmp \$a->[$i]";
+	    CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
 	}
 	else
 	{
-#	    push @sort, "\$a->[$i] cmp \$b->[$i]";
-	    push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
+#	    CORE::push @sort, "\$a->[$i] cmp \$b->[$i]";
+	    CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
 	}
     }
     my $sort_str = join ' || ', @sort;
@@ -677,8 +677,8 @@ sub sorted
 
 #	    debug sprintf("      => %s", $val);
 
-	    push @{$props[$i]}, $val;
-#	    push @{$props[$i]}, $item->$method;
+	    CORE::push @{$props[$i]}, $val;
+#	    CORE::push @{$props[$i]}, $item->$method;
 	}
     }
 
@@ -760,7 +760,7 @@ sub unique_arcs_prio
 	{
 	    if( $arc )
 	    {
-		push @arcs, $arc;
+		CORE::push @arcs, $arc;
 		last;
 	    }
 	}
@@ -796,7 +796,7 @@ See L<Rit::Base::Resource/get_by_anything>
 
 sub get
 {
-    my $list = shift->find(@_);
+    my $list = CORE::shift->find(@_);
 
     return Rit::Base::Resource->get_by_anything($list);
 }
@@ -901,7 +901,7 @@ Returns: A plain string
 
 sub loc
 {
-    my $list = shift;
+    my $list = CORE::shift;
 
     # TODO: Check if the next argument is a hashref. Take that as
     # args.
@@ -934,7 +934,7 @@ sub loc
 		    {
 			next unless $lang;
 			my $code = $lang->code->plain;
-			push @{$alts{$code}}, $item;
+			CORE::push @{$alts{$code}}, $item;
 			unless( $code )
 			{
 			    throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
@@ -944,7 +944,7 @@ sub loc
 		}
 		else
 		{
-		    push @{$alts{'c'}}, $item;
+		    CORE::push @{$alts{'c'}}, $item;
 		    #		debug 4,"Lang c: $item->{'id'} ($langs)";
 		}
 	    }
@@ -972,7 +972,7 @@ sub loc
 	my @new;
 	foreach my $item ( @$list )
 	{
-	    push @new, $item->loc(@_);
+	    CORE::push @new, $item->loc(@_);
 	}
 	return $list->new(\@new);
     }
@@ -1135,11 +1135,11 @@ sub desig
     {
 	if( (ref $elem) and ( UNIVERSAL::isa $elem, 'Rit::Base::Object' ) )
 	{
-	    push @part, $elem->desig($args_in);
+	    CORE::push @part, $elem->desig($args_in);
 	}
 	else
 	{
-	    push @part, "$elem"; # stringify
+	    CORE::push @part, "$elem"; # stringify
 	}
     }
     continue
@@ -1207,11 +1207,11 @@ sub nodes
 #    warn " --> wantarray?\n"; ### DEBUG
     if( wantarray )
     {
-	return @{shift->as_list(@_)};
+	return @{CORE::shift->as_list(@_)};
     }
     else
     {
-	return shift->as_list(@_);
+	return CORE::shift->as_list(@_);
     }
 }
 
@@ -1229,11 +1229,11 @@ sub plain
 {
     if( wantarray )
     {
-	return @{shift->as_list(@_)};
+	return @{CORE::shift->as_list(@_)};
     }
     else
     {
-	return shift->as_list(@_);
+	return CORE::shift->as_list(@_);
     }
 }
 
@@ -1508,12 +1508,12 @@ sub has_pred
 	{
 	    if( $active and $node->{'relarc'}{$predname} )
 	    {
-		push @arcs, @{ $node->{'relarc'}{$predname} };
+		CORE::push @arcs, @{ $node->{'relarc'}{$predname} };
 	    }
 
 	    if( $inactive and $node->{'relarc_inactive'}{$predname} )
 	    {
-		push @arcs, @{ $node->{'relarc_inactive'}{$predname} };
+		CORE::push @arcs, @{ $node->{'relarc_inactive'}{$predname} };
 	    }
 	}
 	else
@@ -1526,7 +1526,7 @@ sub has_pred
 	    next unless $arc->meets_arclim($arclim);
 	    next unless $arc->value_meets_proplim($proplim, $args);
 
-	    push @grep, $node;
+	    CORE::push @grep, $node;
 	    last;
 	}
     }
@@ -1625,7 +1625,7 @@ Returns: C<$l>
 
 sub initiate_rel
 {
-    my( $l ) = shift;
+    my( $l ) = CORE::shift;
 
     foreach( @$l )
     {
@@ -1758,6 +1758,10 @@ The method is called for each element in the source list. Elements
 that are not L<Rit::Base::Object> objects are silently
 ignored. L<Rit::Base::Undef> objects are also ignored.
 
+If the source list is empty, the method are called on
+L<Rit::Base::Undef> in return context, and returned. That class will
+return the right type of value for most L<Rit::Base::Node> methods.
+
 A result list is prepared for the return values of each method call.
 The C<$method> are called in scalar context and given the C<@args>.
 
@@ -1778,7 +1782,7 @@ list.
 
 The B<return> value depends on the size of the result list:
 
-1. For an empty result list, we will return L<Rit::Base::Undef>
+1. For an empty result list, we will return a an empty L<Rit::Base::List>
 
 2. For a result list with just B<one> element, that element will be
 used as a return value, no matter what that value is. (It may, for
@@ -1797,7 +1801,7 @@ AUTOLOAD
     $AUTOLOAD =~ s/.*:://;
     return if $AUTOLOAD =~ /DESTROY$/;
     my $propname = $AUTOLOAD;
-    my $self = shift;
+    my $self = CORE::shift;
     my $class = ref($self) eq 'Rit::Base::List'
 	or confess "Wrong class: ".ref($self)."\n";
     my $thingtype = ref $self;
@@ -1812,6 +1816,12 @@ AUTOLOAD
 	debug "LIST params ".query_desig(\@_);
 	debug "LIST IN ".query_desig($self);
 	debug "Got ".$self->size." elements";
+    }
+
+    unless( $self->size )
+    {
+#	return $self->new_empty();
+	return is_undef->$propname(@_,undef);
     }
 
     my @list = ();
@@ -1831,17 +1841,17 @@ AUTOLOAD
 		{
 		    if( $res->size )
 		    {
-			push @list, $res;
+			CORE::push @list, $res;
 		    }
 		}
 		elsif( $res->defined )
 		{
-		    push @list, $res;
+		    CORE::push @list, $res;
 		}
 	    }
 	    else
 	    {
-		push @list, $res;
+		CORE::push @list, $res;
 	    }
 	}
     }
@@ -1870,7 +1880,7 @@ AUTOLOAD
     else
     {
 	debug "  No value returned" if $DEBUG>2;
-	return is_undef;
+	return $self->new_empty();
     }
 }
 
@@ -2136,7 +2146,7 @@ sub meets_arclim
     {
 	if( $arc->meets_arclim( $arclim ) )
 	{
-	    push @arcs, $arc;
+	    CORE::push @arcs, $arc;
 	}
 
 	( $arc, $error ) = $l->get_next;
