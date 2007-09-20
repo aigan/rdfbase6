@@ -430,6 +430,28 @@ sub list
 
 #######################################################################
 
+=head2 arc_list
+
+=cut
+
+sub arc_list
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 list_preds
+
+=cut
+
+sub list_preds
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
 =head2 revlist
 
 TODO: Rewrite code for handling undef objects in arcs. Those will have
@@ -440,6 +462,61 @@ a relvist in the same manner as literal nodes.
 sub revlist
 {
     return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 revarc_list
+
+=cut
+
+sub revarc_list
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 revlist_preds
+
+=cut
+
+sub revlist_preds
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 arcversions
+
+=cut
+
+sub arcversions
+{
+    return Rit::Base::List->new_empty();
+}
+
+#######################################################################
+
+=head2 count
+
+=cut
+
+sub count
+{
+    return 0;
+}
+
+#######################################################################
+
+=head2 revcount
+
+=cut
+
+sub revcount
+{
+    return 0;
 }
 
 #########################################################################
