@@ -840,7 +840,7 @@ sub replace
 
     # Replace value where it can be done
 
-    Para::Frame::Logging->this_level(4);
+#    Para::Frame::Logging->this_level(4);
 
 
     my( %add, %del, %del_pred );
@@ -856,11 +856,10 @@ sub replace
 
     foreach my $arc ( $oldarcs->as_array )
     {
-#	my $val_str = valclean( $arc->value->syskey );
-	my $val_str = $arc->value->syskey;
+	my $val_key = $arc->value->syskey;
 
-	debug 3, "  old val: $val_str (".$arc->sysdesig.")";
-	$del{$arc->pred->plain}{$val_str} = $arc;
+	debug 3, "  old val: $val_key (".$arc->sysdesig.")";
+	$del{$arc->pred->plain}{$val_key} = $arc;
     }
 
     # go through the new values and remove existing values from the
@@ -898,20 +897,19 @@ sub replace
 				valtype => $valtype,
 			       });
 
-#	    my $val_str = valclean( $val->syskey );
-	    my $val_str = $val->syskey;
+	    my $val_key = $val->syskey;
 
-	    debug 3, "    new val: '$val_str' (".$val.")";
+	    debug 3, "    new val: $val_key (".$val.")";
 
-	    if( $del{$pred_name}{$val_str} )
+	    if( $del{$pred_name}{$val_key} )
 	    {
-		debug 3, "    keep $val_str";
-		delete $del{$pred_name}{$val_str};
+		debug 3, "    keep $val_key";
+		delete $del{$pred_name}{$val_key};
 	    }
-	    elsif( defined $val_str )
+	    elsif( $val_key ne 'undef' )
 	    {
-		debug 3, "    add  '$val_str'";
-		$add{$pred_name}{$val_str} = $val;
+		debug 3, "    add  $val_key";
+		$add{$pred_name}{$val_key} = $val;
 	    }
 	    else
 	    {
@@ -936,11 +934,14 @@ sub replace
 
     foreach my $pred_name ( keys %del )
     {
-	foreach my $arc_key ( keys %{$del{$pred_name}} )
+	foreach my $val_key ( keys %{$del{$pred_name}} )
 	{
-	    my $arc = $del{$pred_name}{$arc_key};
+	    my $arc = $del{$pred_name}{$val_key};
 	    $del_pred{$pred_name} ||= [];
-	    push @{$del_pred{$pred_name}}, $arc_key;
+
+	    # Temporarily inserts the keys here. Replace it with the
+	    # arcs later
+	    push @{$del_pred{$pred_name}}, $val_key;
 	}
     }
 
@@ -959,9 +960,9 @@ sub replace
 	}
 	else
 	{
-	    my $arc_key = $del_pred{$pred_name}[0];
-	    debug 3, "  Considering $pred_name arc $arc_key";
-	    $del_pred{$pred_name} = delete $del{$pred_name}{$arc_key};
+	    my $val_key = $del_pred{$pred_name}[0];
+	    debug 3, "  Considering $pred_name val key $val_key";
+	    $del_pred{$pred_name} = delete $del{$pred_name}{$val_key};
 	}
     }
 
@@ -1000,6 +1001,7 @@ sub replace
 		{
 		    debug 3, "    yes!";
 		    $new->set_replaces( $arc, $args );
+		    debug 3, $arc->sysdesig;
 		}
 		else
 		{
