@@ -1221,7 +1221,7 @@ sub find_arcs
 	}
     }
 
-#    if( debug > 3 )
+    if( debug > 3 )
     {
 	debug "Finding arcs: ".query_desig($props);
 
