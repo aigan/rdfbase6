@@ -1525,7 +1525,8 @@ sub sysdesig  # The designation of obj, including node id
     if( defined $plain )
     {
 	my $value  = truncstring( shift->{'value'} );
-	return $out . "'$value'";
+	$value =~ s/\n/\\n/g;
+	return $out . '"'.$value.'"';
     }
     else
     {
