@@ -4028,24 +4028,6 @@ sub wu
 
     my $is_rev = 0;
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
-    { ### FIXME: Let other types display themselves?  ...as_html or WASH?
-	my $out =
-	  Para::Frame::Widget::label_from_params({
-						  label       => delete $args->{'label'},
-						  tdlabel     => delete $args->{'tdlabel'},
-						  separator   => $args->{'separator'},
-						  label_class => delete $args->{'label_class'},
-						 });
-	my $arc_list = $node->arc_list( $pred_name, undef, aais($args, 'direct') );
-	while( my $arc = $arc_list->get_next_nos )
-	{
-	    $out .= $arc->value->desig .'&nbsp;'.
-	      $arc->edit_link_html;
-	}
-	return $out;
-    }
-
     if( $pred_name =~ /^rev_(.*)$/ )
     {
 	$pred_name = $1;
@@ -4141,6 +4123,8 @@ sub wu
 Returns: a HTML widget for updating subj when a pred's range is a
 Resource..
 
+All wuirc should handle: disabled
+
 Use args:
   arc_type => singular
     if there should be only one arc with that pred from that subj.
@@ -4166,26 +4150,16 @@ sub wuirc
     my $out = '';
     my $is_scof = $args->{'range_is_scof'};
     my $is_rev = $args->{'is_rev'} || '';
-    my $list = ( $is_rev ? $subj->revarc_list( $pred->name ) : $subj->arc_list( $pred->name ) );
+    my $list = ( $is_rev ? $subj->revarc_list( $pred->name, undef, 'explicit' )
+		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
     my $is_pred = ( $is_scof ? 'scof' : 'is' );
-
-    debug "Default ". ( $singular ? '(singular) ' : '')
-      ."wuirc for Resource. Pred: ". $pred->desig;
-    debug "Class". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
-    debug "Singular." if $singular;
-    debug "Given inputtype: ". ( $args->{'inputtype'} || '' );
-
-    debug "Checking size..."
-      unless( $args->{'inputtype'} );
+    my $disabled = $args->{'disabled'};
 
     my $inputtype = $args->{'inputtype'} ||
       ( ( $range->revcount($is_pred) < 25 ) ?
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
-
-    debug "...done"
-      unless( $args->{'inputtype'} );
 
     $out .= Para::Frame::Widget::label_from_params({
 			       label       => delete $args->{'label'},
@@ -4194,6 +4168,15 @@ sub wuirc
 			       id          => $args->{'id'},
 			       label_class => delete $args->{'label_class'},
 			      });
+
+    if( $disabled )
+    {
+	while( my $arc = $list->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+	return $out;
+    }
 
     if( $list and
 	( $inputtype eq 'text' or not $singular ) )
@@ -4218,9 +4201,9 @@ sub wuirc
 						  {
 						   label => $label,
 						  });
-	    $out .= ( $is_rev ? $check_subj->wu_jump({ label => '(Node)' }) :
-		      $item->wu_jump({ label => '(Node)' }) ) .'&nbsp;'.
-			$arc->edit_link_html;
+	    $out .= '['. ( $is_rev ? $check_subj->wu_jump({ label => 'Form' }) :
+			   $item->wu_jump({ label => 'Form' }) ) .']&nbsp;'.
+			     $arc->edit_link_html;
 
 	    debug "ID: ". $check_subj->id;
 	    debug "Desig: ". $check_subj->desig;

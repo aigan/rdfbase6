@@ -150,182 +150,160 @@ sub wub
 			      });
 
 
-    if( $newsubj )
+    if( $args->{'disabled'} eq 'disabled' )
+    {
+	my $arclist = $subj->arc_list($pred, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+    }
+    elsif( not $subj )
     {
 	$out .=
-	  &{$inputtype}("newsubj_${newsubj}__pred_${pred}",
-			"",
+	  &{$inputtype}("arc___pred_${pred}__row_${IDCOUNTER}",	'',
 			{
 			 size => $size,
 			 rows => $rows,
 			 image_url => $args->{'image_url'}
 			});
+	$out .= "<br/>";
     }
-    else
+    elsif( $subj->list($pred,undef,['active','submitted'])->is_true )
     {
-	if( not $subj )
-	{
-	    $out .=
-	      &{$inputtype}("arc___pred_${pred}__row_${IDCOUNTER}",
-			    '',
-			    {
-			     size => $size,
-			     rows => $rows,
-			     image_url => $args->{'image_url'}
-			    });
-	    $out .= "<br/>";
-	}
-	elsif( $subj->list($pred,undef,['active','submitted'])->is_true )
-	{
-	    my $subj_id = $subj->id;
+	my $subj_id = $subj->id;
 
-	    my $arcversions =  $subj->arcversions($pred);
-	    if( scalar(keys %$arcversions) > 1 )
+	my $arcversions =  $subj->arcversions($pred);
+	if( scalar(keys %$arcversions) > 1 )
+	{
+	    $out .= '<ul style="list-style-type: none" class="nopad">';
+	}
+
+	foreach my $arc_id (keys %$arcversions)
+	{
+	    my $arc = Rit::Base::Arc->get($arc_id);
+	    if( my $lang = $arc->obj->is_of_language(undef,'auto') )
 	    {
-		$out .= '<ul style="list-style-type: none" class="nopad">';
+		$out .= "(".$lang->desig."): ";
 	    }
 
-	    foreach my $arc_id (keys %$arcversions)
+	    if( (@{$arcversions->{$arc_id}} > 1) or
+		$arcversions->{$arc_id}[0]->submitted )
 	    {
-#		debug "Arc $arc_id";
+		debug "  multiple";
 
-		my $arc = Rit::Base::Arc->get($arc_id);
-		if( my $lang = $arc->obj->is_of_language(undef,'auto') )
+		$out .=
+		  (
+		   "<li><table class=\"wide suggestion nopad\">".
+		   "<tr><th colspan=\"2\">".
+		   &aloc("Choose one").
+		   "</th></tr>"
+		  );
+
+		foreach my $version (@{$arcversions->{$arc_id}})
 		{
-		    $out .= "(".$lang->desig."): ";
-		}
-
-		if( (@{$arcversions->{$arc_id}} > 1) or
-		    $arcversions->{$arc_id}[0]->submitted )
-		{
-		    debug "  multiple";
-
-		    $out .=
-		      (
-		       "<li><table class=\"wide suggestion nopad\">".
-		       "<tr><th colspan=\"2\">".
-		       &aloc("Choose one").
-		       "</th></tr>"
-		      );
-
-		    foreach my $version (@{$arcversions->{$arc_id}})
-		    {
-			debug "  version $version";
-			$out .=
-			  (
-			   "<tr><td>".
-			   &hidden("version_${arc_id}", $version->id).
-			   &radio("arc_${arc_id}__select_version",
-				  $version->id,
-				  0,
-				  {
-				   id => $version->id,
-				  }).
-			   "</td>"
-			  );
-
-			$out .=
-			   "<td style=\"border-bottom: 1px solid black\">";
-
-			if( $version->is_removal )
-			{
-			    $out .= "<span style=\"font-weight: bold\">REMOVAL</span>";
-			}
-			else
-			{
-			    $out .= &{$inputtype}("undef",
-						  $version->value,
-						  {
-						   disabled => "disabled",
-						   class => "suggestion_field",
-						   size => $smallestsize,
-						   rows => $rows,
-						   version => $version,
-						   image_url => $args->{'image_url'}
-						  });
-			}
-
-			$out .= $version->edit_link_html;
-
-			$out .= "</td></tr>";
-		    }
-
+		    debug "  version $version";
 		    $out .=
 		      (
 		       "<tr><td>".
+		       &hidden("version_${arc_id}", $version->id).
 		       &radio("arc_${arc_id}__select_version",
-			      'deactivate',
+			      $version->id,
 			      0,
 			      {
-			       id => "arc_${arc_id}__activate_version--undef",
+			       id => $version->id,
 			      }).
-		       "</td><td>".
-		       "<label for=\"arc_${arc_id}__activate_version--undef\">".
-		       loc("Deactivate group").
-		       "</label>".
-		       "</td></tr>".
-		       "</table></li>"
+		       "</td>"
 		      );
+
+		    $out .= "<td style=\"border-bottom: 1px solid black\">";
+
+		    if( $version->is_removal )
+		    {
+			$out .= "<span style=\"font-weight: bold\">REMOVAL</span>";
+		    }
+		    else
+		    {
+			$out .= &{$inputtype}("undef",
+					      $version->value,
+					      {
+					       disabled => "disabled",
+					       class => "suggestion_field",
+					       size => $smallestsize,
+					       rows => $rows,
+					       version => $version,
+					       image_url => $args->{'image_url'}
+					      });
+		    }
+
+		    $out .= $version->edit_link_html;
+		    $out .= "</td></tr>";
 		}
-		else
-		{
-#		    debug "  singular";
 
-		    if( scalar(keys %$arcversions) > 1 )
-		    {
-			$out .= '<li>';
-		    }
-
-		    if( $arc->obj->is_value_node )
-		    {
-			$arc = $arc->obj->first_arc('value');
-			$arc_id = $arc->id;
-		    }
-
-		    my $arc_pred_name = $arc->pred->name;
-		    my $arc_subj_id = $arc->subj->id;
-
-		    $out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
-					  $arc->value,
-					  {
-					   arc => $arc_id,
-					   size => $size,
-					   rows => $rows,
-					   image_url => $args->{'image_url'}
-					  });
-
-		    $out .= $arc->edit_link_html;
-
-		    if( scalar(keys %$arcversions) > 1 )
-		    {
-			$out .= '</li>';
-		    }
-		}
+		$out .=
+		  (
+		   "<tr><td>".
+		   &radio("arc_${arc_id}__select_version",
+			  'deactivate',
+			  0,
+			  {
+			   id => "arc_${arc_id}__activate_version--undef",
+			  }).
+		   "</td><td>".
+		   "<label for=\"arc_${arc_id}__activate_version--undef\">".
+		   loc("Deactivate group").
+		   "</label>".
+		   "</td></tr>".
+		   "</table></li>"
+		  );
 	    }
-
-#	    debug "after";
-
-	    if( scalar(keys %$arcversions) > 1 )
+	    else
 	    {
-		$out .= '</ul>';
+		$out .= '<li>'
+		  if( scalar(keys %$arcversions) > 1 );
+
+		if( $arc->obj->is_value_node )
+		{
+		    $arc = $arc->obj->first_arc('value');
+		    $arc_id = $arc->id;
+		}
+
+		my $arc_pred_name = $arc->pred->name;
+		my $arc_subj_id = $arc->subj->id;
+
+		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
+				      $arc->value,
+				      {
+				       arc => $arc_id,
+				       size => $size,
+				       rows => $rows,
+				       image_url => $args->{'image_url'}
+				      });
+
+		$out .= $arc->edit_link_html;
+
+		$out .= '</li>'
+		  if( scalar(keys %$arcversions) > 1 );
 	    }
 	}
-	else # no arc
-	{
-#	    debug "no arc";
 
-	    my $default = $args->{'default_value'} || '';
-	    my $subj_id = $subj->id;
-	    $out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
-				  $default,
-				  {
-				   size => $size,
-				   rows => $rows,
-				   maxw => $maxw,
-				   maxh => $maxh,
-				   image_url => $args->{'image_url'}
-				  });
-	}
+	$out .= '</ul>'
+	  if( scalar(keys %$arcversions) > 1 );
+    }
+    else # no arc
+    {
+	my $default = $args->{'default_value'} || '';
+	my $subj_id = $subj->id;
+	$out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
+			      $default,
+			      {
+			       size => $size,
+			       rows => $rows,
+			       maxw => $maxw,
+			       maxh => $maxh,
+			       image_url => $args->{'image_url'}
+			      });
     }
 
     return $out;
@@ -366,95 +344,85 @@ sub wub_date
 
     my $subj_id = $subj->id;
 
-    if( $newsubj )
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+
+    if( $args->{'disabled'} eq 'disabled' )
     {
-	my $fieldname = "newsubj_${newsubj}__pred_${pred}";
-	$out .= &calendar($fieldname, "",
+	my $arclist = $subj->arc_list($pred, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+    }
+    elsif( $subj->empty )
+    {
+	my $arc_id = $arc ? $arc->id : '';
+	my $fieldname = "arc_${arc_id}__pred_${pred}";
+	$out .= &calendar($fieldname, '',
 			  {
 			   id => $fieldname,
 			   size => $size,
-			   tdlabel => $tdlabel, label => $label
-			   });
+			  });
+	$out .= $arc->edit_link_html
+	  if( $arc );
     }
-    else
+    elsif( $subj->list($pred)->size > 1 )
     {
-	if( $subj->empty )
+	$out .= "<ul>";
+
+	foreach my $arc ( $subj->arc_list($pred) )
 	{
-	    my $arc_id = $arc ? $arc->id : '';
-	    my $fieldname = "arc_${arc_id}__pred_${pred}";
-	    $out .= &calendar($fieldname, '',
-			      {
-			       id => $fieldname,
-			       size => $size,
-			       tdlabel => $tdlabel, label => $label
-			      });
-	    if( $arc )
-	    {
-		$out .= $arc->edit_link_html;
-	    }
-	}
-	elsif( $subj->list($pred)->size > 1 )
-	{
-	    if( $tdlabel )
-	    {
-		$out .= "<label>${tdlabel}</label></td><td>";
-	    }
-
-	    $out .= "<ul>";
-
-	    foreach my $arc ( $subj->arc_list($pred) )
-	    {
-		if( $arc->realy_objtype )
-		{
-		    $out .= "<li><em>This is not a date!!!</em></li>";
-		}
-		else
-		{
-		    $out .= "<li>";
-
-		    my $arc_id = $arc->id || '';
-		    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
-		    my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
-		    $out .= &calendar($fieldname, $value_new,
-				      {
-				       id => $fieldname,
-				       size => $size,
-				       tdlabel => $tdlabel, label => $label
-				      });
-		    if( $arc )
-		    {
-			$out .= $arc->edit_link_html;
-		    }
-
-		    $out .= "</li>";
-		}
-	    }
-
-	    $out .= "</ul>";
-	}
-	else
-	{
-	    my $arc = $subj->first_arc($pred);
 	    if( $arc->realy_objtype )
 	    {
-		$out .= "<em>This is not a date!!!</em>";
+		$out .= "<li><em>This is not a date!!!</em></li>";
 	    }
 	    else
 	    {
+		$out .= "<li>";
+
 		my $arc_id = $arc->id || '';
-		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
-		my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
+		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
+		my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
 		$out .= &calendar($fieldname, $value_new,
 				  {
 				   id => $fieldname,
 				   size => $size,
-				   tdlabel => $tdlabel, label => $label
 				  });
-		if( $arc )
-		{
-		    $out .= $arc->edit_link_html;
-		}
+		$out .= $arc->edit_link_html
+		  if( $arc );
+		$out .= "</li>";
 	    }
+	}
+
+	$out .= "</ul>";
+    }
+    else
+    {
+	my $arc = $subj->first_arc($pred);
+	if( $arc->realy_objtype )
+	{
+	    $out .= "<em>This is not a date!!!</em>";
+	}
+	else
+	{
+	    my $arc_id = $arc->id || '';
+	    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
+	    my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
+	    $out .= &calendar($fieldname, $value_new,
+			      {
+			       id => $fieldname,
+			       size => $size,
+			      });
+	    $out .= $arc->edit_link_html
+	      if( $arc );
 	}
     }
 
@@ -536,6 +504,17 @@ sub wub_select_tree
 			       id          => $args->{'id'},
 			       label_class => $args->{'label_class'},
 			      });
+
+    if( $args->{'disabled'} eq 'disabled' )
+    {
+	my $arclist = $subj->arc_list($pred_name, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+	return $out;
+    }
 
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
       $type->id .'"/>';
@@ -619,6 +598,17 @@ sub wub_select
 			       id          => $args->{'id'},
 			       label_class => $args->{'label_class'},
 			      });
+
+    if( $args->{'disabled'} eq 'disabled' )
+    {
+	my $arclist = $subj->arc_list($pred_name, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+	return $out;
+    }
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
       .'pred_'. $pred_name . $if .'">';
