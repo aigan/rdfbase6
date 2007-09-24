@@ -415,24 +415,25 @@ sub find_by_anything
     {
 	debug 3, "  obj as not an obj, It's a $coltype";
 
-	my( $valref, $obj );
+	my( $valref );
 	if( ref $val )
 	{
 	    $valref = $val;
 	}
+	$valref ||= \$val;
 
-	unless( $obj )
-	{
-	    $valref ||= \$val;
-	    $valtype ||= $this->get_by_label( $coltype );
-	    $val = $valtype->instance_class->parse( $valref,
-						    {
-						     %$args,
-						     aclim => 'active',
-						    }
-						  );
-	    push @new, $val;
-	}
+	$valtype ||= $this->get_by_label( $coltype );
+
+#	debug "Parsing literal using valtype ".$valtype->sysdesig;
+#	debug query_desig $valref;
+
+	$val = $valtype->instance_class->parse( $valref,
+						{
+						 %$args,
+						 aclim => 'active',
+						}
+					      );
+	push @new, $val;
     }
     #
     # 4. obj as list
@@ -4102,15 +4103,6 @@ sub wu
 
 	return $range->wuirc($pred, $args);
     }
-    elsif( $range->equals($textbox) or
-	   $range->scof($textbox) )
-    {
-	$args->{'rows'} ||= 0;
-	$args->{'cols'} ||= 57;
-	$args->{'size'} = $args->{'cols'};
-	$args->{'inputtype'} = 'textarea';
-	return Rit::Base::Widget::wub($pred_name, $args);
-    }
     elsif( $range->equals($image) or
 	$range->scof($image) )
     {
@@ -4119,6 +4111,17 @@ sub wu
     elsif( $range->scof($C_valdate) )
     {
 	return Rit::Base::Widget::wub_date($pred_name, $args);
+    }
+    elsif( $range->equals($textbox) or
+	   $range->scof($textbox) or
+	   ($args->{'rows'}||0) > 1
+	 )
+    {
+	$args->{'rows'} ||= 0;
+	$args->{'cols'} ||= 57;
+	$args->{'size'} = $args->{'cols'};
+	$args->{'inputtype'} = 'textarea';
+	return Rit::Base::Widget::wub($pred_name, $args);
     }
     else
     {
@@ -5009,6 +5012,8 @@ sub new
 	confess "Invalid id for node: $id";
     }
 
+    confess "class $class invalid" if ref $class;
+
     my $node = bless
     {
 	'id' => $id,
@@ -5651,7 +5656,7 @@ sub initiate_rel
 	    $node->populate_rel( $rec );
 
 	    # Handle long lists
-	    unless( ++$cnt % 25 )
+	    unless( ++$cnt % 100 )
 	    {
 		debug "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
@@ -5714,9 +5719,11 @@ sub initiate_rel
 	    }
 
 	    # Handle long lists
-	    unless( ++$cnt % 25 )
+	    unless( ++$cnt % 100 )
 	    {
+		debug "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
 	}
 
@@ -5811,7 +5818,7 @@ sub initiate_rev
 	$node->populate_rev( $rec, undef );
 
 	# Handle long lists
-	unless( ++$cnt % 25 )
+	unless( ++$cnt % 100 )
 	{
 	    debug "Populated $cnt";
 	    $Para::Frame::REQ->may_yield;
@@ -6141,7 +6148,7 @@ sub initiate_revprop
 	    $node->populate_rev( $rec, $args );
 
 	    # Handle long lists
-	    unless( ++$cnt % 25 )
+	    unless( ++$cnt % 100 )
 	    {
 		debug "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
