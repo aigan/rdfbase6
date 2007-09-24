@@ -3742,7 +3742,7 @@ sub set_implicit
     my $sth = $dbh->prepare("update arc set implicit=?, ".
 				   "updated=? ".
 				   "where ver=?");
-    $sth->execute($bool, $now_db, $u_node->id, $arc_ver);
+    $sth->execute($bool, $now_db, $arc_ver);
 
     $arc->{'arc_updated'} = $now;
     $arc->{'implicit'} = $val;

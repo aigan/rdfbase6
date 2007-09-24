@@ -638,6 +638,10 @@ sub sorted
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
+		unless( UNIVERSAL::isa $val, "Rit::Base::Object" )
+		{
+		    last; # skipping undef values...
+		}
 		$val = $val->$part;
 #		debug sprintf("      -> %s", $val);
 	    }
