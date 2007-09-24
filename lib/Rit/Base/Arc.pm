@@ -2808,16 +2808,16 @@ sub remove
 	# Remove arcs to value resource too
 	# ..if there are no other values at all (not even submitted)
 	if( $arc->pred->plain eq 'value' and
-	    $arc->subj->arc_list( 'value', undef, ['not_old'] )->size == 1 )
+	    $arc->subj->arc_list( 'value', undef, [['not_old','not_disregarded']] )->size == 1 )
 	{
 	    debug "There is just 1 not-old value.  Removing value-resource.";
 	    my $subj = $arc->subj;
-	    foreach my $oarc ( $subj->arc_list(undef,undef,['not_old'])->nodes )
+	    foreach my $oarc ( $subj->arc_list(undef,undef,[['not_old','not_disregarded']])->nodes )
 	    {
 		next if $oarc->equals( $arc ); # Handled below
 		$oarc->remove($args);
 	    }
-	    foreach my $oarc ( $subj->revarc_list(undef,undef,['not_old'])->nodes )
+	    foreach my $oarc ( $subj->revarc_list(undef,undef,[['not_old','not_disregarded']])->nodes )
 	    {
 		$oarc->remove($args);
 	    }
