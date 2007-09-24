@@ -112,7 +112,7 @@ sub init
 {
     my( $rule, $rec ) = @_;
 
-    debug "Initiated rule $rule->{id}";
+    debug 2, "Initiated rule $rule->{id}";
 
     $rule->{'a'} = $rule->first_prop('pred_1');
     $rule->{'b'} = $rule->first_prop('pred_2');
