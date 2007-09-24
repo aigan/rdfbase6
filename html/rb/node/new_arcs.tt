@@ -26,6 +26,7 @@
 
 [% tuid = q.param('tuid') %]
 [% DEFAULT tuid = u.id %]
+[% CALL req.note("Finding new and submitted arcs") %]
 
 <p><select name="tuid">
    <option value="-1">-- Select --</option>
@@ -53,6 +54,7 @@
 <table class="admin">
 
 [% IF all %]
+[% CALL req.note("Displaying all $state arcs") %]
 <tr><th>Do
     <th>[% sort('Created by', 'created_by') %]
     <th>[% sort('id', 'id') %]
@@ -63,6 +65,10 @@
 
 [% FOREACH arc IN find({is='arc'},{arclim=[state]}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
    [% tr2 %]
+      [% UNLESS loop.count % 100 %]
+         [% CALL req.may_yield %]
+         [% CALL req.note("viewing new arc $loop.count") %]
+      [% END %]
       <td>[% checkbox("arc_$arc.id",1,1) %]
       <td>[% arc.created_by.wu_jump %]</td>
       <td>[% jump(arc.id, arc.form_url) %]</td>
@@ -73,6 +79,7 @@
    </tr>
 [% END %]
 [% ELSE %]
+[% CALL req.note("Displaying some $state arcs") %]
 <tr><th>Do
     <th>[% sort('id', 'id') %]
     <th>[% sort('Created', 'created') %]
@@ -82,6 +89,10 @@
 
 [% FOREACH arc IN find({is='arc', created_by=tuid},{arclim=[state]}).find(parse_query_props(q.param('filter'))).sorted(order, direction) %]
    [% tr2 %]
+      [% UNLESS loop.count % 100 %]
+         [% CALL req.may_yield %]
+         [% CALL req.note("viewing new arc $loop.count") %]
+      [% END %]
       <td>[% checkbox("arc_$arc.id",1,1) %]
       <td>[% jump(arc.id, arc.form_url) %]</td></td>
       <td>[% arc.created %]</td>
