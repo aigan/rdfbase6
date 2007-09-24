@@ -249,12 +249,15 @@ END;
 
 </table>
 
-
 [% IF include_rev %]
 <table class="admin" style="margin-top:2em">
 <tr><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
 [% FOREACH pred IN node.revlist_preds('',arclim).sorted %]
    [% FOREACH arc IN node.revarc_list(pred,'',arclim).sorted %]
+      [% UNLESS loop.count % 100 %]
+         [% CALL req.may_yield %]
+         [% debug(0, "Rev row $loop.count") %]
+      [% END %]
       <tr>
       <td>
       [% IF arc.direct %]
@@ -276,6 +279,10 @@ END;
 [% IF include_inactive %]
 [% FOREACH pred IN node.revlist_preds('','inactive').sorted %]
    [% FOREACH arc IN node.revarc_list(pred,'','inactive').sorted %]
+      [% UNLESS loop.count % 100 %]
+         [% CALL req.may_yield %]
+         [% debug(0, "Rev inact row $loop.count") %]
+      [% END %]
       <tr>
       <td>
       [% IF arc.direct %]
