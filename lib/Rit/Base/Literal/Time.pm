@@ -75,7 +75,14 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Time" )
     {
-	return $val;
+	if( $valtype->equals( $val->this_valtype ) )
+	{
+	    return $val;
+	}
+	else
+	{
+	    return $class->new($val->plain, $valtype);
+	}
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {

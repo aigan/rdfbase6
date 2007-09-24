@@ -240,11 +240,21 @@ sub parse
 	$val_mod =~ s/^\s*\n//; # Leading empty lines
 	$val_mod =~ s/\n\s+$/\n/; # Trailing empty lines
 
+	# Return the incoming object if it's the same as the one we
+	# are going to create.
 	if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
 	{
 	    if( $val_mod eq $val->plain )
 	    {
-		return $val;
+		if( $valtype->equals( $val->this_valtype ) )
+		{
+		    return $val;
+		}
+		else
+		{
+#		    debug "The new literal has the same string ".
+#		      "content but diffrent valtype";
+		}
 	    }
 	}
 
