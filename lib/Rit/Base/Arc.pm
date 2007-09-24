@@ -569,7 +569,6 @@ sub create
 
 	debug "parsing value ".$props->{'value'} if $DEBUG;
 
-
 	# Returns is_undef if value undef and coltype is obj
 	$value_obj = Rit::Base::Resource->
 	  get_by_anything( $props->{'value'},
@@ -580,7 +579,7 @@ sub create
 			    pred_new => $pred,
 			   });
 
-	debug "value_obj is now '$value_obj'" if $DEBUG;
+	debug "value_obj is now ".$value_obj->sysdesig if $DEBUG;
 
 	if( $value_obj->defined )
 	{
@@ -2995,14 +2994,17 @@ Returns: The removal arc
 
 sub create_removal
 {
-    my( $arc, $args ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     # Should only create removals for submitted or active arcs
+
+    # The create() method will take care of the activation of the
+    # removal if args activate_new_arcs is true.
 
     return Rit::Base::Arc->create({
 				   common      => $arc->common_id,
 				   replaces    => $arc->id,
-				   active      => 0,
 				   subj        => $arc->{'subj'},
 				   pred        => $arc->{'pred'},
 				   value       => is_undef,
@@ -3333,6 +3335,10 @@ sub set_value
 Sets the pred to what we get from L<Rit::Base::Resource/get> called
 from L<Rit::Base::Pred>.
 
+The old are will be removed with a removal and a new arc will be
+created, not as a new version. A new version of an arc can only have a
+diffrent value, not a diffrent subj or pred.
+
 Returns: the arc changed, or the same arc
 
 =cut
@@ -3351,13 +3357,14 @@ sub set_pred
     {
 	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->plain."\n" if $DEBUG;
 
-	my $narc = $arc->create({
-				 read_access  => $arc->read_access->id,
-				 write_access => $arc->write_access->id,
-				 subj         => $arc->subj->id,
-				 pred         => $new_pred,
-				 value        => $arc->value,
-				}, $args);
+	my $narc = Rit::Base::Arc->
+	  create({
+		  read_access  => $arc->read_access->id,
+		  write_access => $arc->write_access->id,
+		  subj         => $arc->subj->id,
+		  pred         => $new_pred,
+		  value        => $arc->value,
+		 }, $args);
 
 	$arc->remove( $args );
 
@@ -3848,10 +3855,11 @@ Exceptions: see L</init>.
 sub get_by_rec
 {
     my $this = shift;
+    my $class = ref $this || $this;
     my $id = $_[0]->{'ver'} or
       confess "get_by_rec misses the ver param: ".datadump($_[0],2);
     return $Rit::Base::Cache::Resource{$id}
-      || $this->new($id, @_)->first_bless(@_);
+      || $class->new($id, @_)->first_bless(@_);
 }
 
 
