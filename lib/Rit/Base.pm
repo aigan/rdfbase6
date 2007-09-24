@@ -9,7 +9,7 @@ package Rit::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -29,7 +29,7 @@ use vars qw( $VERSION );
 
 BEGIN
 {
-    $VERSION = "6.51";
+    $VERSION = "6.52";
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
@@ -69,7 +69,6 @@ BEGIN
 These can be called with the class name
 
 =cut
-
 
 sub init
 {
