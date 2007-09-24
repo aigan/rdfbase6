@@ -247,7 +247,7 @@ sub prop
     debug 3, "!!! get ".($node->id||'<undef>')."-> $name";
 
     confess "loc is a reserved dynamic property" if $name eq 'loc';
-    confess "This node is not an arc" if $name eq 'subj';
+    confess "This node is not an arc: ".datadump($node,2) if $name eq 'subj';
 
     my $values = $node->list($name, @_);
 
