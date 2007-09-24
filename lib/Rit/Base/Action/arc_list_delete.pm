@@ -39,7 +39,11 @@ sub handler
 
     foreach my $arc_id ( reverse sort @arc_id_list )
     {
-	Rit::Base::Arc->get($arc_id)->remove( { res => $res } );
+	my $arc = Rit::Base::Resource->get( $arc_id );
+	if( $arc->is_arc )
+	{
+	    $arc->remove( { res => $res } );
+	}
     }
 
     $res->autocommit;
