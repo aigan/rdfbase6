@@ -43,7 +43,7 @@
 <pre>[% query_desig(a.query) | html %]</pre>
 
 <p>With args:
-<pre>[% query_desig(a.query) | html %]</pre>
+<pre>[% query_desig(a.args) | html %]</pre>
 </p>
 
 [% BLOCK querypart %]
