@@ -613,7 +613,8 @@ sub wub_select
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
       .'pred_'. $pred_name . $if .'">';
 
-    my $default_value = $args->{'default_value'} || '';
+    my $default_value = $subj->prop( $pred_name )->id ||
+      $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if( $header );
 

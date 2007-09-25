@@ -4235,7 +4235,9 @@ sub wuirc
 	elsif( $inputtype eq 'select' )
 	{
 	    debug "Drawing a select for ". $range->desig;
-	    my $header = $args->{'header'} || Para::Frame::L10N::loc('Select');
+	    my $header = $args->{'header'} ||
+	      ( $args->{'default_value'} ? '' :
+		Para::Frame::L10N::loc('Select') );
 	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range,
 						   {
 						    %$args,
