@@ -383,6 +383,7 @@ sub wub_date
 	    if( $arc->realy_objtype )
 	    {
 		$out .= "<li><em>This is not a date!!!</em></li>";
+		$out .= $arc->edit_link_html;
 	    }
 	    else
 	    {
