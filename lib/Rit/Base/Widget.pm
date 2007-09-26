@@ -101,7 +101,7 @@ sub wub
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-#    Para::Frame::Logging->this_level(5);
+    Para::Frame::Logging->this_level(5);
 
     no strict 'refs';
     my $out = "";
@@ -704,6 +704,19 @@ sub aloc
 
 #######################################################################
 
+=head2 reset_wu_row
+
+=cut
+
+sub reset_wu_row
+{
+    $IDCOUNTER = 1;
+    return "";
+}
+
+
+#######################################################################
+
 =head2 next_wu_row
 
 =cut
@@ -740,6 +753,7 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
+     'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,
     };
