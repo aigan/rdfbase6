@@ -9,7 +9,7 @@ package Rit::Base::Undef;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -22,6 +22,7 @@ Rit::Base::Undef
 use Carp qw( cluck );
 use strict;
 use vars qw($AUTOLOAD);
+use Scalar::Util qw( looks_like_number );
 
 BEGIN
 {
@@ -356,6 +357,7 @@ sub cmp_numeric
 	if( $_[1]->defined )
 	{
 	    $val = $_[1]->desig;
+	    return 0 unless looks_like_number($val);
 	}
     }
     else
@@ -363,6 +365,7 @@ sub cmp_numeric
 	if( defined $_[1] )
 	{
 	    $val = $_[1];
+	    return 0 unless looks_like_number($val);
 	}
     }
     if( $_[2] ) # Reverse?
