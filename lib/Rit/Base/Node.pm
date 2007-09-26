@@ -9,7 +9,7 @@ package Rit::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -396,6 +396,8 @@ sub has_revpred
 
   $n->meets_proplim( $proplim, \%args )
 
+  $n->meets_proplim( $object, \%args )
+
 See L<Rit::Base::List/find> for docs.
 
 This also implements meets_proplim for arcs!!!
@@ -418,6 +420,12 @@ sub meets_proplim
 	debug "Node ".$node->sysdesig;
 	debug "Arclim ".$arclim_in->sysdesig;
     }
+
+    unless( ref $proplim and ref $proplim eq 'HASH' )
+    {
+	return $node->equals( $proplim, $args_in );
+    }
+
 
   PRED:
     foreach my $pred_part ( keys %$proplim )
