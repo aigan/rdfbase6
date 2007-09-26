@@ -35,7 +35,7 @@ use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( is_undef parse_propargs );
+use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
 use Rit::Base::Constants qw( $C_guest $C_login_account $C_full_access $C_guest_access );
 
 use base qw(Para::Frame::User);
@@ -335,9 +335,13 @@ sub set_default_propargs
     # request, it must be set for the request
 
     $Para::Frame::REQ->{'rb_default_propargs'} = undef;
-    my $args = parse_propargs( $_[1] );
+    if( $_[1] )
+    {
+	my $args = parse_propargs( $_[1] );
+	return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+    }
 
-    return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+    return undef;
 }
 
 #######################################################################
