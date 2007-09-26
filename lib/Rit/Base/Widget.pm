@@ -363,7 +363,8 @@ sub wub_date
     }
     elsif( $subj->empty )
     {
-	my $arc_id = $arc ? $arc->id : '';
+	my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+
 	my $fieldname = "arc_${arc_id}__pred_${pred}";
 	$out .= &calendar($fieldname, '',
 			  {
@@ -388,7 +389,7 @@ sub wub_date
 	    {
 		$out .= "<li>";
 
-		my $arc_id = $arc->id || '';
+		my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
 		my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
 		$out .= &calendar($fieldname, $value_new,
@@ -413,7 +414,7 @@ sub wub_date
 	}
 	else
 	{
-	    my $arc_id = $arc->id || '';
+	    my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
 	    my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
 	    $out .= &calendar($fieldname, $value_new,
