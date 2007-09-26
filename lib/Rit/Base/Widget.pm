@@ -150,7 +150,7 @@ sub wub
 			      });
 
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( ($args->{'disabled'}||'') eq 'disabled' )
     {
 	my $arclist = $subj->arc_list($pred, undef, $args);
 
@@ -353,7 +353,7 @@ sub wub_date
 			      });
 
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( ($args->{'disabled'}||'') eq 'disabled' )
     {
 	my $arclist = $subj->arc_list($pred, undef, $args);
 
