@@ -728,6 +728,11 @@ sub create
 		    }
 		}
 
+		if( $args->{'mark_updated'} )
+		{
+		    $arc->mark_updated;
+		}
+
 		return $arc;
 	    }
 
@@ -754,6 +759,11 @@ sub create
 		else
 		{
 		    $res->add_newarc( $arc );
+		}
+
+		if( $args->{'mark_updated'} )
+		{
+		    $arc->mark_updated;
 		}
 
 		return $arc;
@@ -1006,6 +1016,36 @@ sub updated
 {
     my( $arc ) = @_;
     return $arc->{'arc_updated'} || is_undef;
+}
+
+#######################################################################
+
+=head2 mark_updated
+
+  $a->mark_updated
+
+  $a->mark_updated( $time )
+
+Sets the update time to given time or now.
+
+Returns the new time as a L<Rit::Base::Literal::Time>
+
+=cut
+
+sub mark_updated
+{
+    my( $arc, $time_in ) = @_;
+
+    $time_in ||= now();
+    my $time = Rit::Base::Literal::Time->get($time_in);
+
+    my $dbix = $Rit::dbix;
+    my $date_db = $dbix->format_datetime($time);
+    my $st = "update arc set updated=? where ver=?";
+    my $sth = $dbix->dbh->prepare($st);
+    $sth->execute( $date_db, $arc->id );
+
+    return $arc->{'arc_updated'} = $time;
 }
 
 #######################################################################
@@ -2699,7 +2739,12 @@ sub meets_arclim
 
   $a->value_meets_proplim( $proplim )
 
+  $a->value_meets_proplim( $object )
+
 Always true if proplim is undef or an empty hashref
+
+If proplim is an object rather than an proplim, we check that the
+value is equal to the object.
 
 Returns: boolean
 
@@ -2710,15 +2755,14 @@ sub value_meets_proplim
     my( $arc, $proplim, $args_in ) = @_;
 
     return 1 unless $proplim;
-    unless( ref $proplim and ref $proplim eq 'HASH' )
-    {
-	confess "proplim should be a hash";
-    }
 
-    return 1 unless keys %$proplim;
-    if( $proplim->{'arclim'} )
+    if( ref $proplim and ref $proplim eq 'HASH' )
     {
-	confess "args given in proplim place";
+	return 1 unless keys %$proplim;
+	if( $proplim->{'arclim'} )
+	{
+	    confess "args given in proplim place";
+	}
     }
 
     if( my $obj = $arc->obj )
