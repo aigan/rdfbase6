@@ -702,7 +702,8 @@ sub find
 	$query = { 'name' => $query };
     }
 
-    my( $args ) = parse_propargs($args_in);
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
 
     ## Default criterions
     my $default = $args->{'default'} || {};
