@@ -51,8 +51,6 @@ use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais );
 #use Rit::Base::Constants qw( );
 
-our $IDCOUNTER = 1;
-
 =head1 DESCRIPTION
 
 
@@ -139,7 +137,7 @@ sub wub
     my $maxw = $args->{'maxw'};
     my $maxh = $args->{'maxh'};
 
-    $args->{'id'} ||= "arc___pred_${pred}__subj_". $subj->id ."__row_${IDCOUNTER}";
+    $args->{'id'} ||= "arc___pred_${pred}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
 
     $out .= label_from_params({
 			       label       => $args->{'label'},
@@ -162,7 +160,7 @@ sub wub
     elsif( not $subj )
     {
 	$out .=
-	  &{$inputtype}("arc___pred_${pred}__row_${IDCOUNTER}",	'',
+	  &{$inputtype}("arc___pred_${pred}__row_".$req->{'rb_wu_row'},	'',
 			{
 			 size => $size,
 			 rows => $rows,
@@ -272,7 +270,7 @@ sub wub
 		my $arc_pred_name = $arc->pred->name;
 		my $arc_subj_id = $arc->subj->id;
 
-		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_${IDCOUNTER}__subj_${arc_subj_id}",
+		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_".$req->{'rb_wu_row'}."__subj_${arc_subj_id}",
 				      $arc->value,
 				      {
 				       arc => $arc_id,
@@ -295,7 +293,7 @@ sub wub
     {
 	my $default = $args->{'default_value'} || '';
 	my $subj_id = $subj->id;
-	$out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_${IDCOUNTER}",
+	$out .= &{$inputtype}("arc___pred_${pred}__subj_${subj_id}__row_".$req->{'rb_wu_row'},
 			      $default,
 			      {
 			       size => $size,
@@ -710,7 +708,7 @@ sub aloc
 
 sub reset_wu_row
 {
-    $IDCOUNTER = 1;
+    $Para::Frame::REQ->{'rb_wu_row'} = 1;
     return "";
 }
 
@@ -723,7 +721,7 @@ sub reset_wu_row
 
 sub next_wu_row
 {
-    $IDCOUNTER++;
+    $Para::Frame::REQ->{'rb_wu_row'} ++;
     return "";
 }
 
@@ -736,7 +734,7 @@ sub next_wu_row
 
 sub wu_row
 {
-    return $IDCOUNTER;
+    return $Para::Frame::REQ->{'rb_wu_row'};
 }
 
 
