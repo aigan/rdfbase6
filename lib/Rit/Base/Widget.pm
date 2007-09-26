@@ -97,7 +97,8 @@ the query param "arc___pred_$pred" can be used for default new value
 sub wub
 {
     my( $pred, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
 
     Para::Frame::Logging->this_level(5);
 
