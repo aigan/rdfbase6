@@ -4173,7 +4173,7 @@ sub wuirc
     {
 	while( my $arc = $list->get_next_nos )
 	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= $arc->value->wu_jump .'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
 	return $out;
     }
