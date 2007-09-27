@@ -2159,10 +2159,6 @@ sub vacuum
 
     debug "vacuum arc $arc->{id}" if $DEBUG;
 
-    # Set global flag what we are in vacuum. Other methods will also
-    # call vacuum
-#    $Rit::Base::Arc::VACUUM = 1; # NO recursive vacuum
-
     return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig;
 
@@ -4148,7 +4144,7 @@ sub initiate_cache
     $arc->{'implicit'} = $implicit;
     $arc->{'indirect'} = $indirect;
     $arc->{'disregard'} ||= 0; ### Keep previous value
-    $arc->{'in_remove_chek'} = 0;
+    $arc->{'in_remove_check'} = 0;
     $arc->{'explain'} = []; # See explain() method
     $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
     $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
@@ -4339,24 +4335,13 @@ arcs.
 
 Returns: True if arc is to be disregarded
 
-TODO: Rewrite L</vacuum> and $Rit::Base::Arc::VACUUM
+TODO: Rewrite L</vacuum>
 
 =cut
 
 sub disregard
 {
-    my( $arc ) = @_;
-    if($arc->{'disregard'})
-    {
-#	debug "Disregarding arc ".$arc->sysdesig."\n";
-#	debug "  value is $arc->{'disregard'}\n";
-	return 1;
-    }
-    elsif( $Rit::Base::Arc::VACUUM )
-    {
-	$arc->vacuum;
-    }
-    return $arc->{'disregard'};
+    return $_[0]->{'disregard'};
 }
 
 
