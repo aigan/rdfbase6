@@ -37,10 +37,10 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( valclean query_desig );
+use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop ); #);
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -375,6 +375,25 @@ sub form_setup
 
 =head2 modify_from_query
 
+  $search->modify_from_query
+
+Recognized parts are:
+
+  revprop
+  rev
+  prop
+  parse
+
+If parse is set to value, the value are parsed recognizing:
+
+  value
+  rev
+  arclim
+  clean
+  match
+  prio
+
+
 =cut
 
 sub modify_from_query
@@ -384,26 +403,52 @@ sub modify_from_query
     my $q = $Para::Frame::REQ->q;
 
     my %props;
-    foreach my $key ( $q->param() )
+    foreach my $param ( $q->param() )
     {
-         if( $key eq 'remove' )
-         {
-             foreach my $remove ( $q->param($key) )
-             {
-                 my( $type, $target ) = split(/_/, $remove, 2 );
-                 $search->broaden( $type, $target );
-             }
-         }
+	if( $param eq 'remove' )
+	{
+	    foreach my $remove ( $q->param($param) )
+	    {
+		my( $type, $target ) = split(/_/, $remove, 2 );
+		$search->broaden( $type, $target );
+	    }
+	}
 
 
 	#filter out other params
-	next unless $key =~ /^(revprop_|prop_|order_by|path_)/;
+	next unless $param =~ /^(revprop_|prop_|order_by|path_)/;
 
-	my( @vals ) =  $q->param($key);
+	my( @vals ) =  $q->param($param);
 
-	# Convert param key
-	$key =~ s/^revprop_/rev_/;
-	$key =~ s/^prop_//;
+#	debug "Parsing $param";
+
+	my $arg = parse_form_field_prop($param);
+
+#	debug "got: ".query_desig( $arg );
+
+	my $key;
+	if( $arg->{'revprop'} )
+	{
+	    $key = "rev_" . $arg->{'revprop'};
+	}
+	elsif( $arg->{'rev'} )
+	{
+	    $key = "rev_" . $arg->{'rev'};
+	}
+	elsif( $arg->{'prop'} )
+	{
+	    $key = $arg->{'prop'};
+	}
+	else
+	{
+	    confess "Param $param not recognized";
+	}
+
+	my $parse_value = 0;
+	if( ($arg->{'parse'}||'') eq 'value' )
+	{
+	    $parse_value = 1;
+	}
 
 	# Add values
 	foreach my $val ( @vals )
@@ -428,7 +473,51 @@ sub modify_from_query
 
 
 #	    debug "Setup search key $key\n"; ### DEBUG
-	    push @{ $props{$key} }, @values;
+	    if( $parse_value )
+	    {
+		foreach my $val ( @values )
+		{
+		    my $varg = parse_form_field_prop($val);
+		    my $val_out = $varg->{'value'};
+		    my $key_out = $key;
+
+		    if( $varg->{'rev'} )
+		    {
+			$key_out = 'rev_'.$key_out;
+		    }
+
+		    if( $varg->{'arclim'} )
+		    {
+			$key_out .= '_'. $varg->{'arclim'};
+		    }
+
+		    if( $varg->{'clean'} )
+		    {
+			$key_out .= '_clean';
+		    }
+
+		    if( $varg->{'match'} )
+		    {
+			$key_out .= '_'. $varg->{'match'};
+		    }
+
+		    if( $varg->{'prio'} )
+		    {
+			$key_out .= '_'. $varg->{'prio'};
+		    }
+
+		    unless( $val_out )
+		    {
+			confess "No value part found in param $val";
+		    }
+
+		    push @{ $props{$key_out} }, $val_out;
+		}
+	    }
+	    else
+	    {
+		push @{ $props{$key} }, @values;
+	    }
 	}
     }
     $search->modify( \%props );
