@@ -18,6 +18,7 @@ use strict;
 use Para::Frame::Utils qw( throw debug datadump );
 
 use Rit::Base::Utils qw( parse_propargs );
+use Rit::Base::L10N qw( loc );
 
 sub handler
 {
