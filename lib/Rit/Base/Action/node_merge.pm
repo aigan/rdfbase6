@@ -16,9 +16,9 @@ package Rit::Base::Action::node_merge;
 use strict;
 
 use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( parse_propargs );
-use Rit::Base::L10N qw( loc );
 
 sub handler
 {
