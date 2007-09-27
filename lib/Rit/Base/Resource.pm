@@ -4041,49 +4041,42 @@ sub wu
     my $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->valtype );
     my $range_scof = ( $args->{'range_scof'} ?
 		       $R->get($args->{'range_scof'}) : $pred->range_scof );
+    my $is_scof = ( $range_scof ? 1 : 0 );
 
+    if( $is_rev )
+    {
+	$args->{'is_rev'} = 'rev';
+	$range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->domain );
+	$range_scof = ( $args->{'range_scof'} ?
+			$R->get($args->{'range_scof'}) : $pred->domain );
+	debug "REV Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
+    }
+    if( $is_scof )
+    {
+	$range = $range_scof;
+	$args->{'range_is_scof'} = 1;
+    }
+
+    # Let classes handle their own with wuirc
+    if( $range->class_handled_by_perl_module )
+    {
+	debug "Redirecting to range->wuirc, range".
+	  ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
+
+	foreach my $module
+	  ( $range->list('class_handled_by_perl_module')->as_array )
+	{
+	    my $code = $module->code->plain;
+	    require(package_to_module($code));
+
+	    return $code->wuirc($pred, $args)
+	      if( $code->can('wuirc') );
+	}
+    } # Has returned if anyone handled wuirc...
 
     if( ( $pred->coltype eq 'obj' and ($range or $range_scof) ) or
 	$is_rev )
     {
-	my $is_scof = ( $range_scof ? 1 : 0 );
-
-	$range = ( $is_scof ? $range_scof : $range );
-	$args->{'range_is_scof'} = 1
-	  if( $is_scof );
-	$args->{'is_rev'} = 'rev'
-	  if( $is_rev );
-
-	debug "Redirecting to range->wuirc";
-
-	if( $is_rev )
-	{
-	    $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->domain );
-	    $range_scof = ( $args->{'range_scof'} ?
-			    $R->get($args->{'range_scof'}) : $pred->domain );
-	    debug "REV Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
-	}
-
-	debug "Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
-
-	if( $range->class_handled_by_perl_module )
-	{
-	    my $modules = $range->list('class_handled_by_perl_module');
-
-	    while( my $module = $modules->get_next_nos )
-	    {
-		my $code = $module->code->plain;
-		require(package_to_module($code));
-		debug "We have a perl_module: ". $code;
-
-		if( $code->can('wuirc') )
-		{
-		    debug "Wuirc gotten from perl_module";
-		    return $code->wuirc($pred, $args);
-		}
-	    }
-	}
-
 	return $range->wuirc($pred, $args);
     }
     elsif( $range->equals($image) or
@@ -4151,12 +4144,22 @@ sub wuirc
     my $out = '';
     my $is_scof = $args->{'range_is_scof'};
     my $is_rev = $args->{'is_rev'} || '';
-    my $list = ( $is_rev ? $subj->revarc_list( $pred->name, undef, 'explicit' )
+    my $is_pred = ( $is_scof ? 'scof' : 'is' );
+    my $list = ( $is_rev ?
+		 $subj->revarc_list( $pred->name, undef, 'explicit' )
 		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
+
+    if( $is_rev )
+    {
+	$list = $list->find({ subj => { $is_pred => $range }}); # Sort out arcs on range...
+    }
+    else
+    {
+	$list = $list->find({ obj => { $is_pred => $range }}); # Sort out arcs on range...
+    }
+
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $is_pred = ( $is_scof ? 'scof' : 'is' );
-    my $disabled = $args->{'disabled'};
 
     my $inputtype = $args->{'inputtype'} ||
       ( ( $range->revcount($is_pred) < 25 ) ?
@@ -4170,7 +4173,7 @@ sub wuirc
 			       label_class => delete $args->{'label_class'},
 			      });
 
-    if( $disabled )
+    if( $args->{'disabled'} eq 'disabled' )
     {
 	while( my $arc = $list->get_next_nos )
 	{
@@ -4182,6 +4185,8 @@ sub wuirc
     if( $list and
 	( $inputtype eq 'text' or not $singular ) )
     {
+	delete $args->{'default_value'}; # No default when values exist...
+
 	$out .= '<ul>'
 	  if( $list->size > 1);
 
@@ -4206,9 +4211,6 @@ sub wuirc
 			   $item->wu_jump({ label => 'Form' }) ) .']&nbsp;'.
 			     $arc->edit_link_html;
 
-	    debug "ID: ". $check_subj->id;
-	    debug "Desig: ". $check_subj->desig;
-
 	    if( $list->size > 1)
 	    {
 		$out .= '</li>';
@@ -4224,18 +4226,19 @@ sub wuirc
     {
 	if( $inputtype eq 'text' )
 	{
-	    debug "Drawing a text-input for ". $range->desig;
 	    my $type_str = ( $is_scof ? 'scof_' : 'type_' ) . $range->label .'__';
 
 	    $out .=
 	      Para::Frame::Widget::input('arc___'. $type_str .'subj_'.
 					 $subj->id .'__'. $is_rev .'pred_'.
 					 $pred->name,
-					 $args->{'default_value'}, {});
+					 $args->{'default_value'},
+					 {
+					  label => Para::Frame::L10N::loc('Add'),
+					 });
 	}
 	elsif( $inputtype eq 'select' )
 	{
-	    debug "Drawing a select for ". $range->desig;
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
@@ -4247,7 +4250,6 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
-	    debug "Drawing a select_tree for ". $range->desig;
 	    $out .= Rit::Base::Widget::wub_select_tree( $pred->name, $range, $args );
 	}
 	else
