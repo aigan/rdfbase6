@@ -4037,22 +4037,29 @@ sub wu
 	$is_rev = 'rev';
     }
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
-    my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
-    my $image = $R->get({label=>'image', scof=>'file'});
 
-    my $range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->valtype );
-    my $range_scof = ( $args->{'range_scof'} ?
-		       $R->get($args->{'range_scof'}) : $pred->range_scof );
-    my $is_scof = ( $range_scof ? 1 : 0 );
-
+    my( $range, $range_scof );
     if( $is_rev )
     {
 	$args->{'is_rev'} = 'rev';
-	$range = ( $args->{'range'} ? $R->get($args->{'range'}) : $pred->domain );
+	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+		   $pred->domain );
 	$range_scof = ( $args->{'range_scof'} ?
-			$R->get($args->{'range_scof'}) : $pred->domain );
-	debug "REV Range". ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
+			$R->get($args->{'range_scof'}) :
+			$pred->domain );
+	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
+	  $range->sysdesig;
     }
+    else
+    {
+	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+		   $pred->valtype );
+	$range_scof = ( $args->{'range_scof'} ?
+			$R->get($args->{'range_scof'}) :
+			$pred->range_scof );
+    }
+
+    my $is_scof = ( $range_scof ? 1 : 0 );
     if( $is_scof )
     {
 	$range = $range_scof;
@@ -4065,19 +4072,18 @@ sub wu
 	debug "Redirecting to range->wuirc, range".
 	  ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
 
-	foreach my $module
-	  ( $range->list('class_handled_by_perl_module')->as_array )
-	{
-	    my $code = $module->code->plain;
-	    require(package_to_module($code));
+	my $class = $range->instance_class;
+	debug "Instance class is $class";
 
-	    return $code->wuirc($pred, $args)
-	      if( $code->can('wuirc') );
+	if( $class->can('wuirc') )
+	{
+	    return $class->wuirc($pred, $args);
 	}
     } # Has returned if anyone handled wuirc...
 
-    if( ( $pred->coltype eq 'obj' and ($range or $range_scof) ) or
-	$is_rev )
+    my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
+    my $image = $R->get_by_label('image');
+    if( ($pred->objtype and $range ) or $is_rev )
     {
 	return $range->wuirc($pred, $args);
     }
@@ -4491,55 +4497,69 @@ sub find_class
 		return $pkg->use_class;
 	    }
 
-
 #	    debug "  Handled by $class";
 	    push @classes, $class;
 	}
     }
 
-    if( $classes[1] ) # Multiple inheritance
+    if( $classes[0] )
     {
-	my $key = join '_', map $_->id, @classes;
-	unless( $Rit::Base::Cache::Class{ $key } )
+	my $package;
+	my $key = join '_', sort map $_->id, @classes;
+	if( $package = $Rit::Base::Cache::Class{ $key } )
 	{
-	    no strict "refs";
-	    my @classnames =  map $_->first_prop('code')->plain, @classes;
-	    my $package = "Rit::Base::Metaclass::$key";
+	    return $package;
+	}
+
+	my( @classnames );
+	foreach my $class ( @classes )
+	{
+	    my $classname = $class->first_prop('code')->plain;
+	    unless( $classname )
+	    {
+		debug datadump($class,2);
+		confess "No classname found for class $class->{id}";
+	    }
+
+	    eval
+	    {
+		require(package_to_module($classname));
+	    };
+	    if( $@ )
+	    {
+		debug $@;
+	    }
+	    else
+	    {
+		push @classnames, $classname;
+	    }
+	}
+
+	no strict "refs";
+	if( $classnames[1] ) # Multiple inheritance
+	{
+	    $package = "Rit::Base::Metaclass::$key";
 #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
 				    @classnames,
 				    "Rit::Base::Resource");
-	    foreach my $classname ( @classnames )
-	    {
-		require(package_to_module($classname));
-	    }
-	    $Rit::Base::Cache::Class{ $key } = $package;
 	}
-#	debug "Class Multi $key -> ".$node->desig;
-	return $Rit::Base::Cache::Class{ $key };
-    }
-    elsif( $classes[0] )
-    {
-	no strict "refs";
-	my $classname = $classes[0]->first_prop('code')->plain;
-	unless( $classname )
+	elsif( $classnames[0] ) # Single inheritance
 	{
-	    debug datadump($classes[0],2);
-	    confess "No classname found for class $classes[0]->{id}";
+	    my $classname = $classnames[0];
+	    $package = "Rit::Base::Metaclass::$classname";
+	    #	    debug "Creating package $package";
+	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 	}
-	require(package_to_module($classname));
+	else
+	{
+	    $package = "Rit::Base::Resource";
+	}
 
-	my $metaclass = "Rit::Base::Metaclass::$classname";
-#	    debug "Creating package $package";
-	@{"${metaclass}::ISA"} = ($classname, "Rit::Base::Resource");
+	return $Rit::Base::Cache::Class{ $key } = $package;
+    }
 
-#	debug "Class $classname -> ".$node->desig;
-	return $metaclass;
-    }
-    else
-    {
-	return "Rit::Base::Resource";
-    }
+    return "Rit::Base::Resource";
 }
 
 
@@ -4624,8 +4644,15 @@ sub on_class_perl_module_change
     my $modules = $node->list('class_handled_by_perl_module',undef,'relative');
     while( my $module = $modules->get_next_nos )
     {
-	my $code = $module->code->plain;
-	require(package_to_module($code));
+	eval
+	{
+	    my $code = $module->code->plain;
+	    require(package_to_module($code));
+	};
+	if( $@ )
+	{
+	    debug $@;
+	}
     }
 
     if( $node->isa('Rit::Base::Literal::Class') )
@@ -4728,7 +4755,14 @@ sub rebless
 	debug "  from $class_old\n    to $class_new";
 	unless($class_new =~ /^Rit::Base::Metaclass::/ )
 	{
-	    require(package_to_module($class_new));
+	    eval
+	    {
+		require(package_to_module($class_new));
+	    };
+	    if( $@ )
+	    {
+		debug $@;
+	    }
 	}
 
 	if( $node->isa("Rit::Base::Metaclass") )
@@ -6390,15 +6424,32 @@ sub this_coltype
   $node->instance_class
 
 Compatible with L<Rit::Base::Literal::Class/instance_class>. This will
-always return C<Rit::Base::Resource>. Even for value resources.
+return the class given by C<class_handled_by_perl_module> and defaults
+to C<Rit::Base::Resource>. Even for value resources.
 
-TODO: make value ersources literal objects
+TODO: make value resources literal objects
 
 =cut
 
 sub instance_class
 {
-    return 'Rit::Base::Resource';
+    my $classname = 'Rit::Base::Resource';
+    if( my $class = $_[0]->first_prop('class_handled_by_perl_module') )
+    {
+	$classname = $class->first_prop('code')->plain
+	  or confess "No classname found for class $class->{id}";
+	eval
+	{
+	    require(package_to_module($classname));
+	};
+	if( $@ )
+	{
+	    debug $@;
+	    $classname = 'Rit::Base::Resource';
+	}
+    }
+
+    return $classname;
 }
 
 
