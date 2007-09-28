@@ -3930,7 +3930,13 @@ sub get_by_rec_and_register
     if( my $arc = $Rit::Base::Cache::Resource{$id} )
     {
 #	debug "Re-Registring arc $id";
-	$arc->register_with_nodes;
+
+	# Calls init in case the arc init got an error the last time
+	# and hasn't got fully initialized. The init method will do a
+	# simple check and just return arc if it looks like it's
+	# initialized.
+
+	$arc->init->register_with_nodes;
 	return $arc;
     }
     else
