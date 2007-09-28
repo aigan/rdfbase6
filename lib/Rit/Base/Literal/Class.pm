@@ -314,31 +314,40 @@ sub instance_class
     {
 	if( my $class = $node->first_prop('class_handled_by_perl_module') )
 	{
-	    $classname = $class->first_prop('code')->plain
-	      or confess "No classname found for class $class->{id}";
-	    no strict "refs";
-	    require(package_to_module($classname));
-	}
-	else
-	{
-	    my $coltype = $node->coltype;
-
-	    if( $coltype eq 'valtext' )
+	    eval
 	    {
-		$classname = "Rit::Base::Literal::String";
-	    }
-	    elsif( $coltype eq 'valdate' )
+		$classname = $class->first_prop('code')->plain
+		  or confess "No classname found for class $class->{id}";
+		require(package_to_module($classname));
+	    };
+	    if( $@ )
 	    {
-		$classname = "Rit::Base::Literal::Time";
-	    }
-	    elsif( $coltype eq "valfloat" )
-	    {
-		$classname = "Rit::Base::Literal::String";
+		debug $@;
 	    }
 	    else
 	    {
-		confess "Coltype $coltype not supported";
+		$Rit::Base::Cache::Class{ $id } = $classname;
+		return $classname;
 	    }
+	}
+
+	my $coltype = $node->coltype;
+
+	if( $coltype eq 'valtext' )
+	{
+	    $classname = "Rit::Base::Literal::String";
+	}
+	elsif( $coltype eq 'valdate' )
+	{
+	    $classname = "Rit::Base::Literal::Time";
+	}
+	elsif( $coltype eq "valfloat" )
+	{
+	    $classname = "Rit::Base::Literal::String";
+	}
+	else
+	{
+	    confess "Coltype $coltype not supported";
 	}
 
 	$Rit::Base::Cache::Class{ $id } = $classname;
