@@ -31,8 +31,9 @@ BEGIN
 
 
 use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Widget qw( label_from_params calendar );
 
-use Rit::Base::Utils qw( );
+use Rit::Base::Utils qw( parse_propargs );
 
 use base qw( Para::Frame::Time Rit::Base::Literal );
 
@@ -207,6 +208,129 @@ sub date
 {
     return bless(Para::Frame::Time->get(@_),'Rit::Base::Literal::Time');
 }
+
+#######################################################################
+
+=head2 wuirc
+
+Display field for updating a date property of a node
+
+var node must be defined
+
+prop pred is required
+
+the query param "arc___pred_$pred__subj_$subjvarname" can be used for
+default new value
+
+=cut
+
+sub wuirc
+{
+    my( $class, $subj, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $q = $Para::Frame::REQ->q;
+
+    my $size = $args->{'size'} || 18;
+
+    my $newsubj = $args->{'newsubj'};
+    my $tdlabel = $args->{'tdlabel'};
+    my $label = $args->{'label'};
+    my $arc = $args->{'arc'};
+    my $arc_type = $args->{'arc_type'} || '';
+
+
+    my $subj_id = $subj->id;
+
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+
+    if( ($args->{'disabled'}||'') eq 'disabled' )
+    {
+	my $arclist = $subj->arc_list($pred, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+    }
+    elsif( $subj->empty )
+    {
+	my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+
+	my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
+	$out .= &calendar($fieldname, '',
+			  {
+			   id => $fieldname,
+			   size => $size,
+			  });
+	$out .= $arc->edit_link_html
+	  if( $arc );
+    }
+    elsif( $subj->list($pred)->size > 1 )
+    {
+	$out .= "<ul>";
+
+	foreach my $arc ( $subj->arc_list($pred) )
+	{
+	    if( $arc->realy_objtype )
+	    {
+		$out .= "<li><em>This is not a date!!!</em></li>";
+		$out .= $arc->edit_link_html;
+	    }
+	    else
+	    {
+		$out .= "<li>";
+
+		my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
+		my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
+		$out .= &calendar($fieldname, $value_new,
+				  {
+				   id => $fieldname,
+				   size => $size,
+				  });
+		$out .= $arc->edit_link_html
+		  if( $arc );
+		$out .= "</li>";
+	    }
+	}
+
+	$out .= "</ul>";
+    }
+    else
+    {
+	my $arc = $subj->first_arc($pred);
+	if( $arc->realy_objtype )
+	{
+	    $out .= "<em>This is not a date!!!</em>";
+	}
+	else
+	{
+	    my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+	    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
+	    my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
+	    $out .= &calendar($fieldname, $value_new,
+			      {
+			       id => $fieldname,
+			       size => $size,
+			      });
+	    $out .= $arc->edit_link_html
+	      if( $arc );
+	}
+    }
+
+    return $out;
+}
+
 
 #######################################################################
 
