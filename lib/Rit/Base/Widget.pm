@@ -97,8 +97,7 @@ the query param "arc___pred_$pred" can be used for default new value
 sub wub
 {
     my( $pred, $args_in ) = @_;
-    my( $args_parsed ) = parse_propargs($args_in);
-    my $args = {%$args_parsed}; # Shallow clone
+    my( $args ) = parse_propargs($args_in);
 
     Para::Frame::Logging->this_level(5);
 
@@ -367,7 +366,7 @@ sub wub_date
     {
 	my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 
-	my $fieldname = "arc_${arc_id}__pred_${pred}";
+	my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
 	$out .= &calendar($fieldname, '',
 			  {
 			   id => $fieldname,
