@@ -281,15 +281,18 @@ sub update_by_query
     my $fields_handled_count = $res->arc_fields_count;
     do
     {
+	debug 3, "----------------------";
+	debug 3, "In field handling loop";
+	debug 3, "Total fields handled: $fields_handled_count";
+	debug 3, "Handled last lopp: $fields_handled_delta";
+
 	foreach my $field (@arc_params)
 	{
-	    next if $res->field_handled( $field );
-
 	    if( $field =~ /^arc_.*$/ )
 	    {
 		$class->handle_query_arc( $field, $args );
 	    }
-	    # Was previously only be used for locations
+	    # Was previously only used for locations
 	    elsif($field =~ /^prop_(.*?)/)
 	    {
 		$class->handle_query_prop( $field, $args );
@@ -299,6 +302,10 @@ sub update_by_query
 	my $new_count = $res->arc_fields_count;
 	$fields_handled_delta = $new_count - $fields_handled_count;
 	$fields_handled_count = $new_count;
+	if( debug > 2 )
+	{
+	    debug 1, $res->sysdesig;
+	}
     } while $fields_handled_delta > 0;
 
     foreach my $param (@row_params)
@@ -387,16 +394,14 @@ Returns the number of changes
 
 sub handle_query_arc
 {
-    my( $class, $field, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $field, $args ) = @_;
 
     foreach my $value ( $Para::Frame::REQ->q->param($field) )
     {
 	$class->handle_query_arc_value( $field, $value, $args );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -415,15 +420,14 @@ Returns: the number of changes
 
 sub handle_query_arc_value
 {
-    my( $class, $param, $value, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $value, $args ) = @_;
 
-#    Para::Frame::Logging->this_level(4);
+    Para::Frame::Logging->this_level(4);
 
     die "missing value" unless defined $value;
 
     my $R = Rit::Base->Resource;
+    my $res = $args->{'res'};
 
     my $req = $Para::Frame::REQ;
     my $page = $req->page;
@@ -478,13 +482,14 @@ sub handle_query_arc_value
     }
 
     # Check conditions
+    my $key = $param;
     if( $if )
     {
 	if( $if =~ /subj/ )
 	{
 	    if( $subj->empty )
 	    {
-#		debug "Condition failed: $param";
+		debug "Condition failed: $key";
 		return 0;
 	    }
 	}
@@ -492,15 +497,17 @@ sub handle_query_arc_value
 	if( $if =~ /obj/ )
 	{
 	    my $obj = $R->get( $value );
+	    $key .= "__obj_".$obj->id;
 	    if( $obj->empty )
 	    {
-#		debug "Condition failed: $param";
+		debug "Condition failed: $key";
 		return 0;
 	    }
 	}
     }
 
-    $res->set_field_handled($param);
+    return if $res->field_handled($key);
+    $res->set_field_handled($key);
 
     # Sanity check of value
     #
@@ -654,8 +661,7 @@ sub handle_query_arc_value
     if( $file and ref $subj ) # Skip if subj doesn't exist
     {
 	debug "Got a fileupload, stated type: $file, value: $value";
-	return $res->changes - $changes_prev
-	  unless( $value );
+	return 1 unless( $value );
 
 	if( $file eq "image" ) # Check image operations (scaling etc)
 	{
@@ -812,7 +818,7 @@ sub handle_query_arc_value
 	elsif( not $arc_id and not length $value )
 	{
 	    # nothing changed
-	    return $res->changes - $changes_prev;
+	    return 0;
 	}
 	else
 	{
@@ -1094,16 +1100,14 @@ sub handle_query_arc_value
 	}
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 ###############################################################################
 
 sub handle_select_version
 {
-    my( $value, $arc_id, $q, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $value, $arc_id, $q, $args ) = @_;
 
     my $arc = Rit::Base::Arc->get( $arc_id )
       or confess("Couldn't get arc for selection from value: $value");
@@ -1165,7 +1169,7 @@ sub handle_select_version
 
     debug "Selection done.";
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 
@@ -1182,10 +1186,10 @@ Return number of changes
 
 sub handle_query_prop
 {
-    my( $class, $param, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $args ) = @_;
 
+    my $res = $args->{'res'};
+    return if $res->field_handled( $param );
     $res->set_field_handled( $param );
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
@@ -1193,7 +1197,7 @@ sub handle_query_prop
 	$class->handle_query_prop_value( $param, $value, $args );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1210,9 +1214,7 @@ TODO: translate this to a call to handle_query_arc
 
 sub handle_query_prop_value
 {
-    my( $class, $param, $value, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $value, $args ) = @_;
 
     die "missing value" unless defined $value;
 
@@ -1297,7 +1299,7 @@ sub handle_query_prop_value
 	$q->delete( $param ); # We will not add the same value twice
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1312,16 +1314,14 @@ Return number of changes
 
 sub handle_query_row
 {
-    my( $class, $param, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $args ) = @_;
 
     foreach my $value ( $Para::Frame::REQ->q->param($param) )
     {
 	$class->handle_query_row_value( $param, $value, $args );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1340,14 +1340,13 @@ inactive.
 
 sub handle_query_row_value
 {
-    my( $class, $param, $value, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $value, $args ) = @_;
 
     die "missing value" unless defined $value;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
+    my $res = $args->{'res'};
 
     my $arg = parse_form_field_prop($param);
 
@@ -1460,7 +1459,7 @@ sub handle_query_row_value
 	$res->add_to_deathrow( $arc );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1475,12 +1474,11 @@ Return number of changes
 
 sub handle_query_check_row
 {
-    my( $class, $param, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
+    my $res = $args->{'res'};
 
     my $arg = parse_form_field_prop($param);
 
@@ -1516,7 +1514,7 @@ sub handle_query_check_row
 	if( not $subj_id )
 	{
 	    # No arc present
-	    return $res->changes - $changes_prev;
+	    return 1;
 	}
 	else
 	{
@@ -1542,7 +1540,7 @@ sub handle_query_check_row
 	$arc->remove( $args );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1557,10 +1555,9 @@ Return number of changes
 
 sub handle_query_check_arc
 {
-    my( $class, $param, $arc_id, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $class, $param, $arc_id, $args ) = @_;
 
-    $res->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
+    $args->{'res'}->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
 
     return 0;
 }
@@ -1577,9 +1574,7 @@ Return number of changes
 
 sub handle_query_check_node
 {
-    my( $class, $param, $node_id, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $node_id, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -1593,7 +1588,7 @@ sub handle_query_check_node
     }
     debug "Saving node: ${node_id}. grep: ". grep( /^node_$node_id/, $q->param );
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 #########################################################################
@@ -1606,9 +1601,7 @@ sub handle_query_check_node
 
 sub handle_query_check_prop
 {
-    my( $class, $param, $pred_in, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $pred_in, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -1676,7 +1669,7 @@ sub handle_query_check_prop
 	}
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 
@@ -1692,9 +1685,7 @@ Return number of changes
 
 sub handle_query_check_revprop
 {
-    my( $class, $param, $pred_name, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-    my $changes_prev = $res->changes;
+    my( $class, $param, $pred_name, $args ) = @_;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -1753,7 +1744,7 @@ sub handle_query_check_revprop
 	}
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 
@@ -1770,10 +1761,6 @@ Return number of changes
 sub handle_query_newsubjs
 {
     my( $q, $newsubj_params, $args ) = @_;
-
-    $args ||= {};
-    my $res = $args->{'res'} ||= Rit::Base::Resource::Change->new;
-    my $changes_prev = $res->changes;
 
     my %newsubj;
     my %keysubjs;
@@ -1808,7 +1795,7 @@ sub handle_query_newsubjs
 	Rit::Base::Resource->create( $newsubj{$ns}, $args );
     }
 
-    return $res->changes - $changes_prev;
+    return 1;
 }
 
 
