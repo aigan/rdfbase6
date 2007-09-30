@@ -292,6 +292,15 @@ sub sysdesig
     $ident ||= 0;
     my $out = "";
 
+    if( $c->{'arc_field_handled'} )
+    {
+	$out .= "Arc fields handled:\n";
+	foreach my $field ( keys %{$c->{'arc_field_handled'}} )
+	{
+	    $out .= "  $field\n";
+	}
+    }
+
     my $deathrow = "";
     foreach my $node (values %{$c->{'deathrow'}})
     {
