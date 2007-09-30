@@ -38,7 +38,7 @@ use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs );
 use Rit::Base::Widget qw( aloc );
-use Rit::Base::Constants qw( $C_textbox );
+use Rit::Base::Constants qw( );
 
 use base qw( Rit::Base::Literal );
 
@@ -629,9 +629,10 @@ sub wuirc
 
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
+    my $tb = $R->get({name=>'textbox', scof=>'text'});
     if( ($args->{'rows'}||0) > 1 or
-	$range->equals($C_textbox) or
-	$range->scof($C_textbox) )
+	$range->equals($tb) or
+	$range->scof($tb) )
     {
 	$args->{'cols'} ||= 57;
 	$args->{'size'} = $args->{'cols'};
