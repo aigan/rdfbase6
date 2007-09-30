@@ -1248,7 +1248,28 @@ sub find_arcs
 	}
     }
 
-    return Rit::Base::List->new($arcs);
+    return Rit::Base::Arc::List->new($arcs);
+}
+
+
+#########################################################################
+
+=head2 list_class
+
+  $class->list_class
+
+This will return which subclass of L<Rit::Base::List> to use for lits
+of nodes blessed into this class.
+
+Example:
+
+  $pred->valtype->instance_class->list_class->new(\@nodes)
+
+=cut
+
+sub list_class
+{
+    return "Rit::Base::List";
 }
 
 

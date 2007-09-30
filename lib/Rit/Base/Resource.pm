@@ -43,12 +43,14 @@ use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 use Rit::Base::Node;
 use Rit::Base::Search;
 use Rit::Base::List;
+use Rit::Base::Arc::List;
 use Rit::Base::Arc;
 use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
 use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Literal::String;
 use Rit::Base::Pred;
+use Rit::Base::Pred::List;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
@@ -56,7 +58,7 @@ use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
 use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
-                             $C_class $C_literal_class );
+                             $C_class $C_literal_class $C_resource );
 
 use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_form_field_prop is_undef arc_lock
@@ -1406,7 +1408,7 @@ The unique node id as a plain string.
 
 sub id
 {
-#    confess "not a object" unless ref $_[0]; ### DEBUG
+#   confess "not a object" unless ref $_[0]; ### DEBUG
     return $_[0]->{'id'};
 }
 
@@ -1747,9 +1749,16 @@ sub list
 
     if( $name )
     {
+	my $pred;
+
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->plain;
+	    $pred = $name;
+	    $name = $pred->plain;
+	}
+	else
+	{
+	    $pred = Rit::Base::Pred->get($name);
 	}
 
 #	debug sprintf "Called %s->list(%s) with proplim:", $node->id, $name;
@@ -1813,12 +1822,13 @@ sub list
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    @arcs = Rit::Base::List->new(\@arcs)->
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
 	}
 
 
-	my $vals = Rit::Base::List->new([ map $_->value, @arcs ]);
+	my $vals = $pred->valtype->instance_class->list_class->
+	  new([ map $_->value, @arcs ]);
 
 	# Don't call find if proplim is empty
 	if( $proplim and (ref $proplim eq 'HASH' ) and not keys %$proplim )
@@ -1926,7 +1936,7 @@ sub list_preds
 
     my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
-    return Rit::Base::List->new(\@preds);
+    return Rit::Base::Pred::List->new(\@preds);
 }
 
 
@@ -1954,9 +1964,16 @@ sub revlist
 
     if( $name )
     {
+	my $pred;
+
 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
 	{
-	    $name = $name->plain;
+	    $pred = $name;
+	    $name = $pred->plain;
+	}
+	else
+	{
+	    $pred = Rit::Base::Pred->get($name);
 	}
 
 	my( $active, $inactive ) = $arclim->incl_act;
@@ -1984,11 +2001,12 @@ sub revlist
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    @arcs = Rit::Base::List->new(\@arcs)->
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
 	}
 
-	my $vals = Rit::Base::List->new([ map $_->subj, @arcs ]);
+	my $vals = $pred->valtype->instance_class->list_class->
+	  new([ map $_->subj, @arcs ]);
 
 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
@@ -2087,7 +2105,7 @@ sub revlist_preds
 
     my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
-    return Rit::Base::List->new(\@preds);
+    return Rit::Base::Pred::List->new(\@preds);
 }
 
 
@@ -2533,7 +2551,7 @@ sub has_value
 
 	    if( @arcs )
 	    {
-		foreach my $arc ( Rit::Base::List->new(\@arcs)->
+		foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
 				  unique_arcs_prio($uap)->as_array )
 		{
 		    return $arc unless $arc->is_removal;
@@ -2567,7 +2585,7 @@ sub has_value
 
 	    if( @arcs )
 	    {
-		return Rit::Base::List->new(\@arcs)->
+		return Rit::Base::Arc::List->new(\@arcs)->
 		  unique_arcs_prio($uap)->get_first_nos;
 	    }
 	}
@@ -2643,7 +2661,7 @@ sub has_value
 
 	if( @arcs )
 	{
-	    foreach my $arc ( Rit::Base::List->new(\@arcs)->
+	    foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
 			      unique_arcs_prio($uap)->as_array )
 	    {
 		return $arc unless $arc->is_removal;
@@ -3047,13 +3065,13 @@ sub arc_list
 	else
 	{
 #	    debug 1, "  No values for relprop $name found!";
-	    return Rit::Base::List->new_empty();
+	    return Rit::Base::Arc::List->new_empty();
 	}
 
 #	debug "  applying arclim";
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	my $lr = Rit::Base::List->new(\@arcs);
+	my $lr = Rit::Base::Arc::List->new(\@arcs);
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
@@ -3105,7 +3123,7 @@ sub arc_list
 		}
 #		debug "limit done";
 
-		$lr = Rit::Base::List->new(\@newlist);
+		$lr = Rit::Base::Arc::List->new(\@newlist);
 	    }
 	}
 
@@ -3144,11 +3162,11 @@ sub arc_list
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    return Rit::Base::List->new(\@arcs)->unique_arcs_prio($uap);
+	    return Rit::Base::Arc::List->new(\@arcs)->unique_arcs_prio($uap);
 	}
 	else
 	{
-	    return Rit::Base::List->new(\@arcs);
+	    return Rit::Base::Arc::List->new(\@arcs);
 	}
     }
 }
@@ -3203,12 +3221,12 @@ sub revarc_list
 	else
 	{
 #	    debug 3, "  No values for revprop $name found!";
-	    return Rit::Base::List->new_empty();
+	    return Rit::Base::Arc::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	my $lr = Rit::Base::List->new(\@arcs);
+	my $lr = Rit::Base::Arc::List->new(\@arcs);
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
@@ -3252,11 +3270,11 @@ sub revarc_list
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
-	    return Rit::Base::List->new(\@arcs)->unique_arcs_prio($uap);
+	    return Rit::Base::Arc::List->new(\@arcs)->unique_arcs_prio($uap);
 	}
 	else
 	{
-	    return Rit::Base::List->new(\@arcs);
+	    return Rit::Base::Arc::List->new(\@arcs);
 	}
     }
 }
@@ -4010,13 +4028,164 @@ sub link_paths
 
 #######################################################################
 
+=head2 wd
+
+  $n->wd( $pred, \%args )
+
+Calls L</wdirc> for the class given by
+C<$pred-E<gt>range-E<gt>instance_class>
+
+Stands for Widget for Displaying
+
+Returns: a HTML widget for displaying the value
+
+=cut
+
+sub wd
+{
+    my( $node, $pred_name, $args_in ) = @_;
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
+
+    my $R = Rit::Base->Resource;
+    my $rev = 0;
+
+    if( $pred_name =~ /^rev_(.*)$/ )
+    {
+	$pred_name = $1;
+	$rev = 1;
+    }
+    my $pred = Rit::Base::Pred->get_by_label($pred_name);
+
+    my( $range, $range_scof );
+    if( $rev )
+    {
+	$args->{'rev'} = 1;
+	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+		   $pred->first_prop('domain') || $C_resource );
+	$range_scof = ( $args->{'range_scof'} ?
+			$R->get($args->{'range_scof'}) :
+			$pred->first_prop('domain_scof') );
+	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
+	  $range->sysdesig;
+    }
+    else
+    {
+	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+		   $pred->valtype );
+	$range_scof = ( $args->{'range_scof'} ?
+			$R->get($args->{'range_scof'}) :
+			$pred->first_prop('range_scof') );
+    }
+
+    if( $range_scof )
+    {
+	$args->{'range_scof'} = $range_scof;
+	$range = $range_scof;
+    }
+    else
+    {
+	$args->{'range'} = $range;
+    }
+
+    # widget for updating subclass of range class
+    return $range->instance_class->wdirc($node, $pred, $args);
+}
+
+
+#######################################################################
+
+=head wdirc
+
+  $class->wdirc( $subj, $pred, \%args )
+
+  Widget for Displaying Instance of Range Class
+
+Example:
+
+  $pred->range->instance_class->wdirc($subj, $pred, $args);
+
+=cut
+
+sub wdirc
+{
+    my( $this, $subj, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = '';
+    my $is_scof = $args->{'range_scof'};
+    my $is_rev = $args->{'rev'} || '';
+    my $is_pred = ( $is_scof ? 'scof' : 'is' );
+    my $range = $args->{'range'} || $args->{'range_scof'};
+    unless( $range )
+    {
+	confess "Range missing";
+    }
+    my $list = ( $is_rev ?
+		 $subj->revarc_list( $pred->name, undef, 'explicit' )
+		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
+
+    if( $is_rev )
+    {
+	$list = $list->find({ subj => { $is_pred => $range }}); # Sort out arcs on range...
+    }
+    else
+    {
+	$list = $list->find({ obj => { $is_pred => $range }}); # Sort out arcs on range...
+    }
+
+    $out .= Para::Frame::Widget::label_from_params({
+			       label       => delete $args->{'label'},
+			       tdlabel     => delete $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => delete $args->{'label_class'},
+			      });
+
+    $out .= '<ul>'
+      if( $list->size > 1);
+
+    foreach my $arc ($list->as_array)
+    {
+	$out .= '<li>'
+	  if( $list->size > 1);
+
+	my $item;
+	if( $is_rev )
+	{
+	    $item = $arc->subj;
+	}
+	else
+	{
+	    $item = $arc->value;
+	}
+
+	$out .= $item->as_html;
+
+	if( $list->size > 1)
+	{
+	    $out .= '</li>';
+	}
+	else
+	{
+	    $out .= '<br/>';
+	}
+    }
+
+    return $out;
+}
+
+
+#######################################################################
+
 =head2 wu
 
   $n->wu( $pred, \%args )
 
-Calls L<Rit::Base::Widget/prop> with subj => $n
-
 Stands for Widget for Updating
+
+Calls L</wuirc> for the class given by
+C<$pred-E<gt>range-E<gt>instance_class>
 
 Returns: a HTML widget for updating the value
 
@@ -4028,27 +4197,25 @@ sub wu
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
-    $args->{'subj'} = $node;
     my $R = Rit::Base->Resource;
-
-    my $is_rev = 0;
+    my $rev = 0;
 
     if( $pred_name =~ /^rev_(.*)$/ )
     {
 	$pred_name = $1;
-	$is_rev = 'rev';
+	$rev = 1;
     }
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
 
     my( $range, $range_scof );
-    if( $is_rev )
+    if( $rev )
     {
-	$args->{'is_rev'} = 'rev';
+	$args->{'rev'} = 1;
 	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->domain );
+		   $pred->first_prop('domain') || $C_resource );
 	$range_scof = ( $args->{'range_scof'} ?
 			$R->get($args->{'range_scof'}) :
-			$pred->domain );
+			$pred->first_prop('domain_scof') );
 	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
 	  $range->sysdesig;
     }
@@ -4058,61 +4225,21 @@ sub wu
 		   $pred->valtype );
 	$range_scof = ( $args->{'range_scof'} ?
 			$R->get($args->{'range_scof'}) :
-			$pred->range_scof );
+			$pred->first_prop('range_scof') );
     }
 
-    my $is_scof = ( $range_scof ? 1 : 0 );
-    if( $is_scof )
+    if( $range_scof )
     {
+	$args->{'range_scof'} = $range_scof;
 	$range = $range_scof;
-	$args->{'range_is_scof'} = 1;
-    }
-
-    # Let classes handle their own with wuirc
-    if( $range->class_handled_by_perl_module )
-    {
-	debug "Redirecting to range->wuirc, range".
-	  ( $is_scof ? ' (scof)' : '') .": ". $range->sysdesig;
-
-	my $class = $range->instance_class;
-	debug "Instance class is $class";
-
-	if( $class->can('wuirc') )
-	{
-	    return $class->wuirc($pred, $args);
-	}
-    } # Has returned if anyone handled wuirc...
-
-    my $textbox = $R->get_by_label('textbox');
-    my $image = $R->get_by_label('image');
-    if( ($pred->objtype and $range ) or $is_rev )
-    {
-	return $range->wuirc($pred, $args);
-    }
-    elsif( $range->equals($image) or
-	$range->scof($image) )
-    {
-	return Rit::Base::Widget::wub_image($pred_name, $args);
-    }
-    elsif( $range->scof($C_valdate) )
-    {
-	return Rit::Base::Widget::wub_date($pred_name, $args);
-    }
-    elsif( $range->equals($textbox) or
-	   $range->scof($textbox) or
-	   ($args->{'rows'}||0) > 1
-	 )
-    {
-	$args->{'rows'} ||= 0;
-	$args->{'cols'} ||= 57;
-	$args->{'size'} = $args->{'cols'};
-	$args->{'inputtype'} = 'textarea';
-	return Rit::Base::Widget::wub($pred_name, $args);
     }
     else
     {
-	return Rit::Base::Widget::wub($pred_name, $args);
+	$args->{'range'} = $range;
     }
+
+    # widget for updating subclass of range class
+    return $range->instance_class->wuirc($node, $pred, $args);
 }
 
 
@@ -4120,9 +4247,13 @@ sub wu
 
 =head wuirc
 
+  $class->wuirc( $subj, $pred, \%args )
+
   Widget for Updating Instance of Range Class
 
-  $pred->range->wuirc($subj, $pred, $args);
+Example:
+
+  $pred->range->instance_class->wuirc($subj, $pred, $args);
 
 Returns: a HTML widget for updating subj when a pred's range is a
 Resource..
@@ -4130,6 +4261,15 @@ Resource..
 All wuirc should handle: disabled
 
 Use args:
+  rev => 1
+    for reverse pred
+
+  range => $range_node
+    the range class. May not be the same as $class
+
+  range_scof => $range_scof_node
+    the range scof class. May not be the same as $class
+
   arc_type => singular
     if there should be only one arc with that pred from that subj.
 
@@ -4146,15 +4286,18 @@ Use args:
 
 sub wuirc
 {
-    my( $range, $pred, $args_in ) = @_;
+    my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    my $subj = $args->{'subj'} or confess "subj missing";
-
     my $out = '';
-    my $is_scof = $args->{'range_is_scof'};
-    my $is_rev = $args->{'is_rev'} || '';
+    my $is_scof = $args->{'range_scof'};
+    my $is_rev = $args->{'rev'} || '';
     my $is_pred = ( $is_scof ? 'scof' : 'is' );
+    my $range = $args->{'range'} || $args->{'range_scof'};
+    unless( $range )
+    {
+	confess "Range missing";
+    }
     my $list = ( $is_rev ?
 		 $subj->revarc_list( $pred->name, undef, 'explicit' )
 		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
@@ -4252,7 +4395,7 @@ sub wuirc
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
-	    $out .= Rit::Base::Widget::wub_select( $pred->name, $range,
+	    $out .= Rit::Base::Widget::wub_select( $subj, $pred->name, $range,
 						   {
 						    %$args,
 						    header => $header,
@@ -4260,7 +4403,7 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
-	    $out .= Rit::Base::Widget::wub_select_tree( $pred->name, $range, $args );
+	    $out .= Rit::Base::Widget::wub_select_tree( $subj, $pred->name, $range, $args );
 	}
 	else
 	{
@@ -6426,8 +6569,9 @@ sub this_coltype
   $node->instance_class
 
 Compatible with L<Rit::Base::Literal::Class/instance_class>. This will
-return the class given by C<class_handled_by_perl_module> and defaults
-to C<Rit::Base::Resource>. Even for value resources.
+return the class in the same manner as L</find_class>, as given by
+C<class_handled_by_perl_module> and defaults to
+C<Rit::Base::Resource>. Even for value resources.
 
 TODO: make value resources literal objects
 
@@ -6435,23 +6579,38 @@ TODO: make value resources literal objects
 
 sub instance_class
 {
-    my $classname = 'Rit::Base::Resource';
-    if( my $class = $_[0]->first_prop('class_handled_by_perl_module') )
+    my $package = 'Rit::Base::Resource';
+    if( my $class_node = $_[0]->first_prop('class_handled_by_perl_module') )
     {
-	$classname = $class->first_prop('code')->plain
-	  or confess "No classname found for class $class->{id}";
 	eval
 	{
+	    # Mirrors find_class()
+	    my $package;
+	    my $key = $class_node->id;
+	    if( $package = $Rit::Base::Cache::Class{ $key } )
+	    {
+		return $package;
+	    }
+
+	    my $classname = $class_node->first_prop('code')->plain
+	      or confess "No classname found for class $class_node->{id}";
+
 	    require(package_to_module($classname));
+
+	    $package = "Rit::Base::Metaclass::$classname";
+	    no strict "refs";
+	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
+	    $Rit::Base::Cache::Class{ $key } = $package;
+	    1;
 	};
 	if( $@ )
 	{
 	    debug $@;
-	    $classname = 'Rit::Base::Resource';
+	    $package = 'Rit::Base::Resource';
 	}
     }
 
-    return $classname;
+    return $package;
 }
 
 

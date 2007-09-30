@@ -994,7 +994,7 @@ sub list
 sub list_preds
 {
     my $pred = Rit::Base::Pred->get_by_label('value');
-    return Rit::Base::List->new([$pred]);
+    return Rit::Base::Pred::List->new([$pred]);
 }
 
 
@@ -1060,7 +1060,7 @@ sub revlist_preds
     my $arc = $_[0]->lit_revarc;
     unless( $arc )
     {
-	return Rit::Base::List->new_empty();
+	return Rit::Base::Pred::List->new_empty();
     }
 
     my $pred = $arc->pred;
@@ -1307,7 +1307,7 @@ pretend to have one...
 
 sub arc_list
 {
-    return Rit::Base::List->new_empty();
+    return Rit::Base::Arc::List->new_empty();
 }
 
 
@@ -1326,7 +1326,7 @@ sub revarc_list
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
-	return Rit::Base::List->new_empty();
+	return Rit::Base::Arc::List->new_empty();
     }
 
     if( $name )
@@ -1338,16 +1338,16 @@ sub revarc_list
 
 	unless( $name eq $arc->pred->plain )
 	{
-	    return Rit::Base::List->new_empty();
+	    return Rit::Base::Arc::List->new_empty();
 	}
     }
 
     unless( $arc->meets_arclim($arclim) )
     {
-	return Rit::Base::List->new_empty();
+	return Rit::Base::Arc::List->new_empty();
     }
 
-    my $vals = Rit::Base::List->new([$arc]);
+    my $vals = Rit::Base::Arc::List->new([$arc]);
 
     if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
@@ -1366,7 +1366,7 @@ sub revarc_list
 
 sub first_arc
 {
-    return Rit::Base::List->new_empty();
+    return Rit::Base::Arc::List->new_empty();
 }
 
 
