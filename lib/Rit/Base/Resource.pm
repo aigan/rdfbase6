@@ -4081,7 +4081,7 @@ sub wu
 	}
     } # Has returned if anyone handled wuirc...
 
-    my $textbox = $R->get({name=>'textbox', scof=>$C_valtext});
+    my $textbox = $R->get_by_label('textbox');
     my $image = $R->get_by_label('image');
     if( ($pred->objtype and $range ) or $is_rev )
     {
