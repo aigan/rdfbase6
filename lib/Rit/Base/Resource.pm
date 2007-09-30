@@ -4025,7 +4025,9 @@ Returns: a HTML widget for updating the value
 sub wu
 {
     my( $node, $pred_name, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
+
     $args->{'subj'} = $node;
     my $R = Rit::Base->Resource;
 
