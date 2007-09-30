@@ -340,6 +340,8 @@ sub wub_date
     my $tdlabel = $args->{'tdlabel'};
     my $label = $args->{'label'};
     my $arc = $args->{'arc'};
+    my $arc_type = $args->{'arc_type'} || '';
+
 
     my $subj_id = $subj->id;
 
@@ -363,7 +365,7 @@ sub wub_date
     }
     elsif( $subj->empty )
     {
-	my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+	my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 
 	my $fieldname = "arc_${arc_id}__pred_${pred}";
 	$out .= &calendar($fieldname, '',
@@ -389,7 +391,7 @@ sub wub_date
 	    {
 		$out .= "<li>";
 
-		my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+		my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
 		my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
 		$out .= &calendar($fieldname, $value_new,
@@ -414,7 +416,7 @@ sub wub_date
 	}
 	else
 	{
-	    my $arc_id = ( $args->{'arc_type'} eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+	    my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
 	    my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
 	    $out .= &calendar($fieldname, $value_new,
@@ -494,8 +496,9 @@ sub wub_select_tree
 
     my $rev = $args->{'is_rev'} || '';
     my $subj = $args->{'subj'} or confess "subj missing";
+    my $arc_type = $args->{'arc_id'} || '';
     my $arc_id = $args->{'arc_id'} ||
-      ( $args->{'arc_type'} eq 'singular' ? 'singular' : '' );
+      ( $arc_type eq 'singular' ? 'singular' : '' );
     my $arc;
 
     $out .= label_from_params({
@@ -600,7 +603,7 @@ sub wub_select
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( ($args->{'disabled'}||'') eq 'disabled' )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -710,6 +713,7 @@ sub aloc
 
 sub reset_wu_row
 {
+    debug "Resetting wu row";
     $Para::Frame::REQ->{'rb_wu_row'} = 1;
     return "";
 }
