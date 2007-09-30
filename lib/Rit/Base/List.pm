@@ -389,7 +389,9 @@ sub find
     debug "Return ".(scalar @newlist)." results for ".
       query_desig($tmpl) if $DEBUG;
 
-    return Rit::Base::List->new(\@newlist);
+    my $class = ref $l;
+
+    return $class->new(\@newlist);
 }
 
 
@@ -726,6 +728,7 @@ A List object with arc duplicates filtered out
 
 sub unique_arcs_prio
 {
+    confess "FIXME";
     my( $list, $sortargs_in ) = @_;
 
     my $sortargs = Rit::Base::Arc::Lim->parse($sortargs_in);
@@ -1806,8 +1809,7 @@ AUTOLOAD
     return if $AUTOLOAD =~ /DESTROY$/;
     my $propname = $AUTOLOAD;
     my $self = CORE::shift;
-    my $class = ref($self) eq 'Rit::Base::List'
-	or confess "Wrong class: ".ref($self)."\n";
+    my $class = ref($self);
     my $thingtype = ref $self;
 
     #Logging mark don't work in AUTOLOAD
@@ -1909,6 +1911,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/active>
 
 sub active
 {
+    confess "FIXME";
     $_[0]->new([grep $_->active, @{$_[0]}]);
 }
 
@@ -1924,6 +1927,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/direct>
 
 sub direct
 {
+    confess "FIXME";
     $_[0]->new([grep $_->direct, @{$_[0]}]);
 }
 
@@ -1939,6 +1943,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/submitted>
 
 sub submitted
 {
+    confess "FIXME";
     $_[0]->new([grep $_->submitted, @{$_[0]}]);
 }
 
@@ -1954,6 +1959,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/is_new>
 
 sub is_new
 {
+    confess "FIXME";
     $_[0]->new([grep $_->is_new, @{$_[0]}]);
 }
 
@@ -1969,6 +1975,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/old>
 
 sub old
 {
+    confess "FIXME";
     $_[0]->new([grep $_->old, @{$_[0]}]);
 }
 
@@ -1984,6 +1991,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/inactive>
 
 sub inactive
 {
+    confess "FIXME";
     $_[0]->new([grep $_->inactive, @{$_[0]}]);
 }
 
@@ -1999,6 +2007,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/indirect>
 
 sub indirect
 {
+    confess "FIXME";
     $_[0]->new([grep $_->indirect, @{$_[0]}]);
 }
 
@@ -2014,6 +2023,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/not_submitted>
 
 sub not_submitted
 {
+    confess "FIXME";
     $_[0]->new([grep $_->not_submitted, @{$_[0]}]);
 }
 
@@ -2029,6 +2039,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/explicit>
 
 sub explicit
 {
+    confess "FIXME";
     $_[0]->new([grep $_->explicit, @{$_[0]}]);
 }
 
@@ -2044,6 +2055,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/implicit>
 
 sub implicit
 {
+    confess "FIXME";
     $_[0]->new([grep $_->implicit, @{$_[0]}]);
 }
 
@@ -2059,6 +2071,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/not_new>
 
 sub not_new
 {
+    confess "FIXME";
     $_[0]->new([grep $_->not_new, @{$_[0]}]);
 }
 
@@ -2074,6 +2087,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/not_old>
 
 sub not_old
 {
+    confess "FIXME";
     $_[0]->new([grep $_->not_old, @{$_[0]}]);
 }
 
@@ -2089,6 +2103,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/not_disregarded>
 
 sub not_disregarded
 {
+    confess "FIXME";
     $_[0]->new([grep $_->not_disregarded, @{$_[0]}]);
 }
 
@@ -2104,6 +2119,7 @@ Returns: A new list with the arcs that are L<Rit::Base::Arc/disregarded>
 
 sub disregarded
 {
+    confess "FIXME";
     $_[0]->new([grep $_->disregarded, @{$_[0]}]);
 }
 
@@ -2119,6 +2135,7 @@ Not implemented
 
 sub meets_proplim
 {
+    confess "FIXME";
     confess "not implemented";
 }
 
@@ -2134,6 +2151,7 @@ Returns: A new list with the arcs that meets the arclim
 
 sub meets_arclim
 {
+    confess "FIXME";
     my( $l, $arclim ) = @_;
 
     $arclim = Rit::Base::Arc::Lim->parse($arclim);
