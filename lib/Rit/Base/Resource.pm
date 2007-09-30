@@ -4181,7 +4181,7 @@ sub wuirc
 			       label_class => delete $args->{'label_class'},
 			      });
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( ($args->{'disabled'}||'') eq 'disabled' )
     {
 	while( my $arc = $list->get_next_nos )
 	{
