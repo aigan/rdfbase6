@@ -31,7 +31,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug package_to_module );
 
-use Rit::Base::Constants;
+use Rit::Base::Constants qw( $C_literal );
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( is_undef parse_propargs );
 
@@ -331,23 +331,31 @@ sub instance_class
 	    }
 	}
 
-	my $coltype = $node->coltype;
-
-	if( $coltype eq 'valtext' )
+	if( $node->id == $C_literal->id )
 	{
-	    $classname = "Rit::Base::Literal::String";
-	}
-	elsif( $coltype eq 'valdate' )
-	{
-	    $classname = "Rit::Base::Literal::Time";
-	}
-	elsif( $coltype eq "valfloat" )
-	{
-	    $classname = "Rit::Base::Literal::String";
+	    # Should be a value literal
+	    $classname = "Rit::Base::Resource";
 	}
 	else
 	{
-	    confess "Coltype $coltype not supported";
+	    my $coltype = $node->coltype;
+
+	    if( $coltype eq 'valtext' )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    elsif( $coltype eq 'valdate' )
+	    {
+		$classname = "Rit::Base::Literal::Time";
+	    }
+	    elsif( $coltype eq "valfloat" )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
+	    else
+	    {
+		confess "Coltype $coltype not supported";
+	    }
 	}
 
 	$Rit::Base::Cache::Class{ $id } = $classname;
