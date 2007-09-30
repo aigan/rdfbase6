@@ -41,6 +41,7 @@ use Para::Frame::L10N qw( loc );
 use Para::Frame::Logging;
 
 use Rit::Base::List;
+use Rit::Base::Arc::List;
 use Rit::Base::Pred;
 use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
@@ -1661,7 +1662,7 @@ sub versions
     }
     $sth->finish;
 
-    return Rit::Base::List->new(\@arcs);
+    return Rit::Base::Arc::List->new(\@arcs);
 }
 
 
@@ -1693,7 +1694,7 @@ sub replaced_by
     }
     $sth->finish;
 
-    return Rit::Base::List->new(\@list);
+    return Rit::Base::Arc::List->new(\@list);
 }
 
 
@@ -4820,6 +4821,18 @@ sub default_write_access
 sub use_class
 {
     return "Rit::Base::Arc";
+}
+
+
+###############################################################
+
+=head2 list_class
+
+=cut
+
+sub list_class
+{
+    return "Rit::Base::Arc::List";
 }
 
 
