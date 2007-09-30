@@ -34,8 +34,11 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump trim throw );
+use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
-use Rit::Base::Utils qw( is_undef valclean truncstring query_desig );
+use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs );
+use Rit::Base::Widget qw( aloc );
+use Rit::Base::Constants qw( $C_textbox );
 
 use base qw( Rit::Base::Literal );
 
@@ -582,6 +585,258 @@ sub this_valtype
 
     return Rit::Base::Literal::Class->get_by_label('valtext');
 }
+
+#######################################################################
+
+=head2 wuirc
+
+Display field for updating a string property of a node
+
+var node must be defined
+
+prop pred is required
+
+document newsubj!
+
+the query param "arc___pred_$pred__subj_$nid" can be used for default new value
+
+the query param "arc___pred_$pred" can be used for default new value
+
+=cut
+
+sub wuirc
+{
+    my( $class, $subj, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    Para::Frame::Logging->this_level(5);
+
+    no strict 'refs';
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $req = $Para::Frame::REQ;
+    my $root_access = $req->user->has_root_access; # BOOL
+
+    unless( $req->user->has_root_access )
+    { ### FIXME: Not ready to use for non-admins...
+	$args =
+	  parse_propargs({
+			  %$args,
+			  unique_arcs_prio => ['submitted','active'],
+			  arclim => [['submitted','created_by_me'],'active'],
+			 });
+    }
+
+    my $range = $args->{'range'} || $args->{'range_scof'}
+      || $class->this_valtype;
+    if( ($args->{'rows'}||0) > 1 or
+	$range->equals($C_textbox) or
+	$range->scof($C_textbox) )
+    {
+	$args->{'cols'} ||= 57;
+	$args->{'size'} = $args->{'cols'};
+	$args->{'inputtype'} = 'textarea';
+    }
+
+
+    my $size = $args->{'size'} || 30;
+    my $smallestsize = $size - 10;
+    if( $smallestsize < 3 )
+    {
+	$smallestsize = 3;
+    }
+
+    my $inputtype = $args->{'inputtype'} || 'input';
+
+    my $predname;
+    if( ref $pred )
+    {
+	$predname = $pred->label;
+    }
+    else
+    {
+	$predname = $pred;
+	$pred = Rit::Base::Pred->get_by_label($predname);
+    }
+
+    debug 2, "wub $inputtype $predname for ".$subj->sysdesig;
+
+
+    my $newsubj = $args->{'newsubj'};
+    my $rows = $args->{'rows'};
+    my $maxw = $args->{'maxw'};
+    my $maxh = $args->{'maxh'};
+
+    $args->{'id'} ||= "arc___pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
+
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+
+    if( ($args->{'disabled'}||'') eq 'disabled' )
+    {
+	my $arclist = $subj->arc_list($predname, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+    }
+    elsif( not $subj )
+    {
+	$out .=
+	  &{$inputtype}("arc___pred_${predname}__row_".$req->{'rb_wu_row'},	'',
+			{
+			 size => $size,
+			 rows => $rows,
+			 image_url => $args->{'image_url'}
+			});
+	$out .= "<br/>";
+    }
+    elsif( $subj->list($predname,undef,['active','submitted'])->is_true )
+    {
+	my $subj_id = $subj->id;
+
+	my $arcversions =  $subj->arcversions($predname);
+	if( scalar(keys %$arcversions) > 1 )
+	{
+	    $out .= '<ul style="list-style-type: none" class="nopad">';
+	}
+
+	foreach my $arc_id (keys %$arcversions)
+	{
+	    my $arc = Rit::Base::Arc->get($arc_id);
+	    if( my $lang = $arc->obj->is_of_language(undef,'auto') )
+	    {
+		$out .= "(".$lang->desig."): ";
+	    }
+
+	    if( (@{$arcversions->{$arc_id}} > 1) or
+		$arcversions->{$arc_id}[0]->submitted )
+	    {
+		debug "  multiple";
+
+		$out .=
+		  (
+		   "<li><table class=\"wide suggestion nopad\">".
+		   "<tr><th colspan=\"2\">".
+		   aloc("Choose one").
+		   "</th></tr>"
+		  );
+
+		foreach my $version (@{$arcversions->{$arc_id}})
+		{
+		    debug "  version $version";
+		    $out .=
+		      (
+		       "<tr><td>".
+		       &hidden("version_${arc_id}", $version->id).
+		       &radio("arc_${arc_id}__select_version",
+			      $version->id,
+			      0,
+			      {
+			       id => $version->id,
+			      }).
+		       "</td>"
+		      );
+
+		    $out .= "<td style=\"border-bottom: 1px solid black\">";
+
+		    if( $version->is_removal )
+		    {
+			$out .= "<span style=\"font-weight: bold\">REMOVAL</span>";
+		    }
+		    else
+		    {
+			$out .= &{$inputtype}("undef",
+					      $version->value,
+					      {
+					       disabled => "disabled",
+					       class => "suggestion_field",
+					       size => $smallestsize,
+					       rows => $rows,
+					       version => $version,
+					       image_url => $args->{'image_url'}
+					      });
+		    }
+
+		    $out .= $version->edit_link_html;
+		    $out .= "</td></tr>";
+		}
+
+		$out .=
+		  (
+		   "<tr><td>".
+		   &radio("arc_${arc_id}__select_version",
+			  'deactivate',
+			  0,
+			  {
+			   id => "arc_${arc_id}__activate_version--undef",
+			  }).
+		   "</td><td>".
+		   "<label for=\"arc_${arc_id}__activate_version--undef\">".
+		   loc("Deactivate group").
+		   "</label>".
+		   "</td></tr>".
+		   "</table></li>"
+		  );
+	    }
+	    else
+	    {
+		$out .= '<li>'
+		  if( scalar(keys %$arcversions) > 1 );
+
+		if( $arc->obj->is_value_node )
+		{
+		    $arc = $arc->obj->first_arc('value');
+		    $arc_id = $arc->id;
+		}
+
+		my $arc_pred_name = $arc->pred->name;
+		my $arc_subj_id = $arc->subj->id;
+
+		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_".$req->{'rb_wu_row'}."__subj_${arc_subj_id}",
+				      $arc->value,
+				      {
+				       arc => $arc_id,
+				       size => $size,
+				       rows => $rows,
+				       image_url => $args->{'image_url'}
+				      });
+
+		$out .= $arc->edit_link_html;
+
+		$out .= '</li>'
+		  if( scalar(keys %$arcversions) > 1 );
+	    }
+	}
+
+	$out .= '</ul>'
+	  if( scalar(keys %$arcversions) > 1 );
+    }
+    else # no arc
+    {
+	my $default = $args->{'default_value'} || '';
+	my $subj_id = $subj->id;
+	$out .= &{$inputtype}("arc___pred_${predname}__subj_${subj_id}__row_".$req->{'rb_wu_row'},
+			      $default,
+			      {
+			       size => $size,
+			       rows => $rows,
+			       maxw => $maxw,
+			       maxh => $maxh,
+			       image_url => $args->{'image_url'}
+			      });
+    }
+
+    return $out;
+}
+
 
 #######################################################################
 
