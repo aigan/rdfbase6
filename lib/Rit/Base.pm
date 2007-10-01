@@ -87,11 +87,15 @@ sub init
 
     Para::Frame->add_hook('on_startup', \&init_on_startup);
 
-    Para::Frame->add_hook('before_db_commit', sub
-			  {
-			      Rit::Base::Resource->commit();
-			      Rit::Base::Arc->unlock_all();
-			  });
+    # Can't unlock all arcs in the middle of an operation. Wait until
+    # we are done. Also wait with resouyrces...
+    #
+#    Para::Frame->add_hook('before_db_commit', sub
+#			  {
+#			      Rit::Base::Resource->commit();
+#			      Rit::Base::Arc->unlock_all();
+#			  });
+
     Para::Frame->add_hook('after_db_rollback', sub
 			  {
 			      Rit::Base::Resource->rollback();
