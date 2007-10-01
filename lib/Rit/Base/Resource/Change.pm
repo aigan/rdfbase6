@@ -261,7 +261,7 @@ sub arc_fields_count
 
 sub field_handled
 {
-    return $_[0]->{'arc_field_handled'}{$_[1]} ? 1 : 0;
+    return $_[0]->{'field_handled'}{$_[1]} ? 1 : 0;
 }
 
 
@@ -273,7 +273,7 @@ sub field_handled
 
 sub set_field_handled
 {
-    return $_[0]->{'arc_field_handled'}{$_[1]} ++;
+    return $_[0]->{'field_handled'}{$_[1]} ++;
 }
 
 
