@@ -254,7 +254,7 @@ sub wuirc
 	$predname = $pred;
 	$pred = Rit::Base::Pred->get_by_label($predname);
     }
-    debug "Predname in date wuirc: $predname";
+    debug 2, "Predname in date wuirc: $predname";
 
     $out .= label_from_params({
 			       label       => $args->{'label'},
