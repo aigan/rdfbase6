@@ -781,7 +781,7 @@ sub wuirc
 			  }).
 		   "</td><td>".
 		   "<label for=\"arc_${arc_id}__activate_version--undef\">".
-		   loc("Deactivate group").
+		   Para::Frame::L10N::loc("Deactivate group").
 		   "</label>".
 		   "</td></tr>".
 		   "</table></li>"

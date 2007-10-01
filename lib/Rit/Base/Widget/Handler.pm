@@ -700,7 +700,7 @@ sub handle_query_arc_value
 	my $filename_in = $value;
 	my $suffix = "";
 
-	if( $filename_in =~ /\.(.*)/ )
+	if( $filename_in =~ /\.([^\.]+)$/ )
 	{
 	    $suffix = lc $1;
 	    debug "Suffix is $suffix";

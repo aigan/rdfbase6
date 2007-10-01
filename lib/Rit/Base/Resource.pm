@@ -4291,7 +4291,7 @@ sub wuirc
 
     my $out = '';
     my $is_scof = $args->{'range_scof'};
-    my $is_rev = $args->{'rev'} || '';
+    my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
     my $is_pred = ( $is_scof ? 'scof' : 'is' );
     my $range = $args->{'range'} || $args->{'range_scof'};
     unless( $range )

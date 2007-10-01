@@ -1097,7 +1097,15 @@ sub execute
 
     $args->{'materializer'} ||= \&Rit::Base::List::materialize;
 
-    $search->{'result'} = Rit::Base::List->new($result, $args);
+
+    if( $search->{'query'}{'arc'} )
+    {
+	$search->{'result'} = Rit::Base::Arc::List->new($result, $args);
+    }
+    else
+    {
+	$search->{'result'} = Rit::Base::List->new($result, $args);
+    }
 
     # Filter out arcs?
     if( my $uap = $args->{unique_arcs_prio} )

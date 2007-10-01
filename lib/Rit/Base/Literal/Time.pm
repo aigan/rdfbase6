@@ -244,6 +244,18 @@ sub wuirc
 
     my $subj_id = $subj->id;
 
+    my $predname;
+    if( ref $pred )
+    {
+	$predname = $pred->label;
+    }
+    else
+    {
+	$predname = $pred;
+	$pred = Rit::Base::Pred->get_by_label($predname);
+    }
+    debug "Predname in date wuirc: $predname";
+
     $out .= label_from_params({
 			       label       => $args->{'label'},
 			       tdlabel     => $args->{'tdlabel'},
@@ -266,7 +278,7 @@ sub wuirc
     {
 	my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
 
-	my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
+	my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
 	$out .= &calendar($fieldname, '',
 			  {
 			   id => $fieldname,
@@ -291,8 +303,8 @@ sub wuirc
 		$out .= "<li>";
 
 		my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
-		my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${$subj_id}";
-		my $value_new = $q->param("arc___pred_${pred}__subj_${$subj_id}") || $arc->value;
+		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
+		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") || $arc->value;
 		$out .= &calendar($fieldname, $value_new,
 				  {
 				   id => $fieldname,
@@ -316,8 +328,8 @@ sub wuirc
 	else
 	{
 	    my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
-	    my $fieldname = "arc_${arc_id}__pred_${pred}__subj_${subj_id}";
-	    my $value_new = $q->param("arc___pred_${pred}__subj_${subj_id}") || $subj->prop($pred);
+	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
+	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}") || $subj->prop($pred);
 	    $out .= &calendar($fieldname, $value_new,
 			      {
 			       id => $fieldname,
