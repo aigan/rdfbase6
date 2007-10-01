@@ -609,7 +609,7 @@ sub wuirc
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    Para::Frame::Logging->this_level(5);
+#    Para::Frame::Logging->this_level(5);
 
     no strict 'refs';
     my $out = "";
