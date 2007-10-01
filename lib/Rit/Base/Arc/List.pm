@@ -368,7 +368,7 @@ sub unique_arcs_prio
 	}
     }
 
-    return Rit::Base::List->new( \@arcs );
+    return Rit::Base::Arc::List->new( \@arcs );
 }
 
 #######################################################################
