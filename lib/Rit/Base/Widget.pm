@@ -89,8 +89,9 @@ To be used for preds with range_scof.
 
 sub wub_select_tree
 {
-    my( $subj, $pred_name, $type, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $subj, $pred_name, $type, $args ) = @_;
+
+    ### Given args MUST have been initialized and localizes!
 
     my $out = "";
     my $R = Rit::Base->Resource;
@@ -101,7 +102,12 @@ sub wub_select_tree
       ( $arc_type eq 'singular' ? 'singular' : '' );
     my $arc;
 
-    $out .= label_from_params({
+    unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
+    {
+	confess "type missing: ".datadump($type,2);
+    }
+
+     $out .= label_from_params({
 			       label       => $args->{'label'},
 			       tdlabel     => $args->{'tdlabel'},
 			       separator   => $args->{'separator'},
@@ -155,7 +161,7 @@ sub wub_select_tree
     {
 	$out .= '<div rel="'. $subtype->id .'" style="display: inline">';
 
-	$out .= wub_select_tree( $pred_name, $subtype, $args )
+	$out .= wub_select_tree( $subj, $pred_name, $subtype, $args )
 	  if( $subtype->has_revpred( 'scof' ) );
 
 	$out .= '</div>';

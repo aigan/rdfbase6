@@ -224,6 +224,7 @@ sub Constants ()
 sub on_done ()
 {
     Rit::Base::Arc->unlock_all();
+    Rit::Base::Resource->commit();
 }
 
 ######################################################################
