@@ -5624,10 +5624,18 @@ sub commit
 
     eval
     {
+	my $cnt = 0;
 	foreach my $node ( values %UNSAVED )
 	{
 	    debug "Saving node ".$node->sysdesig;
 	    $node->save;
+
+	    unless( ++$cnt % 100 )
+	    {
+		debug "Saved $cnt";
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
 	}
     };
     if( $@ )
