@@ -3104,7 +3104,7 @@ sub arc_list
 		}
 
 #		debug "proplim: ".query_desig($proplim);
-		my $proplist = Rit::Base::List->new($proplim);
+		my $proplist = Rit::Base::Arc::List->new($proplim);
 #		debug "Proplist contains:\n".query_desig($proplist);
 
 		my @newlist;
