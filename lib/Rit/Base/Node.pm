@@ -1005,7 +1005,7 @@ sub replace
 
 
 		debug 3, "  should we replace $arc->{id}?";
-		if( $arc->direct )
+		if( $arc->direct and $new->is_new )
 		{
 		    debug 3, "    yes!";
 		    $new->set_replaces( $arc, $args );
@@ -1020,7 +1020,7 @@ sub replace
 		{
 		    # Will deactivate replaced arc
 		    $new->submit($args) unless $new->submitted;
-		    $new->activate( $args );
+		    $new->activate( $args ) unless $new->active;
 		}
 
 		delete $del_pred{$pred_name};
