@@ -2327,8 +2327,17 @@ sub check_valtype
 		# Old value in range
 		$arc->set_value( $old_val, $newargs );
 	    }
+	    elsif( $arc_valtype->equals($c_resource) )
+	    {
+		debug "Trusting new given valtype";
+		$arc->set_value( $old_val, $newargs );
+	    }
 	    else
 	    {
+		debug "TRANSLATION OF VALTYPE";
+		debug "  for ".$arc->sysdesig;
+		debug " from ".$arc_valtype->sysdesig;
+		debug "   to ".$pred_valtype->sysdesig;
 		confess "FIXME";
 	    }
 	}
