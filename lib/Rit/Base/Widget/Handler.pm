@@ -396,9 +396,15 @@ sub handle_query_arc
 {
     my( $class, $field, $args ) = @_;
 
+    my $valuerow = 1;
     foreach my $value ( $Para::Frame::REQ->q->param($field) )
     {
-	$class->handle_query_arc_value( $field, $value, $args );
+	my $key = $field . "__valuerow_" . $valuerow;
+	unless( $args->{'res'}->field_handled( $key ) )
+	{
+	    $class->handle_query_arc_value( $field, $value, $args, $key );
+	}
+	$valuerow++;
     }
 
     return 1;
@@ -420,7 +426,7 @@ Returns: the number of changes
 
 sub handle_query_arc_value
 {
-    my( $class, $param, $value, $args ) = @_;
+    my( $class, $param, $value, $args, $key ) = @_;
 
 #    Para::Frame::Logging->this_level(4);
 
@@ -482,14 +488,13 @@ sub handle_query_arc_value
     }
 
     # Check conditions
-    my $key = $param;
     if( $if )
     {
 	if( $if =~ /subj/ )
 	{
 	    if( $subj->empty )
 	    {
-		debug "Condition failed: $key";
+		debug "Condition failed: $param";
 		return 0;
 	    }
 	}
@@ -497,16 +502,14 @@ sub handle_query_arc_value
 	if( $if =~ /obj/ )
 	{
 	    my $obj = $R->get( $value );
-	    $key .= "__obj_".$obj->id;
 	    if( $obj->empty )
 	    {
-		debug "Condition failed: $key";
+		debug "Condition failed: $param";
 		return 0;
 	    }
 	}
     }
 
-    return if $res->field_handled($key);
     $res->set_field_handled($key);
 
     # Sanity check of value

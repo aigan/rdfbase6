@@ -5621,6 +5621,7 @@ sub mark_updated
 sub commit
 {
 #    debug "Comitting Resource node changes";
+    return if $Para::Frame::FORK;
 
     eval
     {
