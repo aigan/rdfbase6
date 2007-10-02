@@ -1180,7 +1180,7 @@ sub get_result
 	throw('dbi',  $@ . "Values: ".join(", ", map{defined $_ ? "'$_'" : '<undef>'} @$values)."\n");
     }
 
-    if( debug > 2 )
+    if( debug > 3 )
     {
 	my $took = time - $time;
 	debug(sprintf("Execute: %2.2f", $took));
