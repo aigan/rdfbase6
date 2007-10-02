@@ -239,7 +239,7 @@ sub wuirc
     my $tdlabel = $args->{'tdlabel'};
     my $label = $args->{'label'};
     my $arc = $args->{'arc'};
-    my $arc_type = $args->{'arc_type'} || '';
+    my $arc_type = $args->{'arc_type'} || 'singular';
 
 
     my $subj_id = $subj->id;
@@ -276,9 +276,7 @@ sub wuirc
     }
     elsif( $subj->empty )
     {
-	my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
-
-	my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
+	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
 	$out .= &calendar($fieldname, '',
 			  {
 			   id => $fieldname,
@@ -295,8 +293,8 @@ sub wuirc
 	{
 	    if( $arc->realy_objtype )
 	    {
-		$out .= "<li><em>This is not a date!!!</em></li>";
-		$out .= $arc->edit_link_html;
+		$out .= "<li><em>This is not a date!!</em> ".
+		  $arc->edit_link_html ."</li>";
 	    }
 	    else
 	    {
@@ -323,7 +321,7 @@ sub wuirc
 	my $arc = $subj->first_arc($pred);
 	if( $arc->realy_objtype )
 	{
-	    $out .= "<em>This is not a date!!!</em>";
+	    $out .= "<em>This is not a date!</em>";
 	}
 	else
 	{
