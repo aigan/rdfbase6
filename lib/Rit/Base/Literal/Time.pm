@@ -300,7 +300,7 @@ sub wuirc
 	    {
 		$out .= "<li>";
 
-		my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+		my $arc_id = $arc->id;
 		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
 		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") || $arc->value;
 		$out .= &calendar($fieldname, $value_new,
@@ -325,7 +325,8 @@ sub wuirc
 	}
 	else
 	{
-	    my $arc_id = ( $arc_type eq 'singular' ? 'singular' : $arc ? $arc->id : '' );
+	    my $arc_id = ( $arc_type eq 'singular' ?
+			   'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
 	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}") || $subj->prop($pred);
 	    $out .= &calendar($fieldname, $value_new,
