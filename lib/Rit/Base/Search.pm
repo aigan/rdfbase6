@@ -9,7 +9,7 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -1117,7 +1117,7 @@ sub execute
 	}
     }
 
-    debug(3, "Got result ".datadump($search->{'result'}));
+    debug(4, "Got result ".datadump($search->{'result'}));
 
     return '';
 }
@@ -1282,7 +1282,7 @@ sub build_sql
 
     my $min_prio = $main_where[0]->{'prio'} || 0;
 
-    if( debug > 2 )
+    if( debug > 3 )
     {
 	my $report = "";
 	$report .= "MAIN WHERE  ".datadump(\@main_where);
