@@ -278,7 +278,7 @@ sub update_by_query
 
     # Parse the arcs in several passes, until all is done
     my $fields_handled_delta = 0;
-    my $fields_handled_count = $res->arc_fields_count;
+    my $fields_handled_count = $res->fields_count;
     do
     {
 	debug 3, "----------------------";
@@ -299,7 +299,7 @@ sub update_by_query
 	    }
 	}
 
-	my $new_count = $res->arc_fields_count;
+	my $new_count = $res->fields_count;
 	$fields_handled_delta = $new_count - $fields_handled_count;
 	$fields_handled_count = $new_count;
 	if( debug > 2 )
@@ -494,7 +494,7 @@ sub handle_query_arc_value
 	{
 	    if( $subj->empty )
 	    {
-		debug "Condition failed: $param";
+		debug "Condition failed: $key";
 		return 0;
 	    }
 	}
@@ -504,7 +504,7 @@ sub handle_query_arc_value
 	    my $obj = $R->get( $value );
 	    if( $obj->empty )
 	    {
-		debug "Condition failed: $param";
+		debug "Condition failed: $key";
 		return 0;
 	    }
 	}

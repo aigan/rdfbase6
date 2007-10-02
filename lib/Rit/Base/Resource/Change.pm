@@ -61,7 +61,7 @@ sub new
      # These are for use in Rit::Base::Widget::Handler
      'deathrow' => {}, # arcs to remove
      'row'      => {}, # Holds relating field info for row
-     'arc_field_handled' => {},
+     'field_handled' => {},
     }, $class;
 }
 
@@ -247,9 +247,9 @@ sub newarcs
 
 =cut
 
-sub arc_fields_count
+sub fields_count
 {
-    return scalar keys %{$_[0]->{'arc_field_handled'}};
+    return scalar keys %{$_[0]->{'field_handled'}};
 }
 
 
@@ -292,10 +292,10 @@ sub sysdesig
     $ident ||= 0;
     my $out = "";
 
-    if( $c->{'arc_field_handled'} )
+    if( $c->{'field_handled'} )
     {
-	$out .= "Arc fields handled:\n";
-	foreach my $field ( keys %{$c->{'arc_field_handled'}} )
+	$out .= "Fields handled:\n";
+	foreach my $field ( keys %{$c->{'field_handled'}} )
 	{
 	    $out .= "  $field\n";
 	}
