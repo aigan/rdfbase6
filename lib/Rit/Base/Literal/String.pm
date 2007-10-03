@@ -24,7 +24,7 @@ use utf8;
 
 use Carp qw( cluck confess longmess );
 use Digest::MD5 qw( md5_base64 );
-use Scalar::Util qw( looks_like_number );
+use Scalar::Util qw( looks_like_number refaddr );
 
 BEGIN
 {
@@ -140,12 +140,18 @@ sub new
 #    debug "Created string $value->{'value'}";
 
 
-    return bless
+    my $lit = bless
     {
      'arc' => undef,
      'value' => $val,
      'valtype' => $valtype,
     }, $class;
+
+    debug "Returning new ".$lit->sysdesig." ".refaddr($lit);
+    debug "  of valtype ".$lit->this_valtype->sysdesig;
+#    cluck "GOT HERE" if $lit->plain =~ /^test/;
+
+    return $lit;
 }
 
 
@@ -192,6 +198,9 @@ sub new_from_db
   $class->parse( \$value, \%args )
 
 For parsing any type of input. Expecially as given by html forms.
+
+Parsing an existing literal object may MODIFY it's content and valtype
+
 
 Supported args are:
   valtype
@@ -243,22 +252,13 @@ sub parse
 	$val_mod =~ s/^\s*\n//; # Leading empty lines
 	$val_mod =~ s/\n\s+$/\n/; # Trailing empty lines
 
-	# Return the incoming object if it's the same as the one we
-	# are going to create.
+	# Always return the incoming object. This may MODIFY the object
+	#
 	if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
 	{
-	    if( $val_mod eq $val->plain )
-	    {
-		if( $valtype->equals( $val->this_valtype ) )
-		{
-		    return $val;
-		}
-		else
-		{
-#		    debug "The new literal has the same string ".
-#		      "content but diffrent valtype";
-		}
-	    }
+	    $val->{'value'} = $val_mod;
+	    $val->{'valtype'} = $valtype;
+	    return $val;
 	}
 
 	# Implementing class may not take scalarref
