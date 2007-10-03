@@ -602,12 +602,28 @@ sub set_coltype
 
 	    # TODO: now just checks for existance (limit 1)
 	    #
-	    my $st = "select id from arc where pred=$pred_id and $coltype_old is not null limit 1";
+	    my $st = "select id,$coltype_old from arc where pred=$pred_id and $coltype_old is not null limit 1";
 	    my $sth = $Rit::dbix->dbh->prepare($st) or die;
 	    $sth->execute() or die;
 	    if( $sth->rows )
 	    {
-		confess "There is existing arcs with $coltype_old defined";
+		my $R = Rit::Base->Resource;
+
+		my $nodesfu = $R->find({ 'rev_'. $pred->name .'_exist' => '1' });
+
+		# convert to value-nodes
+		while( my $nodefu = $nodesfu->get_next_nos )
+		{
+		    debug "Intending to update ". $nodefu->sysdesig;
+		    if( $nodefu->count('name') and
+			not $nodefu->count('value') )
+		    {
+			debug "Name is: ". $nodefu->name->sysdesig;
+			$nodefu->add({ value => $nodefu->name });
+			$nodefu->arc('name')->remove;
+		    }
+		}
+		#confess "There is existing arcs with $coltype_old defined";
 	    }
 	    $sth->finish;
 	}
