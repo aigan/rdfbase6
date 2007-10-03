@@ -21,6 +21,7 @@ Rit::Base::Literal
 
 use strict;
 use Carp qw( cluck confess carp shortmess longmess );
+use Scalar::Util qw( refaddr );
 
 BEGIN
 {
@@ -40,7 +41,7 @@ use Rit::Base::Pred;
 use Rit::Base::List;
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs
-                         convert_query_prop_for_creation );
+                         convert_query_prop_for_creation query_desig );
 
 ### Inherit
 #
@@ -328,6 +329,12 @@ sub update
     # Just convert to value node and forward the call.
     # But check if we realy have props to add
 
+    debug "Update in literal ".$lit->sysdesig ." ".refaddr($lit);
+#    debug query_desig($props);
+#    debug "With args ".query_desig($args);
+#    cluck "GOT HERE";
+#    debug "---";
+
     if( my $new_val = $props->{'value'} )
     {
 	delete $props->{'value'};
@@ -361,6 +368,14 @@ sub update
 	$node->add( $props, $args );
 
 	my $arc = $lit->lit_revarc; # Before updating literal
+	if( $arc )
+	{
+	    debug "Arc for lit is ".$arc->sysdesig;
+	}
+	else
+	{
+	    debug "No arc in update";
+	}
 	my $valtype = $lit->this_valtype;
 	Rit::Base::Arc->create({
 				subj    => $node,
@@ -395,7 +410,7 @@ sub set_arc
 {
     my( $literal, $arc ) = @_;
 
-#    debug "set_arc to $arc->{id} for $literal";
+#    debug "set_arc to $arc->{id} for $literal ".refaddr($literal);
     $literal->{'arc'} = $arc;
 
     return $arc;
