@@ -6055,7 +6055,9 @@ sub initiate_prop
     }
     elsif( $active and not $inactive )
     {
-	if( $node->{'initiated_relprop'}{$name} )
+	if( $node->{'initiated_relprop'}{$name} and
+	    $node->{'initiated_relprop'}{$name} > 1
+	  )
 	{
 	    # Keeps key nonexistent if nonexistent
 	    return $node->{'relarc'}{ $name };
@@ -6070,6 +6072,7 @@ sub initiate_prop
     elsif( $active and $inactive )
     {
 	if( $node->{'initiated_relprop'}{$name} and
+	    $node->{'initiated_relprop'}{$name} > 1 and
 	    $node->{'initiated_rel_inactive'} )
 	{
 	    return 1;
@@ -6131,8 +6134,9 @@ sub initiate_prop
 		if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 		{
 		    my $obj_id = $proplim->id;
+		    debug 2, "  rowcount > 20. Using obj_id from proplim $obj_id";
 		    $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
-		    my( $arclim_sql, $extralim ) = $arclim->sql;
+		    my( $arclim_sql, $extralim_sql ) = $arclim->sql;
 		    if( $arclim_sql )
 		    {
 			$sql .= " and ".$arclim_sql;
@@ -6196,6 +6200,7 @@ sub initiate_prop
     }
     elsif( $active )
     {
+#	debug "prop $nid $name initiaded to 2";
 	$node->{'initiated_relprop'}{$name} = 2;
     }
 
@@ -6244,7 +6249,9 @@ sub initiate_revprop
     }
     elsif( $active and not $inactive )
     {
-	if( $node->{'initiated_revprop'}{$name} )
+	if( $node->{'initiated_revprop'}{$name} and
+	    $node->{'initiated_revprop'}{$name} > 1
+	  )
 	{
 	    # Keeps key nonexistent if nonexistent
 	    return $node->{'revarc'}{ $name };
@@ -6259,6 +6266,7 @@ sub initiate_revprop
     elsif( $active and $inactive )
     {
 	if( $node->{'initiated_revprop'}{$name} and
+	    $node->{'initiated_revprop'}{$name} > 1 and
 	    $node->{'initiated_rev_inactive'} )
 	{
 	    return 1;
