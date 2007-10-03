@@ -387,7 +387,7 @@ sub create
 	{
 	    debug "this is a valtype";
 	    debug "Subj is a $subj";
-
+	    my $value = $props->{'value'};
 
 	    if( $rec->{'replaces'} )
 	    {
@@ -400,6 +400,10 @@ sub create
 	    elsif( UNIVERSAL::isa $subj, "Rit::Base::Literal" )
 	    {
 		$valtype = $subj->this_valtype;
+	    }
+	    elsif( UNIVERSAL::isa $value, "Rit::Base::Literal" )
+	    {
+		$valtype = $value->this_valtype;
 	    }
 	    else
 	    {
