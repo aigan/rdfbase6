@@ -6602,7 +6602,6 @@ sub instance_class
 	eval
 	{
 	    # Mirrors find_class()
-	    my $package;
 	    my $key = $class_node->id;
 	    if( $package = $Rit::Base::Cache::Class{ $key } )
 	    {
