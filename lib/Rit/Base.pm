@@ -118,6 +118,7 @@ sub init
      C               => Rit::Base::Constants->new,
      timediff        => \&Para::Frame::Utils::timediff,
      timeobj         => sub{ Rit::Base::Literal::Time->get( @_ ) },
+     literal         => sub{ Rit::Base::Literal->new(@_) },
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
     };
     Para::Frame->add_global_tt_params( $global_params );
@@ -211,6 +212,19 @@ Returns class boject for Rit::Base::Constants
 sub Constants ()
 {
     return 'Rit::Base::Constants';
+}
+
+######################################################################
+
+=head2 Literal
+
+Returns class boject for Rit::Base::Literal
+
+=cut
+
+sub Literal ()
+{
+    return 'Rit::Base::Literal';
 }
 
 ######################################################################
