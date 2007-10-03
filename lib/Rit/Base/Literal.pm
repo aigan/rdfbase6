@@ -1466,7 +1466,16 @@ sub link_paths
 
 sub wu
 {
-    confess "not implemented";
+    my( $lit, $pred_name, $args_in ) = @_;
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
+
+    confess "not implemented"
+      unless( $pred_name eq 'value' );
+
+    my $pred = Rit::Base::Pred->get_by_label($pred_name);
+
+    return $lit->wuirc( $lit, $pred, $args );
 }
 
 
