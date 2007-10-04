@@ -644,7 +644,7 @@ sub id
     {
 	my $id = $lit->{'id'} = $Rit::dbix->get_nextval('node_seq');
 	$Rit::Base::Cache::Resource{ $id } = $lit;
-        debug shortmess "Created Literal id ".$lit->sysdesig;
+#        debug shortmess "Created Literal id ".$lit->sysdesig;
     }
     return $lit->{'id'};
 }

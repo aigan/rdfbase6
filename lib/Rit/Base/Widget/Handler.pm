@@ -1132,6 +1132,8 @@ sub handle_select_version
 	else
 	{
 	    debug "Activating version: ". $select_version->sysdesig;
+	    $select_version->activate( $args );
+
 	    if( $select_version->pred->plain eq 'value' ) # Value resource
 	    {
 		my $value_resource = $select_version->subj;
@@ -1148,10 +1150,6 @@ sub handle_select_version
 		    $arc->activate( $args )
 		      unless( $arc->pred->plain eq 'value' );
 		}
-	    }
-	    else
-	    {
-		$select_version->activate( $args );
 	    }
 	}
     }

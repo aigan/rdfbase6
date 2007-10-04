@@ -662,7 +662,6 @@ sub wuirc
 
     debug 2, "wub $inputtype $predname for ".$subj->sysdesig;
 
-
     my $newsubj = $args->{'newsubj'};
     my $rows = $args->{'rows'};
     my $maxw = $args->{'maxw'};
@@ -688,17 +687,18 @@ sub wuirc
 	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
-    elsif( not $subj )
-    {
-	$out .=
-	  &{$inputtype}("arc___pred_${predname}__row_".$req->{'rb_wu_row'},	'',
-			{
-			 size => $size,
-			 rows => $rows,
-			 image_url => $args->{'image_url'}
-			});
-	$out .= "<br/>";
-    }
+#    elsif( not $subj )
+#                           THIS SHOULDN'T HAPPEN!
+#    {
+#	$out .=
+#	  &{$inputtype}("arc___pred_${predname}__row_".$req->{'rb_wu_row'}, '',
+#			{
+#			 size => $size,
+#			 rows => $rows,
+#			 image_url => $args->{'image_url'}
+#			});
+#	$out .= "<br/>";
+#    }
     elsif( $subj->list($predname,undef,['active','submitted'])->is_true )
     {
 	my $subj_id = $subj->id;

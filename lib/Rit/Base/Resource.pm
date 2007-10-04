@@ -2861,9 +2861,9 @@ sub desig  # The designation of obj, meant for human admins
     {
 	# That's good
     }
-    elsif( $node->value->defined )
+    elsif( $node->has_pred('value',{},$args) )
     {
-	$desig = $node->value
+	$desig = $node->list('value',{},$args)->loc();
     }
     elsif( $node->has_pred('code',{},$args) )
     {
@@ -2871,7 +2871,7 @@ sub desig  # The designation of obj, meant for human admins
     }
     else
     {
-	$desig = $node->id
+	$desig = $node->id;
     }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
@@ -4204,28 +4204,34 @@ sub wu
     {
 	$pred_name = $1;
 	$rev = 1;
+	$args->{'rev'} = 1;
     }
     my $pred = Rit::Base::Pred->get_by_label($pred_name);
 
     my( $range, $range_scof );
-    if( $rev )
+
+    if( $args->{'range'} or $args->{'range_scof'} )
     {
-	$args->{'rev'} = 1;
-	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->first_prop('domain') || $C_resource );
-	$range_scof = ( $args->{'range_scof'} ?
-			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('domain_scof') );
-	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
-	  $range->sysdesig;
+	$range = $args->{'range'} ? $R->get($args->{'range'}) : undef;
+	$range_scof = $args->{'range_scof'} ?
+	  $R->get($args->{'range_scof'}) : undef;
+    }
+    elsif( $rev )
+    {
+	$range = $pred->first_prop('domain') || $C_resource;
+	$range_scof = $pred->first_prop('domain_scof');
+
+	#debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
+	#  $range->sysdesig;
+    }
+    elsif( $pred_name eq 'value' ) # value resource
+    {
+	$range = $node->revarc(undef,undef,['active','submitted'])->pred->range;
     }
     else
     {
-	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->valtype );
-	$range_scof = ( $args->{'range_scof'} ?
-			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('range_scof') );
+	$range = $pred->valtype;
+	$range_scof = $pred->first_prop('range_scof');
     }
 
     if( $range_scof )
