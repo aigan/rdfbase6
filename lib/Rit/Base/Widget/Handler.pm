@@ -1138,17 +1138,17 @@ sub handle_select_version
 		debug "...which is a value resource: ".
 		  $value_resource->sysdesig;
 
-		my $revarc = $value_resource->revarc( undef, undef,
-						      ['active','submitted'] );
-		$revarc->activate( $args )
-		  unless $revarc->active;
+		$value_resource->revarc(undef,undef, ['submitted'] )->
+		  activate( $args );
 
-		my $langarc = $value_resource->arc( 'is_of_language', undef,
-						    ['active','submitted'] );
-		$langarc->activate( $args )
-		  unless $langarc->active;
+		# activate ALL submitted arcs... 
+		$value_resource->arc_list(undef,undef, ['submitted'] )->
+		  activate( $args );
 	    }
-	    $select_version->activate( $args );
+	    else
+	    {
+		$select_version->activate( $args );
+	    }
 	}
     }
 
@@ -1164,7 +1164,33 @@ sub handle_select_version
 	if( $version->submitted )
 	{
 	    debug "Removing ". $version->sysdesig;
-	    $version->remove( $args );
+	    if( $version->pred->name eq 'value' )
+	    {
+		my $value_resource = $version->subj;
+		debug "...deactivating value resource: ".
+		  $value_resource->sysdesig;
+
+		# Remove submitted arcs.  If the arc is active,
+		# it probably has an active value, too.
+		$value_resource->revarc(undef,undef, ['submitted'] )->
+		  remove( $args );
+
+		$value_resource->arc_list(undef,undef, ['submitted'] )->
+		  remove( $args );
+
+		if( $value eq 'deactivate' )
+		{
+		    # Remove all active arcs too.
+		    $value_resource->revarc(undef,undef, ['active'] )->
+		      remove( $args );
+		    $value_resource->arc_list(undef,undef, ['active'] )->
+		      remove( $args );
+		}
+	    }
+	    else
+	    {
+		$version->remove( $args );
+	    }
 	}
 
 	#if( $version->pred->name eq 'value' ) # Value resource
