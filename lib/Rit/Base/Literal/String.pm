@@ -147,8 +147,8 @@ sub new
      'valtype' => $valtype,
     }, $class;
 
-    debug "Returning new ".$lit->sysdesig." ".refaddr($lit);
-    debug "  of valtype ".$lit->this_valtype->sysdesig;
+#    debug "Returning new ".$lit->sysdesig." ".refaddr($lit);
+#    debug "  of valtype ".$lit->this_valtype->sysdesig;
 #    cluck "GOT HERE" if $lit->plain =~ /^test/;
 
     return $lit;
