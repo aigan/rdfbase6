@@ -849,7 +849,7 @@ sub modify
 	    }
 	    else
 	    {
-		$pred = Rit::Base::Pred->get( $pred );
+		$pred = Rit::Base::Pred->get_by_label( $pred );
 		$type = $pred->coltype;
 		$predref = [$pred];
 	    }
@@ -2108,7 +2108,7 @@ sub build_outer_select_field
 
 #	debug "  field $field";
 
-	my $pred = Rit::Base::Pred->get( $field );
+	my $pred = Rit::Base::Pred->get_by_label( $field );
 	my $coltype = $pred->coltype;
 	# Sort on real value. Not clean
 

@@ -310,7 +310,7 @@ sub verify_password
 
 sub has_root_access
 {
-    if( $_[0]->has_access_right->equals($C_full_access) )
+    if( $_[0]->prop('has_access_right')->equals($C_full_access) )
     {
 	return 1;
     }
