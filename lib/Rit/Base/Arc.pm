@@ -154,11 +154,15 @@ The props:
 
   obj : Same as L<value>
 
+  created : Creation time. Defaults to now.
+
 Special args:
 
   activate_new_arcs
 
   submit_new_arcs
+
+  updated
 
 If value is a plain string, it's converted to an object based on L<Rit::Base::Pred/coltype>.
 
@@ -385,8 +389,8 @@ sub create
     {
 	if( $pred->{'coltype'} == 6 )  # Value resource?
 	{
-	    debug "this is a valtype";
-	    debug "Subj is a $subj";
+#	    debug "this is a valtype";
+#	    debug "Subj is a $subj";
 	    my $value = $props->{'value'};
 
 	    if( $rec->{'replaces'} )
@@ -458,7 +462,20 @@ sub create
 
 
     ##################### updated
-    $rec->{'updated'} = now();
+    if( $props->{'created'} )
+    {
+	$rec->{'updated'} = Rit::Base::Literal::Time->
+	  get($props->{'created'});
+    }
+    elsif( $args->{'updated'} )
+    {
+	$rec->{'updated'} = Rit::Base::Literal::Time->
+	  get($args->{'updated'});
+    }
+    else
+    {
+	$rec->{'updated'} = now();
+    }
     push @fields, 'updated';
     push @values, $dbix->format_datetime($rec->{'updated'});
 
@@ -804,7 +821,7 @@ sub create
     if( $props->{'active'} and not $arc->active )
     {
 	# Arc should have been submitted instead.
-	$arc->activate;
+	$arc->activate( $args );
     }
 
 
@@ -835,7 +852,7 @@ sub create
     # TODO: Use register_with_nodes() instead!
 
 
-    $arc->schedule_check_create;
+    $arc->schedule_check_create( $args );
 
     $res->changes_add;
 
@@ -1622,6 +1639,40 @@ sub active_version
 
 #######################################################################
 
+=head2 previous_active_version
+
+  $a->previous_active_version
+
+May return undef;
+
+Returns: The arc that was active and deactivated most recently, that
+is a version of this arc. Even if it's this same arc.
+
+=cut
+
+sub previous_active_version
+{
+    my( $arc ) = @_;
+    my $class = ref($arc);
+
+    my $paarc;
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? and active is false and activated is not null and deactivated is not null order by deactivated desc limit 1");
+    $sth->execute($arc->common_id);
+    if( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	$paarc = $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    # May be undef
+    return $paarc;
+}
+
+
+#######################################################################
+
 =head2 versions
 
   $a->versions( $proplim, $args )
@@ -2136,7 +2187,7 @@ sub deactivate
 
     $args->{'res'}->changes_add;
 
-    debug 2, "Deactivated id ".$arc->sysdesig;
+    debug 1, "Deactivated id ".$arc->sysdesig;
 
     return;
 }
@@ -2334,6 +2385,7 @@ sub check_valtype
 	    elsif( $arc_valtype->equals($c_resource) )
 	    {
 		debug "Trusting new given valtype";
+		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
 	    }
 	    else
@@ -2347,6 +2399,8 @@ sub check_valtype
 	}
 	else
 	{
+	    debug "Changing from obj to $pred_coltype";
+
 	    my $val = $pred_valtype->instance_class->
 	      parse($old_val, {
 			       arc => $arc,
@@ -3355,7 +3409,7 @@ sub set_value
 	$value_old->set_arc(undef);
 	$value_new->set_arc($arc);
 
-	$arc->schedule_check_create;
+	$arc->schedule_check_create( $args );
 	$Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 	if( $value_old->is_resource )
 	{
@@ -3399,13 +3453,17 @@ Returns: the arc changed, or the same arc
 
 sub set_pred
 {
-    my( $arc, $pred, $args ) = @_;
+    my( $arc, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     my $DEBUG = 0;
 
     my $new_pred = Rit::Base::Pred->get( $pred );
     my $new_pred_id = $new_pred->id;
     my $old_pred_id = $arc->pred->id;
+    my $now = now();
+
+    $args->{'updated'} = $now;
 
     if( $new_pred_id != $old_pred_id )
     {
@@ -3572,6 +3630,8 @@ Activates the arc.
 Supported args:
 
   updated - time of activation
+  force
+
 
 Returns: the number of changes
 
@@ -3679,7 +3739,7 @@ sub activate
     # Runs create_check AFTER deactivation of other arc version, since
     # the new arc version may INFERE the old arc
     #
-    $arc->schedule_check_create;
+    $arc->schedule_check_create( $args );
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -4388,7 +4448,7 @@ sub not_disregarded
 
 =head2 schedule_check_create
 
-  $a->schedule_check_create
+  $a->schedule_check_create( \%args )
 
 Schedueled checks of newly added/modified arcs
 
@@ -4398,16 +4458,22 @@ Returns: ---
 
 sub schedule_check_create
 {
-    my( $arc ) = @_;
+    my( $arc, $args_in ) = @_;
+
+    # Res and arclim should not be part of the args
+    #
+    my %args = %$args_in;
+    delete $args{'res'};
+    delete $args{'arclim'};
 
     if( $Rit::Base::Arc::lock_check ||= 0 )
     {
-	push @Rit::Base::Arc::queue_check, $arc;
+	push @Rit::Base::Arc::queue_check, [$arc, \%args];
 	debug 3, "Added ".$arc->sysdesig." to queue check";
     }
     else
     {
-	$arc->create_check;
+	$arc->create_check( \%args );
     }
 }
 
@@ -4461,9 +4527,10 @@ sub unlock
 
     if( $cnt == 0 )
     {
-	while( my $arc = shift @Rit::Base::Arc::queue_check )
+	while( my $params = shift @Rit::Base::Arc::queue_check )
 	{
-	    $arc->create_check;
+	    my( $arc, $args ) = @$params;
+	    $arc->create_check( $args );
 	}
     }
 }
