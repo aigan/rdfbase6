@@ -176,17 +176,18 @@ sub get
 
 
 	# $val_in could be a hashref, but those are not chached
-	unless( $id = $Rit::Base::Cache::Label{$class}{ $val_in } )
+	if( my $const = $Rit::Base::Constants::Label{$val_in} )
+	{
+#	    if( $val_in eq 'range' )
+#	    {
+#		cluck "Got const $val_in";
+#	    }
+	    return $const;
+	}
+	else
 	{
 	    $node = $class->get_by_anything( $val_in ) or return is_undef;
 	    $id = $node->id;
-
-	    # Cache name lookups
-	    unless( ref $val_in ) # Do not cache searches
-	    {
-		$Rit::Base::Cache::Label{$class}{ $val_in } = $id;
-		$node->{'lables'}{$class}{$val_in} ++;
-	    }
 
 	    # Cache id lookups
 	    #
@@ -613,19 +614,13 @@ sub get_id
     my $class = ref($this) || $this;
 
     return undef unless defined $label;
-    my $id;
-    unless( $id = $Rit::Base::Cache::Label{$class}{ $label } )
+    if( my $const = $Rit::Base::Constants::Label{$label} )
     {
-	my $node = $class->get_by_anything( $label, $args ) or return is_undef;
-	$id = $node->id;
-	# Cache name lookups
-	unless( ref $label ) # Do not cache searches
-	{
-	    $Rit::Base::Cache::Label{$class}{ $label } = $id;
-	    $node->{'lables'}{$class}{$label} ++;
-	}
+	return $const->id;
     }
-    return $id;
+
+    my $node = $class->get_by_anything( $label, $args ) or return is_undef;
+    return $node->id;
 }
 
 
@@ -1739,7 +1734,7 @@ choose among the versions that meets the proplim (and arclim).
 
 sub list
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
     unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
@@ -1747,18 +1742,18 @@ sub list
 	confess "Not a resource: ".datadump($node);
     }
 
-    if( $name )
+    if( $pred_in )
     {
-	my $pred;
-
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	my( $pred, $name );
+	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
-	    $pred = $name;
+	    $pred = $pred_in;
 	    $name = $pred->plain;
 	}
 	else
 	{
-	    $pred = Rit::Base::Pred->get($name);
+	    $pred = Rit::Base::Pred->get($pred_in);
+	    $name = $pred->plain
 	}
 
 #	debug sprintf "Called %s->list(%s) with proplim:", $node->id, $name;
@@ -1776,7 +1771,7 @@ sub list
 #	}
 
 
-	if( $node->initiate_prop( $name, $proplim, $args ) )
+	if( $node->initiate_prop( $pred, $proplim, $args ) )
 	{
 	    if( $active and $node->{'relarc'}{$name} )
 	    {
@@ -1959,27 +1954,27 @@ instead.
 
 sub revlist
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    if( $name )
+    if( $pred_in )
     {
-	my $pred;
-
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	my( $pred, $name );
+	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
-	    $pred = $name;
+	    $pred = $pred_in;
 	    $name = $pred->plain;
 	}
 	else
 	{
-	    $pred = Rit::Base::Pred->get($name);
+	    $pred = Rit::Base::Pred->get($pred_in);
+	    $name = $pred->plain
 	}
 
 	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
 
-	if( $node->initiate_revprop( $name, $proplim, $args ) )
+	if( $node->initiate_revprop( $pred, $proplim, $args ) )
 	{
 	    if( $active and $node->{'revarc'}{$name} )
 	    {
@@ -2125,11 +2120,23 @@ choose among the versions that meets the proplim (and arclim).
 
 sub first_prop
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    $node->initiate_prop( $name, $proplim, $args );
+    my( $pred, $name );
+    if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
+    {
+	$pred = $pred_in;
+	$name = $pred->plain;
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get($pred_in);
+	$name = $pred->plain
+    }
+
+    $node->initiate_prop( $pred, $proplim, $args );
 
 
     # NOTE: We should make sure that if a relarc key exists, that the
@@ -2266,17 +2273,27 @@ choose among the versions that meets the proplim (and arclim).
 
 sub first_revprop
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
+    my( $pred, $name );
+    if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
+    {
+	$pred = $pred_in;
+	$name = $pred->plain;
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get($pred_in);
+	$name = $pred->plain
+    }
 
     # NOTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
 
-    $node->initiate_revprop( $name, $proplim, $args );
-
+    $node->initiate_revprop( $pred, $proplim, $args );
 
     if( my $sortargs_in = $args->{unique_arcs_prio} )
     {
@@ -2475,38 +2492,7 @@ sub has_value
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
 
-    my $pred;
-    if( ref $pred_name ) # Not an option...
-    {
-	if( UNIVERSAL::isa( $pred_name, 'Rit::Base::Literal') )
-	{
-	    $pred = $pred_name->literal;
-	}
-	elsif( UNIVERSAL::isa($pred_name,'Rit::Base::Pred') )
-	{
-	    $pred = $pred_name;
-	}
-	elsif( ref $pred_name eq 'ARRAY' )
-	{
-	    # Either predicate can have the value.
-	    # unique_arcs_prio is not applicable here.
-
-	    foreach my $pred ( @$pred_name )
-	    {
-		my $arc = $node->has_value({$pred=>$value}, $args );
-		return $arc if $arc;
-	    }
-	    return 0;
-	}
-	else
-	{
-	    die "has_value pred $pred_name not supported";
-	}
-    }
-    else
-    {
-	$pred = Rit::Base::Pred->get( $pred_name );
-    }
+    my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 
     $pred_name = $pred->plain;
 
@@ -2718,7 +2704,7 @@ sub count
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
-    my $pred_id = Rit::Base::Pred->get_by_label( $tmpl )->id;
+    my $pred_id = Rit::Base::Pred->get( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
 
@@ -2761,7 +2747,7 @@ sub revcount
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
-    my $pred_id = Rit::Base::Pred->get_by_label( $tmpl )->id;
+    my $pred_id = Rit::Base::Pred->get( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
 
@@ -2849,25 +2835,25 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if( $node->has_pred('name',{},$args) )
+    if( $node->has_pred('name',undef,$args) )
     {
-	$desig = $node->list('name',{},$args)->loc();
+	$desig = $node->list('name',undef,$args)->loc();
     }
-    elsif( $node->has_pred('name_short',{},$args) )
+    elsif( $node->has_pred('name_short',undef,$args) )
     {
-	$desig = $node->list('name_short',{},$args)->loc();
+	$desig = $node->list('name_short',undef,$args)->loc();
     }
     elsif( $desig = $node->label )
     {
 	# That's good
     }
-    elsif( $node->has_pred('value',{},$args) )
+    elsif( $node->has_pred('value',undef,$args) )
     {
-	$desig = $node->list('value',{},$args)->loc();
+	$desig = $node->list('value',undef,$args)->loc();
     }
-    elsif( $node->has_pred('code',{},$args) )
+    elsif( $node->has_pred('code',undef,$args) )
     {
-	$desig = $node->list('code',{},$args)->loc;
+	$desig = $node->list('code',undef,$args)->loc;
     }
     else
     {
@@ -2903,21 +2889,21 @@ sub sysdesig  # The designation of obj, including node id
     {
 	# That's good
     }
-    elsif( $node->first_prop('name',{},$args)->defined )
+    elsif( $node->first_prop('name',undef,$args)->defined )
     {
-	$desig = $node->first_prop('name',{},$args)
+	$desig = $node->first_prop('name',undef,$args)
     }
-    elsif( $node->first_prop('name_short',{},$args)->defined )
+    elsif( $node->first_prop('name_short',undef,$args)->defined )
     {
-	$desig = $node->first_prop('name_short',{},$args)
+	$desig = $node->first_prop('name_short',undef,$args)
     }
     elsif( $node->value->defined )
     {
 	$desig = $node->value
     }
-    elsif( $node->first_prop('code',{},$args)->defined )
+    elsif( $node->first_prop('code',undef,$args)->defined )
     {
-	$desig = $node->first_prop('code',{},$args)
+	$desig = $node->first_prop('code',undef,$args)
     }
     else
     {
@@ -3035,22 +3021,29 @@ choose among the versions that meets the proplim (and arclim).
 
 sub arc_list
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    if( $name )
+    if( $pred_in )
     {
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	my( $pred, $name );
+	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
-	    $name = $name->plain;
+	    $pred = $pred_in;
+	    $name = $pred->plain;
+	}
+	else
+	{
+	    $pred = Rit::Base::Pred->get($pred_in);
+	    $name = $pred->plain
 	}
 
 	my @arcs;
 
 #	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, query_desig($arclim));
 
-	if( $node->initiate_prop( $name, $proplim, $args ) )
+	if( $node->initiate_prop( $pred, $proplim, $args ) )
 	{
 	    if( $active and $node->{'relarc'}{$name} )
 	    {
@@ -3193,20 +3186,27 @@ With no C<$pred_name>, all revarcs from the node is returned.
 
 sub revarc_list
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
-    if( $name )
+    if( $pred_in )
     {
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	my( $pred, $name );
+	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
-	    $name = $name->plain;
+	    $pred = $pred_in;
+	    $name = $pred->plain;
+	}
+	else
+	{
+	    $pred = Rit::Base::Pred->get($pred_in);
+	    $name = $pred->plain
 	}
 
 	my @arcs;
 
-	if( $node->initiate_revprop( $name, $proplim, $args ) )
+	if( $node->initiate_revprop( $pred, $proplim, $args ) )
 	{
 	    if( $active and $node->{'revarc'}{$name} )
 	    {
@@ -3293,14 +3293,26 @@ predicate.
 
 sub first_arc
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my( $pred, $name );
+    if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
+    {
+	$pred = $pred_in;
+	$name = $pred->plain;
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get($pred_in);
+	$name = $pred->plain
+    }
 
     # NOTE: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    $node->initiate_prop( $name, $proplim, $args );
+    $node->initiate_prop( $pred, $proplim, $args );
 
     if( my $sortargs_in = $args->{unique_arcs_prio} )
     {
@@ -3430,14 +3442,26 @@ predicate.
 
 sub first_revarc
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my( $pred, $name );
+    if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
+    {
+	$pred = $pred_in;
+	$name = $pred->plain;
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get($pred_in);
+	$name = $pred->plain
+    }
 
     # TODO: We should make sure that if a relarc key exists, that the
     # list never is empty
 
-    $node->initiate_revprop( $name, $proplim, $args );
+    $node->initiate_revprop( $pred, $proplim, $args );
 
     if( my $sortargs_in = $args->{unique_arcs_prio} )
     {
@@ -4529,7 +4553,7 @@ sub tree_select_data
     my $id = $node->id;
     my $pred_id = $pred->id;
 
-    my $name = $node->prop('name', {}, $args)->loc;
+    my $name = $node->prop('name', undef, $args)->loc;
     debug 2, "Processing treepart $id: $name";
     my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
     my $cnt = $rec->{'cnt'};
@@ -4623,7 +4647,14 @@ sub find_class
     #
 #    my $islist = $node->list('is',undef,'not_disregarded');
 #    debug "Finding the class for node $node->{id}";
-    my $islist = $node->list('is');
+
+    # Used in startup. Get pred here. (For optimization)
+    my $p_is = Rit::Base::Pred->get_by_label('is');
+    my $p_chbpm = Rit::Base::Pred->
+      get_by_label('class_handled_by_perl_module');
+    my $p_code = Rit::Base::Pred->get_by_label('code');
+
+    my $islist = $node->list($p_is);
     my @classes;
     foreach my $elem ($islist->as_array)
     {
@@ -4633,9 +4664,9 @@ sub find_class
 	}
 
 #	debug "Looking at is $elem->{id}";
-	foreach my $class ($elem->list('class_handled_by_perl_module')->nodes )
+	foreach my $class ($elem->list($p_chbpm)->nodes )
 	{
-	    my $pkg = $class->code->plain;
+	    my $pkg = $class->first_prop($p_code)->plain;
 #	    debug "  found $pkg";
 
 	    # Let confident classes handle themself
@@ -4665,7 +4696,7 @@ sub find_class
 	my( @classnames );
 	foreach my $class ( @classes )
 	{
-	    my $classname = $class->first_prop('code')->plain;
+	    my $classname = $class->first_prop($p_code)->plain;
 	    unless( $classname )
 	    {
 		debug datadump($class,2);
@@ -5221,15 +5252,6 @@ sub get_by_anything
 {
     my( $class, $val, $args ) = @_;
 
-    # Look in lable cache
-    unless( ref($val) or $args ) # Do not lookup complex searches from cache
-    {
-	if( my $id = $Rit::Base::Cache::Label{$class}{ $val } )
-	{
-	    return $class->get( $id );
-	}
-    }
-
     my $list = $class->find_by_anything($val, $args);
 
     my $req = $Para::Frame::REQ;
@@ -5323,17 +5345,7 @@ sub get_by_anything
 	throw('alternatives', 'Specificera alternativ');
     }
 
-    my $first = $list->get_first_nos;
-
-    # Cache name lookups
-    unless( ref($_[0]) or $_[1] ) # Do not cache complex searches
-    {
-	my $id = $first->id;
-	$Rit::Base::Cache::Label{$class}{ $_[0] } = $id;
-	$first->{'lables'}{$class}{ $_[0] } ++;
-    }
-
-    return $first;
+    return $list->get_first_nos;
 }
 
 
@@ -5436,16 +5448,6 @@ sub initiate_cache
     # TODO: Callers should reset the specific part
 #    warn "resetting node $node->{id}\n";
 
-    # Reset registred cached lable lookups
-    my $lables = $node->{'lables'} ||= {};
-    foreach my $class ( keys %$lables )
-    {
-	my $class_hash = $lables->{$class};
-	foreach my $label ( keys %$class_hash )
-	{
-	    delete $Rit::Base::Cache::Label{$class}{ $label };
-	}
-    }
 
     $node->{'arc_id'}                 = {};
     $node->{'relarc'}                 = {};
@@ -5458,19 +5460,36 @@ sub initiate_cache
     $node->{'initiated_rev'}          = 0;
     $node->{'initiated_rel_inactive'} = 0;
     $node->{'initiated_rev_inactive'} = 0;
-    $node->{'initiated_node'}         = 0;
-    $node->{'lables'}                 = {};
-    $node->{'owned_by_obj'}           = undef;
-    $node->{'owned_by'}               = undef;
-    $node->{'read_access_obj'}        = undef;
-    $node->{'read_access'}            = undef;
-    $node->{'write_access_obj'}       = undef;
-    $node->{'write_access'}           = undef;
-    $node->{'created_by_obj'}         = undef;
-    $node->{'created_by'}             = undef;
-    $node->{'updated_by_obj'}         = undef;
-    $node->{'updated_by'}             = undef;
     $node->{'new'}                    = 0;
+
+    $node->{'initiated_node'} ||= 0;
+    if( $node->{'initiated_node'} > 1 )
+    {
+	if( $UNSAVED{$node->{'id'}} )
+	{
+	    debug "CHANGES of node $node->{id} not yet saved";
+	}
+	else
+	{
+	    foreach my $key (qw(
+                       coltype label owned_by_obj owned_by
+                       read_access_obj read_access write_access_obj
+                       write_access created created_by_obj created_by
+                       updated updated_by_obj updated_by
+                       ))
+	    {
+		delete $node->{$key};
+	    }
+
+	    $node->{'initiated_node'} = 0;
+
+	    # We want to reinitiate the node since for exampel preds
+	    # should always be initiated.
+
+	    debug "RE-initiating node $node->{id} from DB";
+	    $node->initiate_node;
+	}
+    }
 
     return $node;
 }
@@ -5513,8 +5532,6 @@ sub initiate_node
 
 	if( my $label = $rec->{'label'} )
 	{
-	    $Rit::Base::Cache::Label{$class}{ $label } = $nid;
-	    $node->{'lables'}{$class}{$label} ++;
 	    $node->{'label'} = $label;
 	}
 
@@ -6041,10 +6058,10 @@ Returns undef if no values for this prop
 
 sub initiate_prop
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
-
+    my $name = $pred->plain;
 
     unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
     {
@@ -6101,7 +6118,7 @@ sub initiate_prop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get( $name )->id )
+    if( my $pred_id = $pred->id )
     {
 #	debug "initiate_prop $node->{id} $name";
 	if( debug > 3 )
@@ -6239,11 +6256,12 @@ TODO: Use custom DBI fetchrow
 
 sub initiate_revprop
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
+    my( $node, $pred, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
     my $extralim = 0;
     my $nid = $node->id;
+    my $name = $pred->plain;
 
     if( $inactive and not $active )
     {
@@ -6293,7 +6311,7 @@ sub initiate_revprop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = Rit::Base::Pred->get( $name )->id )
+    if( my $pred_id = $pred->id )
     {
 	if( debug > 1 )
 	{
@@ -6536,6 +6554,32 @@ sub coltype
 
 #########################################################################
 
+=head2 coltype_id
+
+  $node->coltype_id()
+
+C<$node> must be a class (used as a range of a predicate).
+
+Literal classes handled by L<Rit::Base::Literal::Class>. All other are
+coltype C<obj>.
+
+returns: the id of table column
+
+See also: L<Rit::Base::Pred/coltype>, L<Rit::Base::Arc/coltype>,
+L<Rit::Base::Literal::Class/coltype>
+
+TODO: Move this to L<Rit::Base::Resource::Class>
+
+=cut
+
+sub coltype_id
+{
+    return 1;
+}
+
+
+#########################################################################
+
 =head2 this_valtype
 
   $node->this_valtype( \%args )
@@ -6603,7 +6647,12 @@ TODO: make value resources literal objects
 sub instance_class
 {
     my $package = 'Rit::Base::Resource';
-    if( my $class_node = $_[0]->first_prop('class_handled_by_perl_module') )
+
+    # Maby a small optimization
+    my $p_chbpm = Rit::Base::Pred->
+      get_by_label('class_handled_by_perl_module');
+
+    if( my $class_node = $_[0]->first_prop($p_chbpm) )
     {
 	eval
 	{
@@ -6614,7 +6663,8 @@ sub instance_class
 		return $package;
 	    }
 
-	    my $classname = $class_node->first_prop('code')->plain
+	    my $p_code = Rit::Base::Pred->get_by_label('code');
+	    my $classname = $class_node->first_prop($p_code)->plain
 	      or confess "No classname found for class $class_node->{id}";
 
 	    require(package_to_module($classname));
