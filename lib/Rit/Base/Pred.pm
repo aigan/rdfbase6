@@ -9,7 +9,7 @@ package Rit::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -22,6 +22,7 @@ Rit::Base::Pred
 use Carp qw( cluck confess carp croak );
 use strict;
 use Time::HiRes qw( time );
+use Scalar::Util qw( refaddr );
 
 BEGIN
 {
@@ -29,7 +30,7 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
-use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::List;
@@ -182,8 +183,14 @@ sub valtype
 {
     my( $pred ) = @_;
 
+    if( my $range = $pred->{'relarc'}{'range'}[0] )
+    {
+	return $range; # Optimization shortcut
+    }
+
     if( my $range = $pred->first_prop('range') )
     {
+#	debug datadump($pred,3);
 	return $range;
     }
     else
@@ -249,6 +256,26 @@ sub coltype
 
     return Rit::Base::Literal::Class->
       coltype_by_coltype_id( $_[0]->{'coltype'} );
+}
+
+#######################################################################
+
+=head2 coltype_id
+
+  $p->coltype_id()
+
+Returns: An integer as a scalar string
+
+=cut
+
+sub coltype_id
+{
+    unless( $_[0]->{'coltype'} )
+    {
+	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
+    }
+
+    return $_[0]->{'coltype'};
 }
 
 #########################################################################
@@ -393,7 +420,7 @@ sub on_bless
 {
     my( $pred, $class_old, $args_in ) = @_;
 
-    $pred->set_coltype_from_range($args_in);
+    $pred->on_new_range($args_in);
 }
 
 #######################################################################
@@ -411,7 +438,7 @@ sub on_unbless
 	confess "You can't remove a pred used in arcs";
     }
 
-    $pred->set_coltype_from_range($args_in);
+    $pred->on_new_range($args_in);
 }
 
 #######################################################################
@@ -426,7 +453,7 @@ sub on_arc_add
 
     if( $pred_name eq 'range' )
     {
-	$pred->update_arcs_for_new_range($arc, $args_in);
+	$pred->on_new_range($args_in);
     }
 }
 
@@ -442,32 +469,58 @@ sub on_arc_del
 
     if( $pred_name eq 'range' )
     {
-	$pred->update_arcs_for_new_range($arc, $args_in);
+	$pred->on_new_range($args_in);
     }
 }
 
 #######################################################################
 
-=head2 update_arcs_for_new_range
+=head2 on_new_range
 
-  $pred->update_arcs_for_new_range( \%args )
+  $pred->on_new_range( \%args )
 
 =cut
 
-sub update_arcs_for_new_range
+sub on_new_range
 {
-    my( $pred, $arc, $args_in ) = @_;
+    my( $pred, $args_in ) = @_;
 
-    $pred->set_coltype_from_range($args_in);
+    debug "Updating arcs for the new range";
 
-    unless( $arc->replaces_id )
+    my $C_resource = Rit::Base::Constants->get('resource');
+
+    my( $range_new, $range_old );
+    if( my $range_arc = $pred->first_arc('range') )
     {
-	# No previous value
+	$range_new = $range_arc->value;
+	if( my $prev_arc = $range_arc->previous_active_version )
+	{
+	    $range_old = $prev_arc->value;
+	}
+
+	unless( $range_new ) # A removal arc?
+	{
+	    $range_new = $C_resource;
+	}
+    }
+
+    $range_new ||= $pred->valtype;
+    $range_old ||= $C_resource;
+
+
+    # Updating coltype
+    if( $pred->coltype_id != $range_new->coltype_id )
+    {
+	$pred->set_coltype( $range_new->coltype_id, $args_in );
+    }
+
+
+    # Range unchanged?
+    if( $range_old->equals($range_new) )
+    {
 	return;
     }
 
-    my $range_old = $arc->replaces->value;
-    my $range_new = $pred->valtype; # may fall back on default
 
     # was the old range more specific?
     if( $range_old->scof($range_new) )
@@ -476,16 +529,9 @@ sub update_arcs_for_new_range
 	return;
     }
 
-    # All active existing arcs must be upgraded
-
-    unless( $pred->has_active_arcs )
-    {
-	# No active existing arcs to worry about
-	return;
-    }
 
     # This is a big change. Make sure this is what is wanted
-
+    #
     $pred->vacuum_pred_arcs( $args_in );
 
     return;
@@ -496,6 +542,10 @@ sub update_arcs_for_new_range
 =head2 vacuum_pred_arcs
 
   $pred->vacuum_pred_arcs( \%args )
+
+Special args:
+
+  convert_prop_to_value
 
 For now, we just ignore failed vacuums...
 
@@ -513,16 +563,35 @@ sub vacuum_pred_arcs
     my $size = $arcs->size;
     debug "Vacuuming $size arcs";
 
+    my $conv_pred = $args->{'convert_prop_to_value'};
+    my $value_pred = Rit::Base::Pred->get_by_label('value');
+    my $remove_faulty = $args->{'remove_faulty'} || 0;
+
     my( $arc, $error ) = $arcs->get_first;
     while(! $error )
     {
 	eval
 	{
+	    if( $conv_pred )
+	    {
+		my $obj = $arc->value;
+		if( my $conv_arc = $obj->first_arc($conv_pred) )
+		{
+		    $conv_arc->set_pred($value_pred,
+					{'activate_new_arcs'=>1});
+		}
+	    }
+
 	    $arc->vacuum( $args );
+#	    die "GOT HERE";
 	};
-	if( $@ )
+	if( my $err = catch(['validation']) )
 	{
-	    debug 1, $@;
+	    debug 1, $err->as_string;
+	    if( $remove_faulty )
+	    {
+		$arc->remove({'activate_new_arcs'=>1});
+	    }
 	}
     }
     continue
@@ -531,28 +600,6 @@ sub vacuum_pred_arcs
     };
 
     return;
-}
-
-#######################################################################
-
-=head2 set_coltype_from_range
-
-  $pred->set_coltype_from_range( \%args )
-
-=cut
-
-sub set_coltype_from_range
-{
-    my( $pred, $args_in ) = @_;
-
-    debug "Setting coltype from range for pred $pred->{id}";
-    if( my $range = $pred->range )
-    {
-	debug "  Range is $range->{id}";
-	my $coltype = $range->coltype;
-	debug "  found coltype $coltype" if $coltype;
-	$pred->set_coltype( $coltype, $args_in );
-    }
 }
 
 #######################################################################
@@ -572,6 +619,16 @@ sub set_coltype
     my( $pred, $coltype_new_id, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
+#    debug "Set coltype for pred ".$pred->sysdesig. " ".refaddr($pred);
+    debug "Set coltype for pred ".refaddr($pred);
+
+    unless( $pred->{'initiated_node'} > 1 )
+    {
+	debug datadump($pred,2);
+	confess "Has this been initiated as a pred?!";
+    }
+#    $pred->initiate_node;
+
     my $coltype_old_id = $pred->{'coltype'} || 0;
     $coltype_new_id ||= 0;
 
@@ -583,6 +640,14 @@ sub set_coltype
 
     if( $coltype_old_id != $coltype_new_id )
     {
+	if( my $range = $pred->first_prop('range',undef,$args) )
+	{
+	    if( $range->coltype_id != $coltype_new_id )
+	    {
+		confess "Caller has to set the range first";
+	    }
+	}
+
 	my $pred_id = $pred->id;
 
 	debug "Pred $pred_id coltype set to '$coltype_new_id'";
@@ -592,42 +657,9 @@ sub set_coltype
 
 	if( $coltype_old_id )
 	{
-	    my $coltype_old = Rit::Base::Literal::Class->
-	      coltype_by_coltype_id( $coltype_old_id );
-
-	    my $coltype_new = Rit::Base::Literal::Class->
-	      coltype_by_coltype_id( $coltype_new_id );
-
-	    debug "Changing coltype from $coltype_old to $coltype_new!!!";
-
-	    # TODO: now just checks for existance (limit 1)
-	    #
-	    my $st = "select id,$coltype_old from arc where pred=$pred_id and $coltype_old is not null limit 1";
-	    my $sth = $Rit::dbix->dbh->prepare($st) or die;
-	    $sth->execute() or die;
-	    if( $sth->rows )
-	    {
-		my $R = Rit::Base->Resource;
-
-		my $nodesfu = $R->find({ 'rev_'. $pred->name .'_exist' => '1' });
-
-		# convert to value-nodes
-		while( my $nodefu = $nodesfu->get_next_nos )
-		{
-		    debug "Intending to update ". $nodefu->sysdesig;
-		    if( $nodefu->count('name') and
-			not $nodefu->count('value') )
-		    {
-			debug "Name is: ". $nodefu->name->sysdesig;
-			$nodefu->add({ value => $nodefu->name });
-			$nodefu->arc('name')->remove;
-		    }
-		}
-		#confess "There is existing arcs with $coltype_old defined";
-	    }
-	    $sth->finish;
+	    debug "Changing coltype id from $coltype_old_id to $coltype_new_id!!!";
+	    debug "EXISTING ARCS MUST BE VACUUMED";
 	}
-
     }
 
     return $coltype_new_id;
@@ -646,7 +678,7 @@ sub vacuum
 {
     my( $pred, $args_in ) = @_;
 
-    $pred->set_coltype_from_range( $args_in );
+    $pred->on_new_range( $args_in );
     return $pred->SUPER::vacuum( $args_in );
 }
 
