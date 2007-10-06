@@ -342,9 +342,9 @@ sub desig
     my( $rule ) = @_;
 
     return sprintf( "( A %s B ) and ( B %s C ) ==> ( A %s C )",
-		    $rule->a->name->plain,
-		    $rule->b->name->plain,
-		    $rule->c->name->plain,
+		    $rule->a->plain,
+		    $rule->b->plain,
+		    $rule->c->plain,
 		  );
 }
 

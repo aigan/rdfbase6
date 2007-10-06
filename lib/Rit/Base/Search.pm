@@ -580,7 +580,7 @@ sub broaden # removes targets from searchy type
 	    my $predkey;
 	    if( $preds->size > 1 )
 	    {
-		my @pred_names = map $_->name->plain, $preds->as_array;
+		my @pred_names = map $_->plain, $preds->as_array;
 		$predkey = 'predor_'.join('_-_', @pred_names);
 	    }
 	    else
@@ -1448,7 +1448,7 @@ sub add_prop
     if( $preds->size == 1 )
     {
 	my $first = $preds->get_first_nos;
-	$pred_name = $first->name->plain;
+	$pred_name = $first->plain;
 	$search->replace( 'prop', $pred_name  );
 	$search->replace( 'props', $pred_name );
     }
@@ -1560,7 +1560,7 @@ sub rev_query
 		else
 		{
 		    $pred = $preds->get_first_nos;
-		    $pred_alt = $pred->name->plain;
+		    $pred_alt = $pred->plain;
 		    $pred_alt = undef if $pred eq $pred_alt;
 		}
 
@@ -2493,7 +2493,7 @@ sub elements_props
 	    {
 #		debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
 
-		if( $pred->name->plain eq 'id' )
+		if( $pred->plain eq 'id' )
 		{
 		    die "not implemented";
 		}
@@ -2538,7 +2538,7 @@ sub elements_props
 	    }
 	}
 	elsif( ($preds->size < 2) and
-	       ($preds->get_first_nos->name->plain eq 'id') )
+	       ($preds->get_first_nos->plain eq 'id') )
 	{
 	    if( BINDVALS )
 	    {
