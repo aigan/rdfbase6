@@ -1490,16 +1490,23 @@ value matching proplim and args
 
 sub has_pred
 {
-    my( $l, $predname, $proplim, $args_in ) = @_;
+    my( $l, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
 #    debug "Filtering list on has_pred";
 
     # This is an optimized version of list autoload has_pred...
 
-    if( UNIVERSAL::isa($predname,'Rit::Base::Pred') )
+    my( $pred, $predname );
+    if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
     {
-	$predname = $predname->plain;
+	$pred = $pred_in;
+	$predname = $pred->plain;
+    }
+    else
+    {
+	$pred = Rit::Base::Pred->get($pred_in);
+	$predname = $pred->plain;
     }
 
     my @grep;
@@ -1511,7 +1518,7 @@ sub has_pred
     {
 #	debug "  checking ".$node->desig;
 	my @arcs;
-	if( $node->initiate_prop( $predname, $proplim, $args ) )
+	if( $node->initiate_prop( $pred, $proplim, $args ) )
 	{
 	    if( $active and $node->{'relarc'}{$predname} )
 	    {
