@@ -183,9 +183,9 @@ sub valtype
 {
     my( $pred ) = @_;
 
-    if( my $range = $pred->{'relarc'}{'range'}[0] )
+    if( my $range_arcs = $pred->{'relarc'}{'range'} )
     {
-	return $range; # Optimization shortcut
+	return $range_arcs->[0]{'value'}; # Optimization shortcut
     }
 
     if( my $range = $pred->first_prop('range') )
