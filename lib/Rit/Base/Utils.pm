@@ -90,7 +90,6 @@ sub cache_clear
 
     $Rit::Base::Cache::Created = $time || time;
 
-    %Rit::Base::Cache::Label = ();
     %Rit::Base::Cache::Resource = ();
     %Rit::Base::Cache::find_simple = ();
 
