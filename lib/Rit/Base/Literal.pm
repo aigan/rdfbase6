@@ -30,7 +30,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug datadump );
+use Para::Frame::Utils qw( throw debug datadump );
 
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time;
@@ -607,7 +607,7 @@ sub extract_string
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Resource" )
     {
-	if( my $arc = $val->first_arc('value', $args) )
+	if( my $arc = $val->first_arc('value', undef, $args) )
 	{
 	    $val = $arc->value;
 
@@ -616,7 +616,7 @@ sub extract_string
 	}
 	else
 	{
-	    confess "$val->{id} is not a value node";
+	    throw('validation', "$val->{id} is not a value node");
 	}
     }
     else
