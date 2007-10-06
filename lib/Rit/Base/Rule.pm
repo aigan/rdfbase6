@@ -36,7 +36,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
 use Rit::Base::Utils qw( is_undef );
-use Rit::Base::Constants qw( $C_syllogism );
+use Rit::Base::Constants qw( $C_syllogism $C_is );
 
 
 ### Inherit
@@ -69,7 +69,7 @@ sub on_configure
 
     %Rules = ();
 
-    my $rules = $C_syllogism->revlist('is');
+    my $rules = $C_syllogism->revlist($C_is);
 
     foreach my $rule ( $rules->as_array )
     {
