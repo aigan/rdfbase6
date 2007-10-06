@@ -33,7 +33,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug datadump trim throw );
+use Para::Frame::Utils qw( debug datadump trim throw deunicode );
 use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs );
@@ -125,19 +125,12 @@ sub new
 	if( $val =~ /Ã./ )
 	{
 	    debug "HANDLE THIS (apparent undecoded UTF8: $val)";
-	    unless( utf8::decode( $val ) )
-	    {
-		debug 0, "Failed to convert to UTF8!";
-#		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
-	    }
+	    $val = deunicode($val);
 	}
-	else
-	{
-	    utf8::upgrade( $val );
-	}
-    }
 
-#    debug "Created string $value->{'value'}";
+#	debug "Upgrading $val";
+	utf8::upgrade( $val );
+    }
 
 
     my $lit = bless
@@ -147,9 +140,11 @@ sub new
      'valtype' => $valtype,
     }, $class;
 
+#    debug "Created string $val";
+
 #    debug "Returning new ".$lit->sysdesig." ".refaddr($lit);
 #    debug "  of valtype ".$lit->this_valtype->sysdesig;
-#    cluck "GOT HERE" if $lit->plain =~ /^test/;
+#    cluck "GOT HERE" if $lit->plain =~ /^1/;
 
     return $lit;
 }
