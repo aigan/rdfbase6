@@ -423,6 +423,7 @@ sub meets_proplim
 
     unless( ref $proplim and ref $proplim eq 'HASH' )
     {
+	return 1 unless $proplim;
 	return $node->equals( $proplim, $args_in );
     }
 
@@ -1112,7 +1113,10 @@ sub remove
 
     # Remove from cache
     #
-    delete $Rit::Base::Cache::Resource{ $node->id };
+    if( my $id = $node->id )
+    {
+	delete $Rit::Base::Cache::Resource{ $id };
+    }
 
     return $res->changes - $changes_prev;
 }

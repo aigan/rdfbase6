@@ -420,6 +420,12 @@ sub on_bless
 {
     my( $pred, $class_old, $args_in ) = @_;
 
+    # This initiates the node, if existing
+    unless( $pred->label )
+    {
+	confess "A pred must have a label";
+    }
+
     $pred->on_new_range($args_in);
 }
 
@@ -506,10 +512,10 @@ sub on_new_range
 
     $range_new ||= $pred->valtype;
     $range_old ||= $C_resource;
-
+    my $old_coltype_id = $pred->{'coltype'} || 0;
 
     # Updating coltype
-    if( $pred->coltype_id != $range_new->coltype_id )
+    if( $old_coltype_id != $range_new->coltype_id )
     {
 	$pred->set_coltype( $range_new->coltype_id, $args_in );
     }
@@ -622,7 +628,7 @@ sub set_coltype
 #    debug "Set coltype for pred ".$pred->sysdesig. " ".refaddr($pred);
     debug "Set coltype for pred ".refaddr($pred);
 
-    unless( $pred->{'initiated_node'} > 1 )
+    unless( $pred->{'label'} )
     {
 	debug datadump($pred,2);
 	confess "Has this been initiated as a pred?!";
