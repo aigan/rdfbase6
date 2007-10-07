@@ -2487,7 +2487,7 @@ sub has_value
 
 #    Para::Frame::Logging->this_level(4);
 
-    my( $pred_name, $value ) = each( %$preds );
+    my( $pred_name, $value ) = %$preds;
 
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
@@ -2879,38 +2879,11 @@ debugging.  This version of desig indludes the node id.
 
 =cut
 
-sub sysdesig  # The designation of obj, including node id
+sub sysdesig
 {
     my( $node, $args ) = @_;
 
-    my $desig;
-
-    if( $desig = $node->label )
-    {
-	# That's good
-    }
-    elsif( $node->first_prop('name',undef,$args)->defined )
-    {
-	$desig = $node->first_prop('name',undef,$args)
-    }
-    elsif( $node->first_prop('name_short',undef,$args)->defined )
-    {
-	$desig = $node->first_prop('name_short',undef,$args)
-    }
-    elsif( $node->value->defined )
-    {
-	$desig = $node->value
-    }
-    elsif( $node->first_prop('code',undef,$args)->defined )
-    {
-	$desig = $node->first_prop('code',undef,$args)
-    }
-    else
-    {
-	$desig = $node->id
-    }
-
-    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    my $desig = $node->desig;
 
     if( $desig eq $node->{'id'} )
     {
@@ -2918,7 +2891,7 @@ sub sysdesig  # The designation of obj, including node id
     }
     else
     {
-	return truncstring("$node->{'id'}: $desig");
+	return "$node->{'id'}: $desig";
     }
 }
 
@@ -5486,7 +5459,7 @@ sub initiate_cache
 	    # We want to reinitiate the node since for exampel preds
 	    # should always be initiated.
 
-	    debug "RE-initiating node $node->{id} from DB";
+#	    debug "RE-initiating node $node->{id} from DB";
 	    $node->initiate_node;
 	}
     }
