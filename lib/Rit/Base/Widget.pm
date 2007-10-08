@@ -236,7 +236,7 @@ sub wub_select
       if( $header );
 
     my $is_pred = ( $args->{'range_scof'} ? 'scof' : 'is' );
-    my $items = $type->revlist($is_pred, undef, aais($args,'direct'))->
+    my $items = $type->revlist($is_pred, undef, $args)->
       sorted(['name_short', 'desig', 'label']);
 
     $req->may_yield;
