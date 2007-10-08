@@ -828,11 +828,13 @@ sub create
     # Sanity check
     if( $subj and $subj->id != $arc->subj->id )
     {
-	confess "Creation of arc arc->{id} resulted in confused subj: ".datadump($subj,2).datadump($arc->subj,2);
+	confess "Creation of arc arc->{id} resulted in confused subj: ".
+	  datadump($subj,2).datadump($arc->subj,2);
     }
     if( $value_obj and not $value_obj->equals($arc->value) )
     {
-	confess "Creation of arc arc->{id} resulted in confused value: ".datadump($value_obj,2).datadump($arc->value,2);
+	confess "Creation of arc arc->{id} resulted in confused value: ".
+	  datadump($value_obj,2).datadump($arc->value,2);
     }
 
 
@@ -3172,9 +3174,9 @@ Sets the L</value> of the arc.
 Determines if we are dealning with L<Rit::Base::Resource> or
 L<Rit::Base::Literal>.
 
-Old and/or new value could be a value node.  Fail if old value
-is obj and new value isn't.  If old is value and new is obj,
-just accept that.
+Old and/or new value could be a value node.  If old value is a
+valuenode and new value is a literal, try to update the value arc
+instead.  If old is value and new is obj, just accept that.
 
 Supported args are:
 
@@ -3284,13 +3286,19 @@ sub set_value
     }
 
 
-    if( debug > 2 )
+    if( debug > 1 )
     {
 	debug "  value_old: ".$value_old->sysdesig();
 	debug "   type old: ".$valtype_old->sysdesig;
 	debug "  value_new: ".$value_new->sysdesig();
 	debug "   type new: ".$valtype_new->sysdesig;
 	debug "  coltype  : $coltype_new";
+    }
+
+    if( $value_old->is_value_node and $value_new->is_literal )
+    {
+	return $arc->value->first_arc('value',undef,$args)->
+	  set_value($value_new, $args);
     }
 
     unless( $value_new->equals( $value_old, $args ) and
@@ -3420,7 +3428,7 @@ sub set_value
 	    $Rit::Base::Cache::Changes::Updated{$value_new->id} ++;
 	}
 
-	debug 3, "Updated arc id $arc_id: ".$arc->desig."\n";
+	debug 0, "Updated arc ".$arc->sysdesig;
 
 	$res->changes_add;
 	$res->add_newarc($arc);
