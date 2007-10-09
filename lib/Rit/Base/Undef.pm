@@ -439,7 +439,7 @@ sub list
 
 sub arc_list
 {
-    return Rit::Base::List->new_empty();
+    return Rit::Base::Arc::List->new_empty();
 }
 
 #######################################################################
@@ -475,7 +475,7 @@ sub revlist
 
 sub revarc_list
 {
-    return Rit::Base::List->new_empty();
+    return Rit::Base::Arc::List->new_empty();
 }
 
 #######################################################################
