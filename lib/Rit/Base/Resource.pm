@@ -1756,20 +1756,8 @@ sub list
 	    $name = $pred->plain
 	}
 
-#	debug sprintf "Called %s->list(%s) with proplim:", $node->id, $name;
-#	debug query_desig( $proplim );
-
-
 	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
-
-	### DEBUG
-#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-#	if( ($name eq 'is') and ($node->{id} == 914450) )
-#	{
-#	    debug "Initiating $name:";
-#	}
-
 
 	if( $node->initiate_prop( $pred, $proplim, $args ) )
 	{
@@ -1791,29 +1779,7 @@ sub list
 	    return Rit::Base::List->new_empty();
 	}
 
-	### DEBUG
-#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-#	if( ($name eq 'is') and ($node->{id} == 914450) )
-#	{
-#	    debug "Arcs found:";
-#	    foreach my $arc ( @arcs )
-#	    {
-#		debug "  ".$arc->sysdesig;
-#	    }
-#	}
-
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
-
-	### DEBUG
-#	if( ($name eq 'lodging_description') and ($node->{id} == 2513) )
-#	if( ($name eq 'is') and ($node->{id} == 914450) )
-#	{
-#	    debug "Arcs after filter:";
-#	    foreach my $arc ( @arcs )
-#	    {
-#		debug "  ".$arc->sysdesig;
-#	    }
-#	}
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
@@ -1823,19 +1789,8 @@ sub list
 
 
 	my $vals = $pred->valtype->instance_class->list_class->
-	  new([ map $_->value, @arcs ]);
-
-	# Don't call find if proplim is empty
-	if( $proplim and (ref $proplim eq 'HASH' ) and not keys %$proplim )
-	{
-	    undef $proplim;
-	}
-
-	if( $proplim ) # May be a value or anything taken by find
-	{
-	    # TODO: Include inactive properties?
-	    $vals = $vals->find($proplim, $args);
-	}
+	  new([ grep $_->meets_proplim($proplim,$args),
+		map $_->value, @arcs ]);
 
 	return $vals;
     }
@@ -2001,12 +1956,8 @@ sub revlist
 	}
 
 	my $vals = $pred->valtype->instance_class->list_class->
-	  new([ map $_->subj, @arcs ]);
-
-	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
-	{
-	    $vals = $vals->find($proplim, $args);
-	}
+	  new([ grep $_->meets_proplim($proplim,$args),
+		map $_->subj, @arcs ]);
 
 	return $vals;
     }
