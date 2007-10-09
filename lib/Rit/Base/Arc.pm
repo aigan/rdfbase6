@@ -2184,7 +2184,7 @@ sub deactivate
     $arc->obj->initiate_cache if $arc->obj;
     $arc->subj->initiate_cache;
 #    $arc->initiate_cache; ### not needed
-    $arc->remove_check($args);
+    $arc->schedule_check_remove( $args );
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
     $args->{'res'}->changes_add;
@@ -3319,7 +3319,7 @@ sub set_value
 
 	debug 3, "    Changing value\n";
 
-	$arc->remove_check( $args );
+	$arc->schedule_check_remove( $args );
 
 	my $arc_id      = $arc->id;
 	my $u_node      = $Para::Frame::REQ->user;
@@ -4476,12 +4476,46 @@ sub schedule_check_create
 
     if( $Rit::Base::Arc::lock_check ||= 0 )
     {
-	push @Rit::Base::Arc::queue_check, [$arc, \%args];
-	debug 3, "Added ".$arc->sysdesig." to queue check";
+	push @Rit::Base::Arc::queue_check_add, [$arc, \%args];
+	debug 3, "Added ".$arc->sysdesig." to queue check add";
     }
     else
     {
 	$arc->create_check( \%args );
+    }
+}
+
+
+###############################################################
+
+=head2 schedule_check_remove
+
+  $a->schedule_check_remove( \%args )
+
+Schedueled checks of newly removed arcs
+
+Returns: ---
+
+=cut
+
+sub schedule_check_remove
+{
+    my( $arc, $args_in ) = @_;
+
+    # Res and arclim should not be part of the args
+    #
+    my %args = %$args_in;
+    delete $args{'res'};
+    delete $args{'arclim'};
+
+    if( $Rit::Base::Arc::lock_check ||= 0 )
+    {
+	push @Rit::Base::Arc::queue_check_remove, [$arc, \%args];
+	debug 3, "Added ".$arc->sysdesig." to queue check remove";
+    }
+    else
+    {
+	$arc->remove_check( \%args );
     }
 }
 
@@ -4535,7 +4569,12 @@ sub unlock
 
     if( $cnt == 0 )
     {
-	while( my $params = shift @Rit::Base::Arc::queue_check )
+	while( my $params = shift @Rit::Base::Arc::queue_check_remove )
+	{
+	    my( $arc, $args ) = @$params;
+	    $arc->remove_check( $args );
+	}
+	while( my $params = shift @Rit::Base::Arc::queue_check_add )
 	{
 	    my( $arc, $args ) = @$params;
 	    $arc->create_check( $args );
@@ -4727,6 +4766,21 @@ sub remove_check
 
     my $pred      = $arc->pred;
 
+    # Special remove rules
+    #
+    my $pred_name = $pred->plain;
+    my $subj = $arc->subj;
+
+    if( $pred_name eq 'is' )
+    {
+	$subj->rebless($args);
+    }
+    elsif( $pred_name eq 'class_handled_by_perl_module' )
+    {
+	# TODO: Place this in Rit::Base::Class
+	$subj->on_class_perl_module_change($arc, $pred_name, $args);
+    }
+
     if( my $list_a = Rit::Base::Rule->list_a($pred) )
     {
 	foreach my $rule ( @$list_a )
@@ -4743,21 +4797,6 @@ sub remove_check
 	}
     }
 
-
-    # Special remove rules
-    #
-    my $pred_name = $pred->plain;
-    my $subj = $arc->subj;
-
-    if( $pred_name eq 'is' )
-    {
-	$subj->rebless($args);
-    }
-    elsif( $pred_name eq 'class_handled_by_perl_module' )
-    {
-	# TODO: Place this in Rit::Base::Class
-	$subj->on_class_perl_module_change($arc, $pred_name, $args);
-    }
 
     $subj->on_arc_del($arc, $pred_name, $args);
 
