@@ -1776,7 +1776,7 @@ sub list
 	else
 	{
 #	    debug "No values for $node->{id} prop $name found!";
-	    return Rit::Base::List->new_empty();
+	    return Rit::Base::Arc::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
@@ -1944,7 +1944,7 @@ sub revlist
 	else
 	{
 #	    debug 3, "  No values for revprop $name found!";
-	    return Rit::Base::List->new_empty();
+	    return Rit::Base::Arc::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
