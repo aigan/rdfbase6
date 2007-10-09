@@ -847,6 +847,10 @@ sub modify
 	    {
 		confess "not implemented: $pred";
 	    }
+	    elsif( $pred =~ /\./ )
+	    {
+		confess "not implemented: $pred";
+	    }
 	    else
 	    {
 		$pred = Rit::Base::Pred->get_by_label( $pred );
