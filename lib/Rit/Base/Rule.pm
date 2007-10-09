@@ -134,6 +134,70 @@ sub on_bless
 }
 
 
+#######################################################################
+
+=head2 on_unbless
+
+=cut
+
+sub on_unbless
+{
+    my( $rule, $class, $args_in ) = @_;
+
+    my $id = $rule->id;
+
+    foreach my $key (keys %List_A)
+    {
+	my @newlist;
+	foreach my $rule ( @{$List_A{$key}} )
+	{
+	    if( $rule->id eq $id )
+	    {
+		debug "Skipping rule $id in A";
+		next;
+	    }
+	    push @newlist, $rule;
+	}
+
+	$List_A{$key} = \@newlist;
+    }
+
+    foreach my $key (keys %List_B)
+    {
+	my @newlist;
+	foreach my $rule ( @{$List_B{$key}} )
+	{
+	    if( $rule->id eq $id )
+	    {
+		debug "Skipping rule $id in B";
+		next;
+	    }
+	    push @newlist, $rule;
+	}
+
+	$List_B{$key} = \@newlist;
+    }
+
+    foreach my $key (keys %List_C)
+    {
+	my @newlist;
+	foreach my $rule ( @{$List_C{$key}} )
+	{
+	    if( $rule->id eq $id )
+	    {
+		debug "Skipping rule $id in C";
+		next;
+	    }
+	    push @newlist, $rule;
+	}
+
+	$List_C{$key} = \@newlist;
+    }
+
+    delete $Rules{$id};
+}
+
+
 ###############################################################
 
 =head2 use_class
