@@ -442,7 +442,7 @@ sub uniq
   $literal->as_list()
 
 Returns a referens to a list. Not a List object. The list content are
-materialized.
+materialized. Compatible with L<Para::Frame::List/as_list>
 
 =cut
 
