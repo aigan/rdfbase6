@@ -73,6 +73,59 @@ sub new
 
 #######################################################################
 
+=head3 parse
+
+  $this->parse( $value, $valtype )
+
+=cut
+
+sub parse
+{
+    my( $class, $val_in, $args_in ) = @_;
+    my( $val, $coltype, $valtype, $args ) =
+      $class->extract_string($val_in, $args_in);
+
+    if( $coltype eq 'obj' ) # Is this a value node?
+    {
+	$coltype = $valtype->coltype;
+	debug "Parsing as $coltype: ".query_desig($val_in);
+    }
+
+    my $val_mod;
+    if( ref $val eq 'SCALAR' )
+    {
+	$val_mod = $$val;
+    }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+    {
+	$val_mod = $val->plain;
+    }
+    else
+    {
+	confess "Can't parse $val";
+    }
+
+    unless( length $val_mod )
+    {
+	$class->new( undef, $valtype );
+    }
+
+    # Always return the incoming object. This may MODIFY the object
+    #
+    if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+    {
+	$val->{'value'} = URI->new($val_mod);
+	$val->{'valtype'} = $valtype;
+	return $val;
+    }
+
+    # Implementing class may not take scalarref
+    return $class->new( $val_mod, $valtype );
+}
+
+
+#######################################################################
+
 =head3 new_from_db
 
   $this->new_from_db( $value, $valtype )
