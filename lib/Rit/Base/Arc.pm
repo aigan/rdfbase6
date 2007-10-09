@@ -2366,7 +2366,7 @@ sub check_valtype
 	if( $pred_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
-	    debug "  pred takes any obj";
+#	    debug "  pred takes any obj";
 	    return 0;
 	}
 
@@ -2386,6 +2386,10 @@ sub check_valtype
 	    }
 	    elsif( $arc_valtype->equals($c_resource) )
 	    {
+		debug "TRANSLATION OF VALTYPE";
+		debug "  for ".$arc->sysdesig;
+		debug " from ".$arc_valtype->sysdesig;
+		debug "   to ".$pred_valtype->sysdesig;
 		debug "Trusting new given valtype";
 		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
