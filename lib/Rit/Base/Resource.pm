@@ -5703,6 +5703,7 @@ sub save
 #	debug "Creating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
 	$sth->execute(@values) or die;
+	$node->{'initiated_node'} = 2;
     }
 
     $Rit::Base::Cache::Changes::Updated{$nid} ++;

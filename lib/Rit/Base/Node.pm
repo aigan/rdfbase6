@@ -166,10 +166,13 @@ sub find_remove
     my( $this, $props, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
+    arc_lock;
     foreach my $node ( $this->find( $props, $args )->nodes )
     {
 	$node->remove( $args );
     }
+    arc_unlock;
+
 }
 
 
