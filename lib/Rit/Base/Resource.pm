@@ -5268,7 +5268,7 @@ sub get_by_anything
 
 	unless( $req and $req->is_from_client )
 	{
-	    confess "We got a list: ".datadump( $list,4 );
+	    confess "We got a list: ".$list->sysdesig;
 	}
 
 	my $home = $req->site->home_url_path;
