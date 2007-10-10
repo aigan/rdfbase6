@@ -224,12 +224,17 @@ A language-code; Set the language on this value (as an arc to the value-node).
 sub update_by_query
 {
     my( $class, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args_hash, $arclim, $res ) = parse_propargs($args_in);
+    my $args = {%$args_hash}; # Shallow clone
     my $changes_prev = $res->changes;
 
     my $q = $Para::Frame::REQ->q;
 
-    unless( $args->{'node'} )
+    if( $args->{'node'} )
+    {
+	$q->param('id', $args->{'node'}->id); # Just in case...
+    }
+    else
     {
 	if( my $id = $q->param('id') )
 	{
