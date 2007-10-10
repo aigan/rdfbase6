@@ -1380,19 +1380,14 @@ Setts query param id to node id.
 
 Calls L<Rit::Base::Widget::Handler/update_by_query> for the main work.
 
-Returns: the number of changes done
+Returns: -
 
 =cut
 
 sub update_by_query
 {
     my( $node, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
-
-    my $id = $node->id;
-    my $q = $Para::Frame::REQ->q;
-    $q->param('id', $id); # Just in case...
-
+    my( $args ) = parse_propargs($args_in);
     return Rit::Base::Widget::Handler->update_by_query({
 							%$args,
 							node => $node,
