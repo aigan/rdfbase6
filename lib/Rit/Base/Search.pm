@@ -965,7 +965,7 @@ sub modify
 	    my $coltype = $qarc->{'coltype'} ||= 'obj';
 	    if( $coltype ne 'obj' )
 	    {
-		confess "Coltype mismatch: $coltype ne obj";
+		debug "Coltype mismatch: $coltype ne obj";
 	    }
 	    $qarc->{$coltype} = parse_values($props->{'obj'});
 	}
