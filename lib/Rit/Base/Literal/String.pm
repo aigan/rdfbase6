@@ -652,6 +652,7 @@ sub wuirc
     else
     {
 	$predname = $pred;
+	# Only handles pred nodes
 	$pred = Rit::Base::Pred->get_by_label($predname);
     }
 

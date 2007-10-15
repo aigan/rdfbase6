@@ -546,6 +546,7 @@ sub handle_query_arc_value
       if( $select and $select eq 'version' ); # activate arc-version and return
 
 
+    # Only handles pred nodes
     my $pred = Rit::Base::Pred->get_by_label( $pred_name )
       or die("Can't get pred '$pred_name' from $param");
     my $pred_id = $pred->id;

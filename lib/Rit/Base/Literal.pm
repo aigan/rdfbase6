@@ -1238,6 +1238,7 @@ sub count
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
+    # Only handles pred nodes
     my $pred_name = Rit::Base::Pred->get_by_label( $tmpl )->plain;
 
     if( $pred_name eq 'value' )
@@ -1273,6 +1274,8 @@ sub revcount
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
+
+    # Only handles pred nodes
     my $pred = Rit::Base::Pred->get_by_label( $tmpl );
 
     if( $pred->equals( $arc->pred )  )

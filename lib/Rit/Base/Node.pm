@@ -880,6 +880,7 @@ sub replace
     foreach my $pred_name ( keys %$props )
     {
 	debug 3, "  pred: $pred_name";
+	# Only handles pred nodes
 	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 
 	my $valtype;
@@ -1352,6 +1353,7 @@ sub construct_proplist
 		}
 		else
 		{
+		    # Only handles pred nodes
 		    $valtype = Rit::Base::Pred->get_by_label($pred_name)->valtype;
 		}
 

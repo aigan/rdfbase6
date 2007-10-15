@@ -853,7 +853,8 @@ sub modify
 	    }
 	    else
 	    {
-		$pred = Rit::Base::Pred->get_by_label( $pred );
+		# Must also take dynamic preds like 'is'
+		$pred = Rit::Base::Pred->get( $pred );
 		$type = $pred->coltype;
 		$predref = [$pred];
 	    }
@@ -2112,7 +2113,8 @@ sub build_outer_select_field
 
 #	debug "  field $field";
 
-	my $pred = Rit::Base::Pred->get_by_label( $field );
+	# Should also take dynamic preds like 'is'
+	my $pred = Rit::Base::Pred->get( $field );
 	my $coltype = $pred->coltype;
 	# Sort on real value. Not clean
 

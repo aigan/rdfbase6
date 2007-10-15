@@ -784,6 +784,7 @@ sub find_simple
 {
     my( $this, $pred_in, $value_in ) = @_;
 
+    # Only handles pred nodes
     my $pred = Rit::Base::Pred->get_by_label( $pred_in );
     my $pred_id = $pred->id;
 
@@ -1884,6 +1885,7 @@ sub list_preds
 	}
     }
 
+    # Only handles pred nodes
     my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
     return Rit::Base::Pred::List->new(\@preds);
@@ -2049,6 +2051,7 @@ sub revlist_preds
 	}
     }
 
+    # Only handles pred nodes
     my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
 
     return Rit::Base::Pred::List->new(\@preds);
@@ -2443,7 +2446,8 @@ sub has_value
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
 
-    my $pred = Rit::Base::Pred->get_by_label( $pred_name );
+    # Can we also handle dynamic preds like id or desig?
+    my $pred = Rit::Base::Pred->get( $pred_name );
 
     $pred_name = $pred->plain;
 
@@ -4003,7 +4007,9 @@ sub wd
 	$pred_name = $1;
 	$rev = 1;
     }
-    my $pred = Rit::Base::Pred->get_by_label($pred_name);
+
+    # Should we support dynamic preds?
+    my $pred = Rit::Base::Pred->get($pred_name);
 
     my( $range, $range_scof );
     if( $rev )
@@ -4154,7 +4160,9 @@ sub wu
 	$rev = 1;
 	$args->{'rev'} = 1;
     }
-    my $pred = Rit::Base::Pred->get_by_label($pred_name);
+
+    # Should we support dynamic preds?
+    my $pred = Rit::Base::Pred->get($pred_name);
 
     my( $range, $range_scof );
 
