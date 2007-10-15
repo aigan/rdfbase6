@@ -235,6 +235,8 @@ sub parse
 	confess "Can't parse $val";
     }
 
+    # Remove invisible characters from string
+    $val_mod =~ s/\p{Other}//g;
 
     if( $coltype eq 'valtext' )
     {
