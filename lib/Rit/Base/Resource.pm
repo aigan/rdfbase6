@@ -4318,13 +4318,10 @@ sub wuirc
 
 	    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
 
-	    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1,
-						  {
-						   label => $label,
-						  });
-	    $out .= '['. ( $is_rev ? $check_subj->wu_jump({ label => 'Form' }) :
-			   $item->wu_jump({ label => 'Form' }) ) .']&nbsp;'.
-			     $arc->edit_link_html;
+	    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+	    $out .= ( $is_rev ? $check_subj->wu_jump :
+		      $item->wu_jump ) .'&nbsp;'.
+			$arc->edit_link_html;
 
 	    if( $list->size > 1)
 	    {
