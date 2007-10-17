@@ -236,7 +236,7 @@ sub parse
     }
 
     # Remove invisible characters from string
-    $val_mod =~ s/\p{Other}//g;
+    $val_mod =~ s/(?!\n)\p{Other}//g;
 
     if( $coltype eq 'valtext' )
     {
