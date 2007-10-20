@@ -132,7 +132,8 @@ sub valclean
 
     $value = $$origvalue if ref $origvalue eq 'SCALAR';
 
-    if( UNIVERSAL::can $value, 'plain' )
+    # Make sure that $value is an object and not a class name
+    if( ref($value) and UNIVERSAL::can $value, 'plain' )
     {
 	$value = $value->plain;
     }
