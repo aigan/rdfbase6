@@ -36,7 +36,7 @@ use Para::Frame::User;
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
-use Rit::Base::Constants qw( $C_guest $C_login_account $C_full_access $C_guest_access );
+use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
 
 use base qw(Para::Frame::User);
 
@@ -208,6 +208,8 @@ sub find_by_anything
     my( $this, $val, $args ) = @_;
     return is_undef unless defined $val;
 
+#    Para::Frame::Logging->this_level(3);
+
     unless( ref $val )
     {
 	trim(\$val);
@@ -224,7 +226,7 @@ sub find_by_anything
 	debug 2, "  as guest";
 #	warn datadump($C_guest_access, 2);
 	my $class = ref($_[0]) || $_[0];
-	@new = $C_guest;
+	@new = Rit::Base::Resource->get_by_label('guest');
 #	@new = Rit::Base::Resource->get({
 #					 'name_short'       => 'guest',
 #					 has_access_right   => $C_guest_access,

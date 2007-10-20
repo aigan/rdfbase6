@@ -42,11 +42,13 @@ use Para::Frame::Time qw( now );
 use Rit::Base;
 use Rit::Base::Utils qw( valclean );
 use Rit::Base::Constants;
+use Rit::Base::Literal::Class;
 
 our %NODE;
 our @ARC;
 our %VALTYPE;
 our %NOLABEL;
+our %LITERAL;
 
 sub setup_db
 {
@@ -59,7 +61,8 @@ sub setup_db
 #    debug "First node will have number $cnt";
 
 
-    my $rb_root = $Para::Frame::CFG->{'rb_root'} or die "rb_root not given in CFG";
+    my $rb_root = $Para::Frame::CFG->{'rb_root'}
+      or die "rb_root not given in CFG";
     open RBDATA, "$rb_root/data/base.data" or die $!;
     while(<RBDATA>)
     {
@@ -89,14 +92,23 @@ sub setup_db
 	 pred_coltype => $pred_coltype,
 	 node => $id,
 	};
+
+	print "$id = $label\n";
     }
 
     print "Reading Arcs\n";
+    my $is_literal = 0;
     while(<RBDATA>)
     {
 	chomp;
 	next unless $_;
 	last if $_ eq 'EOF';
+
+	if( /^LITERALS/ )
+	{
+	    $is_literal = 1;
+	    next;
+	}
 
 	my( $subj, $pred, $obj, $value ) = split /\t/, $_;
 
@@ -107,6 +119,14 @@ sub setup_db
 	 obj => $obj,
 	 value => $value,
 	};
+
+	my $valdbg = $obj || $value;
+	print "Planning $subj --$pred--> $valdbg\n";
+
+	if( $is_literal )
+	{
+	    $LITERAL{$subj} = $obj;
+	}
 
 	foreach my $label ($subj, $pred, $obj)
 	{
@@ -121,12 +141,49 @@ sub setup_db
 		 label => $label,
 		 node => $id,
 		};
+
+		print "$id = $label\n";
 	    }
 	}
 
     }
 
     close RBDATA;
+
+    print "Bootstrapping literals\n";
+    foreach my $lit (keys %LITERAL)
+    {
+	my $scof = $LITERAL{$lit};
+	if( $scof eq 'text' )
+	{
+	    push @ARC,
+	    {
+	     subj => $lit,
+	     pred => 'scof',
+	     obj => 'valtext',
+	    };
+	}
+
+	unless( $scof eq 'literal' )
+	{
+	    push @ARC,
+	    {
+	     subj => $lit,
+	     pred => 'scof',
+	     obj => 'literal',
+	    };
+	}
+
+	push @ARC,
+	    {
+	     subj => $lit,
+	     pred => 'is',
+	     obj => 'literal_class',
+	    };
+
+	print "Literal $lit is a scof $scof\n";
+    }
+
 
     print "Adding nodes\n";
     my $root = $NODE{'root'}{'node'};
@@ -168,7 +225,7 @@ sub setup_db
     {
 	my $pred_name = $rec->{'pred'};
 	my $coltype_num = $NODE{$pred_name}{'pred_coltype'} or die "No coltype given for pred $pred_name";
-	my $coltype = $Rit::Base::COLTYPE_num2name{$coltype_num} or die "Coltype $coltype_num not found";
+	my $coltype = $Rit::Base::Literal::Class::COLTYPE_num2name{$coltype_num} or die "Coltype $coltype_num not found";
 	my $obj_in = $rec->{'obj'};
 	my $value;
 	if( $obj_in )
@@ -233,9 +290,14 @@ sub setup_db
 
     $dbh->commit;
 
-    print "Initiating constants\n";
+    # Initialization of constants and valtypes
+    Rit::Base::Literal::Class->on_startup();
+    Rit::Base::Constants->on_startup;
 
-    Rit::Base::Constants->init;
+    my $root_node = Rit::Base::Resource->get_by_id( $root );
+    print "Setting bg_user_code to ".$root;
+    $Para::Frame::CFG->{'bg_user_code'} = sub{ $root_node };
+
 
     my $req = Para::Frame::Request->new_bgrequest();
 
@@ -260,7 +322,7 @@ sub setup_db
 
     print "Initiating constants again\n";
 
-    Rit::Base::Constants->init;
+    Rit::Base::Constants->on_startup;
     $Rit::Base::IN_STARTUP = 0;
 
     print "Done!\n";
