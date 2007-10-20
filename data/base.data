@@ -154,6 +154,25 @@ site_code	range	text
 112	pred_2	scof
 112	pred_3	scof
 
+literal_class	is	class
+literal_class	scof	class
+literal	is	literal_class
+
+root	has_access_right	full_access
+root	is	login_account
+root	has_password		admin
+root	name_short		root
+
+guest	has_access_right	guest_access
+guest	is	login_account
+
+LITERALS
+
+valfloat	scof	literal
+valbin	scof	literal
+valdate	scof	literal
+valtext	scof	literal
+
 bool	scof	valfloat
 date	scof	valdate
 email	scof	text
@@ -166,17 +185,6 @@ text	scof	valtext
 textbox	scof	text
 url	scof	text
 zipcode	scof	text
-valfloat	scof	literal
-valbin	scof	literal
-valdate	scof	literal
-valtext	scof	literal
 
-root	has_access_right	full_access
-root	is	login_account
-root	has_password		admin
-root	name_short		root
-
-guest	has_access_right	guest_access
-guest	is	login_account
 
 EOF
