@@ -295,7 +295,7 @@ sub setup_db
     Rit::Base::Constants->on_startup;
 
     my $root_node = Rit::Base::Resource->get_by_id( $root );
-    print "Setting bg_user_code to ".$root;
+    print "Setting bg_user_code to $root\n";
     $Para::Frame::CFG->{'bg_user_code'} = sub{ $root_node };
 
 
