@@ -565,7 +565,12 @@ sub find_by_anything
 
 	eval # May throw exception
 	{
-	    @new = $this->get_by_label($val);
+#	    debug "Getting $val from const";
+	    my $const = $this->get_by_label($val);
+	    unless( $const->{'NOT_INITIALIZED'} )
+	    {
+		@new = ( $const );
+	    }
 	};
 
 	unless( @new )
