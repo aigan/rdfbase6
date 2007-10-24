@@ -81,8 +81,6 @@ sub wuirc
 
     $args->{'id'} ||= "arc_singular__pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
 
-    debug "wth...";
-
     $out .= label_from_params({
 			       label       => $args->{'label'},
 			       tdlabel     => $args->{'tdlabel'},
