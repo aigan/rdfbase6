@@ -264,6 +264,7 @@ sub parse
     elsif( $coltype eq 'valfloat' )
     {
 	trim($val_mod);
+	$val_mod =~ s/,/./;
 	unless( looks_like_number( $val_mod ) )
 	{
 	    throw 'validation', "String $val_mod is not a number";
