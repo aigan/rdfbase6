@@ -300,7 +300,14 @@ sub desig  # The designation of obj, meant for human admins
 {
     my( $val ) = @_;
 
-    return $val->{'value'};
+    #if( $val->arc('value')->realy_objtype )
+    #{
+    #	return $val->{'value'}->desig;
+    #}
+    #else
+    {
+	return $val->{'value'};
+    }
 }
 
 
@@ -650,6 +657,9 @@ sub wuirc
     if( ref $pred )
     {
 	$predname = $pred->label;
+
+	debug "String wuirc for $predname";
+	debug "$predname class is ". $pred->range->instance_class;
     }
     else
     {
@@ -657,6 +667,7 @@ sub wuirc
 	# Only handles pred nodes
 	$pred = Rit::Base::Pred->get_by_label($predname);
     }
+
 
     debug 2, "wub $inputtype $predname for ".$subj->sysdesig;
 
@@ -685,18 +696,6 @@ sub wuirc
 	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
-#    elsif( not $subj )
-#                           THIS SHOULDN'T HAPPEN!
-#    {
-#	$out .=
-#	  &{$inputtype}("arc___pred_${predname}__row_".$req->{'rb_wu_row'}, '',
-#			{
-#			 size => $size,
-#			 rows => $rows,
-#			 image_url => $args->{'image_url'}
-#			});
-#	$out .= "<br/>";
-#    }
     elsif( $subj->list($predname,undef,['active','submitted'])->is_true )
     {
 	my $subj_id = $subj->id;
@@ -760,7 +759,8 @@ sub wuirc
 					       size => $smallestsize,
 					       rows => $rows,
 					       version => $version,
-					       image_url => $args->{'image_url'}
+					       image_url => $args->{'image_url'},
+					       id => $args->{'id'},
 					      });
 		    }
 
@@ -805,6 +805,7 @@ sub wuirc
 				       arc => $arc_id,
 				       size => $size,
 				       rows => $rows,
+				       id => $args->{'id'},
 				       image_url => $args->{'image_url'}
 				      });
 
@@ -829,6 +830,7 @@ sub wuirc
 			       rows => $rows,
 			       maxw => $maxw,
 			       maxh => $maxh,
+			       id => $args->{'id'},
 			       image_url => $args->{'image_url'}
 			      });
     }
