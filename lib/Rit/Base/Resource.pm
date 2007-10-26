@@ -423,7 +423,10 @@ sub find_by_anything
 	{
 	    $valref = $val;
 	}
-	$valref ||= \$val;
+	else
+	{
+	    $valref ||= \$val;
+	}
 
 	$valtype ||= $this->get_by_label( $coltype );
 
