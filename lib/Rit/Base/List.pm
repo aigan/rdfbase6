@@ -49,6 +49,7 @@ use base qw( Para::Frame::List Rit::Base::Object );
 use overload
   '""'         => 'desig',
   '.'          => 'concatenate_by_overload',
+  'cmp'        => 'cmp_by_overload',
   'fallback'   => 0; # This and NOTHING else!
 
 #use overload 'cmp'  => 'cmp';
@@ -539,6 +540,7 @@ sub sorted
     my( $list, $sortargs, $dir ) = @_;
 
     my $args = {};
+    my $DEBUG = 0;
 
     $sortargs ||= 'desig';
 
@@ -574,8 +576,11 @@ sub sorted
     my @sort;
     for( my $i = 0; $i < @$sortargs; $i++ )
     {
-#	debug "i: $i";
-#	debug sprintf("sortargs: %d\n", scalar @$sortargs);
+	if( $DEBUG )
+	{
+	    debug "i: $i";
+	    debug sprintf("sortargs: %d\n", scalar @$sortargs);
+	}
 	unless( ref $sortargs->[$i] eq 'HASH' )
 	{
 	    $sortargs->[$i] =
@@ -616,27 +621,25 @@ sub sorted
 
 	if( $sortargs->[$i]->{'dir'} eq 'desc')
 	{
-#	    CORE::push @sort, "\$b->[$i] cmp \$a->[$i]";
 	    CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
 	}
 	else
 	{
-#	    CORE::push @sort, "\$a->[$i] cmp \$b->[$i]";
 	    CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
 	}
     }
     my $sort_str = join ' || ', @sort;
 
-#    debug "--- SORTING: $sort_str";
+    debug "--- SORTING: $sort_str" if $DEBUG;
 
     my @props;
     foreach my $item ( $list->as_array )
     {
-#	debug 2, sprintf("  add item %s", $item->sysdesig);
+	debug sprintf("  add item %s", $item->sysdesig) if $DEBUG;
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
 	    my $method = $sortargs->[$i]{'on'};
-#	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'});
+	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'}) if $DEBUG;
 	    my $val = $item;
 	    foreach my $part ( split /\./, $method )
 	    {
@@ -645,7 +648,7 @@ sub sorted
 		    last; # skipping undef values...
 		}
 		$val = $val->$part;
-#		debug sprintf("      -> %s", $val);
+		debug sprintf("      -> %s", $val) if $DEBUG;
 	    }
 
 	    my $coltype = $sortargs->[$i]->{'coltype'} || '';
@@ -669,7 +672,7 @@ sub sorted
 		# Infinite future date
 		use DateTime::Infinite;
 		$val ||= DateTime::Infinite::Future->new;
-		#debug "Date value is $val";
+		debug "Date value is $val" if $DEBUG;
 	    }
 	    elsif( $coltype eq 'valtext' )
 	    {
@@ -681,14 +684,14 @@ sub sorted
 		$val ||= '';
 	    }
 
-#	    debug sprintf("      => %s", $val);
+	    debug sprintf("      => %s", $val) if $DEBUG;
 
 	    CORE::push @{$props[$i]}, $val;
 #	    CORE::push @{$props[$i]}, $item->$method;
 	}
     }
 
-    if( debug>2 )
+    if( $DEBUG )
     {
 	debug "And the props is: \n";
 	for( my $i=0; $i<=$#$list; $i++ )
@@ -696,10 +699,19 @@ sub sorted
 	    my $out = "  ".$list->[$i]->desig.": ";
 	    for( my $x=0; $x<=$#props; $x++ )
 	    {
-		$out .= $props[$x][$i] .' - ';
+		if( ref $props[$x][$i] )
+		{
+		    $out .= $props[$x][$i]->desig .' - ';
+		}
+		else
+		{
+		    $out .= $props[$x][$i] .' - ';
+		}
 	    }
 	    debug $out;
 	}
+
+	debug "Sort string: { $sort_str }";
     }
 
     # The Schwartzian transform:
@@ -1134,6 +1146,7 @@ See L<Rit::Base::Object/desig>
 
 sub desig
 {
+#    debug "in list desig";
     my( $list, $args_in ) = @_;
     my @part;
 
@@ -1650,21 +1663,31 @@ sub initiate_rel
 
 #######################################################################
 
-=head2 cmp
+=head2 cmp_by_overload
 
-  $l->cmp( $val )
+  $l->cmp_by_overload( $val )
 
-Comparing something with the list with cmp or <=> gives an is_undef
-obj.
-
-Returns: L<Rit::Base::Undef>
+Comparing something with the list compares with it's desig
 
 =cut
 
-sub cmp
+sub cmp_by_overload
 {
-#    warn "Compares $_[0] to $_[1]\n";
-    return is_undef;
+    my $val_a = $_[0]->desig;
+    my $val_b = "";
+    if( ref $_[1] )
+    {
+	$val_b = $_[1]->desig;
+    }
+
+    if( $_[2] ) # Reverse?
+    {
+	return( $val_b cmp $val_a );
+    }
+    else
+    {
+	return( $val_a cmp $val_b );
+    }
 }
 
 #######################################################################
