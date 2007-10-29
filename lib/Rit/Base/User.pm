@@ -300,6 +300,8 @@ sub verify_password
     }
     else
     {
+	debug datadump(\%ENV);
+
 	return 0;
     }
 }
