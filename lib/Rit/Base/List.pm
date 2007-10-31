@@ -603,18 +603,25 @@ sub sorted
 	my $cmp = 'cmp';
 
 	# Silently ignore dynamic props (that isn't preds)
-	if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
-							 {
-							  %$args,
-							 }))
+	eval
 	{
-	    my $coltype = $pred->coltype;
-	    $sortargs->[$i]->{'coltype'} = $coltype;
-
-	    if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+	    if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
+							     {
+							      %$args,
+							     }))
 	    {
-		$cmp = '<=>';
+		my $coltype = $pred->coltype;
+		$sortargs->[$i]->{'coltype'} = $coltype;
+
+		if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+		{
+		    $cmp = '<=>';
+		}
 	    }
+	};
+	if( $@ )  # Just dump any errors to log...
+	{
+	    debug $@;
 	}
 
 	$sortargs->[$i]->{'cmp'} = $cmp;
