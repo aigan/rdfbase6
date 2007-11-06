@@ -99,6 +99,7 @@ sub init
     Para::Frame->add_hook('after_db_rollback', sub
 			  {
 			      Rit::Base::Resource->rollback();
+			      Rit::Base::Arc->rollback();
 			  });
 
     Para::Frame->add_hook('done', \&on_done);
