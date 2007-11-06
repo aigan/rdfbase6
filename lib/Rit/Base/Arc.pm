@@ -4475,7 +4475,7 @@ sub schedule_check_create
     # Res and arclim should not be part of the args
     #
     my %args = %$args_in;
-    delete $args{'res'};
+#    delete $args{'res'}; # But it IS a resulting arc
     delete $args{'arclim'};
 
     if( $Rit::Base::Arc::lock_check ||= 0 )
@@ -4521,6 +4521,33 @@ sub schedule_check_remove
     {
 	$arc->remove_check( \%args );
     }
+}
+
+
+#########################################################################
+
+=head2 rollback
+
+=cut
+
+sub rollback
+{
+#    debug "ROLLBACK LOCKED ARCS";
+
+    while( my $params = shift @Rit::Base::Arc::queue_check_remove )
+    {
+	my( $arc, $args ) = @$params;
+	$arc->initiate_cache;
+	$arc->remove_check( $args );
+    }
+    while( my $params = shift @Rit::Base::Arc::queue_check_add )
+    {
+	my( $arc, $args ) = @$params;
+	$arc->initiate_cache;
+	$arc->create_check( $args );
+    }
+
+    $Rit::Base::Arc::lock_check = 0;
 }
 
 
