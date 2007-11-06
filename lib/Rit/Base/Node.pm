@@ -844,6 +844,8 @@ sub replace
     my( $node, $oldarcs, $props, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+#    Para::Frame::Logging->this_level(4);
+
     # Determine new and old arcs
 
     # - existing specified arcs is unchanged
@@ -983,6 +985,8 @@ sub replace
     # removal may become indirect (infered), and therefore not
     # removed
 
+    arc_lock();
+
     foreach my $pred_name ( keys %add )
     {
 	foreach my $key ( keys %{$add{$pred_name}} )
@@ -1055,6 +1059,8 @@ sub replace
 	debug 3, "  now removing other $pred_name";
 	$del_pred{$pred_name}->remove( $args );
     }
+
+    arc_unlock();
 
     debug 3, "-- done";
     return $res->changes - $changes_prev;
