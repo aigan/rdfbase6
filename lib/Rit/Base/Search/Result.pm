@@ -22,6 +22,7 @@ use Para::Frame::Utils qw( debug datadump deunicode throw );
 use Para::Frame::List;
 
 use Rit::Base::Search::Collection;
+use Rit::Base::Utils qw( query_desig );
 
 use base 'Para::Frame::List';
 
@@ -36,7 +37,7 @@ sub init
     my( $res, $args ) = @_;
 
     $res->{'search'} = $args->{'search'}
-      or confess "Obj init misses search arg ".datadump($res);
+      or confess "Obj init misses search arg ".datadump($res,1);
 #    weaken( $res->{'search'} );
 
     $args->{'materializer'} = \&materialize;
@@ -183,7 +184,7 @@ sub add_part
 sub search
 {
     return $_[0]->{'search'} ||
-      confess "No search object registred ".datadump($_[0]);
+      confess "No search object registred ".datadump($_[0],1);
 }
 
 #######################################################################
