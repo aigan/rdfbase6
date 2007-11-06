@@ -21,6 +21,9 @@ Rit::Guides::Search::Collection
 
 use strict;
 use Carp qw( confess );
+use List::Util qw( min );
+
+use constant PAGELIMIT  => 20;
 
 BEGIN
 {
@@ -128,22 +131,36 @@ sub is_rb_search
 
 sub result
 {
-    unless( $_[0]->{'result'} )
+    my( $result ) = $_[0]->{'result'};
+
+    unless( $result )
     {
 	my( $search ) = @_;
 
 	my %params = ( search => $search );
-	if( my $page_size = $search->{'page_size'} )
-	{
-	    $params{'page_size'} = $page_size;
-	}
-
 	return $search->{'result'} =
 	  $Para::Frame::CFG->{'search_result_class'}->
 	    new(undef, \%params );
     }
 
-    return $_[0]->{'result'};
+    unless( $result->{'page_size'} )
+    {
+	my $limit = 20;
+	if( my $req = $Para::Frame::REQ )
+	{
+	    my $user = $req->user;
+	    if( $user and $req->is_from_client )
+	    {
+		my $q = $req->q;
+		$limit = $q->param('limit') || 20;
+		$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+	    }
+	}
+
+	$result->set_page_size( $limit );
+    }
+
+    return $result;
 }
 
 #######################################################################
