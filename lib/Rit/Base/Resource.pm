@@ -1029,6 +1029,12 @@ sub find_set
 
 	if( $new_nodes->[1] )
 	{
+	    unless( $Para::Frame::REQ->is_from_client )
+	    {
+		throw('alternatives',
+		      "More than one node matches the criterions");
+	    }
+
 	    my $req = $Para::Frame::REQ;
 	    my $uri = $req->page->url_path_slash;
 	    $req->session->route->bookmark;
