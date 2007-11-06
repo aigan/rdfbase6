@@ -4,6 +4,8 @@
 %]
 
 [% USE Sorted_table %]
+[% order = q.param('order') || 'id' %]
+[% direction = q.param('direction') %]
 [% search_result = searchobj.result %]
 
    <p>
@@ -17,7 +19,10 @@
 <table class='admin'>
 
 <tr>
-  <td bgcolor="#EFEFEF" colspan="5">&nbsp;</td>      
+  <th>[% sort('ID', 'id') %]</th>
+  <th>[% sort('Name', 'desig') %]</th>
+  <th>[% sort('Type', 'is.desig') %]</th>
+  <th>[% sort('Scof', 'scof.desig') %]</th>
 </tr>
 
 [% FOREACH item IN search_result.from_page %]
@@ -27,9 +32,9 @@
       <td>[% item.arc_list('is').direct.obj.desig %]</td>
       <td>[% item.arc_list('scof').direct.obj.desig %]</td>
 </tr>
-
 [% END %]
 </table>
+
 
 <p align="center">[% search_result.pagelist %]</p>
 
