@@ -16,6 +16,8 @@
 
 [% textarea('query', undef, cols=60, rows=10) %]
 
+<p>Resultat per sida [% input('limit',50, size=5) %]
+
 [% hidden("search_form", "$home/rb/node/search.tt") %]
 [% hidden("search_result", "$home/rb/node/list.tt") %]
 
@@ -26,3 +28,4 @@
 <p>name_clean hotel<br>
 private_ne 1<br>
 arclim ['not_old']
+order_by name.loc
