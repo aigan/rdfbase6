@@ -23,6 +23,7 @@ use strict;
 use Carp qw( cluck confess croak carp shortmess longmess );
 use Time::HiRes qw( time );
 use List::Util qw( min );
+use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
 
 use constant TOPLIMIT   => 100000;
@@ -128,10 +129,12 @@ sub result
     # May have a cb search result instead...
     my $res = $search->{'result'} or return Rit::Base::List->new_empty();
 
+#    debug "Returning search result list ".refaddr( $res );
+
     confess(datadump($res)) if ref $res eq 'ARRAY';
     confess(datadump($search)) unless $res;
 
-    my $limit = 10;
+    my $limit = 20;
     if( my $req = $Para::Frame::REQ )
     {
 	my $user = $req->user;
@@ -2062,6 +2065,8 @@ sub build_outer_select_field
 
     my $dbh = $Rit::dbix->dbh;
     my $fieldpart = $field_in or confess "Param field missing";
+
+    $fieldpart =~ s/\bdesig$/name.loc/;
 
     # Keep first part (exclude asc/desc)
     my $dir = 'asc';
