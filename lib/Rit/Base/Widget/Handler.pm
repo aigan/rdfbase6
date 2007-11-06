@@ -228,6 +228,8 @@ sub update_by_query
     my $args = {%$args_hash}; # Shallow clone
     my $changes_prev = $res->changes;
 
+#    debug "******** WIDGET HANDLER UPDATE BY QUERY";
+
     my $q = $Para::Frame::REQ->q;
 
     if( $args->{'node'} )
@@ -350,6 +352,10 @@ sub update_by_query
 	{
 	    my $node_id = $1 or next;
 	    $class->handle_query_check_node( $param, $node_id, $args );
+	}
+	elsif($param =~ /^check_require_(.*)/)
+	{
+	    $class->handle_query_check_require( $param, $args );
 	}
     }
 
@@ -1245,7 +1251,7 @@ sub handle_query_prop_value
 	my $pred_id = $pred->id;
 	my $coltype = $pred->coltype;
 #	my $valtype = $pred->valtype;
-	die "$pred_name should be of obj type" unless $coltype eq 'obj';
+	confess "$pred_name should be of obj type" unless $coltype eq 'obj';
 
 	my( $objs );
 	if( $obj_pred_name )
@@ -1599,6 +1605,83 @@ sub handle_query_check_node
     debug "Saving node: ${node_id}. grep: ". grep( /^node_$node_id/, $q->param );
 
     return 1;
+}
+
+#########################################################################
+
+=head2 handle_query_check_require
+
+  $class->handle_query_check_require( $param, \%args )
+
+Return number of changes
+
+=cut
+
+sub handle_query_check_require
+{
+    my( $class, $param, $args ) = @_;
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+    my $R = Rit::Base->Resource;
+
+    debug $param;
+    debug query_desig($args);
+
+    my $arg = parse_form_field_prop($param);
+
+    my $node_id = $arg->{'subj'} || $args->{'node'};
+    die "No node in $param" unless $node_id;
+    my $node = $R->get( $node_id );
+
+    my $pred_in = $arg->{'pred'} or die "No pred in $param";
+    my $pred = Rit::Base::Pred->get_by_label($pred_in);
+
+    my $scof;
+    if( my $scof_name = $arg->{'scof'} )
+    {
+	$scof = $R->get($scof_name);
+    }
+
+    my $type;
+    if( my $type_name = $arg->{'type'} )
+    {
+	$type = $R->get($type_name);
+    }
+
+    foreach my $arc ( $node->arc_list($pred, undef, $args )->as_array )
+    {
+	debug "  examining $arc";
+	if( $scof )
+	{
+	    unless( $arc->value->equals($scof) )
+	    {
+		debug "    failed ".$scof->desig;
+		next;
+	    }
+	}
+
+	if( $type )
+	{
+	    unless( $arc->value->equals($type) )
+	    {
+		debug "    failed ".$scof->desig;
+		next;
+	    }
+	}
+
+	return 1;
+    }
+
+    my $node_name = $node->desig;
+    my $pred_name = $pred->plain;
+    my $out = "$node_name is missing a property '$pred_name'";
+    if( $type or $scof )
+    {
+	$out .= " of the right type";
+    }
+
+    throw('validation', $out);
 }
 
 #########################################################################
