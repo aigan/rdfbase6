@@ -83,6 +83,10 @@ REPLACED rg_rg_components.tt
 Display a select for a resource; a new select for its rev_scof and so
 on until you've chosen one that has no scofs.
 
+A value can be preselected by setting the query param C<'arc___'. $rev .'pred_'. $pred_name>.
+
+TODO: Also select the value if it matches exactly a query param
+
 To be used for preds with range_scof.
 
 =cut
@@ -130,18 +134,33 @@ sub wub_select_tree
       $type->id .'"/>';
 
     my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
-      sorted(['name_short', 'desig', 'label']);
+      sorted(['name_short', 'desig']);
+    my $val_stripped = 'arc___'. $rev .'pred_'. $pred_name;
+    my $q = $Para::Frame::REQ->q;
+    my $val_query = $q->param($val_stripped);
 
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'"';
 
-	$out .= ' value="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-	  .'pred_'. $pred_name .'='. $subtype->id .'"'
-	    unless( $subtype->rev_scof );
+	my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+	  .'pred_'. $pred_name .'='. $subtype->id;
 
-	if( $subj->has_value({ $pred_name => $subtype }) or
-	    $subj->has_value({ $pred_name => { scof => $subtype } }))
+	unless( $subtype->rev_scof )
+	{
+	    $out .= ' value="$value"';
+	}
+
+	if( $val_query )
+	{
+	    if( $val_query eq $subtype->id )
+	    {
+		$out .= ' selected="selected"';
+	    }
+	}
+	elsif( $subj->has_value({ $pred_name => $subtype }) or
+	       $subj->has_value({ $pred_name => { scof => $subtype } })
+	     )
 	{
 	    $out .= ' selected="selected"';
 	    $arc = $subj->arc( $pred_name, $subtype );
