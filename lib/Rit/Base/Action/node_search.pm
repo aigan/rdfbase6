@@ -15,7 +15,7 @@ package Rit::Base::Action::node_search;
 
 use strict;
 
-use Para::Frame::Utils qw( throw trim );
+use Para::Frame::Utils qw( throw trim debug );
 
 use Rit::Base::Search;
 
@@ -51,6 +51,12 @@ sub handler
 
 	$args->{'arclim'} = eval $arclim_in;
     }
+
+    unless( $props->{'order_by'} )
+    {
+	$props->{'order_by'} = 'desig';
+    }
+
 
     my $search = Rit::Base::Search->new($args);
     $search->modify($props, $args);
