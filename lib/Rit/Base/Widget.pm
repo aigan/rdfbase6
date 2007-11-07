@@ -148,7 +148,7 @@ sub wub_select_tree
 
 	unless( $subtype->rev_scof )
 	{
-	    $out .= ' value="$value"';
+	    $out .= " value=\"$value\"";
 	}
 
 	if( $val_query )
