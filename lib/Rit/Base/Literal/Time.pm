@@ -272,13 +272,13 @@ sub wuirc
 
 	while( my $arc = $arclist->get_next_nos )
 	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= ( $arc->value->desig || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
     elsif( $subj->empty )
     {
 	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
-	$out .= &calendar($fieldname, '',
+	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
 			  {
 			   id => $fieldname,
 			   size => $size,
@@ -303,7 +303,8 @@ sub wuirc
 
 		my $arc_id = $arc->id;
 		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
-		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") || $arc->value;
+		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") ||
+		  $arc->value || $args->{'default_value'};
 		$out .= &calendar($fieldname, $value_new,
 				  {
 				   id => $fieldname,
@@ -329,7 +330,8 @@ sub wuirc
 	    my $arc_id = ( $arc_type eq 'singular' ?
 			   'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
-	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}") || $subj->prop($pred);
+	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}")
+	      || $subj->prop($pred) || $args->{'default_value'};
 	    $out .= &calendar($fieldname, $value_new,
 			      {
 			       id => $fieldname,
