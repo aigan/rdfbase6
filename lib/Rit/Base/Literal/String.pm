@@ -249,34 +249,33 @@ sub parse
 	$val_mod =~ s/^\s*\n//; # Leading empty lines
 	$val_mod =~ s/\n\s+$/\n/; # Trailing empty lines
 
-	# Always return the incoming object. This may MODIFY the object
-	#
-	if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
-	{
-	    $val->{'value'} = $val_mod;
-	    $val->{'valtype'} = $valtype;
-	    return $val;
-	}
-
-	# Implementing class may not take scalarref
-	return $class->new( $val_mod, $valtype );
     }
     elsif( $coltype eq 'valfloat' )
     {
 	trim($val_mod);
-	$val_mod =~ s/,/./;
+	$val_mod =~ s/,/./; # Handling swedish numerical format...
+
 	unless( looks_like_number( $val_mod ) )
 	{
 	    throw 'validation', "String $val_mod is not a number";
 	}
-
-	# Implementing class may not take scalarref
-	return $class->new( $val_mod, $valtype );
     }
     else
     {
 	confess "coltype $coltype not handled by this class";
     }
+
+    # Always return the incoming object. This may MODIFY the object
+    #
+    if( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
+    {
+	$val->{'value'} = $val_mod;
+	$val->{'valtype'} = $valtype;
+	return $val;
+    }
+
+    # Implementing class may not take scalarref
+    return $class->new( $val_mod, $valtype );
 }
 
 
