@@ -589,7 +589,7 @@ sub create
 	# It's possible we are creating an arc with an undef value.
 	# That is allowed!
 
-	debug "parsing value ".$props->{'value'} if $DEBUG;
+	debug sprintf("parsing value %s (%s)", $props->{'value'}, refaddr($props->{'value'})) if $DEBUG;
 
 	# Returns is_undef if value undef and coltype is obj
 	$value_obj = Rit::Base::Resource->
@@ -601,7 +601,7 @@ sub create
 			    pred_new => $pred,
 			   });
 
-	debug "value_obj is now ".$value_obj->sysdesig if $DEBUG;
+	debug sprintf("value_obj is now %s (%s)",$value_obj->sysdesig, refaddr($value_obj)) if $DEBUG;
 
 	if( $value_obj->defined )
 	{
