@@ -1220,6 +1220,11 @@ sub alfanum_to_id
 	$id += $inc;
     }
 
+    if( $id > 2147483647 ) # Max int size in DB
+    {
+	return undef;
+    }
+
     if( $map[$chksum%$pow] eq $chkchar )
     {
 	return $id;
