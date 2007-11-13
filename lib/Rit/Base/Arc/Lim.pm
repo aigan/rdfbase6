@@ -605,6 +605,30 @@ sub names
 
 #######################################################################
 
+=head2 includes
+
+  $arclim->includes( $limname )
+
+Returns: boolean
+
+=cut
+
+sub includes
+{
+    my( $arclim, $limname ) = @_;
+
+    return 0 unless $LIM{$limname};
+    foreach my $lim (@$arclim)
+    {
+	return 1 if $lim & $LIM{$limname};
+    }
+
+    return 0;
+}
+
+
+#######################################################################
+
 =head1 Functions
 
 =head2 limflag
