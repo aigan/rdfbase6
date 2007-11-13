@@ -256,6 +256,53 @@ sub disregarded
 
 #######################################################################
 
+=head2 subjs
+
+  $l->subjs
+
+Returns: A new list with the subjs
+
+=cut
+
+sub subjs
+{
+    $_[0]->new([map $_->subj, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 vals
+
+  $l->vals
+
+(values() is taken as a perl function)
+
+Returns: A new list with the values
+
+=cut
+
+sub vals
+{
+    $_[0]->new([map $_->value, @{$_[0]}]);
+}
+
+#######################################################################
+
+=head2 preds
+
+  $l->preds
+
+Returns: A new list with the preds
+
+=cut
+
+sub preds
+{
+    $_[0]->new([map $_->pred, @{$_[0]}]);
+}
+
+#######################################################################
+
 =head2 meets_proplim
 
   $l->meets_proplim($proplim, \%args)
