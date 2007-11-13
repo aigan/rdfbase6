@@ -1733,11 +1733,15 @@ Same, but restrict list to values of C<$arclim> property arcs.
 Supported args are:
 
   arclim
+  arclim2
 
 C<$arclim> can be any of the strings L<direct|Rit::Base::Arc/direct>,
 L<explicit|Rit::Base::Arc/explicit>,
 L<indirect|Rit::Base::Arc/indirect>,
 L<implicit|Rit::Base::Arc/implicit>, L<inactive|Rit::Base::Arc/inactive> and L<not_disregarded|Rit::Base::Arc/not_disregarded>.
+
+C<arclim2> if existing, will be used for proplims. Without C<arclim2>,
+C<arclim> will be used.
 
 Note that C<list> is a virtual method in L<Template>. Use it via
 autoload in TT.
@@ -1802,12 +1806,21 @@ sub list
 	      unique_arcs_prio($uap)->as_array;
 	}
 
+	if( my $arclim2 = $args->{'arclim2'} )
+	{
+	    my $args2 = {%$args};
+	    $args2->{'arclim'} = $arclim2;
+	    delete $args2->{'arclim2'};
 
-	my $vals = $pred->valtype->instance_class->list_class->
+#	    debug "Replacing arclim ".$arclim->sysdesig;
+#	    debug "            with ".$arclim2->sysdesig;
+
+	    $args = $args2;
+	}
+
+	return $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->value, @arcs ]);
-
-	return $vals;
     }
     else
     {
@@ -1971,11 +1984,18 @@ sub revlist
 	      unique_arcs_prio($uap)->as_array;
 	}
 
-	my $vals = $pred->valtype->instance_class->list_class->
+	if( my $arclim2 = $args->{'arclim2'} )
+	{
+	    my $args2 = {%$args};
+	    $args2->{'arclim'} = $arclim2;
+	    delete $args2->{'arclim2'};
+
+	    $args = $args2;
+	}
+
+	return $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->subj, @arcs ]);
-
-	return $vals;
     }
     else
     {
@@ -4601,12 +4621,12 @@ sub find_class
     my @classes;
     foreach my $elem ($islist->as_array)
     {
+#	debug "Looking at is $elem->{id}";
 	if( $elem->{'id'} == $Rit::Base::Literal::Class::id )
 	{
 	    return "Rit::Base::Literal::Class";
 	}
 
-#	debug "Looking at is $elem->{id}";
 	foreach my $class ($elem->list($p_chbpm)->nodes )
 	{
 	    my $pkg = $class->first_prop($p_code)->plain;
