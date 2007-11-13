@@ -414,6 +414,7 @@ sub meets_proplim
     my( $node, $proplim, $args_in_in ) = @_;
     my( $args_in, $arclim_in ) = parse_propargs($args_in_in);
 
+    # TODO: Eliminate parse_propargs!!!
 
 #    Para::Frame::Logging->this_level(4);
     my $DEBUG = Para::Frame::Logging->at_level(3);
@@ -1487,8 +1488,10 @@ sub wun_jump
   $n->$method( $proplim, $args )
 
 If C<$method> ends in C<_$arclim> there C<$arclim> is one of
-L<Rit::Base::Arc::Lim/limflag>, the param C<$arclim> is set to that value
-and the suffix removed from C<$method>.
+L<Rit::Base::Arc::Lim/limflag>, the param C<$arclim> is set to that
+value and the suffix removed from C<$method>. Args arclim is stored as
+arclim2 and will be used for proplims. The given arclim will be used
+in the arclim for the given $method.
 
 If C<$proplim> or C<$arclim> are given, we return the result of
 C<$n-E<gt>L<list|/list>( $proplim, $arclim )>. In the other case, we return the
@@ -1532,8 +1535,15 @@ AUTOLOAD
     #                Compiles this regexp only once
     if( $method =~ s/_(@{[join '|', Rit::Base::Arc::Lim->names]})$//o )
     {
-	# Arclims given in this way will override param $arclim
-	$_[1] = $1;
+ 	# Arclims given in this way will override param $arclim
+	my( $args_in, $arclim ) = parse_propargs();
+	my( $args ) = {%$args_in}; # Decouple from req default args
+
+	$args->{'arclim2'} = $arclim;
+	$args->{'arclim'} = Rit::Base::Arc::Lim->parse($1);
+	$_[1] = $args;
+
+#	debug "Setting arclim of $method to ".$args->{'arclim'}->sysdesig;
     }
 
 
@@ -1541,32 +1551,14 @@ AUTOLOAD
     #
     my $res =  eval
     {
-	if( $method =~ s/^rev_?// )
-	{
-	    return $node->revprop($method, @_);
-
-#	    if( @_ )
-#	    {
-#		return $node->revlist($method, @_);
-#	    }
-#	    else
-#	    {
-#		return $node->revprop($method);
-#	    }
-	}
-	else
-	{
-	    return $node->prop($method, @_);
-
-#	    if( @_ )
-#	    {
-#		return $node->list($method, @_);
-#	    }
-#	    else
-#	    {
-#		return $node->prop($method);
-#	    }
-	}
+	    if( $method =~ s/^rev_?// )
+	    {
+		return $node->revprop($method, @_);
+	    }
+	    else
+	    {
+		return $node->prop($method, @_);
+	    }
     };
 
 #    debug "Res $res err $@";
