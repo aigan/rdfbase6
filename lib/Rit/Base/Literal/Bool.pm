@@ -30,24 +30,6 @@ Inherits from L<Rit::Base::Literal::String>
 
 =cut
 
-warn "SYMBOL TABLE:\n";
-foreach my $key ( keys %Rit::Base::Literal::Bool:: )
-{
-    warn " * $key\n";
-    my $val = $Rit::Base::Literal::Bool::{$key};
-    foreach my $type (qw( SCALAR ARRAY HASH CODE IO FORMAT ))
-    {
-	warn "   ".*{$val}{$type}."\n" if *{$val}{$type};
-    }
-}
-
-    warn "\n****************************************\n\n";
-    my $apa = label_from_params({
-				 separator   => ":",
-				 id          => "urban",
-				});
-    warn "test: $apa\n";
-
 #######################################################################
 
 =head2 wuirc
