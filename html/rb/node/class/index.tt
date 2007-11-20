@@ -1,0 +1,186 @@
+﻿[% META
+    title ='-
+		id = q.param("id");
+		IF id;
+		   node = get(id);
+		ELSE;
+		   node = C.class;
+		   id = node.id;
+		END;
+		ttitle = node.sysdesig;
+		GET "Class " _ locescape(ttitle);
+               '
+   level = 1
+%]
+
+[%
+   id = q.param("id");
+   IF id;
+      node = get(id);
+   ELSE;
+      node = C.class;
+      id = node.id;
+   END;
+   hidden('id', id);
+%]
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+[% BLOCK superclass %]
+[% FOREACH sc IN class.parents %]
+[% sc_nodes = find(code=sc.name, is='class_perl_module') %]
+[% IF sc_nodes %]
+<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.id) %]
+[% ELSE %]
+<li>$sc.name
+[% END %]
+[% IF sc.parents.size %]
+<ol>
+   [% INCLUDE superclass class=sc %]
+</ol>
+[% END %]
+</li>
+[% END %]
+[% END %]
+
+[% WRAPPER imgexpand label="Class $node.code_class.name" %]
+<h2>Parents</h2>
+<ol>[% INCLUDE superclass class=node.code_class %]</ol>
+[% END %]
+
+
+<table class="admin" style="margin-top:2em">
+   <tr>
+      <td>created</td>
+      <td>
+      [% IF node.created %]
+         [% node.created %]
+         by [% node.created_by.wu_jump %]
+      [% END %]
+      </td>
+   </tr>
+   <tr>
+      <td>updated</td>
+      <td>
+      [% IF node.updated %]
+	 [% node.updated %]
+         by [% node.updated_by.wu_jump %]
+      [% END %] 
+      </td>
+   </tr>
+   [% IF node.label %]
+   <tr>
+      <td>label</td>
+      <td>[% node.label %]</td>
+   </tr>
+   [% END %]
+   <tr>
+      <td>owned_by</td>
+      <td>
+      [% IF node.owned_by %]
+         [% node.owned_by.wu_jump %]
+      [% END %]
+      </td>
+   </tr>
+   [% IF node.read_access %]
+   <tr>
+      <td>read_access</td>
+      <td>
+         [% node.read_access.wu_jump %]
+      </td>
+   </tr>
+   [% END %]
+   [% IF node.write_access %]
+   <tr>
+      <td>write_access</td>
+      <td>
+         [% node.write_access.wu_jump %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% iss = node.arc_list('is',undef,'direct') %]
+   [% IF iss %]
+   <tr>
+      <td>ISs</td>
+      <td>
+      [% FOREACH arc IN iss.sorted('obj.desig') %]
+      [% arc.obj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% supers = node.arc_list('scof',undef,'direct') %]
+   [% IF supers %]
+   <tr>
+      <td>SUPERs</td>
+      <td>
+      [% FOREACH arc IN supers.sorted('obj.desig') %]
+      [% arc.obj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% subs = node.revarc_list('scof',undef,'direct') %]
+   [% IF subs %]
+   <tr>
+      <td>SUBs</td>
+      <td>
+      [% FOREACH arc IN subs.sorted('subj.desig') %]
+      [% arc.subj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% IF node.equals(C.class) or node.scof(C.class) %]
+   <tr>
+      <td>CLASSES</td>
+      <td>
+      [% FOREACH arc IN node.revarc_list('is',undef,'direct').sorted('subj.desig') %]
+      [% arc.subj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% IF node.admin_comment %]
+   <tr>
+      <td>Description</td>
+      <td>[% node.admin_comment | html %]</td>
+   </tr>
+   [% END %]
+
+   [% domains = node.revarc_list('domain') %]
+   [% IF domains %]
+   <tr>
+      <td>DOMAINs</td>
+      <td>
+      [% FOREACH arc IN domains.sorted('subj.desig') %]
+      [% arc.subj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% ranges = node.revarc_list('range') %]
+   [% IF ranges %]
+   <tr>
+      <td>RANGEs</td>
+      <td>
+      [% FOREACH arc IN ranges.sorted('subj.desig') %]
+      [% arc.subj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+</table>
