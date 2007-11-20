@@ -795,7 +795,9 @@ sub create
 
     # Don't allow arcs where subj and obj is the same node:
     #
-    if( $rec->{obj} and ( $rec->{'subj'} == $rec->{obj} ) )
+    if( $rec->{obj} and ( $rec->{'subj'} == $rec->{obj} )
+	and not $args->{'force'}
+      )
     {
 	confess "Cyclic references not allowed\n".datadump($rec,2);
 	throw('validation', "Cyclic references not allowed\n");
