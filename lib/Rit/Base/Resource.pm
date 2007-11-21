@@ -1358,7 +1358,9 @@ sub form_url
     }
     else
     {
-	if( my $path_node = $n->is->class_form_url->get_first_nos )
+	my $alts = $n->list('is')->sorted('weight', 'desc')->first_prop('class_form_url');
+#	debug $alts;
+	if( my $path_node = $alts->get_first_nos )
 	{
 	    $path = $path_node->plain;
 	}
@@ -2873,6 +2875,8 @@ sub sysdesig
     my( $node, $args ) = @_;
 
     my $desig = $node->desig;
+
+#    debug "Sysdesig for $node->{id}: $desig";
 
     if( $desig eq $node->{'id'} )
     {
