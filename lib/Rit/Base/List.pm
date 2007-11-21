@@ -542,6 +542,9 @@ sub sorted
     my $args = {};
     my $DEBUG = 0;
 
+    return $list if $list->size < 2;
+
+
     $sortargs ||= 'desig';
 
     unless( ref $sortargs and ( ref $sortargs eq 'ARRAY' or
@@ -621,7 +624,7 @@ sub sorted
 	};
 	if( $@ )  # Just dump any errors to log...
 	{
-	    debug $@;
+	    debug "Sortarg $pred_str not a predicate: ".$@;
 	}
 
 	$sortargs->[$i]->{'cmp'} = $cmp;
