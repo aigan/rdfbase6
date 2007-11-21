@@ -1,0 +1,62 @@
+﻿[% META
+    title ='-
+		id = q.param("id");
+                DEFAULT id=1;
+                node = get(id);
+		ttitle = node.sysdesig;
+		GET "Predicate " _ locescape(ttitle);
+               '
+   level = 1
+%]
+
+[%
+   id = q.param("id");
+   DEFAULT id=1;
+   node = get(id);
+   hidden('id', id);
+%]
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+
+<table class="admin" style="margin-top:2em">
+
+   [% domains = node.arc_list('domain') %]
+   [% IF domains %]
+   <tr>
+      <td>DOMAIN</td>
+      <td>
+      [% FOREACH arc IN domains.sorted('obj.desig') %]
+      [% arc.obj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      </td>
+   </tr>
+   [% END %]
+
+   [% ranges = node.arc_list('range') %]
+   <tr>
+      <td>RANGE</td>
+      <td>
+      [% FOREACH arc IN ranges.sorted('obj.desig') %]
+      [% arc.obj.wu_jump %]
+      [% ', ' UNLESS loop.last %]
+      [% END %]
+      ([% node.coltype %])
+      </td>
+   </tr>
+
+   [% IF node.admin_comment %]
+   <tr>
+      <td>Description</td>
+      <td>[% node.admin_comment | html %]</td>
+   </tr>
+   [% END %]
+
+</table>
+
+[% test = find(is=node.domain).get_first_nos %]
+[% IF test %]
+<h2>Example</h2>
+<p>[% test.wu(node.label) %]
+[% END %]
