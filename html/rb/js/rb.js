@@ -19,7 +19,7 @@ var RBInputPopup = Class.create(
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
 		style: 'display: none; position: absolute; top: 45%; left: 45%; z-index: 10',
-		src: '/hg/img/loading_large.gif'
+		src: '[*img*]/img/loading_large.gif'
 	    }, '');
 	\$(this.divid).appendChild(this.loading);
 	this.button.onclick = this.openPopup.bind(this);
@@ -79,7 +79,7 @@ var RBInputPopup = Class.create(
 	search._object[this.search_type] =  value;
 
 	Effect.Appear(this.loading, { duration: 0.5 });
-	new Ajax.Request('/hg/ajax/lookup', {
+	new Ajax.Request('[*home*]/ajax/lookup', {
 		method: 'get',
 		    parameters: { params: Object.toJSON(search) },
 		    requestHeaders: { Accept: 'application/json' },
@@ -157,7 +157,7 @@ var RBInputPopup = Class.create(
     select: function(event, name, key)
     {
 	pps[this.divid].loadingStart();
-	new Ajax.Request('/hg/ajax/action/add_direct', {
+	new Ajax.Request('[*home*]/ajax/action/add_direct', {
 		method: 'get',
 		parameters: {
 		    subj: this.subj,
@@ -186,7 +186,7 @@ var RBInputPopup = Class.create(
 	alert('creating new: '+ value);
 	Effect.Appear(this.loading, { duration: 0.5 });
 
-	new Ajax.Request('/hg/ajax/action/create_new', {
+	new Ajax.Request('[*home*]/ajax/action/create_new', {
 		method: 'get',
 		parameters: {
 		    name: value,
@@ -212,12 +212,12 @@ function rb_remove_arc(divid, arc)
 	loading = Builder.node('img', {
 		id: 'rb_input_loading',
 		style: 'display: none; position: absolute; top: 45%; left: 45%;',
-		src: '/hg/img/loading_large.gif'
+		src: '[*home*]/img/loading_large.gif'
 	    }, '');
 	\$(divid).appendChild(loading);
 	pps[divid].loadingStart();
 	
-	new Ajax.Request('/hg/ajax/action/remove_arc', {
+	new Ajax.Request('[*home*]/ajax/action/remove_arc', {
 		method: 'get',
 		    parameters: { arc: arc },
 		    onComplete: function(transport)
@@ -275,7 +275,7 @@ var PagePart = Class.create(
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
 		style: 'display: none; position: absolute; top: 45%; left: 45%;',
-		src: '/hg/img/loading_large.gif'
+		src: '[*home*]/img/loading_large.gif'
 	    }, '');
 	this.element.appendChild(this.loading);
     },
