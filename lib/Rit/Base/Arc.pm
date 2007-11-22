@@ -2924,7 +2924,7 @@ sub remove
 	# Remove arcs to value resource too
 	# ..if there are no other values at all (not even submitted)
 	if( $arc->pred->plain eq 'value' and
-	    $arc->subj->arc_list( 'value', undef, [['not_old','not_disregarded']] )->size == 1 )
+	    $arc->subj->arc_list( 'value', undef, [['not_old','not_disregarded']] )->size == 0 )
 	{
 	    debug "There is just 1 not-old value.  Removing value-resource.";
 	    my $subj = $arc->subj;
@@ -4862,7 +4862,7 @@ sub edit_link_html
        "<a href=\"$home/rb/node/arc/update.tt?".
        "id=$arc_id\" clas=\"edit_arc_link\" ".
        "onmouseover=\"TagToTip('updated$arc_id')\">E</a>".
-       "<span id=\"updated$arc_id\">".
+       "<span id=\"updated$arc_id\" style=\"display: none\">".
        $arc->info_updated_html($args) .
        "</span>"
       );
