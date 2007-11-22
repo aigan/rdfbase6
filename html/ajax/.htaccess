@@ -1,0 +1,3 @@
+PerlSetVar renderer Rit::Base::Renderer::AJAX
+PerlSetVar loadpage no
+ErrorDocument 404 [% home %]/ajax/
