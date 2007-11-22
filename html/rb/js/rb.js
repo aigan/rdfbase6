@@ -19,7 +19,7 @@ var RBInputPopup = Class.create(
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
 		style: 'display: none; position: absolute; top: 45%; left: 45%; z-index: 10',
-		src: '[*img*]/img/loading_large.gif'
+		src: '[%home%]/img/loading_large.gif'
 	    }, '');
 	\$(this.divid).appendChild(this.loading);
 	this.button.onclick = this.openPopup.bind(this);
