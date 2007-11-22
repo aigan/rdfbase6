@@ -244,7 +244,7 @@ sub wub_select
 	return $out;
     }
 
-    debug "Building select widget for ".$subj->desig." $pred_name";
+    debug 2, "Building select widget for ".$subj->desig." $pred_name";
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
       .'pred_'. $pred_name . $if .'">';

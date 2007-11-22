@@ -658,8 +658,8 @@ sub wuirc
     {
 	$predname = $pred->label;
 
-	debug "String wuirc for $predname";
-	debug "$predname class is ". $pred->range->instance_class;
+	debug 2, "String wuirc for $predname";
+	debug 2, "$predname class is ". $pred->range->instance_class;
     }
     else
     {
