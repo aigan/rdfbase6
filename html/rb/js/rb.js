@@ -321,6 +321,20 @@ var PagePart = Class.create(
 	    });
     },
 
+    performAction: function( action, extra_params )
+    {
+	this.loadingStart();
+	var formData = \$H(\$('f').serialize(true)).merge({ run: action });
+	formData = formData.merge(extra_params);
+
+	//alert( formData.inspect() );
+	new Ajax.Updater( this.element, '[%home%]/clean/update_button_answer.tt', {
+		method: 'post',
+		    parameters: formData.toQueryString(),
+		    onComplete: this.loadingEnd
+		    });
+    },
+    
     insert_wu: function( after, args_json )
     {
 	this.loadingStart();
@@ -335,7 +349,8 @@ var PagePart = Class.create(
 			prepareForm();
 			Effect.Grow(new_part, { delay: 0.5, duration: 0.5 });
 		    }.bind(this)
-	});
+			  });
     }
+    
 
 });

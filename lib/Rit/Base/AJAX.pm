@@ -114,5 +114,26 @@ sub new_form_id
 }
 
 
+#######################################################################
+
+=head2 register_page_part
+
+  [% ajax.register_page_part( divid, update_url, params ) %]
+
+=cut
+
+sub register_page_part
+{
+    my( $ajax, $divid, $update_url, $params ) = @_;
+
+    my $home = $Para::Frame::REQ->site->home_url_path;
+    $update_url ||= "$home/ajax/";
+    $params = objToJson( $params || {} );
+
+    return "<script><!--
+                new PagePart('$divid', '$update_url', '$params'.evalJSON());
+            //--></script>";
+}
+
 
 1;
