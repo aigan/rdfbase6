@@ -27,6 +27,7 @@ use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use LWP::Simple (); # Do not import get
 use Template::PopupTreeSelect 0.9;
+use JSON;
 
 
 BEGIN
@@ -4185,7 +4186,7 @@ Returns: a HTML widget for updating the value
 
 sub wu
 {
-    my( $node, $pred_name, $args_in ) = @_;
+    my( $node, $pred_name, $args_in, $extra_html ) = @_;
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
@@ -4238,8 +4239,118 @@ sub wu
 	$args->{'range'} = $range;
     }
 
+    # Wrap in for ajax
+    my $out = "";
+    my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
+    my $from_ajax = $args->{'from_ajax'};
+    my $divid = $args->{'divid'} ||
+      ( $ajax ? Rit::Base::AJAX->new_form_id() : undef );
+    $args->{'divid'} = $divid
+      if $divid and not $from_ajax;
+
+    $out .= Para::Frame::Widget::label_from_params({
+			       label       => delete $args->{'label'},
+			       tdlabel     => delete $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => delete $args->{'label_class'},
+			      });
+
+    $out .= '<div id="'. $divid .'" style="position: relative;">'
+      if $divid and not $from_ajax;
+
     # widget for updating subclass of range class
-    return $range->instance_class->wuirc($node, $pred, $args);
+    $out .= $range->instance_class->wuirc($node, $pred, $args);
+
+    $out .= $extra_html
+      if $extra_html;
+
+    if( $ajax and not $from_ajax )
+    {
+	$out .= '</div>';
+	$out .= $node->register_ajax_pagepart( $pred_name, $divid, $args );
+    }
+
+    return $out;
+}
+
+
+#######################################################################
+
+=head2 wuh
+
+  $n->wuh( $pred, $obj, \%args )
+
+Stands for Widget for Updating Hidden
+
+Returns: a HTML hidden field for making a new arc
+
+=cut
+
+sub wuh
+{
+    my( $node, $pred_name, $obj, $args ) = @_;
+
+    my $R = Rit::Base->Resource;
+
+    my $extra = '';
+
+    if( $args->{'if'} )
+    {
+	$extra = '__if_'. $args->{'if'};
+    }
+    my $key = "arc___subj_". $node->id ."__pred_". $pred_name . $extra;
+    return Para::Frame::Widget::hidden($key, $obj->id);
+}
+
+
+#######################################################################
+
+=head2 register_ajax_pagepart
+
+Returns: html-fragment of javascript-code to register a divid
+
+=cut
+
+sub register_ajax_pagepart
+{
+    my( $node, $pred_name, $divid, $args ) = @_;
+
+    my $out = "";
+    my $params = {
+		  from_ajax => 1,
+		 };
+    foreach my $key (keys %$args)
+    {
+	if( $key =~ /label/ or
+	    $key eq 'arclim' or
+	    $key eq 'res'
+	  )
+	{}
+	elsif( ref $args->{$key} )
+	{
+	    $params->{$key} = $args->{$key}->id;
+	}
+	else
+	{
+	    $params->{$key} = $args->{$key};
+	}
+    }
+
+    my $home = $Para::Frame::REQ->site->home_url_path;
+    $out .=
+      "<script type=\"text/javascript\">
+        <!--
+            new PagePart('$divid', '$home/ajax/wu',
+            { params: { subj: '". $node->id ."',
+                        params: '". objToJson( $params ) ."',
+                        pred_name: '$pred_name' }";
+
+    $out .= ", depends_on: [ '". $args->{'depends_on'} ."' ]"
+      if $args->{'depends_on'};
+    $out .= "}); //--> </script>";
+
+    return $out;
 }
 
 
@@ -4282,6 +4393,9 @@ Use args:
   inputtype => text
     to get a text-input.
 
+  ajax => true
+    defaults to use ajax-widgets.
+
 =cut
 
 sub wuirc
@@ -4289,15 +4403,20 @@ sub wuirc
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
     my $out = '';
     my $is_scof = $args->{'range_scof'};
     my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
     my $is_pred = ( $is_scof ? 'scof' : 'is' );
     my $range = $args->{'range'} || $args->{'range_scof'};
-    unless( $range )
-    {
-	confess "Range missing";
-    }
+    my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
+    my $divid = $args->{'divid'};
+    my $disabled = $args->{'disabled'} || 0;
+
+    confess "Range missing"
+      unless( $range );
+
     my $list = ( $is_rev ?
 		 $subj->revarc_list( $pred->name, undef, 'explicit' )
 		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
@@ -4318,15 +4437,7 @@ sub wuirc
       ( ( $range->revcount($is_pred) < 25 ) ?
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
 
-    $out .= Para::Frame::Widget::label_from_params({
-			       label       => delete $args->{'label'},
-			       tdlabel     => delete $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => delete $args->{'label_class'},
-			      });
-
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if( $disabled )
     {
 	while( my $arc = $list->get_next_nos )
 	{
@@ -4340,7 +4451,7 @@ sub wuirc
     {
 	delete $args->{'default_value'}; # No default when values exist...
 
-	$out .= '<ul>'
+	$out .= "<ul id=\"$divid-list\">"
 	  if( $list->size > 1);
 
 	foreach my $arc (@$list)
@@ -4350,13 +4461,27 @@ sub wuirc
 
 	    my $check_subj = $arc->subj;
 	    my $item = $arc->value;
-	    my $label = ( $is_rev ? $check_subj->desig : $item->desig );
-	    my $field = 'arc_'. $arc->id .'__subj_'. $check_subj->id
-	      .'__pred_'. $pred->name;
 
-	    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+	    unless( $disabled )
+	    {
+		if( $ajax )
+		{
+		    my $arc_id = $arc->id;
+		    $out .= $q->input({ type => 'button',
+					value => '-',
+					onclick => "rb_remove_arc('$divid', '$arc_id')",
+					class => 'nopad',
+				 });
+		}
+		else
+		{
+		    my $field = 'arc_'. $arc->id .'__subj_'. $check_subj->id
+		      .'__pred_'. $pred->name;
+		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+		}
+	    }
 
-	    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
 	    $out .= ( $is_rev ? $check_subj->wu_jump :
 		      $item->wu_jump ) .'&nbsp;'.
 			$arc->edit_link_html;
@@ -4374,7 +4499,23 @@ sub wuirc
 
     if( not $singular or not $list or ( $singular and $inputtype ne 'text' ))
     {
-	if( $inputtype eq 'text' )
+	if( $ajax and $inputtype eq 'text' )
+	{
+	    my $search_params = { $is_pred => $range->id };
+
+	    #debug "search_params: ". datadump( $search_params );
+
+	    $out .= "
+              <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
+	    $out .=
+	      "<script type=\"text/javascript\">
+                 <!--
+                     new RBInputPopup('$divid-button',
+                              '$divid', '". objToJson( $search_params ) ."',
+                              'name_clean_like', '". $pred->name ."',
+                              '". $subj->id ."') //--> </script>";
+	}
+	elsif( $inputtype eq 'text' )
 	{
 	    my $type_str = ( $is_scof ? 'scof_' : 'type_' ) . $range->label .'__';
 
