@@ -4502,26 +4502,26 @@ sub wuirc
 	}
     }
 
-    if( not $disabled and
-	( not $singular or
-	  not $list or
-	  ( $singular and $inputtype ne 'text' )))
+    if( not $singular or
+	not $list or
+	( $singular and $inputtype ne 'text' ))
     {
 	if( $ajax and $inputtype eq 'text' )
 	{
-	    my $search_params = { $is_pred => $range->id };
+	    unless( $disabled )
+	    {
+		my $search_params = { $is_pred => $range->id };
 
-	    #debug "search_params: ". datadump( $search_params );
-
-	    $out .= "
+		$out .= "
               <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
-	    $out .=
-	      "<script type=\"text/javascript\">
-                 <!--
-                     new RBInputPopup('$divid-button',
-                              '$divid', '". objToJson( $search_params ) ."',
-                              'name_clean_like', '". $pred->name ."',
-                              '". $subj->id ."') //--> </script>";
+		$out .=
+		  "<script type=\"text/javascript\">
+                     <!--
+                         new RBInputPopup('$divid-button',
+                                  '$divid', '". objToJson( $search_params ) ."',
+                                  'name_clean_like', '". $pred->name ."',
+                                  '". $subj->id ."') //--> </script>";
+	    }
 	}
 	elsif( $inputtype eq 'text' )
 	{
