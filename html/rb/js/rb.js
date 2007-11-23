@@ -230,6 +230,7 @@ function rb_remove_arc(divid, arc)
 
 
 var pps = new Hash();
+var pps_deps = new Hash();
 
 var PagePart = Class.create(
 {
@@ -237,7 +238,6 @@ var PagePart = Class.create(
     {
 	this.element = \$(element);
 	this.update_url = update_url;
-	this.update_also = new Array();
 	this.update_params = params['params'];
 	this.is_loading = false;
 
@@ -245,9 +245,10 @@ var PagePart = Class.create(
 	    this.depends_on = params['depends_on'];
 
 	    params['depends_on'].each(function(depo) {
-		    if( pps[depo] ) {
-			pps[depo].registerForUpdate(this);
+		    if( !pps_deps[depo] ) {
+			pps_deps[depo] = new Array();
 		    }
+		    pps_deps[depo].push(this);
 		}.bind(this));
 	}
 	if( params['update_button'] ) {
@@ -263,11 +264,6 @@ var PagePart = Class.create(
     {
 	this.update_button = \$(button);
 	Event.observe(this.update_button, 'click', this.update.bind(this));
-    },
-
-    registerForUpdate: function(pp)
-    {
-	this.update_also.push(pp);
     },
 
     loadingSetup: function()
@@ -316,7 +312,7 @@ var PagePart = Class.create(
 
     updateOthers: function()
     {
-	this.update_also.each(function(pp) {
+	pps_deps[this.element.id].each(function(pp) {
 		pp.update();
 	    });
     },
@@ -327,12 +323,15 @@ var PagePart = Class.create(
 	var formData = \$H(\$('f').serialize(true)).merge({ run: action });
 	formData = formData.merge(extra_params);
 
-	//alert( formData.inspect() );
 	new Ajax.Updater( this.element, '[%home%]/clean/update_button_answer.tt', {
 		method: 'post',
 		    parameters: formData.toQueryString(),
-		    onComplete: this.loadingEnd
-		    });
+		    onComplete: function(transport)
+		    {
+			this.updateOthers();
+			this.loadingEnd();
+		    }.bind(this)
+			  });
     },
     
     insert_wu: function( after, args_json )
