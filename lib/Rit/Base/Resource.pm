@@ -4324,7 +4324,8 @@ sub register_ajax_pagepart
     {
 	if( $key =~ /label/ or
 	    $key eq 'arclim' or
-	    $key eq 'res'
+	    $key eq 'res' or
+	    $key eq 'depends_on'
 	  )
 	{}
 	elsif( ref $args->{$key} )
@@ -4346,8 +4347,21 @@ sub register_ajax_pagepart
                         params: '". objToJson( $params ) ."',
                         pred_name: '$pred_name' }";
 
-    $out .= ", depends_on: [ '". $args->{'depends_on'} ."' ]"
-      if $args->{'depends_on'};
+    if( $args->{'depends_on'} )
+    {
+	my $depends_on = $args->{'depends_on'};
+	if( ref $depends_on )
+	{
+	    debug "Ref depends_on: ". ref $depends_on;
+	    $depends_on = join(', ', map("'$_'", @$depends_on));
+	}
+	else
+	{
+	    $depends_on = "'$depends_on'";
+	}
+	debug "Depends on now: ". $depends_on;
+	$out .= ", depends_on: [ $depends_on ]";
+    }
     $out .= "}); //--> </script>";
 
     return $out;
@@ -4437,15 +4451,6 @@ sub wuirc
       ( ( $range->revcount($is_pred) < 25 ) ?
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
 
-    if( $disabled )
-    {
-	while( my $arc = $list->get_next_nos )
-	{
-	    $out .= $arc->value->wu_jump .'&nbsp;'. $arc->edit_link_html .'<br/>';
-	}
-	return $out;
-    }
-
     if( $list and
 	( $inputtype eq 'text' or not $singular ) )
     {
@@ -4497,7 +4502,10 @@ sub wuirc
 	}
     }
 
-    if( not $singular or not $list or ( $singular and $inputtype ne 'text' ))
+    if( not $disabled and
+	( not $singular or
+	  not $list or
+	  ( $singular and $inputtype ne 'text' )))
     {
 	if( $ajax and $inputtype eq 'text' )
 	{
