@@ -312,15 +312,24 @@ var PagePart = Class.create(
 
     updateOthers: function()
     {
-	pps_deps[this.element.id].each(function(pp) {
-		pp.update();
-	    });
+	if( pps_deps[this.element.id] ) {
+	    pps_deps[this.element.id].each(function(pp) {
+		    pp.update();
+		});
+	}
     },
 
     performAction: function( action, extra_params )
     {
 	this.loadingStart();
-	var formData = \$H(\$('f').serialize(true)).merge({ run: action });
+	var form;
+	if( extra_params.form ) {
+	    form = \$( extra_params.form );
+	}
+	else {
+	    form = \$( 'f' );
+	}
+	var formData = \$H(form.serialize(true)).merge({ run: action });
 	formData = formData.merge(extra_params);
 
 	new Ajax.Updater( this.element, '[%home%]/clean/update_button_answer.tt', {
