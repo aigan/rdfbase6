@@ -321,7 +321,6 @@ var PagePart = Class.create(
 
     performAction: function( action, extra_params )
     {
-	this.loadingStart();
 	var form;
 	if( extra_params.form ) {
 	    form = \$( extra_params.form );
@@ -329,6 +328,14 @@ var PagePart = Class.create(
 	else {
 	    form = \$( 'f' );
 	}
+
+	if( extra_params.confirm ) {
+	    if( !confirm( extra_params.confirm ) ) {
+		return(false);
+	    }
+	}
+
+	this.loadingStart();
 	var formData = \$H(form.serialize(true)).merge({ run: action });
 	formData = formData.merge(extra_params);
 
