@@ -27,7 +27,7 @@ use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use LWP::Simple (); # Do not import get
 use Template::PopupTreeSelect 0.9;
-use JSON;
+use JSON; # objToJson jsonToObj
 
 
 BEGIN

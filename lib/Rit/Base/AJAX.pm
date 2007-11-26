@@ -16,7 +16,7 @@ Tie it all together, make your pages into real applications!
 
 use strict;
 
-use JSON;
+use JSON; # objToJson jsonToObj
 
 BEGIN
 {
