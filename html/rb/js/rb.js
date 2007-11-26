@@ -183,7 +183,6 @@ var RBInputPopup = Class.create(
 
     createNew: function(event, value)
     {
-	alert('creating new: '+ value);
 	Effect.Appear(this.loading, { duration: 0.5 });
 
 	new Ajax.Request('[%home%]/ajax/action/create_new', {
