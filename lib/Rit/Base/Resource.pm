@@ -3853,16 +3853,9 @@ sub vacuum
     my( $args ) = parse_propargs($args_in);
 
     my $no_lim = Rit::Base::Arc::Lim->parse(['active','inactive']);
-    foreach my $arc ( $node->arc_list( undef, undef, $no_lim)->nodes )
-    {
-	next if $arc->disregard;
-	$arc->remove_duplicates( $args );
-    }
-
     foreach my $arc ( $node->arc_list( undef, undef, $no_lim )->as_array )
     {
 	next if $arc->disregard;
-	next unless $arc->real_coltype eq 'obj';
 	$Para::Frame::REQ->may_yield;
 	$arc->vacuum( $args );
     }

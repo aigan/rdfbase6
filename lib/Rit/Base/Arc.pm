@@ -2224,8 +2224,16 @@ sub vacuum
 
     $arc->remove_duplicates( $args );
 
+    my $has_obj = $arc->realy_objtype;
+
 #    warn "  Remove implicit\n";
-    $arc->remove({%$args, implicit => 1}); ## Only removes if not valid
+
+    if( $has_obj )
+    {
+	## Only removes if not valid
+	$arc->remove({%$args, implicit => 1});
+    }
+
     unless( disregard $arc )
     {
 #	debug "  check activation";
@@ -2287,15 +2295,22 @@ sub vacuum
 #	    }
 #	}
 
-	unless( $arc->check_valtype( $args ) )
+	unless( $arc->old )
 	{
-	    $arc->check_value( $args );
+	    unless( $arc->check_valtype( $args ) )
+	    {
+		$arc->check_value( $args );
+	    }
 	}
 
 #	debug "  Reset clean";
 	$arc->reset_clean($args);
+
+	if( $has_obj )
+	{
 #	debug "  Create check";
-	$arc->create_check( $args );
+	    $arc->create_check( $args );
+	}
     }
 }
 
@@ -2313,6 +2328,8 @@ sub check_valtype
 {
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
+
+#    Para::Frame::Logging->this_level(3);
 
     my $pred = $arc->pred;
     if( $pred->plain eq 'value' )
@@ -2474,7 +2491,7 @@ sub reset_clean
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    if( $arc->real_coltype eq 'valtext' )
+    if( ($arc->real_coltype||'') eq 'valtext' )
     {
 	my $cleaned = valclean( $arc->{'value'} );
 	if( ($arc->{'clean'}||'') ne ($cleaned||'') )
@@ -2508,7 +2525,8 @@ Returns: ---
 
 sub remove_duplicates
 {
-    my( $arc, $args ) = @_;
+    my( $arc, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     my $DEBUG = 0;
 
@@ -2518,16 +2536,21 @@ sub remove_duplicates
 	return;
     }
 
+    return unless $arc->active;
+
+
     warn "  Check for duplicates\n" if $DEBUG;
 
     # Now get a hold of the arc object existing in other
     # objects.
     # TODO: generalize this
 
-    my $dbh = $Rit::dbix->dbh;
-
     my $subj = $arc->subj;
-    foreach my $arc2 ( $subj->arc_list($arc->pred, undef, $args)->nodes )
+    foreach my $arc2 ( $subj->arc_list($arc->pred, undef,
+				       {
+					%$args,
+					arclim => ['active'],
+				       })->nodes )
     {
 	next unless $arc->obj->equals( $arc2->obj, $args );
 	next if $arc->id == $arc2->id;
@@ -3307,7 +3330,9 @@ sub set_value
 	  set_value($value_new, $args);
     }
 
-    unless( $value_new->equals( $value_old, $args ) and
+    my $same_value = $value_new->equals( $value_old, $args );
+
+    unless( $same_value and
 	    $valtype_new->equals( $valtype_old )
 	  )
     {
@@ -3325,7 +3350,10 @@ sub set_value
 
 	debug 3, "    Changing value\n";
 
-	$arc->schedule_check_remove( $args );
+	unless( $same_value )
+	{
+	    $arc->schedule_check_remove( $args );
+	}
 
 	my $arc_id      = $arc->id;
 	my $u_node      = $Para::Frame::REQ->user;
@@ -4729,12 +4757,22 @@ sub create_check
 {
     my( $arc, $args ) = @_;
 
+    my $DEBUG = 0;
+
+    return 0 unless $arc->active;
+
     my $pred      = $arc->pred;
+
+    debug( sprintf  "create_check of %s",
+	   $arc->sysdesig ) if $DEBUG;
 
     if( my $list_a = Rit::Base::Rule->list_a($pred) )
     {
 	foreach my $rule ( @$list_a )
 	{
+	    debug( sprintf  "  using %s\n",
+		   $rule->sysdesig) if $DEBUG;
+
 	    $rule->create_infere_rel($arc, $args);
 	}
     }
@@ -4743,6 +4781,9 @@ sub create_check
     {
 	foreach my $rule ( @$list_b )
 	{
+	    debug( sprintf  "  using %s\n",
+		   $rule->sysdesig) if $DEBUG;
+
 	    $rule->create_infere_rev($arc, $args);
 	}
     }
@@ -4775,6 +4816,8 @@ sub create_check
 
 Removes implicit arcs infered from this arc
 
+Should only be called JUST BEFORE the arc is removed.
+
 May also change subject class.
 
 Returns: ---
@@ -4794,6 +4837,8 @@ sub remove_check
     # arc removed (or changed) *after* this sub
 
     $arc->{'in_remove_check'} ++;
+
+    # Don't make arc disregarded, because it's used in inference?
     $arc->{'disregard'} ++;
     warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 
@@ -4833,8 +4878,8 @@ sub remove_check
 
     $subj->on_arc_del($arc, $pred_name, $args);
 
-    $arc->{'disregard'} --;
     $arc->{'in_remove_check'} --;
+    $arc->{'disregard'} --;
     warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 }
 

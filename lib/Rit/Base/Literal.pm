@@ -619,6 +619,10 @@ sub extract_string
 	    throw('validation', "$val->{id} is not a value node");
 	}
     }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
+    {
+	return \ undef;
+    }
     else
     {
 	confess "Can't parse $val";
