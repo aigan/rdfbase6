@@ -16,6 +16,7 @@ package Rit::Base::Action::node_update;
 use strict;
 
 use Para::Frame::L10N qw( loc );
+use Para::Frame::Utils qw( throw debug );
 
 use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Utils qw( parse_propargs );
@@ -29,14 +30,11 @@ sub handler
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $q = $req->q;
+
     my $id = $q->param('id');
-
-    unless( $id ) # creating or editing location?
+    unless( $id )
     {
-	$id = $Rit::dbix->get_nextval('node_seq');
-	$q->param('id', $id);
-
-	$q->param('arc___pred_created', now->iso8601 );
+	throw('incomplete', "Id missing");
     }
 
     my $node = Rit::Base::Resource->get($id);
