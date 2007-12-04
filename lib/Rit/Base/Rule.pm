@@ -577,6 +577,8 @@ sub validate_infere
 
 Make inference on the B part on create
 
+args res must be defined
+
 =cut
 
 sub create_infere_rev
@@ -653,6 +655,8 @@ sub create_infere_rel
 
 Remove implicit arcs infered from this arc, part B
 
+args res must be defined
+
 =cut
 
 sub remove_infered_rev
@@ -686,6 +690,8 @@ sub remove_infered_rev
 =head2 remove_infered_rel
 
 Remove implicit arcs infered from this arc, part A
+
+args res must be defined
 
 =cut
 
