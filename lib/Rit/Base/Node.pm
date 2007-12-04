@@ -1437,7 +1437,9 @@ sub add_note
 
 =head2 wu_jump
 
-  $n->wu_jump( \%args )
+  $n->wu_jump( \%attrs, \%args )
+
+Attrs are the L<Para::Frame::Widget/jump> attributes
 
 Returns: a HTML link to a form form updating the node
 
@@ -1445,13 +1447,15 @@ Returns: a HTML link to a form form updating the node
 
 sub wu_jump
 {
-    my( $node, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $node, $attrs, $args_in ) = @_;
 
-    my $label = $args->{'label'} || $node->desig;
+    $attrs ||= {};
+    my $label = delete($attrs->{'label'}) || $node->desig($args_in);
 
     return Para::Frame::Widget::jump($label,
-				     $node->form_url($args_in));
+				     $node->form_url($args_in),
+				     $attrs,
+				    );
 }
 
 
@@ -1459,7 +1463,9 @@ sub wu_jump
 
 =head2 wun_jump
 
-  $n->wun_jump( \%args )
+  $n->wun_jump( \%attrs, \%args )
+
+Attrs are the L<Para::Frame::Widget/jump> attributes
 
 Returns: a HTML link to node-updating page
 
@@ -1467,13 +1473,15 @@ Returns: a HTML link to node-updating page
 
 sub wun_jump
 {
-    my( $node, $args_in ) = @_;
+    my( $node, $attrs, $args_in ) = @_;
 
+    $attrs ||= {};
     my $base = $Para::Frame::REQ->site->home->url;
     my $url = URI->new('rb/node/update.tt')->abs($base);
     $url->query_form([id=>$node->id]);
+    my $label = delete($attrs->{'label'}) || 'Node';
 
-    return Para::Frame::Widget::jump('Node', $url);
+    return Para::Frame::Widget::jump($label, $url, $attrs);
 }
 
 
