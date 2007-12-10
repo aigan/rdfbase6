@@ -181,9 +181,7 @@ Converts a name to a reasonable string to use in an url
 
 sub name2url
 {
-    my( $name ) = @_;
-
-    deunicode( $name );
+    my( $name ) = deunicode( @_ );
 
     use locale;
     use POSIX qw(locale_h);
