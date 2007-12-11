@@ -162,7 +162,7 @@ var RBInputPopup = Class.create(
 		parameters: {
 		    subj: this.subj,
 		    pred_name: this.pred_name,
-		    obj: key,
+		    obj: key
 		},
 		onComplete: function(transport)
 		{
