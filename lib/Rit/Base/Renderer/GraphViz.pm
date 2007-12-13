@@ -26,7 +26,7 @@ sub render_output
     my $q = $req->q;
     my $R = Rit::Base->Resource;
 
-    my $layout = $q->param('layout') || 'fdp';
+    my $layout = $q->param('layout') || 'dot';
 
     my $g = GraphViz->new( layout => $layout,
 			   #overlap => 'false',
