@@ -87,7 +87,7 @@ sub nodes_arcs
 	if ( $arc->coltype eq 'obj')
 	{
 	    my $valueid = $value->id;
-	    if( join(',', @$expand) =~ /.*$valueid.*/ )
+	    if( grep(/$valueid/, @$expand )
 	    {
 		nodes_arcs( $q, $g, $value, $expand, $revs );
 	    }
