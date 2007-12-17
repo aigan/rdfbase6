@@ -23,6 +23,7 @@ sub render_output
     @handled = undef;
 
     my $req = $rend->req;
+    $req->require_root_access;
     my $q = $req->q;
     my $R = Rit::Base->Resource;
 
