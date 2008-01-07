@@ -1651,10 +1651,10 @@ sub handle_query_check_require
 
     foreach my $arc ( $node->arc_list($pred, undef, $args )->as_array )
     {
-	debug "  examining $arc";
+	debug "  examining ".$arc->sysdesig;
 	if( $scof )
 	{
-	    unless( $arc->value->equals($scof) )
+	    unless( $arc->value->scof($scof) )
 	    {
 		debug "    failed ".$scof->desig;
 		next;
@@ -1663,7 +1663,7 @@ sub handle_query_check_require
 
 	if( $type )
 	{
-	    unless( $arc->value->equals($type) )
+	    unless( $arc->value->is($type) )
 	    {
 		debug "    failed ".$scof->desig;
 		next;
