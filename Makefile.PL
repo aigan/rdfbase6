@@ -46,6 +46,7 @@ WriteMakefile(
 	          'DBD::Pg'                    => 1.49,
 	          'List::Util'                 => 1.18,
 	          'JSON'                       => 1.00,
+	          'GraphViz'                   => 2.02,
 	      },
 	      'dist'          =>
 	      {
