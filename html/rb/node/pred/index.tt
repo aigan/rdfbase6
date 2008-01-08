@@ -55,8 +55,10 @@
 
 </table>
 
+[% IF node.domain %]
 [% test = find(is=node.domain).get_first_nos %]
 [% IF test %]
 <h2>Example</h2>
 <p>[% test.wu(node.label) %]
+[% END %]
 [% END %]
