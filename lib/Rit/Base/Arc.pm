@@ -1024,7 +1024,13 @@ L<Rit::Base::Undef>.
 sub created
 {
     my( $arc ) = @_;
-    return $arc->{'arc_created'} || is_undef;
+    if( defined $arc->{'arc_created_obj'} )
+    {
+	return $arc->{'arc_created_obj'};
+    }
+
+    return $arc->{'arc_created_obj'} =
+      Rit::Base::Literal::Time->get( $arc->{'arc_created'} );
 }
 
 #######################################################################
@@ -1041,7 +1047,13 @@ L<Rit::Base::Undef>.
 sub updated
 {
     my( $arc ) = @_;
-    return $arc->{'arc_updated'} || is_undef;
+    if( defined $arc->{'arc_updated_obj'} )
+    {
+	return $arc->{'arc_updated_obj'};
+    }
+
+    return $arc->{'arc_updated_obj'} =
+      Rit::Base::Literal::Time->get( $arc->{'arc_updated'} );
 }
 
 #######################################################################
@@ -1071,7 +1083,8 @@ sub mark_updated
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
 
-    return $arc->{'arc_updated'} = $time;
+    $arc->{'arc_updated'} = $date_db;
+    return $arc->{'arc_updated_db'} = $time;
 }
 
 #######################################################################
@@ -1088,7 +1101,13 @@ L<Rit::Base::Undef>.
 sub activated
 {
     my( $arc ) = @_;
-    return $arc->{'arc_activated'} || is_undef;
+    if( defined $arc->{'arc_activated_obj'} )
+    {
+	return $arc->{'arc_activated_obj'};
+    }
+
+    return $arc->{'arc_activated_obj'} =
+      Rit::Base::Literal::Time->get( $arc->{'arc_activated'} );
 }
 
 #######################################################################
@@ -1105,7 +1124,13 @@ L<Rit::Base::Undef>.
 sub deactivated
 {
     my( $arc ) = @_;
-    return $arc->{'arc_deactivated'} || is_undef;
+    if( defined $arc->{'arc_deactivated_obj'} )
+    {
+	return $arc->{'arc_deactivated_obj'};
+    }
+
+    return $arc->{'arc_deactivated_obj'} =
+      Rit::Base::Literal::Time->get( $arc->{'arc_deactivated'} );
 }
 
 #######################################################################
@@ -1131,7 +1156,7 @@ sub deactivated_by
     }
 
     my $deactivated_by =
-    my $deactivated = $arc->{'arc_deactivated'};
+    my $deactivated = $arc->deactivated;
     unless( $deactivated )
     {
 	debug "Returning undef deactivated_by obj";
@@ -1182,7 +1207,13 @@ L<Rit::Base::Undef>.
 sub unsubmitted
 {
     my( $arc ) = @_;
-    return $arc->{'arc_unsubmitted'} || is_undef;
+    if( defined $arc->{'arc_unsubmitted_obj'} )
+    {
+	return $arc->{'arc_unsubmitted_obj'};
+    }
+
+    return $arc->{'arc_unsubmitted_obj'} =
+      Rit::Base::Literal::Time->get( $arc->{'arc_unsubmitted'} );
 }
 
 #######################################################################
@@ -2176,8 +2207,10 @@ sub deactivate
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $date_db, $arc->id );
 
-    $arc->{'arc_updated'} = $updated;
-    $arc->{'arc_deactivated'} = $updated;
+    $arc->{'arc_updated'} = $date_db;
+    $arc->{'arc_deactivated'} = $date_db;
+    $arc->{'arc_updated_obj'} = $updated;
+    $arc->{'arc_deactivated_obj'} = $updated;
     $arc->{'active'} = 0;
     $arc->{'submitted'} = 0;
 
@@ -3436,8 +3469,10 @@ sub set_value
 
 	$arc->{'value'}              = $value_new;
 	$arc->{$coltype_new}         = $value_new;
-	$arc->{'arc_updated'}        = $now;
-	$arc->{'arc_created'}        = $now;
+	$arc->{'arc_updated'}        = $now_db;
+	$arc->{'arc_created'}        = $now_db;
+	$arc->{'arc_updated_obj'}    = $now;
+	$arc->{'arc_created_obj'}    = $now;
 	$arc->{'arc_created_by'}     = $u_node->id;
 	$arc->{'arc_created_by_obj'} = $u_node;
 	$arc->{'valtype'}            = $valtype_new->id;
@@ -3574,7 +3609,8 @@ sub submit
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
 
-    $arc->{'arc_updated'} = $updated;
+    $arc->{'arc_updated_obj'} = $updated;
+    $arc->{'arc_updated'} = $date_db;
     $arc->{'submitted'} = 1;
 
 #    $arc->initiate_cache; # not needed
@@ -3651,7 +3687,8 @@ sub unsubmit
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
 
-    $arc->{'arc_updated'} = $updated;
+    $arc->{'arc_updated_obj'} = $updated;
+    $arc->{'arc_updated'} = $date_db;
     $arc->{'submitted'} = 0;
 
 #    $arc->initiate_cache; # not needed
@@ -3723,8 +3760,10 @@ sub activate
 	my $sth = $dbix->dbh->prepare($st);
 	$sth->execute( $date_db, $date_db, $activated_by_id, $aid );
 
-	$arc->{'arc_updated'} = $updated;
-	$arc->{'arc_activated'} = $updated;
+	$arc->{'arc_updated_obj'} = $updated;
+	$arc->{'arc_activated_obj'} = $updated;
+	$arc->{'arc_updated'} = $date_db;
+	$arc->{'arc_activated'} = $date_db;
 	$arc->{'submitted'} = 0;
 	$arc->{'active'} = 1;
 	$arc->{'activated_by'} = $activated_by_id;
@@ -3746,9 +3785,12 @@ sub activate
 	my $sth = $dbix->dbh->prepare($st);
 	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $aid );
 
-	$arc->{'arc_updated'} = $updated;
-	$arc->{'arc_deactivated'} = $updated;
-	$arc->{'arc_activated'} = $updated;
+	$arc->{'arc_updated_obj'} = $updated;
+	$arc->{'arc_deactivated_obj'} = $updated;
+	$arc->{'arc_activated_obj'} = $updated;
+	$arc->{'arc_updated'} = $date_db;
+	$arc->{'arc_deactivated'} = $date_db;
+	$arc->{'arc_activated'} = $date_db;
 	$arc->{'submitted'} = 0;
 	$arc->{'active'} = 0;
 	$arc->{'activated_by'} = $activated_by_id;
@@ -3900,7 +3942,8 @@ sub set_implicit
 				   "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
 
-    $arc->{'arc_updated'} = $now;
+    $arc->{'arc_updated_obj'} = $now;
+    $arc->{'arc_updated'} = $now_db;
     $arc->{'implicit'} = $val;
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
@@ -3975,7 +4018,8 @@ sub set_indirect
 				   "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
 
-    $arc->{'arc_updated'} = $now;
+    $arc->{'arc_updated_obj'} = $now;
+    $arc->{'arc_updated'} = $now_db;
     $arc->{'indirect'} = $val;
 
     if( not $val and $arc->implicit ) # direct ==> explicit
@@ -4125,6 +4169,8 @@ sub initiate_cache
 {
     my( $arc, $rec, $subj, $value_obj ) = @_;
 
+#    my $ts = Time::HiRes::time();
+
     my $id = $arc->{'id'} or die "no id"; # Yes!
     my $bless_subj = 0; # For initiating subj
 
@@ -4145,6 +4191,7 @@ sub initiate_cache
 	$rec = $sth_id->fetchrow_hashref;
 	$sth_id->finish;
 
+#	$Para::Frame::REQ->{RBSTAT}{'arc init exec'} += Time::HiRes::time() - $ts;
 	unless( $rec )
 	{
 	    confess "Arc $id not found";
@@ -4179,6 +4226,7 @@ sub initiate_cache
 	    $subj = Rit::Base::Resource->new( $rec->{'subj'} );
 	    $bless_subj = 1;
 	}
+#	$Para::Frame::REQ->{RBSTAT}{'arc init subj'} += Time::HiRes::time() - $ts;
     }
 
 
@@ -4220,6 +4268,8 @@ sub initiate_cache
 		    $rec->{'valdate'} or
 		    $rec->{'valfloat'} )
 		{
+		    debug datadump($rec);
+		    debug datadump($valtype,1);
 		    throw 'dbi', "Corrupt DB. valtype $valtype->{id} should have been a literal_class";
 		}
 		$value = Rit::Base::Resource->get($rec->{'obj'});
@@ -4230,6 +4280,8 @@ sub initiate_cache
 		  new_from_db( $rec->{$coltype} );
 	    }
 	}
+
+#	$Para::Frame::REQ->{RBSTAT}{'arc init novalue'} += Time::HiRes::time() - $ts;
     }
 
     if( defined $value )
@@ -4250,12 +4302,12 @@ sub initiate_cache
     my $clean = $rec->{'valclean'};
     my $implicit =  $rec->{'implicit'} || 0; # default
     my $indirect = $rec->{'indirect'}  || 0; # default
-    my $updated = Rit::Base::Literal::Time->get($rec->{'updated'} );
-    my $created = Rit::Base::Literal::Time->get($rec->{'created'} );
     my $created_by = $rec->{'created_by'};
-    my $arc_activated = Rit::Base::Literal::Time->get($rec->{'activated'} );
-    my $arc_deactivated = Rit::Base::Literal::Time->get($rec->{'deactivated'} );
-    my $arc_unsubmitted = Rit::Base::Literal::Time->get($rec->{'unsubmitted'} );
+#    my $updated = Rit::Base::Literal::Time->get($rec->{'updated'} );
+#    my $created = Rit::Base::Literal::Time->get($rec->{'created'} );
+#    my $arc_activated = Rit::Base::Literal::Time->get($rec->{'activated'} );
+#    my $arc_deactivated = Rit::Base::Literal::Time->get($rec->{'deactivated'} );
+#    my $arc_unsubmitted = Rit::Base::Literal::Time->get($rec->{'unsubmitted'} );
 
     # Setup data
     $arc->{'id'} = $id; # This is $rec->{'ver'}
@@ -4275,15 +4327,15 @@ sub initiate_cache
     $arc->{'active'} = $rec->{'active'};
     $arc->{'submitted'} = $rec->{'submitted'};
     $arc->{'activated_by'} = $rec->{'activated_by'};
-    $arc->{'unsubmitted'} = $arc_unsubmitted;
     $arc->{'valtype'} = $rec->{'valtype'}; # Get obj on demand
     $arc->{'arc_created_by'} = $created_by;
-    $arc->{'arc_created'} = $created;
-    $arc->{'arc_updated'} = $updated;
     $arc->{'arc_read_access'} = $rec->{'read_access'};
     $arc->{'arc_write_access'} = $rec->{'write_access'};
-    $arc->{'arc_activated'} = $arc_activated;
-    $arc->{'arc_deactivated'} = $arc_deactivated;
+    $arc->{'arc_activated'} = $rec->{'activated'};               #
+    $arc->{'arc_deactivated'} = $rec->{'deactivated'};           #
+    $arc->{'arc_created'} = $rec->{'created'};                   #
+    $arc->{'arc_updated'} = $rec->{'updated'};                   #
+    $arc->{'unsubmitted'} = $rec->{'unsubmitted'};               #
     #
     ####################################
 
@@ -4324,6 +4376,8 @@ sub initiate_cache
     # been initialized on object creation
 
     warn timediff("arc init done") if $DEBUG > 1;
+
+#    $Para::Frame::REQ->{RBSTAT}{'arc init'} += Time::HiRes::time() - $ts;
 
     return $arc;
 }

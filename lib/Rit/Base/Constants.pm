@@ -109,6 +109,9 @@ sub on_startup
 	my $obj = $class->get($export->[1]);
 	*{$export->[0]} = \ $obj;
     }
+
+    debug "Initiating key nodes";
+    $class->get('class')->initiate_rel;
 }
 
 
