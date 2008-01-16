@@ -5946,7 +5946,7 @@ sub initiate_rel
 
     if( $arclim->size )
     {
-	debug "Initiating node $nid rel with arclim";
+#	debug "Initiating node $nid rel with arclim";
 
 	my( $active, $inactive ) = $arclim->incl_act();
 
@@ -6034,7 +6034,7 @@ sub initiate_rel
 
 	my $p_name_id = Rit::Base::Resource->get_by_label('name')->id;
 
-	debug "Initiating node $nid rel WITHOUT arclim";
+#	debug "Initiating node $nid rel WITHOUT arclim";
 
 	# Optimized for also getting value nodes
 	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
@@ -6042,7 +6042,7 @@ sub initiate_rel
 	my $recs = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
 
-	debug timediff "exec done";
+#	debug timediff "exec done";
 #	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM exec'} += Time::HiRes::time() - $ts;
 
 	# TODO: Maby it woule be a litle mor efficient to start by the
