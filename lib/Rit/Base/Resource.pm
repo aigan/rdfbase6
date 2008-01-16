@@ -39,7 +39,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
-			   package_to_module );
+			   package_to_module timediff );
 
 use Rit::Base::Node;
 use Rit::Base::Search;
@@ -214,6 +214,8 @@ sub get
 	return $node;
     }
 
+#    my $ts = Time::HiRes::time();
+
     $node = $class->new( $id );
     # The node will be cached by the new()
 
@@ -224,6 +226,8 @@ sub get
     }
 
     $node->first_bless;
+
+#    $Para::Frame::REQ->{RBSTAT}{get_new} += Time::HiRes::time() - $ts;
 
 #    debug "Got     $id ($node)";
 
@@ -1757,6 +1761,7 @@ choose among the versions that meets the proplim (and arclim).
 sub list
 {
     my( $node, $pred_in, $proplim, $args_in ) = @_;
+#    my $ts = Time::HiRes::time();
     my( $args, $arclim ) = parse_propargs($args_in);
 
     unless( ref $node and UNIVERSAL::isa $node, 'Rit::Base::Resource' )
@@ -1770,16 +1775,17 @@ sub list
 	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
 	    $pred = $pred_in;
-	    $name = $pred->plain;
 	}
 	else
 	{
 	    $pred = Rit::Base::Pred->get($pred_in);
-	    $name = $pred->plain
 	}
+	$name = $pred->plain;
 
 	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
+
+#	$Para::Frame::REQ->{RBSTAT}{'list pred parse'} += Time::HiRes::time() - $ts;
 
 	if( $node->initiate_prop( $pred, $proplim, $args ) )
 	{
@@ -1798,6 +1804,7 @@ sub list
 	else
 	{
 #	    debug "No values for $node->{id} prop $name found!";
+#	    $Para::Frame::REQ->{RBSTAT}{'list pred empty'} += Time::HiRes::time() - $ts;
 	    return Rit::Base::Arc::List->new_empty();
 	}
 
@@ -1821,9 +1828,11 @@ sub list
 	    $args = $args2;
 	}
 
-	return $pred->valtype->instance_class->list_class->
+	my $res = $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->value, @arcs ]);
+#	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
+	return $res;
     }
     else
     {
@@ -4748,6 +4757,9 @@ Returns: A scalar with the package name
 sub find_class
 {
     my( $node ) = @_;
+#    my $ts = Time::HiRes::time();
+
+    # Used in startup.
 
     # I guess this is sufficiently efficient
 
@@ -4757,15 +4769,12 @@ sub find_class
 #    my $islist = $node->list('is',undef,'not_disregarded');
 #    debug "Finding the class for node $node->{id}";
 
-    # Used in startup. Get pred here. (For optimization)
-    my $p_is = Rit::Base::Pred->get_by_label('is');
-    my $p_chbpm = Rit::Base::Pred->
-      get_by_label('class_handled_by_perl_module');
     my $p_code = Rit::Base::Pred->get_by_label('code');
 
-    my $islist = $node->list($p_is);
+    my $islist = $node->list('is');
     my @classes;
-    foreach my $elem ($islist->as_array)
+    my( $elem, $islist_error ) = $islist->get_first;
+    while(! $islist_error )
     {
 #	debug "Looking at is $elem->{id}";
 	if( $elem->{'id'} == $Rit::Base::Literal::Class::id )
@@ -4773,7 +4782,18 @@ sub find_class
 	    return "Rit::Base::Literal::Class";
 	}
 
-	foreach my $class ($elem->list($p_chbpm)->nodes )
+#	# Bootstrap workaround... ### SLOWER!
+#	if( not $Rit::Base::IN_STARTUP )
+#	{
+#	    $elem->initiate_rel; ### PRE-CACH!
+#	}
+
+	my $p_chbpm = Rit::Base::Pred->
+	  get_by_label('class_handled_by_perl_module');
+
+	my $class_list = $elem->list($p_chbpm);
+	my( $class, $class_list_error ) = $class_list->get_first;
+	while(! $class_list_error )
 	{
 	    my $pkg = $class->first_prop($p_code)->plain;
 #	    debug "  found $pkg";
@@ -4785,12 +4805,19 @@ sub find_class
 		# Should only be for classes that never should be
 		# metaclasses
 		#
+#		$Para::Frame::REQ->{RBSTAT}{'find_class use_class'} += Time::HiRes::time() - $ts;
 		return $pkg->use_class;
 	    }
 
 #	    debug "  Handled by $class";
 	    push @classes, $class;
+
+	    # continue!
+	    ( $class, $class_list_error ) = $class_list->get_next;
 	}
+
+	# continue!
+	( $elem, $islist_error ) = $islist->get_next;
     }
 
     if( $classes[0] )
@@ -4799,6 +4826,7 @@ sub find_class
 	my $key = join '_', sort map $_->id, @classes;
 	if( $package = $Rit::Base::Cache::Class{ $key } )
 	{
+#	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
 	    return $package;
 	}
 
@@ -4847,9 +4875,11 @@ sub find_class
 	    $package = "Rit::Base::Resource";
 	}
 
+#	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
+#    $Para::Frame::REQ->{RBSTAT}{'find_class default'} += Time::HiRes::time() - $ts;
     return "Rit::Base::Resource";
 }
 
@@ -4873,6 +4903,7 @@ Calls L</init> with given params
 sub first_bless
 {
     my $node = shift;
+#    my $ts = Time::HiRes::time();
 
     # get the right class
     my( $class ) = ref $node;
@@ -4911,7 +4942,7 @@ sub first_bless
 
 #    debug sprintf "Node %d initiated as $node", $node->id;
 
-    return $node;
+#    $Para::Frame::REQ->{RBSTAT}{'first_bless'} += Time::HiRes::time() - $ts;    return $node;
 }
 
 
@@ -5915,7 +5946,7 @@ sub initiate_rel
 
     if( $arclim->size )
     {
-#	debug "Initiating node $nid rel with arclim";
+	debug "Initiating node $nid rel with arclim";
 
 	my( $active, $inactive ) = $arclim->incl_act();
 
@@ -5999,9 +6030,11 @@ sub initiate_rel
     {
 	return if $_[0]->{'initiated_rel'};
 
-#	debug "Initiating node $nid rel WITHOUT arclim";
+#	my $ts = Time::HiRes::time();
 
 	my $p_name_id = Rit::Base::Resource->get_by_label('name')->id;
+
+	debug "Initiating node $nid rel WITHOUT arclim";
 
 	# Optimized for also getting value nodes
 	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
@@ -6009,6 +6042,8 @@ sub initiate_rel
 	my $recs = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
 
+	debug timediff "exec done";
+#	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM exec'} += Time::HiRes::time() - $ts;
 
 	# TODO: Maby it woule be a litle mor efficient to start by the
 	# extra name-nodes and after that initiate the arcs from this
@@ -6055,6 +6090,8 @@ sub initiate_rel
 #    warn "End   init all props of node $node->{id}\n";
 
 	$node->{'initiated_rel'} = 1;
+
+#	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM'} += Time::HiRes::time() - $ts;
     }
 }
 
@@ -6169,6 +6206,9 @@ Returns undef if no values for this prop
 sub initiate_prop
 {
     my( $node, $pred, $proplim, $args_in ) = @_;
+
+#    my $ts = Time::HiRes::time();
+
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
     my $name = $pred->plain;
@@ -6243,6 +6283,7 @@ sub initiate_prop
 	    $sth_init_subj_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
 	    $recs = $sth_init_subj_pred_name->fetchall_arrayref({});
 	    $sth_init_subj_pred_name->finish;
+#	    $Para::Frame::REQ->{RBSTAT}{'initiate_prop name exec'} += Time::HiRes::time() - $ts;
 	}
 	else
 	{
@@ -6290,6 +6331,8 @@ sub initiate_prop
 		debug "Populating $rowcount arcs";
 		debug "ARGS: ".query_desig($args);
 	    }
+
+#	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
 	}
 
 
@@ -6337,6 +6380,7 @@ sub initiate_prop
 	$node->{'initiated_relprop'}{$name} = 2;
     }
 
+#    $Para::Frame::REQ->{RBSTAT}{'initiate_prop processed'} += Time::HiRes::time() - $ts;
 
     # Keeps key nonexistent if nonexistent
     if( $active and not $inactive )
@@ -6453,7 +6497,6 @@ sub initiate_revprop
 	}
 
 	my $cnt = 0;
-	my $ts = time;
 
 	my $rowcount = $sth_init_obj_pred->rows;
 	if( $rowcount > 100 )
@@ -6856,20 +6899,6 @@ sub handle_query_newsubjs
 
     return $res->changes - $changes_prev;
 }
-
-#########################################################################
-
-=head2 timediff
-
-=cut
-
-sub timediff
-{
-    my $ts = $Rit::Base::timestamp || time;
-    $Rit::Base::timestamp = time;
-    return sprintf "%20s: %2.2f\n", $_[0], time - $ts;
-}
-
 
 #########################################################################
 

@@ -83,11 +83,13 @@ sub materialize
     }
     else
     {
+#	my $ts = Time::HiRes::time();
 	my $node = Rit::Base::Resource->get( $elem );
 	if( debug > 1 )
 	{
 	    debug "Materializing Search result $i: ".$node->sysdesig;
 	}
+#	$Para::Frame::REQ->{RBSTAT}{materialize} += Time::HiRes::time() - $ts;
 	$Para::Frame::REQ->may_yield;
 	return $node;
     }
