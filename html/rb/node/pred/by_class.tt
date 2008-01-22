@@ -1,0 +1,47 @@
+﻿[% META title="List preds"
+	menu="/admin/create.tt"
+        level = 20
+%]
+
+[% order = q.param('order') || 'id' %]
+[% direction = q.param('direction') %]
+
+[% id = q.param('id') %]
+
+[% IF id %]
+   [% target = get(id) %]
+   [% preds_dis = find(is=C.predicate, domain=target) %]
+   [% preds_ris = find(is=C.predicate, range=target) %]
+   [% preds_dsc = find(is=C.predicate, domain_scof=target) %]
+   [% preds_rsc = find(is=C.predicate, range_scof=target) %]
+   [% preds = preds_dis.merge(preds_ris, preds_dsc, preds_rsc).uniq.sorted(order, direction) %]
+[% ELSE %]
+   [% preds_dis = find(is=C.predicate, domain_scof_exist=0, range_scof_exist=0, domain_exist=0) %]
+   [% preds_ris = find(is=C.predicate, domain_scof_exist=0, range_scof_exist=0, range_exist=0) %]
+   [% preds = preds_dis.merge(preds_ris).uniq.sorted(order, direction) %]
+[% END %]
+
+<p>[% loc("[quant,_1,hit]", preds.size) %]<br/>
+[% preds.pagelist %]
+</p>
+
+<table>
+<tr><th>[% sort('ID','id') %]
+    <th>[% sort('Label', 'label') %]
+    <th>Domain is
+    <th>Range is
+    <th>Domain scof
+    <th>Range scof
+
+[% FOREACH pred IN preds.from_page %]
+   [% tr2 %]
+      <td>[% pred.id %]</td>
+      <td>[% pred.wu_jump %]
+      <td>[% IF pred.domain; pred.domain.wu_jump; END; %]</td>
+      <td>[% UNLESS pred.id == 4; IF pred.valtype.id == 5; 'Object'; ELSE; pred.valtype.wu_jump; END; END %]</td>
+      <td>[% IF pred.domain_scof; pred.domain_scof.wu_jump; END; %]</td>
+      <td>[% IF pred.range_scof; pred.range_scof.wu_jump; END; %]</td>
+   </td></tr>
+[% END %]
+</table>
+
