@@ -1158,11 +1158,11 @@ sub set_one
 
     while( my $enode = $nodes->get_next_nos )
     {
-	$enode->merge($node,
-		      {
-		       %$args,
-		       move_literals => 1,
-		      });
+	$enode->merge_node($node,
+			   {
+			    %$args,
+			    move_literals => 1,
+			   });
     }
 
     unless( $node )
@@ -3875,9 +3875,9 @@ sub vacuum
 
 #######################################################################
 
-=head2 merge
+=head2 merge_node
 
-  $node1->merge($node2, \%args )
+  $node1->merge_node($node2, \%args )
 
 Copies all arcs from C<$node1> to C<$node2>. And remove the arcs from
 C<$node1>.  Copies both arcs and reverse arcs.
@@ -3894,6 +3894,8 @@ missing, only ovject properties are copied.
 This will destroy any properties of the copied arcs, beyond the basic
 properties C<{subj, pred, value}>.
 
+SEE ALSO L<Para::Frame::List/merge>
+
 TODO:
 
 Move the arcs in order to keep arc metadata.
@@ -3902,7 +3904,7 @@ Returns: C<$node2>
 
 =cut
 
-sub merge
+sub merge_node
 {
     my( $node1, $node2, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);

@@ -67,7 +67,7 @@ sub handler
     my( $args, $arclim, $res ) = parse_propargs();
     $args->{'move_literals'} = $move_literals;
 
-    $node1->merge( $node2, $args );
+    $node1->merge_node( $node2, $args );
 
     $node2->session_history_add('updated');
 

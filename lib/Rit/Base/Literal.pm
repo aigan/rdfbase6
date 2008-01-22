@@ -1458,11 +1458,11 @@ sub vacuum
 
 #######################################################################
 
-=head3 merge
+=head3 merge_node
 
 =cut
 
-sub merge
+sub merge_node
 {
     confess "merging a literal?!";
 }
