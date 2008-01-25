@@ -121,6 +121,7 @@ class_handled_by_perl_module	is	predicate
 class_handled_by_perl_module	admin_comment		Bless instances in this perl class
 class_handled_by_perl_module	domain	class
 class_handled_by_perl_module	range	class_perl_module
+class_perl_module	is	class
 rule	is	class
 syllogism	scof	rule
 syllogism	class_handled_by_perl_module	101
@@ -132,6 +133,9 @@ predicate	class_handled_by_perl_module	102
 login_account	class_handled_by_perl_module	103
 103	is	class_perl_module
 103	code		Rit::Base::User
+email	class_handled_by_perl_module	104
+104	is	class_perl_module
+104	code	Rit::Guides::Email
 predicate	is	class
 class_form_url	is	predicate
 class_form_url	admin_comment		HTML form relative site root
@@ -154,6 +158,11 @@ site_code	range	text
 112	pred_2	scof
 112	pred_3	scof
 
+113	is	syllogism
+113	pred_1	scof
+113	pred_2	is
+113	pred_3	is
+
 literal_class	is	class
 literal_class	scof	class
 literal	is	literal_class
@@ -166,6 +175,28 @@ root	name_short		root
 guest	has_access_right	guest_access
 guest	is	login_account
 
+bool		class_handled_by_perl_module	105
+105		is	class_perl_module
+105		code	Rit::Base::Literal::Bool
+
+email_address	class_handled_by_perl_module	106
+106		is	class_perl_module
+106		code	Rit::Base::Literal::Email::Address
+
+image		class_handled_by_perl_module	107
+107		is	class_perl_module
+107		code	Rit::Base::Literal::Image
+
+url		class_handled_by_perl_module	108
+108		is	class_perl_module
+108		code	Rit::Base::Literal::URL
+
+website_url	class_handled_by_perl_module	109
+109		is	class_perl_module
+109		code	Rit::Base::Literal::URL::Website
+
+
+
 LITERALS
 
 valfloat	scof	literal
@@ -175,7 +206,7 @@ valtext	scof	literal
 
 bool	scof	valfloat
 date	scof	valdate
-email	scof	text
+email_address	scof	text
 file	scof	text
 float	scof	valfloat
 int	scof	valfloat
@@ -185,6 +216,7 @@ text	scof	valtext
 textbox	scof	text
 url	scof	text
 zipcode	scof	text
-
+image	scof	file
+website_url	scof	url
 
 EOF
