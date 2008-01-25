@@ -78,7 +78,7 @@ ALTER TABLE ONLY arc
     ADD CONSTRAINT arc_pred_fkey FOREIGN KEY (pred) REFERENCES node(node);
 
 ALTER TABLE ONLY arc
-    ADD CONSTRAINT arc_replaces_fkey FOREIGN KEY (replaces) REFERENCES arc(ver);
-ALTER TABLE ONLY arc
     ADD CONSTRAINT arc_pkey PRIMARY KEY (ver);
 
+ALTER TABLE ONLY arc
+    ADD CONSTRAINT arc_replaces_fkey FOREIGN KEY (replaces) REFERENCES arc(ver);

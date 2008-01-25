@@ -70,6 +70,11 @@ sub setup_db
 	last if $_ eq 'NODES';
     }
 
+    unless( $dbix->table('arc') )
+    {
+	throw 'dbi', "Tables missing in database";
+    }
+
     $dbh->do("delete from arc") or die;
     $dbh->do("delete from node") or die;
     $dbh->do("select setval('node_seq',1,false)");

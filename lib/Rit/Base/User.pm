@@ -48,7 +48,7 @@ Inherits from L<Para::Frame::User>
 This class doesn't inherit from L<Rit::Base::Resoure>. But see
 L<Rit::Base::User::Meta>.
 
-Resources, then initiated, will be placed in the right class based on
+Resources, when initiated, will be placed in the right class based on
 the C<class_handled_by_perl_module> property. Since a resource can
 have multiple classes, the class in itself can not inherit from
 L<Rit::Base::Resource>. The resource will be placed in a metaclass

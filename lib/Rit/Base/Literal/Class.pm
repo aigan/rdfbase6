@@ -82,12 +82,12 @@ sub on_startup
 	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
 	$sth_label->finish;
 
-#	debug "Caching colname $colname";
+	debug "Caching colname $colname";
 	$sth_child->execute($colid) or die;
 	while(my( $nid ) = $sth_child->fetchrow_array)
 	{
 	    $COLTYPE_valtype2name{$nid} = $colname;
-#	    debug "Valtype $nid = $colname";
+	    debug "Valtype $nid = $colname";
 	}
 	$sth_child->finish;
 
@@ -98,7 +98,7 @@ sub on_startup
     %COLTYPE_name2num = reverse %COLTYPE_num2name;
 
 
-#    debug "Initiating literal_class";
+    debug "Initiating literal_class";
 
     my $sth = $Rit::dbix->dbh->
       prepare("select node from node where label=?");
@@ -106,17 +106,20 @@ sub on_startup
     $id = $sth->fetchrow_array; # Store in GLOBAL id
     $sth->finish;
 
-    #################### CREATION
     unless( $id )
     {
-	my( $args, $arclim, $res ) = parse_propargs('auto');
-	my $req = Para::Frame::Request->new_bgrequest();
-	$req->user->set_default_propargs({activate_new_arcs => 1 });
+	die "Failed to initiate literal_class constant";
 
-	my $lc = Rit::Base::Resource->get('new');
-	$id = $lc->id;
-	$lc->set_label('literal_class');
-	Rit::Base::Resource->commit;
+
+    #################### CREATION
+#	my( $args, $arclim, $res ) = parse_propargs('auto');
+#	my $req = Para::Frame::Request->new_bgrequest();
+#	$req->user->set_default_propargs({activate_new_arcs => 1 });
+#
+#	my $lc = Rit::Base::Resource->get('new');
+#	$id = $lc->id;
+#	$lc->set_label('literal_class');
+#	Rit::Base::Resource->commit;
     }
 
 

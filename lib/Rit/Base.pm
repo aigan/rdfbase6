@@ -76,6 +76,7 @@ sub init
 
     warn "Adding hooks for Rit::Base\n";
 
+    # Just in case we temporarily switched to root and got an exception
     Para::Frame->add_hook('on_error_detect', sub
 			  {
 			      Rit::Base::User->revert_from_temporary_user();
@@ -88,7 +89,7 @@ sub init
     Para::Frame->add_hook('on_startup', \&init_on_startup);
 
     # Can't unlock all arcs in the middle of an operation. Wait until
-    # we are done. Also wait with resouyrces...
+    # we are done. Also wait with resources...
     #
 #    Para::Frame->add_hook('before_db_commit', sub
 #			  {
@@ -126,6 +127,8 @@ sub init
 
     Rit::Base::Widget->on_configure();
 
+    warn "Done adding hooks for Rit::Base\n";
+
     return 1;
 }
 
@@ -139,8 +142,12 @@ sub init
 
 sub init_on_startup
 {
+    warn "init_on_startup\n";
+
     Rit::Base::Literal::Class->on_startup();
+    warn "init_on_startup 2\n";
     Rit::Base::Constants->on_startup();
+    warn "init_on_startup 3\n";
 
     my $cfg = $Para::Frame::CFG;
 
@@ -157,10 +164,13 @@ sub init_on_startup
 	    $cfg->{$key} = Rit::Base::Resource->get_by_label($val);
 	}
     }
+    warn "init_on_startup 4\n";
 
     $Rit::Base::IN_STARTUP = 0;
 
+    warn "calling on_ritbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
+    warn "done init_on_startup\n";
 }
 
 #######################################################################

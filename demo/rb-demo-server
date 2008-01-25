@@ -167,7 +167,6 @@ use Rit::Base::Demo;
     # Attatch code to hooks
     #
 
-    # Just in case we temporarily switched to root and got an exception
     Para::Frame->add_hook('on_startup', sub
 			  {
 			      $Rit::dbix->connect;
