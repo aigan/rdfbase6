@@ -1097,6 +1097,7 @@ sub remove
 
     debug "Removing resource ".$node->sysdesig;
 
+
     # Remove value arcs before the corresponding datatype arc
     my( @arcs, $value_arc );
     my $pred_value_id = Rit::Base::Pred->get_by_label('value')->id;
@@ -1121,6 +1122,22 @@ sub remove
     {
 	$arc->remove( $args );
     }
+
+    # Remove node
+    #
+    if( $node->has_node_record )
+    {
+	if( $args->{'force'} )
+	{
+	    $Rit::dbix->delete("from node where node=?", $node->id);
+	    debug "  node record deleted";
+	}
+	else
+	{
+	    debug "NOT REMOVING NODE RECORD";
+	}
+    }
+
 
     # Remove from cache
     #
