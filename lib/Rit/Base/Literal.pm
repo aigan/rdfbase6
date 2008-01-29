@@ -1566,6 +1566,18 @@ sub sysdesig  # The designation of obj, including node id
 }
 
 
+#######################################################################
+
+=head3 default_valtype
+
+=cut
+
+sub default_valtype
+{
+    die "No valtype given";
+#    return Rit::Base::Literal::Class->get_by_label('valtext');
+}
+
 #########################################################################
 
 
