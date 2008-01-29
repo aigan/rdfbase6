@@ -1589,6 +1589,23 @@ sub empty
 
 #######################################################################
 
+=head2 has_node_record
+
+  $n->has_node_record
+
+Returns: true if node has node record
+
+=cut
+
+sub has_node_record
+{
+    $_[0]->initiate_node;
+    return $_[0]->{'initiated_node'} > 1 ? 1 : 0;
+}
+
+
+#######################################################################
+
 =head2 created
 
   $n->created
@@ -5680,11 +5697,11 @@ sub initiate_node
 	$node->{'owned_by'} = $rec->{'owned_by'};
 	$node->{'read_access'} = $rec->{'read_access'};
 	$node->{'write_access'} = $rec->{'write_access'};
+
 	$node->{'created'} = Rit::Base::Literal::Time->get( $rec->{'created'} );
 	$node->{'created_by'} = $rec->{'created_by'};
 	$node->{'updated'} = Rit::Base::Literal::Time->get( $rec->{'updated'} );
 	$node->{'updated_by'} = $rec->{'updated_by'};
-#	debug "  Created $node->{created} by $node->{created_by}";
 
 	$node->{'initiated_node'} = 2;
     }
