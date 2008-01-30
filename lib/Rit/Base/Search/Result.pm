@@ -1,9 +1,21 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Search::Result;
+#=====================================================================
+#
+# DESCRIPTION
+#   Ritbase Search Result class
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
-Rit::Guides::Base::Result
+Rit::Base::Search::Result
 
 =cut
 

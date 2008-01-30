@@ -9,13 +9,13 @@ package Rit::Base::Search::Collection;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 =head1 NAME
 
-Rit::Guides::Search::Collection
+Rit::Base::Search::Collection
 
 =cut
 
