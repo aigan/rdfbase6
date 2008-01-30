@@ -9,17 +9,15 @@ package Rit::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 =head1 NAME
 
-Rit::Guides::Upgrade
+Rit::Base::Setup
 
 =head2 DESCRIPTION
-
-See also Rit::Base::Action::setup_db
 
 =cut
 
@@ -334,5 +332,117 @@ sub setup_db
 
     return;
 }
+
+
+#######################################################################
+
+sub convert_valuenodes
+{
+    die "NOT READY";
+
+    my $dbix = $Rit::dbix;
+    my $dbh = $dbix->dbh;
+    my $req = Para::Frame::Request->new_bgrequest();
+    my $now_db = DateTime::Format::Pg->format_datetime(now);
+
+    print "\nCONVERTING VALUENODES\n\n";
+
+#    my $arclist = $dbix->select_list("from arc where pred=4 order by ver desc");
+
+
+    my $arclist = $dbix->select_list("from arc where pred=4 and subj in (select subj from arc where pred=4 and active is true group by subj having count(pred)>1) order by ver desc");
+
+    debug sprintf "Got %d arcs", $arclist->size;
+
+    my $update_sth = $dbh->prepare("update arc set valfloat=?, valdate=?, valtext=?, valclean=?, valtype=?, activated=?, activated_by=? where ver=?") or die;
+
+    my @REMOVE;
+    my @CONVERT;
+
+    my( $rec, $error ) = $arclist->get_first;
+    while(! $error )
+    {
+	my $arc = Rit::Base::Arc->get_by_rec($rec);
+
+#	debug $arc->sysdesig;
+
+	if(not $arc->active)
+	{
+#	    debug "NOT ACTIVE";
+	    push @REMOVE, $arc;
+	    next;
+	}
+
+	push @CONVERT, $arc;
+    }
+    continue
+    {
+	( $rec, $error ) = $arclist->get_next;
+    };
+
+    foreach my $arc ( @CONVERT )
+    {
+	my $rec = $dbix->select_possible_record("from arc where obj=? and active is true", $arc->{'subj'});
+
+	unless( $rec )
+	{
+	    debug "Arc unconnected";
+	    push @REMOVE, $arc;
+	    next;
+	}
+
+
+
+	# Ignoring source, created, created_by, read_access, write_access
+
+	my $valtype = $arc->valtype;
+	my $valtype_db = $arc->valtype->id;
+	my $coltype = $arc->coltype;
+	my $activated_db = $arc->{'arc_activated'};
+	my $activated_by_db = $arc->{'activated_by'};
+
+	if( $rec->{$coltype} )
+	{
+	    debug "Removing duplicate";
+	    push @REMOVE, $arc;
+	    next;
+	}
+
+	my( $valfloat, $valdate, $valtext, $valclean );
+	my $value = $arc->value;
+
+	if( $coltype eq 'valfloat' )
+	{
+	    $valfloat = $value;
+	}
+	elsif( $coltype eq 'valdate' )
+	{
+	    $valdate = DateTime::Format::Pg->format_datetime($value);
+	}
+	elsif( $coltype eq 'valtext' )
+	{
+	    $valtext = $value;
+	    $valclean = valclean( $value );
+	}
+	else
+	{
+	    die "What is this? ".datadump($arc);
+	}
+
+	debug $arc->sysdesig;
+#	debug "About to overwrite ".datadump($rec);
+#	last;
+
+	$update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $rec->{'ver'});
+    }
+
+    my $remove_sth = $dbh->prepare("delete from arc where ver=?");
+
+
+    debug "COMMIT";
+    $Para::Frame::REQ->done;
+}
+
+#######################################################################
 
 1;
