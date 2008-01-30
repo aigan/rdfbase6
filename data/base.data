@@ -133,9 +133,6 @@ predicate	class_handled_by_perl_module	102
 login_account	class_handled_by_perl_module	103
 103	is	class_perl_module
 103	code		Rit::Base::User
-email	class_handled_by_perl_module	104
-104	is	class_perl_module
-104	code		Rit::Guides::Email
 predicate	is	class
 class_form_url	is	predicate
 class_form_url	admin_comment		HTML form relative site root

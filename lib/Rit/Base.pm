@@ -107,7 +107,10 @@ sub init
 
     Para::Frame->add_hook('add_background_jobs', \&add_background_jobs);
 
-
+    $Para::Frame::CFG->{'search_collection_class'} ||=
+      'Rit::Base::Search::Collection';
+    $Para::Frame::CFG->{'search_result_class'} ||=
+      'Rit::Base::Search::Result';
 
     my $global_params =
     {
@@ -122,8 +125,10 @@ sub init
      timeobj         => sub{ Rit::Base::Literal::Time->get( @_ ) },
      literal         => sub{ Rit::Base::Literal->new(@_) },
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
+     searchobj       => sub{ $Para::Frame::REQ->session->search_collection },
     };
     Para::Frame->add_global_tt_params( $global_params );
+
 
     Rit::Base::Widget->on_configure();
 
