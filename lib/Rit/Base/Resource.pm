@@ -1616,7 +1616,14 @@ Returns: L<Rit::Base::Literal::Time> object
 
 sub created
 {
-    return $_[0]->initiate_node->{'created'};
+    my( $n ) = @_;
+    if( defined $n->{'created_obj'} )
+    {
+	return $n->{'created_obj'};
+    }
+
+    return $n->{'created_obj'} =
+      Rit::Base::Literal::Time->get( $n->{'created'} );
 }
 
 
@@ -1632,6 +1639,15 @@ Returns: L<Rit::Base::Literal::Time> object
 
 sub updated
 {
+    my( $n ) = @_;
+    if( defined $n->{'updated_obj'} )
+    {
+	return $n->{'updated_obj'};
+    }
+
+    return $n->{'updated_obj'} =
+      Rit::Base::Literal::Time->get( $n->{'updated'} );
+
     return $_[0]->initiate_node->{'updated'};
 }
 
@@ -5697,10 +5713,9 @@ sub initiate_node
 	$node->{'owned_by'} = $rec->{'owned_by'};
 	$node->{'read_access'} = $rec->{'read_access'};
 	$node->{'write_access'} = $rec->{'write_access'};
-
-	$node->{'created'} = Rit::Base::Literal::Time->get( $rec->{'created'} );
+	$node->{'created'} = $rec->{'created'};
 	$node->{'created_by'} = $rec->{'created_by'};
-	$node->{'updated'} = Rit::Base::Literal::Time->get( $rec->{'updated'} );
+	$node->{'updated'} = $rec->{'updated'};
 	$node->{'updated_by'} = $rec->{'updated_by'};
 
 	$node->{'initiated_node'} = 2;
@@ -5785,10 +5800,12 @@ sub mark_updated
     $time ||= now();
     $u ||= $Para::Frame::REQ->user;
     $node->initiate_node;
-    $node->{'updated'} = $time;
-    $node->{'created'} ||= $time;
+    $node->{'updated_obj'} = $time;
+    $node->{'created_obj'} ||= $time;
     $node->{'updated_by_obj'} = $u;
     $node->{'created_by_obj'} ||= $u;
+    delete $node->{'updated'};
+    delete $node->{'created'};
     $node->mark_unsaved;
     return $time;
 }
@@ -5872,15 +5889,18 @@ sub save
 
     $node->{'read_access'}    ||= $public->id;
     $node->{'write_access'}   ||= $sysadmin_group->id;
-    $node->{'created'}        ||= $now;
+    $node->{'created_obj'}    ||= $now;
+    delete $node->{'created'};
 
-    if( $node->{'updated_by_obj'} )
+    if( $node->{'created_by_obj'} )
     {
-	$node->{'created_by'}   = $node->{'updated_by_obj'}->id;
+	$node->{'created_by'}   = $node->{'created_by_obj'}->id;
     }
     $node->{'created_by'}     ||= $uid;
 
-    $node->{'updated'}        ||= $now;
+    $node->{'updated_obj'}    ||= $now;
+    delete $node->{'updated'};
+
     if( $node->{'updated_by_obj'} )
     {
 	$node->{'updated_by'}   = $node->{'updated_by_obj'}->id;
@@ -5901,9 +5921,9 @@ sub save
        $node->{'read_access'},
        $node->{'write_access'},
        $node->{'coltype'},
-       $dbix->format_datetime($node->{'created'}),
+       $dbix->format_datetime($node->{'created_obj'}),
        $node->{'created_by'},
-       $dbix->format_datetime($node->{'updated'}),
+       $dbix->format_datetime($node->{'updated_obj'}),
        $node->{'updated_by'},
        $nid,
       );
