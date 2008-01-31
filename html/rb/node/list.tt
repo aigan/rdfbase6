@@ -3,10 +3,8 @@
    level = 20
 %]
 
-[% USE Sorted_table %]
-[% order = q.param('order') || 'id' %]
-[% direction = q.param('direction') %]
-[% search_result = searchobj.result %]
+[% USE Sorted_table('id') %]
+[% search_result = searchobj.result.resort(order,direction) %]
 
    <p>
    [ [% jump('Modifiera sökning', searchobj.form_url ) %]
@@ -21,8 +19,8 @@
 <tr>
   <th>[% sort('ID', 'id') %]</th>
   <th>[% sort('Name', 'desig') %]</th>
-  <th>[% sort('Type', 'is.desig') %]</th>
-  <th>[% sort('Scof', 'scof.desig') %]</th>
+  <th>[% sort('Type', 'is_direct.desig') %]</th>
+  <th>[% sort('Scof', 'scof_direct.desig') %]</th>
 </tr>
 
 [% FOREACH item IN search_result.from_page %]

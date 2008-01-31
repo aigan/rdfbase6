@@ -36,7 +36,7 @@ use Para::Frame::List;
 use Rit::Base::Search::Collection;
 use Rit::Base::Utils qw( query_desig );
 
-use base 'Para::Frame::List';
+use base 'Rit::Base::List';
 
 #######################################################################
 

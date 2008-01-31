@@ -44,6 +44,8 @@ use Rit::Base::User;
 use Rit::Base::Session;
 use Rit::Base::L10N;
 use Rit::Base::Widget;
+use Rit::Base::Search::Collection;
+use Rit::Base::Search::Result;
 
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
