@@ -37,6 +37,16 @@ use Para::Frame::Utils qw( debug datadump deunicode throw );
 use Rit::Base::Search;
 use Rit::Base::Search::Result;
 
+
+=head1 DESCRIPTION
+
+CGI query parameters reserved for use with some methods are:
+
+  limit
+
+=cut
+
+
 #######################################################################
 
 =head2 new
@@ -138,7 +148,7 @@ sub result
 	my( $search ) = @_;
 
 	my %params = ( search => $search );
-	return $search->{'result'} =
+	$result = $search->{'result'} =
 	  $Para::Frame::CFG->{'search_result_class'}->
 	    new(undef, \%params );
     }
