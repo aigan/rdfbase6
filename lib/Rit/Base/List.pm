@@ -90,6 +90,9 @@ returned unchanged. The Para::Frame::List object will be used for
 extracting the elements and creating a new separate Rit::Base::List
 object.
 
+If the first argument is undef, the list will be marked as
+unpopulated.
+
 The special arg C<initiate_rel> will cause the materialization of the
 arc to initialize all rel properties directly
 
@@ -107,9 +110,7 @@ sub new
     my( $this, $listref, $args ) = @_;
     my $class = ref($this) || $this;
 
-    $listref ||= [];
-
-    if( ref $listref eq "ARRAY" )
+    if( (ref $listref eq "ARRAY") or (not defined $listref) )
     {
 	return $class->SUPER::new($listref, $args);
     }
@@ -480,6 +481,7 @@ sub limit
     return $list->new( [@{$list}[0..($limit-1)]] );
 }
 
+
 #######################################################################
 
 =head2 sorted
@@ -527,7 +529,10 @@ code and secondly on the weight in reverse order:
 
 Returns:
 
-A List object with 0 or more Resources.
+A List object with 0 or more Resources, with properties cloned from
+the soruce list.
+
+If sort key is the same, the same object is returned without sorting
 
 Exceptions:
 
@@ -539,106 +544,34 @@ sub sorted
 {
     my( $list, $sortargs, $dir ) = @_;
 
-    my $args = {};
+    # sort_str, if given MUST match sortargs
+
     my $DEBUG = 0;
 
     return $list if $list->size < 2;
 
+    my( $sort_str, $sort_key );
 
-    $sortargs ||= 'desig';
-
-    unless( ref $sortargs and ( ref $sortargs eq 'ARRAY' or
-			    ref $sortargs eq 'Rit::Base::List' )
-	  )
+    if( ref $dir eq 'HASH' )
     {
-	$sortargs = [ $sortargs ];
+	$sort_str = $dir->{'sort_str'};
+	$sort_key = $dir->{'sort_key'};
+	$dir      = $dir->{'dir'};
     }
 
-    if( $dir )
+    unless( $sort_key )
     {
-	unless( $dir =~ /^(asc|desc)$/ )
-	{
-	    die "direction '$dir' out of bound";
-	}
-
-	for( my $i = 0; $i < @$sortargs; $i++ )
-	{
-	    unless( ref $sortargs->[$i] eq 'HASH' )
-	    {
-		$sortargs->[$i] =
-		{
-		 on => $sortargs->[$i],
-		 dir => $dir,
-		};
-	    }
-	}
+	( $sortargs, $sort_str, $sort_key ) =
+	  $list->parse_sortargs( $sortargs, $dir );
     }
+
+    if( $sort_key eq ($list->{'sorted_on_key'}||'') )
+    {
+	return $list;
+    }
+
 
     $list->materialize_all; # for sorting on props
-
-    my @sort;
-    for( my $i = 0; $i < @$sortargs; $i++ )
-    {
-	if( $DEBUG )
-	{
-	    debug "i: $i";
-	    debug sprintf("sortargs: %d\n", scalar @$sortargs);
-	}
-	unless( ref $sortargs->[$i] eq 'HASH' )
-	{
-	    $sortargs->[$i] =
-	    {
-		on => $sortargs->[$i],
-	    };
-	}
-
-	$sortargs->[$i]->{'dir'} ||= 'asc';
-
-	# Find out if we should do a numeric or literal sort
-	#
-	my $on =  $sortargs->[$i]->{'on'};
-	if( ref $on )
-	{
-	    die "not implemented ($on)";
-	}
-	$on =~ /([^\.]+)$/; #match last part
-	my $pred_str = $1;
-	my $cmp = 'cmp';
-
-	# Silently ignore dynamic props (that isn't preds)
-	eval
-	{
-	    if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
-							     {
-							      %$args,
-							     }))
-	    {
-		my $coltype = $pred->coltype;
-		$sortargs->[$i]->{'coltype'} = $coltype;
-
-		if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
-		{
-		    $cmp = '<=>';
-		}
-	    }
-	};
-	if( $@ )  # Just dump any errors to log...
-	{
-	    debug "Sortarg $pred_str not a predicate: ".$@;
-	}
-
-	$sortargs->[$i]->{'cmp'} = $cmp;
-
-	if( $sortargs->[$i]->{'dir'} eq 'desc')
-	{
-	    CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
-	}
-	else
-	{
-	    CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
-	}
-    }
-    my $sort_str = join ' || ', @sort;
 
     debug "--- SORTING: $sort_str" if $DEBUG;
 
@@ -729,8 +662,130 @@ sub sorted
     my @new = @{$list}[ eval qq{ sort { $sort_str } 0..$#$list } ];
     die "Sort error for '$sort_str': $@" if $@; ### DEBUG
 
-    return $list->new( \@new );
+    my $list_props = $list->clone_props;
+    $list_props->{'sorted_on'} = $sortargs;
+    $list_props->{'sorted_on_key'} = $sort_key;
+
+    return $list->new( \@new, $list_props );
 }
+
+
+#######################################################################
+
+=head2 parse_sortargs
+
+  $class->parse_sortargs( ... )
+
+=cut
+
+sub parse_sortargs
+{
+    my( $this, $sortargs, $dir ) = @_;
+
+    my $args = {};
+    my $DEBUG = 0;
+
+    $sortargs ||= 'desig';
+
+    unless( ref $sortargs and ( ref $sortargs eq 'ARRAY' or
+			    ref $sortargs eq 'Rit::Base::List' )
+	  )
+    {
+	$sortargs = [ $sortargs ];
+    }
+
+    if( $dir )
+    {
+	unless( $dir =~ /^(asc|desc)$/ )
+	{
+	    die "direction '$dir' out of bound";
+	}
+
+	for( my $i = 0; $i < @$sortargs; $i++ )
+	{
+	    unless( ref $sortargs->[$i] eq 'HASH' )
+	    {
+		$sortargs->[$i] =
+		{
+		 on => $sortargs->[$i],
+		 dir => $dir,
+		};
+	    }
+	}
+    }
+
+    my @sort;
+    my @prop_str_list;
+    for( my $i = 0; $i < @$sortargs; $i++ )
+    {
+	if( $DEBUG )
+	{
+	    debug "i: $i";
+	    debug sprintf("sortargs: %d\n", scalar @$sortargs);
+	}
+	unless( ref $sortargs->[$i] eq 'HASH' )
+	{
+	    $sortargs->[$i] =
+	    {
+		on => $sortargs->[$i],
+	    };
+	}
+
+	$sortargs->[$i]->{'dir'} ||= 'asc';
+
+	# Find out if we should do a numeric or literal sort
+	#
+	my $on =  $sortargs->[$i]->{'on'};
+	if( ref $on )
+	{
+	    die "not implemented ($on)";
+	}
+	CORE::push @prop_str_list, $on;
+
+	$on =~ /([^\.]+)$/; #match last part
+	my $pred_str = $1;
+	my $cmp = 'cmp';
+
+	# Silently ignore dynamic props (that isn't preds)
+	eval
+	{
+	    if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
+							     {
+							      %$args,
+							     }))
+	    {
+		my $coltype = $pred->coltype;
+		$sortargs->[$i]->{'coltype'} = $coltype;
+
+		if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+		{
+		    $cmp = '<=>';
+		}
+	    }
+	};
+	if( $@ )  # Just dump any errors to log...
+	{
+	    debug "Sortarg $pred_str not a predicate: ".$@;
+	}
+
+	$sortargs->[$i]->{'cmp'} = $cmp;
+
+	if( $sortargs->[$i]->{'dir'} eq 'desc')
+	{
+	    CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
+	}
+	else
+	{
+	    CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
+	}
+    }
+    my $sort_str = join ' || ', @sort;
+
+    my $sort_key = join( ',', @prop_str_list) . '=>' . $sort_str;
+
+    return( $sortargs, $sort_str, $sort_key );
+}
+
 
 #######################################################################
 
