@@ -15,7 +15,7 @@ package Rit::Base::Action::node_search;
 
 use strict;
 
-use Para::Frame::Utils qw( throw trim debug );
+use Para::Frame::Utils qw( throw trim debug datadump );
 
 use Rit::Base::Search;
 
@@ -52,16 +52,20 @@ sub handler
 	$args->{'arclim'} = eval $arclim_in;
     }
 
-    unless( $props->{'order_by'} )
-    {
-	$props->{'order_by'} = 'desig';
-    }
+# Faster to not order result
+#    unless( $props->{'order_by'} )
+#    {
+#	$props->{'order_by'} = 'desig';
+#    }
 
 
     my $search = Rit::Base::Search->new($args);
     $search->modify($props, $args);
     $search->execute($args);
     $search_col->add($search);
+
+#    debug "Search_col now contains";
+#    debug datadump($search_col,2);
 
 
     if( my $result_url = $req->q->param('search_result') )
