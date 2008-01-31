@@ -9,7 +9,7 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -53,6 +53,19 @@ use base 'Clone'; # gives method clone()
 =head1 DESCRIPTION
 
 Represents one search project.
+
+CGI query parameters reserved for use with some methods are:
+
+  limit
+  use_cached
+  query
+  remove
+  revprop_...
+  prop_...
+  order_by...
+  path_...
+  replace
+
 
 =cut
 
