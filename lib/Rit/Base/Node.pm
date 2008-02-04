@@ -1540,6 +1540,11 @@ AUTOLOAD
     my $node = shift;
     my $class = ref($node);
 
+    if( $method =~ /(.*?)\.(.*)/ )
+    {
+	return $node->$1->$2;
+    }
+
 #    warn "Calling $method\n";
     confess "AUTOLOAD $node -> $method"
       unless UNIVERSAL::isa($node, 'Rit::Base::Node');
