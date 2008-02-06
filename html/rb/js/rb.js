@@ -7,7 +7,7 @@ var RBInputPopup = Class.create(
     // search_crit:      passed to $R->find; already as json
     // search_type:      what is inputted ('name_clean_like')
     initialize: function(button, divid, search_crit,
-			 search_type, pred_name, subj)
+			 search_type, pred_name, subj, rev)
     {
 	this.divid = divid;
 	this.search_crit = \$H(search_crit.evalJSON());
@@ -15,6 +15,7 @@ var RBInputPopup = Class.create(
 	this.button = \$(button);
 	this.pred_name = pred_name;
 	this.subj = subj;
+	this.rev = rev;
 
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
@@ -161,8 +162,10 @@ var RBInputPopup = Class.create(
 		method: 'get',
 		parameters: {
 		    subj: this.subj,
-		    pred_name: this.pred_name,
-		    obj: key
+			pred_name: this.pred_name,
+			obj: key,
+			rev: this.rev
+			
 		},
 		onComplete: function(transport)
 		{

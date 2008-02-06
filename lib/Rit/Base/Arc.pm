@@ -4959,7 +4959,7 @@ sub edit_link_html
     return
       (
        "<a href=\"$home/rb/node/arc/update.tt?".
-       "id=$arc_id\" clas=\"edit_arc_link\" ".
+       "id=$arc_id\" class=\"edit_arc_link\" ".
        "onmouseover=\"TagToTip('updated$arc_id')\">E</a>".
        "<span id=\"updated$arc_id\" style=\"display: none\">".
        $arc->info_updated_html($args) .

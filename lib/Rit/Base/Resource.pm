@@ -4228,7 +4228,7 @@ sub wu
     my $args = {%$args_parsed}; # Shallow clone
 
     my $R = Rit::Base->Resource;
-    my $rev = 0;
+    my $rev = $args->{'rev'} || 0;
 
     if( $pred_name =~ /^rev_(.*)$/ )
     {
@@ -4557,7 +4557,7 @@ sub wuirc
                          new RBInputPopup('$divid-button',
                                   '$divid', '". objToJson( $search_params ) ."',
                                   'name_clean_like', '". $pred->name ."',
-                                  '". $subj->id ."') //--> </script>";
+                                  '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
 	    }
 	}
 	elsif( $inputtype eq 'text' )

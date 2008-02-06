@@ -577,15 +577,15 @@ sub handle_query_arc_value
 	}
     }
 
-    if( $type )
-    {
-	$type = $R->get($type)->find({is=>$C_class});
-    }
-
-    if( $scof )
-    {
-	$scof = $R->get($scof)->find({is=>$C_class});
-    }
+#    if( $type )
+#    {
+#	$type = $R->get($type)->find({is=>$C_class});
+#    }
+#
+#    if( $scof )
+#    {
+#	$scof = $R->get($scof)->find({is=>$C_class});
+#    }
 
 
 
@@ -1002,6 +1002,8 @@ sub handle_query_arc_value
 			$req->set_error_response_path("/alternatives.tt");
 			my $result = $req->result;
 
+			push @$objs, $R->get('new');
+
 			$result->{'info'}{'alternatives'} =
 			{
 			 title => "Choose $pred_name",
@@ -1010,6 +1012,7 @@ sub handle_query_arc_value
 			 rowformat => sub
 			 {
 			     my( $item ) = @_;
+
 			     # TODO: create cusom label
 			     my $label = $item->desig;
 
@@ -1026,11 +1029,44 @@ sub handle_query_arc_value
 			      $param => $value_new,
 			      run => 'next_step',
 			     };
+
+			     if( $item->empty )
+			     {
+				 my $name_param = 'arc___subj_'. $item->id .'__pred_name';
+				 my $is_param = 'arc___subj_'. $item->id .'__pred_is';
+				 $args->{'step_add_params'} =
+				   [
+				    $name_param,
+				    $is_param,
+				   ];
+				 $args->{$name_param} = $val;
+				 debug "Type is $type from param $param";
+				 $args->{$is_param} = $type;
+				 if( $type )
+				 {
+				     my $main_param = $param;
+				     $main_param =~ s/_type_.*_//;
+				     $main_param =~ s/__type_.*//;
+				     debug "$param transformed to $main_param";
+				     $args->{$param} = '';
+				     $args->{$main_param} = $item->id;
+				     push @{$args->{'step_add_params'}},
+				       $main_param;
+				 }
+
+				 return
+				   Para::Frame::Widget::jump("Create $type $val",
+							     $uri, $args );
+			     }
 			     my $link = Para::Frame::Widget::forward( $label, $uri, $args );
 			     my $tstr = $item->list('is', undef, aais($args,'direct'))->desig;
-			     my $view = Para::Frame::Widget::jump('visa',
-								  $item->form_url->as_string,
-								 );
+			     my $view =
+			       Para::Frame::Widget::jump('visa',
+							 $item->form_url->as_string,
+							 {
+							  href_target => '_blank',
+							 }
+							);
 			     return "$tstr $link - ($view)";
 			 },
 			 button =>
@@ -1060,7 +1096,7 @@ sub handle_query_arc_value
 			$q->delete_all();
 			$q->init({
 				  arc___pred_name => $val,
-				  prop_is         => $type,
+				  prop_is	  => $type,
 				 });
 			throw('incomplete', "Node missing");
 		    }
