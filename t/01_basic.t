@@ -53,7 +53,7 @@ is( $cfg->{'dir_var'}, '/var', 'dir_var');
 is( $cfg->{'port'}, 7788, 'port');
 is( $cfg->{'paraframe'}, '/usr/local/paraframe', 'paraframe');
 isa_ok($cfg->{'bg_user_code'}, 'CODE', 'bg_user_code');
-is( $cfg->{'ttcdir'}, '/tmp/approot/var/ttc', 'ttcdir');
+is( $cfg->{'ttcdir'}, '/var/ttc', 'ttcdir');
 is( $cfg->{'dir_run'}, '/var/run', 'dir_run');
 is( $cfg->{'pidfile'}, '/var/run/parframe_7788.pid', 'pidfile');
 is( $cfg->{'paraframe_group'}, 'staff', 'paraframe_group');
