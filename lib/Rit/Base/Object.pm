@@ -21,6 +21,7 @@ Rit::Base::Object
 
 use strict;
 use Carp qw( cluck confess carp croak );
+use CGI;
 
 BEGIN
 {
@@ -217,7 +218,7 @@ Defaults to L</desig>
 
 sub as_html
 {
-    return shift->desig(@_);
+    return CGI->escapeHTML(shift->desig(@_));
 }
 
 
