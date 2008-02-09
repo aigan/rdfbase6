@@ -1237,6 +1237,56 @@ sub desig
 
 #######################################################################
 
+=head2 as_html
+
+  $l->as_html
+
+Return a SCALAR string with the elements html representations concatenated with
+C<'E<lt>brE<gt>'>.
+
+See L<Rit::Base::Object/desig>
+
+=cut
+
+sub as_html
+{
+#    debug "in list desig";
+    my( $list, $args_in ) = @_;
+    my @part;
+
+    my( $elem, $error ) = $list->get_first;
+    while(! $error )
+    {
+	if( ref $elem )
+	{
+	    if( UNIVERSAL::isa $elem, 'Rit::Base::Object' )
+	    {
+		CORE::push @part, $elem->as_html($args_in);
+	    }
+	    elsif( $elem->can('as_html') )
+	    {
+		CORE::push @part, $elem->as_html;
+	    }
+	    else
+	    {
+		CORE::push @part, "$elem"; # stringify
+	    }
+	}
+	else
+	{
+	    CORE::push @part, "$elem"; # stringify
+	}
+    }
+    continue
+    {
+	( $elem, $error ) = $list->get_next;
+    };
+
+    return join "<br/>\n", @part;
+}
+
+#######################################################################
+
 =head2 sysdesig
 
   $l->sysdesig
