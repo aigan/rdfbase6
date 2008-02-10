@@ -194,7 +194,7 @@ sub new_from_db
 
 For parsing any type of input. Expecially as given by html forms.
 
-Parsing an existing literal object may MODIFY it's content and valtype
+Parsing an existing literal object may MODIFY it''s content and valtype
 
 
 Supported args are:

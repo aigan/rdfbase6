@@ -113,6 +113,11 @@ sub init
       'Rit::Base::Search::Collection';
     $Para::Frame::CFG->{'search_result_class'} ||=
       'Rit::Base::Search::Result';
+    $Para::Frame::CFG->{'email_subject_class'} ||=
+      'Rit::Base::Literal::Email::Subject';
+    $Para::Frame::CFG->{'email_class'} ||=
+      'Rit::Base::Email';
+
 
     my $global_params =
     {

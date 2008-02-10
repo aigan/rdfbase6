@@ -1,9 +1,9 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Email::Header;
+package Rit::Base::Email::Header;
 
 =head1 NAME
 
-Rit::Guides::Email::Header
+Rit::Base::Email::Header
 
 =head1 DESCRIPTION
 
@@ -37,8 +37,7 @@ use Rit::Base::Constants qw( $C_email );
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
-
-use Rit::Guides::Email::Header::Subject;
+use Rit::Base::Literal::Email::Subject;
 
 use constant EA => 'Rit::Base::Literal::Email::Address';
 
@@ -236,7 +235,7 @@ C<$field_name> defaults to C<subject>
 
 C<$field_value> defaults to the first value of C<$field_name>.
 
-Returns: A L<Rit::Guides::Email::Subject>
+Returns: A L<Rit::Base::Literal::Email::Subject>
 
 =cut
 
@@ -246,7 +245,8 @@ sub parsed_subject
 
     $field_in ||= 'subject';
     $value ||= $header->header($field_in);
-    return Rit::Guides::Email::Header::Subject->new_by_raw($value);
+    return $Para::Frame::CFG->{'email_subject_class'}->
+      new_by_raw($value);
 }
 
 

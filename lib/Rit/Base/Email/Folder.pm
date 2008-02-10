@@ -1,9 +1,9 @@
 #  $Id$  -*-cperl-*-
-package Rit::Guides::Email::Folder;
+package Rit::Base::Email::Folder;
 
 =head1 NAME
 
-Rit::Guides::Email::Folder
+Rit::Base::Email::Folder
 
 =cut
 
@@ -25,8 +25,7 @@ use Para::Frame::List;
 
 use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Utils qw( );
-
-use Rit::Guides::Email;
+use Rit::Base::Email;
 
 ### DEFAULT CONFIG...
 our $USER   = 'avisita.com_rg-tickets';
@@ -141,13 +140,13 @@ sub create
     debug "Reconnecting...";
     $folder->connect;
 
-    my $email = Rit::Guides::Email->
+    my $email = $Para::Frame::CFG->{'email_class'}->
       get({
 	   uid => $uid,
 	   folder => $folder,
 	  });
 
-    unless( $Rit::Guides::CFG->{'check_email'} )
+    unless( $Para::Frame::CFG->{'check_email'} )
     {
 	$email->unsee;
     }
@@ -387,7 +386,7 @@ sub unseen
       {
 	  my $elem = $_[0]->{'_DATA'}[$_[1]];
 	  debug "Getting uid elem $elem";
-	  return Rit::Guides::Email->
+	  return $Para::Frame::CFG->{'email_class'}->
 	    get({
 		 uid => $elem,
 		 folder => $folder,
