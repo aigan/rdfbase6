@@ -1,5 +1,14 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Email;
+#=====================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
@@ -68,7 +77,7 @@ sub get
 #    my $headers = $class->parse_headers( $headers_in );
 
     # Messge id without surrounding brackets
-    my( $message_id ) = $headers->header("message-id")->[0];
+    my( $message_id ) = $headers->header("message-id");
     unless( $message_id )
     {
 	debug $folder->diag("Failed getting header");

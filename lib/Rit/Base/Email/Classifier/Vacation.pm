@@ -1,5 +1,14 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Email::Classifier::Vacation;
+#=====================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
