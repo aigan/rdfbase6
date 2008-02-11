@@ -38,7 +38,7 @@ BEGIN
 use Para::Frame::Reload;
 #use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_decode datadump catch fqdn );
 use Para::Frame::Utils qw( throw debug );
-#use Para::Frame::L10N qw( loc );
+use Para::Frame::L10N qw( loc );
 use Para::Frame::List;
 
 use Rit::Base;

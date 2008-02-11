@@ -279,7 +279,7 @@ sub body_as_html
 
 	    my $name_enc = CGI->escapeHTML($name);
 	    my $type = $att->type;
-	    my $desc = CGI->escapeHTML($att->description);
+	    my $desc = CGI->escapeHTML($att->struct->description);
 
 	    my $url_path = $att->url_path($name);
 #	    my $url_path = $email->part_url_path($att, $name);
