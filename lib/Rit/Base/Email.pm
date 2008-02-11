@@ -76,7 +76,7 @@ sub get
 
     my $R = Rit::Base->Resource;
 
-    my $head = Rit::Base::Email::IMAP::Header->new_by_uid( $folder, $uid );
+    my $head = Rit::Base::Email::IMAP::Head->new_by_uid( $folder, $uid );
 
     # Messge id without surrounding brackets
     my( $message_id ) = $head->header("message-id");
