@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::Email::Folder;
+package Rit::Base::Email::IMAP::Folder;
 #=====================================================================
 #
 # AUTHOR
@@ -12,7 +12,7 @@ package Rit::Base::Email::Folder;
 
 =head1 NAME
 
-Rit::Base::Email::Folder
+Rit::Base::Email::IMAP::Folder
 
 =cut
 

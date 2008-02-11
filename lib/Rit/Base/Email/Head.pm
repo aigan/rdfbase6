@@ -1,5 +1,5 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::Email::Header;
+package Rit::Base::Email::Head;
 #=====================================================================
 #
 # AUTHOR
@@ -12,7 +12,7 @@ package Rit::Base::Email::Header;
 
 =head1 NAME
 
-Rit::Base::Email::Header
+Rit::Base::Email::Head
 
 =head1 DESCRIPTION
 
@@ -51,89 +51,6 @@ use Rit::Base::Literal::Email::Subject;
 use constant EA => 'Rit::Base::Literal::Email::Address';
 
 use base qw( Email::Simple::Header );
-
-
-#######################################################################
-
-=head2 new_by_uid
-
-Taken from L<Mail::IMAPClient/parse_headers>
-
-=cut
-
-sub new_by_uid
-{
-    my( $class, $folder, $uid ) = @_;
-
-    my $raw = $folder->imap_cmd('fetch',
-				"$uid BODY.PEEK[HEADER]");
-
-    my $headers; # original string
-    my $msgid;
-    my $h = 0;   # in header
-
-    # NOTE: Taken from Mail::IMAPClient/parse_headers
-    #
-    # TODO: simplify!!!
-    #
-    # $raw is a arrayref looking like:
-    # [
-    #  '5 UID FETCH 1605 BODY.PEEK[HEADER]',
-    #  '* 1598 FETCH (UID 1605 BODY[HEADER]',
-    #  'Return-Path: <konferens@rfsl.se>
-    #  Delivered-To: avisita.com_rg-tickets@skinner.ritweb.se
-    #  Received: from mail.rit.se (mail.rit.se [213.88.173.41])
-    #    (using TLSv1 with cipher DHE-RSA-AES256-SHA (256/256 bits))
-    #    (No client certificate requested)
-    #    by skinner.ritweb.se (Postfix) with ESMTP id B1F4810580A4
-    #    for <avisita.com_rg-tickets@skinner.ritweb.se>; Wed, 30 Jan 2008 17:10:25 +0100 (CET)
-    # .....
-    #  ',
-    #  ')
-    #  ',
-    #  '5 OK FETCH completed.
-    #  '
-    # ];
-
-    foreach my $header (map {split /\r?\n/} @$raw)
-    {
-	# little problem: Windows2003 has UID as body, not in header
-        if(
-	   $header =~ s/^\* \s+ (\d+) \s+ FETCH \s+
-                        \( (.*?) BODY\[HEADER (?:\.FIELDS)? .*? \]\s*//ix)
-        {
-	    # start new message header
-            ($msgid, my $msgattrs) = ($1, $2);
-	    $h = 1;
-            $msgid = $msgattrs =~ m/\b UID \s+ (\d+)/x ? $1 : undef;
-        }
-
-        $header =~ /\S/ or next; # skip empty lines.
-
-        # ( for vi
-        if($header =~ /^\)/)  # end of this message
-        {
-	    $h = 0; # inbetween headers
-            next;
-        }
-        elsif(!$msgid && $header =~ /^\s*UID\s+(\d+)\s*\)/)
-        {
-	    $h = 0;
-            next;
-        }
-
-        unless( $h )
-        {
-	    last if $header =~ / OK /i;
-            debug(0, "found data between fetch headers: $header");
-            next;
-        }
-
-	$headers .= $header . "\n";
-    }
-
-    return $class->new( \$headers );
-}
 
 
 #######################################################################

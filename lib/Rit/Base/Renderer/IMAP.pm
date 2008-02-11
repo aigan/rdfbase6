@@ -63,7 +63,7 @@ sub render_output
 
     unless( $path =~ /\/(\d+)\/([^\/]+)$/ )
     {
-	debug "Path in invalid format";
+	debug "Path in invalid format: $path";
 	return undef;
     }
 
@@ -96,10 +96,11 @@ sub render_output
 
 
     my $email = Rit::Base::Resource->get($nid);
-    my $part = $email->part($imap_path);
+    my $top = $email->structure;
+    my $part = $top->new_by_path($imap_path);
 
-    my $type = lc $part->type;
-    my $charset = $email->charset_plain( $part );
+    my $type = $part->type;
+    my $charset = $part->charset_guess;
 
     unless( $charset )
     {
@@ -111,7 +112,7 @@ sub render_output
     $rend->{'content_type'} = $type;
     $rend->{'charset'} = $charset;
 
-    my $encoding = lc($part->encoding);
+    my $encoding = lc($part->struct->encoding);
 
 
     debug "Metadata registred: $type - $charset";
@@ -149,8 +150,8 @@ sub render_output
 
     my $client = $req->client;
 
-    my $folder = $email->folder;
-    my $uid = $email->uid_plain;
+    my $folder = $top->folder;
+    my $uid = $top->uid_plain;
 
     debug "Getting bodypart $uid $imap_path";
     my $data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
@@ -184,7 +185,7 @@ sub render_output
     {
 	use bytes; # Don't touch original encoding!
 
-	my $url_path = $email->part_url_path;
+	my $url_path = $top->url_path;
 	$data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$url_path$lookup->{$2}$3/gi;
 	unless( $data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
