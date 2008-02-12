@@ -20,13 +20,14 @@ Rit::Base::Email::Part
 
 use strict;
 use utf8;
-use Carp qw( croak confess cluck );
+use Carp qw( croak confess cluck shortmess );
 use Scalar::Util qw(weaken);
 use MIME::Words qw( decode_mimewords );
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
 use MIME::Types;
 use CGI;
+use Number::Bytes::Human qw(format_bytes);
 
 BEGIN
 {
@@ -208,6 +209,50 @@ sub disp
 
 #######################################################################
 
+=head2 description
+
+=cut
+
+sub description
+{
+    return scalar decode_mimewords($_[0]->struct->description||'');
+}
+
+
+#######################################################################
+
+=head2 size_human
+
+=cut
+
+sub size_human
+{
+    my $size = $_[0]->struct->size;
+    if( defined $size )
+    {
+	return format_bytes($size);
+    }
+
+    return "";
+}
+
+
+#######################################################################
+
+=head2 head
+
+=cut
+
+sub head
+{
+    return $_[0]->{'head'} ||=
+      Rit::Base::Email::IMAP::Head->
+	  new_by_part_env( $_[0]->struct->{'envelope'} );
+}
+
+
+#######################################################################
+
 =head2 charset_guess
 
 =cut
@@ -269,16 +314,14 @@ sub charset_guess
 
 =head2 url_path
 
-TODO: Make path base a config
-
 =cut
 
 sub url_path
 {
     my( $part, $name ) = @_;
 
-    my $home = $Para::Frame::REQ->site->home_url_path;
-    my $nid = $part->email->id;
+    my $email = $part->email;
+    my $nid = $email->id;
     my $path = $part->path;
     $path =~ s/\.TEXT$/.1/; # For embedded messages
 
@@ -292,7 +335,11 @@ sub url_path
 	$path = $safe;
     }
 
-    return "$home/admin/email/files/$nid/$path";
+    my $email_url = $email->url_path;
+
+#    debug "Returning url_path $email_url$path";
+
+    return $email_url . $path;
 }
 
 
@@ -312,9 +359,9 @@ sub filename_safe
 
     my $safe = lc $name;
     $safe =~ s/.*[\/\\]//; # Remove path
-    $safe =~ s/\..*\././;  # Remove multiple extenstions
+    $safe =~ s/\..{1,4}\././;  # Remove multiple extenstions
     my $ext;
-    if( $safe =~ s/\.(.*)// )
+    if( $safe =~ s/\.([^.]*)$// ) # Extract the extenstion
     {
 	$ext = $1;
     }
@@ -327,7 +374,18 @@ sub filename_safe
 #    debug "Safe base name: $safe";
 #    debug "type name: $type_name";
 
+
     my $mt = MIME::Types->new;
+
+
+    # Try to figure out octet-streams
+    if( $type_name eq 'application/octet-stream' )
+    {
+	$type_name = $mt->mimeTypeOf($ext)->type;
+	debug "Guessing type $type_name from ext $ext for octet-stream";
+    }
+
+
     if( $type_name eq 'file/pdf' )
     {
 	$type_name = 'application/pdf';
@@ -477,7 +535,7 @@ sub select_renderer
 {
     my( $part, $type ) = @_;
 
-    debug "Selecting renderer for $type";
+#    debug "Selecting renderer for $type";
 
     my $renderer;
     foreach (
@@ -511,7 +569,7 @@ sub _render_textplain
 {
     my( $part ) = @_;
 
-    debug "  rendering textplain";
+#    debug "  rendering textplain";
 
     my $charset = $part->charset_guess;
 #    my $charset = $email->charset_plain($part);
@@ -524,6 +582,8 @@ sub _render_textplain
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
+#    debug "  rendering textplain - done";
+
     return $msg;
 }
 
@@ -534,7 +594,7 @@ sub _render_texthtml
 {
     my( $part ) = @_;
 
-    debug "  rendering texthtml";
+#    debug "  rendering texthtml";
 
     my $url_path = $part->url_path;
 
@@ -557,6 +617,9 @@ $msg .= <<EOT;
 EOT
 ;
 
+#    debug "  rendering texthtml - done";
+
+    return $msg;
 }
 
 
@@ -566,7 +629,7 @@ sub _render_delivery_status
 {
     my( $part ) = @_;
 
-    debug "  rendering delivery_status";
+#    debug "  rendering delivery_status";
 
     my $data_dec = $part->bodypart_decoded;
     my $data_enc = CGI->escapeHTML($data_dec);
@@ -575,6 +638,8 @@ sub _render_delivery_status
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
     $msg .= "</div>\n";
+
+#    debug "  rendering delivery_status - done";
 
     return $msg;
 }
@@ -586,7 +651,7 @@ sub _render_headers
 {
     my( $part ) = @_;
 
-    debug "  rendering headers";
+#    debug "  rendering headers";
 
     my $data_dec = $part->bodypart_decoded;
     my $msg;
@@ -602,11 +667,7 @@ sub _render_headers
 	$msg = $header->as_html;
     }
 
-#    my $msg = "<div style=\"background:#e8e9e3\"><h3>The headers</h3>\n";
-#    my $data_enc = CGI->escapeHTML($data_dec);
-#    $data_enc =~ s/\n/<br>\n/g;
-#    $msg .= $data_enc;
-#    $msg .= "</div>\n";
+#    debug "  rendering headers - done";
 
     return $msg;
 }
@@ -618,17 +679,21 @@ sub _render_alt
 {
     my( $part ) = @_;
 
-    debug "  rendering alt";
+#    debug "  rendering alt";
 
     my $alts = $part->parts;
 
     my %prio =
       (
-       'text/html' => 3,
-       'text/plain' => 2,
+       'multipart/related' => 3,
+       'text/html' => 2,
+       'text/plain' => 0,
       );
 
     my $choice = shift @$alts;
+#    debug sprintf "Considering %s at %s",
+#      $choice->type,
+#	$choice->struct->part_path;
     my $score = $prio{ $choice->type } || 1; # prefere first part
 
     my @other;
@@ -636,6 +701,8 @@ sub _render_alt
     foreach my $alt (@$alts)
     {
 	my $type = $alt->type;
+#	debug "Considering $type at ".$alt->struct->part_path;
+
 	unless( $type )
 	{
 	    push @other, $alt;
@@ -644,12 +711,15 @@ sub _render_alt
 
 	if( ($prio{$type}||0) > $score )
 	{
+#	    debug sprintf "  %d is better than %d",
+#	      ($prio{$type}||1), $score;
 	    push @other, $choice;
 	    $choice = $alt;
 	    $score = $prio{$type};
 	}
 	else
 	{
+#	    debug "  not better";
 	    push @other, $alt;
 	}
     }
@@ -666,6 +736,8 @@ sub _render_alt
 	return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
+#    debug "  rendering alt - done";
+
     return $choice->$renderer;
 }
 
@@ -676,7 +748,7 @@ sub _render_mixed
 {
     my( $part ) = @_;
 
-    debug "  rendering mixed";
+#    debug "  rendering mixed";
 
 #    debug $email->part_desig;
 
@@ -723,6 +795,8 @@ sub _render_mixed
 	}
     }
 
+#    debug "  rendering mixed - done";
+
     return $msg;
 }
 
@@ -733,7 +807,7 @@ sub _render_related
 {
     my( $part ) = @_;
 
-    debug "  rendering related";
+#    debug "  rendering related";
 
     my $path = $part->path;
 
@@ -763,7 +837,7 @@ sub _render_related
 	    $cid =~ s/^<//;
 	    $cid =~ s/>$//;
 	    $files{$cid} = $apath;
-	    debug "Path $apath -> $cid";
+#	    debug "Path $apath -> $cid";
 	}
     }
 
@@ -799,8 +873,11 @@ sub _render_related
 
 #"cid:part1.00090900.07060702@avisita.com"
 
-    my $url_path = $part->top->url_path();
-    $data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$url_path$files{$2}$3/gi;
+    my $email_path = $part->email->url_path();
+    $data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$files{$2}$3/gi;
+
+#    debug "  rendering related - done";
+
     return $data;
 }
 
@@ -811,12 +888,12 @@ sub _render_image
 {
     my( $part ) = @_;
 
-    debug "  rendering image";
+#    debug "  rendering image";
 
     my $url_path = $part->url_path;
 
     my $desig = $part->filename || "image";
-    if( my $desc = $part->struct->description )
+    if( my $desc = $part->description )
     {
 	$desig .= " - $desc";
     }
@@ -825,6 +902,8 @@ sub _render_image
 
     $part->top->{'attatchemnts'} ||= {};
     $part->top->{'attatchemnts'}{$part->path} = $part;
+
+#    debug "  rendering image - done";
 
     return "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
 }
@@ -836,7 +915,10 @@ sub _render_rfc822
 {
     my( $part ) = @_;
 
-    debug "  rendering rfc822";
+#    debug "  rendering rfc822";
+
+
+    my $head = $part->head;
 
     my $struct = $part->struct;
     my $env = $struct->{'envelope'};
@@ -846,19 +928,23 @@ sub _render_rfc822
     $msg .= "\n<br>\n<table class=\"admin\" style=\"background:#E0E0EA\">\n";
 
     my $subj_lab = CGI->escapeHTML(loc("Subject"));
-    my $subj_val = CGI->escapeHTML(scalar decode_mimewords($env->{'subject'}));
+#    my $subj_val = CGI->escapeHTML(scalar decode_mimewords($env->{'subject'}));
+    my $subj_val = $head->parsed_subject->as_html;
     $msg .= "<tr><td>$subj_lab</td><td width=\"100%\"><strong>$subj_val</strong></td></tr>\n";
 
     my $from_lab = CGI->escapeHTML(loc("From"));
-    my $from_val =  CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'from'}} );
+#    my $from_val =  CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'from'}} );
+    my $from_val = $head->parsed_address('from')->as_html;
     $msg .= "<tr><td>$from_lab</td><td>$from_val</td></tr>\n";
 
     my $date_lab = CGI->escapeHTML(loc("Date"));
-    my $date_val = CGI->escapeHTML(Rit::Base::Literal::Time->get($env->{'date'}));
+#    my $date_val = CGI->escapeHTML(Rit::Base::Literal::Time->get($env->{'date'}));
+    my $date_val = $head->parsed_date->as_html;
     $msg .= "<tr><td>$date_lab</td><td>$date_val</td></tr>\n";
 
     my $to_lab = CGI->escapeHTML(loc("To"));
-    my $to_val = CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'to'}} );
+#    my $to_val = CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'to'}} );
+    my $to_val = $head->parsed_address('to')->as_html;
     $msg .= "<tr><td>$to_lab</td><td>$to_val</td></tr>\n";
 
     my $filename = $part->filename;
@@ -886,6 +972,8 @@ sub _render_rfc822
 
     $msg .= "</td></tr></table>\n";
 
+#    debug "  rendering rfc822 - done";
+
     return $msg;
 }
 
@@ -903,7 +991,7 @@ sub bodypart_decoded
     my $folder = $part->top->folder;
     my $uid = $part->top->uid_plain;
     my $path = $struct->part_path;
-    debug "Getting bodypart $uid $path";
+#    debug "Getting bodypart $uid $path";
 
     my $data = $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 
@@ -942,9 +1030,10 @@ sub bodypart_decoded
 
 sub desig
 {
-    my( $part ) = @_;
+    my( $part, $ident ) = @_;
 
     my $struct = $part->struct;
+    $ident ||= 0;
 
     my $type = $struct->type     || '-';
     my $enc = $struct->encoding  || '-';
@@ -959,12 +1048,13 @@ sub desig
 
     my $path = $struct->part_path;
 
-    my $msg = "$path $type $enc $size $disp $char $file $lang $loc $cid $desc\n";
+    my $msg = ('  'x$ident)."$path $type $enc $size $disp $char $file $lang $loc $cid $desc\n";
 #    debug $msg;
+    $ident ++;
     foreach my $subpart ( @{$part->parts} )
     {
 #	debug "  subpart $subpart";
-	$msg .= $subpart->desig;
+	$msg .= $subpart->desig($ident);
     }
 
     return $msg;

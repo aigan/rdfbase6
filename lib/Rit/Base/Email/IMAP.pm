@@ -199,20 +199,6 @@ sub top
 }
 
 
-#######################################################################
-
-=head2 path
-
-=cut
-
-sub path
-{
-    return '';
-}
-
-
-#######################################################################
-
 =head2 generate_name
 
   $part->generate_name
@@ -273,6 +259,7 @@ sub body_as_html
     my $nid = $part->email->id;
     $s->{'email_imap'}{$nid} ||= {};
 
+#    debug $part->desig;
 
     my $msg = $part->$renderer();
 
@@ -285,25 +272,36 @@ sub body_as_html
 	foreach my $att ( sort values %{$part->{'attatchemnts'}} )
 	{
 	    my $name = $att->filename || $att->generate_name;
-
-#	    my $name = $email->part_filename($att) ||
-#	      $email->generate_name($att);
+	    my $desc = $att->description;
 
 	    my $name_enc = CGI->escapeHTML($name);
+	    my $desc_enc = CGI->escapeHTML($desc);
+
 	    my $type = $att->type;
-	    my $desc = CGI->escapeHTML($att->struct->description);
+	    my $size_human = $att->size_human;
 
 	    my $url_path = $att->url_path($name);
+	    my $path = $att->path;
+
 #	    my $url_path = $email->part_url_path($att, $name);
 
-	    my $desig = "<a href=\"$url_path\">$name</a>";
-	    if( $desc )
-	    {
-		$desig .= " - $desc";
-	    }
-	    $desig .= " ($type)";
+	    my $mouse_over =
+	      "onmouseover=\"TagToTip('email_file_$nid/$path')\"";
 
-	    $msg .= "<li>$desig</li>\n";
+	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
+	    if( $desc and ($desc ne $name ) )
+	    {
+		$desig .= "<br>\n$desc";
+	    }
+
+	    $msg .= "<li $mouse_over>$desig</li>\n";
+
+	    ## Adding tooltip
+	    $msg .= "<span id=\"email_file_$nid/$path\" style=\"display: none\">";
+	    $msg .= "$name_enc<br>\n";
+	    $msg .= "Type: $type<br>\n";
+	    $msg .= "Size: $size_human<br>\n";
+	    $msg .= "</span>";
 	}
 	$msg .= "</ol>\n";
     }

@@ -138,4 +138,33 @@ sub new_by_uid
 
 #######################################################################
 
+=head2 new_by_part_env
+
+Takes a IMAP::BodyStructure::Envelope
+
+=cut
+
+sub new_by_part_env
+{
+    my( $class, $env ) = @_;
+
+    my $head = $class->new("");
+
+    $head->header_set('date', $env->{date} ); ### CHECKME
+    $head->header_set('subject', $env->{subject} );
+    $head->header_set('message-id', $env->{message_id} );
+    $head->header_set('in-reply-to', $env->{in_reply_to} );
+    $head->header_set('to', map $_->{full}, @{$env->{to}} );
+    $head->header_set('from', map $_->{full}, @{$env->{from}} );
+    $head->header_set('cc', map $_->{full}, @{$env->{cc}} );
+    $head->header_set('bcc', map $_->{full}, @{$env->{bcc}} );
+    $head->header_set('sender', map $_->{full}, @{$env->{sender}} );
+    $head->header_set('reply-to', map $_->{full}, @{$env->{reply_to}} );
+
+    return $head;
+}
+
+
+#######################################################################
+
 1;

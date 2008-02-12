@@ -138,6 +138,22 @@ sub get
 
 #######################################################################
 
+=head2 url_path
+
+TODO: Make path base a config
+
+=cut
+
+sub url_path
+{
+    my $home = $Para::Frame::REQ->site->home_url_path;
+    my $nid = $_[0]->id;
+    return "$home/admin/email/files/$nid/";
+}
+
+
+#######################################################################
+
 =head2 folder
 
 =cut
