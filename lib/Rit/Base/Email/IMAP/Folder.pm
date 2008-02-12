@@ -36,10 +36,6 @@ use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Utils qw( );
 use Rit::Base::Email;
 
-### DEFAULT CONFIG...
-our $USER   = 'avisita.com_rg-tickets';
-our $SERVER = 'skinner.ritweb.se';
-
 
 our %FOLDERS;
 
@@ -57,8 +53,13 @@ sub get
     $val_in ||= {};
     if( UNIVERSAL::isa $val_in, 'HASH' )
     {
-	$server = $val_in->{'server'} || $SERVER;
-	$user   = $val_in->{'user'}   || $USER;
+	$server =
+	  $val_in->{'server'} ||
+	    $Para::Frame::CFG->{'imap_access_default'}{'server'} ||
+	      die "No default server given";
+	$user   = $val_in->{'user'} ||
+	  $Para::Frame::CFG->{'imap_access_default'}{'user'} ||
+	    die "No default user given";
 	$foldername = $val_in->{'foldername'} || 'INBOX';
 
 	# look out for reserved chars in user
