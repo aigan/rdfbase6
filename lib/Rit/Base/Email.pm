@@ -799,27 +799,27 @@ sub send
 
 
 #######################################################################
-
-=head2 on_bless
-
-=cut
-
-sub on_bless
-{
-    $_[0]->reset_cache;
-}
-
+#
+#=head2 on_bless
+#
+#=cut
+#
+#sub on_bless
+#{
+#    $_[0]->reset_cache;
+#}
+#
 #######################################################################
-
-=head2 on_unbless
-
-=cut
-
-sub on_unbless
-{
-    $_[0]->reset_cache;
-}
-
+#
+#=head2 on_unbless
+#
+#=cut
+#
+#sub on_unbless
+#{
+#    $_[0]->reset_cache;
+#}
+#
 #######################################################################
 
 =head2 on_arc_add
