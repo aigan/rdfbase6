@@ -50,7 +50,7 @@ use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 
-use constant EA => 'Rit::Base::Literal::Email::Address';
+# use constant EA => 'Rit::Base::Literal::Email::Address';
 
 use base qw( Rit::Base::Email::Head );
 
@@ -72,9 +72,19 @@ sub new_by_email
     $head->header_set('subject', $email->list('email_subject')->as_array);
     $head->header_set('date', $email->list('email_sent')->as_array);
     $head->header_set('from', $email->list('email_from')->as_array);
-    $head->header_set('to', $email->list('email_to')->as_array);
     $head->header_set('bcc', $email->list('email_bcc')->as_array);
     $head->header_set('reply-to', $email->list('email_reply_to')->as_array);
+
+
+    my @to_list = $email->list('email_to')->as_array;
+    my $to_obj_list = $email->list('email_to_obj');
+    while( my $to_obj = $to_obj_list->get_next_nos )
+    {
+	push @to_list, $to_obj->email_main->plain;
+    }
+    $head->header_set('to', @to_list );
+
+    debug "Creating TO header field with @to_list";
 
     return $head;
 }
