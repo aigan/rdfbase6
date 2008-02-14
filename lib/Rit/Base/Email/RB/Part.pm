@@ -78,4 +78,21 @@ sub new_by_email
 
 #######################################################################
 
+=head2 folder
+
+RB emails has no folder. We define this method in case it's called
+from a TT form...
+
+Returns: undef
+
+=cut
+
+sub folder
+{
+    return undef;
+}
+
+
+#######################################################################
+
 1;
