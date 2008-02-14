@@ -2,14 +2,11 @@
 package Rit::Base::Arc::Lim;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Arc Lim class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -81,7 +78,7 @@ BEGIN
 sub new
 {
     my $class = shift;
-    return bless [], $class;
+    return bless [1], $class;
 }
 
 #########################################################################
@@ -109,7 +106,7 @@ sub parse
     my( $this, $arclim ) = @_;
     my $class = ref $this || $this;
 
-    $arclim ||= [];
+    $arclim ||= [1];
 
 #    debug "Parsing arclim ".query_desig($arclim);
 
@@ -277,7 +274,7 @@ sub incl_act
 
 =head2 sql
 
-  $this->sql( $arclim, \%args )
+  $arclim->sql( \%args )
 
 Supported args are
 
@@ -302,12 +299,13 @@ sub sql
 
     $args ||= {};
 
-    $arclim ||= [];
+    $arclim ||= [1]; # defaults to 'active'
 
     my $pf = $args->{'prefix'} || "";
 
-    unless( @$arclim )
+    if( (@$arclim == 1) and ($arclim->[0] == 1) )
     {
+#	debug "Returning default arclim SQL";
 	return "${pf}active is true";
     }
 
@@ -419,7 +417,7 @@ sub sql
 	push @alt, join " and ", @crit;
     }
 
-    my $sql;
+    my $sql = "";
     if( @alt == 1 )
     {
 	$sql = $alt[0];
@@ -429,10 +427,10 @@ sub sql
 	my $joined = join " or ", map "($_)", @alt;
 	$sql = "($joined)";
     }
-    else
-    {
-	$sql = "${pf}active is true";
-    }
+#    else
+#    {
+#	$sql = "${pf}active is true";
+#    }
 
     if( wantarray )
     {
@@ -461,7 +459,7 @@ sub sql_prio
 
     $args ||= {};
 
-    $arclim ||= [];
+    $arclim ||= [1];
 
     unless( @$arclim )
     {
