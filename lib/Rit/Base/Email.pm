@@ -95,14 +95,14 @@ sub get
     my $emails = $R->find({
 			   has_message_id => $message_id,
 			   is => $C_email,
-			  });
+			  },['not_removal']);
 
     unless( $emails->size )
     {
 	$emails = $R->find({
 			    has_imap_url => $url_string,
 			    is => $C_email,
-			   });
+			   },['not_removal']);
     }
 
     my $email;
@@ -110,6 +110,20 @@ sub get
     if( $emails->size )
     {
 	$email = $emails->get_first_nos;
+
+	unless( $email->is($C_email) )  # May gotten removed (inactive)
+	{
+	    debug "Email ".$email->sysdesig." is removed from database";
+	    debug "  $message_id";
+	    debug "  $url_string";
+
+	    # Mark as read...
+	    $folder->imap_cmd('see', $uid);
+
+	    ### Not an email unless it's have an ACTIVE is property
+	    return is_undef;
+	}
+
 	$email->{'email_structure'} =
 	  Rit::Base::Email::IMAP->new_by_email($email, $head);
     }
@@ -296,7 +310,7 @@ sub structure
 {
     unless( $_[0]->{'email_structure'} )
     {
-	if( $_[0]->prop('has_imap_url' ) )
+	if( $_[0]->prop('has_imap_url', undef, ['not_removal'] ) )
 	{
 	    $_[0]->{'email_structure'} =
 	      Rit::Base::Email::IMAP->new_by_email( $_[0] );
