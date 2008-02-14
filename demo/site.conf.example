@@ -1,0 +1,20 @@
+# -*- perl -*-
+
+$VAR1 = {
+	 'demo_root'    => "$FindBin::Bin",
+	 'rb_root'    => "$FindBin::Bin/..",
+	 'email' => 'jonas@paranormal.se',
+	 'dbconnect'  => ['dbi:Pg:dbname=rb;host=localhost','jonas','navkapsel'],
+	 'port'       => 7788,
+	 'debug'      => 0,
+	 'do_bgjob'   => 0,
+	 'send_email' => 0,
+	 'webhost'    => 'jonas.rit.se',
+	 'site' =>
+	 {
+	  'demo' =>
+	  {
+	   'webhome' => '/~jonas/rb_demo',
+	  },
+	 },
+        };
