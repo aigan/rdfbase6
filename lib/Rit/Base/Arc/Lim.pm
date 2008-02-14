@@ -51,7 +51,7 @@ our %LIM =
    not_new          =>  2048,
    old              =>  4096,
    not_old          =>  8192,
-   created_by_me    => 16384,
+   created_by_me    => 16384, # Not used alone!
    removal          => 32768,
    not_removal      => 65536,
 
@@ -60,8 +60,8 @@ our %LIM =
 
 our %REVLIM = reverse %LIM;
 
-use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192);
-use constant FLAGS_ACTIVE   => (1+512+2048+8192);
+use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192+32768+65536);
+use constant FLAGS_ACTIVE   => (1+512+2048+8192+65536);
 
 use base qw( Exporter );
 BEGIN
@@ -225,7 +225,7 @@ sub add_intersect
 
 Stands for "Does the arclim includes active and/or inactive arcs?"
 
-No arclims menas that only active arcs are included.
+No arclims menas that ALL arcs are included.
 
 Returns:
 
@@ -238,7 +238,7 @@ sub incl_act
     my( $arclim ) = @_;
 
     my $active   = 1;
-    my $inactive = 0;
+    my $inactive = 1;
     my $other    = 0;
 
     confess "Invalid arclim ($arclim)" unless ref $arclim;
@@ -246,6 +246,7 @@ sub incl_act
     if( @$arclim )
     {
 	$active = 0;
+	$inactive = 0;
 	foreach(@$arclim)
 	{
 	    $_||=0;
@@ -260,10 +261,10 @@ sub incl_act
 	    }
 	}
 
-	unless( $inactive )
-	{
-	    $active = 1;
-	}
+#	unless( $inactive )
+#	{
+#	    $active = 1;
+#	}
     }
 
     return( $active, $inactive );
