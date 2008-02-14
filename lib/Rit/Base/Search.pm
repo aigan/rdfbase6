@@ -2995,7 +2995,10 @@ sub set_arclim
 
     my $arclim = Rit::Base::Arc::Lim->parse( $arclim_in );
 
-#    debug "Setting arclim to ".$arclim->sysdesig;
+#    if( (ref $arclim eq 'ARRAY') and ( @$arclim == 0 ) )
+#    {
+#        cluck "Setting arclim to ".$arclim->sysdesig;
+#    }
 
     return $search->{'arclim'} = $arclim;
 }
@@ -3042,7 +3045,11 @@ sub arclim_sql
 
     my $arclim = $args->{'arclim'} || $search->arclim;
 
-    return "and " . $arclim->sql($args);
+#    debug "Adding arclim_sql based on\n".datadump($arclim);
+    my $sql = $arclim->sql($args);
+#    debug "  -> ".$sql;
+
+    return $sql ? "and $sql" : '';
 }
 
 
