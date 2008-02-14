@@ -78,7 +78,7 @@ BEGIN
 sub new
 {
     my $class = shift;
-    return bless [1], $class;
+    return bless [], $class;
 }
 
 #########################################################################
@@ -106,7 +106,7 @@ sub parse
     my( $this, $arclim ) = @_;
     my $class = ref $this || $this;
 
-    $arclim ||= [1];
+    $arclim ||= [];
 
 #    debug "Parsing arclim ".query_desig($arclim);
 
@@ -225,7 +225,7 @@ sub add_intersect
 
 Stands for "Does the arclim includes active and/or inactive arcs?"
 
-No arclims menas that ALL arcs are included.
+No arclims menas that only active arcs are included.
 
 Returns:
 
@@ -238,7 +238,7 @@ sub incl_act
     my( $arclim ) = @_;
 
     my $active   = 1;
-    my $inactive = 1;
+    my $inactive = 0;
     my $other    = 0;
 
     confess "Invalid arclim ($arclim)" unless ref $arclim;
@@ -246,7 +246,6 @@ sub incl_act
     if( @$arclim )
     {
 	$active = 0;
-	$inactive = 0;
 	foreach(@$arclim)
 	{
 	    $_||=0;
@@ -261,10 +260,10 @@ sub incl_act
 	    }
 	}
 
-#	unless( $inactive )
-#	{
-#	    $active = 1;
-#	}
+	unless( $inactive )
+	{
+	    $active = 1;
+	}
     }
 
     return( $active, $inactive );
@@ -300,13 +299,12 @@ sub sql
 
     $args ||= {};
 
-    $arclim ||= [1]; # defaults to 'active'
+    $arclim ||= [];
 
     my $pf = $args->{'prefix'} || "";
 
-    if( (@$arclim == 1) and ($arclim->[0] == 1) )
+    unless( @$arclim )
     {
-#	debug "Returning default arclim SQL";
 	return "${pf}active is true";
     }
 
@@ -418,7 +416,7 @@ sub sql
 	push @alt, join " and ", @crit;
     }
 
-    my $sql = "";
+    my $sql;
     if( @alt == 1 )
     {
 	$sql = $alt[0];
@@ -428,10 +426,10 @@ sub sql
 	my $joined = join " or ", map "($_)", @alt;
 	$sql = "($joined)";
     }
-#    else
-#    {
-#	$sql = "${pf}active is true";
-#    }
+    else
+    {
+	$sql = "${pf}active is true";
+    }
 
     if( wantarray )
     {
@@ -460,7 +458,7 @@ sub sql_prio
 
     $args ||= {};
 
-    $arclim ||= [1];
+    $arclim ||= [];
 
     unless( @$arclim )
     {
