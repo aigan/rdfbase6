@@ -67,6 +67,11 @@ sub new_by_email
     my( $class, $email, $head ) = @_;
 
     my $imap_url = $email->first_prop('has_imap_url')->plain;
+    unless( $imap_url )
+    {
+	confess "Faild to get has_imap_url from ".$email->id;
+    }
+
 
     $imap_url =~ /;UID=(\d+)/ or
       die "Couldn't extract uid from url $imap_url";
