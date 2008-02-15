@@ -597,6 +597,7 @@ sub create_infere_rev
 	my $pred = $rule->c;
 	my $subj3 = $arc2->subj;
 	my $arc3_list = $subj3->arc_list($pred, $obj);
+
 	if( $arc3_list->size < 1 )
 	{
 	    Rit::Base::Arc->create({
@@ -606,7 +607,7 @@ sub create_infere_rev
 				   },
 				   {
 				    implicit => 1,
-				    active => 1, # Activate directly
+				    activate_new_arcs => 1, # Activate directly
 				   });
 	}
 	elsif( $arc3_list->size > 1 ) # cleanup
@@ -678,6 +679,7 @@ sub create_infere_rel
 	my $pred = $rule->c;
 	my $obj3 = $arc2->obj;
 	my $arc3_list = $subj->arc_list($pred, $obj3);
+
 	if( $arc3_list->size < 1 )
 	{
 	    Rit::Base::Arc->create({
@@ -687,7 +689,7 @@ sub create_infere_rel
 				   },
 				   {
 				    implicit => 1,
-				    active => 1, # Activate directly
+				    activate_new_arcs => 1, # Activate directly
 				   });
 	}
 	elsif( $arc3_list->size > 1 ) # cleanup
