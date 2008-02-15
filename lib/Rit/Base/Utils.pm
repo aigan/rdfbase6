@@ -1042,6 +1042,9 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
+all: Sets arclim to [['active'}, ['inactive'] and
+unique_arcs_prio to ['active'].
+
 Arguments from L<Rit::Base::User/default_propargs> are used for any
 undefined argument given.
 
@@ -1108,6 +1111,12 @@ sub parse_propargs
 	    # active or (not_old and created_by_me)
 	    $arclim = [1, 8192+16384];
 	    $unique = [1024, 256, 1]; # new, submitted, active
+	}
+	elsif( $arg eq 'all' )
+	{
+	    # active or inactive
+	    $arclim = [1, 2];
+	    $unique = [1]; # active
 	}
 	else
 	{
