@@ -66,7 +66,7 @@ sub new_by_email
 {
     my( $class, $email, $head ) = @_;
 
-    my $imap_url = $email->first_prop('has_imap_url')->plain;
+    my $imap_url = $email->first_prop('has_imap_url',undef,'not_removal')->plain;
     unless( $imap_url )
     {
 	confess "Faild to get has_imap_url from ".$email->id;
