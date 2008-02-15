@@ -593,19 +593,61 @@ sub create_infere_rev
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
 	next if disregard $arc2;
-	Rit::Base::Arc->find_set({
-				  pred => $rule->c,
-				  subj => $arc2->subj,
-				  obj  => $obj,
-				 },
-				 {
-				  default_create =>
-				  {
-				   implicit => 1,
-				   active => 1, # Activate directly
-				  },
-				  res => $args->{'res'},
-				 })->set_indirect;
+
+	my $pred = $rule->c;
+	my $subj3 = $arc2->subj;
+	my $arc3_list = $subj3->arc_list($pred, $obj);
+	if( $arc3_list->size < 1 )
+	{
+	    Rit::Base::Arc->create({
+				    subj => $subj3,
+				    pred => $pred,
+				    value => $obj,
+				   },
+				   {
+				    implicit => 1,
+				    active => 1, # Activate directly
+				   });
+	}
+	elsif( $arc3_list->size > 1 ) # cleanup
+	{
+	    # prioritize on explict, indirect, other
+	    my $choice = $arc3_list->explicit->indirect->get_first_nos
+	      || $arc3_list->indirect->get_first_nos
+		|| $arc3_list->get_first_nos;
+
+	    my( $arc3, $err ) = $arc3_list->get_first;
+	    while(!$err)
+	    {
+		next if $arc3->equals($choice);
+		$arc3->remove({%$args, force=>1});
+	    }
+	    continue
+	    {
+		( $arc3, $err ) = $arc3_list->get_next;
+	    };
+
+	    $choice->set_indirect;
+	}
+	else
+	{
+	    $arc3_list->get_first_nos->set_indirect;
+	}
+
+
+#	Rit::Base::Arc->find_set({
+#				  pred => $rule->c,
+#				  subj => $arc2->subj,
+#				  obj  => $obj,
+#				 },
+#				 {
+#				  default_create =>
+#				  {
+#				   implicit => 1,
+#				   active => 1, # Activate directly
+#				  },
+#				  res => $args->{'res'},
+#				 })->set_indirect;
     }
 }
 
@@ -632,19 +674,61 @@ sub create_infere_rel
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
 	next if disregard $arc2;
-	Rit::Base::Arc->find_set({
-				  pred => $rule->c,
-				  subj => $subj,
-				  obj  => $arc2->obj,
-				 },
-				 {
-				  default_create =>
-				  {
-				   implicit => 1,
-				   active => 1, # Activate directly
-				  },
-				  res => $args->{'res'},
-				 })->set_indirect;
+
+	my $pred = $rule->c;
+	my $obj3 = $arc2->obj;
+	my $arc3_list = $subj->arc_list($pred, $obj3);
+	if( $arc3_list->size < 1 )
+	{
+	    Rit::Base::Arc->create({
+				    subj => $subj,
+				    pred => $pred,
+				    value => $obj3,
+				   },
+				   {
+				    implicit => 1,
+				    active => 1, # Activate directly
+				   });
+	}
+	elsif( $arc3_list->size > 1 ) # cleanup
+	{
+	    # prioritize on explict, indirect, other
+	    my $choice = $arc3_list->explicit->indirect->get_first_nos
+	      || $arc3_list->indirect->get_first_nos
+		|| $arc3_list->get_first_nos;
+
+	    my( $arc3, $err ) = $arc3_list->get_first;
+	    while(!$err)
+	    {
+		next if $arc3->equals($choice);
+		$arc3->remove({%$args, force=>1});
+	    }
+	    continue
+	    {
+		( $arc3, $err ) = $arc3_list->get_next;
+	    };
+
+	    $choice->set_indirect;
+	}
+	else
+	{
+	    $arc3_list->get_first_nos->set_indirect;
+	}
+
+
+#	Rit::Base::Arc->find_set({
+#				  pred => $rule->c,
+#				  subj => $subj,
+#				  obj  => $arc2->obj,
+#				 },
+#				 {
+#				  default_create =>
+#				  {
+#				   implicit => 1,
+#				   active => 1, # Activate directly
+#				  },
+#				  res => $args->{'res'},
+#				 })->set_indirect;
     }
 }
 
