@@ -116,12 +116,19 @@ sub get
 	    debug "Email ".$email->sysdesig." is removed from database";
 	    debug "  $message_id";
 	    debug "  $url_string";
+	    debug "  REACTIVATING";
 
-	    # Mark as read...
-	    $folder->imap_cmd('see', $uid);
+	    $email->add({
+			 is => $C_email,
+			 has_message_id => $message_id,
+			 has_imap_url => $url_string,
+			},
+			{
+			 activate_new_arcs => 1,
+			});
 
-	    ### Not an email unless it's have an ACTIVE is property
-	    return is_undef;
+#	    # Mark as read...
+#	    $folder->imap_cmd('see', $uid);
 	}
 
 	$email->{'email_structure'} =
