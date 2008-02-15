@@ -152,7 +152,7 @@ The props:
   value : May be L<Rit::Base::Undef>, any L<Rit::Base::Literal> or a
   L<Rit::Base::Resource>
 
-  obj : Same as L<value>
+  obj : MUST be the id of the object, if given. Instead of C<value>
 
   created : Creation time. Defaults to now.
 
@@ -573,6 +573,11 @@ sub create
 
     if( my $obj_id = $props->{'obj'} )
     {
+	unless( $obj_id =~ /^\d+$/ )
+	{
+	    confess "arc obj id must be an integer";
+	}
+
 	$coltype = 'obj';
 	$rec->{$coltype} = $obj_id;
 	push @fields, $coltype;
