@@ -114,7 +114,7 @@ sub head
 
   $email->header( $field_name )
 
-Returns: An array ref
+Returns: An array
 
 =cut
 
@@ -127,7 +127,7 @@ sub header
     }
 
     # LIST CONTEXT
-    return([ $_[0]->{'head'}->header($_[1]) ]);
+    return( $_[0]->{'head'}->header($_[1]) );
 }
 
 
@@ -204,6 +204,8 @@ sub top
 }
 
 
+#######################################################################
+
 =head2 generate_name
 
   $part->generate_name
@@ -222,20 +224,49 @@ sub generate_name
 
 #######################################################################
 
-=head2 body
+=head2 url_path
+
+  $part->url_path
 
 =cut
 
-sub body
+sub url_path
 {
     my( $part ) = @_;
-    return "<not found>" unless $part->exist;
 
-    my $uid = $part->uid_plain;
-    return $part->folder->imap_cmd('body_string', $uid);
+    my $email = $part->email;
+    my $nid = $email->id;
+
+    my $subject = $part->head->parsed_subject->plain;
+
+    my $safe = $part->filename_safe($subject,"message/rfc822");
+
+    my $s = $Para::Frame::REQ->session
+      or die "Session not found";
+    $s->{'email_imap'}{$nid}{$safe} = '-';
+    my $path = $safe;
+
+    my $email_url = $email->url_path;
+    return $email_url . $path;
 }
 
 
+#######################################################################
+#
+#=head2 body
+#
+#=cut
+#
+#sub body
+#{
+#    my( $part ) = @_;
+#    return "<not found>" unless $part->exist;
+#
+#    my $uid = $part->uid_plain;
+#    return $part->folder->imap_cmd('body_string', $uid);
+#}
+#
+#
 #######################################################################
 
 =head2 body_as_html
@@ -266,7 +297,15 @@ sub body_as_html
 
 #    debug $part->desig;
 
-    my $msg = $part->$renderer();
+
+    my $top_path = $part->url_path;
+    my $msg = "<a href=\"$top_path\">Download email</a>\n";
+
+    my $head_path = $part->email->url_path. ".head";
+    $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
+
+
+    $msg .= $part->$renderer();
 
 #    my $msg = &{$renderer}($email, $struct);
 
@@ -287,8 +326,6 @@ sub body_as_html
 
 	    my $url_path = $att->url_path($name);
 	    my $path = $att->path;
-
-#	    my $url_path = $email->part_url_path($att, $name);
 
 	    my $mouse_over =
 	      "onmouseover=\"TagToTip('email_file_$nid/$path')\"";
@@ -384,6 +421,7 @@ sub charset_guess
     return $charset;
 }
 
+
 #######################################################################
 
 =head2 see
@@ -403,6 +441,7 @@ sub see
     $folder->imap_cmd('see', $uid);
 }
 
+
 #######################################################################
 
 =head2 unsee
@@ -421,6 +460,7 @@ sub unsee
     $folder->imap_cmd('unset_flag', "\\Seen", $uid);
     return 1;
 }
+
 
 #######################################################################
 
@@ -449,6 +489,7 @@ sub is_seen
     return 0;
 }
 
+
 #######################################################################
 
 =head2 is_flagged
@@ -475,6 +516,7 @@ sub is_flagged
 
     return 0;
 }
+
 
 #######################################################################
 

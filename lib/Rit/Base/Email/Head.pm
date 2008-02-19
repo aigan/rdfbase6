@@ -72,7 +72,7 @@ sub as_html
     {
 	my( $key ) = $headers[$i];
 	my( $val ) = $header->parsed_field($key, $headers[$i+1])->as_html;
-	$msg .= "<tr><td style=\"text-align:right;font-weight:bold\">$key</td><td>$val</td></tr>\n";
+	$msg .= "<tr><td style=\"text-align:right;font-weight:bold;vertical-align:top\">$key</td><td>$val</td></tr>\n";
     }
     $msg .= "</table>\n";
 
@@ -97,6 +97,8 @@ sub parsed_field
     my( $header, $field_in, $value ) = @_;
 
     my $field = lc($field_in);
+
+    debug "  parsing field '$field'";
 
     if( $field eq 'subject' )
     {
@@ -240,7 +242,7 @@ sub parsed_address
     {
 	unless( $field_in )
 	{
-	    croak "missing field name";
+	    confess "missing field name";
 	}
 
 	$value = [ $header->header($field_in) ];
@@ -277,9 +279,9 @@ sub parsed_default
 {
     my( $header, $field_in, $value ) = @_;
 
-    if( not $value )
+    if( not defined $value )
     {
-	croak "missing field name";
+	confess "missing field name";
     }
     elsif( ref($value) eq 'ARRAY' )
     {

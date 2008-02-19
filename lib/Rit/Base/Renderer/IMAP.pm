@@ -61,14 +61,24 @@ sub render_output
 
     my $req = $rend->req;
 
-    unless( $path =~ /\/(\d+)\/([^\/]+)$/ )
+    my( $nid, $search, $head );
+    if( $path =~ /\/(\d+)(?:\/([^\/]*?)(\.head)?)$/ )
+    {
+	debug "$1 - $2 - $3 - $4";
+
+	$nid = $1;
+	$search = $2;
+
+	if( $3 )
+	{
+	    $head = 1; # Show the headers
+	}
+    }
+    else
     {
 	debug "Path in invalid format: $path";
 	return undef;
     }
-
-    my $nid = $1;
-    my $search = $2;
 
     my $lookup = $req->session->{'email_imap'}{$nid};
     unless( $lookup )
@@ -77,45 +87,65 @@ sub render_output
 	return undef;
     }
 
-    my $imap_path;
-
-    if( $search =~ /^[\d\.]+$/ )
-    {
-	$imap_path = $search;
-    }
-    else
-    {
-	$imap_path = $lookup->{$search};
-    }
-
-    unless( $imap_path )
-    {
-	debug "file not found as a part of message";
-	return undef;
-    }
-
-
     my $email = Rit::Base::Resource->get($nid);
     my $top = $email->structure;
-    my $part = $top->new_by_path($imap_path);
 
-    my $type = $part->type;
-    my $charset = $part->charset_guess;
 
-    unless( $charset )
+    my( $imap_path, $part, $type, $charset, $encoding );
+
+    if( $search )
     {
-	debug "Charset undefined. Falling back on ISO-8859-1";
-	$charset = "iso-8859-1";
+	if( $search =~ /^[\d\.]+$/ )
+	{
+	    $imap_path = $search;
+	}
+	else
+	{
+	    $imap_path = $lookup->{$search};
+	}
+
+	if( $imap_path eq '-' )
+	{
+	    $imap_path = undef;
+	}
+	elsif( not $imap_path )
+	{
+	    debug "file '$search' not found as a part of message";
+	    return undef;
+	}
     }
 
+    if( $imap_path )
+    {
+	$part = $top->new_by_path($imap_path);
 
-    $rend->{'content_type'} = $type;
-    $rend->{'charset'} = $charset;
+	$type = $part->type;
+	$charset = $part->charset_guess;
 
-    my $encoding = lc($part->struct->encoding);
+	unless( $charset )
+	{
+	    debug "Charset undefined. Falling back on ISO-8859-1";
+	    $charset = "iso-8859-1";
+	}
 
+	$rend->{'content_type'} = $type;
+	$rend->{'charset'} = $charset;
 
-    debug "Metadata registred: $type - $charset";
+	$encoding = lc($part->struct->encoding);
+	debug "Metadata registred: $type - $charset";
+    }
+
+    if( $head )
+    {
+	$part ||= $top;
+
+	$rend->{'content_type'} = "text/html";
+	$rend->{'charset'} = "UTF-8";
+	my $head = $part->head;
+	my $data = $head->as_html;
+	return \$data;
+    }
+
 
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -145,6 +175,7 @@ sub render_output
     }
 
     $resp->set_http_status(200);
+    $resp->{'encoding'} = 'raw';
 
 
 
@@ -152,6 +183,16 @@ sub render_output
 
     my $folder = $top->folder;
     my $uid = $top->uid_plain;
+
+
+    # Returning the whole message
+    unless( $imap_path )
+    {
+	$rend->{'content_type'} = "message/rfc822";
+	my $data = $folder->imap_cmd('message_string', $uid);
+	return \$data;
+    }
+
 
     debug "Getting bodypart $uid $imap_path";
     my $data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
@@ -200,7 +241,6 @@ sub render_output
 	}
     }
 
-    $resp->{'encoding'} = 'raw';
 
 #    debug "Body is ".length($data)." chars long: ".validate_utf8(\$data);
 

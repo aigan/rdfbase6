@@ -37,6 +37,8 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use Email::Classifier;
+
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_decode datadump catch fqdn );
 use Para::Frame::L10N qw( loc );
@@ -49,8 +51,6 @@ use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
-use Rit::Base::Email::Classifier::Bounce;
-use Rit::Base::Email::Classifier::Vacation;
 use Rit::Base::Email::IMAP;
 use Rit::Base::Email::RB;
 use Rit::Base::Email::RB::Head;
@@ -59,6 +59,12 @@ use Rit::Base::Email::IMAP::Folder;
 use Rit::Base::Email::IMAP::Head;
 
 use constant EA => 'Rit::Base::Literal::Email::Address';
+
+BEGIN
+{
+    $Email::Classifier::CLASS_HEADER = "Rit::Base::Email::Head";
+}
+
 
 #######################################################################
 
@@ -200,7 +206,7 @@ sub message_id_plain
     {
 	if( $email->prop('has_imap_url' ) )
 	{
-	    $mid = $email->header("message-id")->[0];
+	    $mid = $email->header("message-id");
 	    if( $mid )
 	    {
 		$mid =~ s/^<|>$//g;
@@ -234,8 +240,8 @@ sub in_reply_to
     my( $email ) = @_;
 
     my @emails;
-    my $in_reply_to = $email->header("in-reply-to");
-    foreach my $mid ( @$in_reply_to )
+    my( @in_reply_to ) = $email->header("in-reply-to");
+    foreach my $mid ( @in_reply_to )
     {
 	debug "In-Reply-To $mid";
 	$mid =~ s/^<|>$//g;
@@ -267,8 +273,8 @@ sub references
     my( $email ) = @_;
 
     my @emails;
-    my $in_reply_to = $email->header("references");
-    foreach my $mid_string ( @$in_reply_to )
+    my( @in_reply_to ) = $email->header("references");
+    foreach my $mid_string ( @in_reply_to )
     {
 	$mid_string =~ s/^<|>$//g;
 	foreach my $mid ( split />\s*</, $mid_string )
@@ -533,7 +539,7 @@ sub content_type_plain
 	unless( $email->{'email_content_type'} )
 	{
 	    return is_undef unless $email->exist;
-	    my $content_type_raw = $email->header("content-type")->[0];
+	    my $content_type_raw = $email->header("content-type");
 	    my @parts = split /\s*;\s*/, $content_type_raw;
 
 	    $email->{'email_content_type'} = shift @parts;
@@ -598,7 +604,7 @@ sub encoding_plain
 	{
 	    return is_undef unless $email->exist;
 	    my $encoding_raw =
-	      $email->header("content-transfer-encoding")->[0];
+	      $email->header("content-transfer-encoding");
 	    $email->{'email_encoding'} = lc $encoding_raw;
 	}
 
@@ -715,83 +721,6 @@ sub desig
     {
 	return "<deleted>";
     }
-}
-
-#######################################################################
-
-=head2 is_message_bounce
-
-=cut
-
-sub is_message_bounce
-{
-    return $_[0]->message_bounce->is_bounce;
-}
-
-
-#######################################################################
-
-=head2 message_bounce
-
-=cut
-
-sub message_bounce
-{
-    my( $email ) = @_;
-
-    return $email->{'message'}{'bounce'} ||=
-      Rit::Base::Email::Classifier::Bounce->new($email);
-}
-
-
-#######################################################################
-
-=head2 is_message_vacation
-
-=cut
-
-sub is_message_vacation
-{
-    return $_[0]->message_vacation->is_vacation;
-}
-
-
-#######################################################################
-
-=head2 message_vacation
-
-=cut
-
-sub message_vacation
-{
-    my( $email ) = @_;
-
-    return $email->{'message'}{'vacation'} ||=
-      Rit::Base::Email::Classifier::Vacation->new($email);
-}
-
-
-#######################################################################
-
-=head2 is_message_challenge_response
-
-Taken from L<Mail::DeliveryStatus::BounceParser>
-
-=cut
-
-sub is_message_challenge_response
-{
-    my( $email ) = @_;
-
-    my $da = $email->header("x-delivery-agent")->[0] || '';
-
-    if( $da =~ /^TMDA/ )
-    {
-	debug "Challenge / Response system autoreply";
-	return 1;
-    }
-
-    return 0;
 }
 
 

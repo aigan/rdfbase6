@@ -140,7 +140,74 @@ sub email
 
 #######################################################################
 
+=head2 envelope
+
+=cut
+
+sub envelope
+{
+    die "IMPLEMENT ME";
+}
+
+
+#######################################################################
+
+=head2 first_part_with_type
+
+=cut
+
+sub first_part_with_type
+{
+    my( $part, $type ) = @_;
+    my $class = ref($part);
+
+    foreach my $struct ( $part->struct->parts )
+    {
+	if( $struct->type =~ /^$type/ )
+	{
+	    return $part->new($struct);
+	}
+	elsif( $struct->type =~ /^multipart\// )
+	{
+	    if( my $match = $part->new($struct)->
+		first_part_with_type($type) )
+	    {
+		return $match;
+	    }
+	}
+    }
+
+    return undef;
+}
+
+
+#######################################################################
+
+=head2 first_non_multi_part
+
+=cut
+
+sub first_non_multi_part
+{
+    my( $part ) = @_;
+    my $class = ref($part);
+
+    if( $part->type =~ /^multipart\// )
+    {
+	my( $struct ) = ($part->struct->parts)[0]
+	  or return $part; # type may be wrong
+	return $part->new($struct)->first_non_multi_part;
+    }
+
+    return $part;
+}
+
+
+#######################################################################
+
 =head2 parts
+
+Returns: A list of parts
 
 =cut
 
@@ -155,7 +222,7 @@ sub parts
 	push @parts, $part->new($struct);
     }
 
-    return \@parts;
+    return @parts;
 }
 
 
@@ -187,11 +254,29 @@ sub charset
 
 =head2 type
 
+Alias: content_type
+
 =cut
 
 sub type
 {
     return lc $_[0]->struct->type;
+}
+
+*content_type = \&type;
+
+
+#######################################################################
+
+=head2 effective_type
+
+TODO: Implement effective_type, as in L<MIME::Entity/effective_type>
+
+=cut
+
+sub effective_type
+{
+    return $_[0]->type;
 }
 
 
@@ -241,6 +326,8 @@ sub size_human
 
 =head2 head
 
+Alias: header_obj
+
 =cut
 
 sub head
@@ -248,6 +335,26 @@ sub head
     return $_[0]->{'head'} ||=
       Rit::Base::Email::IMAP::Head->
 	  new_by_part_env( $_[0]->struct->{'envelope'} );
+}
+
+*header_obj = \&head;
+
+#######################################################################
+
+=head2 header
+
+=cut
+
+sub header
+{
+    unless($_[0]->{'head'} )
+    {
+	$_[0]->{'head'} = Rit::Base::Email::IMAP::Head->
+	  new_by_part_env( $_[0]->struct->{'envelope'} );
+    }
+
+    # LIST CONTEXT
+    return( $_[0]->{'head'}->header($_[1]) );
 }
 
 
@@ -284,7 +391,7 @@ sub charset_guess
 	my $type = lc $struct->type;
 	if( $type =~ /^text\// )
 	{
-	    my $sample = $part->bodypart_decoded(2000);
+	    my $sample = $part->body(2000);
 	    require Encode::Detect::Detector;
 	    $charset = lc Encode::Detect::Detector::detect($sample);
 
@@ -351,11 +458,10 @@ sub url_path
 
 sub filename_safe
 {
-    my( $part, $name ) = @_;
+    my( $part, $name, $type_name ) = @_;
 
     $name ||= $part->filename || $part->generate_name;
-
-    my $type_name = $part->type;
+    $type_name ||= $part->type;
 
     my $safe = lc $name;
     $safe =~ s/.*[\/\\]//; # Remove path
@@ -370,6 +476,8 @@ sub filename_safe
                [aaaaaaaeeeeiiiioooooouuuuyydps];
 
     $safe =~ s/[^a-z0-9_\- ]//g;
+    $safe =~ s/  / /g;
+
 
 #    debug "Safe base name: $safe";
 #    debug "type name: $type_name";
@@ -574,11 +682,11 @@ sub _render_textplain
     my $charset = $part->charset_guess;
 #    my $charset = $email->charset_plain($part);
 
-    my $data_dec = $part->bodypart_decoded;
-#    my $data_dec = $email->bodypart_decoded($part);
+    my $data_dec = $part->body;
+#    my $data_dec = $email->body($part);
     my $data_enc = CGI->escapeHTML($data_dec);
 
-    my $msg = "<p>Charset: $charset</p>\n";
+    my $msg = "| $charset\n<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
@@ -598,7 +706,7 @@ sub _render_texthtml
 
     my $url_path = $part->url_path;
 
-    my $msg = qq(<a href="$url_path">Download HTML message</a>\n );
+    my $msg = qq(| <a href="$url_path">View HTML message</a>\n );
 
     if( my $other = $part->top->{'other'} )
     {
@@ -631,7 +739,7 @@ sub _render_delivery_status
 
 #    debug "  rendering delivery_status";
 
-    my $data_dec = $part->bodypart_decoded;
+    my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($data_dec);
 
     my $msg = "<div style=\"background:yellow\"><h2>Delivery report</h2>\n";
@@ -653,7 +761,7 @@ sub _render_headers
 
 #    debug "  rendering headers";
 
-    my $data_dec = $part->bodypart_decoded;
+    my $data_dec = $part->body;
     my $msg;
 
     my $header = Rit::Base::Email::Head->new(\$data_dec );
@@ -681,7 +789,7 @@ sub _render_alt
 
 #    debug "  rendering alt";
 
-    my $alts = $part->parts;
+    my @alts = $part->parts;
 
     my %prio =
       (
@@ -690,7 +798,7 @@ sub _render_alt
        'text/plain' => 0,
       );
 
-    my $choice = shift @$alts;
+    my $choice = shift @alts;
 #    debug sprintf "Considering %s at %s",
 #      $choice->type,
 #	$choice->struct->part_path;
@@ -698,7 +806,7 @@ sub _render_alt
 
     my @other;
 
-    foreach my $alt (@$alts)
+    foreach my $alt (@alts)
     {
 	my $type = $alt->type;
 #	debug "Considering $type at ".$alt->struct->part_path;
@@ -752,13 +860,13 @@ sub _render_mixed
 
 #    debug $email->part_desig;
 
-    my $alts = $part->parts;
+    my @alts = $part->parts;
 
     my $msg = "";
 
     $part->top->{'attatchemnts'} ||= {};
 
-    foreach my $alt (@$alts)
+    foreach my $alt (@alts)
     {
 	my $apath = $alt->path;
 
@@ -813,7 +921,7 @@ sub _render_related
 
     my $req = $Para::Frame::REQ;
 
-    my $alts = $part->parts;
+    my @alts = $part->parts;
 
     my %prio =
       (
@@ -823,7 +931,7 @@ sub _render_related
 
     my %files = ();
 
-    foreach my $alt (@$alts)
+    foreach my $alt (@alts)
     {
 	my $apath = $alt->path;
 
@@ -846,10 +954,10 @@ sub _render_related
     my $id = $part->email->id;
     $s->{'email_imap'}{$id} = \%files;
 
-    my $choice = shift @$alts;
+    my $choice = shift @alts;
     my $score = $prio{ $choice->type } || 1; # prefere first part
 
-    foreach my $alt (@$alts)
+    foreach my $alt (@alts)
     {
 	my $type = $alt->type;
 	next unless $type;
@@ -980,7 +1088,11 @@ sub _render_rfc822
 
 #######################################################################
 
-sub bodypart_decoded
+=head2 body
+
+=cut
+
+sub body
 {
     my( $part, $length ) = @_;
 
@@ -1051,7 +1163,7 @@ sub desig
     my $msg = ('  'x$ident)."$path $type $enc $size $disp $char $file $lang $loc $cid $desc\n";
 #    debug $msg;
     $ident ++;
-    foreach my $subpart ( @{$part->parts} )
+    foreach my $subpart ( $part->parts )
     {
 #	debug "  subpart $subpart";
 	$msg .= $subpart->desig($ident);

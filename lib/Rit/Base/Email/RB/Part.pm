@@ -44,16 +44,12 @@ use Para::Frame::List;
 
 use Rit::Base;
 use Rit::Base::Utils qw( parse_propargs alfanum_to_id is_undef );
-use Rit::Base::Constants qw( $C_email );
-use Rit::Base::Literal::String;
-use Rit::Base::Literal::Time qw( now ); #);
-use Rit::Base::Literal::Email::Address;
-use Rit::Base::Literal::Email::Subject;
+#use Rit::Base::Constants qw( $C_email );
+#use Rit::Base::Literal::String;
+#use Rit::Base::Literal::Time qw( now ); #);
+#use Rit::Base::Literal::Email::Address;
+#use Rit::Base::Literal::Email::Subject;
 use Rit::Base::Email::Head;
-use Rit::Base::Email::Classifier::Bounce;
-use Rit::Base::Email::Classifier::Vacation;
-
-use constant EA => 'Rit::Base::Literal::Email::Address';
 
 use base qw( Rit::Base::Email::Part );
 
