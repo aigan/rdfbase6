@@ -47,61 +47,68 @@ our %FOLDERS;
 
 sub get
 {
-    my( $this, $val_in ) = @_;
+    my( $this, $args ) = @_;
 
-    my( $cfg, $server, $user, $password, $foldername, $url );
-    $val_in ||= {};
-    if( UNIVERSAL::isa $val_in, 'HASH' )
+    $args ||= {};
+
+    unless( UNIVERSAL::isa $args, 'HASH' )
     {
-	$server =
-	  $val_in->{'server'} ||
-	    $Para::Frame::CFG->{'imap_access_default'}{'server'} ||
-	      die "No default server given";
-	$user   = $val_in->{'user'} ||
-	  $Para::Frame::CFG->{'imap_access_default'}{'user'} ||
-	    die "No default user given";
-	$foldername = $val_in->{'foldername'} || 'INBOX';
-
-	# look out for reserved chars in user
-	my $url_str = "imap://$user\@$server/$foldername";
-
-	if( my $folder = $FOLDERS{$url_str} )
+	$args =
 	{
-#	    debug "Found folder in cache";
-	    $folder->awake;
-	    return $folder;
-	}
+	 user => $args,
+	};
+    }
 
-	$password = $val_in->{'password'};
-	$url = URI->new($url_str);
+    my $server = $args->{'server'} ||
+      $Para::Frame::CFG->{'imap_access_default'}{'server'} ||
+	die "No default server given";
+
+    my $user = $args->{'user'} ||
+      $Para::Frame::CFG->{'imap_access_default'}{'user'} ||
+	die "No default user given";
+
+    my $foldername = $args->{'foldername'} || 'INBOX';
+
+    # look out for reserved chars in user
+    my $url_str = "imap://$user\@$server/$foldername";
+
+    return $this->get_by_url($url_str);
+}
+
+
+#######################################################################
+
+=head2 get_by_url
+
+=cut
+
+sub get_by_url
+{
+    my( $this, $url_in ) = @_;
+
+    $url_in =~ s/\/;UID=.*//;
+
+    if( my $folder = $FOLDERS{$url_in} )
+    {
+	$folder->awake;
+	return $folder;
+    }
+
+    my $url = URI->new( $url_in );
+
+    my $foldername;
+    my $user = $url->userinfo;
+    my $server = $url->host;
+    if( $url->path =~ /\/(.*)/ )
+    {
+	$foldername = $1;
     }
     else
     {
-	$val_in =~ s/\/;UID=.*//;
-
-	if( my $folder = $FOLDERS{$val_in} )
-	{
-#	    debug "Found folder in cache";
-	    $folder->awake;
-	    return $folder;
-	}
-
-	$url = URI->new( $val_in );
-
-	$user = $url->userinfo;
-	$server = $url->host;
-	if( $url->path =~ /\/(.*)/ )
-	{
-	    $foldername = $1;
-	}
-	else
-	{
-	    die "Could not extract foldername from $val_in";
-	}
-
+	die "Could not extract foldername from $url_in";
     }
 
-    $password ||= $Para::Frame::CFG->{imap_access}{$server}{$user}
+    my $password = $Para::Frame::CFG->{imap_access}{$server}{$user}
       or throw 'IMAP', "Password for $user\@$server not found";
 
     my $folder = bless
@@ -551,6 +558,20 @@ sub foldername
     my( $folder ) = @_;
 
     return $folder->{'foldername'};
+}
+
+
+#######################################################################
+
+=head2 equals
+
+=cut
+
+sub equals
+{
+    my( $folder, $folder2 ) = @_;
+
+    return( $folder->url eq $folder2->url );
 }
 
 
