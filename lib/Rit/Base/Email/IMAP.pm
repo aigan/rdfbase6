@@ -442,11 +442,9 @@ sub see
     my( $part ) = @_;
 
     my $uid = $part->uid_plain;
-
-    debug "Mark email as seen";
     my $folder = $part->folder;
-#    $folder->imap->see($uid)
-#      or debug $folder->diag("Could not see email $uid");
+
+    debug "  Mark email $uid as seen";
     $folder->imap_cmd('see', $uid);
 }
 
