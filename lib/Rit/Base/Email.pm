@@ -156,7 +156,6 @@ sub get
 
 	$email->{'email_structure'} =
 	  Rit::Base::Email::IMAP->new_by_email($email, $head);
-	$email->process;
     }
 
     return $email;
