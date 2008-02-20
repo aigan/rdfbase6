@@ -49,13 +49,13 @@ var RBInputPopup = Class.create(
 
 	this.submit = document.createElement('input');
 	this.submit.id = 'rb_input_button';
-	this.submit.value = 'Lookup';
+	this.submit.value = '[% loc('Lookup') %]';
 	this.submit.type = 'submit';
 	this.form.appendChild(this.submit);
 
 	this.cancel = document.createElement('input');
 	this.cancel.type = 'button';
-	this.cancel.value = 'Cancel';
+	this.cancel.value = '[% loc('Cancel') %]';
 	this.cancel.onclick = this.close.bind(this);
 	this.form.appendChild(this.cancel);
 	
