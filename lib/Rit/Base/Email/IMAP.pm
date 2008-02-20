@@ -98,9 +98,9 @@ sub new_by_email
 
 sub complete_head
 {
-    return $_[0]->{'head'} ||=
+   return $_[0]->{'head'} ||=
       Rit::Base::Email::IMAP::Head->
-	  new_by_part_env( $_[0]->struct->{'envelope'} );
+	  new_by_uid( $_[0]->folder, $_[0]->uid_plain );
 }
 
 
