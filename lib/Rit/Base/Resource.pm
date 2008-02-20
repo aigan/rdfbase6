@@ -1207,15 +1207,26 @@ value is either a node or a array(ref) of nodes or a
 L<List|Rit::Base::List> of nodes.  And the nodes can be given
 as anything that L</get> will accept.
 
+Specially handled props:
+
+  label
+
+  created
+
+  updated
+
+
 Special args:
 
   activate_new_arcs
 
   submit_new_arcs
 
+
 Returns:
 
 a node
+
 
 Exceptions:
 
@@ -1257,6 +1268,9 @@ sub create
     # Create all props before checking
     arc_lock;
 
+    my $mark_updated = undef; # for tagging node with timestamp
+    my $mark_created = undef; # for tagging node with timestamp
+
     foreach my $pred_name ( @props_list )
     {
 	# May not be only Resources
@@ -1280,6 +1294,14 @@ sub create
 		confess "Can't give a node more than one label";
 	    }
 	    $node->set_label( $vals->get_first_nos );
+	}
+	elsif( $pred_name eq 'created' )
+	{
+	    $mark_updated = $vals->get_first_nos;
+	}
+	elsif( $pred_name eq 'updated' )
+	{
+	    $mark_updated = $vals->get_first_nos;
 	}
 	elsif( $pred_name =~ /^rev_(.*)$/ )
 	{
@@ -1308,6 +1330,16 @@ sub create
     }
 
     my $node = Rit::Base::Resource->get( $subj_id );
+
+    if( $mark_created or $mark_updated )
+    {
+	$node->mark_updated($mark_updated);
+	if( $mark_created )
+	{
+	    $node->{'created_obj'} = $mark_created;
+	}
+    }
+
     unless( @props_list )
     {
 	$node->{'new'} = 1;
