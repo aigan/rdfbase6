@@ -106,20 +106,21 @@ var RBInputPopup = Class.create(
 	this.popup_li.style.padding = '0';
 	this.popup_li.style.whiteSpace = 'nowrap';
 	this.popup.appendChild(this.popup_li);
-	this.result = \$H(result);
+	this.result = \$A(result);
 
-	if( result[0] ) {
-	    var line = Builder.node('li', 'No matches');
+	if( \$H(result[0]).get('id') == 0 ) {
+	    var line = Builder.node('li', \$H(result[0]).get('name'));
 	    this.popup_li.appendChild(line);
 	}
 	else {
-	    this.result.each( function(pair) {
-		    var name = pair.value['name'];
+	    this.result.each( function(item) {
+		    var node = \$H(item);
+		    var name = node.get('name');
 		    var select_button = Builder.node('input', { value: 'Select', type: 'button' });
-		    select_button.onclick = this.select.bindAsEventListener(this, name, pair.key);
+		    select_button.onclick = this.select.bindAsEventListener(this, name, node.get('id'));
 		    
 		    var tip_text = Builder.node('table');
-		    \$H(pair.value).each( function(npair) {
+		    node.each( function(npair) {
 			    if( npair.key != 'form_url' ) {
 				var tip_line = Builder.node('tr',
 							    [ Builder.node('td', npair.key +':'),
@@ -128,12 +129,12 @@ var RBInputPopup = Class.create(
 			    }
 			});
 		    
-		    var more_info = Builder.node('a',{ href: pair.value['form_url'],
+		    var more_info = Builder.node('a',{ href: node.get('form_url'),
 						       target: '_new',
 						       onmouseover: 'Tip(\'<table>'+ tip_text.innerHTML +'</table>\', DURATION, 0, FOLLOWMOUSE, true, STICKY, false, FONTSIZE, \'12px\')'
-			},
-			name);
-		    
+			                             },
+			                         name);
+		
 		    var line = Builder.node('li', [ select_button, ' ', more_info ] );
 		    this.popup_li.appendChild(line);
 		}.bind(this));
