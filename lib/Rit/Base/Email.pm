@@ -93,23 +93,16 @@ sub get
     }
     $message_id =~ s/^<|>$//g;
 
-    debug "SEARCHING for Message-ID $message_id";
-
     my $folder_url_string = $folder->url->as_string;
     my $url_string = "$folder_url_string/;UID=$uid";
 
+    debug "SEARCHING for $url_string";
+
     my $emails = $R->find({
-			   has_message_id => $message_id,
+			   has_imap_url => $url_string,
 			   is => $C_email,
 			  },['not_removal']);
 
-    unless( $emails->size )
-    {
-	$emails = $R->find({
-			    has_imap_url => $url_string,
-			    is => $C_email,
-			   },['not_removal']);
-    }
 
     my $email;
 
@@ -696,7 +689,9 @@ sub sysdesig
 {
     my( $email ) = @_;
 
-    return "Email ". $email->id .': '. $email->desig;
+    return sprintf "Email %d: (%d) %s",
+      $email->id, $email->structure->uid_plain,
+	($email->subject->plain || '<no subject>');
 }
 
 #######################################################################
