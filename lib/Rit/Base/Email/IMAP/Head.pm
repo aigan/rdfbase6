@@ -148,20 +148,91 @@ sub new_by_part_env
 {
     my( $class, $env ) = @_;
 
+#    debug "ENV: ".datadump($env);
+
     my $head = $class->new("");
 
-    $head->header_set('date', $env->{date} ); ### CHECKME
-    $head->header_set('subject', $env->{subject} );
-    $head->header_set('message-id', $env->{message_id} );
-    $head->header_set('in-reply-to', $env->{in_reply_to} );
-    $head->header_set('to', map $_->{full}, @{$env->{to}} );
-    $head->header_set('from', map $_->{full}, @{$env->{from}} );
-    $head->header_set('cc', map $_->{full}, @{$env->{cc}} );
-    $head->header_set('bcc', map $_->{full}, @{$env->{bcc}} );
-    $head->header_set('sender', map $_->{full}, @{$env->{sender}} );
-    $head->header_set('reply-to', map $_->{full}, @{$env->{reply_to}} );
+
+    foreach my $field (qw( date subject message-id in-reply-to ))
+    {
+	my $key = $field; $key =~ s/-/_/g;
+
+	if( my $val = $env->{$key} )
+	{
+#	    debug "  $field: $val";
+	    $head->header_set($field, $val );
+	}
+    }
+
+    foreach my $field (qw( to from cc bcc sender reply-to ))
+    {
+	my $key = $field; $key =~ s/-/_/g;
+	my $val = $env->{$key};
+
+	if( $val and ref($val)eq'ARRAY' and @{$env->{$key}} )
+	{
+	    my @vals = map $_->{full}, @{$env->{$key}};
+#	    debug "  $field: @vals";
+	    $head->header_set($field, @vals );
+	}
+    }
 
     return $head;
+}
+
+
+#######################################################################
+
+=head2 new_by_part
+
+Import the full headers
+
+=cut
+
+sub new_by_part
+{
+    my( $class, $part ) = @_;
+
+    my $email = $part->email;
+    my $folder = $email->folder;
+    my $uid = $part->top->uid_plain or die "No uid";
+    my $imap_path = $part->path;
+
+    # Read the header, but not the body
+
+
+    my $chunk_size = 1000;
+    my $data = "";
+    my $pos = 0;
+
+#    debug "bodypart_string($uid,'$imap_path',$chunk_size,$pos)";
+
+    my $chunk = $folder->imap_cmd('bodypart_string',
+				  $uid, $imap_path,
+				  $chunk_size, $pos,
+				 );
+#    debug "Reading header from pos $pos";
+    while( my $len = length $chunk )
+    {
+	debug "Got $len bytes";
+
+	if( $chunk =~ s/(\r?\n\r?\n).*/$1/s )
+	{
+	    $data .= $chunk;
+	    last;
+	}
+
+	$data .= $chunk;
+	$pos += $len;
+
+#	debug "Reading header from pos $pos";
+	$chunk = $folder->imap_cmd('bodypart_string',
+				   $uid, $imap_path,
+				   $chunk_size, $pos,
+				  );
+    }
+
+    return $class->new( \$data );
 }
 
 

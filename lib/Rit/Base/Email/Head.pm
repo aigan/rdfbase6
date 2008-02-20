@@ -67,6 +67,10 @@ sub as_html
 
     my $msg = "\n<br>\n<table class=\"admin\" style=\"background:#E0E0EA\">\n";
 
+#    debug "HEADERS:\n".datadump($header);
+
+    $header->load_all if $header->can('load_all');
+
     my @headers = $header->header_pairs;
     for(my $i=0; $i<= $#headers; $i+=2 )
     {
@@ -281,7 +285,7 @@ sub parsed_default
 
     if( not defined $value )
     {
-	confess "missing field name";
+	confess "missing field value";
     }
     elsif( ref($value) eq 'ARRAY' )
     {

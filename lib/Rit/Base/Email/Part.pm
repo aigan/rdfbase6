@@ -324,9 +324,20 @@ sub size_human
 
 #######################################################################
 
-=head2 head
+=head2 complete_head
 
-Alias: header_obj
+=cut
+
+sub complete_head
+{
+    return $_[0]->{'complete_head'} ||=
+      Rit::Base::Email::IMAP::Head->
+	  new_by_part( $_[0] );
+}
+
+#######################################################################
+
+=head2 head
 
 =cut
 
@@ -337,7 +348,7 @@ sub head
 	  new_by_part_env( $_[0]->struct->{'envelope'} );
 }
 
-*header_obj = \&head;
+*header_obj = \&complete_head;
 
 #######################################################################
 
@@ -952,7 +963,10 @@ sub _render_related
     my $s = $req->session
       or die "Session not found";
     my $id = $part->email->id;
-    $s->{'email_imap'}{$id} = \%files;
+    foreach my $file ( keys %files )
+    {
+	$s->{'email_imap'}{$id}{$file} = $files{$file};
+    }
 
     my $choice = shift @alts;
     my $score = $prio{ $choice->type } || 1; # prefere first part
@@ -1055,25 +1069,36 @@ sub _render_rfc822
     my $to_val = $head->parsed_address('to')->as_html;
     $msg .= "<tr><td>$to_lab</td><td>$to_val</td></tr>\n";
 
-    my $filename = $part->filename;
-    my $url_path = $part->url_path;
-    $msg .= "<tr><td colspan=\"2\"><a href=\"$url_path\">Download as email</a></td></tr>\n";
-
-
-
-
     $msg .= "<tr><td colspan=\"2\" style=\"background:#FFFFE5\">";
 
+
+    # Create a path to the email
+    my $email = $part->email;
+    my $nid = $email->id;
+    my $subject = $part->head->parsed_subject->plain;
+    my $path = $part->path;
+    my $safe = $path .'-'. $part->filename_safe($subject,"message/rfc822");
+    my $s = $Para::Frame::REQ->session
+      or die "Session not found";
+    $s->{'email_imap'}{$nid}{$safe} = $part->path;
+    my $eml_path = $email->url_path . $safe;
+    $msg .= "<a href=\"$eml_path\">Download email</a>\n";
+
+
+
+    my $head_path = $part->url_path. ".head";
+    $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
+
     my $sub = $part->new( $struct->{'bodystructure'} );
-    my $path = $sub->path;
-    my $type = $sub->type;
+    my $sub_path = $sub->path;
+    my $sub_type = $sub->type;
 
 
-    my $renderer = $sub->select_renderer($type);
+    my $renderer = $sub->select_renderer($sub_type);
     unless( $renderer )
     {
-	debug "No renderer defined for $type";
-	return "<code>No renderer defined for part $path <strong>$type</strong></code>";
+	debug "No renderer defined for $sub_type";
+	return "<code>No renderer defined for part $sub_path <strong>$sub_type</strong></code>";
     }
 
     $msg .= $sub->$renderer;

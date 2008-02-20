@@ -64,7 +64,7 @@ sub render_output
     my( $nid, $search, $head );
     if( $path =~ /\/(\d+)(?:\/([^\/]*?)(\.head)?)$/ )
     {
-	debug "$1 - $2 - $3 - $4";
+#	debug "$1 - $2 - $3 - $4";
 
 	$nid = $1;
 	$search = $2;
@@ -104,14 +104,17 @@ sub render_output
 	    $imap_path = $lookup->{$search};
 	}
 
-	if( $imap_path eq '-' )
-	{
-	    $imap_path = undef;
-	}
-	elsif( not $imap_path )
+	if( not $imap_path )
 	{
 	    debug "file '$search' not found as a part of message";
+	    my $s = $req->session;
+	    debug "Session ($s) :\n".
+	      datadump($s->{'email_imap'});
 	    return undef;
+	}
+	elsif( $imap_path eq '-' )
+	{
+	    $imap_path = undef;
 	}
     }
 
@@ -134,19 +137,6 @@ sub render_output
 	$encoding = lc($part->struct->encoding);
 	debug "Metadata registred: $type - $charset";
     }
-
-    if( $head )
-    {
-	$part ||= $top;
-
-	$rend->{'content_type'} = "text/html";
-	$rend->{'charset'} = "UTF-8";
-	my $head = $part->head;
-	my $data = $head->as_html;
-	return \$data;
-    }
-
-
 
     my $updated = $email->first_arc('has_imap_url')->updated;
     my $epoch = $updated->epoch;
@@ -176,6 +166,20 @@ sub render_output
 
     $resp->set_http_status(200);
     $resp->{'encoding'} = 'raw';
+
+
+    if( $head )
+    {
+	$part ||= $top;
+
+	$rend->{'content_type'} = "text/html";
+	$rend->{'charset'} = "UTF-8";
+
+	my $head = $part->complete_head;
+
+	my $data = $head->as_html;
+	return \$data;
+    }
 
 
 
