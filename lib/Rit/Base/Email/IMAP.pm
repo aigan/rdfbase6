@@ -150,7 +150,7 @@ sub folder
 {
     if( my $url_plain = $_[0]->{'imap_url'} )
     {
-	return Rit::Base::Email::IMAP::Folder->get($url_plain);
+	return Rit::Base::Email::IMAP::Folder->get_by_url($url_plain);
     }
 
     confess "IMAP email without URL";
