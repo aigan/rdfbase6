@@ -125,7 +125,7 @@ sub new_by_uid
         unless( $h )
         {
 	    last if $header =~ / OK /i;
-            debug(0, "found data between fetch headers: $header");
+            debug(2, "found data between fetch headers: $header");
             next;
         }
 
