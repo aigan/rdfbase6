@@ -2000,11 +2000,12 @@ sub build_main_from
 	    if( $part->{'negate'} )
 	    {
 		debug "WARNING! VERY BIG SEARCH!";
-		$part_sql .= join " INTERSECT ", map "select $select from $table where not($_)", @where;
+		$part_sql .= join " INTERSECT ", map "select distinct $select from $table where not($_)", @where;
 	    }
 	    else
 	    {
-		$part_sql .= join " UNION ", map "select $select from $table where $_", @where;
+		# Found a case where this gave a 500 times speed increase
+		$part_sql .= join " UNION ", map "select distinct $select from $table where $_", @where;
 	    }
 	}
 	else
