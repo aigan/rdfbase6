@@ -1,13 +1,13 @@
 ﻿
 var RBInputPopup = Class.create(
 {
-    // button: id of calling element
-    // result_container: where to add the result to ('ul')
+    // button:           id of calling element
+    // divid:            the element that should have it's contents replaced after selection
     // search_crit:      passed to $R->find; already as json
     // search_type:      what is inputted ('name_clean_like')
-    // pred_name:        ???
-    // subj:             ???
-    // rev:              ???
+    // pred_name:        pred for added arc
+    // subj:             subj for added arc
+    // rev:              if added arc is reverse
     initialize: function(button, divid, search_crit,
 			 search_type, pred_name, subj, rev)
     {
@@ -374,3 +374,36 @@ var PagePart = Class.create(
     
 
 });
+
+
+
+function check_pattern(pattern, text)
+{
+    if(typeof text != "undefined"){
+	if (text.search(pattern) == -1)
+	    return false;
+	else
+	    return true;
+    }
+    return true;
+}
+function rb_init()
+{
+    document.observe("dom:loaded", function() {
+	    var fform = \$('f');
+
+	    fform.getInputs('text').each( function(elem) {
+		    if( elem.getAttribute('pattern') ) {
+			alert('adding pattern matching');
+			elem.observe('onblur', function(event){
+				var elem = Event.element(event);
+				if( !check_pattern(elem.getAttribute('pattern'),
+						   elem.getValue) ) {
+				    alert('Pattern mismatch: '+ elem.getAttribute('pattern')
+					  +' ne '+ elem.getValue);
+				}
+			    });
+		    }
+		});
+	});
+}
