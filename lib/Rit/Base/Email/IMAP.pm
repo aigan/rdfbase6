@@ -527,4 +527,18 @@ sub is_flagged
 
 #######################################################################
 
+=head2 sysdesig
+
+=cut
+
+sub sysdesig
+{
+    my( $part ) = @_;
+
+    return sprintf "(%d) %s", $part->uid,
+      ($part->head->parsed_subject->plain || '<no subject>');
+}
+
+#######################################################################
+
 1;
