@@ -3,9 +3,11 @@ var RBInputPopup = Class.create(
 {
     // button: id of calling element
     // result_container: where to add the result to ('ul')
-    // result_type:      what type of element the result should be in ('li')
     // search_crit:      passed to $R->find; already as json
     // search_type:      what is inputted ('name_clean_like')
+    // pred_name:        ???
+    // subj:             ???
+    // rev:              ???
     initialize: function(button, divid, search_crit,
 			 search_type, pred_name, subj, rev)
     {
