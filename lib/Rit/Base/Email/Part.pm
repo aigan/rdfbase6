@@ -638,7 +638,7 @@ sub generate_name
 {
     my( $part ) = @_;
 
-    my $name = "email".$part->top->uid_plain;
+    my $name = "email".$part->top->uid;
     $name .= "-part".$part->path;
     return $name;
 }
@@ -1126,7 +1126,7 @@ sub body
     my $encoding = lc $struct->encoding or die;
 
     my $folder = $part->top->folder;
-    my $uid = $part->top->uid_plain;
+    my $uid = $part->top->uid;
     my $path = $struct->part_path;
 #    debug "Getting bodypart $uid $path";
 

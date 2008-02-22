@@ -195,7 +195,7 @@ sub new_by_part
 
     my $email = $part->email;
     my $folder = $email->folder;
-    my $uid = $part->top->uid_plain or die "No uid";
+    my $uid = $part->top->uid or die "No uid";
     my $imap_path = $part->path;
 
     # Read the header, but not the body

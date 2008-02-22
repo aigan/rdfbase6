@@ -100,7 +100,7 @@ sub complete_head
 {
    return $_[0]->{'head'} ||=
       Rit::Base::Email::IMAP::Head->
-	  new_by_uid( $_[0]->folder, $_[0]->uid_plain );
+	  new_by_uid( $_[0]->folder, $_[0]->uid );
 }
 
 
@@ -132,7 +132,7 @@ sub header
     unless( $_[0]->{'head'} )
     {
 	$_[0]->{'head'} = Rit::Base::Email::IMAP::Head->
-	  new_by_uid( $_[0]->folder, $_[0]->uid_plain );
+	  new_by_uid( $_[0]->folder, $_[0]->uid );
     }
 
     # LIST CONTEXT
@@ -191,11 +191,11 @@ sub exist
 
 #######################################################################
 
-=head2 uid_plain
+=head2 uid
 
 =cut
 
-sub uid_plain
+sub uid
 {
     return $_[0]->{'uid'};
 }
@@ -227,7 +227,7 @@ sub generate_name
 {
     my( $part ) = @_;
 
-    return  "email".$part->uid_plain;
+    return  "email".$part->uid;
 }
 
 
@@ -271,7 +271,7 @@ sub url_path
 #    my( $part ) = @_;
 #    return "<not found>" unless $part->exist;
 #
-#    my $uid = $part->uid_plain;
+#    my $uid = $part->uid;
 #    return $part->folder->imap_cmd('body_string', $uid);
 #}
 #
@@ -377,7 +377,7 @@ sub struct
     }
 
     my $folder = $part->folder;
-    my $uid = $part->uid_plain;
+    my $uid = $part->uid;
 
     my $res = $folder->imap_cmd('fetch', $uid,"bodystructure");
 
@@ -441,7 +441,7 @@ sub see
 {
     my( $part ) = @_;
 
-    my $uid = $part->uid_plain;
+    my $uid = $part->uid;
     my $folder = $part->folder;
 
     debug "  Mark email $uid as seen";
@@ -459,7 +459,7 @@ sub unsee
 {
     my( $part ) = @_;
 
-    my $uid = $part->uid_plain;
+    my $uid = $part->uid;
 
     debug "Mark email as unseen";
     my $folder = $part->folder;
@@ -479,7 +479,7 @@ sub is_seen
 {
     my( $part ) = @_;
 
-    my $uid = $part->uid_plain;
+    my $uid = $part->uid;
 
     my $folder = $part->folder;
 #    my $flags = $folder->imap->flags($uid)
@@ -507,7 +507,7 @@ sub is_flagged
 {
     my( $part ) = @_;
 
-    my $uid = $part->uid_plain;
+    my $uid = $part->uid;
 
     my $folder = $part->folder;
 #    my $flags = $folder->imap->flags($uid)

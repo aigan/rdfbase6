@@ -186,7 +186,7 @@ sub render_output
     my $client = $req->client;
 
     my $folder = $top->folder;
-    my $uid = $top->uid_plain;
+    my $uid = $top->uid;
 
 
     # Returning the whole message
