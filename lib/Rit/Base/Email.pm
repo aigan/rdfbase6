@@ -689,9 +689,8 @@ sub sysdesig
 {
     my( $email ) = @_;
 
-    return sprintf "Email %d: (%d) %s",
-      $email->id, $email->structure->uid,
-	($email->subject->plain || '<no subject>');
+    return sprintf "Email %d: %s",
+      $email->id, $email->structure->sysdesig;
 }
 
 #######################################################################
