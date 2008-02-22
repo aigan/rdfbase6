@@ -98,6 +98,28 @@ sub as_html
 
 #######################################################################
 
+=head2 as_reply
+
+  $subj->as_reply
+
+=cut
+
+sub as_reply
+{
+    my( $subj ) = @_;
+
+    my $orig = $subj->plain;
+    my $text = $orig;
+
+    $text =~ s/\b(re|sv):s*//gi;
+    $text =~ s/^ +//;
+
+    return "Re: $text";
+}
+
+
+#######################################################################
+
 =head2 new_by_raw
 
   $subj->new_by_raw( $raw_subject )
