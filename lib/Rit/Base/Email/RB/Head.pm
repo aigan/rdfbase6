@@ -22,13 +22,7 @@ use strict;
 use utf8;
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-#use URI;
-#use MIME::Words qw( decode_mimewords );
-#use IMAP::BodyStructure;
-#use MIME::QuotedPrint qw(decode_qp);
-#use MIME::Base64 qw( decode_base64 );
-#use MIME::Types;
-#use CGI;
+use List::Uniq qw( uniq ); # keeps first of each value
 
 BEGIN
 {
@@ -37,20 +31,11 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-#use Para::Frame::Utils qw( throw debug idn_encode idn_decode datadump catch fqdn );
 use Para::Frame::Utils qw( throw debug );
-#use Para::Frame::L10N qw( loc );
 
 use Rit::Base;
 use Rit::Base::List;
 use Rit::Base::Utils qw( parse_propargs is_undef );
-#use Rit::Base::Constants qw( $C_email );
-#use Rit::Base::Literal::String;
-#use Rit::Base::Literal::Time qw( now ); #);
-#use Rit::Base::Literal::Email::Address;
-#use Rit::Base::Literal::Email::Subject;
-
-# use constant EA => 'Rit::Base::Literal::Email::Address';
 
 use base qw( Rit::Base::Email::Head );
 
@@ -82,9 +67,11 @@ sub new_by_email
     {
 	push @to_list, $to_obj->email_main->plain;
     }
-    $head->header_set('to', @to_list );
+    my @to_uniq = uniq @to_list;
 
-    debug "Creating TO header field with @to_list";
+    $head->header_set('to', @to_uniq );
+
+    debug "Creating TO header field with @to_uniq";
 
     return $head;
 }
