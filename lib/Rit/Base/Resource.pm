@@ -4189,11 +4189,13 @@ sub wdirc
 
     if( $is_rev )
     {
-	$list = $list->find({ subj => { $is_pred => $range }}); # Sort out arcs on range...
+	$list = $list->find({ subj => { $is_pred => $range }}) # Sort out arcs on range...
+	  if( $range and $range ne $C_resource );
     }
     else
     {
-	$list = $list->find({ obj => { $is_pred => $range }}); # Sort out arcs on range...
+	$list = $list->find({ obj => { $is_pred => $range }}) # Sort out arcs on range...
+	  if( $range and $range ne $C_resource );
     }
 
     $out .= Para::Frame::Widget::label_from_params({
@@ -4207,6 +4209,7 @@ sub wdirc
     $out .= '<ul>'
       if( $list->size > 1);
 
+    debug "Making a wdirc for ". $pred->name ." with ". $list->size ." items.  Range: ". $range->sysdesig;
     foreach my $arc ($list->as_array)
     {
 	$out .= '<li>'
@@ -4222,7 +4225,8 @@ sub wdirc
 	    $item = $arc->value;
 	}
 
-	$out .= $item->as_html;
+	#$out .= $item->as_html;
+	$out .= $item->name->loc;
 
 	if( $list->size > 1)
 	{

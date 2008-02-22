@@ -119,7 +119,7 @@ sub wub_select_tree
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( $args->{'disabled'} eq 'disabled' )
+    if( $args->{'disabled'} and $args->{'disabled'} eq 'disabled' )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -131,7 +131,7 @@ sub wub_select_tree
     }
 
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
-      $type->id .'"/>';
+      $type->id .'-'. $subj->id .'"/>';
 
     my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
       sorted(['name_short', 'desig']);
@@ -141,7 +141,7 @@ sub wub_select_tree
 
     while( my $subtype = $subtypes->get_next_nos )
     {
-	$out .= '<option rel="'. $subtype->id .'"';
+	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
 	my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
 	  .'pred_'. $pred_name .'='. $subtype->id;
@@ -173,12 +173,12 @@ sub wub_select_tree
     $out .= $arc->edit_link_html
       if( $arc );
 
-    $out .= '<div rel="nop-'. $type->id .'" style="display: none"></div>'; # usableforms quirk...
+    $out .= '<div rel="nop-'. $type->id .'-'. $subj->id .'" style="display: none"></div>'; # usableforms quirk...
 
     $subtypes->reset;
     while( my $subtype = $subtypes->get_next_nos )
     {
-	$out .= '<div rel="'. $subtype->id .'" style="display: inline">';
+	$out .= '<div rel="'. $subtype->id .'-'. $subj->id .'" style="display: inline">';
 
 	$out .= wub_select_tree( $subj, $pred_name, $subtype, $args )
 	  if( $subtype->has_revpred( 'scof' ) );

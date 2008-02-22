@@ -31,6 +31,7 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Widget qw( label_from_params );
 
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time;
@@ -1542,6 +1543,11 @@ sub sysdesig  # The designation of obj, including node id
 
     my $out;
 
+    debug "Literal is '$lit', a ". ref $lit;
+    confess "$lit is not a literal: ". ref $lit
+      if $lit eq 'Rit::Base::Literal::String';
+    #unless( UNIVERSAL::isa $lit, 'Rit::Base::Literal' );
+
     if( my $id = $lit->{'id'} )
     {
 	$out .= "$id: ";
@@ -1580,6 +1586,48 @@ sub default_valtype
 
 #########################################################################
 
+sub wdirc
+{
+    my( $class, $subj, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+
+    my $predname;
+    if( ref $pred )
+    {
+	$predname = $pred->label;
+
+	debug 2, "String wuirc for $predname";
+	debug 2, "$predname class is ". $pred->range->instance_class;
+    }
+    else
+    {
+	$predname = $pred;
+	# Only handles pred nodes
+	$pred = Rit::Base::Pred->get_by_label($predname);
+    }
+
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+    my $arclist = $subj->arc_list($predname, undef, $args);
+
+    while( my $arc = $arclist->get_next_nos )
+    {
+	$out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+    }
+
+    return $out;
+}
+
+
+#######################################################################
 
 1;
 
