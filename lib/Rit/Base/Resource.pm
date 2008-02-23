@@ -912,8 +912,8 @@ sub find_one
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'adirect')->desig || '';
-		  my $cstr = $item->list('scof',undef, 'adirect')->desig;
+		  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
+		  my $cstr = $item->list('scof',undef,['adirect'])->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -1055,8 +1055,8 @@ sub find_set
 	      sub
 	      {
 		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef, 'adirect')->desig || '';
-		  my $cstr = $item->list('scof',undef, 'adirect')->desig;
+		  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
+		  my $cstr = $item->list('scof',undef,['adirect'])->desig;
 		  my $desig = $item->desig;
 		  my $desc = "$tstr $desig";
 		  if( $cstr )
@@ -1395,7 +1395,7 @@ sub form_url
     }
     else
     {
-	my $alts = $n->list('is')->sorted('weight', 'desc')->first_prop('class_form_url');
+	my $alts = $n->list('is',undef,['active'])->sorted('weight', 'desc')->first_prop('class_form_url');
 #	debug $alts;
 	if( my $path_node = $alts->get_first_nos )
 	{
@@ -4124,10 +4124,11 @@ sub wd
     {
 	$args->{'rev'} = 1;
 	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->first_prop('domain') || $C_resource );
+		   $pred->first_prop('domain',undef,['active'])
+		   || $C_resource );
 	$range_scof = ( $args->{'range_scof'} ?
 			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('domain_scof') );
+			$pred->first_prop('domain_scof',undef,['active']) );
 	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
 	  $range->sysdesig;
     }
@@ -4137,7 +4138,7 @@ sub wd
 		   $pred->valtype );
 	$range_scof = ( $args->{'range_scof'} ?
 			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('range_scof') );
+			$pred->first_prop('range_scof',undef,['active']) );
     }
 
     if( $range_scof )
@@ -4286,8 +4287,9 @@ sub wu
     }
     elsif( $rev )
     {
-	$range = $pred->first_prop('domain') || $C_resource;
-	$range_scof = $pred->first_prop('domain_scof');
+	$range = $pred->first_prop('domain',undef,['active'])
+	  || $C_resource;
+	$range_scof = $pred->first_prop('domain_scof',undef,['active']);
 
 	#debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
 	#  $range->sysdesig;
@@ -4299,7 +4301,7 @@ sub wu
     else
     {
 	$range = $pred->valtype;
-	$range_scof = $pred->first_prop('range_scof');
+	$range_scof = $pred->first_prop('range_scof',undef,['active']);
     }
 
     if( $range_scof )
@@ -4804,7 +4806,7 @@ handled as special cases in order to avoid bootstrap problems. Of
 these, handling of C<literal_class> is needed in this method.
 
 This tells that the resource object should be blessd into the class
-represented bu the object pointed to by
+represented by the object pointed to by
 C<class_handled_by_perl_module>.  The package name is given by the
 nodes C<code> property.
 
@@ -4842,31 +4844,39 @@ sub find_class
 
     my $p_code = Rit::Base::Pred->get_by_label('code');
 
-    my $islist = $node->list('is');
+    my $islist = $node->list('is',undef,['active']);
     my @classes;
     my( $elem, $islist_error ) = $islist->get_first;
     while(! $islist_error )
     {
 #	debug "Looking at is $elem->{id}";
+	unless( $elem->{'id'} )
+	{
+	    cluck "Should not bee possible: ".datadump($elem);
+	    next;
+	}
+
 	if( $elem->{'id'} == $Rit::Base::Literal::Class::id )
 	{
 	    return "Rit::Base::Literal::Class";
 	}
 
-#	# Bootstrap workaround... ### SLOWER!
-#	if( not $Rit::Base::IN_STARTUP )
-#	{
-#	    $elem->initiate_rel; ### PRE-CACH!
-#	}
+	# Bootstrap workaround...
+	if( not $Rit::Base::IN_STARTUP )
+	{
+	    # This pre-caching may be a litle slower in some cases,
+	    # but seems to be a litle faster over all
+	    $elem->initiate_rel; ### PRE-CACH!
+	}
 
 	my $p_chbpm = Rit::Base::Pred->
 	  get_by_label('class_handled_by_perl_module');
 
-	my $class_list = $elem->list($p_chbpm);
+	my $class_list = $elem->list($p_chbpm,undef,['active']);
 	my( $class, $class_list_error ) = $class_list->get_first;
 	while(! $class_list_error )
 	{
-	    my $pkg = $class->first_prop($p_code)->plain;
+	    my $pkg = $class->first_prop($p_code,undef,['active'])->plain;
 #	    debug "  found $pkg";
 
 	    # Let confident classes handle themself
@@ -4886,10 +4896,11 @@ sub find_class
 	    # continue!
 	    ( $class, $class_list_error ) = $class_list->get_next;
 	}
-
-	# continue!
-	( $elem, $islist_error ) = $islist->get_next;
     }
+    continue
+    {
+	( $elem, $islist_error ) = $islist->get_next;
+    };
 
     if( $classes[0] )
     {
@@ -4904,7 +4915,7 @@ sub find_class
 	my( @classnames );
 	foreach my $class ( @classes )
 	{
-	    my $classname = $class->first_prop($p_code)->plain;
+	    my $classname = $class->first_prop($p_code,undef,['active'])->plain;
 	    unless( $classname )
 	    {
 		debug datadump($class,2);
@@ -5531,8 +5542,8 @@ sub get_by_anything
 	 rowformat => sub
 	 {
 	     my( $item ) = @_;
-	     my $tstr = $item->list('is', undef, 'adirect')->desig || '';
-	     my $cstr = $item->list('scof',undef, 'adirect')->desig;
+	     my $tstr = $item->list('is', undef, ['adirect'])->desig || '';
+	     my $cstr = $item->list('scof',undef, ['adirect'])->desig;
 	     my $desig = $item->desig;
 	     my $desc = "$tstr $desig";
 	     if( $cstr )
@@ -5658,6 +5669,10 @@ sub initiate_cache
 
     # TODO: Callers should reset the specific part
 #    warn "resetting node $node->{id}\n";
+
+    # TODO: Add
+    #       initiated_relprop_inactive
+    #       initiated_revprop_inactive
 
 
     $node->{'arc_id'}                 = {};
@@ -5843,6 +5858,9 @@ sub mark_updated
     delete $node->{'updated'};
     delete $node->{'created'};
     $node->mark_unsaved;
+
+    $node->session_history_add('updated');
+
     return $time;
 }
 
@@ -6880,7 +6898,7 @@ sub instance_class
     my $p_chbpm = Rit::Base::Pred->
       get_by_label('class_handled_by_perl_module');
 
-    if( my $class_node = $_[0]->first_prop($p_chbpm) )
+    if( my $class_node = $_[0]->first_prop($p_chbpm,undef,['active']) )
     {
 	eval
 	{
@@ -6892,7 +6910,7 @@ sub instance_class
 	    }
 
 	    my $p_code = Rit::Base::Pred->get_by_label('code');
-	    my $classname = $class_node->first_prop($p_code)->plain
+	    my $classname = $class_node->first_prop($p_code,undef,['active'])->plain
 	      or confess "No classname found for class $class_node->{id}";
 
 	    require(package_to_module($classname));
