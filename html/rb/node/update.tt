@@ -82,6 +82,7 @@ END;
 <table class="admin" style="margin-top:2em">
 <tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
+[% IF node.node_rec_exist %]
    <tr>
       <td>-</td>
       <td>created</td>
@@ -135,6 +136,7 @@ END;
       </td>
       <td>hard</td>
    </tr>
+[% END %]
 
 [% IF node.is_arc %]
    <tr>
