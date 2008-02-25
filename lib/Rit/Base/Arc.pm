@@ -162,6 +162,8 @@ Special args:
 
   submit_new_arcs
 
+  mark_updated
+
   updated
 
 If value is a plain string, it's converted to an object based on L<Rit::Base::Pred/coltype>.
