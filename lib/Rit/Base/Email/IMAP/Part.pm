@@ -102,4 +102,18 @@ sub new_by_path
 
 #######################################################################
 
+=head2 envelope
+
+For compatibility with Email::IMAP. Returns self.
+
+=cut
+
+sub envelope
+{
+    return $_[0];
+}
+
+
+#######################################################################
+
 1;
