@@ -1655,7 +1655,7 @@ sub created
     }
 
     return $n->{'created_obj'} =
-      Rit::Base::Literal::Time->get( $n->{'created'} );
+      Rit::Base::Literal::Time->get( $n->initiate_node->{'created'} );
 }
 
 
@@ -1678,9 +1678,7 @@ sub updated
     }
 
     return $n->{'updated_obj'} =
-      Rit::Base::Literal::Time->get( $n->{'updated'} );
-
-    return $_[0]->initiate_node->{'updated'};
+      Rit::Base::Literal::Time->get( $n->initiate_node->{'updated'} );
 }
 
 
@@ -6764,11 +6762,14 @@ sub set_arc
 sub session_history_add
 {
     my( $node, $table ) = @_;
-    $table ||= 'visited';
-    my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
-      ||= Rit::Base::List->new();
-    $list->unshift_uniq($node);
-    return $list;
+    if( $Para::Frame::REQ->is_from_client )
+    {
+	$table ||= 'visited';
+	my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
+	  ||= Rit::Base::List->new();
+	$list->unshift_uniq($node);
+	return $list;
+    }
 }
 
 
