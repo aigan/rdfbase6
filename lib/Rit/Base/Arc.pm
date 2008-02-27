@@ -4679,7 +4679,7 @@ sub unlock
     my $cnt = -- $Rit::Base::Arc::lock_check;
     if( $cnt < 0 )
     {
-	confess "Unlock called without previous lock";
+	debug "Unlock called without previous lock";
     }
 
     my $DEBUG = 0;
