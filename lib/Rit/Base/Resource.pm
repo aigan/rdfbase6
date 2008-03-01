@@ -2,14 +2,11 @@
 package Rit::Base::Resource;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource class
-#
 # AUTHOR
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -27,7 +24,7 @@ use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use LWP::Simple (); # Do not import get
 use Template::PopupTreeSelect 0.9;
-use JSON; # objToJson jsonToObj
+use JSON; # to_json
 
 
 BEGIN
@@ -4417,7 +4414,7 @@ sub register_ajax_pagepart
         <!--
             new PagePart('$divid', '$home/ajax/wu',
             { params: { subj: '". $node->id ."',
-                        params: '". objToJson( $params ) ."',
+                        params: '". to_json( $params ) ."',
                         pred_name: '$pred_name' }";
 
     if( $args->{'depends_on'} )
@@ -4591,7 +4588,7 @@ sub wuirc
 		  "<script type=\"text/javascript\">
                      <!--
                          new RBInputPopup('$divid-button',
-                                  '$divid', '". objToJson( $search_params ) ."',
+                                  '$divid', '". to_json( $search_params ) ."',
                                   'name_clean_like', '". $pred->name ."',
                                   '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
 	    }
