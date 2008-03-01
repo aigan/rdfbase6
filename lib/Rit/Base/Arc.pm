@@ -2,14 +2,11 @@
 package Rit::Base::Arc;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Arc class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -155,6 +152,8 @@ The props:
   obj : MUST be the id of the object, if given. Instead of C<value>
 
   created : Creation time. Defaults to now.
+
+  created_by : Creator. Defaults to request user or root
 
 Special args:
 
@@ -441,7 +440,7 @@ sub create
 	}
     }
 
-    confess("Missing valtype")
+    confess("Missing valtype while creating ".query_desig($props))
       unless( defined $rec->{'valtype'} );
 
     push @fields, 'valtype';
@@ -450,7 +449,12 @@ sub create
 
 
     ##################### updated_by
-    if( $req and $req->user )
+    if( $props->{'created_by'} )
+    {
+	$rec->{'created_by'} = Rit::Base::Resource->
+	  get($props->{'created_by'})->id;
+    }
+    elsif( $req and $req->user )
     {
 	$rec->{'created_by'} = $req->user->id;
     }
