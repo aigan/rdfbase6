@@ -45,7 +45,7 @@ WriteMakefile(
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
 	          'List::Util'                 => 1.18,
-	          'JSON'                       => 1.00,
+	          'JSON'                       => 2.04,
 	          'GraphViz'                   => 2.02,
 	      },
 	      'dist'          =>
