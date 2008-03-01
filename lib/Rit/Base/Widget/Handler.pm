@@ -513,6 +513,12 @@ sub handle_query_arc_value
 	if( $if =~ /obj/ )
 	{
 	    my $obj = $R->get( $value );
+	    unless( $obj )
+	    {
+		debug "Condition failed: $key (OBJ NOT FOUND)";
+		return 0;
+	    }
+
 	    if( $obj->empty )
 	    {
 		debug "Condition failed: $key";
