@@ -1095,7 +1095,7 @@ sub mark_updated
     $sth->execute( $date_db, $arc->id );
 
     $arc->{'arc_updated'} = $date_db;
-    return $arc->{'arc_updated_db'} = $time;
+    return $arc->{'arc_updated_obj'} = $time;
 }
 
 #######################################################################
