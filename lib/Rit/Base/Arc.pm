@@ -2929,6 +2929,7 @@ without the creation of a removal arc.
 Supported args are:
 
   force
+  force_recursive
   implicit
   res
 
@@ -2966,16 +2967,16 @@ sub remove
 
     my $implicit = $args->{'implicit'} || 0;
     my $create_removal = 0;
-    my $force = $args->{'force'} || 0;
+    my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
 
     if( $DEBUG )
     {
-	debug sprintf("  Req rem arc id %s\n", $arc->sysdesig);
+	debug "REQ REM ARC ".$arc->sysdesig;
 
 	my($package, $filename, $line) = caller;
 	debug "  called from $package, line $line";
 	debug "  implicit: $implicit";
-	debug "  force: $force";
+	debug "  force: $force".($args->{'force_recursive'}?' RECURSIVE':'');
 	debug "  active: ".$arc->active;
 	debug "  validate_check";
 #	debug "  res: ".datadump($res,2);
@@ -3113,6 +3114,17 @@ sub remove
 	    return 1;
 	}
     }
+
+    if( $args->{'force_recursive'} )
+    {
+	foreach my $repl ( $arc->replaced_by->as_array )
+	{
+	    debug "  removes dependant version" if $DEBUG;
+	    $repl->remove( $args );
+	}
+    }
+
+
 
     debug "  remove_check" if $DEBUG;
     $arc->remove_check( $args );
