@@ -79,12 +79,16 @@ var RBInputPopup = Class.create(
 	var value = \$('rb_input').getValue();
 
 	var search = this.search_crit.merge({});
-	search._object[this.search_type] =  value;
 
 	Effect.Appear(this.loading, { duration: 0.5 });
 	new Ajax.Request('[%home%]/ajax/lookup', {
 		method: 'get',
-		    parameters: { params: Object.toJSON(search) },
+		    parameters:
+                    {
+			params: Object.toJSON(search),
+			search_type: this.search_type,
+			search_value: value,
+                    },
 		    requestHeaders: { Accept: 'application/json' },
 		    onComplete: function(transport)
 		    {
