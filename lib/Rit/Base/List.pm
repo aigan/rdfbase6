@@ -2,14 +2,11 @@
 package Rit::Base::List;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource List class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -313,11 +310,6 @@ TODO: Is example 4 correct..?
 
 sub find
 {
-    if( ref $_[1] and ( $_[1]->{'arclim'} or $_[1]->{'res'} ) )
-    {
-	confess datadump(\@_,2);
-    }
-
     my( $l, $tmpl, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
@@ -344,6 +336,11 @@ sub find
     {
 #	debug 2, "Does list contain $tmpl?";
 	return $l->contains( $tmpl, $args );
+    }
+
+    if( $tmpl->{'arclim'} or $tmpl->{'res'} )
+    {
+	confess datadump(\@_,2);
     }
 
     if( $DEBUG > 1 )
@@ -1410,10 +1407,6 @@ sub is_true
 #######################################################################
 
 =head2 contains
-
-  $list->contains( $node )
-
-  $list->contains( $list2 )
 
   $list->contains( $node, \%args )
 
