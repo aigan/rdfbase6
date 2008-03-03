@@ -7019,7 +7019,9 @@ sub update_unseen_by
 	}
 
 	$node->add({unseen_by => $watcher},
-		   {activate_new_arcs => 1});
+		   {activate_new_arcs => 1,
+		    updated => $node->updated,
+		   });
     }
 
 }
