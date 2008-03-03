@@ -16,7 +16,7 @@ Tie it all together, make your pages into real applications!
 
 use strict;
 
-use JSON; # objToJson jsonToObj
+use JSON; # to_json from_json
 
 BEGIN
 {
@@ -61,7 +61,7 @@ sub wu
     {
 	$args = {
 		 %$args,
-		 %{jsonToObj($args->{'params'})},
+		 %{from_json($args->{'params'})},
 		 params => ''};
     }
 
@@ -128,7 +128,7 @@ sub register_page_part
 
     my $home = $Para::Frame::REQ->site->home_url_path;
     $update_url ||= "$home/ajax/";
-    $params = objToJson( $params || {} );
+    $params = to_json( $params || {} );
 
     return "<script><!--
                 new PagePart('$divid', '$update_url', '$params'.evalJSON());
