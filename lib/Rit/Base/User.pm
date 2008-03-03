@@ -289,7 +289,8 @@ sub verify_password
     {
 	my $uname = $u->desig;
 	confess "No desig for user" unless $uname;
-	throw('validation', "$uname has no password");
+	debug("$uname has no password");
+	return 0;
     }
 
     # Validating password
@@ -359,6 +360,23 @@ For the current request
 sub default_propargs
 {
     return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
+}
+
+
+#######################################################################
+
+=head2 on_arc_add
+
+=cut
+
+sub on_arc_add
+{
+    my( $u, $arc, $pred_name, $args_in ) = @_;
+
+    if( $pred_name eq 'name_short' )
+    {
+	delete $u->{username};
+    }
 }
 
 #######################################################################
