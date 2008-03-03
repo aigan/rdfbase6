@@ -4395,7 +4395,8 @@ sub register_ajax_pagepart
 	if( $key =~ /label/ or
 	    $key eq 'arclim' or
 	    $key eq 'res' or
-	    $key eq 'depends_on'
+	    $key eq 'depends_on' or
+	    $key eq 'lookup_pred'
 	  )
 	{}
 	elsif( ref $args->{$key} )
@@ -4480,6 +4481,10 @@ Use args:
   ajax => true
     defaults to use ajax-widgets.
 
+  lookup_pred => name_clean_like
+    Coonsider using
+      ['customer_id_clean','name_clean_like','name_short_clean']
+
 =cut
 
 sub wuirc
@@ -4497,6 +4502,13 @@ sub wuirc
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
+
+    my $lookup_pred = $args->{'lookup_pred'} || 'name_clean_like';
+    unless( UNIVERSAL::isa( $lookup_pred, 'ARRAY' ) )
+    {
+	$lookup_pred = [$lookup_pred];
+    }
+
 
     confess "Range missing"
       unless( $range );
@@ -4589,7 +4601,7 @@ sub wuirc
                      <!--
                          new RBInputPopup('$divid-button',
                                   '$divid', '". to_json( $search_params ) ."',
-                                  'name_clean_like', '". $pred->name ."',
+                                  '".to_json($lookup_pred)."', '". $pred->name ."',
                                   '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
 	    }
 	}
