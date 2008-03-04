@@ -4395,10 +4395,13 @@ sub register_ajax_pagepart
 	if( $key =~ /label/ or
 	    $key eq 'arclim' or
 	    $key eq 'res' or
-	    $key eq 'depends_on' or
-	    $key eq 'lookup_pred'
+	    $key eq 'depends_on'
 	  )
 	{}
+	elsif( $key eq 'lookup_pred' )
+	{
+	    $params->{$key} = $args->{$key};
+	}
 	elsif( ref $args->{$key} )
 	{
 	    $params->{$key} = $args->{$key}->id;
