@@ -1082,6 +1082,8 @@ by yourself.
 Supported args are:
   arclim
   res
+  force
+  force_recursive
 
 TODO: Count the changes correctly
 
@@ -1127,7 +1129,7 @@ sub remove
     #
     if( $node->has_node_record )
     {
-	if( $args->{'force'} )
+	if( $args->{'force'} or $args->{'force_recursive'} )
 	{
 	    $Rit::dbix->delete("from node where node=?", $node->id);
 	    debug "  node record deleted";
