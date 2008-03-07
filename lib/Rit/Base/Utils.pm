@@ -1046,7 +1046,9 @@ all: Sets arclim to [['active'}, ['inactive'] and
 unique_arcs_prio to ['active'].
 
 Arguments from L<Rit::Base::User/default_propargs> are used for any
-undefined argument given.
+UNEXISTING argument given. You can for example override the use of a
+default unique_arcs_prio by explicitly setting unique_arcs_prio to
+undef.
 
 Returns in array context: (C<$arg>, C<$arclim>, C<$res>)
 
@@ -1148,7 +1150,10 @@ sub parse_propargs
     {
 	foreach my $key (keys %$def_args)
 	{
-	    $arg->{$key} ||= $def_args->{$key};
+	    unless( exists $arg->{$key} )
+	    {
+		$arg->{$key} = $def_args->{$key};
+	    }
 	}
     }
 
