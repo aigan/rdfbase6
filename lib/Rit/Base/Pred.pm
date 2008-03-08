@@ -2,14 +2,11 @@
 package Rit::Base::Pred;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Pred class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -61,6 +58,13 @@ our $special_id =
  obj => -9,
  coltype => -10,
  label => -11,
+ created => -12,
+ updated => -13,
+ owned_by => -14,
+ read_access => -15,
+ write_access => -16,
+ created_by => -17,
+ updated_by => -18,
 };
 
 our $special_label = { reverse %$special_id };
@@ -359,6 +363,22 @@ sub find_by_anything
 					    label   => $1,
 					    node    => $special_id->{$1},
 					    pred_coltype => 5, # valtext
+					   });
+    }
+    elsif( $label =~ /^(created|updated)$/ )
+    {
+	push @new, $class->get_by_node_rec({
+					    label   => $1,
+					    node    => $special_id->{$1},
+					    pred_coltype => 4, # valdate
+					   });
+    }
+    elsif( $label =~ /^(owned_by|read_access|write_access|created_by|updated_by)$/ )
+    {
+	push @new, $class->get_by_node_rec({
+					    label   => $1,
+					    node    => $special_id->{$1},
+					    pred_coltype => 1, # obj
 					   });
     }
     elsif( $label =~ /^\d+$/ )
