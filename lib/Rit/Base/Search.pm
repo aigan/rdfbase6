@@ -2,9 +2,6 @@
 package Rit::Base::Search;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Search class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
@@ -770,24 +767,10 @@ sub modify
 	{
 	    $search->order_add( \@values );
 	}
-        elsif( $key =~ m/^(id|obj|value|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
+        elsif( $key =~ m/^(obj|value)$/ )
 	{
 	    # Handled in second fase
-	}
-	elsif( $key =~ /^label(_exist)?$/ )
-	{
-	    if( ($1||'') eq '_exist' )
-	    {
-		if( $values[0] )
-		{
-		    $values[0] = '*';
-		}
-		else
-		{
-		    $values[0] = '';
-		}
-	    }
-	    $search->{'query'}{'label'} = \@values;
+	    # TODO: Remove need for this?
 	}
 	elsif( $key =~ m/^(subj|pred|coltype)$/ )
 	{
@@ -951,17 +934,43 @@ sub modify
 		$type = 'subj';
 	    }
 
-	    $search->add_prop({
-		rev => $rev,
-		pred => Rit::Base::List->new($predref),
-		type => $type,
-		match => $match,
-		clean => $clean,
-		values => \@values,
-		prio => $prio,   # Low prio first
-		private => $private,
-		arclim => $arclim,
-	    });
+	    my $pred_name = $predref->[0]->label;
+	    if( $pred_name =~ m/^(id|label|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
+	    {
+		if( @$predref > 1)
+		{
+		    confess "predor not supported for $pred_name";
+		}
+
+		debug "Adding search meta '$pred_name'";
+		$search->{'meta'}{$pred_name} ||= [];
+		push @{$search->{'meta'}{$pred_name}},
+		{
+		 match => $match,
+		 values => \@values,
+		 prio => $prio,   # Low prio first
+		 pred_name => $pred_name,
+		 pred => Rit::Base::List->new($predref),
+		};
+	    }
+	    elsif( $pred_name =~ m/^(obj|value)$/ )
+	    {
+		die "implement me: $pred_name";
+	    }
+	    else
+	    {
+		$search->add_prop({
+				   rev => $rev,
+				   pred => Rit::Base::List->new($predref),
+				   type => $type,
+				   match => $match,
+				   clean => $clean,
+				   values => \@values,
+				   prio => $prio,   # Low prio first
+				   private => $private,
+				   arclim => $arclim,
+				  });
+	    }
 	}
 	else
 	{
@@ -971,6 +980,8 @@ sub modify
 
     $search->reset_sql;
 
+    my @unhandled = qw(owned_by read_access write_access);
+    my $meta = $search->{'meta'};
 
     # Is this an arc search?
     if( my $qarc = $search->{'query'}{'arc'} )
@@ -1006,17 +1017,22 @@ sub modify
 	    $qarc->{$coltype} = $values;
 	}
 
-	if( $props->{'created_by'} )
+	foreach my $key (qw(created_by updated_by created updated id))
 	{
-	    $qarc->{'created_by'} = parse_values($props->{'created_by'});
+	    if( $meta->{$key} )
+	    {
+		foreach my $m (@{$meta->{$key}})
+		{
+		    if( $m->{'match'} ne 'eq' )
+		    {
+			confess "Matchtype $m->{'match'} not implemented for arc $key";
+		    }
+		    $qarc->{$key} = $m->{'values'};
+		}
+	    }
 	}
 
-	if( $props->{'id'} )
-	{
-	    $qarc->{'id'} = parse_values($props->{'id'});
-	}
-
-	foreach my $key (split /\|/, "created|updated|owned_by|read_access|write_access|updated_by")
+	foreach my $key (@unhandled)
 	{
 	    if( $props->{$key} )
 	    {
@@ -1027,25 +1043,34 @@ sub modify
     }
     else
     {
-	my $values;
-	if( $props->{'id'} )
+	if( $meta->{'id'} )
 	{
-	    $values = parse_values($props->{'id'});
-	    my $pred = Rit::Base::Pred->get('id');
-	    $search->add_prop({
-		rev => 0,
-		pred => Rit::Base::List->new([$pred]),
-		type => 'valfloat',
-		match => 'eq',
-		clean => 0,
-		values => $values,
-		prio => 1,   # Low prio first
-		private => 0,
-		arclim => undef,
-	    });
+	    foreach my $mid (@{$meta->{'id'}})
+	    {
+		$search->add_prop({
+				   rev => 0,
+				   pred => $mid->{'pred'},
+				   type => 'valfloat',
+				   match => $mid->{'match'},
+				   clean => 0,
+				   values => $mid->{'values'},
+				   prio => ($mid->{'prio'}||1),
+				   private => 0,
+				   arclim => undef,
+				  });
+	    }
 	}
 
-	foreach my $key (split /\|/, "created|updated|owned_by|read_access|write_access|created_by|updated_by")
+	foreach my $key (qw(created_by updated_by created updated label ))
+	{
+	    if( my $mlist = $meta->{$key} )
+	    {
+		my $snode = $search->{'query'}{'node'} ||= [];
+		push @{$snode}, @{$mlist};
+	    }
+	}
+
+	foreach my $key (@unhandled)
 	{
 	    if( $props->{$key} )
 	    {
@@ -1113,7 +1138,7 @@ sub execute
 	    debug 0, $search->sysdesig;
 	    debug 0, $search->sql_sysdesig;
 	}
-	$result = $search->get_result($sql, $values, 15); # 10
+	$result = $search->get_result($sql, $values, 30); # 10
     }
 
     $args->{'materializer'} ||= \&Rit::Base::List::materialize;
@@ -1173,7 +1198,8 @@ sub get_result
 #    my $sth = $dbh->prepare_cached( $sql );
     my $sth = $dbh->prepare( $sql );
 
-    $timeout ||= 20;
+#    $timeout ||= 20;
+    $timeout ||= 30;
 
     my $time = time;
     eval
@@ -1252,10 +1278,10 @@ sub build_sql
 	push @elements, @{ $search->elements_path( $paths ) };
     }
 
-    # labels
-    if( my $lables = $search->{'query'}{'label'} )
+    # nodes
+    if( my $nodes = $search->{'query'}{'node'} )
     {
-	push @elements, @{ $search->elements_lables( $lables ) };
+	push @elements, @{ $search->elements_nodes( $nodes ) };
     }
 
     # props
@@ -1952,8 +1978,9 @@ sub build_main_where
 	$select eq '1'               and die "malformed select";
 
 	my @where = ref $part->{'where'} ? @{$part->{'where'}} : $part->{'where'};
+	my $table = $part->{'table'} || 'arc';
 
-	my $part_sql = join " UNION ", map "select 1 from arc where $select=main.node and $_", @where;
+	my $part_sql = join " UNION ", map "select 1 from $table where $select=main.node and $_", @where;
 
 	my $sql;
 	if( $part->{'negate'} )
@@ -2267,51 +2294,84 @@ sub build_main_select_price
 
 #######################################################################
 
-sub elements_lables
+sub elements_nodes
 {
-    my( $search, $lables ) = @_;
+    my( $search, $nodes ) = @_;
 
     my @element;
-    my $prio = 1;
-    my @values;
-    my $negate = 0;
-    my $where;
 
-    if( $lables->[0] eq '*' )
+    foreach my $snode ( @$nodes )
     {
-	$where = "(label is not null)";
-	$prio = 3;
-    }
-    elsif( not $lables->[0] )
-    {
-	$where = "(label is not null)";
-	$negate = 1;
-	$prio = 8;
-    }
-    else
-    {
-	if( BINDVALS )
+	my $pred_name = $snode->{'pred_name'};
+	my $prio_override = $snode->{'prio'};
+	my $match = $snode->{'match'} || 'eq';
+	my $negate = ( $match eq 'ne' ? 1 : 0 );
+	my $invalues = $snode->{'values'};
+
+	my @outvalues;
+	my $where;
+
+	my $prio = 3;
+	if( $pred_name eq 'label' )
 	{
-	    $where = join " or ", map "(label=?)", @$lables;
-	    push @values, @$lables;
+	    $prio = 1;
+	}
+
+	if( $match eq 'exist' )        # match any
+	{
+	    $where = "($pred_name is not null)";
+	    $prio += 2;
+
+	    if( $invalues->[0] == 0 ) # NOT exist
+	    {
+		$negate = 1;
+		$prio += 5;
+	    }
+	}
+	elsif( $pred_name eq 'id' )
+	{
+	    if( BINDVALS )
+	    {
+		$where = join(" or ", map "node = ?", @$invalues);
+		@outvalues = @$invalues; # value should be numeric
+	    }
+	    else
+	    {
+		$where = join(" or ", map "node = $_", @$invalues);
+	    }
+	    $prio = 1;
 	}
 	else
 	{
-	    my $dbh = $Rit::dbix->dbh;
-	    $where = join " or ", map sprintf("(label=%s)", $dbh->quote($_)),
-	      @$lables;
-	}
-    }
+	    my $matchpart = matchpart( $match );
 
-    push @element,
-    {
-     select => 'node', # TODO: Also implement id select
-     where => $where,
-     values => \@values,
-     prio => $prio,
-     table => 'node',
-     negate => $negate,
-    };
+	    unless( $match eq 'eq' )
+	    {
+		$prio += 4;
+	    }
+
+	    if( BINDVALS )
+	    {
+		$where = join " or ", map "($pred_name $matchpart ?)", @$invalues;
+		push @outvalues, @$invalues;
+	    }
+	    else
+	    {
+		my $dbh = $Rit::dbix->dbh;
+		$where = join " or ", map sprintf("($pred_name $matchpart %s)", $dbh->quote($_)), @$invalues;
+	    }
+	}
+
+	push @element,
+	{
+	 select => 'node', # TODO: Also implement id select
+	 where => $where,
+	 values => \@outvalues,
+	 prio => ($prio_override || $prio),
+	 table => 'node',
+	 negate => $negate,
+	};
+    }
 
     return( \@element );
 }
@@ -2364,6 +2424,30 @@ sub elements_arc
 	    push @parts, "($part)";
 	    push @values, @$vals;
 	    $prio = min( $prio, 5 );
+	}
+
+	if( my $vals = $qarc->{'updated_by'} )
+	{
+	    my $part = join " or ", map "(updated_by=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 5 );
+	}
+
+	if( my $vals = $qarc->{'created'} )
+	{
+	    my $part = join " or ", map "(created=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 7 );
+	}
+
+	if( my $vals = $qarc->{'updated'} )
+	{
+	    my $part = join " or ", map "(updated=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 7 );
 	}
 
 	if( my $coltype = $qarc->{'coltype'} )
@@ -2823,7 +2907,7 @@ sub set_prio
 {
     my( $cond ) = @_;
 
-    my $preds = $cond->{'pred'};
+    my $preds = $cond->{'pred'} or confess "no preds";
     my $first_pred = $preds->get_first_nos;
     my $vals = $cond->{'values'};
     my $match = $cond->{'match'};
@@ -3249,6 +3333,39 @@ sub sysdesig
     {
 	$txt .= "  Prop:\n";
 	foreach my $cond ( values %$props )
+	{
+	    my $key = $search->criterion_to_key( $cond );
+
+#	    my $len1 = length($key);
+#	    my $len2 = bytes::length($key);
+#	    $txt .= sprintf "    $key (%d/%d):\n", $len1, $len2;
+	    $txt .= "    $key:\n";
+
+	    foreach my $val (@{$cond->{'values'}} )
+	    {
+		my $valout = $val;
+		if( ref $val )
+		{
+		    if( UNIVERSAL::can($val, 'sysdesig') )
+		    {
+			$valout = $val->sysdesig;
+		    }
+		    else
+		    {
+			$valout = datadump( $val );
+		    }
+		}
+		my $len1 = length($valout);
+		my $len2 = bytes::length($valout);
+		$txt .= sprintf "      $valout (%d/%d)\n", $len1, $len2;
+	    }
+	}
+    }
+
+    if( my $nodes = $query->{'node'} )
+    {
+	$txt .= "  Node:\n";
+	foreach my $cond ( @$nodes )
 	{
 	    my $key = $search->criterion_to_key( $cond );
 
