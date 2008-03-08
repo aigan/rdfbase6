@@ -2,14 +2,11 @@
 package Rit::Base;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase package main class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -29,7 +26,7 @@ use vars qw( $VERSION );
 
 BEGIN
 {
-    $VERSION = "6.52";
+    $VERSION = "6.54";
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
