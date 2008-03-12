@@ -93,7 +93,7 @@ sub wuirc
     }
     else
     {
-	$out .= checkbox($args->{'id'}, 1, 0);
+	$out .= checkbox($args->{'id'}, 1, $args->{'default_value'} || 0);
     }
 
     return $out;
