@@ -4099,6 +4099,10 @@ Returns: a HTML widget for displaying the value
 sub wd
 {
     my( $node, $pred_name, $args_in ) = @_;
+
+    return $node->wu( $pred_name, { %$args_in, disabled => 'disabled' });
+
+
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
@@ -4221,8 +4225,8 @@ sub wdirc
 	    $item = $arc->value;
 	}
 
-	#$out .= $item->as_html;
-	$out .= $item->name->loc;
+	#$out .= $item->name->loc;
+	$out .= $item->as_html;
 
 	if( $list->size > 1)
 	{
@@ -4349,7 +4353,7 @@ sub wu
 
 =head2 wuh
 
-  $n->wuh( $pred, $obj, \%args )
+  $n->wuh( $pred, $value, \%args )
 
 Stands for Widget for Updating Hidden
 
@@ -4359,7 +4363,7 @@ Returns: a HTML hidden field for making a new arc
 
 sub wuh
 {
-    my( $node, $pred_name, $obj, $args ) = @_;
+    my( $node, $pred_name, $value, $args ) = @_;
 
     my $R = Rit::Base->Resource;
 
@@ -4370,7 +4374,13 @@ sub wuh
 	$extra = '__if_'. $args->{'if'};
     }
     my $key = "arc___subj_". $node->id ."__pred_". $pred_name . $extra;
-    return Para::Frame::Widget::hidden($key, $obj->id);
+
+    if( ref $value and UNIVERSAL::isa $value, "Rit::Base::Resource" )
+    {
+	$value = $value->id;
+    }
+
+    return Para::Frame::Widget::hidden($key, $value);
 }
 
 
@@ -4402,9 +4412,12 @@ sub register_ajax_pagepart
 	{
 	    $params->{$key} = $args->{$key};
 	}
-	elsif( ref $args->{$key} )
+	elsif( ref $args->{$key} and UNIVERSAL::isa $args->{$key}, 'Rit::Base::Resource' )
 	{
 	    $params->{$key} = $args->{$key}->id;
+	}
+	elsif( ref $args->{$key} )
+	{
 	}
 	else
 	{
