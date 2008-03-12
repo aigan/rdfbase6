@@ -4976,6 +4976,9 @@ sub edit_link_html
 {
     my( $arc, $args ) = @_;
 
+    return ''
+      unless $Para::Frame::REQ->user->has_root_access;
+
     my $home = $Para::Frame::REQ->site->home_url_path;
     my $arc_id = $arc->id;
 
