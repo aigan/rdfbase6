@@ -641,6 +641,7 @@ sub wuirc
 	$args->{'cols'} ||= 57;
 	$args->{'size'} = $args->{'cols'};
 	$args->{'inputtype'} = 'textarea';
+	$args->{'rows'} ||= 3;
     }
 
 
@@ -802,6 +803,7 @@ sub wuirc
 		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_".$req->{'rb_wu_row'}."__subj_${arc_subj_id}",
 				      $arc->value,
 				      {
+				       class => $args->{'class'},
 				       arc => $arc_id,
 				       size => $size,
 				       rows => $rows,
@@ -826,6 +828,7 @@ sub wuirc
 	$out .= &{$inputtype}("arc___pred_${predname}__subj_${subj_id}__row_".$req->{'rb_wu_row'},
 			      $default,
 			      {
+			       class => $args->{'class'},
 			       size => $size,
 			       rows => $rows,
 			       maxw => $maxw,
