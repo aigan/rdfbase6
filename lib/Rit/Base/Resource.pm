@@ -4100,6 +4100,8 @@ sub wd
 {
     my( $node, $pred_name, $args_in ) = @_;
 
+    $args_in ||= {};
+
     return $node->wu( $pred_name, { %$args_in, disabled => 'disabled' });
 
 
