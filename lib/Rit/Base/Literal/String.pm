@@ -643,6 +643,7 @@ sub wuirc
 	$args->{'inputtype'} = 'textarea';
 	$args->{'rows'} ||= 3;
     }
+    $args->{'maxlength'} ||= 2800;
 
 
     my $size = $args->{'size'} || 30;
@@ -759,6 +760,7 @@ sub wuirc
 					       class => "suggestion_field",
 					       size => $smallestsize,
 					       rows => $rows,
+					       maxlength => $args->{'maxlenght'},
 					       version => $version,
 					       image_url => $args->{'image_url'},
 					       id => $args->{'id'},
@@ -807,6 +809,7 @@ sub wuirc
 				       arc => $arc_id,
 				       size => $size,
 				       rows => $rows,
+				       maxlength => $args->{'maxlenght'},
 				       id => $args->{'id'},
 				       image_url => $args->{'image_url'}
 				      });
@@ -831,6 +834,7 @@ sub wuirc
 			       class => $args->{'class'},
 			       size => $size,
 			       rows => $rows,
+			       maxlength => $args->{'maxlenght'},
 			       maxw => $maxw,
 			       maxh => $maxh,
 			       id => $args->{'id'},
