@@ -7042,44 +7042,6 @@ sub update_seen_by
 
 #######################################################################
 
-=head2 update_unseen_by
-
-=cut
-
-sub update_unseen_by
-{
-    my( $node ) = @_;
-
-    my %uns;
-    my $unseers = $node->list('unseen_by');
-    while( my $unseer = $unseers->get_next_nos )
-    {
-	$uns{$unseer->id} = $unseer;
-    }
-
-    my $updated = $node->updated;
-
-    my $watchers = $node->watchers;
-    while( my $watcher = $watchers->get_next_nos )
-    {
-	next if $uns{$watcher->id}; # Already added
-
-	if( my $seen_arc = $node->first_arc('seen_by', $watcher) )
-	{
-	    next if $seen_arc->updated >= $updated;
-	}
-
-	$node->add({unseen_by => $watcher},
-		   {activate_new_arcs => 1,
-		    updated => $node->updated,
-		   });
-    }
-
-}
-
-
-#######################################################################
-
 =head2 watchers
 
 =cut
@@ -7134,30 +7096,6 @@ sub update_valtype
 
 #######################################################################
 
-=head2 update_seen_by
-
-=cut
-
-sub update_seen_by
-{
-    my( $node, $user, $args_in ) = @_;
-    my( $args ) = parse_propargs( $args_in );
-    $user ||= $Para::Frame::U;
-    $node->add({'seen_by'=>$user},
-		 {
-		  %$args,
-		  mark_updated => 1,
-		  activate_new_arcs => 1,
-		 });
-
-    $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
-
-    return $user;
-}
-
-
-#######################################################################
-
 =head2 update_unseen_by
 
 =cut
@@ -7191,18 +7129,6 @@ sub update_unseen_by
 		   });
     }
 
-}
-
-
-#######################################################################
-
-=head2 watchers
-
-=cut
-
-sub watchers
-{
-    return Rit::Base::List->new_empty;
 }
 
 
