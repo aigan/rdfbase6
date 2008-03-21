@@ -2,14 +2,11 @@
 package Rit::Base::Rule;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Rule class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -110,7 +107,7 @@ sub build_lists
 
 sub init
 {
-    my( $rule, $rec ) = @_;
+    my( $rule ) = @_;
 
     debug 2, "Initiated rule $rule->{id}";
 
@@ -207,6 +204,18 @@ sub on_unbless
 sub use_class
 {
     return "Rit::Base::Rule";
+}
+
+
+###############################################################
+
+=head2 this_valtype
+
+=cut
+
+sub this_valtype
+{
+    return $C_syllogism;
 }
 
 

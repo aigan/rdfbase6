@@ -2,14 +2,11 @@
 package Rit::Base::Action::setup_db;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action setting up an Ritbase DB
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,6 +15,12 @@ use strict;
 use Para::Frame::Utils qw( trim );
 
 use Rit::Base::Utils qw( parse_arc_add_box );
+
+=head1 DESCRIPTION
+
+Ritbase Action setting up an Ritbase DB
+
+=cut
 
 sub handler
 {

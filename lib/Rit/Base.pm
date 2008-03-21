@@ -26,8 +26,10 @@ use vars qw( $VERSION );
 
 BEGIN
 {
-    $VERSION = "6.54";
+    $VERSION = "6.55";
     print "Loading ".__PACKAGE__." $VERSION\n";
+
+    $Rit::Base::ioid = 0; # Internal object enumeration
 }
 
 use Para::Frame;
@@ -151,12 +153,14 @@ sub init
 
 sub init_on_startup
 {
-    warn "init_on_startup\n";
+#    warn "init_on_startup\n";
 
+    Rit::Base::Resource->on_startup();
+#    warn "init_on_startup 2\n";
     Rit::Base::Literal::Class->on_startup();
-    warn "init_on_startup 2\n";
+#    warn "init_on_startup 3\n";
     Rit::Base::Constants->on_startup();
-    warn "init_on_startup 3\n";
+#    warn "init_on_startup 4\n";
 
     my $cfg = $Para::Frame::CFG;
 
@@ -173,20 +177,20 @@ sub init_on_startup
 	    $cfg->{$key} = Rit::Base::Resource->get_by_label($val);
 	}
     }
-    warn "init_on_startup 4\n";
+#    warn "init_on_startup 5\n";
 
     $Rit::Base::IN_STARTUP = 0;
 
-    warn "calling on_ritbase_ready\n";
+#    warn "calling on_ritbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
-    warn "done init_on_startup\n";
+#    warn "done init_on_startup\n";
 }
 
 #######################################################################
 
 =head2 Resource
 
-Returns class object for Rit::Base::Resource
+Returns class object for L<Rit::Base::Resource>
 
 =cut
 
@@ -199,7 +203,7 @@ sub Resource ()
 
 =head2 Arc
 
-Returns class boject for Rit::Base::Arc
+Returns class object for L<Rit::Base::Arc>
 
 =cut
 
@@ -212,7 +216,7 @@ sub Arc ()
 
 =head2 Pred
 
-Returns class boject for Rit::Base::Pred
+Returns class object for L<Rit::Base::Pred>
 
 =cut
 
@@ -225,7 +229,7 @@ sub Pred ()
 
 =head2 Constants
 
-Returns class boject for Rit::Base::Constants
+Returns class object for L<Rit::Base::Constants>
 
 =cut
 
@@ -238,7 +242,7 @@ sub Constants ()
 
 =head2 Literal
 
-Returns class boject for Rit::Base::Literal
+Returns class object for L<Rit::Base::Literal>
 
 =cut
 

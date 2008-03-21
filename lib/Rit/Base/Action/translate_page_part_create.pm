@@ -2,14 +2,11 @@
 package Rit::Base::Action::translate_page_part_create;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for adding a page part resource
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -20,6 +17,12 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( parse_propargs );
+
+=head1 DESCRIPTION
+
+Ritbase Action for adding a page part resource
+
+=cut
 
 sub handler
 {

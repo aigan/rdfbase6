@@ -2,9 +2,6 @@
 package Rit::Base::Search::Collection;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Search Collection class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #

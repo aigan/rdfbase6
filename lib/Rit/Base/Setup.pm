@@ -2,9 +2,6 @@
 package Rit::Base::Setup;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Database Setup
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
@@ -33,6 +30,7 @@ use utf8;
 use DBI;
 use Carp qw( croak );
 use DateTime::Format::Pg;
+use Encode; # encode decode
 
 use Para::Frame::Utils qw( debug datadump throw );
 use Para::Frame::Time qw( now );
@@ -338,30 +336,71 @@ sub setup_db
 
 sub convert_valuenodes
 {
-    die "NOT READY";
-
     my $dbix = $Rit::dbix;
     my $dbh = $dbix->dbh;
     my $req = Para::Frame::Request->new_bgrequest();
     my $now_db = DateTime::Format::Pg->format_datetime(now);
+    my $R = Rit::Base->Resource;
 
     print "\nCONVERTING VALUENODES\n\n";
 
 #    my $arclist = $dbix->select_list("from arc where pred=4 order by ver desc");
 
-
-    my $arclist = $dbix->select_list("from arc where pred=4 and subj in (select subj from arc where pred=4 and active is true group by subj having count(pred)>1) order by ver desc");
-
-    debug sprintf "Got %d arcs", $arclist->size;
-
-    my $update_sth = $dbh->prepare("update arc set valfloat=?, valdate=?, valtext=?, valclean=?, valtype=?, activated=?, activated_by=? where ver=?") or die;
-
     my @REMOVE;
     my @CONVERT;
+
+
+    my $dupsubjlist = $dbix->select_list("select distinct subj from arc where pred=4 and active is true group by subj having count(pred)>1 order by subj desc");
+    debug sprintf "Got %d subjs with duplicate value arcs", $dupsubjlist->size;
+    my( $dupsubjrec, $dserror ) = $dupsubjlist->get_first;
+    while(! $dserror )
+    {
+	my $node = $R->get($dupsubjrec->{'subj'});
+
+	debug $node->sysdesig;
+
+	# Keeps the last value arc
+	my $varcs = $node->arc_list('value')->sorted('id');
+	my( $arc, $aerr ) = $varcs->get_first;
+	while(!$aerr )
+	{
+	    if( $varcs->last )
+	    {
+		debug "Keeping  resource ".$arc->sysdesig;
+	    }
+	    else
+	    {
+		$arc->remove({force_recursive=>1});
+	    }
+	}
+	continue
+	{
+	    ( $arc, $aerr ) = $varcs->get_next;
+	};
+    }
+    continue
+    {
+	( $dupsubjrec, $dserror ) = $dupsubjlist->get_next;
+    };
+
+
+    my $arclist = $dbix->select_list("from arc where pred=4 order by ver desc");
+
+    debug sprintf "Sorting %d arcs", $arclist->size;
+
+    my $update_sth = $dbh->prepare("update arc set valfloat=?, valdate=?, valtext=?, valclean=?, valtype=?, activated=?, activated_by=?, updated=? where ver=?") or die;
+    my $remove_sth = $dbh->prepare("delete from arc where ver=?");
 
     my( $rec, $error ) = $arclist->get_first;
     while(! $error )
     {
+	unless( $arclist->count % 100 )
+	{
+	    debug sprintf "%5d", $arclist->count;
+#	    last if $arclist->count == 100;
+	}
+
+
 	my $arc = Rit::Base::Arc->get_by_rec($rec);
 
 #	debug $arc->sysdesig;
@@ -380,17 +419,25 @@ sub convert_valuenodes
 	( $rec, $error ) = $arclist->get_next;
     };
 
+    debug sprintf "Converting %d arcs",scalar(@CONVERT);
+
+    my $cnt = 0;
     foreach my $arc ( @CONVERT )
     {
+	unless( ++$cnt % 100 )
+	{
+	    debug sprintf "%5d COMMITTING", $cnt;
+	    $dbh->commit;
+	}
+
 	my $rec = $dbix->select_possible_record("from arc where obj=? and active is true", $arc->{'subj'});
 
 	unless( $rec )
 	{
-	    debug "Arc unconnected";
+	    debug "Arc unconnected: ".$arc->{'id'};
 	    push @REMOVE, $arc;
 	    next;
 	}
-
 
 
 	# Ignoring source, created, created_by, read_access, write_access
@@ -400,13 +447,7 @@ sub convert_valuenodes
 	my $coltype = $arc->coltype;
 	my $activated_db = $arc->{'arc_activated'};
 	my $activated_by_db = $arc->{'activated_by'};
-
-	if( $rec->{$coltype} )
-	{
-	    debug "Removing duplicate";
-	    push @REMOVE, $arc;
-	    next;
-	}
+	my $updated_db = $arc->{'arc_updated'};
 
 	my( $valfloat, $valdate, $valtext, $valclean );
 	my $value = $arc->value;
@@ -429,15 +470,185 @@ sub convert_valuenodes
 	    die "What is this? ".datadump($arc);
 	}
 
-	debug $arc->sysdesig;
+#	debug $arc->sysdesig;
 #	debug "About to overwrite ".datadump($rec);
 #	last;
 
-	$update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $rec->{'ver'});
+	$update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $updated_db, $rec->{'ver'});
+	$remove_sth->execute($arc->{'id'});
     }
 
-    my $remove_sth = $dbh->prepare("delete from arc where ver=?");
+    debug "Committing";
+    $dbh->commit;
 
+    debug sprintf "Removing %d arcs",scalar(@REMOVE);
+    $cnt = 0;
+    # Removes the latest arc first, avoiding arc_replaces_fkey
+    foreach my $arc ( sort {$b->{id} <=> $a->{id}} @REMOVE )
+    {
+	unless( ++$cnt % 100 )
+	{
+	    debug sprintf "%5d COMMITTING", $cnt;
+	    $dbh->commit;
+	}
+	debug sprintf "%5d Removing %s", $cnt, $arc->sysdesig;
+
+	$remove_sth->execute($arc->{'id'});
+    }
+
+    debug "Committing";
+    $dbh->commit;
+
+    if( $R->find({label=>'value'})->size )
+    {
+	$R->get(4)->remove({force=>1});
+	debug "Committing";
+	$dbh->commit;
+    }
+
+    debug "Cleaning up texts from old errors";
+
+    my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
+
+    my $text_sth = $dbh->prepare("select ver, valtext from arc where valtext is not null");
+    $text_sth->execute;
+    my $cleaned = 0;
+    my $text_cnt = 0;
+    debug "  ".$text_sth->rows." records";
+    while( my $rec = $text_sth->fetchrow_hashref )
+    {
+	unless( ++$text_cnt % 1000 )
+	{
+	    debug sprintf "%6d Total cleaned %5d", $text_cnt, $cleaned;
+	    $dbh->commit;
+	}
+
+	my $ver = $rec->{'ver'};
+
+	# Cleaning up UTF8...
+	my $valtext = $rec->{'valtext'};
+	my $decoded = $valtext;
+	if( $valtext =~ /Ã./ )
+	{
+	    my $res;
+	    while( length $decoded )
+	    {
+		$res .= decode("UTF-8", $decoded, Encode::FB_QUIET);
+		$res .= substr($decoded, 0, 1, "") if length $decoded;
+	    }
+	    $decoded = $res;
+	}
+	else
+	{
+	    utf8::upgrade( $decoded );
+	}
+
+	# Repair chars in CP 1252 text,
+	# incorrectly imported as ISO 8859-1.
+	# For example x96 (SPA) and x97 (EPA)
+	# are only used by text termianls.
+	$decoded =~ s/\x{0080}/\x{20AC}/g; # Euro sign
+	$decoded =~ s/\x{0085}/\x{2026}/g; # Horizontal ellipses
+	$decoded =~ s/\x{0091}/\x{2018}/g; # Left single quotation mark
+	$decoded =~ s/\x{0092}/\x{2019}/g; # Right single quotation mark
+	$decoded =~ s/\x{0093}/\x{201C}/g; # Left double quotation mark
+	$decoded =~ s/\x{0094}/\x{201D}/g; # Right double quotation mark
+	$decoded =~ s/\x{0095}/\x{2022}/g; # bullet
+	$decoded =~ s/\x{0096}/\x{2013}/g; # en dash
+	$decoded =~ s/\x{0097}/\x{2014}/g; # em dash
+
+
+	# Remove invisible characters from string
+	$decoded =~ s/\p{Other}//g;
+
+	# Remove Unicode 'REPLACEMENT CHARACTER'
+	$decoded =~ s/\x{fffd}//g;
+
+	$decoded =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
+	$decoded =~ s/^\s*\n//; # Leading empty lines
+	$decoded =~ s/\n\s+$/\n/; # Trailing empty lines
+
+
+	if( $valtext ne $decoded)
+	{
+	    $cleaned++;
+
+#	    ### FIXED
+#	    $valtext =~ s/\r//g;
+#	    $valtext =~ s/\x{fffd}//g;
+#	    $valtext =~ s/\x{000b}//g; # Vertical tabulation
+#	    $valtext =~ s/\x{00ad}//g; # Soft hypen
+#	    $valtext =~ s/\x{0009}//g; # Horizontal tabulation
+#	    $valtext =~ s/\p{Co}//g;   # Private unicode char
+#
+#	    $valtext =~ s/\x{0080}/\x{20AC}/g; # Euro sign
+#	    $valtext =~ s/\x{0085}/\x{2026}/g; # Horizontal ellipses
+#	    $valtext =~ s/\x{0091}/\x{2018}/g; # Left single quotation mark
+#	    $valtext =~ s/\x{0092}/\x{2019}/g; # Right single quotation mark
+#	    $valtext =~ s/\x{0093}/\x{201C}/g; # Left double quotation mark
+#	    $valtext =~ s/\x{0094}/\x{201D}/g; # Right double quotation mark
+#	    $valtext =~ s/\x{0095}/\x{2022}/g; # bullet
+#	    $valtext =~ s/\x{0096}/\x{2013}/g; # en dash
+#	    $valtext =~ s/\x{0097}/\x{2014}/g; # em dash
+#	    if( $valtext eq $decoded )
+#	    {
+#		next;
+#	    }
+#	    else
+#	    {
+#		for( my $i=0; $i<length($valtext); $i++ )
+#		{
+#		    my $char1 = substr($valtext,$i,1);
+#		    my $char2 = substr($decoded,$i,1);
+#		    if( ord($char1) != ord($char2) )
+#		    {
+#			debug sprintf "Position %d, char %s(%4x)!=%s(%4x)",
+#			  $i, $char1, ord($char1), $char2, ord($char2);
+#			if( $char1 =~ /\pL/ ){ debug "  LETTER" };
+#			if( $char1 =~ /\pM/ ){ debug "  MARK" };
+#			if( $char1 =~ /\pZ/ ){ debug "  SEPARATOR" };
+#			if( $char1 =~ /\pS/ ){ debug "  SYMBOL" };
+#			if( $char1 =~ /\pN/ ){ debug "  NUMBER" };
+#			if( $char1 =~ /\pP/ ){ debug "  PUNCTUATION" };
+#			if( $char1 =~ /\p{Cc}/ ){ debug "  CONTROL" };
+#			if( $char1 =~ /\p{Cf}/ ){ debug "  FORMAT" };
+#			if( $char1 =~ /\p{Co}/ ){ debug "  PRIVATE" };
+#			if( $char1 =~ /\p{Cs}/ ){ debug "  SURROGATE" };
+#			if( $char1 =~ /\p{Cn}/ ){ debug "  UNASSIGNED" };
+#
+#			last;
+#		    }
+##		    debug sprintf "%2d: %4d (%s)", $i, ord($char), $char;
+#		}
+#
+#	    }
+
+
+	    my $cleaned = valclean($decoded);
+
+#	    debug "Cleaning text in $ver";
+#
+#	    $valtext =~ s/\r/\\r/g;
+#	    $valtext =~ s/\n/\\n\n/g;
+#	    $valtext =~ s/ /_/g;
+#
+#	    $decoded =~ s/\r/\\r/g;
+#	    $decoded =~ s/\n/\\n\n/g;
+#	    $decoded =~ s/ /_/g;
+#
+#	    debug "---\n$valtext\n---\n$decoded\n---";
+
+	    $update_text_sth->execute($decoded, $cleaned, $ver);
+	}
+    }
+    $text_sth-> finish;
+
+    debug "Cleaned $cleaned";
+
+#    debug "Committing";
+#    $dbh->commit;
+#    debug "Adding id's to all arcs";
+#    $dbh->do("update arc set obj=nextval('node_seq') where obj is null");
 
     debug "COMMIT";
     $Para::Frame::REQ->done;

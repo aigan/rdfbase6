@@ -2,14 +2,11 @@
 package Rit::Base::Action::arc_activate;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for activating an arc
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -17,6 +14,12 @@ use strict;
 
 use Rit::Base::Utils qw( );
 use Rit::Base::Resource;
+
+=head1 DESCRIPTION
+
+Ritbase Action for activating an arc
+
+=cut
 
 sub handler
 {

@@ -21,23 +21,18 @@
 
 <table>
 <tr><th>[% loc('Language') %] <th>Arc <th>[% loc('Text') %] <th>[% loc('Prio') %]
-[% FOREACH arc IN node.arc_list(pred).sorted(['obj.is_of_language.code',{on='obj.weight' dir='desc'}]) %]
+[% FOREACH arc IN node.arc_list(pred).sorted(['value_node.is_of_language.code',{on='value_node.weight' dir='desc'}]) %]
    [% aid = arc.id %]
    [% tr2%]
-   [% l = arc.obj.is_of_language %]
+   [% l = arc.value_node.is_of_language %]
    <td>
-   [% IF arc.obj %]
+   [% IF arc.value_node %]
       [% l.code %] [% hidden("arc_${aid}_is_of_language", l.id) %]
    [% ELSE %]
       [% select("arc_${aid}_is_of_language", '', langlist)%]
    [% END %]
    <td>[% jump(aid, "$home/rb/node/arc/update.tt", id=aid) %]
-   <td>
-   [% IF arc.obj %]
-      [% input("arc_${aid}_val", arc.obj.desig) %]
-   [% ELSE %]
-      [% input("arc_${aid}_val", arc.value) %]
-   [% END %]
+   <td>[% input("arc_${aid}_val", arc.value) %]
    <td align="right">[% select("arc_${aid}_weight", arc.obj.weight, {''='-','1'=1,'2'=2}, undef,undef,'-') %]
 [% END %]
 <tr>

@@ -2,9 +2,6 @@
 package Rit::Base::Search::Result;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Search Result class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #

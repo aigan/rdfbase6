@@ -2,14 +2,11 @@
 package Rit::Base::Action::search_execute;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for running sessionobj search
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -19,6 +16,12 @@ use Time::HiRes qw( time );
 use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Search;
+
+=head1 DESCRIPTION
+
+Ritbase Action for running sessionobj search
+
+=cut
 
 sub handler
 {

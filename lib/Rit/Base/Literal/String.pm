@@ -2,14 +2,11 @@
 package Rit::Base::Literal::String;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Literal String class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -23,7 +20,7 @@ use strict;
 use utf8;
 
 use Carp qw( cluck confess longmess );
-use Digest::MD5 qw( md5_base64 );
+use Digest::MD5 qw( md5_base64 ); #);
 use Scalar::Util qw( looks_like_number refaddr );
 
 BEGIN
@@ -215,8 +212,9 @@ sub parse
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
 
-    if( $coltype eq 'obj' ) # Is this a value node?
+    if( $coltype eq 'obj' )
     {
+	confess "FIXME";
 	$coltype = $valtype->coltype;
 	debug "Parsing as $coltype: ".query_desig($val_in);
     }
@@ -242,8 +240,39 @@ sub parse
     {
 	unless( length $val_mod )
 	{
-	    $class->new( undef, $valtype );
+	    return $class->new( undef, $valtype );
 	}
+
+	# Cleaning up UTF8...
+	if( $val_mod =~ /Ã./ )
+	{
+	    my $res;
+	    while( length $val_mod )
+	    {
+		$res .= decode("UTF-8", $val_mod, Encode::FB_QUIET);
+		$res .= substr($val_mod, 0, 1, "") if length $val_mod;
+	    }
+	    $val_mod = $res;
+	}
+
+	# Repair chars in CP 1252 text,
+	# incorrectly imported as ISO 8859-1.
+	# For example x96 (SPA) and x97 (EPA)
+	# are only used by text termianls.
+	$val_mod =~ s/\x{0080}/\x{20AC}/g; # Euro sign
+	$val_mod =~ s/\x{0085}/\x{2026}/g; # Horizontal ellipses
+	$val_mod =~ s/\x{0091}/\x{2018}/g; # Left single quotation mark
+	$val_mod =~ s/\x{0092}/\x{2019}/g; # Right single quotation mark
+	$val_mod =~ s/\x{0093}/\x{201C}/g; # Left double quotation mark
+	$val_mod =~ s/\x{0094}/\x{201D}/g; # Right double quotation mark
+	$val_mod =~ s/\x{0095}/\x{2022}/g; # bullet
+	$val_mod =~ s/\x{0096}/\x{2013}/g; # en dash
+	$val_mod =~ s/\x{0097}/\x{2014}/g; # em dash
+
+
+	# NOT Remove Unicode 'REPLACEMENT CHARACTER'
+	#$val_mod =~ s/\x{fffd}//g;
+
 
 	$val_mod =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
 	$val_mod =~ s/^\s*\n//; # Leading empty lines
@@ -344,8 +373,7 @@ sub syskey
 
   $n->literal()
 
-The literal value that this object represents.  This asumes that the
-object is a value node or a list of value nodes.
+The literal value that this object represents.
 
 =cut
 

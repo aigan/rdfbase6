@@ -2,14 +2,11 @@
 package Rit::Base::Action::node_search;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for searching nodes
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,6 +15,12 @@ use strict;
 use Para::Frame::Utils qw( throw trim debug datadump );
 
 use Rit::Base::Search;
+
+=head1 DESCRIPTION
+
+Ritbase Action for searching nodes
+
+=cut
 
 sub handler
 {

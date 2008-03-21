@@ -43,6 +43,7 @@ use Rit::Base::Search;
 use Rit::Base::List;
 use Rit::Base::Arc::List;
 use Rit::Base::Arc;
+use Rit::Base::Resource::Literal;
 use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
 use Rit::Base::Literal::Time qw( now );
@@ -56,7 +57,7 @@ use Rit::Base::Widget;
 use Rit::Base::Widget::Handler;
 
 use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
-                             $C_class $C_literal_class $C_resource );
+                             $C_class $C_literal_class $C_resource $C_arc );
 
 use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_form_field_prop is_undef arc_lock
@@ -64,7 +65,14 @@ use Rit::Base::Utils qw( valclean translate parse_query_props
 			 convert_query_prop_for_creation
 			 parse_propargs aais );
 
+
+use constant CLUE_NOARC => 1;
+use constant CLUE_NOUSEREVARC => 2;
+use constant CLUE_VALUENODE => 4;
+use constant CLUE_NOVALUENODE => 8;
+
 our %UNSAVED;
+our $ID;
 
 ### Inherit
 #
@@ -126,9 +134,23 @@ for. This is initiated to:
 NB! If you call get() from a class other than these, you must make
 sure that the object will never also be of another class.
 
+For non-cached objects the algoritm is:
+
+ 1. $node = $class->new( $id );
+ 2. $node->first_bless;
+
+
+
 Supported args are:
 
-  initiate_rel: initiates all rel arcs BEFORE L</first_bless>
+  initiate_rel
+  class_clue
+
+C<initiate_rel> initiates all rel arcs BEFORE L</first_bless>. That's
+just for optimization
+
+C<class_clue> is given as the first argument to L</find_class>
+
 
 Returns:
 
@@ -169,7 +191,7 @@ sub get
 	    $id = $Rit::dbix->get_nextval('node_seq');
 	    $node = $class->new( $id );
 	    $node->{'new'} = 1;
-	    return $node;
+	    return $node->init;
 	}
 
 
@@ -222,7 +244,7 @@ sub get
 	$node->initiate_rel;
     }
 
-    $node->first_bless;
+    $node->first_bless(undef,$args_in->{'class_clue'})->init();
 
 #    $Para::Frame::REQ->{RBSTAT}{get_new} += Time::HiRes::time() - $ts;
 
@@ -236,7 +258,7 @@ sub get
 
 =head2 get_by_node_rec
 
-  $n->get_by_node_rec( $rec, @extra )
+  $n->get_by_node_rec( $rec )
 
 Returns: a node
 
@@ -252,7 +274,33 @@ sub get_by_node_rec
       confess "get_by_node_rec misses the node param: ".datadump($rec,2);
 
     return $Rit::Base::Cache::Resource{$id} ||
-      $this->new($id)->first_bless($rec);
+      $this->new($id)->first_bless->init->initiate_node($rec);
+}
+
+
+#######################################################################
+
+=head2 get_by_arc_rec
+
+  $n->get_by_arc_rec( $rec, $valtype )
+
+Returns: a node
+
+Exceptions: see L</init>.
+
+=cut
+
+sub get_by_arc_rec
+{
+    my( $this, $rec, $valtype ) = @_;
+
+#    debug "get_by_arc_rec @_";
+    my $id = $rec->{'obj'} or
+      confess "get_by_arc_rec misses the obj param: ".datadump($rec,2);
+
+#    debug "Arc rec $rec->{ver}";
+    return $Rit::Base::Cache::Resource{$id} ||
+      $this->new($id)->first_bless($valtype)->init;
 }
 
 
@@ -367,8 +415,6 @@ sub find_by_anything
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(3);
-
-#    debug "fins args:\n".query_desig($args); ### DEBUG
 
     my( @new );
     my $valtype = $args->{'valtype'};
@@ -773,8 +819,6 @@ This uses the field valtext (valclean).  No other value types are
 supported.
 
 The search result is cached.
-
-Note that this will not work for Literal resources (value nodes).
 
 Examples:
 
@@ -1243,7 +1287,7 @@ sub create
     # TODO: Handle creation with 'is' coupled to a class. Especially
     # is $C_arc
 
-    confess "invalid props: $props" unless ref $props; ### DEBUG
+    confess "invalid props: $props" unless ref $props;
 
 
 #    # Any value props should be added after datatype props
@@ -1454,7 +1498,6 @@ The unique node id as a plain string.
 
 sub id
 {
-#   confess "not a object" unless ref $_[0]; ### DEBUG
     return $_[0]->{'id'};
 }
 
@@ -1486,47 +1529,6 @@ sub name
 
 #######################################################################
 
-=head2 score
-
-Used by L<Rit::Base::Seach> class.
-
-Default: 0
-
-TODO: Remove
-
-=cut
-
-sub score
-{
-    cluck "REMOVE ME";
-    $_[0]->{'score'}||0;
-} ## Used by Seach class
-
-
-#######################################################################
-
-=head2 random
-
-  $n->random
-
-Used by L<Rit::Base::Seach> class.  Must be set by some other
-method.
-
-Default: 0
-
-TODO: Remove
-
-=cut
-
-sub random
-{
-    cluck "REMOVE ME";
-    $_[0]->{'random'}||0;
-} ## Used by Seach class
-
-
-#######################################################################
-
 =head2 is_resource
 
   $n->is_resource
@@ -1536,36 +1538,6 @@ Returns true.
 =cut
 
 sub is_resource { 1 };
-
-
-#######################################################################
-
-=head2 is_value_node
-
-  $n->is_value_node( \%args )
-
-Returns true if this node is a Literal Resource (aka value node).
-
-TODO: All value nodes should be handled as literals
-
-Returns: boolean
-
-See also: L</this_valtype>
-
-=cut
-
-sub is_value_node
-{
-    my( $node, $args ) = @_;
-    if( $node->first_prop('value', undef, $args) )
-    {
-	return 1;
-    }
-    else
-    {
-	return 0;
-    }
-}
 
 
 #######################################################################
@@ -1805,7 +1777,9 @@ Supported args are:
 C<$arclim> can be any of the strings L<direct|Rit::Base::Arc/direct>,
 L<explicit|Rit::Base::Arc/explicit>,
 L<indirect|Rit::Base::Arc/indirect>,
-L<implicit|Rit::Base::Arc/implicit>, L<inactive|Rit::Base::Arc/inactive> and L<not_disregarded|Rit::Base::Arc/not_disregarded>.
+L<implicit|Rit::Base::Arc/implicit>,
+L<inactive|Rit::Base::Arc/inactive> and
+L<not_disregarded|Rit::Base::Arc/not_disregarded>.
 
 C<arclim2> if existing, will be used for proplims. Without C<arclim2>,
 C<arclim> will be used.
@@ -1867,6 +1841,8 @@ sub list
 #	    $Para::Frame::REQ->{RBSTAT}{'list pred empty'} += Time::HiRes::time() - $ts;
 	    return Rit::Base::Arc::List->new_empty();
 	}
+
+#	if( $node->{id} == 5 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
 
@@ -2908,10 +2884,6 @@ sub desig  # The designation of obj, meant for human admins
     {
 	# That's good
     }
-    elsif( $node->has_pred('value',undef,$args) )
-    {
-	$desig = $node->list('value',undef,$args)->loc();
-    }
     elsif( $node->has_pred('code',undef,$args) )
     {
 	$desig = $node->list('code',undef,$args)->loc;
@@ -2972,35 +2944,6 @@ Returns a unique predictable id representing this object
 sub syskey
 {
     return sprintf("node:%d", shift->{'id'});
-}
-
-
-#######################################################################
-
-=head2 literal
-
-  $n->literal()
-
-The literal value that this object represents.  This asumes that the
-object is a Literal Resource (aka Value Resource).  Only use this then you
-know that this L</is_value_node>.
-
-Defaults to C<is_undef>.
-
-=cut
-
-sub literal
-{
-    my( $node, $args ) = @_;
-
-    if( UNIVERSAL::isa($node,'Para::Frame::List') )
-    {
-	croak "deprecated";
-#	return $node->loc( $args );
-    }
-
-    debug "Turning node ".$node->{'id'}." to literal";
-    return $node->first_prop('value', $args);
 }
 
 
@@ -4295,10 +4238,6 @@ sub wu
 	#debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
 	#  $range->sysdesig;
     }
-    elsif( $pred_name eq 'value' ) # value resource
-    {
-	$range = $node->revarc(undef,undef,['active','submitted'])->pred->range;
-    }
     else
     {
 	$range = $pred->valtype;
@@ -4695,17 +4634,9 @@ sub arcversions
     {
 	my @versions;
 
-	if( $arc->realy_objtype ) # Value resource
-	{
-	    push @versions,
-	      $arc->obj->arc_list( 'value', $proplim, ['active','submitted'] )->as_array;
-	}
-	else
-	{
-	    push @versions,
-	      $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
-	    #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
-	}
+	push @versions,
+	  $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
+	#debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
 
 	$arcversions{$arc->id} = \@versions
 	  if( @versions );
@@ -4819,9 +4750,7 @@ sub tree_select_data
 
   $n->find_class()
 
-TODO: Handle the class for value nodes based on the value-arcs
-valtype.
-
+  $n->find_class( $clue )
 
 Checks if the resource has a property C<is> to a class that has the
 property C<class_handled_by_perl_module>.
@@ -4854,35 +4783,101 @@ Returns: A scalar with the package name
 
 sub find_class
 {
-    my( $node ) = @_;
+    my( $node, $clue ) = @_;
 #    my $ts = Time::HiRes::time();
+    $clue ||= 0;
+    my $id = $node->{'id'};
+
+    my $DEBUG = 0;
+
+#    debug "Find class for $id";
+#    cluck if $id == 5863813; ### DEBUG
 
     # Used in startup.
 
-    # I guess this is sufficiently efficient
+
+    # We assume that Arcs et al are retrieved directly. Thus,
+    # only look for 'is' arcs. Pred and Rule nodes should have an
+    # 'is' arc. Lastly, look if it's an arc if it's nothing else.
+
+    if( $clue & CLUE_VALUENODE )
+    {
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where obj = ?");
+	$sth_id->execute($id);
+	my $rec = $sth_id->fetchrow_hashref;
+	if( $rec )
+	{
+	    $node->{'revrecs'} = [ $rec ];
+	    while( $rec = $sth_id->fetchrow_hashref )
+	    {
+		push @{$node->{'revrecs'}}, $rec;
+	    }
+	    $sth_id->finish;
+	    return "Rit::Base::Resource::Literal";
+	}
+	$sth_id->finish;
+
+	confess "Assumed valuenod $id was not a valuenode";
+    }
+
+
+
+    # Avoid checking for arc or other special node if we know
+    # it's not a special node.
+    unless( $clue & CLUE_NOUSEREVARC )
+    {
+	# Check if this is a known value node. (It may be it even if
+	# this test fails.)
+	#
+	foreach my $pred_name ( keys %{$node->{'revarc'}} )
+	{
+	    # if pred_name has a literal range...
+	    my $pred = Rit::Base::Pred->get($pred_name);
+	    if( $pred->objtype )
+	    {
+		# Assume that ALL preds should have a literal valtype
+		last;
+	    }
+
+	    my $valtype = $pred->valtype;
+	    $node->{'valtype'} = $valtype;
+	    debug "Setting1 valtype for $id to $valtype->{id}" if $DEBUG;
+	    my $class = $valtype->instance_class;
+	    debug "----> Got class from revarc ($class)!!!!!" if $DEBUG;
+	    return $class;
+	}
+    }
+
+
+
 
     # This is an optimization for:
     # my $classes = $islist->list('class_handled_by_perl_module');
     #
 #    my $islist = $node->list('is',undef,'not_disregarded');
-#    debug "Finding the class for node $node->{id}";
+    debug "Finding the class for node $id" if $DEBUG;
 
     my $p_code = Rit::Base::Pred->get_by_label('code');
 
     my $islist = $node->list('is',undef,['active']);
+#    debug "got islist for $id:\n".datadump($islist->{'_DATA'},1);
     my @classes;
     my( $elem, $islist_error ) = $islist->get_first;
+    my $first_is = $elem;
     while(! $islist_error )
     {
-#	debug "Looking at is $elem->{id}";
+	debug "Looking at $id is $elem->{id}" if $DEBUG;
 	unless( $elem->{'id'} )
 	{
-	    cluck "Should not bee possible: ".datadump($elem);
+	    cluck "Should not bee possible. Element must be a class! ".datadump($elem,1);
+	    die;
 	    next;
 	}
 
-	if( $elem->{'id'} == $Rit::Base::Literal::Class::id )
+	if( $elem->{'id'} == $Rit::Base::Literal::Class::ID )
 	{
+	    $node->{'valtype'} = $elem;
+	    debug "Setting2 valtype for $id to $elem->{id}" if $DEBUG;
 	    return "Rit::Base::Literal::Class";
 	}
 
@@ -4902,20 +4897,29 @@ sub find_class
 	while(! $class_list_error )
 	{
 	    my $pkg = $class->first_prop($p_code,undef,['active'])->plain;
-#	    debug "  found $pkg";
+	    debug "  found $pkg" if $DEBUG;
 
 	    # Let confident classes handle themself
 	    if( UNIVERSAL::can($pkg, 'use_class') )
 	    {
-#		debug "    using a custom class";
+		debug "    using a custom class" if $DEBUG;
 		# Should only be for classes that never should be
 		# metaclasses
 		#
 #		$Para::Frame::REQ->{RBSTAT}{'find_class use_class'} += Time::HiRes::time() - $ts;
+		if( UNIVERSAL::can($pkg, 'this_valtype') )
+		{
+		    # In case we was called from...
+		    debug "  Should we look up valtype for ".$pkg if $DEBUG;
+		}
+		else
+		{
+		    debug "NOT able to get valtytype for $id" if $DEBUG;
+		}
 		return $pkg->use_class;
 	    }
 
-#	    debug "  Handled by $class";
+	    debug "  Handled by $class" if $DEBUG;
 	    push @classes, $class;
 
 	    # continue!
@@ -4927,13 +4931,22 @@ sub find_class
 	( $elem, $islist_error ) = $islist->get_next;
     };
 
+
+    my $package = "Rit::Base::Resource"; # Default
+    my $valtype = $Rit::Base::Constants::Label{'resource'};
+
     if( $classes[0] )
     {
-	my $package;
+	# Class and Valtype should be defined in pair, but we check
+	# both in case of bugs...
 	my $key = join '_', sort map $_->id, @classes;
-	if( $package = $Rit::Base::Cache::Class{ $key } )
+	if( ($package = $Rit::Base::Cache::Class{ $key }) and
+	    ($node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key })
+	  )
 	{
 #	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
+	    $node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key };
+	    debug "Setting3 valtype for $id to $node->{valtype}{id}" if $DEBUG;
 	    return $package;
 	}
 
@@ -4969,6 +4982,7 @@ sub find_class
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
 				    @classnames,
 				    "Rit::Base::Resource");
+	    $valtype = $C_resource;
 	}
 	elsif( $classnames[0] ) # Single inheritance
 	{
@@ -4976,18 +4990,59 @@ sub find_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
-	}
-	else
-	{
-	    $package = "Rit::Base::Resource";
+	    $valtype = $first_is; # The first 'is' for the node
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
+	$Rit::Base::Cache::Valtype{ $key } = $valtype;
+	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
 #    $Para::Frame::REQ->{RBSTAT}{'find_class default'} += Time::HiRes::time() - $ts;
-    return "Rit::Base::Resource";
+
+    unless( ($clue & CLUE_NOARC) and ($clue & CLUE_NOVALUENODE) )
+    {
+	debug "IDENTIFYING $id" if $DEBUG;
+#	confess "HERE" unless grep{$id==$_}(2672025);
+
+	# Check if this is an arc
+	#
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where ver=? or obj=?");
+	$sth_id->execute($id,$id);
+	my $rec = $sth_id->fetchrow_hashref;
+	if( $rec )
+	{
+	    if( $rec->{'ver'} == $id )
+	    {
+		$package = "Rit::Base::Arc";
+		$valtype = $C_arc;
+		$node->{'original_rec'} = $rec; # Used in Rit::Base::Arc
+	    }
+	    elsif( $rec->{'obj'} == $id )
+	    {
+		if( Rit::Base::Literal::Class->coltype_by_valtype_id_or_obj($rec->{'valtype'}) ne 'obj' )
+		{
+		    $package = "Rit::Base::Resource::Literal";
+		    $node->{'revrecs'} = [ $rec ];
+		    while( $rec = $sth_id->fetchrow_hashref )
+		    {
+			push @{$node->{'revrecs'}}, $rec;
+		    }
+		}
+		else
+		{
+		    # Ignoring data...
+		    # Avoid deep recursion
+		}
+	    }
+	}
+	$sth_id->finish;
+    }
+
+    debug "Setting5 valtype for $id to $valtype->{id}" if $DEBUG;
+    $node->{'valtype'} = $valtype;
+    return $package;
 }
 
 
@@ -4997,59 +5052,45 @@ sub find_class
 
   $node->first_bless()
 
-  $node->first_bless( @init_params )
+  $node->first_bless( $valtype )
+
+  $node->first_bless( undef, $class_clue )
 
 Used by L</get>
 
 Uses C<%Rit::Base::LOOKUP_CLASS_FOR>
 
-Calls L</init> with given params
+C<$valtype> is used by L</instance_class>.
+
+C<$class_clue> is used by L</find_class>.
 
 =cut
 
 sub first_bless
 {
     my $node = shift;
-#    my $ts = Time::HiRes::time();
 
-    # get the right class
+#    cluck "HERE" if grep{$node->{'id'}==$_}(3595, 2223);
+
     my( $class ) = ref $node;
-    if( $Rit::Base::LOOKUP_CLASS_FOR{ $class } )
+    if( $_[0] and  ($_[0]->{'id'}!=$ID) ) # $valtype is not $C_resource?
     {
-	# We assume that Arcs et al are retrieved directly. Thus,
-	# only look for 'is' arcs. Pred and Rule nodes should have an
-	# is arc. Lastly, look if it's an arc if it's nothing else.
-
-	$class = $node->find_class();
-
-	# If its a resource and no args given for init
-	if( ($class eq 'Rit::Base::Resource') and not $_[0] )
-	{
-	    # Check if this is an arc
-	    #
-	    my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where ver = ?");
-	    $sth_id->execute($node->{'id'});
-	    my $rec = $sth_id->fetchrow_hashref;
-	    $sth_id->finish;
-	    if( $rec )
-	    {
-		$class = "Rit::Base::Arc";
-		@_ = ($rec);
-	    }
-	}
-
+	confess("Not a node '$_[0]'") unless UNIVERSAL::isa($_[0],"Rit::Base::Resource");
+	$class = $_[0]->instance_class;
+	debug 2, "Blessing $node->{id} to $class ($_[0]->{id})";
+	bless $node, $class;
+#	confess "HERE" if grep{$_[0]->{'id'}==$_}(5863813);
+    }
+    elsif( $Rit::Base::LOOKUP_CLASS_FOR{ $class } )
+    {
+	$class = $node->find_class($_[1]);
 	bless $node, $class;
     }
 
-#    $node->initiate_node; # Done on demand
+#    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
 
-    confess $node unless ref $node;
 
-    $node->init(@_);
-
-#    debug sprintf "Node %d initiated as $node", $node->id;
-
-#    $Para::Frame::REQ->{RBSTAT}{'first_bless'} += Time::HiRes::time() - $ts;    return $node;
+    return $node;
 }
 
 
@@ -5068,6 +5109,10 @@ sub on_class_perl_module_change
     my( $node, $arc, $pred_name, $args_in ) = @_;
 
     debug "on_class_perl_module_change for ".$node->sysdesig;
+
+    # Caches %Rit::Base::Cache::Class and %Rit::Base::Cache::Valtype
+    # should be the same even after an update since the key is based
+    # on the current combination of classes.
 
     # Check out new module
     my $modules = $node->list('class_handled_by_perl_module',undef,'relative');
@@ -5177,7 +5222,9 @@ sub rebless
     my( $node, $args_in ) = @_;
 
     my $class_old = ref $node;
-    my $class_new = $node->find_class;
+    my $class_new = $node->find_class(CLUE_NOARC|
+				      CLUE_NOUSEREVARC|
+				      CLUE_NOVALUENODE);
     if( $class_old ne $class_new )
     {
 	debug "Reblessing ".$node->sysdesig;
@@ -5469,9 +5516,7 @@ sub on_updated
 The caller must take care of using the cache
 C<$Rit::Base::Cache::Resource{$id}> before calling this constructor!
 
-The C<@args> differs for diffrent classes. Specially implemented in
-L<Rit::Base::Arc> and maby other classes. Will call L</initiate_cache>
-with the given args in the given class.
+The C<@args> are passed to L</initiate_cache>
 
 =cut
 
@@ -5658,12 +5703,12 @@ sub get_by_label
 
 	# Each class init should validate the node...
 
-	$Rit::Base::Constants::Label{$label} = $this->get( $id );
+	$Rit::Base::Constants::Label{$label} = $this->get( $id, { class_clue => (CLUE_NOARC|CLUE_NOVALUENODE) } );
 	$Rit::Base::Constants::Label{$label}->initiate_node($rec);
     }
 
     my $class = ref $this || $this;
-    if( $class ne 'Rit::Base::Resource' )
+    if( $class ne 'Rit::Base::Resource' ) # Validate constant class
     {
 	if( my $obj = $Rit::Base::Constants::Label{$label} )
 	{
@@ -5683,9 +5728,32 @@ sub get_by_label
 
 #########################################################################
 
+=head2 reset_cache
+
+  $node->reset_cache( $rec, \%args )
+
+This will call L</initiate_cache> and L</init> for resetting all
+cached data that can be re-read from DB or other place
+
+C<$rec> and C<%args> will be given to L</init>
+
+Returns: the node
+
+=cut
+
+sub reset_cache
+{
+    my( $node, $rec, $args ) = @_;
+    $args ||= {};
+    return $node->initiate_cache->init($rec,{%$args,reset=>1});
+}
+
+
+#########################################################################
+
 =head2 init
 
-  $node->init
+  $node->init( $rec, \%args )
 
 May be implemented in a subclass to initiate class specific data.
 
@@ -5703,7 +5771,10 @@ sub init
 
 =head2 initiate_cache
 
-  $node->initiate_cache
+  $node->initiate_cache( @args )
+
+The C<@args> differs for diffrent classes. Specially implemented in
+L<Rit::Base::Arc> and maby other classes.
 
 Returns the node with all data resetted. It will be reread from the DB.
 
@@ -5733,6 +5804,7 @@ sub initiate_cache
     $node->{'initiated_rel_inactive'} = 0;
     $node->{'initiated_rev_inactive'} = 0;
     $node->{'new'}                    = 0;
+    $node->{'valtype'}                = undef; # See this_valtype()
 
     $node->{'initiated_node'} ||= 0;
     if( $node->{'initiated_node'} > 1 )
@@ -5959,7 +6031,7 @@ sub rollback
     debug "ROLLBACK NODES";
     foreach my $node ( values %UNSAVED )
     {
-	$node->initiate_cache;
+	$node->reset_cache;
     }
     %UNSAVED = ();
 }
@@ -6173,37 +6245,21 @@ sub initiate_rel
 
 #	my $ts = Time::HiRes::time();
 
-	my $p_name_id = Rit::Base::Resource->get_by_label('name')->id;
-
 #	debug "Initiating node $nid rel WITHOUT arclim";
 
 	# Optimized for also getting value nodes
-	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where subj=? and active is true");
-	$sth_init_subj_name->execute($nid, $p_name_id, $nid);
+	my $sth_init_subj_name = $Rit::dbix->dbh->prepare("select * from arc where subj=$nid and active is true");
+	$sth_init_subj_name->execute();
 	my $recs = $sth_init_subj_name->fetchall_arrayref({});
 	$sth_init_subj_name->finish;
 
 #	debug timediff "exec done";
 #	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM exec'} += Time::HiRes::time() - $ts;
 
-	# TODO: Maby it woule be a litle mor efficient to start by the
-	# extra name-nodes and after that initiate the arcs from this
-	# node. Then, the name arcs will already be defined.
-
-	my @extra_nodes_initiated;
 	my $cnt = 0;
 	foreach my $rec ( @$recs )
 	{
-	    if( $rec->{'subj'} == $nid )
-	    {
-		$node->populate_rel( $rec );
-	    }
-	    else # A literal resource for pred name
-	    {
-		my $subjnode = $node->get( $rec->{'subj'} );
-		$subjnode->populate_rel( $rec );
-		push @extra_nodes_initiated, $subjnode;
-	    }
+	    $node->populate_rel( $rec );
 
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
@@ -6220,14 +6276,6 @@ sub initiate_rel
 	    $node->{'initiated_relprop'}{$name} = 2;
 	}
 
-	foreach my $subnode ( @extra_nodes_initiated )
-	{
-	    foreach my $name ( keys %{$subnode->{'relarc'}} )
-	    {
-		$subnode->{'initiated_relprop'}{$name} = 2;
-	    }
-	    $subnode->{'initiated_rel'} = 1;
-	}
 #    warn "End   init all props of node $node->{id}\n";
 
 	$node->{'initiated_rel'} = 1;
@@ -6418,90 +6466,59 @@ sub initiate_prop
 	}
 
 	my $recs;
-	if( ($name eq 'name') and not $inactive ) # Optimization...
+	my $sql = "select * from arc where subj=$nid and pred=$pred_id";
+	if( $inactive and not $active )
 	{
-	    my $sth_init_subj_pred_name = $Rit::dbix->dbh->prepare("select * from arc where subj in(select obj from arc where (subj=? and pred=? and active is true)) UNION select * from arc where (subj=? and pred=? and active is true)");
-	    $sth_init_subj_pred_name->execute( $nid, $pred_id, $nid, $pred_id );
-	    $recs = $sth_init_subj_pred_name->fetchall_arrayref({});
-	    $sth_init_subj_pred_name->finish;
-#	    $Para::Frame::REQ->{RBSTAT}{'initiate_prop name exec'} += Time::HiRes::time() - $ts;
+	    $sql .= " and active is false";
 	}
-	else
+	if( $active and not $inactive )
 	{
-	    my $sql = "select * from arc where subj=$nid and pred=$pred_id";
-	    if( $inactive and not $active )
-	    {
-		$sql .= " and active is false";
-	    }
-	    if( $active and not $inactive )
-	    {
-		$sql .= " and active is true";
-	    }
+	    $sql .= " and active is true";
+	}
 
-	    my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
-	    $sth_init_subj_pred->execute();
-	    $recs = $sth_init_subj_pred->fetchall_arrayref({});
-	    $sth_init_subj_pred->finish;
+	my $sth_init_subj_pred = $Rit::dbix->dbh->prepare($sql);
+	$sth_init_subj_pred->execute();
+	$recs = $sth_init_subj_pred->fetchall_arrayref({});
+	$sth_init_subj_pred->finish;
 
-	    my $rowcount = $sth_init_subj_pred->rows;
-	    if( $rowcount > 20 )
+	my $rowcount = $sth_init_subj_pred->rows;
+	if( $rowcount > 20 )
+	{
+	    if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 	    {
-		if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
+		my $obj_id = $proplim->id;
+		debug 2, "  rowcount > 20. Using obj_id from proplim $obj_id";
+		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
+		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
+		if( $arclim_sql )
 		{
-		    my $obj_id = $proplim->id;
-		    debug 2, "  rowcount > 20. Using obj_id from proplim $obj_id";
-		    $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
-		    my( $arclim_sql, $extralim_sql ) = $arclim->sql;
-		    if( $arclim_sql )
-		    {
-			$sql .= " and ".$arclim_sql;
-		    }
-
-		    my $sth = $Rit::dbix->dbh->prepare($sql);
-		    $sth->execute();
-		    $recs = $sth->fetchall_arrayref({});
-		    $sth->finish;
-		    $extralim ++;
-		    $rowcount = $sth->rows;
+		    $sql .= " and ".$arclim_sql;
 		}
-	    }
 
-	    if( $rowcount > 100 )
-	    {
-		debug "initiate_prop $node->{id} $name";
-		debug "Populating $rowcount arcs";
-		debug "ARGS: ".query_desig($args);
+		my $sth = $Rit::dbix->dbh->prepare($sql);
+		$sth->execute();
+		$recs = $sth->fetchall_arrayref({});
+		$sth->finish;
+		$extralim ++;
+		$rowcount = $sth->rows;
 	    }
+	}
+
+	if( $rowcount > 100 )
+	{
+	    debug "initiate_prop $node->{id} $name";
+	    debug "Populating $rowcount arcs";
+	    debug "ARGS: ".query_desig($args);
+	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
-	}
 
-
-	my @extra_nodes_initiated;
 	foreach my $rec ( @$recs )
 	{
 	    debug "  populating with ".datadump($rec,4)
 	      if debug > 4;
-	    if( $rec->{'subj'} == $nid )
-	    {
-		$node->populate_rel( $rec, $args );
-	    }
-	    else
-	    {
-		my $subnode = $node->get_by_id( $rec->{'subj'} );
-		$subnode->populate_rel( $rec, $args );
-		push @extra_nodes_initiated, $subnode;
-	    }
-	}
 
-	# Only for active statements
-	foreach my $subnode ( @extra_nodes_initiated )
-	{
-	    foreach my $name ( keys %{$subnode->{'relarc'}} )
-	    {
-		$subnode->{'initiated_relprop'}{$name} = 2;
-	    }
-	    $subnode->{'initiated_rel'} = 1;
+	    $node->populate_rel( $rec, $args );
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -6707,7 +6724,6 @@ sub populate_rel
 
     # Oh, yeah? Like I care?!?
     my $pred_name = Rit::Base::Pred->get( $rec->{'pred'} )->plain;
-#    debug "Populating node $node->{id} prop $pred_name"; ### DEBUG
     if( $rec->{'active'} and (($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1))
     {
 	debug 4, "NOT creating arc";
@@ -6715,7 +6731,10 @@ sub populate_rel
     }
 
 #    debug "Creating arc for $node with $rec";
-    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec, $node );
+    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec,
+						       {
+							subj => $node,
+						       });
 #    debug "  Created";
 
 #    debug "**Add prop $pred_name to $node->{id}";
@@ -6751,7 +6770,10 @@ sub populate_rev
 	debug "Creating arc for $node->{id} with ".datadump($rec,4);
 #	debug timediff("new arc");
     }
-    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec, undef, $node );
+    my $arc = Rit::Base::Arc->get_by_rec_and_register( $rec,
+						       {
+							value => $node,
+						       });
     if( debug > 3 )
     {
 	debug "  Created";
@@ -6884,25 +6906,30 @@ sub coltype_id
 This would be the same as the C<is> property of this resource. But it
 must only have ONE value. It's important for literal values.
 
-This method will return the literal valtype for value resoruces and
-return the C<resource> resource for other resources.
+This method will return the literal valtype for value resoruces.
 
-See also: L<Rit::Base::Literal/this_valtype>, L</is_value_node>.
+It will retrun the C<resource> resource if a single class can't be
+identified.
+
+See also: L<Rit::Base::Literal/this_valtype>,
+L<Rit::Base::Arc/this_valtype>, L</is_value_node>.
 
 =cut
 
 sub this_valtype
 {
-    my( $node, $args_in ) = @_;
+    unless( $_[0]->{'valtype'} )
+    {
+	debug "Letting find_class find out type for $_[0]->{id}";
+	$_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
 
-    if( my $arc = $_[0]->first_arc('value',undef, $args_in) )
-    {
-	return $arc->valtype;
+	unless( $_[0]->{'valtype'} )
+	{
+	    confess "CONFUSED";
+	}
     }
-    else
-    {
-	return Rit::Base::Resource->get_by_label('resource');
-    }
+
+    return $_[0]->{'valtype'};
 }
 
 
@@ -6935,14 +6962,19 @@ sub this_coltype
 Compatible with L<Rit::Base::Literal::Class/instance_class>. This will
 return the class in the same manner as L</find_class>, as given by
 C<class_handled_by_perl_module> and defaults to
-C<Rit::Base::Resource>. Even for value resources.
-
-TODO: make value resources literal objects
+C<Rit::Base::Resource>.
 
 =cut
 
 sub instance_class
 {
+    # Used in startup.
+
+    if( $_[0]->{'id'} == $ID )
+    {
+	return 'Rit::Base::Resource';
+    }
+
     my $package = 'Rit::Base::Resource';
 
     # Maby a small optimization
@@ -6970,6 +7002,7 @@ sub instance_class
 	    no strict "refs";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 	    $Rit::Base::Cache::Class{ $key } = $package;
+	    $Rit::Base::Cache::Valtype{ $key } = $class_node;
 	    1;
 	};
 	if( $@ )
@@ -6980,6 +7013,122 @@ sub instance_class
     }
 
     return $package;
+}
+
+
+#######################################################################
+
+=head2 update_seen_by
+
+=cut
+
+sub update_seen_by
+{
+    my( $node, $user, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
+    $user ||= $Para::Frame::U;
+    $node->add({'seen_by'=>$user},
+		 {
+		  %$args,
+		  mark_updated => 1,
+		  activate_new_arcs => 1,
+		 });
+
+    $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
+
+    return $user;
+}
+
+
+#######################################################################
+
+=head2 update_unseen_by
+
+=cut
+
+sub update_unseen_by
+{
+    my( $node ) = @_;
+
+    my %uns;
+    my $unseers = $node->list('unseen_by');
+    while( my $unseer = $unseers->get_next_nos )
+    {
+	$uns{$unseer->id} = $unseer;
+    }
+
+    my $updated = $node->updated;
+
+    my $watchers = $node->watchers;
+    while( my $watcher = $watchers->get_next_nos )
+    {
+	next if $uns{$watcher->id}; # Already added
+
+	if( my $seen_arc = $node->first_arc('seen_by', $watcher) )
+	{
+	    next if $seen_arc->updated >= $updated;
+	}
+
+	$node->add({unseen_by => $watcher},
+		   {activate_new_arcs => 1,
+		    updated => $node->updated,
+		   });
+    }
+
+}
+
+
+#######################################################################
+
+=head2 watchers
+
+=cut
+
+sub watchers
+{
+    return Rit::Base::List->new_empty;
+}
+
+
+#########################################################################
+
+=head2 update_valtype
+
+  $node->update_valtype( \%args )
+
+Should update all active revarcs with the new valtype
+
+=cut
+
+sub update_valtype
+{
+    my( $node, $args ) = @_;
+
+    my $valtype = $node->this_valtype;
+
+    my $newargs =
+    {
+     'res' => $args->{'res'},
+     'force_set_value'   => 1,
+     'force_set_value_same_version' => 1,
+     'valtype' => $valtype,
+    };
+
+    my $revarcs = $node->revarc_list;
+    my( $arc, $err ) = $revarcs->get_first;
+    while(!$err)
+    {
+	unless( $valtype->equals($arc->valtype) )
+	{
+	    $arc->set_value( $arc->value, $newargs );
+	}
+    }
+    continue
+    {
+	( $arc, $err ) = $revarcs->get_next;
+    }
+
+    return $valtype;
 }
 
 
@@ -7117,6 +7266,31 @@ sub handle_query_newsubjs
 
     return $res->changes - $changes_prev;
 }
+
+#######################################################################
+
+=head2 on_startup
+
+=cut
+
+sub on_startup
+{
+    my $sth = $Rit::dbix->dbh->
+      prepare("select node from node where label=?");
+    $sth->execute( 'resource' );
+    $ID = $sth->fetchrow_array; # Store in GLOBAL id
+    $sth->finish;
+
+    unless( $ID )
+    {
+	die "Failed to initiate resource constant";
+    }
+
+    $Rit::Base::Constants::Label{'resource'} =
+      $Rit::Base::Cache::Resource{ $ID } ||=
+	Rit::Base::Resource->new($ID)->init();
+}
+
 
 #########################################################################
 

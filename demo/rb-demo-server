@@ -1,18 +1,20 @@
 #!/usr/bin/perl -w
 #  $Id$  -*-cperl-*-
-
 #=====================================================================
-#
-# DESCRIPTION
-#   Ritguides daemon example server
 #
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
+
+=head1 DESCRIPTION
+
+Ritguides daemon example server
+
+=cut
 
 our $CFG;
 our $pf;

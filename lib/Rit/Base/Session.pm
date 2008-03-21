@@ -2,14 +2,11 @@
 package Rit::Base::Session;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Session class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2006-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -33,6 +30,12 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug );
 
 use Rit::Base::Search::Collection;
+
+=head1 DESCRIPTION
+
+Ritbase Resource Session class
+
+=cut
 
 ###########################################################################
 

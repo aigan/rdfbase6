@@ -1,4 +1,14 @@
+#  $Id$  -*-cperl-*-
 package Rit::Base::Widget::Plugins;
+#=====================================================================
+#
+# AUTHOR
+#   Fredrik Liljegren   <fredrik@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 use warnings;

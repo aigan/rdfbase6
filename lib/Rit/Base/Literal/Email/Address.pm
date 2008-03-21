@@ -2,14 +2,11 @@
 package Rit::Base::Literal::Email::Address;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Literal Email Address class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -230,8 +227,7 @@ sub syskey
 
   $n->literal()
 
-The literal value that this object represents.  This asumes that the
-object is a value node or a list of value nodes.
+The literal value that this object represents.
 
 =cut
 

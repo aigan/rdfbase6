@@ -169,6 +169,15 @@ END;
          <td>hard</td>
          <td>-</td>
       </tr>
+      [% IF node.value_node %]
+      <tr>
+         <td>[% jump('E', node.form_url ) %]</td>
+         <td>value node</td>
+         <td>[% jump(node.value_node.desig, me, id=node.value_node.id) %]</td>
+         <td>hard</td>
+         <td>-</td>
+      </tr>
+      [% END %]
    [% END %]
 [% END %]
 

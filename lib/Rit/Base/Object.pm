@@ -2,14 +2,11 @@
 package Rit::Base::Object;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Objects base class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -190,16 +187,7 @@ sub is_node { 0 };
 
 Returns true if this is a Literal Resource (aka value node).
 
-Liuteral Resources are nodes representing a Literal. For example
-Instead of
-
-  $obj -name-> $name
-
-we could have
-
-  $obj -name-> $valobj,
-  $valobj -value-> $name,
-  $valobj -is_of_language-> $langobj.
+Literal Resources are nodes representing a Literal.
 
 =cut
 
@@ -384,6 +372,23 @@ sub as_string
 =cut
 
 sub size
+{
+    return 1;
+}
+
+#######################################################################
+
+=head2 empty
+
+  $n->empty()
+
+Returns true if this node has no properties.
+
+Returns: 1
+
+=cut
+
+sub empty
 {
     return 1;
 }

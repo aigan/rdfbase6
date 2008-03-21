@@ -2182,7 +2182,7 @@ sub build_outer_select_field
 	    my $weight_id = Rit::Base::Resource->get_by_label('weight')->id;
 
 	    # Sort by weight
-	    $sql ="select $coltype from (select CASE WHEN obj is not null THEN (select $coltype from arc where pred=4 and subj=${sortkey}_inner.obj $arclim_sql) ELSE $coltype END, CASE WHEN obj is not null THEN (select valfloat from arc where pred=${weight_id} and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
+	    $sql ="select $coltype from (select $coltype, CASE WHEN obj is not null THEN (select valfloat from arc where pred=${weight_id} and subj=${sortkey}_inner.obj $arclim_sql) ELSE 0 END as weight from arc as ${sortkey}_inner where $where and pred=? $arclim_sql order by weight limit 1) as ${sortkey}_mid";
 	}
 	elsif( $dir eq 'exists' )
 	{
@@ -2677,22 +2677,8 @@ sub elements_props
 		$matchpart = join(" or ", map "$type $matchpart ".$dbh->quote($_), @{ searchvals($cond) });
 	    }
 
-	    ### Support matching valuenodes
-	    if( $type ne 'obj' )
-	    {
-		# See time comparsion in doc/notes2.txt
-		$where =
-		  [
-		   "$pred_part and obj in ( select subj from arc where pred=4 and ($matchpart) $arclim_sql) $arclim_sql",
-		   "$pred_part and ($matchpart) $arclim_sql",
-		  ];
-		@outvalues = ( @pred_ids, @matchvalues, @pred_ids, @matchvalues );
-	    }
-	    else
-	    {
-		$where = "$pred_part and ($matchpart) $arclim_sql";
-		@outvalues = ( @pred_ids, @matchvalues);
-	    }
+	    $where = "$pred_part and ($matchpart) $arclim_sql";
+	    @outvalues = ( @pred_ids, @matchvalues);
 	}
 
 	if( $search->add_stats )

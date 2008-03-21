@@ -2,14 +2,11 @@
 package Rit::Base::Action::rule_add;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for adding rules
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -20,6 +17,12 @@ use Para::Frame::Utils qw( throw );
 
 use Rit::Base::Pred;
 use Rit::Base::Rule;
+
+=head1 DESCRIPTION
+
+Ritbase Action for adding rules
+
+=cut
 
 sub handler
 {

@@ -2,14 +2,11 @@
 package Rit::Base::Node;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Node class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -885,24 +882,7 @@ sub replace
 	debug 3, "  pred: $pred_name";
 	# Only handles pred nodes
 	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
-
-	my $valtype;
-	my $coltype = $pred->coltype;
-	if( $coltype eq 'value' )
-	{
-	    # Should only replace an existing value property
-	    my $varc = $node->first_arc('value', undef, $args );
-	    unless( $varc )
-	    {
-		confess "Node $node->{id} has no existing value arc to replace";
-	    }
-
-	    $valtype = $varc->valtype;
-	}
-	else
-	{
-	    $valtype = $pred->valtype;
-	}
+	my $valtype = $pred->valtype;
 
 	foreach my $val_in ( @{$props->{$pred_name}} )
 	{
@@ -934,11 +914,9 @@ sub replace
 	}
     }
 
-    # We should prefere to replace the values for properties
-    # with unique predicates. This is a must for value arcs,
-    # since removing value arcs are treated as a special case.
-    # The updating of the value also gives a better history
-    # recording.
+    # We should prefere to replace the values for properties with
+    # unique predicates. The updating of the value gives a better
+    # history recording.
 
     # We are putting the arcs which should have its value replaced
     # in %del_pred and keeps the arc that should be removed in
@@ -1099,28 +1077,8 @@ sub remove
 
     debug "Removing resource ".$node->sysdesig;
 
-
-    # Remove value arcs before the corresponding datatype arc
-    my( @arcs, $value_arc );
-    my $pred_value_id = Rit::Base::Pred->get_by_label('value')->id;
-
-    foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes )
-    {
-	if( $arc->pred->id == $pred_value_id )
-	{
-	    $value_arc = $arc;
-	}
-	else
-	{
-	    push @arcs, $arc;
-	}
-    }
-
-    # Place it first
-    unshift @arcs, $value_arc if $value_arc;
-
-
-    foreach my $arc ( @arcs, $node->revarc_list(undef, undef, $args)->nodes )
+    foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
+		      $node->revarc_list(undef, undef, $args)->nodes )
     {
 	$arc->remove( $args );
     }

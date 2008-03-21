@@ -2,14 +2,11 @@
 package Rit::Base::Literal::URL;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Literal URL class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -84,12 +81,6 @@ sub parse
     my( $class, $val_in, $args_in ) = @_;
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
-
-    if( $coltype eq 'obj' ) # Is this a value node?
-    {
-	$coltype = $valtype->coltype;
-	debug "Parsing as $coltype: ".query_desig($val_in);
-    }
 
     my $val_mod;
     if( ref $val eq 'SCALAR' )
@@ -197,8 +188,7 @@ sub syskey
 
   $n->literal()
 
-The literal value that this object represents.  This asumes that the
-object is a value node or a list of value nodes.
+The literal value that this object represents.
 
 =cut
 

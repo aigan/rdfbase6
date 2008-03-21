@@ -1,6 +1,14 @@
 # $Id$
 package Rit::Base::AJAX;
-
+#=====================================================================
+#
+# AUTHOR
+#   Fredrik Liljegren   <fredrik@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 

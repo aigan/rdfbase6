@@ -2,14 +2,11 @@
 package Rit::Base::Action::search_lucky;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for redirecting to form of hit, if single hit
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,6 +15,12 @@ use strict;
 use URI::QueryParam;
 
 use Para::Frame::Utils qw( debug );
+
+=head1 DESCRIPTION
+
+Ritbase Action for redirecting to form of hit, if single hit
+
+=cut
 
 sub handler
 {

@@ -2,14 +2,11 @@
 package Rit::Base::Literal;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase node Literal class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -21,7 +18,7 @@ Rit::Base::Literal
 
 use strict;
 use Carp qw( cluck confess carp shortmess longmess );
-use Scalar::Util qw( refaddr );
+use Scalar::Util qw( refaddr blessed );
 
 BEGIN
 {
@@ -33,6 +30,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Widget qw( label_from_params );
 
+use Rit::Base::Resource::Literal;
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time;
 use Rit::Base::Literal::URL;
@@ -72,25 +70,19 @@ Supported args:
   valtype
 
 
-TODO: For handling value resoruces and be clean and consistent we will
-have to, for the example String:
+=head2 notes
 
-  @{"Rit::Base::Metaclass::Literal::Rit::Base::Literal::String::ISA"} =
-   ("Rit::Base::String", "Rit::Base::Literal");
+121[122] 123 -name-> [124]"Apa"
+125[126] 124 -is_of_language-> sv
+127[122] 123 -name-> [124]"Bepa"
 
-And for value resources of String type:
+"Apa" isa Rit::Base::Literal
+[124] isa Rit::Base::Resource::Literal
 
-  @{"Rit::Base::Metaclass::Rit::Base::Literal::String::ISA"} =
-   ("Rit::Base::String", "Rit::Base::Literal::Resource");
-
-And Rit::Base::Literal::Resource will implement its version of
-Rit::Base::Literal and inherit from Rit::Base::Resource
-
-
-This makes it behave more like other speical classes handled by
-L<Rit::Base::Resource/find_class>. And we will bless all valuenodes in
-this way and can then access the literal methods and still get the
-other properties.
+$nlit = $R->get(124);
+$lit = $nlit->value('active');
+$nlit = $lit->node;
+print $lit->plain; # Bepa
 
 =cut
 
@@ -108,7 +100,7 @@ These can be called with the class name or any List object.
 
 =head2 new
 
-  $class->new( \$val )
+  $class->new( \$val, $valtype )
 
 Implement in subclasses!
 
@@ -142,18 +134,28 @@ sub new
 
 =head2 new_from_db
 
+  $this->new_from_db( $value, $valtype)
+
 =cut
 
 sub new_from_db
 {
-    my( $this, $val_in, $valtype_in ) = @_;
+    my( $this, $val_in, $valtype ) = @_;
 
-    unless( $valtype_in )
+    # This should reset the node based on the DB content. But the
+    # content is dependant of the arc. An init of the arc will call
+    # this with the new data. We will never drop the C<arc>
+    # connection.
+    #
+    # An init without C<$valtype> will use the C<arc> if
+    # existing. If not, it will keep existing data.
+
+
+    unless( $valtype )
     {
-	confess "valtype missing";
+ 	confess "valtype missing";
     }
 
-    my $valtype = Rit::Base::Resource->get($valtype_in);
     unless( $valtype->UNIVERSAL::isa('Rit::Base::Literal::Class') )
     {
 	my $valtype_desig = $valtype->desig;
@@ -163,6 +165,47 @@ sub new_from_db
     my $class_name = $valtype->instance_class;
 
     return $class_name->new_from_db( $val_in, $valtype );
+}
+
+
+#######################################################################
+
+=head2 get_by_arc_rec
+
+  $n->get_by_arc_rec( $rec, $valtype )
+
+This will B<allways> re-init the literal object. It will usually be
+called from the arc holding the literal. The init or reinit of the arc
+should also reinit the literal. Thus, we will find the literal in the
+cache, but init with the rec, even if found.
+
+Returns: a literal
+
+Exceptions: see L</init>.
+
+=cut
+
+sub get_by_arc_rec
+{
+    my( $this, $rec, $valtype ) = @_;
+    my $coltype = $valtype->coltype;
+    return $this->new_from_db($rec->{$coltype}, $valtype);
+}
+
+
+#########################################################################
+
+=head2 reset_cache
+
+  $node->reset_cache()
+
+Does nothing here...
+
+=cut
+
+sub reset_cache
+{
+    return $_[0];
 }
 
 
@@ -226,8 +269,7 @@ sub nodes
 
   $literal->lit_revarc
 
-Return the arc this literal is a part of. For value resources, this
-will return the value arc.
+Return the arc this literal is a part of.
 
 See also: L</arc> and L</revarc>
 
@@ -264,6 +306,56 @@ See L</Rit::Base::Object/is_literal>
 sub is_literal
 {
     return 1;
+}
+
+
+#######################################################################
+
+=head2 node
+
+  $lit->node
+
+=cut
+
+sub node
+{
+    return( $_[0]->{'node'} ||= $_[0]->{'arc'} ?
+	    $_[0]->{'arc'}->value_node : is_undef );
+}
+
+
+#######################################################################
+
+=head2 node_set
+
+  $lit->node_set
+
+Will create a node if not existing
+
+=cut
+
+sub node_set
+{
+    unless( $_[0]->{'node'} )
+    {
+	my( $lit ) = @_;
+	if( my $arc = $lit->{'arc'} )
+	{
+	    if( my $node = $arc->value_node )
+	    {
+		$lit->{'node'} = $node;
+	    }
+	    else
+	    {
+		$lit->{'node'} = $arc->set_value_node();
+	    }
+	}
+	else
+	{
+	    $lit->{'node'} = Rit::Base::Resource::Literal->get('new');
+	}
+    }
+    return $_[0]->{'node'};
 }
 
 
@@ -311,7 +403,11 @@ sub equals
 
 The API is the same as for L<Rit::Base::Resource/update>.
 
-This converts the literal to a value node.
+The prop C<value> will update the literal. If the literal is not bound
+to an arc, it may be updated to any type of literal or resource.
+
+Supported args are teh same as for
+L<Rit::Base::Resource/find_by_anything>.
 
 Returns:
 
@@ -331,7 +427,7 @@ sub update
     # But check if we realy have props to add
 
     debug "Update in literal ".$lit->sysdesig ." ".refaddr($lit);
-#    debug query_desig($props);
+    debug query_desig($props);
 #    debug "With args ".query_desig($args);
 #    cluck "GOT HERE";
 #    debug "---";
@@ -349,92 +445,18 @@ sub update
 	    $lit = Rit::Base::Resource->get_by_anything($new_val, $args);
 	}
 
-	return $lit->update($props, $args);
+	$lit->update($props, $args);
     }
-
-    if( keys %$props )
+    else
     {
-	my $node;
-	if( my $id = $lit->{'id'} )
-	{
-	    # Transform to value resource
-	    delete $Rit::Base::Cache::Resource{ $id };
-	    $node = Rit::Base::Resource->get( $id );
-	}
-	else
-	{
-	    $node =  Rit::Base::Resource->get( 'new' );
-	}
+	my $node = $lit->node_set;
+	debug "Getting value node ".$node->sysdesig;
+	$node->update($props, $args);
 
-	$node->add( $props, $args );
-
-	my $arc = $lit->lit_revarc; # Before updating literal
-	if( $arc )
-	{
-	    debug "Arc for lit is ".$arc->sysdesig;
-	}
-	else
-	{
-	    debug "No arc in update";
-	}
-	my $valtype = $lit->this_valtype;
-	Rit::Base::Arc->create({
-				subj    => $node,
-				pred    => 'value',
-				value   => $lit,
-				valtype => $valtype,
-			       }, $args);
-
-	if( $arc )
-	{
-	    $arc->set_value( $node, $args );
-	}
-
-	return $node;
+#	$lit->node_set->update($props, $args);
     }
 
     return $lit;
-}
-
-
-#######################################################################
-
-=head2 set_arc
-
-  $literal->set_arc( $arc )
-
-Bind Literal to arc.
-
-=cut
-
-sub set_arc
-{
-    my( $literal, $arc ) = @_;
-
-#    debug "set_arc to $arc->{id} for $literal ".refaddr($literal);
-    $literal->{'arc'} = $arc;
-
-    return $arc;
-}
-
-
-#######################################################################
-
-=head2 initiate_cache
-
-  $literal->initiate_cache( $arc )
-
-Resets value metadata. But keeps the actual value.
-
-=cut
-
-sub initiate_cache
-{
-    my( $literal, $arc ) = @_;
-
-    $literal->set_arc( $arc );
-
-    return $literal;
 }
 
 
@@ -444,7 +466,7 @@ sub initiate_cache
 
   $lit->this_valtype()
 
-This is like this C<is> property for literals. Defaults to
+This is like the C<is> property for literals. Defaults to
 L</default_valtype>.
 
 See also: L<Rit::Base::Resource/this_valtype>
@@ -489,7 +511,14 @@ sub this_coltype
 
 =head3 subj
 
+  $this->subj( \%args )
+
 Get existing or planned subj
+
+Supported args are:
+
+  arc
+  subj_new
 
 =cut
 
@@ -506,7 +535,6 @@ sub subj
 	}
     }
 
-    my $class = $this;
     my( $args ) = parse_propargs($args_in);
     if( my $arc = $args->{'arc'} )
     {
@@ -520,7 +548,14 @@ sub subj
 
 =head3 pred
 
+  $this->pred( \%args )
+
 Get existing or planned pred
+
+Supported args are:
+
+  arc
+  pred_new
 
 =cut
 
@@ -537,7 +572,6 @@ sub pred
 	}
     }
 
-    my $class = $this;
     my( $args ) = parse_propargs($args_in);
     if( my $arc = $args->{'arc'} )
     {
@@ -553,13 +587,12 @@ sub pred
 
   $class->extract_string( \$val, \%args )
 
+For use in L</parse> methods.
 
 Supported args are:
   valtype
   coltype
   arclim
-
-For use in L</parse> methods.
 
 Thre C<$retval> will either be a scalar ref of the plain value to
 parse, or a L<Rit::Base::Literal> object.
@@ -606,18 +639,11 @@ sub extract_string
 						     });
 	return( $val, $coltype, $valtype, $args );
     }
-    elsif( UNIVERSAL::isa $val, "Rit::Base::Resource" )
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Resource::Literal" )
     {
-	if( my $arc = $val->first_arc('value', undef, $args) )
+	unless( $val = $val->value($args) )
 	{
-	    $val = $arc->value;
-
-	    # Is arc always set?
-	    $val->set_arc($arc) unless $val->{'arc'};
-	}
-	else
-	{
-	    throw('validation', "$val->{id} is not a value node");
+	    throw('validation', $val->id." is not a literal resource");
 	}
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
@@ -640,18 +666,13 @@ sub extract_string
 
 =head3 id
 
+Returns: the node id
+
 =cut
 
 sub id
 {
-    my( $lit ) = @_;
-    unless( $lit->{'id'} )
-    {
-	my $id = $lit->{'id'} = $Rit::dbix->get_nextval('node_seq');
-	$Rit::Base::Cache::Resource{ $id } = $lit;
-#        debug shortmess "Created Literal id ".$lit->sysdesig;
-    }
-    return $lit->{'id'};
+    $_[0]->node->id;
 }
 
 
@@ -664,30 +685,7 @@ sub id
 
 sub find
 {
-    my( $lit, $query, $args_in ) = @_;
-
-    unless( ref $query )
-    {
-	return Rit::Base::List->new_empty();
-    }
-    unless( ref $lit )
-    {
-	return Rit::Base::List->new_empty();
-    }
-    my( $args ) = parse_propargs($args_in);
-
-    ## Default criterions
-    my $default = $args->{'default'} || {};
-    foreach my $key ( keys %$default )
-    {
-	unless( defined $query->{$key} )
-	{
-	    $query->{$key} = $default->{$key};
-	}
-    }
-
-    my $list = Rit::Base::List->new([$lit]);
-    return $list->find($query, $args);
+    return shift->node->find(@_);
 }
 
 
@@ -699,7 +697,7 @@ sub find
 
 sub find_one
 {
-    return shift->find(@_)->get_first_nos;
+    return shift->node->find_one(@_);
 }
 
 
@@ -711,37 +709,9 @@ sub find_one
 
 sub find_set
 {
-    my( $this, $query, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
-
-    my $nodes = $this->find( $query, $args )->as_arrayref;
-    my $node = $nodes->[0];
-    unless( $node )
-    {
-	my $query_new = convert_query_prop_for_creation($query);
-
-	my $default_create = $args->{'default_create'} || {};
-	foreach my $pred ( keys %$default_create )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default_create->{$pred};
-	    }
-	}
-
-	my $default = $args->{'default'} || {};
-	foreach my $pred ( keys %$default )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default->{$pred};
-	    }
-	}
-
-	return $this->create($query_new, $args);
-    }
-
-    return $node;
+    my( $lit ) = shift;
+    blessed $lit or confess "Not a class method";
+    return $lit->node_set->find_set(@_);
 }
 
 
@@ -753,44 +723,9 @@ sub find_set
 
 sub set_one
 {
-    my( $this, $query, $args_in ) = @_;
-
-    my( $args ) = parse_propargs($args_in);
-
-    my $nodes = $this->find( $query, $args );
-    my $node = $nodes->get_first_nos;
-
-    while( my $enode = $nodes->get_next_nos )
-    {
-	confess "not possible";
-    }
-
-    unless( $node )
-    {
-	my $query_new = convert_query_prop_for_creation($query);
-
-	my $default_create = $args->{'default_create'} || {};
-	foreach my $pred ( keys %$default_create )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default_create->{$pred};
-	    }
-	}
-
-	my $default = $args->{'default'} || {};
-	foreach my $pred ( keys %$default )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default->{$pred};
-	    }
-	}
-
-	return $this->create($query_new, $args);
-    }
-
-    return $node;
+    my( $lit ) = shift;
+    blessed $lit or confess "Not a class method";
+    return $lit->node_set->set_one(@_);
 }
 
 
@@ -822,11 +757,19 @@ sub page_url_path_slash
 
 =head3 empty
 
+  $n->empty()
+
+Returns true if the literal node has no properties.
+
+Returns true if the literal is not coupled to a node.
+
+Returns: boolean
+
 =cut
 
 sub empty
 {
-    return 1;
+    return $_[0]->node->empty;
 }
 
 
@@ -842,6 +785,8 @@ sub created
     {
 	return $arc->created;
     }
+
+    cluck "FIXME";
 
     return Rit::Base::Literal::Time->new();
 }
@@ -859,6 +804,8 @@ sub updated
     {
 	return $arc->updated;
     }
+
+    cluck "FIXME";
 
     return Rit::Base::Literal::Time->new();
 }
@@ -957,28 +904,34 @@ sub updated_by
 
 sub list
 {
-    my( $node, $name, $proplim, $args_in ) = @_;
-    my( $args, $arclim ) = parse_propargs($args_in);
-
-    if( $name )
+    my( $lit, $pred_in, $proplim, $args_in ) = @_;
+    if( $pred_in )
     {
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+	my( $pred, $name );
+	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
-	    $name = $name->plain;
-	}
-
-	my $target;
-
-	if( $name eq 'value' )
-	{
-	    $target = $node;
+	    $pred = $pred_in;
 	}
 	else
+	{
+	    $pred = Rit::Base::Pred->get($pred_in);
+	}
+	$name = $pred->plain;
+
+	unless( $name eq 'value' )
+	{
+	    return $lit->node->list($pred, $proplim, $args_in);
+	}
+
+	my $node = $lit->node;
+	unless( $node )
 	{
 	    return Rit::Base::List->new_empty();
 	}
 
-	unless( Rit::Base::Arc::Lim::literal_meets_lim($target, $arclim ) )
+
+	my( $args, $arclim ) = parse_propargs($args_in);
+	unless( Rit::Base::Arc::Lim::literal_meets_lim($lit, $arclim ) )
 	{
 	    return Rit::Base::List->new_empty();
 	}
@@ -991,16 +944,17 @@ sub list
 
 	if( $proplim ) # May be a value or anything taken by find
 	{
-	    # Proplim may be in negative form, and thus valid
-
-	    $target = $target->find($proplim, $args)->get_first_nos;
+	    unless( $node->find($proplim, $args)->size )
+	    {
+		return Rit::Base::List->new_empty();
+	    }
 	}
 
-	return $target;
+	return $lit;
     }
     else
     {
-	return $node->list_preds( $proplim, $args );
+	return $lit->node->list_preds( $proplim, $args_in );
     }
 }
 
@@ -1013,8 +967,7 @@ sub list
 
 sub list_preds
 {
-    my $pred = Rit::Base::Pred->get_by_label('value');
-    return Rit::Base::Pred::List->new([$pred]);
+    return shift->node->list_preds(@_);
 }
 
 
@@ -1037,34 +990,34 @@ sub revlist
 
     if( $name )
     {
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
-	{
-	    $name = $name->plain;
-	}
+ 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+ 	{
+ 	    $name = $name->plain;
+ 	}
 
-	unless( $arc->pred->plain eq $name )
-	{
-	    return Rit::Base::List->new_empty();
-	}
+ 	unless( $arc->pred->plain eq $name )
+ 	{
+ 	    return Rit::Base::List->new_empty();
+ 	}
 
-	unless( $arc->meets_arclim($arclim) )
-	{
-	    return Rit::Base::List->new_empty();
-	}
+ 	unless( $arc->meets_arclim($arclim) )
+ 	{
+ 	    return Rit::Base::List->new_empty();
+ 	}
 
 
-	my $vals = Rit::Base::List->new([$arc->subj]);
+ 	my $vals = Rit::Base::List->new([$arc->subj]);
 
-	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
-	{
-	    $vals = $vals->find($proplim, $args);
-	}
+ 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+ 	{
+ 	    $vals = $vals->find($proplim, $args);
+ 	}
 
-	return $vals;
+ 	return $vals;
     }
     else
     {
-	return $node->revlist_preds( $proplim, $args );
+ 	return $node->revlist_preds( $proplim, $args );
     }
 }
 
@@ -1080,7 +1033,7 @@ sub revlist_preds
     my $arc = $_[0]->lit_revarc;
     unless( $arc )
     {
-	return Rit::Base::Pred::List->new_empty();
+ 	return Rit::Base::Pred::List->new_empty();
     }
 
     my $pred = $arc->pred;
@@ -1096,7 +1049,7 @@ sub revlist_preds
 
 sub first_prop
 {
-    return shift->list(@_)->get_first_nos;
+    return shift->node->first_prop(@_);
 }
 
 
@@ -1120,16 +1073,7 @@ sub first_revprop
 
 sub has_pred
 {
-    my( $node ) = shift;
-
-    if( $node->list(@_)->size )
-    {
-	return $node;
-    }
-    else
-    {
-	return is_undef;
-    }
+    return shift->node->has_pred(@_);
 }
 
 
@@ -1141,19 +1085,22 @@ sub has_pred
 
 sub has_value
 {
-    my( $node, $preds, $args_in ) = @_;
-    my( $args, $arclim ) = parse_propargs($args_in);
-
+    my( $lit, $preds, $args_in ) = @_;
     confess "Not a hashref" unless ref $preds;
 
     my( $pred_name, $value ) = each( %$preds );
+
+    unless( $pred_name eq 'value' )
+    {
+	return $lit->node->has_value($preds, $args_in);
+    }
+
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
 
     my $pred = Rit::Base::Pred->get( $pred_name );
-    $pred_name = $pred->plain;
-
 
     # Sub query
     if( ref $value eq 'HASH' )
@@ -1161,11 +1108,6 @@ sub has_value
 	unless( $match eq 'eq' )
 	{
 	    confess "subquery not implemented for matchtype $match";
-	}
-
-	if( $node->find($value, $args)->size )
-	{
-	    return 1;
 	}
 	return 0;
     }
@@ -1175,55 +1117,32 @@ sub has_value
     {
 	foreach my $val (@$value )
 	{
-	    my $res = $node->has_value({$pred_name=>$val},  $args);
+	    my $res = $lit->has_value({$pred_name=>$val},  $args);
 	    return $res if $res;
 	}
 	return 0;
     }
 
-
-    # Check the dynamic properties (methods) for the node
-    if( $node->can($pred_name) )
+    if( $match eq 'eq' )
     {
-	debug 3, "  check method $pred_name";
-	my $prop_value = $node->$pred_name( {}, $args );
-
-	if( ref $prop_value )
-	{
-	    $prop_value = $prop_value->desig;
-	}
-
-	if( $clean )
-	{
-	    $prop_value = valclean(\$prop_value);
-	    $value = valclean(\$value);
-	}
-
-	if( $match eq 'eq' )
-	{
-	    return -1 if $prop_value eq $value;
-	}
-	elsif( $match eq 'begins' )
-	{
-	    return -1 if $prop_value =~ /^\Q$value/;
-	}
-	elsif( $match eq 'like' )
-	{
-	    return -1 if $prop_value =~ /\Q$value/;
-	}
-	else
-	{
-	    confess "Matchtype $match not implemented";
-	}
+	return $lit->equals( $value, $args );
     }
 
+    my $val1 = $lit->plain;
+    my $val2 = $value->plain;
 
-    if( $pred_name eq 'value' )
+    if( $match eq 'begins' )
     {
-	return $node->equals( $value, $args );
+	return 1 if $val1 =~ /^\Q$val2/;
     }
-
-    return 0;
+    elsif( $match eq 'like' )
+    {
+	return 1 if $val1 =~ /\Q$val2/;
+    }
+    else
+    {
+	confess "Matchtype $match not implemented";
+    }
 }
 
 
@@ -1235,26 +1154,7 @@ sub has_value
 
 sub count
 {
-    my( $node, $tmpl, $args_in ) = @_;
-    my( $args, $arclim ) = parse_propargs($args_in);
-
-    if( ref $tmpl and ref $tmpl eq 'HASH' )
-    {
-	throw('action',"count( \%tmpl, ... ) not implemented");
-    }
-
-    # Only handles pred nodes
-    my $pred_name = Rit::Base::Pred->get_by_label( $tmpl )->plain;
-
-    if( $pred_name eq 'value' )
-    {
-	if( Rit::Base::Arc::Lim::literal_meets_lim($node, $arclim ) )
-	{
-	    return 1;
-	}
-    }
-
-    return 0;
+    return shift->node->count(@_);
 }
 
 
@@ -1272,12 +1172,12 @@ sub revcount
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
-	return 0;
+ 	return 0;
     }
 
     if( ref $tmpl and ref $tmpl eq 'HASH' )
     {
-	throw('action',"count( \%tmpl, ... ) not implemented");
+ 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
     # Only handles pred nodes
@@ -1285,10 +1185,10 @@ sub revcount
 
     if( $pred->equals( $arc->pred )  )
     {
-	if( $arc->meets_arclim( $arclim ) )
-	{
-	    return 1;
-	}
+ 	if( $arc->meets_arclim( $arclim ) )
+ 	{
+ 	    return 1;
+ 	}
     }
 
     return 0;
@@ -1330,7 +1230,7 @@ pretend to have one...
 
 sub arc_list
 {
-    return Rit::Base::Arc::List->new_empty();
+    return shift->node->arc_list(@_);
 }
 
 
@@ -1349,32 +1249,32 @@ sub revarc_list
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
-	return Rit::Base::Arc::List->new_empty();
+ 	return Rit::Base::Arc::List->new_empty();
     }
 
     if( $name )
     {
-	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
-	{
-	    $name = $name->plain;
-	}
+ 	if( UNIVERSAL::isa($name,'Rit::Base::Pred') )
+ 	{
+ 	    $name = $name->plain;
+ 	}
 
-	unless( $name eq $arc->pred->plain )
-	{
-	    return Rit::Base::Arc::List->new_empty();
-	}
+ 	unless( $name eq $arc->pred->plain )
+ 	{
+ 	    return Rit::Base::Arc::List->new_empty();
+ 	}
     }
 
     unless( $arc->meets_arclim($arclim) )
     {
-	return Rit::Base::Arc::List->new_empty();
+ 	return Rit::Base::Arc::List->new_empty();
     }
 
     my $vals = Rit::Base::Arc::List->new([$arc]);
 
     if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
-	$vals = $vals->find($proplim, $args);
+ 	$vals = $vals->find($proplim, $args);
     }
 
     return $vals;
@@ -1389,7 +1289,7 @@ sub revarc_list
 
 sub first_arc
 {
-    return Rit::Base::Arc::List->new_empty();
+    return shift->node->first_arc(@_);
 }
 
 
@@ -1413,7 +1313,7 @@ sub first_revarc
 
 sub arc
 {
-    return is_undef;
+    return shift->node->arc(@_);
 }
 
 
@@ -1437,7 +1337,7 @@ sub revarc
 
 sub add
 {
-    return shift->update(@_);
+    return shift->node_set->add(@_);
 }
 
 
@@ -1543,12 +1443,12 @@ sub sysdesig  # The designation of obj, including node id
 
     my $out;
 
-    debug "Literal is '$lit', a ". ref $lit;
+#    debug "Literal is '$lit', a ". ref $lit;
     confess "$lit is not a literal: ". ref $lit
       if $lit eq 'Rit::Base::Literal::String';
     #unless( UNIVERSAL::isa $lit, 'Rit::Base::Literal' );
 
-    if( my $id = $lit->{'id'} )
+    if( my $id = $lit->id )
     {
 	$out .= "$id: ";
     }
@@ -1585,6 +1485,10 @@ sub default_valtype
 }
 
 #########################################################################
+
+=head3 wdirc
+
+=cut
 
 sub wdirc
 {
@@ -1634,6 +1538,7 @@ sub wdirc
 =head1 SEE ALSO
 
 L<Rit::Base>,
+L<Rit::Base::Resource::Literal>,
 L<Rit::Base::Resource>,
 L<Rit::Base::Arc>,
 L<Rit::Base::Pred>,

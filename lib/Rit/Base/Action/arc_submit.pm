@@ -2,20 +2,23 @@
 package Rit::Base::Action::arc_submit;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for submitting an arc
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 use strict;
 
 use Rit::Base::Arc;
+
+=head1 DESCRIPTION
+
+Ritbase Action for submitting an arc
+
+=cut
 
 sub handler
 {

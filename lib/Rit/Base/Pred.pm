@@ -33,6 +33,7 @@ use Para::Frame::Reload;
 use Rit::Base::List;
 use Rit::Base::Utils qw( valclean translate is_undef parse_propargs );
 use Rit::Base::Literal::String;
+use Rit::Base::Constants qw( $C_predicate );
 
 
 ### Inherit
@@ -79,26 +80,6 @@ Inherits from L<Rit::Base::Resource>.
 
 
 
-
-#########################################################################
-
-=head2 id
-
-  $p->id
-
-An id of the node, not conflicting with any other
-L<Rit::Base::Resource>.
-
-Returns: An integer
-
-=cut
-
-sub id
-{
-    my( $pred ) = @_;
-
-    return $pred->{'id'};
-}
 
 #######################################################################
 
@@ -175,12 +156,6 @@ Find the valtype of a predicate.  This will use the range or the coltype.
 
 Returns: A C<valtype> node to use as the valtype for arcs with this pred.
 
-If this is the predicate C<value>, it will return the literal class
-C<literal>.
-
-Note: Previously, we would die if there was a request for the valtype
-of value.
-
 =cut
 
 sub valtype
@@ -204,10 +179,6 @@ sub valtype
 	if( $coltype eq 'obj' )
 	{
 	    return Rit::Base::Constants->get('resource');
-	}
-	elsif( $coltype eq 'value' )
-	{
-	    return Rit::Base::Constants->get('literal');
 	}
 	else
 	{
@@ -412,13 +383,16 @@ sub find_by_anything
 
 =head2 init
 
+Data from node rec mus always be awailible. Thus always load the node
+rec.
+
 =cut
 
 sub init
 {
     my( $pred, $node_rec ) = @_;
 
-    $pred->initiate_node( $node_rec );
+    $pred->initiate_node($node_rec);
 
     unless( $pred->{coltype} )
     {
@@ -428,6 +402,25 @@ sub init
 #    debug "Pred coltype of $pred->{label} is $pred->{coltype}";
 
     return $pred;
+}
+
+#######################################################################
+
+=head2 get_by_node_rec
+
+Reimplements this here because we can't give the node_rec to init for
+any class.
+
+=cut
+
+sub get_by_node_rec
+{
+    my( $this, $rec ) = @_;
+
+    my $id = $rec->{'node'} or
+      confess "get_by_node_rec misses the node param: ".datadump($rec,2);
+    return $Rit::Base::Cache::Resource{$id} ||
+      $this->new($id)->init($rec);
 }
 
 #######################################################################
@@ -589,8 +582,6 @@ sub vacuum_pred_arcs
     my $size = $arcs->size;
     debug "Vacuuming $size arcs";
 
-    my $conv_pred = $args->{'convert_prop_to_value'};
-    my $value_pred = Rit::Base::Pred->get_by_label('value');
     my $remove_faulty = $args->{'remove_faulty'} || 0;
 
     my( $arc, $error ) = $arcs->get_first;
@@ -598,18 +589,7 @@ sub vacuum_pred_arcs
     {
 	eval
 	{
-	    if( $conv_pred )
-	    {
-		my $obj = $arc->value;
-		if( my $conv_arc = $obj->first_arc($conv_pred) )
-		{
-		    $conv_arc->set_pred($value_pred,
-					{'activate_new_arcs'=>1});
-		}
-	    }
-
 	    $arc->vacuum( $args );
-#	    die "GOT HERE";
 	};
 	if( my $err = catch(['validation']) )
 	{
@@ -718,6 +698,18 @@ sub vacuum
 sub use_class
 {
     return "Rit::Base::Pred";
+}
+
+
+#######################################################################
+
+=head2 this_valtype
+
+=cut
+
+sub this_valtype
+{
+    return $C_predicate;
 }
 
 

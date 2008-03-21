@@ -2,14 +2,11 @@
 package Rit::Base::Widget::Handler;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Widget Handler class
-#
 # AUTHOR
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -1187,24 +1184,6 @@ sub handle_select_version
 	{
 	    debug "Activating version: ". $select_version->sysdesig;
 	    $select_version->activate( $args );
-
-	    if( $select_version->pred->plain eq 'value' ) # Value resource
-	    {
-		my $value_resource = $select_version->subj;
-		debug "...which is a value resource: ".
-		  $value_resource->sysdesig;
-
-		$value_resource->revarc(undef,undef, ['submitted'] )->
-		  activate( $args );
-
-		# activate ALL submitted arcs... ...except value-arcs
-		my $arcs = $value_resource->arc_list(undef,undef, ['submitted'] );
-		while( my $arc = $arcs->get_next_nos )
-		{
-		    $arc->activate( $args )
-		      unless( $arc->pred->plain eq 'value' );
-		}
-	    }
 	}
     }
 
@@ -1221,8 +1200,6 @@ sub handle_select_version
 	{
 	    $version->remove( $args );
 	}
-
-	#if( $version->pred->name eq 'value' ) # Value resource
     }
 
     debug "Selection done.";

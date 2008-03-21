@@ -2,14 +2,11 @@
 package Rit::Base::Site;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Site class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2006-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 

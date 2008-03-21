@@ -2,14 +2,11 @@
 package Rit::Base::Action::translate_page_create;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for creating a page resource
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -21,6 +18,12 @@ use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_webpage );
 use Rit::Base::Utils qw( is_undef parse_propargs );
 use Rit::Base::L10N qw( loc );
+
+=head1 DESCRIPTION
+
+Ritbase Action for creating a page resource
+
+=cut
 
 sub handler
 {

@@ -2,14 +2,11 @@
 package Rit::Base::Arc::List;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Arc List class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 

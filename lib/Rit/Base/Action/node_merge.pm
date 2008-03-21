@@ -2,14 +2,11 @@
 package Rit::Base::Action::node_merge;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for merging nodes
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -19,6 +16,12 @@ use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( parse_propargs );
+
+=head1 DESCRIPTION
+
+Ritbase Action for merging nodes
+
+=cut
 
 sub handler
 {

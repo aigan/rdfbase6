@@ -2,14 +2,11 @@
 package Rit::Base::Resource::Change;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource Change class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 

@@ -2,14 +2,11 @@
 package Rit::Base::Literal::Class;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Literal Class class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -44,14 +41,13 @@ our %COLTYPE_num2name =
  3 => 'valbin',
  4 => 'valdate',
  5 => 'valtext',
- 6 => 'value',
 );
 
 our %COLTYPE_name2num;
 
 our %COLTYPE_valtype2name; # For bootstrapping
 
-our $id; # Node id
+our $ID; # Node id (used in Rit::Base::Resource)
 
 
 =head1 DESCRIPTION
@@ -82,12 +78,12 @@ sub on_startup
 	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
 	$sth_label->finish;
 
-	debug "Caching colname $colname";
+#	debug "Caching colname $colname";
 	$sth_child->execute($colid) or die;
 	while(my( $nid ) = $sth_child->fetchrow_array)
 	{
 	    $COLTYPE_valtype2name{$nid} = $colname;
-	    debug "Valtype $nid = $colname";
+#	    debug "Valtype $nid = $colname";
 	}
 	$sth_child->finish;
 
@@ -98,15 +94,15 @@ sub on_startup
     %COLTYPE_name2num = reverse %COLTYPE_num2name;
 
 
-    debug "Initiating literal_class";
+#    debug "Initiating literal_class";
 
     my $sth = $Rit::dbix->dbh->
       prepare("select node from node where label=?");
     $sth->execute( 'literal_class' );
-    $id = $sth->fetchrow_array; # Store in GLOBAL id
+    $ID = $sth->fetchrow_array; # Store in GLOBAL id
     $sth->finish;
 
-    unless( $id )
+    unless( $ID )
     {
 	die "Failed to initiate literal_class constant";
 
@@ -124,7 +120,8 @@ sub on_startup
 
 
     $Rit::Base::Constants::Label{'literal_class'} =
-      Rit::Base::Resource->get($id);
+      $Rit::Base::Cache::Resource{ $ID } ||=
+	Rit::Base::Resource->new($ID)->init();
 }
 
 
@@ -315,6 +312,8 @@ sub instance_class
     my $classname = $Rit::Base::Cache::Class{ $id };
     unless( $classname )
     {
+#	debug "Getting instance class for $id";
+
 	if( my $class = $node->first_prop('class_handled_by_perl_module') )
 	{
 	    eval
@@ -334,7 +333,7 @@ sub instance_class
 	    }
 	}
 
-	if( $node->id == $C_literal->id )
+	if( $id == $C_literal->id )
 	{
 	    # Should be a value literal
 	    $classname = "Rit::Base::Resource";
@@ -376,12 +375,40 @@ sub instance_class
 
 Rit::Base::Literal::Class->coltype_by_valtype_id( $id )
 
+Dies if this is not a registred literal valtype
+
+Returns: a coltype as a string
+
+Example: valtext
+
 =cut
 
 sub coltype_by_valtype_id
 {
-    return $COLTYPE_valtype2name{ $_[1] }
-      or confess "coltype not found for valtype id $_[1]";
+    debug "coltype_by_valtype_id for $_[1] is $COLTYPE_valtype2name{ $_[1] }"; # DEBUG
+    return( $COLTYPE_valtype2name{ $_[1] }
+	    or confess "coltype not found for valtype id $_[1]" );
+}
+
+
+#######################################################################
+
+=head2 coltype_by_valtype_id_or_obj
+
+Rit::Base::Literal::Class->coltype_by_valtype_id( $id )
+
+Defaults to 'obj' for unregistred valtypes
+
+Returns: a coltype as a string
+
+Example: obj
+
+=cut
+
+sub coltype_by_valtype_id_or_obj
+{
+    confess unless defined $_[1];
+    return( $COLTYPE_valtype2name{ $_[1] } || 'obj' );
 }
 
 

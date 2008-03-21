@@ -2,14 +2,11 @@
 package Rit::Base::Action::arc_add;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for adding arcs
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,6 +15,12 @@ use strict;
 use Para::Frame::Utils qw( trim );
 
 use Rit::Base::Utils qw( parse_arc_add_box parse_propargs );
+
+=head1 DESCRIPTION
+
+Ritbase Action for adding arcs
+
+=cut
 
 sub handler
 {

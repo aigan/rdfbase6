@@ -1,5 +1,14 @@
 #  $Id$  -*-cperl-*-
 package Rit::Base::Demo;
+#=====================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2006-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );

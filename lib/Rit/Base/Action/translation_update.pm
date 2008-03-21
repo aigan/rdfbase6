@@ -2,14 +2,11 @@
 package Rit::Base::Action::translation_update;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for updating a translation
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -19,6 +16,12 @@ use Data::Dumper;
 
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Utils qw( throw );
+
+=head1 DESCRIPTION
+
+Ritbase Action for updating a translation
+
+=cut
 
 sub handler
 {

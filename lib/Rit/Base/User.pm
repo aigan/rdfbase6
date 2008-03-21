@@ -2,14 +2,11 @@
 package Rit::Base::User;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Resource User class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 

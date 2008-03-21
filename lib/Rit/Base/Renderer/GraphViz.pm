@@ -1,8 +1,23 @@
 # $Id$
 package Rit::Base::Renderer::GraphViz;
+#=====================================================================
+#
+# AUTHOR
+#   Fredrik Liljegren   <fredrik@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 use GraphViz;
+
+BEGIN
+{
+    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
+    print "Loading ".__PACKAGE__." $VERSION\n";
+}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump uri );

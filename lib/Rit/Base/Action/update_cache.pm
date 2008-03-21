@@ -1,11 +1,26 @@
-# -*-cperl-*-
+#  $Id$  -*-cperl-*-
 package Rit::Base::Action::update_cache;
+#=====================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 use strict;
 
 use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Resource;
+
+=head1 DESCRIPTION
+
+Updating cache?
+
+=cut
 
 sub handler
 {
@@ -21,10 +36,10 @@ sub handler
 	    {
 		if( $n->is_arc )
 		{
-		    $n->subj->initiate_cache;
-		    $n->value->initiate_cache($n);
+		    $n->subj->reset_cache;
+		    $n->value->reset_cache($n);
 		}
-		$n->initiate_cache;
+		$n->reset_cache;
 	    }
 	}
     }
@@ -37,8 +52,8 @@ sub handler
 	    if( $n->is_arc )
 	    {
 		# In case subj or obj is in memory
-		$n->subj->initiate_cache;
-		$n->value->initiate_cache($n);
+		$n->subj->reset_cache;
+		$n->value->reset_cache($n);
 	    }
 	}
     }
@@ -51,10 +66,10 @@ sub handler
 	    {
 		if( $n->is_arc )
 		{
-		    $n->subj->initiate_cache;
-		    $n->value->initiate_cache($n);
+		    $n->subj->reset_cache;
+		    $n->value->reset_cache($n);
 		}
-		$n->initiate_cache;
+		$n->reset_cache;
 	    }
 	}
     }

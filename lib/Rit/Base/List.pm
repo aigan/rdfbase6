@@ -20,6 +20,7 @@ use Carp qw(carp croak cluck confess);
 use strict;
 use vars qw($AUTOLOAD);
 use List::Util;
+use Scalar::Util qw(blessed);
 
 
 BEGIN
@@ -304,9 +305,6 @@ TODO: Is example 4 correct..?
 
 
 =cut
-
-# TODO: make value nodes transparent.  Or are they? (haven't found any
-# trouble)
 
 sub find
 {
@@ -988,7 +986,7 @@ sub loc
     # args.
 
 
-#    Para::Frame::Logging->this_level(3);
+#    Para::Frame::Logging->this_level(4);
 
     my $req = $Para::Frame::REQ;
 
@@ -1006,21 +1004,24 @@ sub loc
     {
 	if( ref $item )
 	{
-	    if( UNIVERSAL::isa($item, 'Rit::Base::Resource') )
+	    if( UNIVERSAL::isa($item, 'Rit::Base::Node') )
 	    {
+		debug 3, sprintf "Res '%s' (%s)",
+		  $item, blessed($item);
+
 		my $langs = $item->list('is_of_language');
 		if( @$langs )
 		{
 		    foreach my $lang ( @$langs )
 		    {
 			next unless $lang;
-			my $code = $lang->code->plain;
+			my $code = $lang->first_prop('code')->plain;
 			CORE::push @{$alts{$code}}, $item;
 			unless( $code )
 			{
 			    throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
 			}
-			debug 4,"Lang $code: $item->{'id'}";
+			debug 4,"Lang $code: ".$item->id;
 		    }
 		}
 		else
@@ -1037,7 +1038,8 @@ sub loc
 	    else
 	    {
 		$default = $item;
-		debug 3,"No translation";
+		debug 3, sprintf "No translation '%s' (%s)",
+		  $item, blessed($item);
 	    }
 	}
 	else
@@ -1070,6 +1072,7 @@ sub loc
 	{
 	    # Not using ->value, since this may be a Literal
 	    debug 3, "  Returning only alternative";
+	    debug(0,$alts{$lang}[0]->{'id'});
 	    return $alts{$lang}[0]->loc(@_);
 	}
 

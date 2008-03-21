@@ -2,14 +2,11 @@
 package Rit::Base::Action::arc_delete;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for removing arcs
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -30,31 +27,15 @@ sub handler
     my $node_id = $q->param('id');
     my $node = Rit::Base::Resource->get( $node_id );
     my $desig = $node->sysdesig;
-
+    my $res = Rit::Base::Resource::Change->new;
 
     my @arc_ids = $q->param('arc_delete');
-
-
-    # Remove value arcs before the corresponding datatype arc
-    my( @arcs, $value_arc );
-    my $pred_value_id = Rit::Base::Pred->get('value')->id;
+    my( @arcs );
     foreach my $arc_id (@arc_ids)
     {
 	my $arc = Rit::Base::Arc->get( $arc_id ) or die "Can't find arc";
-	if( $arc->pred->id == $pred_value_id )
-	{
-	    $value_arc = $arc;
-	}
-	else
-	{
-	    push @arcs, $arc;
-	}
+	push @arcs, $arc;
     }
-
-    # Place it first
-    unshift @arcs, $value_arc if $value_arc;
-
-    my $res = Rit::Base::Resource::Change->new;
 
     foreach my $arc ( @arcs )
     {

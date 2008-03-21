@@ -2,14 +2,11 @@
 package Rit::Base::Action::arc_edit;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for updating arcs
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -20,6 +17,12 @@ use Para::Frame::Utils qw( clear_params debug );
 
 use Rit::Base::Utils qw( parse_arc_add_box );
 use Rit::Base::Resource::Change;
+
+=head1 DESCRIPTION
+
+Ritbase Action for updating arcs
+
+=cut
 
 sub handler
 {

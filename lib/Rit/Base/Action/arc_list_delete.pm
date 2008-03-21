@@ -2,14 +2,11 @@
 package Rit::Base::Action::arc_list_delete;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for removing arcs
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -19,6 +16,11 @@ use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Resource::Change;
 
+=head1 DESCRIPTION
+
+Ritbase Action for removing arcs
+
+=cut
 
 sub handler
 {

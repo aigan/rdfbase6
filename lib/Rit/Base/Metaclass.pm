@@ -2,14 +2,11 @@
 package Rit::Base::Metaclass;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase constant class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 

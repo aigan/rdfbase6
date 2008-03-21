@@ -2,14 +2,11 @@
 package Rit::Base::Widget;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Widget class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -356,7 +353,7 @@ sub aloc
 
 sub reset_wu_row
 {
-    debug "Resetting wu row";
+#    debug "Resetting wu row";
     $Para::Frame::REQ->{'rb_wu_row'} = 1;
     return "";
 }

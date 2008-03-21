@@ -2,14 +2,11 @@
 package Rit::Base::Literal::Time;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Literal Time class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -292,7 +289,7 @@ sub wuirc
 
 	foreach my $arc ( $subj->arc_list($pred) )
 	{
-	    if( $arc->realy_objtype )
+	    if( $arc->objtype )
 	    {
 		$out .= "<li><em>This is not a date!!</em> ".
 		  $arc->edit_link_html ."</li>";
@@ -321,7 +318,7 @@ sub wuirc
     else
     {
 	my $arc = $subj->first_arc($pred);
-	if( $arc->realy_objtype )
+	if( $arc->objtype )
 	{
 	    $out .= "<em>This is not a date!</em>";
 	}

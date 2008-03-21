@@ -2,14 +2,11 @@
 package Rit::Base::L10N;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase L10N class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -118,9 +115,6 @@ sub maketext
     {
 	confess "Encoded but not marked as encoded ($phrase)";
     }
-
-    # The object to be translated could be one or more value nodes.
-    # choose the right value node
 
     if( ref $phrase )
     {

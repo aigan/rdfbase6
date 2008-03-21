@@ -2,14 +2,11 @@
 package Rit::Base::Utils;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Utils class
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2007 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -350,9 +347,6 @@ after the first space, should be the value.
 Value nodes can be created by giving adding the value props after an
 C<-E<gt>>. Those props are parsed using L</parse_query_props>.
 
-NB! This function ads value arcs so that the returning props list can
-be used for creating arcs.
-
 Returns:
 
 a props hash with pred/value pairs.
@@ -364,16 +358,15 @@ Example:
 
 This would create a node with the properties
 
-  $valnode1 =
+  $sverige =
   {
     is_of_language => 'sv (code)',
-    value    => 'Sverige',
   }
 
 And then return the hashref
 
   {
-    name => $valnode1,
+    name => $sverige,
     is   => 'country',
   }
 
@@ -405,15 +398,9 @@ sub parse_arc_add_box
 	if( $value =~ /^\s*(.*?)\s*->\s*(.*)$/ )
 	{
 	    my $sprops = parse_query_props( $2, $args );
-	    my $svalue = $1;
 	    my $pred = Rit::Base::Pred->get_by_anything( $pred_name, $args );
-	    $value = Rit::Base::Resource->create( $sprops, $args );
-	    Rit::Base::Arc->create({
-				    subj    => $value,
-				    pred    => 'value',
-				    value   => $svalue,
-				    valtype => $pred->valtype,
-				   }, $args);
+	    my $value = $pred->valtypen->instance_class->parse($1, $args);
+	    $value->add($sprops, $args);
 	}
 
 	unless( ref $value )

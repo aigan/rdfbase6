@@ -2,14 +2,11 @@
 package Rit::Base::Action::translate_node;
 #=====================================================================
 #
-# DESCRIPTION
-#   Ritbase Action for translating a node
-#
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2006 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -25,6 +22,12 @@ use Rit::Base::Literal::String;
 use Rit::Base::Utils qw( is_undef parse_propargs );
 
 use Rit::Base::Constants qw( $C_language );
+
+=head1 DESCRIPTION
+
+Ritbase Action for translating a node
+
+=cut
 
 sub handler
 {
@@ -55,7 +58,7 @@ sub handler
 	my $weight_in = $q->param("arc_${aid}_weight");
 	my $weight_new = Rit::Base::Literal::String->new($weight_in)||is_undef;
 
-	if( my $obj = $arc->obj ) # value node (with lang or weight)
+	if( my $obj = $arc->value_node )
 	{
 	    unless( length $val_new ) # Remove?
 	    {
@@ -66,7 +69,7 @@ sub handler
 	    my $val_old = $obj->desig($args);
 	    if( $val_new ne $val_old )
 	    {
-		$obj->update({'value' => $val_new }, $args);
+		$arc->set_value($val_new, $args);
 	    }
 
 #	    debug "BEFORE ".datadump($obj, 2); ### DEBUG

@@ -39,6 +39,10 @@
 [% END %]
 
 <table class='admin'>
+<tr><td>Common</td><td>
+<span style="float: right">ID: <strong>[% arc.id %]</strong></span>
+                       [% arc.common_id %]</td></tr>
+
 <tr>
    <td>[% jump('Subj', '../update.tt', id=subj.id) %]
 </td>
@@ -59,7 +63,7 @@
    <td>
       <span style="text-decoration:line-through; color:red">
       [% oarc = arc.replaces %]
-      [% IF oarc.realy_objtype %]
+      [% IF oarc.objtype %]
          [% oarc.obj.sysdesig | html %]
       [% ELSE %]
          [% IF oarc.valtype.desig == 'textbox' %]
@@ -71,7 +75,7 @@
       </span>
    </td>
 </tr>
-[% ELSIF arc.realy_objtype %]
+[% ELSIF arc.objtype %]
 <tr>
    <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
    <td>[% arc.obj.sysdesig | html %]</td>
@@ -87,12 +91,20 @@
       <td>[% arc.value | html %]</td>
    [% END %]
 </tr>
+[% vnode = arc.value_node %]
+[% IF vnode %]
+<tr>
+   <td>Value node</td>
+   <td>[% vnode.wu_jump %]</td>
+</tr>
+[% ELSE %]
 <tr>
    <td colspan="2">
       Add arcs to the literal:<br>
       [% textarea('literal_arcs','', cols=35, rows=3 ) %]
    </td>
 </tr>
+[% END %]
 [% END %]
 
 <tr>
@@ -120,7 +132,7 @@
    <td>
       <span style="text-decoration:line-through; color:red">
       [% oarc = arc.replaces %]
-      [% IF oarc.realy_objtype %]
+      [% IF oarc.objtype %]
          [% oarc.obj.sysdesig | html %]
       [% ELSE %]
          [% IF oarc.valtype.desig == 'textbox' %]
@@ -132,7 +144,7 @@
       </span>
    </td>
 </tr>
-[% ELSIF arc.realy_objtype %]
+[% ELSIF arc.objtype %]
 <tr>
    <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
    <td>[% input('val', arc.obj.sysdesig) %]</td>
@@ -148,6 +160,13 @@
       <td>[% input('val', arc.value) %]</td>
    [% END %]
 </tr>
+[% vnode = arc.value_node %]
+[% IF vnode %]
+<tr>
+   <td>Value node</td>
+   <td>[% vnode.wu_jump %]</td>
+</tr>
+[% ELSE %]
 <tr>
    <td colspan="2">
       Add arcs to the literal:<br>
@@ -156,8 +175,7 @@
 </tr>
 [% END %]
 [% END %]
-
-<tr><td>Common</td><td>[% arc.common_id %]</td></tr>
+[% END %]
 
 <tr><td>Replaces</td><td>
 [% IF arc.replaces_id %]
@@ -201,7 +219,14 @@
 
 <p>
 [% hidden('remove',0) %]
+[% IF u.has_root_access %]
+   [% hidden('force',0) %]
+   <span style="float: right">[% go("HARD Delete", me, 'arc_edit', remove=1, force=1, href_class="alert") %]</span>
+[% END %]
 [% IF arc.inactive %]
+   [% UNLESS arc.deactivated %]
+      <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, href_class="alert") %]</span>
+   [% END %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
       [% go("Unsubmit", me, "arc_unsubmit") %]
@@ -223,18 +248,9 @@
       [% go("Submit", me, "arc_submit") %]
       [% step("Save") %]
    [% END %]
-   [% UNLESS arc.deactivated %]
-      &nbsp;
-      [% go("Delete", subj.form_url, 'arc_edit', remove=1) %]
-   [% END %]
 [% ELSE %]
+   <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, href_class="alert") %]</span>
    [% step("Save as a new version") %]
-   &nbsp;
-   [% go("Delete", subj.form_url, 'arc_edit', remove=1) %]
-[% END %]
-[% IF u.has_root_access %]
-   [% hidden('force',0) %]
-   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1) %]
 [% END %]
 </p>
 

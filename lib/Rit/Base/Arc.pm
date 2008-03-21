@@ -21,15 +21,14 @@ use utf8;
 use Carp qw( cluck confess carp croak shortmess );
 use strict;
 use Time::HiRes qw( time );
-use Scalar::Util qw( refaddr );
+use Scalar::Util qw( refaddr blessed );
 
 BEGIN
 {
     our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
     print "Loading ".__PACKAGE__." $VERSION\n";
-
-    $Rit::Base::Arc = 0; # Internal object enumeration
 }
+
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
@@ -40,6 +39,7 @@ use Para::Frame::Logging;
 use Rit::Base::List;
 use Rit::Base::Arc::List;
 use Rit::Base::Pred;
+use Rit::Base::Resource::Literal;
 use Rit::Base::Literal::Class;
 use Rit::Base::Literal;
 use Rit::Base::Literal::String;
@@ -49,6 +49,11 @@ use Rit::Base::Rule;
 use Rit::Base::Utils qw( valclean translate is_undef truncstring
                          query_desig parse_propargs
                          );
+
+use constant CLUE_NOARC => 1;
+use constant CLUE_NOUSEREVARC => 2;
+use constant CLUE_VALUENODE => 4;
+use constant CLUE_NOVALUENODE => 8;
 
 ### Inherit
 #
@@ -85,7 +90,7 @@ our %DYNAMIC_PRED =
   (
    subj => 'resource',
    pred => 'predicate',
-   value => 'value',
+#   value => 'value',
    obj  => 'resource',
    value_desig => 'text',
    created => 'date',
@@ -150,6 +155,8 @@ The props:
   L<Rit::Base::Resource>
 
   obj : MUST be the id of the object, if given. Instead of C<value>
+
+  value_node : A L<Rit::Base::Resource>
 
   created : Creation time. Defaults to now.
 
@@ -336,31 +343,7 @@ sub create
 	if( UNIVERSAL::isa $subj, "Rit::Base::Literal" )
 	{
 	    # Transform to a value resource
-	    my $lit = $subj;
-	    my $lit_id = $lit->id;
-	    my $lit_valtype = $lit->this_valtype;
-
-	    debug "Transforming $lit_id to a value resource";
-
-	    delete $Rit::Base::Cache::Resource{ $lit_id };
-	    $subj = Rit::Base::Resource->get( $lit_id );
-
-	    if( $pred_name eq 'value' )
-	    {
-		# Replacing old literal
-	    }
-	    else
-	    {
-		Rit::Base::Arc->create({
-					subj    => $subj,
-					pred    => 'value',
-					value   => $lit,
-					valtype => $lit_valtype,
-				       }, $args);
-	    }
-
-	    # Should never be a removal...
-	    $props->{'valtype'} = $lit_valtype;
+	    $subj = $subj->node_set;
 	}
     }
     else
@@ -374,70 +357,13 @@ sub create
 
     ##################### valtype
     my $valtype;
-    if( defined $props->{'valtype'} )
+    if( $props->{'valtype'} )
     {
-	if( $props->{'valtype'} )
-	{
-	    $valtype = Rit::Base::Resource->get( $props->{'valtype'} );
-	    $rec->{'valtype'} = $valtype->id;
-	}
-	else
-	{
-	    $rec->{'valtype'} = 0; # Special valtype for REMOVAL arc
-	}
+	$valtype = Rit::Base::Resource->get( $props->{'valtype'} );
     }
-    else
+    elsif( not defined $props->{'valtype'} )
     {
-	if( $pred->{'coltype'} == 6 )  # Value resource?
-	{
-#	    debug "this is a valtype";
-#	    debug "Subj is a $subj";
-	    my $value = $props->{'value'};
-
-	    if( $rec->{'replaces'} )
-	    {
-		my $repl = $this->get( $rec->{'replaces'} );
-		if( $repl->{'valtype'} )
-		{
-		    $valtype = Rit::Base::Resource->get( $repl->{'valtype'} );
-		}
-	    }
-	    elsif( UNIVERSAL::isa $subj, "Rit::Base::Literal" )
-	    {
-		$valtype = $subj->this_valtype;
-	    }
-	    elsif( UNIVERSAL::isa $value, "Rit::Base::Literal" )
-	    {
-		$valtype = $value->this_valtype;
-	    }
-	    else
-	    {
-		### Get valtype from subjs revarc
-		# Should be only one on a value resource
-		my $revarc = $subj->revarc(undef,undef,$args)
-		  or confess("Couldn't get revarc for value resource: ".
-			     $subj->sysdesig);
-
-		my $revpred = $revarc->pred;
-		$valtype = $revpred->valtype;
-	    }
-
-	    $rec->{'valtype'} = $valtype->id;
-
-#	    debug("Setting valtype to ". $rec->{'valtype'} .
-#		  " for value from revpred ".
-#		  $revpred->plain);
-
-	    confess("I won't make a value resource with a resource as value.")
-	      if $props->{'obj'};
-	}
-	else
-	{
-	    $valtype = $pred->valtype;
-	    $rec->{'valtype'} = $valtype->id;
-#	    debug("Setting valtype to ". $rec->{'valtype'} ." from pred ".
-#		  $pred->plain);
-	}
+	$valtype = $pred->valtype;
     }
 
     confess("Missing valtype while creating ".query_desig($props))
@@ -572,10 +498,15 @@ sub create
     my $value_obj;
     # Find out the *real* coltype
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
-    my $coltype = Rit::Base::Literal::Class->coltype_by_valtype_id( $rec->{'valtype'} );
+    my $coltype = $valtype ? $valtype->coltype : 'obj';
 
-    debug "Valtype now: ". $rec->{'valtype'} if $DEBUG;
+    debug "Valtype now: ". $valtype->id if $DEBUG;
     debug "Coltype now: ".($coltype||'') if $DEBUG;
+    unless( $coltype )
+    {
+	debug "No coltype found: ".datadump(\%Rit::Base::Literal::Class::COLTYPE_valtype2name);
+    }
+
 
     if( my $obj_id = $props->{'obj'} )
     {
@@ -591,7 +522,7 @@ sub create
 
 	$value_obj = Rit::Base::Resource->get_by_id( $obj_id );
     }
-    elsif( $rec->{'valtype'} == 0 ) # Special valtype for removals
+    elsif( not $valtype ) # Special valtype for removals
     {
 	$value_obj = is_undef;
     }
@@ -612,49 +543,34 @@ sub create
 			    pred_new => $pred,
 			   });
 
-	debug sprintf("value_obj is now %s (%s)",$value_obj->sysdesig, refaddr($value_obj)) if $DEBUG;
+	debug sprintf("value_obj is now %s (%s)",$value_obj->sysdesig, blessed($value_obj)) if $DEBUG;
 
 	if( $value_obj->defined )
 	{
 	    # Coltype says how the value should be stored.  The predicate
-	    # specifies the coltype.  But it is possible that the value is
-	    # an object even if it should be another coltype.  This will
-	    # happen if the value is a value node.  In that case, the
-	    # coltype will be set as obj.
+	    # specifies the coltype.
 
-	    if( UNIVERSAL::isa $value_obj, 'Rit::Base::Resource' )
-	    {
-		$coltype = 'obj';
-	    }
-
+	    # Sanity check
+	    #
 	    if( $coltype eq 'obj' )
 	    {
-		if( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
-		{
-		    # All good
-		}
-		else
+		unless( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
 		{
 		    confess "Value incompatible with coltype $coltype: ".
 		      datadump($props, 2);
 		}
 	    }
-	    else
+	    elsif( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
 	    {
-		if( UNIVERSAL::isa($value_obj, 'Rit::Base::Resource' ) )
-		{
-		    confess "Value incompatible with coltype $coltype: ".
-		      datadump($props, 2);
-		}
-		else
-		{
-		    # All good
-		}
+		confess "Value incompatible with coltype $coltype: ".
+		  datadump($props, 2);
 	    }
 
 
 	    # Handle the coltypes in the table
 	    my $value;
+
+	    # TODO: Handle in each obj class
 
 	    if( $coltype eq 'obj' )
 	    {
@@ -695,6 +611,20 @@ sub create
 	}
     }
 
+    ##################### value_node
+    if( my $vnode_in = $props->{'value_node'} )
+    {
+	if( $coltype eq 'obj' )
+	{
+	    confess "Valuenode can not be set for non-literals ($value_obj / $vnode_in)";
+	}
+
+	my $vnode = Rit::Base::Resource->get_by_anything($vnode_in);
+	push @fields, 'obj';
+	push @values, $vnode->id;
+	$rec->{'obj'} = $vnode->id;
+    }
+
 
     # Do not create duplicate arcs.  Check if arc with subj, pred, val
     # already exists. This checks if the arc already is existing. It
@@ -728,7 +658,12 @@ sub create
 
 	    if( $props->{'common'} ) # Explicitly defined
 	    {
-		next unless ($arc->common_id||0) == $props->{'common'};
+		next unless ($arc->common_id||0) == $rec->{'id'};
+	    }
+
+	    if( $props->{'value_node'} )
+	    {
+		next unless ($arc->obj_id||0) == $rec->{'obj'};
 	    }
 
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
@@ -815,8 +750,85 @@ sub create
     }
 
 
-#    debug "Would have created new arc..."; return is_undef; ### DEBUG
+    ##################### Validate and update $valtype
 
+    if( $valtype )
+    {
+	if( $pred->objtype )
+	{
+	    my $val_valtype = $value_obj->this_valtype;
+
+	    if( $val_valtype->id == $Rit::Base::Resource::ID )
+	    {
+		# Always valid
+	    }
+	    elsif( $valtype->id == $Rit::Base::Resource::ID )
+	    {
+		# Generic, to be specified
+	    }
+	    elsif( not $valtype->equals( $val_valtype ) )
+	    {
+		if( $val_valtype->scof( $valtype ) )
+		{
+		    # In valid range
+		}
+		else
+		{
+		    my $subjd = $subj->sysdesig;
+		    my $predd = $pred->plain;
+		    my $val_valtd = $val_valtype->sysdesig;
+		    my $valtd = $valtype->sysdesig;
+		    my $vald = $value_obj->sysdesig;
+		    confess "Valtype check faild for $subjd -${predd}-> $vald ".
+		      "($valtd should have been $val_valtd)";
+		}
+	    }
+
+	    debug " Old valtype: ".$valtype->sysdesig;
+	    $valtype = $val_valtype;
+	    debug " New valtype: ".$valtype->sysdesig;
+
+	    ###### Validate pred range with value
+
+	    my $pred_valtype = $pred->valtype;
+	    if( $pred_valtype->id != $Rit::Base::Resource::ID )
+	    {
+		if( $value_obj->is( $pred_valtype ) )
+		{
+		    # In valid range
+		}
+		else
+		{
+		    my $subjd = $subj->sysdesig;
+		    my $predd = $pred->plain;
+		    my $val_valtd = $val_valtype->sysdesig;
+		    my $pred_valtd = $pred_valtype->sysdesig;
+		    my $vald = $value_obj->sysdesig;
+		    confess "Range check faild for $subjd -${predd}-> $vald ".
+		      "(should have been $pred_valtd)";
+		}
+	    }
+	}
+	else
+	{
+	    # Should be ok
+	}
+
+	$rec->{'valtype'} = $valtype->id;
+    }
+    else # Special valtype for REMOVAL arc
+    {
+	$rec->{'valtype'} = 0;
+    }
+
+    push @fields, 'valtype';
+    push @values, $rec->{'valtype'};
+
+
+
+    #####################
+
+#    debug "Would have created new arc..."; return is_undef; ### DEBUG
 
     my $fields_part = join ",", @fields;
     my $values_part = join ",", map "?", @fields;
@@ -826,7 +838,11 @@ sub create
 
     $sth->execute( @values );
 
-    my $arc = $this->get_by_rec($rec, $subj, $value_obj );
+    my $arc = $this->get_by_rec($rec,
+				{
+				 subj => $subj,
+				 value => $value_obj,
+				});
 
     # If the arc was requested to be cerated active, but wasn't
     # becasue it was replacing another arc, we will activate it now
@@ -854,17 +870,16 @@ sub create
     debug "Created arc id ".$arc->sysdesig;
 
 
-    ######## Has not been done by get_by_rec.
-    ##
-    ## This may have been a new arc added to an exisiting initiated
-    ## node. That means that that object must be updated to reflect
-    ## the existence of the new arc. A normal init of an arc does not
-    ## require the subj and obj to be resetted.
+    ####### Has not been done by get_by_rec.
     #
-    $arc->subj->initiate_cache;
-    $arc->value->initiate_cache($arc);
-
-    # TODO: Use register_with_nodes() instead!
+    # This may have been a new arc added to an exisiting initiated
+    # node. That means that that object must be updated to reflect
+    # the existence of the new arc. A normal init of an arc does not
+    # require the subj and obj to be resetted.
+    #
+    # This should not mess up init status flags for the subj and obj
+    #
+    $arc->register_with_nodes;
 
 
     $arc->schedule_check_create( $args );
@@ -944,12 +959,75 @@ sub value
 
 #######################################################################
 
+=head2 value_node
+
+  $a->value_node
+
+Returns the common literal resource representing the literal. Assumes
+to only be called for literal arcs. Will always return the obj field.
+
+=cut
+
+sub value_node
+{
+#    debug "Getting value node $_[0]->{id}: ".($_[0]->{'value_node'}||'<undef>');
+    return( $_[0]->{'value_node_obj'} ||= $_[0]->{'value_node'}
+	    ? Rit::Base::Resource::Literal->get($_[0]->{'value_node'})
+	    : is_undef );
+}
+
+#######################################################################
+
+=head2 set_value_node
+
+  $a->set_value_node()
+
+  $a->set_value_node( $node )
+
+Caller should do the authorization checks
+
+=cut
+
+sub set_value_node
+{
+    my( $arc, $node, $args_in ) = @_;
+
+    $node ||= Rit::Base::Resource::Literal->get('new');
+
+    my $st = "update arc set obj=? where ver=?";
+    my $sth = $Rit::dbix->dbh->prepare($st);
+    $sth->execute( $node->id, $arc->id );
+
+    $arc->{'value_node'} = $node->id;
+    $arc->{'value_node_obj'} = $node;
+
+    my $class = "Rit::Base::Resource::Literal";
+    unless( UNIVERSAL::isa($node, $class) )
+    {
+	my $class_old = ref $node;
+	no strict "refs";
+	foreach my $class_old_real (@{"${class_old}::ISA"})
+	{
+	    if( my $method = $class_old_real->can("on_unbless") )
+	    {
+		&{$method}($node, $class, $args_in);
+	    }
+	}
+
+	bless $node, $class;
+    }
+
+    return $node->init;
+}
+
+#######################################################################
+
 =head2 obj
 
   $a->obj
 
 Returns: The object L<Rit::Base::Resource> of the arc.  If the value
-of the arc isn't an object; returns L<Rit::Base::Undef>.
+of the arc is a literal; returns L<Rit::Base::Undef>.
 
 =cut
 
@@ -957,13 +1035,38 @@ sub obj
 {
     my( $arc ) = @_;
 
-    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource' ) )
+    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Literal' ) )
     {
-	return $arc->{'value'};
+	return is_undef;
     }
     else
     {
-	return is_undef;
+	return $arc->{'value'};
+    }
+}
+
+#######################################################################
+
+=head2 obj_id
+
+  $a->obj_id
+
+
+Shortcut for $a->obj->id. Returns plain undef if no id.
+
+=cut
+
+sub obj_id
+{
+    my( $arc ) = @_;
+
+    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Literal' ) )
+    {
+	return undef;
+    }
+    else
+    {
+	return $arc->{'value'}->id;
     }
 }
 
@@ -1869,7 +1972,7 @@ sub sysdesig
 {
     my( $arc ) = @_;
 
-    return sprintf("%d[%d]: %s --%s--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->plain, $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
+    return sprintf("%d[%d]: %s --%s(%s)--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->plain, ($arc->valtype->desig), $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
 }
 
 
@@ -1972,15 +2075,6 @@ sub is_arc
 
 Returns: true if the L</coltype> of the L</value> is C<obj>.
 
-This will not return true if the real value is a value node, unless
-the value node has a value that is a node.
-
-In other words; We check what type of value this arc should have,
-based on the L</pred>.
-
-Compare with L</realy_objtype>. See also
-L<Rit::Base::Resource/is_value_node>.
-
 =cut
 
 sub objtype
@@ -1992,48 +2086,12 @@ sub objtype
 
 #######################################################################
 
-=head2 realy_objtype
-
-  $a->realy_objtype
-
-Returns: true if the actual value is a node.
-
-It gives the same answer as L</objtype>, except then the value is a
-value node.
-
-Also returns true if the value is undef and should be of coltype obj.
-
-Compare with L</objtype>. See also
-L<Rit::Base::Resource/is_value_node>.
-
-=cut
-
-sub realy_objtype
-{
-    return 1 if UNIVERSAL::isa( $_[0]->{'value'}, 'Rit::Base::Resource' );
-
-    unless( defined $_[0]->{'value'} and $_[0]->{'value'}->defined )
-    {
-	return $_[0]->objtype;
-    }
-
-    return 0;
-}
-
-
-#######################################################################
-
 =head2 coltype
 
   $a->coltype
 
-Returns: the coltype the value will have unless the value is a value
+Returns: the coltype the value will have.
 node.
-
-In other words; the coltype based on the L</pred>.
-
-See L</real_coltype>, L<Rit::Base::Pred/coltype> and
-L<Rit::Base::Resource/is_value_node>.
 
 =cut
 
@@ -2042,35 +2100,7 @@ sub coltype
     # The arc value may be undefined.
     # Assume that all valtypes not in the COLTYPE hash are objs
 
-    return Rit::Base::Literal::Class->coltype_by_valtype_id( $_[0]->{'valtype'} ) || 'obj';
-}
-
-
-#######################################################################
-
-=head2 real_coltype
-
-  $a->real_coltype
-
-Returns: the actual coltype of the value.
-
-It's the same as the coltype, except if the value is a value node.
-
-See L</coltype>, L<Rit::Base::Pred/coltype> and
-L<Rit::Base::Resource/is_value_node>.
-
-=cut
-
-sub real_coltype
-{
-    my( $arc ) = @_;
-    return 'obj' if UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Resource' );
-    unless( defined $arc->{'valtype'} )
-    {
-	confess "arc valtype not defined: ".datadump($arc,2);
-    }
-    return Rit::Base::Literal::Class->
-      coltype_by_valtype_id( $arc->{'valtype'} );
+    return Rit::Base::Literal::Class->coltype_by_valtype_id_or_obj( $_[0]->{'valtype'} );
 }
 
 
@@ -2084,6 +2114,8 @@ Valtype 0: Removal arcs
 
 The valtypes are nodes. Coltypes are not, and there id's doesn't match
 the valtype ids.
+
+??? Valtypes must uniquely identify the perl module class of the value.
 
 TODO: Handle removal arcs transparently
 
@@ -2101,6 +2133,29 @@ sub valtype
     {
 	return is_undef;
     }
+}
+
+
+#######################################################################
+
+=head2 this_valtype
+
+  $a->this_valtype
+
+This would be the same as the C<is> property of this resource. But it
+must only have ONE value. It's important for literal values.
+
+This method will return the literal valtype for value resoruces.
+
+See also: L<Rit::Base::Literal/this_valtype>, L</is_value_node>.
+
+Returns: The C<arc> class resource.
+
+=cut
+
+sub this_valtype
+{
+    return Rit::Base::Resource->get_by_label('arc');
 }
 
 
@@ -2227,9 +2282,8 @@ sub deactivate
 
     # Reset caches
     #
-    $arc->obj->initiate_cache if $arc->obj;
-    $arc->subj->initiate_cache;
-#    $arc->initiate_cache; ### not needed
+    $arc->obj->reset_cache if $arc->obj; # Literals unaffected
+    $arc->subj->reset_cache;
     $arc->schedule_check_remove( $args );
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -2259,6 +2313,8 @@ sub vacuum
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
+    # TODO: Moce value cleaning to Literal classes
+
     my $DEBUG = 0;
 
     debug "vacuum arc $arc->{id}" if $DEBUG;
@@ -2268,7 +2324,7 @@ sub vacuum
 
     $arc->remove_duplicates( $args );
 
-    my $has_obj = $arc->realy_objtype;
+    my $has_obj = $arc->objtype;
 
 #    warn "  Remove implicit\n";
 
@@ -2289,55 +2345,6 @@ sub vacuum
 	    }
 	}
 
-#	if( $arc->inactive and ( $arc->active_version
-#				 or $arc->replaced_by->activated ) )
-#	{
-#	    if( $arc->replaced_by and
-#		( not $arc->activated or
-#		  not $arc->deactivated or
-#		  not $arc->activated_by
-#		) )
-#	    {
-#		my $updated = $arc->activated ||
-#		  $arc->deactivated ||
-#		    $arc->updated;
-#		my $activated_by = $arc->activated_by;
-#		unless( $activated_by )
-#		{
-#		    if( my $replaced_by = $arc->replaced_by->get_first_nos )
-#		    {
-#			$activated_by = $replaced_by->activated_by;
-#		    }
-#		}
-#
-#		unless( $activated_by )
-#		{
-#		    if( my $aarc = $arc->active_version )
-#		    {
-#			$activated_by = $aarc->activated_by;
-#		    }
-#		}
-#
-#		unless( $activated_by )
-#		{
-#		    $activated_by = $arc->created_by;
-#		}
-#
-#		my $dbix = $Rit::dbix;
-#		my $date_db = $dbix->format_datetime($updated);
-#
-#		my $st = "update arc set deactivated=?, activated=?, activated_by=? where ver=?";
-#		my $sth = $dbix->dbh->prepare($st);
-#		$sth->execute( $date_db, $date_db, $activated_by->id, $arc->id );
-#
-#		$arc->{'arc_deactivated'} = $updated;
-#		$arc->{'arc_activated'} = $updated;
-#		$arc->{'activated_by'} = $activated_by->id;
-#		$arc->{'activated_by_obj'} = $activated_by;
-#
-#		$res->changes_add;
-#	    }
-#	}
 
 	unless( $arc->old )
 	{
@@ -2373,22 +2380,21 @@ sub check_valtype
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
-#    Para::Frame::Logging->this_level(3);
+    Para::Frame::Logging->this_level(3);
+
+    my $old_val = $arc->value;
+
+    # Reset valtype cache
+    $old_val->{'valtype'} = undef;
 
     my $pred = $arc->pred;
-    if( $pred->plain eq 'value' )
-    {
-	$pred = $arc->subj->revlist_preds->get_first_nos;
-	unless( $pred )
-	{
-	    my $subj_id = $arc->subj->id;
-#	    debug "Valuenode $subj_id is disconnected";
-	    return 0;
-	}
-    }
-
     my $arc_valtype = $arc->valtype;
-    my $pred_valtype = $pred->valtype;
+#    my $pred_valtype = $pred->valtype;
+    my $pred_valtype = $old_val->this_valtype; # val_valtype...
+    debug "Arc   valtype is ".$arc_valtype->sysdesig;
+    debug "Value         is ".$old_val->sysdesig;
+    debug "Value valtype is ".$pred_valtype->sysdesig;
+
 
     if( $arc_valtype->equals( $pred_valtype ) )
     {
@@ -2403,8 +2409,6 @@ sub check_valtype
     }
 
     my $pred_coltype = $pred->coltype;
-
-    my $old_val = $arc->value;
 
     if( debug > 1)
     {
@@ -2429,7 +2433,7 @@ sub check_valtype
 	if( $pred_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
-#	    debug "  pred takes any obj";
+	    debug 3, "  pred takes any obj";
 	    return 0;
 	}
 
@@ -2445,7 +2449,10 @@ sub check_valtype
 	    if( $old_val->is($pred_valtype) )
 	    {
 		# Old value in range
+		debug 3, "old value in range";
 		$arc->set_value( $old_val, $newargs );
+
+		$old_val->vacuum;
 	    }
 	    elsif( $arc_valtype->equals($c_resource) )
 	    {
@@ -2468,6 +2475,8 @@ sub check_valtype
 	}
 	else
 	{
+	    confess "FIXME"; # Mismatch
+
 	    debug "Changing from obj to $pred_coltype";
 
 	    my $val = $pred_valtype->instance_class->
@@ -2488,6 +2497,7 @@ sub check_valtype
 	}
 	else
 	{
+	    debug 3, "Setting literal";
 	    my $val = $pred_valtype->instance_class->
 	      parse($old_val, {
 			       arc => $arc,
@@ -2535,7 +2545,9 @@ sub reset_clean
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    if( ($arc->real_coltype||'') eq 'valtext' )
+    # TODO: Move to literal class
+
+    if( ($arc->coltype||'') eq 'valtext' )
     {
 	my $cleaned = valclean( $arc->{'value'} );
 	if( ($arc->{'clean'}||'') ne ($cleaned||'') )
@@ -2659,15 +2671,7 @@ sub has_value
     }
 
     my $valtype_name = $DYNAMIC_PRED{$pred_name};
-    my $valtype;
-    if( $valtype_name eq 'value' )
-    {
-	$valtype = undef;
-    }
-    else
-    {
-	$valtype = Rit::Base::Resource->get_by_label($valtype_name);
-    }
+    my $valtype = Rit::Base::Resource->get_by_label($valtype_name);
     my $args_valtype =
     {
      %$args,
@@ -2783,10 +2787,10 @@ sub value_equals
     }
     elsif( ref $val2 eq 'Rit::Base::Resource' )
     {
-	debug "  A value node is compared with a plain Literal" if $DEBUG;
+	debug "  A normal resource is compared with a Literal" if $DEBUG;
 
 	# It seems that the value of the arc is a literal.  val2 is a
-	# node, probably a value node. They are not equal.
+	# node. They are not equal.
 
 	return 0;
     }
@@ -2951,9 +2955,6 @@ If called with a false value, it will remove the arc only if the arc
 can't be infered. If the arc can be infered, the arc will be changed
 from L</explicit> to L</implicit>.
 
-Removal of a value arc will instead remove all arcs to the value
-resource.
-
 
 Returns: the number of arcs removed.
 
@@ -2989,25 +2990,6 @@ sub remove
 
     unless( $force )
     {
-	# Remove arcs to value resource too
-	# ..if there are no other values at all (not even submitted)
-	if( $arc->pred->plain eq 'value' and
-	    $arc->subj->arc_list( 'value', undef, [['not_old','not_disregarded']] )->size == 0 )
-	{
-	    debug "There is just 1 not-old value.  Removing value-resource.";
-	    my $subj = $arc->subj;
-	    foreach my $oarc ( $subj->arc_list(undef,undef,[['not_old','not_disregarded']])->nodes )
-	    {
-		next if $oarc->equals( $arc ); # Handled below
-		$oarc->remove($args);
-	    }
-	    foreach my $oarc ( $subj->revarc_list(undef,undef,[['not_old','not_disregarded']])->nodes )
-	    {
-		$oarc->remove($args);
-	    }
-	}
-
-
 	if( $arc->is_removal and $arc->activated )
 	{
 	    debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
@@ -3151,8 +3133,8 @@ sub remove
     $sth->execute($arc_id);
 
     debug "  init subj" if $DEBUG;
-    $arc->subj->initiate_cache;
-    $arc->value->initiate_cache(undef);
+    $arc->subj->reset_cache;
+    $arc->value->reset_cache(undef);
 
     $Rit::Base::Cache::Changes::Removed{$arc->id} ++;
 
@@ -3259,15 +3241,12 @@ Sets the L</value> of the arc.
 Determines if we are dealning with L<Rit::Base::Resource> or
 L<Rit::Base::Literal>.
 
-Old and/or new value could be a value node.  If old value is a
-valuenode and new value is a literal, try to update the value arc
-instead.  If old is value and new is obj, just accept that.
-
 Supported args are:
 
   force_set_value
   force_set_value_same_version
   valtype
+  value_node
 
 Returns: the arc changed, or the same arc
 
@@ -3278,11 +3257,11 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-#    Para::Frame::Logging->this_level(4);
+    Para::Frame::Logging->this_level(4);
 
     debug 3, "Set value of arc $arc->{'id'} to '$value_new_in'\n";
 
-    my $coltype_old  = $arc->real_coltype;
+    my $coltype_old  = $arc->coltype;
     my $value_new;
     if( $args->{'force_set_value'} )
     {
@@ -3290,18 +3269,9 @@ sub set_value
     }
     else
     {
-	# Works also for valtype, but not for removals
+	# Doesn't work for removals
 
-	# Get valtype from arg unless it's a value node
-	my $valtype;
-	if( $valtype = $args->{'valtype'} )
-	{
-	    if( $valtype->equals('literal') )
-	    {
-		undef $valtype;
-	    }
-	}
-	$valtype ||= $arc->valtype;
+	my $valtype = $args->{'valtype'} || $arc->valtype;
 	unless( $valtype )
 	{
 	    confess "Can't set the value of a removal ($value_new_in)";
@@ -3348,48 +3318,39 @@ sub set_value
 	confess "We should have got a value";
     }
 
-
-    my $coltype_new = $value_new->this_coltype;
-    if( $value_new->is_value_node($args) )
+    my $vnode_old   = $arc->value_node;
+    my $vnode_new;
+    if( exists $args->{'value_node'} )
     {
-	$coltype_new = 'obj';
-    }
-
-#    # TODO: Should also verify the type of the new value
-#    # Should be done by find_by_anything()
-
-    my $valtype_old = $arc->valtype;
-    my $valtype_new;
-    if( $value_new->is_literal )
-    {
-	$valtype_new = $value_new->this_valtype;
+	$vnode_new = Rit::Base::Resource->
+	  get_by_anything($args->{'value_node'});
     }
     else
     {
-	# Since $value_new->valtype always is 'resource'.
-	$valtype_new = $arc->pred->valtype;
+	$vnode_new = $vnode_old;
     }
 
+
+    my $coltype_new = $value_new->this_coltype;
+    my $valtype_old = $arc->valtype;
+    my $valtype_new = $value_new->this_valtype;
 
     if( debug > 1 )
     {
 	debug "  value_old: ".$value_old->sysdesig();
 	debug "   type old: ".$valtype_old->sysdesig;
+	debug "  vnode old; ".$vnode_old->desig;
 	debug "  value_new: ".$value_new->sysdesig();
 	debug "   type new: ".$valtype_new->sysdesig;
+	debug "  vnode new: ".$vnode_new->desig;
 	debug "  coltype  : $coltype_new";
-    }
-
-    if( $value_old->is_value_node and $value_new->is_literal )
-    {
-	return $arc->value->first_arc('value',undef,$args)->
-	  set_value($value_new, $args);
     }
 
     my $same_value = $value_new->equals( $value_old, $args );
 
     unless( $same_value and
-	    $valtype_new->equals( $valtype_old )
+	    $valtype_new->equals( $valtype_old ) and
+	    $vnode_old->equals($vnode_new)
 	  )
     {
 	unless( $arc->is_new or $args->{'force_set_value_same_version'} )
@@ -3400,6 +3361,7 @@ sub set_value
 					      subj        => $arc->{'subj'},
 					      pred        => $arc->{'pred'},
 					      value       => $value_new,
+					      value_node  => $vnode_new,
 					     }, $args );
 	    return $new;
 	}
@@ -3430,8 +3392,8 @@ sub set_value
 	if( $coltype_new eq 'obj' )
 	{
 	    $value_db = $value_new->id;
-	    $arc->obj->initiate_cache;
-	    # $arc->subj->initiate_cache # IS CALLED BELOW
+	    $arc->obj->reset_cache;
+	    # $arc->subj->reset_cache # IS CALLED BELOW
 	}
 	elsif( $coltype_new eq 'valdate' )
 	{
@@ -3485,6 +3447,13 @@ sub set_value
 	      $now_db,
 	    );
 
+	if( $vnode_old or $vnode_new )
+	{
+	    push @dbparts, "obj=?";
+	    push @dbvalues, $vnode_new->id; # Also works for Undef
+	}
+
+
 	my $sql_set = join ",",@dbparts;
 	my $st = "update arc set $sql_set where ver=?";
 	my $sth = $dbh->prepare($st);
@@ -3499,12 +3468,14 @@ sub set_value
 	$arc->{'arc_created_by'}     = $u_node->id;
 	$arc->{'arc_created_by_obj'} = $u_node;
 	$arc->{'valtype'}            = $valtype_new->id;
+	$arc->{'value_node'}         = $vnode_new->id;
+	$arc->{'value_node_obj'}     = $vnode_new;
 
 	debug 2, "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
-	$arc->subj->initiate_cache;
-#	$arc->initiate_cache; # not needed
-	# $arc->obj->initiate_cache # IS CALLED ABOVE
+	$arc->subj->reset_cache;
+#	$arc->reset_cache; # not needed
+	# $arc->obj->reset_cache # IS CALLED ABOVE
 
 	$value_old->set_arc(undef);
 	$value_new->set_arc($arc);
@@ -3576,6 +3547,7 @@ sub set_pred
 		  subj         => $arc->subj->id,
 		  pred         => $new_pred,
 		  value        => $arc->value,
+		  value_node   => $arc->value_node,
 		 }, $args);
 
 	$arc->remove( $args );
@@ -3636,7 +3608,7 @@ sub submit
     $arc->{'arc_updated'} = $date_db;
     $arc->{'submitted'} = 1;
 
-#    $arc->initiate_cache; # not needed
+#    $arc->reset_cache; # not needed
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -3674,6 +3646,7 @@ sub resubmit
 				      subj        => $arc->{'subj'},
 				      pred        => $arc->{'pred'},
 				      value       => $arc->{'value'},
+				      value_node  => $arc->value_node,
 				     }, $args );
     return $new;
 }
@@ -3714,7 +3687,7 @@ sub unsubmit
     $arc->{'arc_updated'} = $date_db;
     $arc->{'submitted'} = 0;
 
-#    $arc->initiate_cache; # not needed
+#    $arc->reset_cache; # not needed
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -3831,9 +3804,9 @@ sub activate
 
     # Reset caches
     #
-    $arc->obj->initiate_cache if $arc->obj;
-    $arc->subj->initiate_cache;
-#    $arc->initiate_cache;  ### Not needed. And reads from DB...
+    $arc->obj->reset_cache if $arc->obj;
+    $arc->subj->reset_cache;
+#    $arc->reset_cache;  ### Not needed. And reads from DB...
 
     # If this is not a removal and we have another active arc, it must
     # be deactivated
@@ -4082,7 +4055,7 @@ sub get_by_rec
     my $id = $_[0]->{'ver'} or
       confess "get_by_rec misses the ver param: ".datadump($_[0],2);
     return $Rit::Base::Cache::Resource{$id}
-      || $class->new($id, @_)->first_bless(@_);
+      || $class->new($id, @_)->first_bless()->init(@_);
 }
 
 
@@ -4119,13 +4092,13 @@ sub get_by_rec_and_register
 	# simple check and just return arc if it looks like it's
 	# initialized.
 
-	$arc->init->register_with_nodes;
+	$arc->init(@_)->register_with_nodes;
 	return $arc;
     }
     else
     {
 #	debug "Calling firstbless for $id, with stmt"; ### DEBUG
-	return $this->new($id, @_)->first_bless(@_);
+	return $this->new($id, @_)->first_bless()->init(@_);
     }
 }
 
@@ -4138,14 +4111,18 @@ sub get_by_rec_and_register
 
   $a->init( $rec )
 
-  $a->init( $rec, $subj )
+  $a->init( $rec, \%args )
 
-  $a->init( $rec, undef, $value_obj )
-
-  $a->init( $rec, $subj, $value_obj )
+  $a->init( undef, \%args )
 
 The existing subj and obj can be given, if known, to speed up the
 initialization process.
+
+Supported args are:
+
+  subj
+  value
+  reset
 
 Returns: the arc
 
@@ -4153,51 +4130,24 @@ Returns: the arc
 
 sub init
 {
-    my( $arc, $rec, $subj, $value_obj ) = @_;
+    my( $arc, $rec, $args ) = @_;
 
-# NOTE:
-# $arc->{'id'}        == $rec->{'ver'}
-# $arc->{'common'}    == $rec->{'id'}
+    my $subj = $args->{'subj'};
+    my $value = $args->{'value'};
+    my $reset = $args->{'reset'};
 
-
-    if( $arc->{'ioid'} )
+    if( $arc->{'ioid'} and not $reset )
     {
 	# Arc aspect of node already initiated
 	return $arc;
     }
-
-    return $arc->initiate_cache( $rec, $subj, $value_obj );
-}
-
-
-#########################################################################
-
-=head2 initiate_cache
-
-  $arc->initiate_cache
-
-Extends L<Rit::Base::Resource/initiate_cache>
-
-Takes the same params as L</init>.
-
-The caller must first initiate the subj and obj, if necessary.
-
-This may be called either from new(), if caleld as an Arc, or from
-first_bless(), via init(). In both cases, we may have passed along rec
-to speed up things.
-
-=cut
-
-sub initiate_cache
-{
-    my( $arc, $rec, $subj, $value_obj ) = @_;
 
 #    my $ts = Time::HiRes::time();
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
     my $bless_subj = 0; # For initiating subj
 
-#    debug "Init arc $id with value_obj $value_obj with addr".refaddr($value_obj);
+    $rec ||= delete $arc->{'original_rec'}; # TEST
 
     if( $rec )
     {
@@ -4214,7 +4164,8 @@ sub initiate_cache
 	$rec = $sth_id->fetchrow_hashref;
 	$sth_id->finish;
 
-#	$Para::Frame::REQ->{RBSTAT}{'arc init exec'} += Time::HiRes::time() - $ts;
+#	$Para::Frame::REQ->{RBSTAT}{'arc init exec'}
+#	  += Time::HiRes::time() - $ts;
 	unless( $rec )
 	{
 	    confess "Arc $id not found";
@@ -4249,7 +4200,9 @@ sub initiate_cache
 	    $subj = Rit::Base::Resource->new( $rec->{'subj'} );
 	    $bless_subj = 1;
 	}
-#	$Para::Frame::REQ->{RBSTAT}{'arc init subj'} += Time::HiRes::time() - $ts;
+
+#	$Para::Frame::REQ->{RBSTAT}{'arc init subj'}
+#	  += Time::HiRes::time() - $ts;
     }
 
 
@@ -4258,92 +4211,59 @@ sub initiate_cache
     my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
 
     my $valtype_id = $rec->{'valtype'};
-    my $value = $value_obj;
     unless( $value )
     {
 	### Bootstrap coltype
 
-	if( $rec->{'obj'} )
-	{
-	    # Set value to obj, even if coltype is a literal, since the obj
-	    # could be a value node
-	    $value = Rit::Base::Resource->get_by_id( $rec->{'obj'} );
-	}
-	elsif( $valtype_id == 0 ) # Removal arc
+	if( $valtype_id == 0 ) # Removal arc
 	{
 	    $value = is_undef;
 	}
-	else # Literal or undef obj
+	else
 	{
 	    my $valtype = Rit::Base::Resource->get($valtype_id)
 	      or confess "Couldn't find the valtype $valtype_id ".
 		"for arc $id";
+#	    debug "Arc $id valtype is $valtype_id";
 
-	    # TODO: this whole part could be replaced with just
-	    #
-	    # $value = $valtype->instance_class->new_from_db(
-	    # $rec->{$coltype} );
-
-	    my $coltype = $valtype->coltype;
-	    if( $coltype eq 'obj' )
-	    {
-		if( $rec->{'valtext'} or
-		    $rec->{'valdate'} or
-		    $rec->{'valfloat'} )
-		{
-		    debug datadump($rec);
-		    debug datadump($valtype,1);
-		    throw 'dbi', "Corrupt DB. valtype $valtype->{id} should have been a literal_class";
-		}
-		$value = Rit::Base::Resource->get($rec->{'obj'});
-	    }
-	    else
-	    {
-		$value = $valtype->instance_class->
-		  new_from_db( $rec->{$coltype} );
-	    }
+	    $value = $valtype->instance_class->get_by_arc_rec($rec,$valtype);
 	}
 
-#	$Para::Frame::REQ->{RBSTAT}{'arc init novalue'} += Time::HiRes::time() - $ts;
+#	$Para::Frame::REQ->{RBSTAT}{'arc init novalue'}
+#	  += Time::HiRes::time() - $ts;
     }
 
-    if( defined $value )
+    # Clean out old values if this is a reset
+    if( $arc->{'ioid'} )
     {
-#	check_value(\$value); # Already initiated
+	foreach my $key (qw(
+			       arc_created_obj arc_updated_obj
+			       arc_activated_obj arc_deactivated_obj
+			       arc_deactivated_by_obj
+			       arc_unsubmitted_obj activated_by_obj
+			       arc_created_by_obj source_obj
+			       arc_read_access_obj
+			       arc_write_access_obj value_node_obj
+			  ))
+	{
+	    delete $arc->{$key};
+	}
     }
-    else
-    {
-	$value = is_undef;
-    }
 
-
-    # INITIATES Resource part
-    #
-    $arc->SUPER::initiate_cache();
-
-
-    my $clean = $rec->{'valclean'};
-    my $implicit =  $rec->{'implicit'} || 0; # default
-    my $indirect = $rec->{'indirect'}  || 0; # default
-    my $created_by = $rec->{'created_by'};
-#    my $updated = Rit::Base::Literal::Time->get($rec->{'updated'} );
-#    my $created = Rit::Base::Literal::Time->get($rec->{'created'} );
-#    my $arc_activated = Rit::Base::Literal::Time->get($rec->{'activated'} );
-#    my $arc_deactivated = Rit::Base::Literal::Time->get($rec->{'deactivated'} );
-#    my $arc_unsubmitted = Rit::Base::Literal::Time->get($rec->{'unsubmitted'} );
 
     # Setup data
-    $arc->{'id'} = $id; # This is $rec->{'ver'}
     $arc->{'subj'} = $subj;
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
-    $arc->{'clean'} = $clean;
-    $arc->{'implicit'} = $implicit;
-    $arc->{'indirect'} = $indirect;
+#    debug "Setting value node of arc $id to ".($rec->{obj}||'<undef>');
+    $arc->{'value_node'} = $rec->{'obj'};
+    $arc->{'clean'} = $rec->{'valclean'}; # TODO: remove
+    $arc->{'implicit'} = $rec->{'implicit'} || 0; # default
+    $arc->{'indirect'} = $rec->{'indirect'}  || 0; # default
     $arc->{'disregard'} ||= 0; ### Keep previous value
     $arc->{'in_remove_check'} = 0;
     $arc->{'explain'} = []; # See explain() method
-    $arc->{'ioid'} ||= ++ $Rit::Base::Arc; # To track obj identity
+    $arc->{'ioid'} ||= ++ $Rit::Base::ioid; # To track obj identity
     $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
     $arc->{'replaces'} = $rec->{'replaces'};
     $arc->{'source'} = $rec->{'source'};
@@ -4351,7 +4271,7 @@ sub initiate_cache
     $arc->{'submitted'} = $rec->{'submitted'};
     $arc->{'activated_by'} = $rec->{'activated_by'};
     $arc->{'valtype'} = $rec->{'valtype'}; # Get obj on demand
-    $arc->{'arc_created_by'} = $created_by;
+    $arc->{'arc_created_by'} = $rec->{'created_by'};
     $arc->{'arc_read_access'} = $rec->{'read_access'};
     $arc->{'arc_write_access'} = $rec->{'write_access'};
     $arc->{'arc_activated'} = $rec->{'activated'};               #
@@ -4363,7 +4283,7 @@ sub initiate_cache
     ####################################
 
 
-    # Store arc in cache (if not yet done)
+    # Store arc in cache (if not yet done) (Should not be needed!)
     #
     $Rit::Base::Cache::Resource{ $id } = $arc;
 
@@ -4372,9 +4292,11 @@ sub initiate_cache
     #
     $arc->register_with_nodes;
 
-    warn "Arc $arc->{id} $arc->{ioid} ($value) has disregard value $arc->{'disregard'}\n" if $DEBUG > 1;
     if( $DEBUG > 1 )
     {
+	warn "Arc $arc->{id} $arc->{ioid} ($value) ".
+	  "has disregard value $arc->{'disregard'}\n";
+
 	my $pred_name = $pred->plain;
 	warn "arcs for $subj->{id} $pred_name:\n";
 	foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
@@ -4392,7 +4314,7 @@ sub initiate_cache
     if( $bless_subj )
     {
 	debug 2, "Calling first_bless for $subj->{id}";
-	$subj->first_bless;
+	$subj->first_bless->init;
     }
 
     # The node sense of the arc should NOT be resetted. It must have
@@ -4400,7 +4322,8 @@ sub initiate_cache
 
     warn timediff("arc init done") if $DEBUG > 1;
 
-#    $Para::Frame::REQ->{RBSTAT}{'arc init'} += Time::HiRes::time() - $ts;
+#    $Para::Frame::REQ->{RBSTAT}{'arc init'}
+#      += Time::HiRes::time() - $ts;
 
     return $arc;
 }
@@ -4424,7 +4347,7 @@ sub register_with_nodes
     my $pred = $arc->pred;
     my $subj = $arc->{'subj'};
     my $pred_name = $pred->plain;
-    my $coltype = $arc->real_coltype || ''; # coltype may be removal
+    my $coltype = $arc->coltype || ''; # coltype may be removal
 
 #    debug "--> Registring arc $id pred $pred_name with subj $arc->{subj}{id} and obj";
 
@@ -4468,46 +4391,41 @@ sub register_with_nodes
 #	check_value(\$value); # Already initiated
 #    }
 
-    # Register the arc with the obj
-    if( $coltype eq 'obj' )
+    if( UNIVERSAL::isa($value, "ARRAY") )
     {
-	if( UNIVERSAL::isa($value, "ARRAY") )
-	{
-	    confess "bad value ".datadump($value,2);
-	}
+	confess "bad value ".datadump($value,2);
+    }
 
-	unless( $value->{'arc_id'}{$id} )
+    if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
+    {
+	$value->{'arc'} = $arc;
+    }
+    elsif( not $value->{'arc_id'}{$id} )
+    {
+	if( $arc->{'active'} )
 	{
-	    if( $arc->{'active'} )
+	    if( ref $value->{'revarc'}{ $pred_name } )
 	    {
-		if( ref $value->{'revarc'}{ $pred_name } )
-		{
-		    push @{$value->{'revarc'}{ $pred_name }}, $arc;
-		}
-		else
-		{
-		    $value->{'revarc'}{ $pred_name } = [$arc];
-		}
+		push @{$value->{'revarc'}{ $pred_name }}, $arc;
 	    }
 	    else
 	    {
-		if( ref $value->{'revarc_inactive'}{ $pred_name } )
-		{
-		    push @{$value->{'revarc_inactive'}{ $pred_name }}, $arc;
-		}
-		else
-		{
-		    $value->{'revarc_inactive'}{ $pred_name } = [$arc];
-		}
+		$value->{'revarc'}{ $pred_name } = [$arc];
 	    }
-
-	    $value->{'arc_id'}{$id} = $arc;
 	}
-    }
-    elsif( defined $value )
-    {
-	# Remember the arc this Literal belongs to
-	$value->set_arc( $arc );
+	else
+	{
+	    if( ref $value->{'revarc_inactive'}{ $pred_name } )
+	    {
+		push @{$value->{'revarc_inactive'}{ $pred_name }}, $arc;
+	    }
+	    else
+	    {
+		$value->{'revarc_inactive'}{ $pred_name } = [$arc];
+	    }
+	}
+
+	$value->{'arc_id'}{$id} = $arc;
     }
 
     return $arc;
@@ -4644,13 +4562,13 @@ sub rollback
     while( my $params = shift @Rit::Base::Arc::queue_check_remove )
     {
 	my( $arc, $args ) = @$params;
-	$arc->initiate_cache;
+	$arc->reset_cache;
 	$arc->remove_check( $args );
     }
     while( my $params = shift @Rit::Base::Arc::queue_check_add )
     {
 	my( $arc, $args ) = @$params;
-	$arc->initiate_cache;
+	$arc->reset_cache;
 	$arc->create_check( $args );
     }
 
@@ -4872,6 +4790,7 @@ sub create_check
 
     if( $pred_name eq 'is' )
     {
+	$subj->update_valtype($args);
 	$subj->rebless( $args );
     }
     elsif( $pred_name eq 'class_handled_by_perl_module' )
@@ -4928,6 +4847,7 @@ sub remove_check
 
     if( $pred_name eq 'is' )
     {
+	$subj->update_valtype($args);
 	$subj->rebless($args);
     }
     elsif( $pred_name eq 'class_handled_by_perl_module' )

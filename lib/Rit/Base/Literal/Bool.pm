@@ -1,5 +1,14 @@
 # $Id$
 package Rit::Base::Literal::Bool;
+#=====================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
 =head1 NAME
 
