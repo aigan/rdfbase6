@@ -341,6 +341,7 @@ sub convert_valuenodes
     my $req = Para::Frame::Request->new_bgrequest();
     my $now_db = DateTime::Format::Pg->format_datetime(now);
     my $R = Rit::Base->Resource;
+    my $C = Rit::Base->Constants;
 
     print "\nCONVERTING VALUENODES\n\n";
 
@@ -502,12 +503,55 @@ sub convert_valuenodes
     if( $R->find({label=>'value'})->size )
     {
 	$R->get(4)->remove({force=>1});
-	debug "Committing";
-	$dbh->commit;
     }
 
-    debug "Cleaning up texts from old errors";
+    my $class = $C->get('class');
+    my $resource = $R->get('resource');
+    $resource->add({is=>$class});
+    $R->find({code=>'ritbase_core_resource'})->remove({force_recursive=>1});
+    $C->get('email')->add({is=>$class});
+    $C->get('business_role')->add({is=>$class});
 
+    debug "Committing";
+    $dbh->commit;
+
+    debug "Setting valtype for obj arcs";
+    my $obj_arcs_sth = $dbh->prepare("select * from arc where valfloat is null and valdate is null and valbin is null and valtext is null and obj is not null and valtype <> 5");
+    $obj_arcs_sth->execute;
+    my $valtype_update_sth = $dbh->prepare("update arc set valtype=? where ver=?");
+    my $obj_arc_cnt = 0;
+    my $valtype_updated_cnt = 0;
+    debug "  ".$obj_arcs_sth->rows." records";
+    while( my $rec = $obj_arcs_sth->fetchrow_hashref )
+    {
+	unless( ++$obj_arc_cnt % 1000 )
+	{
+	    debug sprintf "%6d Total updated %5d",
+	      $obj_arc_cnt, $valtype_updated_cnt;
+	    $dbh->commit;
+	}
+
+	my $pred = Rit::Base::Pred->get($rec->{'pred'});
+	next unless $pred->objtype;
+
+	my $old_valtype_id = $rec->{'valtype'};
+
+	my $obj = $R->get($rec->{'obj'});
+	my $new_valtype_id = $obj->this_valtype->id;
+	if( $new_valtype_id != $old_valtype_id )
+	{
+	    $valtype_updated_cnt++;
+	    $valtype_update_sth->execute($new_valtype_id,$rec->{'ver'});
+#	    debug "$rec->{ver}: $old_valtype_id -> $new_valtype_id";
+	}
+    }
+    $obj_arcs_sth->finish;
+    debug "Updated $valtype_updated_cnt valtypes";
+    debug "Committing";
+    $dbh->commit;
+
+
+    debug "Cleaning up texts from old errors";
     my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
 
     my $text_sth = $dbh->prepare("select ver, valtext from arc where valtext is not null");
@@ -520,7 +564,7 @@ sub convert_valuenodes
 	unless( ++$text_cnt % 1000 )
 	{
 	    debug sprintf "%6d Total cleaned %5d", $text_cnt, $cleaned;
-	    $dbh->commit;
+#	    $dbh->commit;
 	}
 
 	my $ver = $rec->{'ver'};
@@ -558,16 +602,24 @@ sub convert_valuenodes
 	$decoded =~ s/\x{0097}/\x{2014}/g; # em dash
 
 
-	# Remove invisible characters from string
-	$decoded =~ s/\p{Other}//g;
-
 	# Remove Unicode 'REPLACEMENT CHARACTER'
 	$decoded =~ s/\x{fffd}//g;
+
+	# Replace Space separator chars
+	$decoded =~ s/\p{Zs}/ /g;
+
+	# Replace Line separator chars
+	$decoded =~ s/\p{Zl}/\n/g;
+
+	# Replace Paragraph separator chars
+	$decoded =~ s/\p{Zp}/\n\n/g;
 
 	$decoded =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
 	$decoded =~ s/^\s*\n//; # Leading empty lines
 	$decoded =~ s/\n\s+$/\n/; # Trailing empty lines
 
+	# Remove invisible characters, other than LF
+	$decoded =~ s/(?!\n)\p{Other}/*/g;
 
 	if( $valtext ne $decoded)
 	{
@@ -618,7 +670,6 @@ sub convert_valuenodes
 #
 #			last;
 #		    }
-##		    debug sprintf "%2d: %4d (%s)", $i, ord($char), $char;
 #		}
 #
 #	    }
@@ -644,6 +695,7 @@ sub convert_valuenodes
     $text_sth-> finish;
 
     debug "Cleaned $cleaned";
+
 
 #    debug "Committing";
 #    $dbh->commit;
