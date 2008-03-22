@@ -241,7 +241,7 @@ sub parse
 
     if( $coltype eq 'valtext' )
     {
-	unless( length $val_mod )
+	unless( length($val_mod||'') )
 	{
 	    return $class->new( undef, $valtype );
 	}

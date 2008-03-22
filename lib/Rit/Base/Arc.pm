@@ -3257,7 +3257,8 @@ sub set_value
 
 #    Para::Frame::Logging->this_level(4);
 
-    debug 3, "Set value of arc $arc->{'id'} to '$value_new_in'\n";
+    debug 3, sprintf "Set value of arc %s to '%s'",
+      $arc->{'id'}, ($value_new_in||'<undef>');
 
     my $coltype_old  = $arc->coltype;
     my $value_new;

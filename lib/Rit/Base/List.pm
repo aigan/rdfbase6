@@ -1007,7 +1007,7 @@ sub loc
 	    if( UNIVERSAL::isa($item, 'Rit::Base::Node') )
 	    {
 		debug 3, sprintf "Res '%s' (%s)",
-		  $item, blessed($item);
+		  ($item||'<undef>'), blessed($item);
 
 		my $langs = $item->list('is_of_language');
 		if( @$langs )
@@ -1129,7 +1129,7 @@ sub loc
 	    return "";
 	}
 
-	die "No default found";
+	die "No default found in list: ".query_desig($list);
     }
 }
 
