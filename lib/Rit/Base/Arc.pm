@@ -3441,7 +3441,7 @@ sub set_value
 	      $now_db,
 	    );
 
-	if( $vnode_old or $vnode_new )
+	if( ($vnode_old or $vnode_new) and ($coltype_new ne 'obj') )
 	{
 	    push @dbparts, "obj=?";
 	    push @dbvalues, $vnode_new->id; # Also works for Undef
