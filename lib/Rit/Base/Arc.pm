@@ -3251,7 +3251,7 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    Para::Frame::Logging->this_level(4);
+#    Para::Frame::Logging->this_level(4);
 
     debug 3, "Set value of arc $arc->{'id'} to '$value_new_in'\n";
 
