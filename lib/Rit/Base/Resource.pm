@@ -6920,7 +6920,7 @@ sub this_valtype
 {
     unless( $_[0]->{'valtype'} )
     {
-	debug "Letting find_class find out type for $_[0]->{id}";
+	debug 2, "Letting find_class find out type for $_[0]->{id}";
 	$_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
 
 	unless( $_[0]->{'valtype'} )
