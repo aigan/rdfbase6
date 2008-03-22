@@ -3425,7 +3425,7 @@ sub set_value
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
 	$value_db = $value_db->plain if ref $value_db;
 	# Assume that ->plain() always returns charstring
-	utf8::upgrade( $value_db );
+	utf8::upgrade( $value_db ) if defined $value_db; # May be undef
 
 	my $now_db = $dbix->format_datetime($now);
 

@@ -233,8 +233,11 @@ sub parse
 	confess "Can't parse $val";
     }
 
-    # Remove invisible characters, other than LF
-    $val_mod =~ s/(?!\n)\p{Other}//g;
+    if( defined $val_mod )
+    {
+	# Remove invisible characters, other than LF
+	$val_mod =~ s/(?!\n)\p{Other}//g;
+    }
 
     if( $coltype eq 'valtext' )
     {
@@ -290,6 +293,7 @@ sub parse
     }
     elsif( $coltype eq 'valfloat' )
     {
+	$val_mod ||= 0;
 	trim($val_mod);
 	$val_mod =~ s/,/./; # Handling swedish numerical format...
 
