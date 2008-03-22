@@ -6822,20 +6822,6 @@ sub dereference_nesting
 
 #########################################################################
 
-=head2 set_arc
-
-Called for literal resources. Ignored here but active for literal nodes
-
-=cut
-
-sub set_arc
-{
-    return $_[1]; # return the arc
-}
-
-
-#########################################################################
-
 =head2 session_history_add
 
 =cut

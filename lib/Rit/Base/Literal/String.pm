@@ -34,7 +34,7 @@ use Para::Frame::Utils qw( debug datadump trim throw deunicode );
 use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs );
-use Rit::Base::Widget qw( aloc );
+use Rit::Base::Widget qw( aloc build_field_key );
 use Rit::Base::Constants qw( );
 
 use base qw( Rit::Base::Literal );
@@ -631,11 +631,38 @@ sub this_valtype
 
 =head2 wuirc
 
+  $class->wuirc( $subj, $pred, \%args )
+
 Display field for updating a string property of a node
 
-var node must be defined
+Supported args are:
 
-prop pred is required
+  proplim
+  arclim
+  default_create
+  unique_arcs_prio
+  range (valtype)
+  range_scof
+  rows
+  cols
+  size
+  inputtype
+  maxlength
+  newsubj
+  maxw
+  maxh
+  label
+  tdlabel
+  separator
+  id
+  label_class
+  disabled
+  image_url
+  class
+  default_value
+  vnode
+
+
 
 document newsubj!
 
@@ -652,7 +679,7 @@ sub wuirc
 
 #    Para::Frame::Logging->this_level(5);
 
-    no strict 'refs';
+    no strict 'refs'; # For &{$inputtype} below
     my $out = "";
     my $R = Rit::Base->Resource;
     my $req = $Para::Frame::REQ;
@@ -715,7 +742,10 @@ sub wuirc
     my $maxw = $args->{'maxw'};
     my $maxh = $args->{'maxh'};
 
-    $args->{'id'} ||= "arc___pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
+    $args->{'id'} ||= build_field_key({
+				       pred => $predname,
+				       subj => $subj,
+				      });
 
     $out .= label_from_params({
 			       label       => $args->{'label'},
@@ -725,17 +755,20 @@ sub wuirc
 			       label_class => $args->{'label_class'},
 			      });
 
+    my $proplim = $args->{'proplim'} || undef;
+    my $arclim = $args->{'arclim'} || ['active','submitted'];
+
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
-	my $arclist = $subj->arc_list($predname, undef, $args);
+	my $arclist = $subj->arc_list($predname, $proplim, $args);
 
 	while( my $arc = $arclist->get_next_nos )
 	{
 	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
-    elsif( $subj->list($predname,undef,['active','submitted'])->is_true )
+    elsif( $subj->list($predname,$proplim,$arclim)->is_true )
     {
 	my $subj_id = $subj->id;
 
@@ -748,7 +781,7 @@ sub wuirc
 	foreach my $arc_id (keys %$arcversions)
 	{
 	    my $arc = Rit::Base::Arc->get($arc_id);
-	    if( my $lang = $arc->obj->is_of_language(undef,'auto') )
+	    if( my $lang = $arc->value_node->is_of_language(undef,'auto') )
 	    {
 		$out .= "(".$lang->desig."): ";
 	    }
@@ -797,7 +830,7 @@ sub wuirc
 					       class => "suggestion_field",
 					       size => $smallestsize,
 					       rows => $rows,
-					       maxlength => $args->{'maxlenght'},
+					       maxlength => $args->{'maxlength'},
 					       version => $version,
 					       image_url => $args->{'image_url'},
 					       id => $args->{'id'},
@@ -830,23 +863,19 @@ sub wuirc
 		$out .= '<li>'
 		  if( scalar(keys %$arcversions) > 1 );
 
-		if( $arc->obj->is_value_node )
-		{
-		    $arc = $arc->obj->first_arc('value');
-		    $arc_id = $arc->id;
-		}
-
-		my $arc_pred_name = $arc->pred->name;
-		my $arc_subj_id = $arc->subj->id;
-
-		$out .= &{$inputtype}("arc_${arc_id}__pred_${arc_pred_name}__row_".$req->{'rb_wu_row'}."__subj_${arc_subj_id}",
+		my $field = build_field_key({
+					     arc => $arc_id,
+					     pred => $arc->pred,
+					     subj => $arc->subj,
+					    });
+		$out .= &{$inputtype}($field,
 				      $arc->value,
 				      {
 				       class => $args->{'class'},
 				       arc => $arc_id,
 				       size => $size,
 				       rows => $rows,
-				       maxlength => $args->{'maxlenght'},
+				       maxlength => $args->{'maxlength'},
 				       id => $args->{'id'},
 				       image_url => $args->{'image_url'}
 				      });
@@ -863,23 +892,71 @@ sub wuirc
     }
     else # no arc
     {
-	my $default = $args->{'default_value'} || '';
-	my $subj_id = $subj->id;
-	$out .= &{$inputtype}("arc___pred_${predname}__subj_${subj_id}__row_".$req->{'rb_wu_row'},
+	my $default = $class->new($args->{'default_value'}, $range);
+
+	my $props =
+	{
+	 pred => $predname,
+	 subj => $subj,
+	};
+
+	my $dc = $args->{'default_create'} || {};
+	my $vnode = $default->node || $args->{'vnode'};
+	if( keys %$dc and not $vnode )
+	{
+	    $vnode = $default->node_set;
+	    $props->{'vnode'} = $vnode;
+	}
+
+	$out .= &{$inputtype}(build_field_key($props),
 			      $default,
 			      {
 			       class => $args->{'class'},
 			       size => $size,
 			       rows => $rows,
-			       maxlength => $args->{'maxlenght'},
+			       maxlength => $args->{'maxlength'},
 			       maxw => $maxw,
 			       maxh => $maxh,
 			       id => $args->{'id'},
-			       image_url => $args->{'image_url'}
+			       image_url => $args->{'image_url'},
 			      });
+
+	foreach my $key ( keys %$dc )
+	{
+	    my $vallist = $R->find_by_anything($dc->{$key});
+	    foreach my $val ( $vallist->as_array )
+	    {
+		my $field = build_field_key({
+					     pred => $key,
+					     subj => $vnode,
+					     if => 'subj',
+					    });
+		$out .= &hidden($field,$val);
+	    }
+	}
     }
 
     return $out;
+}
+
+
+#######################################################################
+
+=head2 wul
+
+Display field for updating a string property of a node
+
+var node must be defined
+
+the query param "arc___pred_$pred__subj_$nid" can be used for default new value
+
+the query param "arc___pred_$pred" can be used for default new value
+
+=cut
+
+sub wul
+{
+    die "FIXME";
 }
 
 

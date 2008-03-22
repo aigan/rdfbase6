@@ -326,6 +326,26 @@ sub node
 
 #######################################################################
 
+=head2 set_arc
+
+  $lit->set_arc( $arc )
+
+Bind Literal to arc.
+
+=cut
+
+sub set_arc
+{
+    my( $lit, $arc ) = @_;
+
+    $lit->{'arc'} = $arc;
+
+    return $arc;
+}
+
+
+#######################################################################
+
 =head2 node_set
 
   $lit->node_set
@@ -1385,20 +1405,19 @@ sub link_paths
 
 =head3 wu
 
+Widget for updating a node
+
 =cut
 
 sub wu
 {
     my( $lit, $pred_name, $args_in ) = @_;
-    my( $args_parsed ) = parse_propargs($args_in);
-    my $args = {%$args_parsed}; # Shallow clone
 
     confess "not implemented"
       unless( $pred_name eq 'value' );
 
-    my $pred = Rit::Base::Pred->get_by_label($pred_name);
-
-    return $lit->wuirc( $lit, $pred, $args );
+    # Widget for updating literal
+    return $lit->wul($args_in);
 }
 
 

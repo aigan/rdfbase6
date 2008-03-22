@@ -395,9 +395,9 @@ sub convert_valuenodes
     my( $rec, $error ) = $arclist->get_first;
     while(! $error )
     {
-	unless( $arclist->count % 100 )
+	unless( $arclist->count % 1000 )
 	{
-	    debug sprintf "%5d", $arclist->count;
+	    debug sprintf "%5d sorted", $arclist->count;
 #	    last if $arclist->count == 100;
 	}
 

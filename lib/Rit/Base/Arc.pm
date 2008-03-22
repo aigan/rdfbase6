@@ -2314,7 +2314,7 @@ sub vacuum
     debug "vacuum arc $arc->{id}" if $DEBUG;
 
     return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
-    debug "vacuum ".$arc->sysdesig;
+    debug "vacuum ".$arc->sysdesig if $DEBUG;
 
     $arc->remove_duplicates( $args );
 
@@ -4396,7 +4396,7 @@ sub register_with_nodes
 
     if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
     {
-	$value->{'arc'} = $arc;
+	$value->set_arc($arc);
     }
     elsif( not $value->{'arc_id'}{$id} )
     {

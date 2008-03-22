@@ -31,7 +31,7 @@ BEGIN
 {
     @Rit::Base::Widget::EXPORT_OK
 
-      = qw( wub aloc );
+      = qw( wub aloc build_field_key );
 
 }
 
@@ -381,6 +381,47 @@ sub next_wu_row
 sub wu_row
 {
     return $Para::Frame::REQ->{'rb_wu_row'};
+}
+
+
+#######################################################################
+
+=head2 build_field_key
+
+  build_field_key( \%props )
+
+=cut
+
+sub build_field_key
+{
+    my( $props ) = @_;
+    unless( ref $props eq 'HASH' )
+    {
+	confess "Invalid argument: ".datadump($props,1);
+    }
+    my $arc_id = '';
+    if( my $arc_in = delete($props->{'arc'}) )
+    {
+	my $arc = Rit::Base::Arc->get($arc_in);
+	$arc_id = $arc->id;
+    }
+
+    my $out = "arc_".$arc_id;
+
+    foreach my $key (sort keys %$props)
+    {
+	my $val = $props->{$key} || '';
+	if( grep{$key eq $_} qw( subj type scof vnode ) )
+	{
+	    $val = Rit::Base::Resource->get($val)->id;
+	}
+	elsif( grep{$key eq $_} qw( pred desig ) )
+	{
+	    $val = Rit::Base::Pred->get($val)->plain;
+	}
+	$out .= '__'.$key.'_'.$val;
+    }
+    return $out;
 }
 
 
