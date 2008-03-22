@@ -2374,7 +2374,7 @@ sub check_valtype
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
-    Para::Frame::Logging->this_level(3);
+#    Para::Frame::Logging->this_level(3);
 
     my $old_val = $arc->value;
 
