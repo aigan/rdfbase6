@@ -2385,9 +2385,13 @@ sub check_valtype
     my $arc_valtype = $arc->valtype;
 #    my $pred_valtype = $pred->valtype;
     my $pred_valtype = $old_val->this_valtype; # val_valtype...
-    debug "Arc   valtype is ".$arc_valtype->sysdesig;
-    debug "Value         is ".$old_val->sysdesig;
-    debug "Value valtype is ".$pred_valtype->sysdesig;
+
+    if( debug > 2 )
+    {
+	debug "Arc   valtype is ".$arc_valtype->sysdesig;
+	debug "Value         is ".$old_val->sysdesig;
+	debug "Value valtype is ".$pred_valtype->sysdesig;
+    }
 
 
     if( $arc_valtype->equals( $pred_valtype ) )
