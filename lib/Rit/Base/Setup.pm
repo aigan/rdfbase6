@@ -505,16 +505,6 @@ sub convert_valuenodes
 	$R->get(4)->remove({force=>1});
     }
 
-    my $class = $C->get('class');
-    my $resource = $R->get('resource');
-    $resource->add({is=>$class});
-    $R->find({code=>'ritbase_core_resource'})->remove({force_recursive=>1});
-    $C->get('email')->add({is=>$class});
-    $C->get('business_role')->add({is=>$class});
-
-    debug "Committing";
-    $dbh->commit;
-
     debug "Setting valtype for obj arcs";
     my $obj_arcs_sth = $dbh->prepare("select * from arc where valfloat is null and valdate is null and valbin is null and valtext is null and obj is not null and valtype <> 5");
     $obj_arcs_sth->execute;
@@ -695,6 +685,16 @@ sub convert_valuenodes
     $text_sth-> finish;
 
     debug "Cleaned $cleaned";
+
+    my $class = $C->get('class');
+    my $resource = $R->get('resource');
+    $resource->add({is=>$class});
+    $R->find({code=>'ritbase_core_resource'})->remove({force_recursive=>1});
+    $C->get('email')->add({is=>$class});
+    $C->get('business_role')->add({is=>$class});
+
+    debug "Committing";
+    $dbh->commit;
 
 
 #    debug "Committing";
