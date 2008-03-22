@@ -365,13 +365,7 @@ sub create
     {
 	$valtype = $pred->valtype;
     }
-
-    confess("Missing valtype while creating ".query_desig($props))
-      unless( defined $rec->{'valtype'} );
-
-    push @fields, 'valtype';
-    push @values, $rec->{'valtype'};
-
+    # Setting up the final valtype below
 
 
     ##################### updated_by
