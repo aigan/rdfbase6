@@ -284,6 +284,8 @@ sub get_by_node_rec
 
   $n->get_by_arc_rec( $rec, $valtype )
 
+If obj is undef; returns is_undef.
+
 Returns: a node
 
 Exceptions: see L</init>.
@@ -295,8 +297,11 @@ sub get_by_arc_rec
     my( $this, $rec, $valtype ) = @_;
 
 #    debug "get_by_arc_rec @_";
-    my $id = $rec->{'obj'} or
-      confess "get_by_arc_rec misses the obj param: ".datadump($rec,2);
+    my $id = $rec->{'obj'};
+    unless( $id )
+    {
+	return is_undef;
+    }
 
 #    debug "Arc rec $rec->{ver}";
     return $Rit::Base::Cache::Resource{$id} ||
@@ -4257,11 +4262,9 @@ sub wu
     # Wrap in for ajax
     my $out = "";
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
-    my $from_ajax = $args->{'from_ajax'};
+    my $from_ajax = $args->{'from_ajax'} || 0;
     my $divid = $args->{'divid'} ||
       ( $ajax ? Rit::Base::AJAX->new_form_id() : undef );
-    $args->{'divid'} = $divid
-      if $divid and not $from_ajax;
 
     $out .= Para::Frame::Widget::label_from_params({
 			       label       => delete $args->{'label'},
@@ -4271,19 +4274,25 @@ sub wu
 			       label_class => delete $args->{'label_class'},
 			      });
 
-    $out .= '<div id="'. $divid .'" style="position: relative;">'
-      if $divid and not $from_ajax;
+    if( $divid and not $from_ajax )
+    {
+	$args->{'divid'} = $divid;
+	$out .= '<div id="'. $divid .'" style="position: relative;">';
+    }
 
     # widget for updating subclass of range class
     $out .= $range->instance_class->wuirc($node, $pred, $args);
+    $out .= $extra_html if $extra_html;
 
-    $out .= $extra_html
-      if $extra_html;
-
-    if( $ajax and not $from_ajax )
+    if( $divid and not $from_ajax )
     {
 	$out .= '</div>';
-	$out .= $node->register_ajax_pagepart( $pred_name, $divid, $args );
+
+	if( $ajax )
+	{
+	    $out .= $node->register_ajax_pagepart( $pred_name,
+						   $divid, $args );
+	}
     }
 
     return $out;
