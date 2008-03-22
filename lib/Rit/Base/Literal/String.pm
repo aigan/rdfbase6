@@ -233,7 +233,7 @@ sub parse
 	confess "Can't parse $val";
     }
 
-    # Remove invisible characters from string
+    # Remove invisible characters, other than LF
     $val_mod =~ s/(?!\n)\p{Other}//g;
 
     if( $coltype eq 'valtext' )
@@ -272,6 +272,15 @@ sub parse
 
 	# NOT Remove Unicode 'REPLACEMENT CHARACTER'
 	#$val_mod =~ s/\x{fffd}//g;
+
+	# Replace Space separator chars
+	$decoded =~ s/\p{Zs}/ /g;
+
+	# Replace Line separator chars
+	$decoded =~ s/\p{Zl}/\n/g;
+
+	# Replace Paragraph separator chars
+	$decoded =~ s/\p{Zp}/\n\n/g;
 
 
 	$val_mod =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
