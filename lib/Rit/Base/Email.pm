@@ -793,7 +793,7 @@ sub on_arc_del
 
 sub reset_cache
 {
-    debug "Resetting cached properties for email";
+#    debug "Resetting cached properties for email";
 
     my @keys = keys %{$_[0]};
 
