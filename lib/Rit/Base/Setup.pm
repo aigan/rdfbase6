@@ -551,7 +551,7 @@ sub convert_valuenodes
     debug "  ".$text_sth->rows." records";
     while( my $rec = $text_sth->fetchrow_hashref )
     {
-	unless( ++$text_cnt % 1000 )
+	unless( ++$text_cnt % 10000 )
 	{
 	    debug sprintf "%6d Total cleaned %5d", $text_cnt, $cleaned;
 #	    $dbh->commit;
@@ -609,7 +609,7 @@ sub convert_valuenodes
 	$decoded =~ s/\n\s+$/\n/; # Trailing empty lines
 
 	# Remove invisible characters, other than LF
-	$decoded =~ s/(?!\n)\p{Other}/*/g;
+	$decoded =~ s/(?!\n)\p{Other}//g;
 
 	if( $valtext ne $decoded)
 	{
@@ -638,30 +638,31 @@ sub convert_valuenodes
 #	    }
 #	    else
 #	    {
-#		for( my $i=0; $i<length($valtext); $i++ )
-#		{
-#		    my $char1 = substr($valtext,$i,1);
-#		    my $char2 = substr($decoded,$i,1);
-#		    if( ord($char1) != ord($char2) )
-#		    {
-#			debug sprintf "Position %d, char %s(%4x)!=%s(%4x)",
-#			  $i, $char1, ord($char1), $char2, ord($char2);
-#			if( $char1 =~ /\pL/ ){ debug "  LETTER" };
-#			if( $char1 =~ /\pM/ ){ debug "  MARK" };
-#			if( $char1 =~ /\pZ/ ){ debug "  SEPARATOR" };
-#			if( $char1 =~ /\pS/ ){ debug "  SYMBOL" };
-#			if( $char1 =~ /\pN/ ){ debug "  NUMBER" };
-#			if( $char1 =~ /\pP/ ){ debug "  PUNCTUATION" };
-#			if( $char1 =~ /\p{Cc}/ ){ debug "  CONTROL" };
-#			if( $char1 =~ /\p{Cf}/ ){ debug "  FORMAT" };
-#			if( $char1 =~ /\p{Co}/ ){ debug "  PRIVATE" };
-#			if( $char1 =~ /\p{Cs}/ ){ debug "  SURROGATE" };
-#			if( $char1 =~ /\p{Cn}/ ){ debug "  UNASSIGNED" };
+
+# 		for( my $i=0; $i<length($valtext); $i++ )
+# 		{
+# 		    my $char1 = substr($valtext,$i,1);
+# 		    my $char2 = substr($decoded,$i,1);
+# 		    if( ord($char1) != ord($char2) )
+# 		    {
+# 			debug sprintf "Position %d, char %s(%4x)!=%s(%4x)",
+# 			  $i, $char1, ord($char1), $char2, ord($char2);
+# 			if( $char1 =~ /\pL/ ){ debug "  LETTER" };
+# 			if( $char1 =~ /\pM/ ){ debug "  MARK" };
+# 			if( $char1 =~ /\pZ/ ){ debug "  SEPARATOR" };
+# 			if( $char1 =~ /\pS/ ){ debug "  SYMBOL" };
+# 			if( $char1 =~ /\pN/ ){ debug "  NUMBER" };
+# 			if( $char1 =~ /\pP/ ){ debug "  PUNCTUATION" };
+# 			if( $char1 =~ /\p{Cc}/ ){ debug "  CONTROL" };
+# 			if( $char1 =~ /\p{Cf}/ ){ debug "  FORMAT" };
+# 			if( $char1 =~ /\p{Co}/ ){ debug "  PRIVATE" };
+# 			if( $char1 =~ /\p{Cs}/ ){ debug "  SURROGATE" };
+# 			if( $char1 =~ /\p{Cn}/ ){ debug "  UNASSIGNED" };
 #
-#			last;
-#		    }
-#		}
-#
+# 			last;
+# 		    }
+# 		}
+
 #	    }
 
 
@@ -677,7 +678,9 @@ sub convert_valuenodes
 #	    $decoded =~ s/\n/\\n\n/g;
 #	    $decoded =~ s/ /_/g;
 #
+
 #	    debug "---\n$valtext\n---\n$decoded\n---";
+#	    die;
 
 	    $update_text_sth->execute($decoded, $cleaned, $ver);
 	}
