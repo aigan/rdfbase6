@@ -2473,7 +2473,7 @@ sub check_valtype
 	}
 	else
 	{
-	    confess "FIXME"; # Mismatch
+	    confess "FIXME for arc ".$arc->id; # Mismatch
 
 	    debug "Changing from obj to $pred_coltype";
 
@@ -2491,7 +2491,7 @@ sub check_valtype
 
 	if( $pred_coltype eq 'obj' )
 	{
-	    confess "FIXME";
+	    confess "FIXME for arc ".$arc->id;
 	}
 	else
 	{
