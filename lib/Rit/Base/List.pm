@@ -1973,6 +1973,7 @@ AUTOLOAD
     }
 
     my @list = ();
+    my $list_class;
     my( $elem, $error ) = $self->get_first;
     while(! $error )
     {
@@ -1987,6 +1988,7 @@ AUTOLOAD
 	    {
 		if( $res->is_list )
 		{
+		    $list_class ||= ref($res);
 		    if( $res->size )
 		    {
 			CORE::push @list, $res;
@@ -1994,6 +1996,7 @@ AUTOLOAD
 		}
 		elsif( $res->defined )
 		{
+		    $list_class ||= $res->list_class;
 		    CORE::push @list, $res;
 		}
 	    }
@@ -2008,6 +2011,8 @@ AUTOLOAD
 	( $elem, $error ) = $self->get_next;
     }
 
+    # Don't assume it it the same as the calle class
+    $list_class ||= "Rit::Base::List";
 
     if( $DEBUG > 2 )
     {
@@ -2022,13 +2027,13 @@ AUTOLOAD
 	}
 	else
 	{
-	    return $self->new(\@list);
+	    return $list_class->new(\@list);
 	}
     }
     else
     {
 	debug "  No value returned" if $DEBUG>2;
-	return $self->new_empty();
+	return $list_class->new_empty();
     }
 }
 
