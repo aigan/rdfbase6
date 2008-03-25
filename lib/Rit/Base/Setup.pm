@@ -689,6 +689,8 @@ sub convert_valuenodes
 
     debug "Cleaned $cleaned";
 
+    $Para::Frame::REQ->user->
+      set_default_propargs({activate_new_arcs => 1});
     my $class = $C->get('class');
     my $resource = $R->get('resource');
     $resource->add({is=>$class});

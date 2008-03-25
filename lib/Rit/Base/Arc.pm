@@ -2971,6 +2971,7 @@ sub remove
     my $implicit = $args->{'implicit'} || 0;
     my $create_removal = 0;
     my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
+    my $arc_id = $arc->id;
 
     if( $DEBUG )
     {
@@ -3119,32 +3120,49 @@ sub remove
     debug "  SUPER::remove" if $DEBUG;
     $arc->SUPER::remove();  # Removes the arc node: the arcs properties
 
-    my $arc_id = $arc->id;
+
+    ### Not important if doesn't exist in DB. For example, if the arc
+    ### was rolled back before it was comitted. We can still use this
+    ### method for removing the arc from memory!
+
 #    debug "Removed arc id ".$arc->sysdesig;
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
     $res->changes_add;
-
-
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
-
     $sth->execute($arc_id);
+
 
     debug "  init subj" if $DEBUG;
     $arc->subj->reset_cache;
     $arc->value->reset_cache(undef);
 
-    $Rit::Base::Cache::Changes::Removed{$arc->id} ++;
+    $Rit::Base::Cache::Changes::Removed{$arc_id} ++;
 
     # Clear out data from arc (and arc in cache)
     #
     # We use the subj prop to determine if this arc is removed
     #
+    # Sync with init() property setup
     debug "  clear arc data\n" if $DEBUG;
-    foreach my $prop (qw( subj pred_name value clean coltype valtype
-			  created updated created_by implicit indirect ))
+    foreach my $prop (qw(
+			    subj pred value value_node clean implicit
+			    indirect explain replaces source active
+			    submitted activated_by valtype
+			    arc_created_by arc_read_access
+			    arc_write_access arc_activated
+			    arc_deactivated arc_created arc_updated
+			    unsubmitted arc_created_obj
+			    arc_updated_obj arc_activated_obj
+			    arc_deactivated_obj
+			    arc_deactivated_by_obj
+			    arc_unsubmitted_obj activated_by_obj
+			    arc_created_by_obj source_obj
+			    arc_read_access_obj
+			    arc_write_access_obj value_node_obj
+		       ))
     {
-	$arc->{$prop} = undef;
+	delete $arc->{$prop};
     }
     $arc->{disregard} ++;
     debug "  Set disregard arc $arc->{id} #$arc->{ioid}\n" if $DEBUG;
@@ -4249,6 +4267,7 @@ sub init
 	}
     }
 
+    # Sync with remove() property cleanup
 
     # Setup data
     $arc->{'subj'} = $subj;
@@ -4564,11 +4583,28 @@ sub rollback
 	$arc->reset_cache;
 	$arc->remove_check( $args );
     }
+
     while( my $params = shift @Rit::Base::Arc::queue_check_add )
     {
+	# These may have been rolled back. Check if they exist at all
 	my( $arc, $args ) = @$params;
-	$arc->reset_cache;
-	$arc->create_check( $args );
+	my $arc_id = $arc->{'id'} or next;
+
+	my $sth_id = $Rit::dbix->dbh->
+	  prepare("select * from arc where ver = ?");
+	$sth_id->execute($arc_id);
+	my $rec = $sth_id->fetchrow_hashref;
+	$sth_id->finish;
+
+	if( $rec )
+	{
+	    $arc->reset_cache( $rec, $args );
+	    $arc->create_check( $args );
+	}
+	else # Not added to DB
+	{
+	    $arc->remove({%$args,force=>1});
+	}
     }
 
     $Rit::Base::Arc::lock_check = 0;
