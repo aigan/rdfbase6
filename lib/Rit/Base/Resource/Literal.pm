@@ -38,7 +38,7 @@ use Rit::Base::Arc::Lim;
 use Rit::Base::Pred;
 use Rit::Base::List;
 
-use Rit::Base::Constants qw( $C_resource );
+use Rit::Base::Constants qw( $C_resource $C_literal );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs
                          convert_query_prop_for_creation query_desig );
@@ -254,7 +254,7 @@ sub this_valtype
     my( $node, $args_in ) = @_;
 
     debug " ---------> CHECKME, valtype for $node->{id}";
-    return $C_resource;
+    return $C_literal;
 }
 
 

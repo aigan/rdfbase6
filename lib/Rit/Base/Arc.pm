@@ -2383,23 +2383,24 @@ sub check_valtype
 
     my $pred = $arc->pred;
     my $arc_valtype = $arc->valtype;
-#    my $pred_valtype = $pred->valtype;
-    my $pred_valtype = $old_val->this_valtype; # val_valtype...
+    my $pred_valtype = $pred->valtype;
+    my $old_valtype = $old_val->this_valtype;
 
     if( debug > 2 )
     {
 	debug "Arc   valtype is ".$arc_valtype->sysdesig;
 	debug "Value         is ".$old_val->sysdesig;
-	debug "Value valtype is ".$pred_valtype->sysdesig;
+	debug "Pred  valtype is ".$pred_valtype->sysdesig;
+	debug "Value valtype is ".$old_valtype->sysdesig;
     }
 
 
-    if( $arc_valtype->equals( $pred_valtype ) )
+    if( $arc_valtype->equals( $old_valtype ) )
     {
 #	debug "  same valtype";
 	return 0;
     }
-    elsif( $arc_valtype->scof( $pred_valtype ) )
+    elsif( $arc_valtype->scof( $old_valtype ) )
     {
 	# Valtype in valid range
 #	debug "  arc valtype more specific";
@@ -2413,7 +2414,7 @@ sub check_valtype
 	debug "TRANSLATION OF VALTYPE";
 	debug "  for ".$arc->sysdesig;
 	debug " from ".$arc_valtype->sysdesig;
-	debug "   to ".$pred_valtype->sysdesig;
+	debug "   to ".$old_valtype->sysdesig;
     }
 
     my $newargs =
@@ -2421,14 +2422,14 @@ sub check_valtype
      'activate_new_arcs' => $arc->active,
      'force_set_value'   => 1,
      'force_set_value_same_version' => $arc->active,
-     'valtype' => $pred_valtype,
+     'valtype' => $old_valtype,
     };
 
 
     if( $arc->coltype eq 'obj' )
     {
 	my $c_resource = Rit::Base::Constants->get('resource');
-	if( $pred_valtype->equals( $c_resource ) )
+	if( $old_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
 	    debug 3, "  pred takes any obj";
@@ -2444,7 +2445,7 @@ sub check_valtype
 
 	if( $pred_coltype eq 'obj' )
 	{
-	    if( $old_val->is($pred_valtype) )
+	    if( $old_val->is($old_valtype) )
 	    {
 		# Old value in range
 		debug 3, "old value in range";
@@ -2457,7 +2458,7 @@ sub check_valtype
 		debug "TRANSLATION OF VALTYPE";
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$pred_valtype->sysdesig;
+		debug "   to ".$old_valtype->sysdesig;
 		debug "Trusting new given valtype";
 		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
@@ -2467,21 +2468,21 @@ sub check_valtype
 		debug "TRANSLATION OF VALTYPE";
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$pred_valtype->sysdesig;
+		debug "   to ".$old_valtype->sysdesig;
 		confess "FIXME";
 	    }
 	}
 	else
 	{
-	    confess "FIXME for arc ".$arc->id; # Mismatch
+	    # Convert resource to a literal resource
 
 	    debug "Changing from obj to $pred_coltype";
+	    debug 2, "Pred valtype is ".$pred_valtype->sysdesig;
+	    debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
+	    debug 2, "Old valtype instance class is ".$old_valtype->instance_class;
 
 	    my $val = $pred_valtype->instance_class->
-	      parse($old_val, {
-			       arc => $arc,
-			       valtype => $pred_valtype,
-			      });
+	      new(undef, $pred_valtype);
 	    $arc->set_value( $val, $newargs );
 	}
     }
@@ -2496,6 +2497,7 @@ sub check_valtype
 	else
 	{
 	    debug 3, "Setting literal";
+	    debug 2, "Pred renge instance class is ".$pred_valtype->instance_class;
 	    my $val = $pred_valtype->instance_class->
 	      parse($old_val, {
 			       arc => $arc,
@@ -2550,7 +2552,7 @@ sub reset_clean
 	my $cleaned = valclean( $arc->{'value'} );
 	if( ($arc->{'clean'}||'') ne ($cleaned||'') )
 	{
-	    debug "Updating valclean";
+#	    debug "Updating valclean";
 	    my $dbh = $Rit::dbix->dbh;
 	    my $sth = $dbh->prepare
 	      ("update arc set valclean=? where ver=?");
@@ -3385,7 +3387,12 @@ sub set_value
 
 	debug 3, "    Changing value\n";
 
-	unless( $same_value )
+	# If the value is the same, or we are changing to a literal
+	# resource, we should keep infered arcs
+
+	unless( $same_value or
+		(($coltype_old eq 'obj') and
+		 ($coltype_new ne 'obj')) )
 	{
 	    $arc->schedule_check_remove( $args );
 	}
@@ -3400,45 +3407,46 @@ sub set_value
 	my @dbvalues;
 	my @dbparts;
 
-	if( $coltype_old ne $coltype_new )
+	if( $coltype_old eq 'obj' )
 	{
-	    push @dbparts, "$coltype_old=null";
-	    $arc->{$coltype_old} = undef;
+	    $arc->obj->reset_cache;
 	}
 
 	if( $coltype_new eq 'obj' )
 	{
 	    $value_db = $value_new->id;
-	    $arc->obj->reset_cache;
 	    # $arc->subj->reset_cache # IS CALLED BELOW
-	}
-	elsif( $coltype_new eq 'valdate' )
-	{
-	    $value_db = $dbix->format_datetime($value_new);
-	}
-	elsif( $coltype_new eq 'valfloat' )
-	{
-	    $value_db = $value_new;
-	}
-	elsif( $coltype_new eq 'valtext' )
-	{
-	    unless( UNIVERSAL::isa $value_new, "Rit::Base::Literal::String")
-	    {
-		confess "type mismatch for ".datadump($value_new,2);
-	    }
-
-	    $value_db = $value_new;
-	    my $clean = $value_new->clean_plain;
-
-	    push @dbparts, "valclean=?";
-	    push @dbvalues, $clean;
-
-	    $arc->{'clean'} = $clean;
 	}
 	else
 	{
-	    debug 3, "We do not specificaly handle coltype $coltype_new\n";
-	    $value_db = $value_new;
+	    if( $coltype_new eq 'valdate' )
+	    {
+		$value_db = $dbix->format_datetime($value_new);
+	    }
+	    elsif( $coltype_new eq 'valfloat' )
+	    {
+		$value_db = $value_new;
+	    }
+	    elsif( $coltype_new eq 'valtext' )
+	    {
+		unless( UNIVERSAL::isa $value_new, "Rit::Base::Literal::String")
+		{
+		    confess "type mismatch for ".datadump($value_new,2);
+		}
+
+		$value_db = $value_new;
+		my $clean = $value_new->clean_plain;
+
+		push @dbparts, "valclean=?";
+		push @dbvalues, $clean;
+
+		$arc->{'clean'} = $clean;
+	    }
+	    else
+	    {
+		debug 3, "We do not specificaly handle coltype $coltype_new\n";
+		$value_db = $value_new;
+	    }
 	}
 
 	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
@@ -3468,6 +3476,17 @@ sub set_value
 	{
 	    push @dbparts, "obj=?";
 	    push @dbvalues, $vnode_new->id; # Also works for Undef
+
+	    if( $coltype_old ne 'obj' )
+	    {
+		push @dbparts, "$coltype_old=null";
+		$arc->{$coltype_old} = undef;
+	    }
+	}
+	elsif( $coltype_old ne $coltype_new )
+	{
+	    push @dbparts, "$coltype_old=null";
+	    $arc->{$coltype_old} = undef;
 	}
 
 
@@ -4417,6 +4436,10 @@ sub register_with_nodes
     if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
     {
 	$value->set_arc($arc);
+    }
+    elsif( UNIVERSAL::isa($value, "Rit::Base::Resource::Literal") )
+    {
+	# Always revarc initiated
     }
     elsif( not $value->{'arc_id'}{$id} )
     {
