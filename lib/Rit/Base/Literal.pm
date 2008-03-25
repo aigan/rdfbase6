@@ -662,9 +662,11 @@ sub extract_string
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Resource::Literal" )
     {
-	unless( $val = $val->value($args) )
+	my $node = $val;
+	$val = $node->first_literal($args);
+	unless( UNIVERSAL::isa $val, "Rit::Base::Litral" )
 	{
-	    throw('validation', $val->id." is not a literal resource");
+	    throw('validation', $node->id." is not a literal resource");
 	}
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )

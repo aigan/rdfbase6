@@ -293,13 +293,15 @@ sub parse
     }
     elsif( $coltype eq 'valfloat' )
     {
-	$val_mod ||= 0;
-	trim($val_mod);
-	$val_mod =~ s/,/./; # Handling swedish numerical format...
-
-	unless( looks_like_number( $val_mod ) )
+	if( $val_mod )
 	{
-	    throw 'validation', "String $val_mod is not a number";
+	    trim($val_mod);
+	    $val_mod =~ s/,/./; # Handling swedish numerical format...
+
+	    unless( looks_like_number( $val_mod ) )
+	    {
+		throw 'validation', "String $val_mod is not a number";
+	    }
 	}
     }
     else
@@ -876,7 +878,7 @@ sub wuirc
 				      $arc->value,
 				      {
 				       class => $args->{'class'},
-				       arc => $arc_id,
+#				       arc => $arc_id,
 				       size => $size,
 				       rows => $rows,
 				       maxlength => $args->{'maxlength'},
@@ -930,12 +932,25 @@ sub wuirc
 	    my $vallist = $R->find_by_anything($dc->{$key});
 	    foreach my $val ( $vallist->as_array )
 	    {
-		my $field = build_field_key({
-					     pred => $key,
-					     subj => $vnode,
-					     if => 'subj',
-					    });
-		$out .= &hidden($field,$val);
+		if( UNIVERSAL::isa( $val, "Rit::Base::Resource" ) )
+		{
+		    my $field = build_field_key({
+						 pred => $key,
+						 subj => $vnode,
+						 if => 'subj',
+						 parse => 'id',
+						});
+		    $out .= &hidden($field,$val->id);
+		}
+		else
+		{
+		    my $field = build_field_key({
+						 pred => $key,
+						 subj => $vnode,
+						 if => 'subj',
+						});
+		    $out .= &hidden($field,$val->plain);
+		}
 	    }
 	}
     }

@@ -446,8 +446,16 @@ sub find_by_anything
     #
     if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource') )
     {
-	debug 3, "  obj as object";
-	push @new, $val;
+	if( $coltype eq 'obj' )
+	{
+	    debug 3, "  obj as object";
+	    push @new, $val;
+	}
+	else # Resource as literal
+	{
+	    debug 3, "  obj as litral";
+	    push @new, $valtype->instance_class->parse($val,$args);
+	}
     }
     #
     # 2. obj as subquery
