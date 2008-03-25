@@ -778,9 +778,9 @@ sub create
 		}
 	    }
 
-	    debug " Old valtype: ".$valtype->sysdesig;
+	    debug " Old valtype: ".$valtype->sysdesig if $DEBUG;
 	    $valtype = $val_valtype;
-	    debug " New valtype: ".$valtype->sysdesig;
+	    debug " New valtype: ".$valtype->sysdesig if $DEBUG;
 
 	    ###### Validate pred range with value
 
