@@ -1129,7 +1129,7 @@ sub loc
 	    return "";
 	}
 
-	die "No default found in list: ".query_desig($list);
+	confess "No default found in list: ".query_desig($list);
     }
 }
 
