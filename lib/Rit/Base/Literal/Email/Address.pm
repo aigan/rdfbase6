@@ -57,7 +57,9 @@ These can be called with the class name or any List object.
 
   $this->new( $value, $valtype )
 
-Calls L<Para::Frame::Email::Address/parse>
+Calls L<Para::Frame::Email::Address/new>
+
+Will B<not> throw an exception if email address is faulty
 
 =cut
 
@@ -65,7 +67,7 @@ sub new
 {
     my( $class, $in_value, $valtype ) = @_;
 
-    my $a = $class->Para::Frame::Email::Address::parse($in_value);
+    my $a = $class->Para::Frame::Email::Address::new($in_value);
 
     $a->{'valtype'} = $valtype;
 
@@ -80,6 +82,8 @@ sub new
 Wrapper for L<Para::Frame::Email::Address/parse> that reimplements
 L<Rit::Base::Literal::String/parse>. (Avoid recursion)
 
+Will throw exception if not a correct email address
+
 =cut
 
 sub parse
@@ -90,7 +94,7 @@ sub parse
 
     if( ref $val eq 'SCALAR' )
     {
-	return $class->new( $$val, $valtype );
+	$val = $$val;
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Email::Address" )
     {
@@ -98,20 +102,24 @@ sub parse
     }
     elsif( UNIVERSAL::isa $val, "Para::Frame::Email::Address" )
     {
-	return $class->new($val, $valtype);
+	# Good
     }
     elsif( UNIVERSAL::isa $val, "Mail::Address" )
     {
-	return $class->new($val, $valtype);
+	# Good
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
-	return $class->new(undef, $valtype);
+	$val = undef;
     }
     else
     {
 	confess "Can't parse $val";
     }
+
+    my $a = $class->Para::Frame::Email::Address::parse($val);
+    $a->{'valtype'} = $valtype;
+    return $a;
 }
 
 

@@ -1129,7 +1129,8 @@ sub loc
 	    return "";
 	}
 
-	confess "No default found in list: ".query_desig($list);
+	# The only choice is an undefined value!!!
+	return "<undef>"; # This should not be common. Be clear!
     }
 }
 
