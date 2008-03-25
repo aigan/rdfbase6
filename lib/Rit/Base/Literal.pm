@@ -277,7 +277,8 @@ See also: L</arc> and L</revarc>
 
 sub lit_revarc
 {
-    $_[0]->{'arc'} || is_undef;
+    # Try to handle arc list method calls on return value...
+    return($_[0]->{'arc'} || Rit::Base::Arc::List->new_empty());
 }
 
 
