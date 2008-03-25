@@ -2752,7 +2752,7 @@ sub count
 
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare( "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql" );
-    debug "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql; ($pred_id, $node->{id})";
+#    debug "select count(id) as cnt from arc where pred=? and subj=? and $arclim_sql; ($pred_id, $node->{id})";
     $sth->execute( $pred_id, $node->id );
     my( $cnt ) =  $sth->fetchrow_array;
     return $cnt;
