@@ -794,7 +794,7 @@ sub modify
 		    my $coltype = $pred->coltype;
 		    if( $ocoltype and ($coltype ne $ocoltype) )
 		    {
-			confess "Coltype mismatch: $coltype ne $ocoltype";
+			confess "Coltype mismatch1: $coltype ne $ocoltype";
 		    }
 		    $qarc->{'coltype'} = $coltype;
 
@@ -808,7 +808,7 @@ sub modify
 		{
 		    if( $ocoltype and ($val ne $ocoltype) )
 		    {
-			confess "Coltype mismatch: $val ne $ocoltype";
+			confess "Coltype mismatch2: $val ne $ocoltype";
 		    }
 		    $qarc->{'coltype'} = $val;
 		}
@@ -993,7 +993,7 @@ sub modify
 	    my $coltype = $qarc->{'coltype'} ||= 'obj';
 	    if( $coltype ne 'obj' )
 	    {
-		debug "Coltype mismatch: $coltype ne obj";
+		debug "Coltype mismatch3: $coltype ne obj";
 	    }
 	    $qarc->{$coltype} = parse_values($props->{'obj'});
 	}
