@@ -86,7 +86,7 @@ sub wuirc
 
 	while( my $arc = $arclist->get_next_nos )
 	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= 'X';
 	}
     }
     elsif( $subj->count($predname) )
@@ -108,5 +108,46 @@ sub wuirc
     return $out;
 }
 
+
+
+#######################################################################
+
+=head2 as_html
+
+=cut
+
+sub as_html
+{
+    debug "Bool wuirc.";
+
+    my( $class, $subj, $pred, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $req = $Para::Frame::REQ;
+
+    my $predname;
+    if( ref $pred )
+    {
+	$predname = $pred->label;
+    }
+    else
+    {
+	$predname = $pred;
+	# Only handles pred nodes
+	$pred = Rit::Base::Pred->get_by_label($predname);
+    }
+
+    my $arclist = $subj->arc_list($predname, undef, $args);
+
+    while( my $arc = $arclist->get_next_nos )
+    {
+	$out .= ( $arc->value->desig ? '<span style="color: green">V</span>' :
+		  '<span style="color: red">X</span>' );
+    }
+
+    return $out;
+}
 
 1;
