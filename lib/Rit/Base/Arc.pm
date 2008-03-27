@@ -1020,8 +1020,10 @@ sub set_value_node
 
   $a->obj
 
-Returns: The object L<Rit::Base::Resource> of the arc.  If the value
-of the arc is a literal; returns L<Rit::Base::Undef>.
+Returns: The object L<Rit::Base::Resource> of the arc. If the arc
+points to a literal resource (value node), we will return the value
+node. Thus. You can't use this to determine if the arc ponts to a
+literal or not. Retruns L<Rit::Base::Undef> if nothing else.
 
 =cut
 
@@ -1029,13 +1031,17 @@ sub obj
 {
     my( $arc ) = @_;
 
-    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Literal' ) )
+    if( $arc->coltype eq 'obj' )
     {
-	return is_undef;
+	return $arc->{'value'};
+    }
+    elsif( $arc->{'value_node'} )
+    {
+	return $arc->value_node;
     }
     else
     {
-	return $arc->{'value'};
+	return is_undef;
     }
 }
 
@@ -2309,16 +2315,16 @@ sub vacuum
 
     # TODO: Moce value cleaning to Literal classes
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
-    debug "vacuum arc $arc->{id}" if $DEBUG;
+#    debug "vacuum arc $arc->{id}" if $DEBUG;
 
     return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig if $DEBUG;
 
     $arc->remove_duplicates( $args );
 
-    my $has_obj = $arc->objtype;
+    my $has_obj = $arc->obj;
 
 #    warn "  Remove implicit\n";
 
@@ -3275,7 +3281,7 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-#    Para::Frame::Logging->this_level(4);
+    Para::Frame::Logging->this_level(4);
 
     debug 3, sprintf "Set value of arc %s to '%s'",
       $arc->{'id'}, ($value_new_in||'<undef>');
@@ -3329,7 +3335,8 @@ sub set_value
     }
 
 
-    my $value_old = $arc->value          || is_undef; # Is object
+    # Is object. May be obj representing undef value
+    my $value_old = $arc->value;
 
     debug 4, "got new value ".$value_new->sysdesig;
     if( $value_new_in and not $value_new )
@@ -3353,16 +3360,20 @@ sub set_value
     my $coltype_new = $value_new->this_coltype;
     my $valtype_old = $arc->valtype;
     my $valtype_new = $value_new->this_valtype;
+    my $objtype_old = ($coltype_old eq 'obj')? 1 : 0;
+    my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
+
 
     if( debug > 1 )
     {
 	debug "  value_old: ".$value_old->sysdesig();
 	debug "   type old: ".$valtype_old->sysdesig;
 	debug "  vnode old; ".$vnode_old->desig;
+	debug "coltype old: ".$coltype_old;
 	debug "  value_new: ".$value_new->sysdesig();
 	debug "   type new: ".$valtype_new->sysdesig;
 	debug "  vnode new: ".$vnode_new->desig;
-	debug "  coltype  : $coltype_new";
+	debug "coltype new: ".$coltype_new;
     }
 
     my $same_value = $value_new->equals( $value_old, $args );
@@ -3390,9 +3401,7 @@ sub set_value
 	# If the value is the same, or we are changing to a literal
 	# resource, we should keep infered arcs
 
-	unless( $same_value or
-		(($coltype_old eq 'obj') and
-		 ($coltype_new ne 'obj')) )
+	unless( $same_value or ($objtype_old and !$objtype_new) )
 	{
 	    $arc->schedule_check_remove( $args );
 	}
@@ -3407,12 +3416,12 @@ sub set_value
 	my @dbvalues;
 	my @dbparts;
 
-	if( $coltype_old eq 'obj' )
+	if( $objtype_old )
 	{
 	    $arc->obj->reset_cache;
 	}
 
-	if( $coltype_new eq 'obj' )
+	if( $objtype_new )
 	{
 	    $value_db = $value_new->id;
 	    # $arc->subj->reset_cache # IS CALLED BELOW
@@ -3472,21 +3481,36 @@ sub set_value
 	      $now_db,
 	    );
 
-	if( ($vnode_old or $vnode_new) and ($coltype_new ne 'obj') )
+	if(     $objtype_old and  $objtype_new )
 	{
-	    push @dbparts, "obj=?";
-	    push @dbvalues, $vnode_new->id; # Also works for Undef
+	    # All good
+	}
+	elsif(  $objtype_old and !$objtype_new )
+	{
+	    if( $vnode_new )
+	    {
+		push @dbparts, "obj=?";
+		push @dbvalues, $vnode_new->id; # Also works for Undef
+	    }
+	}
+	elsif( !$objtype_old and  $objtype_new )
+	{
+	    push @dbparts, "$coltype_old=null";
+	    $arc->{$coltype_old} = undef;
+	}
+	else # !$objtype_old and !$objtype_new
+	{
+	    if( $vnode_old or $vnode_new )
+	    {
+		push @dbparts, "obj=?";
+		push @dbvalues, $vnode_new->id; # Also works for Undef
+	    }
 
-	    if( $coltype_old ne 'obj' )
+	    if( $coltype_old ne $coltype_new )
 	    {
 		push @dbparts, "$coltype_old=null";
 		$arc->{$coltype_old} = undef;
 	    }
-	}
-	elsif( $coltype_old ne $coltype_new )
-	{
-	    push @dbparts, "$coltype_old=null";
-	    $arc->{$coltype_old} = undef;
 	}
 
 
@@ -4810,7 +4834,7 @@ sub create_check
 {
     my( $arc, $args ) = @_;
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
     return 0 unless $arc->active;
 
