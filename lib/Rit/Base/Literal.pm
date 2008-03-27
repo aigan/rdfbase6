@@ -664,14 +664,15 @@ sub extract_string
     {
 	my $node = $val;
 	$val = $node->first_literal($args);
-	unless( UNIVERSAL::isa $val, "Rit::Base::Litral" )
+	unless( UNIVERSAL::isa $val, "Rit::Base::Literal" )
 	{
+	    debug "First literal of node is a ".ref($val);
 	    throw('validation', $node->id." is not a literal resource");
 	}
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
-	return \ undef;
+	return( \ undef, $coltype, $valtype, $args );
     }
     else
     {
