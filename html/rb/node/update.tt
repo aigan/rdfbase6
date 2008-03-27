@@ -211,8 +211,10 @@ END;
       <td>
       [% IF arc.obj %]
          [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
+      [% ELSIF arc.value_node %]
+         [% jump(arc.value.sysdesig, me, id=arc.value_node.id) %]
       [% ELSE %]
-         [% arc.value | html %]
+         [% arc.value.sysdesig | html %]
       [% END %]
       </td>
       <td style="white-space: nowrap">[% arc.view_flags %]</td>
