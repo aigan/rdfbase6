@@ -349,6 +349,7 @@ sub convert_valuenodes
 
     my @REMOVE;
     my @CONVERT;
+    my %VNODE;
 
 
     my $dupsubjlist = $dbix->select_list("select distinct subj from arc where pred=4 and active is true group by subj having count(pred)>1 order by subj desc");
@@ -432,6 +433,8 @@ sub convert_valuenodes
 	}
 
 	my $rec = $dbix->select_possible_record("from arc where obj=? and active is true", $arc->{'subj'});
+
+	$VNODE{$arc->{'subj'}}++;
 
 	unless( $rec )
 	{
@@ -686,20 +689,7 @@ sub convert_valuenodes
 	}
     }
     $text_sth-> finish;
-
     debug "Cleaned $cleaned";
-
-    $Para::Frame::REQ->user->
-      set_default_propargs({activate_new_arcs => 1});
-    my $class = $C->get('class');
-    my $resource = $R->get('resource');
-    $resource->add({is=>$class});
-    $R->find({code=>'ritbase_core_resource'})->remove({force_recursive=>1});
-    $C->get('email')->add({is=>$class});
-    $C->get('business_role')->add({is=>$class});
-
-    debug "Committing";
-    $dbh->commit;
 
 
 #    debug "Committing";

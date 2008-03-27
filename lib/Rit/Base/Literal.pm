@@ -410,6 +410,21 @@ sub equals
     {
 	if( $lit->syskey($args) eq $val->syskey($args) )
 	{
+	    if( my $lit_id = $lit->id )
+	    {
+		if( $val->id and ($lit_id == $val->id) )
+		{
+		    return 1;
+		}
+		# Values equals. But diffrent value nodes
+		return 0;
+	    }
+	    elsif( $val->id )
+	    {
+		# Values equals. But diffrent value nodes
+		return 0;
+	    }
+
 	    return 1;
 	}
     }
@@ -662,8 +677,18 @@ sub extract_string
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Resource::Literal" )
     {
+	debug "Val isa Res Lit: ".$val->id;
+	debug "Using args:\n".query_desig($args);
+
+	# Sort by id in order to use the original arc as a base of
+	# reference for the value, in case that other arc points to
+	# the same node.
+
 	my $node = $val;
-	$val = $node->first_literal($args);
+	$val = $node->first_literal();
+
+	#$val = $node->first_literal({%$args,arclim=>['adirect']});
+	debug "  Extracted ".$val->sysdesig;
 	unless( UNIVERSAL::isa $val, "Rit::Base::Literal" )
 	{
 	    debug "First literal of node is a ".ref($val);

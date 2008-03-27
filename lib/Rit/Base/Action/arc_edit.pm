@@ -34,7 +34,7 @@ sub handler
     my $pred_name      = $q->param('pred');
     my $value          = $q->param('val');
     my $literal_arcs   = $q->param('literal_arcs');
-    my $explicit       = $q->param('explicit');
+    my $explicit       = $q->param('explicit') || 0;
     my $check_explicit = $q->param('check_explicit');
     my $force          = $q->param('force');
     my $remove         = $q->param('remove');

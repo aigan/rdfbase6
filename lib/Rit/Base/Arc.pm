@@ -494,7 +494,10 @@ sub create
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
     my $coltype = $valtype ? $valtype->coltype : 'obj';
 
-    debug "Valtype now: ". $valtype->id if $DEBUG;
+    if( $DEBUG and $valtype )
+    {
+	debug "Valtype now: ". $valtype->id;
+    }
     debug "Coltype now: ".($coltype||'') if $DEBUG;
     unless( $coltype )
     {
@@ -537,7 +540,7 @@ sub create
 			    pred_new => $pred,
 			   });
 
-	debug sprintf("value_obj is now %s (%s)",$value_obj->sysdesig, blessed($value_obj)) if $DEBUG;
+	debug sprintf("value_obj is now %s",$value_obj->sysdesig) if $DEBUG;
 
 	if( $value_obj->defined )
 	{
@@ -571,37 +574,48 @@ sub create
 		debug "Getting the id for the object by the name ".($value||'') if $DEBUG;
 		$value = $this->get( $value_obj )->id;
 	    }
-	    elsif( $coltype eq 'valdate' )
+	    else # Literal
 	    {
-		$value = $dbix->format_datetime($value_obj);
-	    }
-	    else
-	    {
-		$value = $value_obj->literal;
-
-		if( $coltype eq 'valtext' )
+		if( $coltype eq 'valdate' )
 		{
-		    $rec->{'valclean'} = valclean( $value );
-
-		    if( $rec->{'valclean'} =~ /^ritbase.*hash/ )
-		    {
-			die "Object stringification ".datadump($rec, 2);
-		    }
-
-		    push @fields, 'valclean';
-		    push @values, $rec->{'valclean'};
+		    $value = $dbix->format_datetime($value_obj);
 		}
+		else
+		{
+		    $value = $value_obj->literal;
+		    debug sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
+
+		    if( $coltype eq 'valtext' )
+		    {
+			$rec->{'valclean'} = valclean( $value );
+
+			if( $rec->{'valclean'} =~ /^ritbase.*hash/ )
+			{
+			    die "Object stringification ".datadump($rec, 2);
+			}
+
+			push @fields, 'valclean';
+			push @values, $rec->{'valclean'};
+		    }
+		}
+
+		if( $value_obj->id ) # Literal resource (value node)
+		{
+		    # Don't override any explicitly given value node
+		    $props->{'value_node'} ||= $value_obj->id;
+		}
+
 	    }
 
 	    $rec->{$coltype} = $value;
 	    push @fields, $coltype;
 	    push @values, $rec->{$coltype};
 
-	    debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})\n" if $DEBUG;
+	    debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
 	}
 	else
 	{
-	    debug "Create arc $pred_name($rec->{'subj'}, undef)\n" if $DEBUG;
+	    debug "Create arc $pred_name($rec->{'subj'}, undef)" if $DEBUG;
 	}
     }
 
@@ -828,7 +842,7 @@ sub create
     my $values_part = join ",", map "?", @fields;
     my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
-    warn "SQL $st (@values)\n" if $DEBUG;
+    debug "SQL $st (@values)" if $DEBUG;
 
     $sth->execute( @values );
 
@@ -1060,13 +1074,17 @@ sub obj_id
 {
     my( $arc ) = @_;
 
-    if( UNIVERSAL::isa( $arc->{'value'}, 'Rit::Base::Literal' ) )
+    if( $arc->coltype eq 'obj' )
     {
-	return undef;
+	return $arc->{'value'}->id;
+    }
+    elsif( $arc->{'value_node'} )
+    {
+	return $arc->{'value_node'};
     }
     else
     {
-	return $arc->{'value'}->id;
+	return undef;
     }
 }
 
@@ -1084,9 +1102,9 @@ sub value_desig
 {
     my( $arc ) = @_;
 
-    if( $arc->obj )
+    if( $arc->objtype )
     {
-	return sprintf("'%s'", $arc->obj->desig );
+	return $arc->obj->desig;
     }
     else
     {
@@ -2100,6 +2118,7 @@ sub coltype
     # The arc value may be undefined.
     # Assume that all valtypes not in the COLTYPE hash are objs
 
+#    debug "Getting coltype for $_[0]->{id}";
     return Rit::Base::Literal::Class->coltype_by_valtype_id_or_obj( $_[0]->{'valtype'} );
 }
 
@@ -2315,9 +2334,7 @@ sub vacuum
 
     # TODO: Moce value cleaning to Literal classes
 
-    my $DEBUG = 1;
-
-#    debug "vacuum arc $arc->{id}" if $DEBUG;
+    my $DEBUG = 0;
 
     return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig if $DEBUG;
@@ -2326,17 +2343,17 @@ sub vacuum
 
     my $has_obj = $arc->obj;
 
-#    warn "  Remove implicit\n";
 
     if( $has_obj )
     {
 	## Only removes if not valid
+	debug "  Remove implicit" if $DEBUG;
 	$arc->remove({%$args, implicit => 1});
     }
 
     unless( disregard $arc )
     {
-#	debug "  check activation";
+	debug "  check activation" if $DEBUG;
 	if( $arc->inactive and $arc->indirect )
 	{
 	    unless( $arc->active_version )
@@ -2348,6 +2365,7 @@ sub vacuum
 
 	unless( $arc->old )
 	{
+	    debug "  check valtype" if $DEBUG;
 	    unless( $arc->check_valtype( $args ) )
 	    {
 		$arc->check_value( $args );
@@ -2359,7 +2377,7 @@ sub vacuum
 
 	if( $has_obj )
 	{
-#	debug "  Create check";
+	    debug "  Create check" if $DEBUG;
 	    $arc->create_check( $args );
 	}
     }
@@ -2503,7 +2521,7 @@ sub check_valtype
 	else
 	{
 	    debug 3, "Setting literal";
-	    debug 2, "Pred renge instance class is ".$pred_valtype->instance_class;
+	    debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
 	    my $val = $pred_valtype->instance_class->
 	      parse($old_val, {
 			       arc => $arc,
@@ -2601,7 +2619,7 @@ sub remove_duplicates
     return unless $arc->active;
 
 
-    warn "  Check for duplicates\n" if $DEBUG;
+    debug "Check for duplicates" if $DEBUG;
 
     # Now get a hold of the arc object existing in other
     # objects.
@@ -2614,7 +2632,7 @@ sub remove_duplicates
 					arclim => ['active'],
 				       })->nodes )
     {
-	next unless $arc->obj->equals( $arc2->obj, $args );
+	next unless $arc->value->equals( $arc2->value, $args );
 	next if $arc->id == $arc2->id;
 
 	if( $arc2->explicit )
@@ -2622,7 +2640,7 @@ sub remove_duplicates
 	    $arc->set_explicit;
 	}
 
-	debug " =====================> Removing duplicate ".$arc2->sysdesig."\n";
+	debug "=====================> Removing duplicate ".$arc2->sysdesig;
 
 	foreach my $rarc ( $arc2->replaced_by )
 	{
@@ -4784,12 +4802,12 @@ sub validate_check
     return 0 if $arc->is_removed;
 
     $arc->{'disregard'} ++;
-    warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+    debug "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})" if $DEBUG;
 
     my $validated = 0;
     my $pred      = $arc->pred;
 
-    warn( sprintf "$$:   Retrieve list C for pred %s in %s\n",
+    debug( sprintf "  Retrieve list C for pred %s in %s",
 	  $pred->plain, $arc->sysdesig) if $DEBUG;
 
     $arc->{'explain'} = []; # Reset the explain list
@@ -4801,7 +4819,7 @@ sub validate_check
 	    $validated += $rule->validate_infere( $arc, $args );
 	}
     }
-    warn( "$$:   List C done\n") if $DEBUG;
+    debug "  List C done" if $DEBUG;
 
     # Mark arc if it's indirect or not
     $arc->set_indirect( $validated );
@@ -4809,8 +4827,8 @@ sub validate_check
     $arc->{'disregard'} --;
     if( $DEBUG )
     {
-	warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n";
-	warn "  Validation for $arc->{id} is $validated\n";
+	debug "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})";
+	debug "  Validation for $arc->{id} is $validated";
     }
     return $validated;
 }
@@ -4834,7 +4852,7 @@ sub create_check
 {
     my( $arc, $args ) = @_;
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     return 0 unless $arc->active;
 
@@ -4847,7 +4865,7 @@ sub create_check
     {
 	foreach my $rule ( @$list_a )
 	{
-	    debug( sprintf  "  using %s\n",
+	    debug( sprintf  "  using %s",
 		   $rule->sysdesig) if $DEBUG;
 
 	    $rule->create_infere_rel($arc, $args);
@@ -4858,7 +4876,7 @@ sub create_check
     {
 	foreach my $rule ( @$list_b )
 	{
-	    debug( sprintf  "  using %s\n",
+	    debug( sprintf  "  using %s",
 		   $rule->sysdesig) if $DEBUG;
 
 	    $rule->create_infere_rev($arc, $args);

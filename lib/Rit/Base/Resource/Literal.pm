@@ -85,6 +85,8 @@ sub init
 
     $args ||= {};
 
+#    debug "(re)initiating lit res $node->{id}";
+
     my $revrecs = delete $node->{'revrecs'};
     unless( $revrecs )
     {
@@ -107,6 +109,7 @@ sub init
 	my $arc = Rit::Base::Arc->get_by_rec($rec);
 	if( $arc->active )
 	{
+#	    debug "  active: ".$arc->sysdesig;
 	    push @revarc_active, $arc;
 	}
 	else
@@ -158,27 +161,33 @@ sub literal_list
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
+#    debug "Literal list using arclim: ".$arclim->sysdesig;
+
     my @arcs;
 
     if( $active and $inactive )
     {
+#	debug "  active and inactive";
 	@arcs = grep $_->meets_arclim($arclim),
 	  @{$node->{'revarc_active'}},
 	    @{$node->{'revarc_inactive'}};
     }
     elsif( $active )
     {
+#	debug "  active";
 	@arcs = grep $_->meets_arclim($arclim),
 	  @{$node->{'revarc_active'}};
     }
     elsif( $inactive )
     {
+#	debug "  inactive";
 	@arcs = grep $_->meets_arclim($arclim),
 	  @{$node->{'revarc_inactive'}};
     }
 
     if( my $uap = $args->{unique_arcs_prio} )
     {
+#	debug "  unique_arcs_prio";
 	@arcs = Rit::Base::Arc::List->new(\@arcs)->
 	  unique_arcs_prio($uap)->as_array;
     }
@@ -193,11 +202,23 @@ sub literal_list
 
   $n->first_literal( \%args )
 
+Always returns the first created arc value that is active and direct. 
+
+Sort by id in order to use the original arc as a base of reference for
+the value, in case that other arc points to the same node.
+
 =cut
 
 sub first_literal
 {
-    return shift->literal_list(@_)->get_first_nos();
+    return $_[0]->literal_list({arclim=>['adirect']})->sorted('id')->get_first_nos();
+
+#    my $list = shift->literal_list(@_);
+#    debug "Returning first literal from list:";
+#    foreach my $lit ($list->as_array ){debug " * ".$lit->sysdesig}
+#    return $list->get_first_nos();
+
+#    return shift->literal_list(@_)->get_first_nos();
 }
 
 
@@ -666,7 +687,8 @@ debugging.  This version of desig indludes the node id, if existing.
 
 sub sysdesig  # The designation of obj, including node id
 {
-    return shift->id.": <value>";
+    my( $node ) = @_;
+    return sprintf "%s: <value> (%s)", $node->id, $node->first_literal->desig;
 }
 
 

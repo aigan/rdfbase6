@@ -1555,6 +1555,22 @@ sub is_resource { 1 };
 
 #######################################################################
 
+=head2 is_removed
+
+  $n->is_removed
+
+Relevant for L<Rit::Base::Arc>. For other resources, calls L</empty>.
+
+=cut
+
+sub is_removed
+{
+    return shift->empty(@_);
+};
+
+
+#######################################################################
+
 =head2 empty
 
   $n->empty()
@@ -3089,14 +3105,14 @@ sub arc_list
 		}
 
 #		debug "proplim: ".query_desig($proplim);
-		my $proplist = Rit::Base::Arc::List->new($proplim);
+		my $proplist = Rit::Base::List->new($proplim);
 #		debug "Proplist contains:\n".query_desig($proplist);
 
 		my @newlist;
 		my( $arc, $error ) = $lr->get_first;
 		while(! $error )
 		{
-#		    debug "  Does proplist containt the value ".$arc->value;
+#		    debug "  Does proplist containt the value ".$arc->value->sysdesig;
 		    # May return is_undef object
 		    # No match gives literal undef
 		    if( ref $proplist->contains( $arc->value, $args ) )
@@ -3830,9 +3846,16 @@ sub equals
 	}
 	elsif( ref $node2 and UNIVERSAL::isa($node2, 'Rit::Base::Literal') )
 	{
+#	    debug sprintf "Comparing %s with %s", $node->sysdesig, $node2->sysdesig;
 
-	    # We will not try totransform a literal node into a
-	    # resource node. They are not considered equals
+	    if( $node->is_value_node )
+	    {
+		if( $node->first_literal->equals( $node2 ) )
+		{
+		    return 1;
+		}
+	    }
+
 	    return 0;
 	}
 	else

@@ -536,7 +536,7 @@ sub validate_infere
 
     my $DEBUG = 0;
 
-    debug( sprintf  "validate_infere of %s using %s\n",
+    debug( sprintf  "validate_infere of %s using %s",
 	  $arc->sysdesig, $rule->sysdesig) if $DEBUG;
 
     # Check subj and obj
@@ -546,20 +546,25 @@ sub validate_infere
 
     foreach my $arc2 (@{ $subj->arc_list($rule->a) })
     {
-	debug( sprintf  "  Check %s\n", $arc2->sysdesig) if $DEBUG;
+	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
 
 	next if disregard $arc2;
 	next if $arc2->id == $arc->id;
 
 	foreach my $arc3 (@{ $arc2->obj->arc_list($rule->b) })
 	{
-	    debug( sprintf  "    Check %s\n", $arc3->sysdesig) if $DEBUG;
+	    debug( sprintf  "    Check %s", $arc3->sysdesig) if $DEBUG;
 
 	    next if disregard $arc3;
 
 	    if( $arc3->obj->id == $obj->id )
 	    {
-		debug( "      Match!\n") if $DEBUG;
+		unless( $arc3->objtype ) # Value node
+		{
+		    next unless $arc3->value->equals($arc->value);
+		}
+
+		debug( "      Match!") if $DEBUG;
 
 		my $exp =
 		{
@@ -575,7 +580,7 @@ sub validate_infere
 	}
     }
 
-    debug( "  No match\n") if $DEBUG;
+    debug( "  No match") if $DEBUG;
     return 0;
 }
 
@@ -599,8 +604,12 @@ sub create_infere_rev
     my $obj  = $arc->obj;
     return 0 unless $obj;
 
+    my $DEBUG = 0;
+
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
+	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
+
 	next if disregard $arc2;
 
 	my $pred = $rule->c;
@@ -609,18 +618,21 @@ sub create_infere_rev
 
 	if( $arc3_list->size < 1 )
 	{
+	    debug "    Less than 1" if $DEBUG;
 	    Rit::Base::Arc->create({
 				    subj => $subj3,
 				    pred => $pred,
 				    value => $obj,
+				    implicit => 1,
 				   },
 				   {
-				    implicit => 1,
 				    activate_new_arcs => 1, # Activate directly
+				    res => $args->{'res'},
 				   });
 	}
 	elsif( $arc3_list->size > 1 ) # cleanup
 	{
+	    debug "    More than 1" if $DEBUG;
 	    # prioritize on explict, indirect, other
 	    my $choice = $arc3_list->explicit->indirect->get_first_nos
 	      || $arc3_list->indirect->get_first_nos
@@ -641,6 +653,7 @@ sub create_infere_rev
 	}
 	else
 	{
+	    debug "    Just 1" if $DEBUG;
 	    $arc3_list->get_first_nos->set_indirect;
 	}
 
@@ -681,8 +694,12 @@ sub create_infere_rel
     my $obj  = $arc->obj;
     return 0 unless $obj;
 
+    my $DEBUG = 0;
+
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
+	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
+
 	next if disregard $arc2;
 
 	my $pred = $rule->c;
@@ -691,18 +708,21 @@ sub create_infere_rel
 
 	if( $arc3_list->size < 1 )
 	{
+	    debug "    Less than 1" if $DEBUG;
 	    Rit::Base::Arc->create({
 				    subj => $subj,
 				    pred => $pred,
 				    value => $obj3,
+				    implicit => 1,
 				   },
 				   {
-				    implicit => 1,
 				    activate_new_arcs => 1, # Activate directly
+				    res => $args->{'res'},
 				   });
 	}
 	elsif( $arc3_list->size > 1 ) # cleanup
 	{
+	    debug "    More than 1" if $DEBUG;
 	    # prioritize on explict, indirect, other
 	    my $choice = $arc3_list->explicit->indirect->get_first_nos
 	      || $arc3_list->indirect->get_first_nos
@@ -723,6 +743,7 @@ sub create_infere_rel
 	}
 	else
 	{
+	    debug "    Just 1" if $DEBUG;
 	    $arc3_list->get_first_nos->set_indirect;
 	}
 
@@ -770,9 +791,9 @@ sub remove_infered_rev
 				     subj => $arc2->subj,
 				     pred => $rule->c,
 				     obj  => $obj,
+				     implicit => 1,
 				    },
 				    {
-				     implicit => 1,
 				     res => $args->{'res'},
 				    });
     }
@@ -806,9 +827,9 @@ sub remove_infered_rel
 				     subj => $subj,
 				     pred => $rule->c,
 				     obj  => $arc2->obj,
+				     implicit => 1,
 				    },
 				    {
-				     implicit => 1,
 				     res => $args->{'res'},
 				    });
     }
