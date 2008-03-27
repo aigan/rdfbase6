@@ -209,7 +209,7 @@ END;
       </td>
       <td valign="top">[% pred.plain %]</td>
       <td>
-      [% IF arc.obj %]
+      [% IF arc.objtype %]
          [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
       [% ELSIF arc.value_node %]
          [% jump(arc.value.sysdesig, me, id=arc.value_node.id) %]
