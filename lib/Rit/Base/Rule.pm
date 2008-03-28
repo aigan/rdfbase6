@@ -791,9 +791,9 @@ sub remove_infered_rev
 				     subj => $arc2->subj,
 				     pred => $rule->c,
 				     obj  => $obj,
-				     implicit => 1,
 				    },
 				    {
+				     implicit => 1,
 				     res => $args->{'res'},
 				    });
     }
@@ -827,9 +827,9 @@ sub remove_infered_rel
 				     subj => $subj,
 				     pred => $rule->c,
 				     obj  => $arc2->obj,
-				     implicit => 1,
 				    },
 				    {
+				     implicit => 1,
 				     res => $args->{'res'},
 				    });
     }
