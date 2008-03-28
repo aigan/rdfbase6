@@ -1990,7 +1990,7 @@ sub sysdesig
 {
     my( $arc ) = @_;
 
-    return sprintf("%d[%d]: %s --%s(%s)--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, $arc->pred->plain, ($arc->valtype->desig), $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
+    return sprintf("%d[%d]: %s --%s(%s)--> %s (%s%s) #%d", $arc->{'id'}, $arc->{'common_id'}, $arc->subj->sysdesig, ($arc->pred?$arc->pred->plain:'<undef>'), ($arc->valtype->desig), $arc->value_sysdesig, $arc->view_flags, ($arc->{'disregard'}?' D':''), $arc->{'ioid'});
 }
 
 
@@ -2380,6 +2380,8 @@ sub vacuum
 	    debug "  Create check" if $DEBUG;
 	    $arc->create_check( $args );
 	}
+
+	$arc->validate_range;
     }
 }
 
@@ -2493,6 +2495,13 @@ sub check_valtype
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
 		debug "   to ".$old_valtype->sysdesig;
+
+		$Para::Frame::REQ->session->set_debug(3);
+		# Reset valtype cache
+		$old_val->{'valtype'} = undef;
+		debug "val valtype: ".$old_val->this_valtype->sysdesig;
+
+
 		confess "FIXME";
 	    }
 	}
@@ -4903,7 +4912,6 @@ sub create_check
  }
 
 
-
 ###############################################################
 
 =head2 remove_check
@@ -4978,6 +4986,91 @@ sub remove_check
     $arc->{'in_remove_check'} --;
     $arc->{'disregard'} --;
     warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+}
+
+
+###############################################################
+
+=head2 validate_range
+
+  $a->validate_range( \%args )
+
+=cut
+
+sub validate_range
+{
+    my( $arc, $args ) = @_;
+
+    my $subj = $arc->subj;
+    my $valtype = $arc->valtype;
+    my $pred = $arc->pred;
+    my $value_obj = $arc->value;
+
+    unless( $valtype )
+    {
+	return 1;
+    }
+
+    unless( $pred->objtype )
+    {
+	return 1;
+    }
+
+
+
+
+    my $val_valtype = $value_obj->this_valtype;
+
+    if( $val_valtype->id == $Rit::Base::Resource::ID )
+    {
+	# Always valid
+    }
+    elsif( $valtype->id == $Rit::Base::Resource::ID )
+    {
+	# Generic, to be specified
+    }
+    elsif( not $valtype->equals( $val_valtype ) )
+    {
+	if( $val_valtype->scof( $valtype ) )
+	{
+	    # In valid range
+	}
+	else
+	{
+	    my $subjd = $subj->sysdesig;
+	    my $predd = $pred->plain;
+	    my $val_valtd = $val_valtype->sysdesig;
+	    my $valtd = $valtype->sysdesig;
+	    my $vald = $value_obj->sysdesig;
+	    confess "Valtype check faild for $subjd -${predd}-> $vald ".
+	      "($valtd should have been $val_valtd)";
+	}
+    }
+
+    $valtype = $val_valtype;
+
+    ###### Validate pred range with value
+
+    my $pred_valtype = $pred->valtype;
+    if( $pred_valtype->id != $Rit::Base::Resource::ID )
+    {
+	if( $value_obj->is( $pred_valtype ) )
+	{
+	    # In valid range
+	}
+	else
+	{
+	    my $subjd = $subj->sysdesig;
+	    my $predd = $pred->plain;
+	    my $val_valtd = $val_valtype->sysdesig;
+	    my $pred_valtd = $pred_valtype->sysdesig;
+	    my $vald = $value_obj->sysdesig;
+	    confess "Range check faild for $subjd -${predd}-> $vald ".
+	      "(should have been $pred_valtd)";
+	}
+    }
+
+    return 1;
 }
 
 
