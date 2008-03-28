@@ -426,23 +426,22 @@ sub convert_valuenodes
     my $cnt = 0;
     foreach my $arc ( @CONVERT )
     {
+	$VNODE{$arc->{'subj'}}++;
+
 	unless( ++$cnt % 100 )
 	{
 	    debug sprintf "%5d COMMITTING", $cnt;
 	    $dbh->commit;
 	}
 
-	my $rec = $dbix->select_possible_record("from arc where obj=? and active is true", $arc->{'subj'});
+	my $recs = $dbix->select_list("from arc where obj=? and active is true", $arc->{'subj'});
 
-	$VNODE{$arc->{'subj'}}++;
-
-	unless( $rec )
+	unless( $recs->size )
 	{
 	    debug "Arc unconnected: ".$arc->{'id'};
 	    push @REMOVE, $arc;
 	    next;
 	}
-
 
 	# Ignoring source, created, created_by, read_access, write_access
 
@@ -478,7 +477,11 @@ sub convert_valuenodes
 #	debug "About to overwrite ".datadump($rec);
 #	last;
 
-	$update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $updated_db, $rec->{'ver'});
+	foreach my $rec ($recs->as_array)
+	{
+	    $update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $updated_db, $rec->{'ver'});
+	}
+
 	$remove_sth->execute($arc->{'id'});
     }
 
