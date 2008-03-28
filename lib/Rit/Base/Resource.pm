@@ -4828,9 +4828,9 @@ sub find_class
     $clue ||= 0;
     my $id = $node->{'id'};
 
-    my $DEBUG = 0;
+    my $DEBUG = Para::Frame::Logging->at_level(2);
 
-#    debug "Find class for $id";
+    debug "Find class for $id (clue $clue)" if $DEBUG;
 #    cluck if $id == 5863813; ### DEBUG
 
     # Used in startup.
@@ -6238,7 +6238,7 @@ sub initiate_rel
 	$sth_init_subj->finish;
 
 	my $rowcount = $sth_init_subj->rows;
-	if( $rowcount > 100 )
+	if( ($rowcount > 100) and (debug > 2) )
 	{
 	    debug "initiate_rel $node->{id}";
 	    debug "Populating $rowcount arcs";
@@ -6253,7 +6253,7 @@ sub initiate_rel
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug "Populated $cnt";
+		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
@@ -6304,7 +6304,7 @@ sub initiate_rel
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug "Populated $cnt";
+		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
@@ -6382,7 +6382,7 @@ sub initiate_rev
     $sth_init_obj->finish;
 
     my $rowcount = $sth_init_obj->rows;
-    if( $rowcount > 100 )
+    if( ($rowcount > 100) and (debug > 2) )
     {
 	debug "initiate_rev $node->{id}";
 	debug "Populating $rowcount arcs";
@@ -6397,7 +6397,7 @@ sub initiate_rev
 	# Handle long lists
 	unless( ++$cnt % 100 )
 	{
-	    debug "Populated $cnt";
+	    debug 2, "Populated $cnt";
 	    $Para::Frame::REQ->may_yield;
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
 	}
@@ -6697,7 +6697,7 @@ sub initiate_revprop
 	my $cnt = 0;
 
 	my $rowcount = $sth_init_obj_pred->rows;
-	if( $rowcount > 100 )
+	if( ($rowcount > 100) and (debug > 2) )
 	{
 	    debug "initiate_revprop $node->{id} $name";
 	    debug "Populating $rowcount arcs";
@@ -6711,7 +6711,7 @@ sub initiate_revprop
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug "Populated $cnt";
+		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
@@ -6951,6 +6951,9 @@ sub this_valtype
 
 	unless( $_[0]->{'valtype'} )
 	{
+	    debug "Tried to find valtype of ".$_[0]->id;
+	    $Para::Frame::REQ->session->set_debug(3);
+	    $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
 	    confess "CONFUSED";
 	}
     }
@@ -7028,7 +7031,7 @@ sub instance_class
 	    no strict "refs";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 	    $Rit::Base::Cache::Class{ $key } = $package;
-	    $Rit::Base::Cache::Valtype{ $key } = $class_node;
+	    $Rit::Base::Cache::Valtype{ $key } = $_[0];
 	    1;
 	};
 	if( $@ )
