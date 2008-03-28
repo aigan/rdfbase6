@@ -688,7 +688,22 @@ debugging.  This version of desig indludes the node id, if existing.
 sub sysdesig  # The designation of obj, including node id
 {
     my( $node ) = @_;
-    return sprintf "%s: <value> (%s)", $node->id, $node->first_literal->desig;
+    my $lit = $node->first_literal;
+    if( $lit->is_literal )
+    {
+	if( defined $lit->plain )
+	{
+	    return sprintf "%s: <value> (%s)", $node->id, $lit->desig;
+	}
+	else
+	{
+	    return sprintf "%s: <value> (<undef>)", $node->id;
+	}
+    }
+    else
+    {
+	return sprintf "%s: <no-value>", $node->id;
+    }
 }
 
 
