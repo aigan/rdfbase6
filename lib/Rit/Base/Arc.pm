@@ -625,7 +625,7 @@ sub create
 	if( $coltype eq 'obj' )
 	{
 	    debug "Create props:\n".query_desig($props);
-	    debug "Create args:\n".query_Desig($args);
+	    debug "Create args:\n".query_desig($args);
 	    confess "Valuenode can not be set for non-literals ($value_obj / $vnode_in)";
 	}
 
@@ -4345,8 +4345,8 @@ sub init
     $arc->{'subj'} = $subj;
     $arc->{'pred'} = $pred;
     $arc->{'value'} = $value;  # can be Rit::Base::Undef
+    $arc->{'value_node'} = $pred->objtype ? undef : $rec->{'obj'};
 #    debug "Setting value node of arc $id to ".($rec->{obj}||'<undef>');
-    $arc->{'value_node'} = $rec->{'obj'};
     $arc->{'clean'} = $rec->{'valclean'}; # TODO: remove
     $arc->{'implicit'} = $rec->{'implicit'} || 0; # default
     $arc->{'indirect'} = $rec->{'indirect'}  || 0; # default
