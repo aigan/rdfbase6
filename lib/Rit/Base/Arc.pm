@@ -624,6 +624,8 @@ sub create
     {
 	if( $coltype eq 'obj' )
 	{
+	    debug "Create props:\n".query_desig($props);
+	    debug "Create args:\n".query_Desig($args);
 	    confess "Valuenode can not be set for non-literals ($value_obj / $vnode_in)";
 	}
 
