@@ -1697,6 +1697,42 @@ sub owned_by
 }
 
 
+#######################################################################
+
+=head2 is_owned_by
+
+  $n->is_ownde_by
+
+C<$agent> must be a Resource. It may be a L<Rit::Base::User>.
+
+Returns: true if C<$agent> is regarded as an owner of the arc
+
+TODO: Handle arcs where subj and obj has diffrent owners
+
+TODO: Handle user that's members of a owner group
+
+See: L<Rit::Base::Arc::is_owned_by>
+
+=cut
+
+sub is_owned_by
+{
+    my( $n, $agent ) = @_;
+
+    if( UNIVERSAL::isa($agent, 'Rit::Base::User') )
+    {
+	return 1 if $agent->has_root_access;
+    }
+
+    if( $agent->equals( $n->owned_by ) )
+    {
+	return 1;
+    }
+
+    return 0;
+}
+
+
 ########################################################################
 
 =head2 read_access
