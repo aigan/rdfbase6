@@ -419,6 +419,12 @@ sub build_field_key
 	{
 	    $val = Rit::Base::Pred->get($val)->plain;
 	}
+
+	unless( length $val ) # Not inserting empty fields
+	{
+	    next if grep{$key eq $_} qw( if );
+	}
+
 	$out .= '__'.$key.'_'.$val;
     }
     return $out;
