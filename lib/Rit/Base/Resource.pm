@@ -53,7 +53,7 @@ use Rit::Base::Pred::List;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Widget;
+use Rit::Base::Widget qw(build_field_key);
 use Rit::Base::Widget::Handler;
 
 use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
@@ -4346,22 +4346,18 @@ sub wuh
 {
     my( $node, $pred_name, $value, $args ) = @_;
 
-    my $R = Rit::Base->Resource;
-
-    my $extra = '';
-
-    if( $args->{'if'} )
-    {
-	$extra = '__if_'. $args->{'if'};
-    }
-    my $key = "arc___subj_". $node->id ."__pred_". $pred_name . $extra;
+    my $fkey = build_field_key({
+				subj => $node,
+				pred => $pred_name,
+				if => $args->{'if'},
+			       });
 
     if( ref $value and UNIVERSAL::isa $value, "Rit::Base::Resource" )
     {
 	$value = $value->id;
     }
 
-    return Para::Frame::Widget::hidden($key, $value);
+    return Para::Frame::Widget::hidden($fkey, $value);
 }
 
 
@@ -4559,8 +4555,11 @@ sub wuirc
 		}
 		else
 		{
-		    my $field = 'arc_'. $arc->id .'__subj_'. $check_subj->id
-		      .'__pred_'. $pred->name;
+		    my $field = build_field_key({
+						 arc => $arc,
+						 subj => $check_subj,
+						 pred => $pred,
+						});
 		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
 		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
 		}
@@ -4604,12 +4603,15 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'text' )
 	{
-	    my $type_str = ( $is_scof ? 'scof_' : 'type_' ) . $range->label .'__';
+	    my $fkeys =
+	    {
+	     subj => $subj,
+	     $is_rev.'pred' => $pred,
+	    };
+	    $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
 	    $out .=
-	      Para::Frame::Widget::input('arc___'. $type_str .'subj_'.
-					 $subj->id .'__'. $is_rev .'pred_'.
-					 $pred->name,
+	      Para::Frame::Widget::input(build_field_key($fkeys),
 					 $args->{'default_value'},
 					 {
 					  label => Para::Frame::L10N::loc('Add'),
