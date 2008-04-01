@@ -1521,12 +1521,7 @@ sub is_owned_by
     }
 
 
-    if( $arc->subj->is_owned_by($agent) )
-    {
-	return 1;
-    }
-
-    return 0;
+    return $arc->subj->is_owned_by($agent);
 }
 
 #######################################################################
@@ -3048,7 +3043,7 @@ sub remove
 	}
 	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
 	{
-	    confess('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user, $arc->sysdesig);
+	    confess('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
 	}
 
 	# Can this arc be infered?
