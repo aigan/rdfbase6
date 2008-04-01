@@ -3048,7 +3048,7 @@ sub remove
 	}
 	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
 	{
-	    confess('denied', sprintf "You don't own the arc %s", $arc->sysdesig);
+	    confess('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user, $arc->sysdesig);
 	}
 
 	# Can this arc be infered?
