@@ -1501,6 +1501,8 @@ TODO: Handle arcs where subj and obj has diffrent owners
 
 TODO: Handle user that's members of a owner group
 
+See: L<Rit::Base::Resource::is_owned_by>
+
 =cut
 
 sub is_owned_by
@@ -1519,7 +1521,7 @@ sub is_owned_by
     }
 
 
-    if( $agent->equals( $arc->subj->owned_by ) )
+    if( $arc->subj->is_owned_by($agent) )
     {
 	return 1;
     }
