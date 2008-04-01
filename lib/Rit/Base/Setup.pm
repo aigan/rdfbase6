@@ -392,6 +392,7 @@ sub convert_valuenodes
 
     my $update_sth = $dbh->prepare("update arc set valfloat=?, valdate=?, valtext=?, valclean=?, valtype=?, activated=?, activated_by=?, updated=? where ver=?") or die;
     my $remove_sth = $dbh->prepare("delete from arc where ver=?");
+    my $null_replaces = $dbh->prepare("update arc set replaces=null where replaces=?");
 
     my( $rec, $error ) = $arclist->get_first;
     while(! $error )
@@ -482,6 +483,7 @@ sub convert_valuenodes
 	    $update_sth->execute($valfloat, $valdate, $valtext, $valclean, $valtype_db, $activated_db, $activated_by_db, $updated_db, $rec->{'ver'});
 	}
 
+	$null_replaces->execute($arc->{'id'});
 	$remove_sth->execute($arc->{'id'});
     }
 
@@ -500,6 +502,7 @@ sub convert_valuenodes
 	}
 	debug sprintf "%5d Removing %s", $cnt, $arc->sysdesig;
 
+	$null_replaces->execute($arc->{'id'});
 	$remove_sth->execute($arc->{'id'});
     }
 
