@@ -168,11 +168,11 @@ sub level
 	my $node = $_[0];
 	## See $apphome/doc/notes.txt
 	my $level;
-	if( $node->has_value({ 'has_access_right' => $C_guest_access }) )
+	if( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
 	{
 	    $level = 0;
 	}
-	elsif( $node->has_value({ 'has_access_right' => $C_full_access }) )
+	elsif( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
 	{
 	    $level = 40;
 	}
@@ -224,10 +224,6 @@ sub find_by_anything
 #	warn datadump($C_guest_access, 2);
 	my $class = ref($_[0]) || $_[0];
 	@new = Rit::Base::Resource->get_by_label('guest');
-#	@new = Rit::Base::Resource->get({
-#					 'name_short'       => 'guest',
-#					 has_access_right   => $C_guest_access,
-#					});
     }
     elsif( $val !~ /^\d+$/ )
     {
@@ -281,7 +277,7 @@ sub verify_password
     $password_encrypted ||= '';
 
 #    debug "Retrieving password for $u->{id}";
-    my $n_password = $u->first_prop('has_password') || '';
+    my $n_password = $u->first_prop('has_password',undef,['active']) || '';
     unless( $n_password )
     {
 	my $uname = $u->desig;
@@ -312,7 +308,7 @@ sub verify_password
 
 sub has_root_access
 {
-    if( $_[0]->prop('has_access_right')->equals($C_full_access) )
+    if( $_[0]->prop('has_access_right',undef,['active'])->equals($C_full_access) )
     {
 	return 1;
     }
