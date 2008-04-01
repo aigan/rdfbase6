@@ -205,7 +205,7 @@ Returns: 1 or 0
 
 sub objtype
 {
-    return shift->coltype eq 'obj' ? 1 : 0;
+    return( ($_[0]->{'coltype'}||0) == 1 ? 1 : 0 );
 }
 
 
