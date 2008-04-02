@@ -5023,7 +5023,6 @@ sub find_class
 	  )
 	{
 #	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
-	    $node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key };
 	    debug "Setting3 valtype for $id to $node->{valtype}{id}" if $DEBUG;
 	    return $package;
 	}
@@ -5072,7 +5071,7 @@ sub find_class
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
-	$Rit::Base::Cache::Valtype{ $key } = $valtype;
+	$node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key } = $valtype;
 	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
