@@ -807,6 +807,7 @@ sub wuirc
 
 		foreach my $version (@{$arcversions->{$arc_id}})
 		{
+		    # TODO: Handle mixxed infered / noninfered arcs
 		    debug "  version $version";
 		    $out .=
 		      (
@@ -874,19 +875,26 @@ sub wuirc
 					     pred => $arc->pred,
 					     subj => $arc->subj,
 					    });
-		$out .= &{$inputtype}($field,
-				      $arc->value,
-				      {
-				       class => $args->{'class'},
-#				       arc => $arc_id,
-				       size => $size,
-				       rows => $rows,
-				       maxlength => $args->{'maxlength'},
-				       id => $args->{'id'},
-				       image_url => $args->{'image_url'}
-				      });
+		my $fargs =
+		{
+		 class => $args->{'class'},
+		 size => $size,
+		 rows => $rows,
+		 maxlength => $args->{'maxlength'},
+		 id => $args->{'id'},
+		 image_url => $args->{'image_url'}
+		};
+		if( $arc->indirect )
+		{
+		    $fargs->{'disabled'} = 'disabled';
+		    $field = '-'.$field; # Don't read content
+		}
 
-		$out .= $arc->edit_link_html;
+		$out .= &{$inputtype}($field, $arc->value, $fargs);
+		unless( $arc->indirect )
+		{
+		    $out .= $arc->edit_link_html;
+		}
 
 		$out .= '</li>'
 		  if( scalar(keys %$arcversions) > 1 );
