@@ -583,7 +583,7 @@ sub create
 		else
 		{
 		    $value = $value_obj->literal;
-		    debug sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
+		    debug 2, sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
 
 		    if( $coltype eq 'valtext' )
 		    {
