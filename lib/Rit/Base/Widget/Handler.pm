@@ -451,7 +451,8 @@ sub handle_query_arc_value
     my $arg = parse_form_field_prop($param);
 
     my $subj      = $arg->{'subj'};     # The subj of the prop
-    my $pred_name = $arg->{'pred'};     # In case we should create the prop
+    my $pred_name = $arg->{'pred'}||''; # In case we should create the prop
+    my $vnode     = $arg->{'vnode'};    # Value node, if existing
     my $rev       = $arg->{'revpred'};  # In case we should create the prop
     my $arc_id    = $arg->{'arc'};      # arc to update. Create arc if undef
     my $desig     = $arg->{'desig'};    # look up obj that has $value as $desig
@@ -464,8 +465,15 @@ sub handle_query_arc_value
     my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
     my $select	  = $arg->{'select'};   # for version-selection
+    my $singular  = 0;
 
 #    my $ ## TODO: Add extra "new"-alternative "None of the avobe"...
+
+    if( $arc_id and ($arc_id eq 'singular') )
+    {
+	$singular = 1;
+	$arc_id = '';
+    }
 
 
     if( debug > 3 )
@@ -477,6 +485,7 @@ sub handle_query_arc_value
 	debug "  scof : ".($scof||'');
 	debug "  desig: ".($desig||'');
 	debug "  parse: ".($parse||'');
+	debug "  sing : ".($singular);
     }
 
 
@@ -490,6 +499,10 @@ sub handle_query_arc_value
 	$subj = $R->get($subj);
 	debug 2, "subj gave ".$subj->sysdesig;
     }
+    elsif( $arc_id )
+    {
+	# Getting subj from arc, later
+    }
     else
     {
 	$subj = $args->{'node'} || $R->get('new');
@@ -502,7 +515,7 @@ sub handle_query_arc_value
 	{
 	    if( $subj->empty )
 	    {
-		debug "Condition failed: $key";
+		debug 2, "Condition failed: $key";
 		return 0;
 	    }
 	}
@@ -512,13 +525,13 @@ sub handle_query_arc_value
 	    my $obj = $R->get( $value );
 	    unless( $obj )
 	    {
-		debug "Condition failed: $key (OBJ NOT FOUND)";
+		debug 2, "Condition failed: $key (OBJ NOT FOUND)";
 		return 0;
 	    }
 
 	    if( $obj->empty )
 	    {
-		debug "Condition failed: $key";
+		debug 2, "Condition failed: $key";
 		return 0;
 	    }
 	}
@@ -555,23 +568,12 @@ sub handle_query_arc_value
       if( $select and $select eq 'version' ); # activate arc-version and return
 
 
-    # Only handles pred nodes
-    my $pred = Rit::Base::Pred->get_by_label( $pred_name )
-      or die("Can't get pred '$pred_name' from $param");
-    my $pred_id = $pred->id;
-    my $coltype = $pred->coltype;
-    if( $rev )
-    {
-	$coltype = 'obj';
-    }
-
     # Value-resources given by literal id handled here
     #
     if( $parse )
     {
 	if( $parse eq 'id' )
 	{
-	    $coltype = 'obj';
 	    $value = $R->get($value);
 	}
 	else
@@ -594,11 +596,11 @@ sub handle_query_arc_value
 
     if( $rowno )
     {
-	$res->set_pred_id_by_row( $rowno, $pred_id );
+	$res->set_pred_id_by_row( $rowno, Rit::Base::Pred->get_by_label( $pred_name )->id );
     }
 
     # Only one ACTIVE prop with this pred and of this type
-    if( $arc_id eq 'singular' and ref $subj ) # Skip if subj doesn't exist
+    if( $singular and ref $subj ) # Skip if subj doesn't exist
     {
 	my $args_active = aais($args,'active');
 
@@ -666,11 +668,6 @@ sub handle_query_arc_value
 	    $arc_id = '';
 	}
     }
-    elsif( $arc_id eq 'singular' )
-    {
-	$arc_id = '';
-    }
-
 
 
     ############### File handling #####################################
@@ -801,6 +798,34 @@ sub handle_query_arc_value
     }
 
 
+    # check old value
+    my $arc;
+    if( $arc_id )
+    {
+	$arc = Rit::Base::Arc->get_by_id($arc_id);
+
+	### Set up subj and pred_name if missing
+	$pred_name ||= $arc->pred->plain;
+	unless( $rev )
+	{
+	    $subj ||= $arc->subj;
+	}
+
+	$vnode ||= $arc->value_node;
+    }
+
+
+    # Only handles pred nodes
+    my $pred = Rit::Base::Pred->get_by_label( $pred_name )
+      or die("Can't get pred '$pred_name' from $param");
+    my $pred_id = $pred->id;
+    my $coltype = $pred->coltype;
+    if( $rev )
+    {
+	$coltype = 'obj';
+    }
+
+
     # Switch subj and value if this is a reverse arc
 
     if( $rev )
@@ -848,13 +873,6 @@ sub handle_query_arc_value
     if( $rowno )
     {
 	$res->set_subj_id_by_row( $rowno, $subj->id );
-    }
-
-    # check old value
-    my $arc;
-    if( $arc_id )
-    {
-	$arc = Rit::Base::Arc->get_by_id($arc_id);
     }
 
     if( $arc and $arc->is_arc )

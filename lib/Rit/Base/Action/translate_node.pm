@@ -100,7 +100,7 @@ sub handler
 	    my $val_old = $arc->value;
 	    if( $val_new ne $val_old )
 	    {
-		$arc->set_value($val_new, $args);
+		$arc = $arc->set_value($val_new, $args);
 	    }
 
 	    my $props = {};

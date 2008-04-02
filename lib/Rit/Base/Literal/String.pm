@@ -870,11 +870,7 @@ sub wuirc
 		$out .= '<li>'
 		  if( scalar(keys %$arcversions) > 1 );
 
-		my $field = build_field_key({
-					     arc => $arc_id,
-					     pred => $arc->pred,
-					     subj => $arc->subj,
-					    });
+		my $field = build_field_key({arc => $arc});
 		my $fargs =
 		{
 		 class => $args->{'class'},

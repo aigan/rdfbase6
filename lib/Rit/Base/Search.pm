@@ -990,12 +990,10 @@ sub modify
 	my $values;
 	if( $props->{'obj'} )
 	{
-	    my $coltype = $qarc->{'coltype'} ||= 'obj';
-	    if( $coltype ne 'obj' )
-	    {
-		debug "Coltype mismatch3: $coltype ne obj";
-	    }
-	    $qarc->{$coltype} = parse_values($props->{'obj'});
+	    # Used by Rit::Base::Rule/remove_infered_rel
+	    # ... the obj may be a value node of a literal.
+	    $qarc->{'coltype'} ||= 'obj';
+	    $qarc->{'obj'} = parse_values($props->{'obj'});
 	}
 	elsif( $props->{'value'} )
 	{

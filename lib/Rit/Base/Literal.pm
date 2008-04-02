@@ -340,6 +340,7 @@ sub set_arc
     my( $lit, $arc ) = @_;
 
     $lit->{'arc'} = $arc;
+    $lit->{'node'} = undef;
 
     return $arc;
 }
@@ -351,31 +352,69 @@ sub set_arc
 
   $lit->node_set
 
+  $lit->node_set( $node )
+
 Will create a node if not existing
+
+Exceptions: If trying to explicitly set a node on a literal belonging
+to an arc
+
+Returns: the node
 
 =cut
 
 sub node_set
 {
-    unless( $_[0]->{'node'} )
+    if( not($_[0]->{'node'}) or $_[1] )
     {
-	my( $lit ) = @_;
+#	debug "  setting vnode";
+	my( $lit, $node ) = @_;
 	if( my $arc = $lit->{'arc'} )
 	{
-	    if( my $node = $arc->value_node )
+	    if( $node )
 	    {
+		if( my $old_node = $arc->value_node )
+		{
+		    if( $old_node->equals($node) )
+		    {
+#			debug "  no change in value_node";
+			# No change...
+			return $old_node;
+		    }
+		    confess "Can't set node for lit belonging to an arc: ".
+		      $lit->sysdesig;
+		}
+
+		confess "CHECKME: ".$lit->sysdesig." / ".$arc->sysdesig;
+	    }
+
+	    if( $node = $arc->value_node )
+	    {
+#		debug "  set by arc value_node";
 		$lit->{'node'} = $node;
 	    }
 	    else
 	    {
+#		debug "  set to new value_node for arc";
 		$lit->{'node'} = $arc->set_value_node();
 	    }
 	}
+	elsif( $node )
+	{
+#	    debug "  set to given value";
+	    $lit->{'node'} = $node;
+	}
 	else
 	{
+#	    debug "  Creating a new value_node for literal";
 	    $lit->{'node'} = Rit::Base::Resource::Literal->get('new');
 	}
     }
+#    else
+#    {
+#	debug "vnode initialized and no new vnode given (@_)";
+#    }
+
     return $_[0]->{'node'};
 }
 
@@ -677,8 +716,8 @@ sub extract_string
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Resource::Literal" )
     {
-	debug "Val isa Res Lit: ".$val->id;
-	debug "Using args:\n".query_desig($args);
+#	debug "Val isa Res Lit: ".$val->id;
+#	debug "Using args:\n".query_desig($args);
 
 	# Sort by id in order to use the original arc as a base of
 	# reference for the value, in case that other arc points to
@@ -687,8 +726,7 @@ sub extract_string
 	my $node = $val;
 	$val = $node->first_literal();
 
-	#$val = $node->first_literal({%$args,arclim=>['adirect']});
-	debug "  Extracted ".$val->sysdesig;
+#	debug "  Extracted ".$val->sysdesig;
 	unless( UNIVERSAL::isa $val, "Rit::Base::Literal" )
 	{
 	    debug "First literal of node is a ".ref($val);

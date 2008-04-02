@@ -3310,7 +3310,7 @@ sub set_value
     my( $arc, $value_new_in, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    Para::Frame::Logging->this_level(4);
+#    Para::Frame::Logging->this_level(4);
 
     debug 3, sprintf "Set value of arc %s to '%s'",
       $arc->{'id'}, ($value_new_in||'<undef>');
@@ -3383,6 +3383,12 @@ sub set_value
     else
     {
 	$vnode_new = $vnode_old;
+    }
+
+    if( $vnode_new )
+    {
+#	debug "Setting value_new vnode";
+	$value_new->node_set($vnode_new);
     }
 
 
@@ -4522,6 +4528,10 @@ sub register_with_nodes
 
 	$value->{'arc_id'}{$id} = $arc;
     }
+
+    # Nodes not new anymore... Not empty
+    delete $subj->{'new'};
+    delete $value->{'new'};
 
     return $arc;
 }
