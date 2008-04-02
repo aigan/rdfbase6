@@ -2380,7 +2380,10 @@ sub vacuum
 	    $arc->create_check( $args );
 	}
 
-	$arc->validate_range;
+	if( $arc->active )
+	{
+	    $arc->validate_range;
+	}
     }
 }
 
@@ -3394,15 +3397,16 @@ sub set_value
     {
 	debug "  value_old: ".$value_old->sysdesig();
 	debug "   type old: ".$valtype_old->sysdesig;
-	debug "  vnode old; ".$vnode_old->desig;
+	debug "  vnode old: ".$vnode_old->sysdesig;
 	debug "coltype old: ".$coltype_old;
 	debug "  value_new: ".$value_new->sysdesig();
 	debug "   type new: ".$valtype_new->sysdesig;
-	debug "  vnode new: ".$vnode_new->desig;
+	debug "  vnode new: ".$vnode_new->sysdesig;
 	debug "coltype new: ".$coltype_new;
     }
 
     my $same_value = $value_new->equals( $value_old, $args );
+
 
     unless( $same_value and
 	    $valtype_new->equals( $valtype_old ) and
