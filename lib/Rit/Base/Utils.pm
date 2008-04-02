@@ -102,6 +102,9 @@ sub cache_clear
 
   valclean( $value )
 
+Exceptions:
+  Will die if encountered a "Malformed UTF-8 character (fatal)"
+
 Returns: The new value after a lot of transformation
 
     $value = lc($value);
