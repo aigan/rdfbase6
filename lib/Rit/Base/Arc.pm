@@ -5078,7 +5078,7 @@ sub validate_range
 	    my $val_valtd = $val_valtype->sysdesig;
 	    my $pred_valtd = $pred_valtype->sysdesig;
 	    my $vald = $value_obj->sysdesig;
-	    confess "Range check faild for $subjd -${predd}-> $vald ".
+	    throw 'validation',  "Range check faild for $subjd -${predd}-> $vald ".
 	      "(should have been $pred_valtd)";
 	}
     }
