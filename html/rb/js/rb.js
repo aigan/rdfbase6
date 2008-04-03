@@ -264,8 +264,6 @@ var PagePart = Class.create(
 	    this.registerUpdateButton(\$(params['update_button']));
 	}
 
-	this.loadingSetup();
-
 	pps[element] = this;
     },
 
@@ -287,6 +285,9 @@ var PagePart = Class.create(
 
     loadingStart: function()
     {
+	if( !this.loading ) {
+	    this.loadingSetup();
+	}
 	if( this.is_loading == false ) {
 	    //Effect.Fold(this.element, { duration: 0.5 });
 	    Effect.Appear(this.loading, { duration: 0.5 });
