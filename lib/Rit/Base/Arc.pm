@@ -789,7 +789,7 @@ sub create
 		    my $val_valtd = $val_valtype->sysdesig;
 		    my $valtd = $valtype->sysdesig;
 		    my $vald = $value_obj->sysdesig;
-		    confess "Valtype check faild for $subjd -${predd}-> $vald ".
+		    confess "Valtype check failed for $subjd -${predd}-> $vald ".
 		      "($valtd should have been $val_valtd)";
 		}
 	    }
@@ -814,7 +814,7 @@ sub create
 		    my $val_valtd = $val_valtype->sysdesig;
 		    my $pred_valtd = $pred_valtype->sysdesig;
 		    my $vald = $value_obj->sysdesig;
-		    throw 'validation', "Range check faild for $subjd -${predd}-> $vald ".
+		    throw 'validation', "Range check failed for $subjd -${predd}-> $vald ".
 		      "(should have been $pred_valtd)";
 		}
 	    }
@@ -2417,8 +2417,8 @@ sub check_valtype
     if( debug > 2 )
     {
 	debug "Arc   valtype is ".$arc_valtype->sysdesig;
-	debug "Value         is ".$old_val->sysdesig;
 	debug "Pred  valtype is ".$pred_valtype->sysdesig;
+	debug "Value         is ".$old_val->sysdesig;
 	debug "Value valtype is ".$old_valtype->sysdesig;
     }
 
@@ -2430,9 +2430,15 @@ sub check_valtype
     }
     elsif( $arc_valtype->scof( $old_valtype ) )
     {
-	# Valtype in valid range
-#	debug "  arc valtype more specific";
-	return 0;
+	if( $objtype )
+	{
+	    debug 2, "  arc valtype more specific";
+	}
+	else
+	{
+	    # Valtype in valid range
+	    return 0;
+	}
     }
 
     my $pred_coltype = $pred->coltype;
@@ -2454,7 +2460,7 @@ sub check_valtype
     };
 
 
-    if( $arc->coltype eq 'obj' )
+    if( $arc->objtype )
     {
 	my $c_resource = Rit::Base::Constants->get('resource');
 	if( $old_valtype->equals( $c_resource ) )
@@ -5055,8 +5061,8 @@ sub validate_range
 	    my $val_valtd = $val_valtype->sysdesig;
 	    my $valtd = $valtype->sysdesig;
 	    my $vald = $value_obj->sysdesig;
-	    confess "Valtype check faild for $subjd -${predd}-> $vald ".
-	      "($valtd should have been $val_valtd)";
+	    confess "Valtype check failed for $subjd -${predd}($valtd)-> $vald ".
+	      "(should have been $val_valtd)";
 	}
     }
 
@@ -5078,7 +5084,7 @@ sub validate_range
 	    my $val_valtd = $val_valtype->sysdesig;
 	    my $pred_valtd = $pred_valtype->sysdesig;
 	    my $vald = $value_obj->sysdesig;
-	    confess "Range check faild for $subjd -${predd}-> $vald ".
+	    confess "Range check failed for $subjd -${predd}-> $vald ".
 	      "(should have been $pred_valtd)";
 	}
     }
