@@ -2430,7 +2430,7 @@ sub check_valtype
     }
     elsif( $arc_valtype->scof( $old_valtype ) )
     {
-	if( $objtype )
+	if( $arc->objtype )
 	{
 	    debug 2, "  arc valtype more specific";
 	}
