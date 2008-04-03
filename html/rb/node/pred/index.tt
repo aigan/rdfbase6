@@ -1,19 +1,27 @@
 ﻿[% META
     title ='-
 		id = q.param("id");
-                DEFAULT id=1;
+		#DEFAULT id=1;
                 node = get(id);
 		ttitle = node.sysdesig;
 		GET "Predicate " _ locescape(ttitle);
                '
    level = 1
+   next_action = 'node_update'
 %]
 
 [%
    id = q.param("id");
-   DEFAULT id=1;
-   node = get(id);
+   #DEFAULT id=1;
+   node = get(id) || get('new');
+   id = node.id;
    hidden('id', id);
+
+   IF node.empty;
+     domain_id = q.param('domain_id');
+     default_label = q.param('default_label');
+     node.wuh('is', C.predicate);
+   END;
 %]
 
 <p>[% PROCESS node_menu.tt %]</p>
@@ -55,10 +63,34 @@
 
 </table>
 
-[% IF node.domain %]
-[% test = find(is=node.domain).get_first_nos %]
-[% IF test %]
-<h2>Example</h2>
-<p>[% test.wu(node.label) %]
+[% IF u.has_root_access %]
+  <table class="admin">
+    <caption>[% aloc("Change") %]</caption>
+    <tr><td>[% input('prop_label', node.label || default_label, tdlabel="[* loc('Label') *]") %]</td></tr>
+    <tr>
+      <td>[* aloc('Domain') *]</td>
+      <td>
+        [% IF domain_id;
+             node.wuh('domain', domain_id);
+             get(domain_id).desig;
+           END;
+        %]<br/>
+      [% node.wu('domain') %]
+    </td></tr>
+    <tr><td>[% node.wu('name', tdlabel="[* loc('Name') *]") %]</td></tr>
+    <tr><td>[% node.wu('range', tdlabel="[* loc('Range') *]") %]</td></tr>
+    <tr><td>[% node.wu('weight', tdlabel="[* loc('Weight') *]") %]</td></tr>
+    <tr><td>[% node.wu('no_auto_show', tdlabel="[* loc('NO auto-show') *]") %]</td></tr>
+    <tr><td>[% node.wu('is_mandatory', tdlabel="[* loc('Is mandatory') *]") %]</td></tr>
+  </table>
+  [% step %]
+
 [% END %]
+
+[% IF node.domain %]
+  [% test = find(is=node.domain).get_first_nos %]
+  [% IF test %]
+    <h2>Example</h2>
+    <p>[% test.wu(node.label) %]
+  [% END %]
 [% END %]

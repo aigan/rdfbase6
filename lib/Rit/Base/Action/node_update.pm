@@ -41,6 +41,13 @@ sub handler
     }
 
     my $node = Rit::Base::Resource->get($id);
+
+    if( $q->param('prop_label') )
+    {
+	$node->set_label( $q->param('prop_label') );
+	$q->delete('prop_label');
+    }
+
     $node->update_by_query($args);
 
     if( $res->changes )
@@ -49,6 +56,7 @@ sub handler
     }
 
     $res->autocommit;
+
 
     if( $res->changes )
     {
