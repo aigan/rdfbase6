@@ -210,7 +210,7 @@ C<eq> for mathing the elements those property is the same as the
 value. C<ne> matches if the property is not the same as the
 value. (The other matchtypes are not implemented here).
 
-If the key begins with C<count_pred_> we counts the number of
+If the key begins with C<count_pred_> we count the number of
 properties the element has with the given predicate. Use C<rev_>
 prefix for couting reverse properties. The value is compared with the
 resulting number. For this comparsion, the matchtypes C<eq>, C<exact>,
