@@ -1580,7 +1580,7 @@ AUTOLOAD
 	if( $node->defined )
 	{
 	    confess sprintf "While calling %s for %s (%s):\n%s\n%s",
-	      $method, $node->sysdesig, $node->code_class_desig, $desc, $err;
+	      $method, $node->id, $node->code_class_desig, $desc, $err;
 	}
 	else
 	{
