@@ -1176,6 +1176,8 @@ sub copy_revprops
 
   $n->find_arcs( $query, \%args )
 
+NB! Use L<Rit::Base::Resource/arc_list> instead!
+
 TODO: Do not use the query form...
 
 C<@crits> can be a mixture of arcs, hashrefs or arc numbers. Hashrefs
