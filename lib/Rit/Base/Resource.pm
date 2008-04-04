@@ -2615,8 +2615,7 @@ sub has_value
 
     if( debug > 2 )
     {
-	my $value_str = defined($value)?$value:"<undef>";
-	debug "  Checking if node $node->{'id'} has $pred_name $match($clean) $value_str";
+	debug "  Checking if node $node->{'id'} has $pred_name $match($clean) ".query_desig($value);
     }
 
 
@@ -2739,6 +2738,8 @@ sub has_value
 	    confess "Matchtype $match not implemented";
 	}
     }
+
+#    debug "  with args:\n".query_desig($args);
 
     if( my $uap = $args->{unique_arcs_prio} )
     {
@@ -3133,7 +3134,7 @@ sub arc_list
 #	debug "List is now ".$lr->sysdesig;
 	if( defined $proplim ) # The Undef Literal is also an proplim
 	{
-#	    debug "Sorting out the nodes matching proplim ".datadump($proplim);
+#	    debug "Sorting out the nodes matching proplim ".query_desig($proplim);
 #	    debug "  Sorting out the nodes matching proplim\n";
 
 	    if( ref $proplim and ref $proplim eq 'HASH' )
@@ -3717,6 +3718,9 @@ Supported args are:
 Returns:
 
   The node object
+
+
+See also L<Rit::Base::Node/add_arc>
 
 =cut
 
@@ -4572,9 +4576,13 @@ sub wuirc
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
 
+#    debug "Selecting inputtype for ".$pred->desig;
+#    debug "  range: ".$range->sysdesig;
+#    debug "  is_pred: ".$is_pred;
     my $inputtype = $args->{'inputtype'} ||
       ( ( $range->revcount($is_pred) < 25 ) ?
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
+#    debug "  $inputtype";
 
     if( $list and
 	( $inputtype eq 'text' or not $singular ) )
