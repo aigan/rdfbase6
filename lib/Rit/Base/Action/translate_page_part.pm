@@ -52,25 +52,12 @@ sub handler
 
     if( my $arc = $arcs->get_first_nos )
     {
-	$arc->obj->update({'value'=>$trt}, $args);
+	$arc->set_value($trt, $args);
     }
     else
     {
-	my $pred = Rit::Base::Pred->get_by_anything( 'description', $args );
-	my $props =
-	{
-	 is_of_language => $l,
-	};
-
-	my $value = Rit::Base::Resource->create( $props, $args );
-	Rit::Base::Arc->create({
-				subj    => $value,
-				pred    => 'value',
-				value   => $trt,
-				valtype => $pred->valtype,
-			       }, $args);
-
-	$n->add({ $pred->plain => $value }, $args);
+	$n->add({'description' => $trt}, $args);
+	$n->description->add({is_of_language => $l});
     }
 
     $res->autocommit;
