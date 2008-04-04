@@ -6589,7 +6589,7 @@ sub initiate_prop
 	    }
 	}
 
-	if( $rowcount > 100 )
+	if( ($rowcount > 100) and (debug > 2) )
 	{
 	    debug "initiate_prop $node->{id} $name";
 	    debug "Populating $rowcount arcs";
