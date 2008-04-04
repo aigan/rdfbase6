@@ -4132,7 +4132,7 @@ sub wd
 
     $args_in ||= {};
 
-    return $node->wu( $pred_name, { %$args_in, disabled => 'disabled' });
+    return $node->wu( $pred_name, { %$args_in, disabled => 'disabled', ajax => 0 });
 
 
     my( $args_parsed ) = parse_propargs($args_in);
@@ -4553,7 +4553,6 @@ sub wuirc
 	$lookup_pred = [$lookup_pred];
     }
 
-
     confess "Range missing"
       unless( $range );
 
@@ -4627,26 +4626,24 @@ sub wuirc
 	}
     }
 
-    if( not $singular or
-	not $list or
-	( $singular and $inputtype ne 'text' ))
+    if( not $disabled and
+	( not $singular or
+	  not $list or
+	  ( $singular and $inputtype ne 'text' )))
     {
 	if( $ajax and $inputtype eq 'text' )
 	{
-	    unless( $disabled )
-	    {
-		my $search_params = { $is_pred => $range->id };
+	    my $search_params = { $is_pred => $range->id };
 
-		$out .= "
+	    $out .= "
               <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
-		$out .=
-		  "<script type=\"text/javascript\">
+	    $out .=
+	      "<script type=\"text/javascript\">
                      <!--
                          new RBInputPopup('$divid-button',
                                   '$divid', '". to_json( $search_params ) ."',
                                   '".to_json($lookup_pred)."', '". $pred->name ."',
                                   '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
-	    }
 	}
 	elsif( $inputtype eq 'text' )
 	{
