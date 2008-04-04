@@ -344,7 +344,7 @@ sub find
     if( $DEBUG > 1 )
     {
 	debug "QUERY ".query_desig($tmpl);
-	debug  "ON LIST ".$l->desig;
+	debug  "ON LIST ".$l->sysdesig;
     }
 
 
