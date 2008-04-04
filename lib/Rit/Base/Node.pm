@@ -416,16 +416,16 @@ sub meets_proplim
 #    Para::Frame::Logging->this_level(4);
     my $DEBUG = Para::Frame::Logging->at_level(3);
 
-    if( $DEBUG )
-    {
-	debug "Node ".$node->sysdesig;
-	debug "Arclim ".$arclim_in->sysdesig;
-    }
-
     unless( ref $proplim and ref $proplim eq 'HASH' )
     {
 	return 1 unless $proplim;
 	return $node->equals( $proplim, $args_in );
+    }
+
+    if( $DEBUG )
+    {
+	debug "Node ".$node->id;
+	debug "Arclim ".$arclim_in->sysdesig;
     }
 
 
@@ -436,7 +436,7 @@ sub meets_proplim
 	if( $DEBUG )
 	{
 	    debug "  Pred $pred_part";
-	    debug "  Target $target_value (".ref($target_value).")";
+	    debug "  Target ".query_desig($target_value);
 	}
 
 	    # Target value may be a plain scalar or undef or an object !!!
@@ -484,7 +484,7 @@ sub meets_proplim
 		{
 		    debug "No pred_part?";
 		    debug "Template: ".query_desig($proplim);
-		    debug "For node ".$node->sysdesig;
+		    debug "For node ".$node->id;
 		}
 	    }
 	    die "wrong format in find: $pred_part\n";
