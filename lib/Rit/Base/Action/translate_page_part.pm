@@ -14,12 +14,12 @@ use strict;
 
 use Data::Dumper;
 
-use Para::Frame::Utils qw( throw );
+use Para::Frame::Utils qw( throw debug );
 use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_website_text $C_language );
-use Rit::Base::Utils qw(parse_propargs);
+use Rit::Base::Utils qw( parse_propargs );
 
 =head1 DESCRIPTION
 
@@ -48,16 +48,22 @@ sub handler
 	throw('validation', "The node must be a website_text");
     }
 
-    my $arcs = $n->find_arcs({ 'description' => {is_of_language=>$l} }, $args);
+    debug "  Looking up arc with the language ".$l->sysdesig;
+    my $arcs = $n->arc_list('description' => {'obj.is_of_language'=>$l}, $args);
+
+#    return "  Found arc: ".$arcs->sysdesig;
 
     if( my $arc = $arcs->get_first_nos )
     {
+#	debug "  updating existing arc";
 	$arc->set_value($trt, $args);
     }
     else
     {
-	$n->add({'description' => $trt}, $args);
-	$n->description->add({is_of_language => $l});
+#	debug "  Adding description to $n->{id}";
+	$arc = $n->add_arc({'description' => $trt}, $args);
+#	debug "Added arc $arc->{id}";
+	$arc->value->add({is_of_language => $l}, $args);
     }
 
     $res->autocommit;
