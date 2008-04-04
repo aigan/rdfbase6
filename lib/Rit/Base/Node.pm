@@ -1178,10 +1178,11 @@ sub copy_revprops
 
 NB! Use L<Rit::Base::Resource/arc_list> instead!
 
-TODO: Do not use the query form...
+Used by L<Rit::Base::Node/replace>
 
 C<@crits> can be a mixture of arcs, hashrefs or arc numbers. Hashrefs
-holds pred/value pairs that is added as arcs.
+holds pred/value pairs that is added as arcs. Mostly only usable if
+called via L<Rit::Base::Node/replace>.
 
 Returns the union of all results from each criterion
 
@@ -1210,7 +1211,6 @@ sub find_arcs
 	}
 	elsif( ref($crit) eq 'HASH' )
 	{
-	    confess "CHECKME";
 	    foreach my $pred ( keys %$crit )
 	    {
 		my $val = $crit->{$pred};
