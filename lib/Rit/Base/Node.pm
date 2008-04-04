@@ -763,6 +763,8 @@ Returns:
 
   The arc object
 
+See also L<Rit::Base::Resource/add>
+
 =cut
 
 sub add_arc
@@ -1174,8 +1176,12 @@ sub copy_revprops
 
   $n->find_arcs( $query, \%args )
 
+TODO: Do not use the query form...
+
 C<@crits> can be a mixture of arcs, hashrefs or arc numbers. Hashrefs
 holds pred/value pairs that is added as arcs.
+
+Returns the union of all results from each criterion
 
 Returns: A L<Rit::Base::List> of found L<Rit::Base::Arc>s
 
@@ -1184,8 +1190,6 @@ Returns: A L<Rit::Base::List> of found L<Rit::Base::Arc>s
 sub find_arcs
 {
     my( $node, $props, $args ) = @_;
-
-    # Returns the union of all results from each criterion
 
     unless( ref $props and (ref $props eq 'ARRAY' or
 			   ref $props eq 'Rit::Base::List' )
@@ -1204,6 +1208,7 @@ sub find_arcs
 	}
 	elsif( ref($crit) eq 'HASH' )
 	{
+	    confess "CHECKME";
 	    foreach my $pred ( keys %$crit )
 	    {
 		my $val = $crit->{$pred};
