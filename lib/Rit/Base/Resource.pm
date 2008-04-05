@@ -7162,7 +7162,7 @@ sub update_valtype
     my( $arc, $err ) = $revarcs->get_first;
     while(!$err)
     {
-	next is $arc->is_removed; # Found a case of arc with undef valtype
+	next if $arc->is_removed; # Found a case of arc with undef valtype
 	unless( $valtype->equals($arc->valtype) )
 	{
 	    $arc->set_value( $arc->value, $newargs );
