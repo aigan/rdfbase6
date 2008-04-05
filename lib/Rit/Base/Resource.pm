@@ -5166,7 +5166,12 @@ sub first_bless
 #    cluck "HERE" if grep{$node->{'id'}==$_}(3595, 2223);
 
     my( $class ) = ref $node;
-    if( $_[0] and  ($_[0]->{'id'}!=$ID) ) # $valtype is not $C_resource?
+
+    # If we trust all valtypes to be correct:
+#    if( $_[0] and  ($_[0]->{'id'}!=$ID) ) # $valtype is not $C_resource?
+
+    # Else, no fancy stuff... Take the longer route
+    if( 0 )
     {
 	confess("Not a node '$_[0]'") unless UNIVERSAL::isa($_[0],"Rit::Base::Resource");
 	$class = $_[0]->instance_class;
