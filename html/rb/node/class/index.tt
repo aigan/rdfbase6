@@ -160,7 +160,7 @@
    [% domains = node.revarc_list('domain') %]
    [% IF domains %]
    <tr>
-      <td>DOMAINs</td>
+      <td>is DOMAIN for predicate</td>
       <td>
       [% FOREACH arc IN domains.sorted('subj.desig') %]
       [% arc.subj.wu_jump %]
@@ -173,7 +173,7 @@
    [% ranges = node.revarc_list('range') %]
    [% IF ranges %]
    <tr>
-      <td>RANGEs</td>
+      <td>is RANGE for predicate</td>
       <td>
       [% FOREACH arc IN ranges.sorted('subj.desig') %]
       [% arc.subj.wu_jump %]
