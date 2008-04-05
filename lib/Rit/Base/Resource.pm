@@ -4955,23 +4955,23 @@ sub find_class
 
     my $islist = $node->list('is',undef,['active']);
 #    debug "got islist for $id:\n".datadump($islist->{'_DATA'},1);
-    my @classes;
-    my( $elem, $islist_error ) = $islist->get_first;
-    my $first_is = $elem;
+    my @pmodule_nodes;
+    my( $class, $islist_error ) = $islist->get_first;
+    my @valtypes;
     while(! $islist_error )
     {
-	debug "Looking at $id is $elem->{id}" if $DEBUG;
-	unless( $elem->{'id'} )
+	debug "Looking at $id is $class->{id}" if $DEBUG;
+	unless( $class->{'id'} )
 	{
-	    cluck "Should not bee possible. Element must be a class! ".datadump($elem,1);
+	    cluck "Should not bee possible. Element must be a class! ".datadump($class,1);
 	    die;
 	    next;
 	}
 
-	if( $elem->{'id'} == $Rit::Base::Literal::Class::ID )
+	if( $class->{'id'} == $Rit::Base::Literal::Class::ID )
 	{
-	    $node->{'valtype'} = $elem;
-	    debug "Setting2 valtype for $id to $elem->{id}" if $DEBUG;
+	    $node->{'valtype'} = $class;
+	    debug "Setting2 valtype for $id to $class->{id}" if $DEBUG;
 	    return "Rit::Base::Literal::Class";
 	}
 
@@ -4980,17 +4980,18 @@ sub find_class
 	{
 	    # This pre-caching may be a litle slower in some cases,
 	    # but seems to be a litle faster over all
-	    $elem->initiate_rel; ### PRE-CACH!
+	    $class->initiate_rel; ### PRE-CACH!
 	}
 
 	my $p_chbpm = Rit::Base::Pred->
 	  get_by_label('class_handled_by_perl_module');
 
-	my $class_list = $elem->list($p_chbpm,undef,['active']);
-	my( $class, $class_list_error ) = $class_list->get_first;
-	while(! $class_list_error )
+	my $pmodule_node_list = $class->list($p_chbpm,undef,['active']);
+	my( $pmodule_node, $pmodule_node_list_error )
+	  = $pmodule_node_list->get_first;
+	while(! $pmodule_node_list_error )
 	{
-	    my $pkg = $class->first_prop($p_code,undef,['active'])->plain;
+	    my $pkg = $pmodule_node->first_prop($p_code,undef,['active'])->plain;
 	    debug "  found $pkg" if $DEBUG;
 
 	    # Let confident classes handle themself
@@ -5013,38 +5014,46 @@ sub find_class
 		return $pkg->use_class;
 	    }
 
-	    debug "  Handled by $class" if $DEBUG;
-	    push @classes, $class;
+	    debug "  Handled by ".$pmodule_node->sysdesig if $DEBUG;
+	    push @pmodule_nodes, $pmodule_node;
+	    push @valtypes, $class;
 
 	    # continue!
-	    ( $class, $class_list_error ) = $class_list->get_next;
+	    ( $pmodule_node, $pmodule_node_list_error )
+	      = $pmodule_node_list->get_next;
 	}
     }
     continue
     {
-	( $elem, $islist_error ) = $islist->get_next;
+	( $class, $islist_error ) = $islist->get_next;
     };
 
 
     my $package = "Rit::Base::Resource"; # Default
     my $valtype = $Rit::Base::Constants::Label{'resource'};
 
-    if( $classes[0] )
+    if( $pmodule_nodes[0] )
     {
 	# Class and Valtype should be defined in pair, but we check
 	# both in case of bugs...
-	my $key = join '_', sort map $_->id, @classes;
+
+	# The key consists of the id's of the nodes representing the
+	# perl modules for the class handling instances of the valtype
+	# class. In other words: the key is NOT the valtype id.
+
+	my $key = join '_', sort map $_->id, @pmodule_nodes;
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
 	    ($node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key })
 	  )
 	{
 #	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
 	    debug "Setting3 valtype for $id to $node->{valtype}{id}" if $DEBUG;
+	    debug "Based on the key $key" if $DEBUG;
 	    return $package;
 	}
 
 	my( @classnames );
-	foreach my $class ( @classes )
+	foreach my $class ( @pmodule_nodes )
 	{
 	    my $classname = $class->first_prop($p_code,undef,['active'])->plain;
 	    unless( $classname )
@@ -5083,7 +5092,7 @@ sub find_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
-	    $valtype = $first_is; # The first 'is' for the node
+	    $valtype = $valtypes[0];
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
