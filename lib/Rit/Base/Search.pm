@@ -1112,7 +1112,8 @@ sub execute
 #	debug $search->sql_sysdesig;
 
 	my $req = $Para::Frame::REQ;
-	$req->note("This search may take a some time!");
+#	$req->note("This search may take some time!");
+	$req->note("Searching...!");
 	my $fork = $req->create_fork;
 	if( $fork->in_child )
 	{
