@@ -22,6 +22,7 @@ use utf8;
 use Carp qw( cluck confess longmess );
 use Digest::MD5 qw( md5_base64 ); #);
 use Scalar::Util qw( looks_like_number refaddr );
+use Encode; # decode FB_QUIET
 
 BEGIN
 {
@@ -165,6 +166,15 @@ sub new_from_db
 	    unless( utf8::decode( $val ) )
 	    {
 		debug 0, "Failed to convert to UTF8!";
+		my $res;
+		while( length $val )
+		{
+		    $res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
+		    $res .= substr($val, 0, 1, "") if length $val;
+		}
+		$val = $res;
+		debug "Conversion result: $val";
+
 #		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
 	    }
 	}
@@ -252,7 +262,7 @@ sub parse
 	    my $res;
 	    while( length $val_mod )
 	    {
-		$res .= decode("UTF-8", $val_mod, Encode::FB_QUIET);
+		$res .= Encode::decode("UTF-8", $val_mod, Encode::FB_QUIET);
 		$res .= substr($val_mod, 0, 1, "") if length $val_mod;
 	    }
 	    $val_mod = $res;
