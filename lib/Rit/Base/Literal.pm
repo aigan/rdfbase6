@@ -565,6 +565,27 @@ sub this_valtype
 
 #######################################################################
 
+=head3 this_valtype_reset
+
+  $lit->this_valtype_reset()
+
+For re-evaluating the valtype of the literal. This does nothing, since
+we needs to keep the given valtype. But the Resource equivalent does a
+re-evaluation.
+
+Returns: -
+
+See also: L<Rit::Base::Resource/this_valtype_reset>
+
+=cut
+
+sub this_valtype_reset
+{
+    return;
+}
+
+#######################################################################
+
 =head3 this_coltype
 
   $lit->this_coltype()
