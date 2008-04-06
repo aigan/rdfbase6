@@ -5918,7 +5918,7 @@ sub initiate_cache
     {
 	if( $UNSAVED{$node->{'id'}} )
 	{
-	    debug "CHANGES of node $node->{id} not yet saved";
+#	    debug "CHANGES of node $node->{id} not yet saved";
 	}
 	else
 	{
@@ -7026,6 +7026,26 @@ sub this_valtype
     }
 
     return $_[0]->{'valtype'};
+}
+
+
+#########################################################################
+
+=head2 this_valtype_reset
+
+  $node->this_valtype_reset( \%args )
+
+For re-evaluating the valtype of the node.
+
+Returns: -
+
+See also: L<Rit::Base::Literal/this_valtype_reset>
+
+=cut
+
+sub this_valtype_reset
+{
+    $_[0]->{'valtype'} = undef;
 }
 
 
