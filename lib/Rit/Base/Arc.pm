@@ -2407,7 +2407,7 @@ sub check_valtype
     my $old_val = $arc->value;
 
     # Reset valtype cache
-    $old_val->{'valtype'} = undef;
+    $old_val->this_valtype_reset;
 
     my $pred = $arc->pred;
     my $arc_valtype = $arc->valtype;
@@ -2493,9 +2493,10 @@ sub check_valtype
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
 		debug "   to ".$old_valtype->sysdesig;
-		debug "Trusting new given valtype";
-		confess "or not...";
+#		debug "Trusting new given valtype";
+#		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
+		die "CHECKME";
 	    }
 	    else
 	    {
@@ -3412,6 +3413,7 @@ sub set_value
 	debug "  vnode old: ".$vnode_old->sysdesig;
 	debug "coltype old: ".$coltype_old;
 	debug "  value_new: ".$value_new->sysdesig();
+	debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
 	debug "   type new: ".$valtype_new->sysdesig;
 	debug "  vnode new: ".$vnode_new->sysdesig;
 	debug "coltype new: ".$coltype_new;
