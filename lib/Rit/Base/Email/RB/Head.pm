@@ -71,7 +71,7 @@ sub new_by_email
 
     $head->header_set('to', @to_uniq );
 
-    debug "Creating TO header field with @to_uniq";
+    debug 2, "Creating TO header field with @to_uniq";
 
     return $head;
 }
