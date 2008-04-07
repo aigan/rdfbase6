@@ -584,6 +584,7 @@ sub vacuum_pred_arcs
 
     my $remove_faulty = $args->{'remove_faulty'} || 0;
 
+    Rit::Base::Arc->lock;
     my( $arc, $error ) = $arcs->get_first;
     while(! $error )
     {
@@ -604,6 +605,7 @@ sub vacuum_pred_arcs
     {
 	( $arc, $error ) = $arcs->get_next;
     };
+    Rit::Base::Arc->unlock;
 
     return;
 }
