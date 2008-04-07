@@ -48,6 +48,7 @@ WriteMakefile(
 	          'JSON'                       => 2.04,
 	          'GraphViz'                   => 2.02,
 	          'DateTime::Incomplete'       => 0.02,
+	          'Email::Classifier'          => 0.01,
 	      },
 	      'dist'          =>
 	      {
