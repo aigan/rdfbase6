@@ -3401,7 +3401,7 @@ sub set_value
 	else
 	{
 	    debug $vnode_new->sysdesig." is not a value node anymore";
-	    $vnode_new = undef;
+	    $vnode_new = is_undef;
 	}
     }
 
