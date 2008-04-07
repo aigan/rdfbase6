@@ -800,7 +800,7 @@ sub active_arcs
     };
 
     my $pred_id = $pred->id;
-    my $st = "select * from arc where pred=$pred_id and active is true";
+    my $st = "select * from arc where pred=$pred_id and active is true order by ver";
     my $sth = $Rit::dbix->dbh->prepare($st) or die;
     $sth->execute() or die;
 
