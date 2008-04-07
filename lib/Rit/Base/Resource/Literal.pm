@@ -118,8 +118,8 @@ sub init
 	}
     }
 
-    $node->{'revarc_active'} = \@revarc_active;
-    $node->{'revarc_inactive'} = \@revarc_inactive;
+    $node->{'lit_revarc_active'} = \@revarc_active;
+    $node->{'lit_revarc_inactive'} = \@revarc_inactive;
 
     return $node;
 }
@@ -169,20 +169,20 @@ sub literal_list
     {
 #	debug "  active and inactive";
 	@arcs = grep $_->meets_arclim($arclim),
-	  @{$node->{'revarc_active'}},
-	    @{$node->{'revarc_inactive'}};
+	  @{$node->{'lit_revarc_active'}},
+	    @{$node->{'lit_revarc_inactive'}};
     }
     elsif( $active )
     {
 #	debug "  active";
 	@arcs = grep $_->meets_arclim($arclim),
-	  @{$node->{'revarc_active'}};
+	  @{$node->{'lit_revarc_active'}};
     }
     elsif( $inactive )
     {
 #	debug "  inactive";
 	@arcs = grep $_->meets_arclim($arclim),
-	  @{$node->{'revarc_inactive'}};
+	  @{$node->{'lit_revarc_inactive'}};
     }
 
     if( my $uap = $args->{unique_arcs_prio} )
@@ -327,7 +327,7 @@ sub revlist
 
 	if( $active )
 	{
-	    foreach my $arc (@{$node->{'revarc_active'}})
+	    foreach my $arc (@{$node->{'lit_revarc_active'}})
 	    {
 		if( $arc->pred->equals($pred) )
 		{
@@ -338,7 +338,7 @@ sub revlist
 
 	if( $inactive )
 	{
-	    foreach my $arc (@{$node->{'revarc_inactive'}})
+	    foreach my $arc (@{$node->{'lit_revarc_inactive'}})
 	    {
 		if( $arc->pred->equals($pred) )
 		{
@@ -397,7 +397,7 @@ sub revlist_preds
     my %preds_name;
     if( $active )
     {
-	foreach my $arc (@{$node->{'revarc_active'}})
+	foreach my $arc (@{$node->{'lit_revarc_active'}})
 	{
 	    if( $arc->meets_arclim($arclim) )
 	    {
@@ -408,7 +408,7 @@ sub revlist_preds
 
     if( $inactive )
     {
-	foreach my $arc (@{$node->{'revarc_inactive'}})
+	foreach my $arc (@{$node->{'lit_revarc_inactive'}})
 	{
 	    if( $arc->meets_arclim($arclim) )
 	    {
@@ -498,7 +498,7 @@ sub revarc_list
 
 	if( $active )
 	{
-	    foreach my $arc (@{$node->{'revarc_active'}})
+	    foreach my $arc (@{$node->{'lit_revarc_active'}})
 	    {
 		if( $arc->pred->equals($pred) )
 		{
@@ -509,7 +509,7 @@ sub revarc_list
 
 	if( $inactive )
 	{
-	    foreach my $arc (@{$node->{'revarc_inactive'}})
+	    foreach my $arc (@{$node->{'lit_revarc_inactive'}})
 	    {
 		if( $arc->pred->equals($pred) )
 		{
@@ -546,12 +546,12 @@ sub revarc_list
 	my @arcs;
 	if( $active )
 	{
-	    push @arcs, @{$node->{'revarc_active'}};
+	    push @arcs, @{$node->{'lit_revarc_active'}};
 	}
 
 	if( $inactive )
 	{
-	    push @arcs, @{$node->{'revarc_inactive'}};
+	    push @arcs, @{$node->{'lit_revarc_inactive'}};
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
