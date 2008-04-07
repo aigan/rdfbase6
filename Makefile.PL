@@ -47,6 +47,7 @@ WriteMakefile(
 	          'List::Util'                 => 1.18,
 	          'JSON'                       => 2.04,
 	          'GraphViz'                   => 2.02,
+	          'DateTime::Incomplete'       => 0.02,
 	      },
 	      'dist'          =>
 	      {
