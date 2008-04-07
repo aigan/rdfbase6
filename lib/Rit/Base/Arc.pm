@@ -3394,8 +3394,15 @@ sub set_value
 
     if( $vnode_new )
     {
-#	debug "Setting value_new vnode";
-	$value_new->node_set($vnode_new);
+	if( UNIVERSAL::isa($value_new,'Rit::Base::Literal') )
+	{
+	    $value_new->node_set($vnode_new);
+	}
+	else
+	{
+	    debug $vnode_new->sysdesig." is not a value node anymore";
+	    $vnode_new = undef;
+	}
     }
 
 
