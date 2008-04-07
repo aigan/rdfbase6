@@ -1,8 +1,7 @@
 NODES
 is	1
 scof	1
-has_member	1
-value	6
+member_of	1
 resource	
 name	5
 description	5
@@ -10,7 +9,6 @@ admin_comment	5
 name_short	5
 is_of_language	1
 code	5
-created	4
 note	5
 ritbase	
 sysadmin_group	
@@ -42,15 +40,19 @@ has	1
 url_part	5
 site_code	5
 has_translation	5
+seen_by	1
+unseen_by	1
+no_auto_show	2
+is_mandatory	2
 
 
 ARCS
+resource	is	class
 is	is	predicate
 is	range	class
 scof	is	predicate
 scof	range	class
-has_member	is	predicate
-value	is	predicate
+member_of	is	predicate
 name	range	text
 name	is	predicate
 description	range	textbox
@@ -66,8 +68,6 @@ has_translation	is	predicate
 has_translation	range	text
 code	range	text
 code	is	predicate
-created	range	date
-created	is	predicate
 note	range	text
 note	is	predicate
 domain	is	predicate
@@ -144,6 +144,18 @@ url_part	admin_comment		Part for constructing unique URLs
 url_part	range	url
 site_code	is	predicate
 site_code	range	text
+unseen_by	is	predicate
+unseen_by	range	login_account
+unseen_by	admin_comment		Persons that hasn't seen the CURRENT version of this node
+seen_by	is	predicate
+seen_by	range	login_account
+seen_by	admin_comment		Says who saw what then
+no_auto_show	is	predicate
+no_auto_show	domain	predicate
+no_auto_show	range	bool
+is_mandatory	is	predicate
+is_mandatory	domain	predicate
+is_mandatory	range	bool
 
 111	is	syllogism
 111	pred_1	is
@@ -191,6 +203,11 @@ url	class_handled_by_perl_module	108
 website_url	class_handled_by_perl_module	109
 109	is	class_perl_module
 109	code		Rit::Base::Literal::URL::Website
+
+email	is	class
+email	class_handled_by_perl_module	114
+114	is	class_perl_module
+114	code		Rit::Base::Email
 
 
 
