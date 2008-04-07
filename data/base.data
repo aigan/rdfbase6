@@ -48,7 +48,10 @@ is_mandatory	2
 
 ARCS
 resource	is	class
+class	is	class
 is	is	predicate
+login_account	is	class
+system_access_right	is	class
 is	range	class
 scof	is	predicate
 scof	range	class

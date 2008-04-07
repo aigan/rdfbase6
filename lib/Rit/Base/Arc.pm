@@ -867,12 +867,12 @@ sub create
     # Sanity check
     if( $subj and $subj->id != $arc->subj->id )
     {
-	confess "Creation of arc arc->{id} resulted in confused subj: ".
+	confess "Creation of arc $arc->{id} resulted in confused subj: ".
 	  datadump($subj,2).datadump($arc->subj,2);
     }
     if( $value_obj and not $value_obj->equals($arc->value) )
     {
-	confess "Creation of arc arc->{id} resulted in confused value: ".
+	confess "Creation of arc $arc->{id} resulted in confused value: ".
 	  datadump($value_obj,2).datadump($arc->value,2);
     }
 

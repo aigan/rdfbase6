@@ -293,6 +293,9 @@ sub setup_db
     }
 
     $dbh->commit;
+    $Para::Frame::DEBUG = $old_debug;
+    $ARGV[0] = 'vacuum_all'; # For not vacuuming recursively
+
 
     # Initialization of constants and valtypes
     Rit::Base::Literal::Class->on_startup();
@@ -318,7 +321,9 @@ sub setup_db
 
     foreach my $arc_rec (@arc_recs)
     {
+	debug "  arc ".$arc_rec->{ver};
 	my $arc = Rit::Base::Arc->get_by_rec_and_register($arc_rec);
+	debug "  ".$arc->sysdesig;
 	$arc->create_check;
     }
 
@@ -330,8 +335,7 @@ sub setup_db
     $Rit::Base::IN_STARTUP = 0;
 
     print "Done!\n";
-    $Para::Frame::DEBUG = $old_debug;
- 
+
    return;
 }
 
