@@ -53,6 +53,9 @@ sub setup_db
     my $now = DateTime::Format::Pg->format_datetime(now);
 
 
+    my $old_debug = $Para::Frame::DEBUG;
+    $Para::Frame::DEBUG = 0;
+
 #    my $cnt = $dbix->get_lastval('node_seq');
 #    debug "First node will have number $cnt";
 
@@ -327,8 +330,9 @@ sub setup_db
     $Rit::Base::IN_STARTUP = 0;
 
     print "Done!\n";
-
-    return;
+    $Para::Frame::DEBUG = $old_debug;
+ 
+   return;
 }
 
 
