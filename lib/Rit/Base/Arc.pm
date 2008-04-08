@@ -766,7 +766,9 @@ sub create
     {
 	if( $pred->objtype )
 	{
-	    my $val_valtype = $value_obj->this_valtype;
+	    # Fall back on 'resource' for Undef value_obj
+	    my $val_valtype = $value_obj->this_valtype ||
+	      Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
 
 	    if( $val_valtype->id == $Rit::Base::Resource::ID )
 	    {
@@ -2412,7 +2414,8 @@ sub check_valtype
     my $pred = $arc->pred;
     my $arc_valtype = $arc->valtype;
     my $pred_valtype = $pred->valtype;
-    my $old_valtype = $old_val->this_valtype;
+    # Falls back on arc_valtype in case of Undef
+    my $old_valtype = $old_val->this_valtype || $arc_valtype;
 
     if( debug > 2 )
     {
@@ -3053,7 +3056,7 @@ sub remove
 	}
 	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
 	{
-	    confess('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
+	    throw('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
 	}
 
 	# Can this arc be infered?
@@ -3406,9 +3409,10 @@ sub set_value
     }
 
 
-    my $coltype_new = $value_new->this_coltype;
+    # Falling back on old coltype/valtype in case of an Undef value
+    my $coltype_new = $value_new->this_coltype || $coltype_old;
     my $valtype_old = $arc->valtype;
-    my $valtype_new = $value_new->this_valtype;
+    my $valtype_new = $value_new->this_valtype || $valtype_old;
     my $objtype_old = ($coltype_old eq 'obj')? 1 : 0;
     my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
 
@@ -5046,8 +5050,8 @@ sub validate_range
 
 
 
-
-    my $val_valtype = $value_obj->this_valtype;
+    # Falling back on arc valtype in case of Undef
+    my $val_valtype = $value_obj->this_valtype || $arc->valtype;
 
     if( $val_valtype->id == $Rit::Base::Resource::ID )
     {
