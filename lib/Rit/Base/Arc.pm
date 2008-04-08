@@ -3056,7 +3056,8 @@ sub remove
 	}
 	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
 	{
-	    throw('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
+	    # TODO: FIXME, RG::Action::pr_update can't handle this...
+	    #throw('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
 	}
 
 	# Can this arc be infered?
