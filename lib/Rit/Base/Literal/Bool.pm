@@ -27,7 +27,7 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
-use Para::Frame::Widget qw( checkbox label_from_params );
+use Para::Frame::Widget qw( checkbox label_from_params hidden );
 
 use Rit::Base::Utils qw( parse_propargs );
 
@@ -49,8 +49,6 @@ Display checkbox for updating...
 
 sub wuirc
 {
-    debug "Bool wuirc.";
-
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
@@ -93,8 +91,10 @@ sub wuirc
     {
 	my $arclist = $subj->arc_list($predname, undef, $args);
 
+
 	while( my $arc = $arclist->get_next_nos )
 	{
+	    $out .= hidden('check_arc_'. $arc->id, $arc->value->plain);
 	    $out .= checkbox($args->{'id'}, 1, $arc->value->plain) .
 	      $arc->edit_link_html;
 
@@ -118,8 +118,6 @@ sub wuirc
 
 sub as_html
 {
-    debug "Bool wuirc.";
-
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
