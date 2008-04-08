@@ -37,6 +37,7 @@ BEGIN
 
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop ); #);
 use Rit::Base::Resource;
