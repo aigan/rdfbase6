@@ -713,6 +713,22 @@ sub wuirc
 
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
+    my $onchange = '';
+    my $pattern = $range->has_input_pattern;
+    if( $pattern )
+    {
+	my $pattern_errmsg = CGI->escapeHTML( $range->has_input_pattern_errmsg->loc );
+
+	# javascript through html escaping...
+#	debug "Pattern before escape: ". $pattern;
+	$pattern =~ s/\\/\\\\/g;
+	$pattern =~ s/\$/\\\$/g;
+#	debug "Pattern after escape: ". $pattern;
+
+	$onchange = 'check_pattern(\''. $pattern .'\', this.value, \''.
+	  $pattern_errmsg .'\')';
+    }
+
     my $tb = $R->get({name=>'textbox', scof=>'text'});
     if( ($args->{'rows'}||0) > 1 or
 	$range->equals($tb) or
@@ -851,6 +867,7 @@ sub wuirc
 					       version => $version,
 					       image_url => $args->{'image_url'},
 					       id => $args->{'id'},
+					       onchange => $onchange,
 					      });
 		    }
 
@@ -888,7 +905,8 @@ sub wuirc
 		 rows => $rows,
 		 maxlength => $args->{'maxlength'},
 		 id => $args->{'id'},
-		 image_url => $args->{'image_url'}
+		 image_url => $args->{'image_url'},
+		 onchange => $onchange,
 		};
 		if( $arc->indirect )
 		{
@@ -939,6 +957,7 @@ sub wuirc
 			       maxh => $maxh,
 			       id => $args->{'id'},
 			       image_url => $args->{'image_url'},
+			       onchange => $onchange,
 			      });
 
 	foreach my $key ( keys %$dc )

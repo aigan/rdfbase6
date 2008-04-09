@@ -381,34 +381,28 @@ var PagePart = Class.create(
 });
 
 
-
-function check_pattern(pattern, text)
+// check_pattern(pattern, text, errmsg)
+//
+// Used from onchange on text-inputs, with a pattern to be checked...
+//   pattern - regexp pattern (make sure to escape it properly!
+//   text    - preferrably this.value
+//   errmsg  - The message to show if pattern is NOT matched.
+//   debug   - Alert's more info.
+//
+function check_pattern(pattern, text, errmsg, debug)
 {
-    if(typeof text != "undefined"){
-	if (text.search(pattern) == -1)
+    if(debug)
+	alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
+    if(typeof text == "string" && text.length > 0){
+	if (text.search(pattern) == -1){
+	    alert('[% loc('Input error') %]\n'+ errmsg);
 	    return false;
-	else
+	}
+	else {
+	    //alert("We have a match!  Pattern gave: "+ text.search(pattern));
 	    return true;
+	}
     }
+    //alert("Winning by default - no string!");
     return true;
-}
-function rb_init()
-{
-    document.observe("dom:loaded", function() {
-	    var fform = \$('f');
-
-	    fform.getInputs('text').each( function(elem) {
-		    if( elem.getAttribute('pattern') ) {
-			alert('adding pattern matching');
-			elem.observe('onblur', function(event){
-				var elem = Event.element(event);
-				if( !check_pattern(elem.getAttribute('pattern'),
-						   elem.getValue) ) {
-				    alert('Pattern mismatch: '+ elem.getAttribute('pattern')
-					  +' ne '+ elem.getValue);
-				}
-			    });
-		    }
-		});
-	});
 }
