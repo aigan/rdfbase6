@@ -341,6 +341,7 @@ sub set_arc
 
     $lit->{'arc'} = $arc;
     $lit->{'node'} = undef;
+    # Called from Rit::Base::Arc/register_with_nodes
 
     return $arc;
 }
