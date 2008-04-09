@@ -1600,12 +1600,16 @@ sub empty
 {
     my( $node ) = @_;
 
+    my $DEBUG = 0;
+    debug "node $node->{id} empty?" if $DEBUG;
     if( $node->{'new'} )
     {
+	debug "  new" if $DEBUG;
 	return 1;
     }
     elsif( scalar keys(%{$node->{'arc_id'}}) )
     {
+	debug "  has arcs" if $DEBUG;
 	return 0;
     }
     else
@@ -1613,9 +1617,11 @@ sub empty
 	$node->initiate_node;
 	if( $node->{'initiated_node'} > 1 )
 	{
+	    debug "  initiated_node" if $DEBUG;
 	    return 0;
 	}
 
+	debug "  checking DB" if $DEBUG;
 	my $st = "select count(ver) from arc where subj=? or obj=? or ver=? or id=?";
 	my $dbh = $Rit::dbix->dbh;
 	my $sth = $dbh->prepare($st);
@@ -1624,6 +1630,7 @@ sub empty
 	my $res = 1;
 	if( $sth->fetchrow_array )
 	{
+	    debug "  found data in db" if $DEBUG;
 	    $res = 0;
 	}
 	$sth->finish;
@@ -7151,6 +7158,8 @@ sub update_seen_by
 		 });
 
     $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
+
+#    debug sprintf "Updated %s --seen_by--> %s ", $node->sysdesig, $user->sysdesig;
 
     return $user;
 }
