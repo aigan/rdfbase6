@@ -542,6 +542,16 @@ sub create
 
 	debug sprintf("value_obj is now %s",$value_obj->sysdesig) if $DEBUG;
 
+	if( UNIVERSAL::isa( $value_obj, 'Rit::Base::Literal' ) )
+	{
+	    if( my $vnode = $value_obj->node )
+	    {
+		# Let given value_node override that of the value
+		$props->{'value_node'} ||= $vnode;
+	    }
+	}
+
+
 	if( $value_obj->defined )
 	{
 	    # Coltype says how the value should be stored.  The predicate
@@ -4552,6 +4562,12 @@ sub register_with_nodes
     # Nodes not new anymore... Not empty
     delete $subj->{'new'};
     delete $value->{'new'};
+    if( $arc->{'value_node'} )
+    {
+	# Not empty now, since coupled to an arc
+	delete $arc->value_node->{'new'};
+    }
+
 
     return $arc;
 }
