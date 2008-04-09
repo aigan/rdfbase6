@@ -962,13 +962,18 @@ sub wuirc
 
 	foreach my $key ( keys %$dc )
 	{
-	    my $vallist = $R->find_by_anything($dc->{$key});
+	    my $pred = Rit::Base::Pred->get($key);
+#	    debug "  default cerate: $key";
+#	    debug "    looking up ".$dc->{$key};
+	    my $vallist = $R->find_by_anything($dc->{$key},
+					       {valtype=>$pred->valtype});
 	    foreach my $val ( $vallist->as_array )
 	    {
+#		debug "    $val";
 		if( UNIVERSAL::isa( $val, "Rit::Base::Resource" ) )
 		{
 		    my $field = build_field_key({
-						 pred => $key,
+						 pred => $pred,
 						 subj => $vnode,
 						 if => 'subj',
 						 parse => 'id',
@@ -978,7 +983,7 @@ sub wuirc
 		else
 		{
 		    my $field = build_field_key({
-						 pred => $key,
+						 pred => $pred,
 						 subj => $vnode,
 						 if => 'subj',
 						});

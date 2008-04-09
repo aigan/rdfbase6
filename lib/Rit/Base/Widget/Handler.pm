@@ -1145,6 +1145,7 @@ sub handle_query_arc_value
 		if( $lang )
 		{
 		    debug(1, "Making value-node with langcode $lang");
+		    # TODO: This section could be simplified
 
 		    my $language = $R->get({
 					    code => $lang,
@@ -1153,6 +1154,7 @@ sub handle_query_arc_value
 		      or die("Erronuous lang-code $lang");
 
 		    my $value_node = Rit::Base::Literal::String->new( $value );
+		    $value_node->node_set($vnode) if $vnode;
 		    $subj->add({ $pred_name => $value_node }, $args);
 		    $value_node->add({
 				      is_of_language => $language,
@@ -1166,6 +1168,7 @@ sub handle_query_arc_value
 			      subj    => $subj->id,
 			      pred    => $pred_id,
 			      value   => $value,
+			      value_node => $vnode,
 			     }, $args );
 		}
 	    }
