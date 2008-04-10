@@ -930,7 +930,12 @@ sub wuirc
     }
     else # no arc
     {
-	my $default = $class->new($args->{'default_value'}, $range);
+	my $def_value = $args->{'default_value'};
+	if( UNIVERSAL::can($def_value, 'plain') )
+	{
+	    $def_value = $def_value->plain;
+	}
+	my $default = $class->new($def_value, $range);
 
 	my $props =
 	{
