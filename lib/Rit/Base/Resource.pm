@@ -5260,51 +5260,6 @@ sub on_class_perl_module_change
 
 #########################################################################
 
-=head2 code_class
-
-  $node->code_class()
-
-List the class of the node
-
-=cut
-
-sub code_class
-{
-    my( $node ) = @_;
-
-    return Para::Frame::Code::Class->get($node);
-}
-
-
-#########################################################################
-
-=head2 code_class_desig
-
-  $node->code_class_desig()
-
-Return a string naming the class of the node suitable for Rit::Base.
-
-=cut
-
-sub code_class_desig
-{
-    my( $node ) = @_;
-
-    my $cl = Para::Frame::Code::Class->get($node);
-    my $cl_name = $cl->name;
-    if( $cl_name =~ /^Rit::Base::Metaclass/ )
-    {
-	return join ", ", map $_->name, @{$cl->parents};
-    }
-    else
-    {
-	return $cl_name;
-    }
-}
-
-
-#########################################################################
-
 =head2 rebless
 
   $node->rebless( \%args )
