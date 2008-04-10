@@ -470,6 +470,9 @@ sub on_arc_add
 {
     my( $pred, $arc, $pred_name, $args_in ) = @_;
 
+    # TODO: This will be called for the arc range in vacuum of the
+    # pred. It's then not a new range, but vacuum of an old.
+
     if( $pred_name eq 'range' )
     {
 	$pred->on_new_range($args_in);
