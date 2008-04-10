@@ -112,6 +112,10 @@ sub parse
     {
 	$val = undef;
     }
+    elsif( UNIVERSAL::isa $val, "Rit::Base::Literal" )
+    {
+	$val = $val->plain;
+    }
     else
     {
 	confess "Can't parse $val";

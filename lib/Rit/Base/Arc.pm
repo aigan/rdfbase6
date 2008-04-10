@@ -2426,6 +2426,16 @@ sub check_valtype
     my $pred_valtype = $pred->valtype;
     # Falls back on arc_valtype in case of Undef
     my $old_valtype = $old_val->this_valtype || $arc_valtype;
+    my $new_valtype;
+    if( $pred->objtype )
+    {
+	$new_valtype = $old_valtype;
+    }
+    else
+    {
+	$new_valtype = $pred_valtype;
+    }
+
 
     if( debug > 2 )
     {
@@ -2433,15 +2443,16 @@ sub check_valtype
 	debug "Pred  valtype is ".$pred_valtype->sysdesig;
 	debug "Value         is ".$old_val->sysdesig;
 	debug "Value valtype is ".$old_valtype->sysdesig;
+	debug "New   valtype is ".$new_valtype->sysdesig;
     }
 
 
-    if( $arc_valtype->equals( $old_valtype ) )
+    if( $arc_valtype->equals( $new_valtype ) )
     {
 #	debug "  same valtype";
 	return 0;
     }
-    elsif( $arc_valtype->scof( $old_valtype ) )
+    elsif( $arc_valtype->scof( $new_valtype ) )
     {
 	if( $arc->objtype )
 	{
@@ -2461,7 +2472,7 @@ sub check_valtype
 	debug "TRANSLATION OF VALTYPE";
 	debug "  for ".$arc->sysdesig;
 	debug " from ".$arc_valtype->sysdesig;
-	debug "   to ".$old_valtype->sysdesig;
+	debug "   to ".$new_valtype->sysdesig;
     }
 
     my $newargs =
@@ -2469,14 +2480,14 @@ sub check_valtype
      'activate_new_arcs' => $arc->active,
      'force_set_value'   => 1,
      'force_set_value_same_version' => $arc->active,
-     'valtype' => $old_valtype,
+     'valtype' => $new_valtype,
     };
 
 
     if( $arc->objtype )
     {
 	my $c_resource = Rit::Base::Constants->get('resource');
-	if( $old_valtype->equals( $c_resource ) )
+	if( $new_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
 	    debug 3, "  pred takes any obj";
@@ -2492,7 +2503,7 @@ sub check_valtype
 
 	if( $pred_coltype eq 'obj' )
 	{
-	    if( $old_val->is($old_valtype) )
+	    if( $old_val->is($new_valtype) )
 	    {
 		# Old value in range
 		debug 3, "old value in range";
@@ -2505,7 +2516,7 @@ sub check_valtype
 		debug "TRANSLATION OF VALTYPE";
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$old_valtype->sysdesig;
+		debug "   to ".$new_valtype->sysdesig;
 #		debug "Trusting new given valtype";
 #		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
@@ -2516,7 +2527,7 @@ sub check_valtype
 		debug "TRANSLATION OF VALTYPE";
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$old_valtype->sysdesig;
+		debug "   to ".$new_valtype->sysdesig;
 
 		$Para::Frame::REQ->session->set_debug(3);
 		# Reset valtype cache
