@@ -263,7 +263,7 @@ sub update_by_query
     {
 	if( $param =~ /^(arc|prop)_.*$/ )
 	{
-	    next if $q->param("check_$param"); #handled by check below
+#	    next if $q->param("check_$param"); #handled by check below
 	    push @arc_params, $param;
 	}
 	elsif( $param =~ /^row_.*$/ )
