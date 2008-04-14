@@ -390,7 +390,6 @@ sub update_by_query
 
     foreach my $arc ( $res->deathrow_list )
     {
-	die "CHECKME";
 	$arc->remove( $args );
     }
 
