@@ -4962,9 +4962,8 @@ sub find_class
 
     my $islist = $node->list('is',undef,['active']);
 #    debug "got islist for $id:\n".datadump($islist->{'_DATA'},1);
-    my @pmodule_nodes;
     my( $class, $islist_error ) = $islist->get_first;
-    my @valtypes;
+    my @pmodules;
     while(! $islist_error )
     {
 	debug "Looking at $id is $class->{id}" if $DEBUG;
@@ -5022,8 +5021,7 @@ sub find_class
 	    }
 
 	    debug "  Handled by ".$pmodule_node->sysdesig if $DEBUG;
-	    push @pmodule_nodes, $pmodule_node;
-	    push @valtypes, $class;
+	    push @pmodules, [$pmodule_node,$class];
 
 	    # continue!
 	    ( $pmodule_node, $pmodule_node_list_error )
@@ -5039,7 +5037,7 @@ sub find_class
     my $package = "Rit::Base::Resource"; # Default
     my $valtype = $Rit::Base::Constants::Label{'resource'};
 
-    if( $pmodule_nodes[0] )
+    if( $pmodules[0] )
     {
 	# Class and Valtype should be defined in pair, but we check
 	# both in case of bugs...
@@ -5048,7 +5046,9 @@ sub find_class
 	# perl modules for the class handling instances of the valtype
 	# class. In other words: the key is NOT the valtype id.
 
-	my $key = join '_', sort map $_->id, @pmodule_nodes;
+	my @pmodules_sorted = sort { $a->[0]->id <=> $b->[0]->id } @pmodules;
+
+	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
 	    ($node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key })
 	  )
@@ -5060,7 +5060,7 @@ sub find_class
 	}
 
 	my( @classnames );
-	foreach my $class ( @pmodule_nodes )
+	foreach my $class ( map $_->[0], @pmodules_sorted )
 	{
 	    my $classname = $class->first_prop($p_code,undef,['active'])->plain;
 	    unless( $classname )
@@ -5099,7 +5099,7 @@ sub find_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
-	    $valtype = $valtypes[0];
+	    $valtype = $pmodules_sorted[0][1];
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
