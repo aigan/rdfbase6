@@ -201,16 +201,23 @@ if you follow those naming conventions:
 
 =head3 Field props:
 
-pred
-revpred
 arc
 desig
-type
-scof
-rowno
-subj
-newsubj
+file
+if
 is
+lang
+newsubj
+parse
+pred
+revpred
+row
+select
+scof
+subj
+type
+vnode
+
 
 =head4 lang
 
@@ -263,7 +270,12 @@ sub update_by_query
     {
 	if( $param =~ /^(arc|prop)_.*$/ )
 	{
-#	    next if $q->param("check_$param"); #handled by check below
+	    # check_prop is used both for adding and removing arcs.
+	    # check_arc is only used for removing arcs. Thus, you can
+	    # not update the arc value if you also have a
+	    # corresponding check_arc_ field.
+	    #
+	    next if $q->param("check_$param"); #handled by check below
 	    push @arc_params, $param;
 	}
 	elsif( $param =~ /^row_.*$/ )
@@ -281,6 +293,13 @@ sub update_by_query
     }
 
     # Parse the arcs in several passes, until all is done
+
+    # Some fields has an __if_... part that checks if the subj or obj
+    # part exists. But those parts may only exist after other fields
+    # has been processed. It may go on in several passes. We take care
+    # of all if's by handling the fields several rounds, until we get
+    # a round that didn't added more arcs, as seen by the $res object.
+
     my $fields_handled_delta = 0;
     my $fields_handled_count = $res->fields_count;
     do
@@ -319,30 +338,32 @@ sub update_by_query
 
     foreach my $param (@check_params)
     {
+	# $param alwas begins wich "check_". This check may not be
+	# needed. But somthing might have removed the query param in
+	# order to disable the check.
 	next unless $q->param( $param );
 
 	### Remove all check_arc params that is ok. All check_arc
 	### params left now represent arcs that should be removed
 
-	# Check row is a copy of similar code above
-	#
 	if( $param =~ /^check_row_.*$/ )
 	{
+	    # Check row is a copy of similar code above
 	    $class->handle_query_check_row( $param, $args );
 	}
-	elsif($param =~ /^check_arc_(.*)/)
+	elsif($param =~ /^check_arc_(\d+)/)
         {
 	    my $arc_id = $1 or next;
 	    $class->handle_query_check_arc( $param, $arc_id, $args );
         }
         elsif($param =~ /^check_prop_(.*)/)
         {
-	    my $pred_name = $1;
+	    my $pred_name = $1 or next;
 	    $class->handle_query_check_prop( $param, $pred_name, $args );
         }
         elsif($param =~ /^check_revprop_(.*)/)
         {
-	    my $pred_name = $1;
+	    my $pred_name = $1 or next;
 	    $class->handle_query_check_revprop( $param, $pred_name, $args );
         }
 	elsif($param =~ /^check_node_(.*)/)
@@ -369,6 +390,7 @@ sub update_by_query
 
     foreach my $arc ( $res->deathrow_list )
     {
+	die "CHECKME";
 	$arc->remove( $args );
     }
 
@@ -1613,7 +1635,13 @@ sub handle_query_check_arc
 {
     my( $class, $param, $arc_id, $args ) = @_;
 
-    $args->{'res'}->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+
+    unless( $q->param("arc_${arc_id}") )
+    {
+	$args->{'res'}->add_to_deathrow( Rit::Base::Arc->get($arc_id) );
+    }
 
     return 0;
 }
