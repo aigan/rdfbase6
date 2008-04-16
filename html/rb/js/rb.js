@@ -87,7 +87,7 @@ var RBInputPopup = Class.create(
                     {
 			params: Object.toJSON(search),
 			search_type: this.search_type,
-			search_value: value,
+			search_value: value
                     },
 		    requestHeaders: { Accept: 'application/json' },
 		    onComplete: function(transport)
