@@ -907,6 +907,7 @@ sub wuirc
 		 id => $args->{'id'},
 		 image_url => $args->{'image_url'},
 		 onchange => $onchange,
+		 arc => $arc->id,
 		};
 		if( $arc->indirect )
 		{
