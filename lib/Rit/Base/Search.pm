@@ -39,7 +39,7 @@ use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
 use Para::Frame::L10N qw( loc );
 
-use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop ); #);
+use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id ); #);
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -712,6 +712,7 @@ sub modify
 
     $search->remove_node;
 
+    Para::Frame::Logging->this_level(4);
     debug 3, shortmess "modify search ".query_desig( $props ); ### DEBUG
     unless( ref $props eq 'HASH' )
     {
@@ -936,7 +937,7 @@ sub modify
 	    }
 
 	    my $pred_name = $predref->[0]->label;
-	    if( $pred_name =~ m/^(id|label|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
+	    if( $pred_name =~ m/^(id|id_alphanum|label|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
 	    {
 		if( @$predref > 1)
 		{
@@ -1042,6 +1043,27 @@ sub modify
     }
     else
     {
+	if( $meta->{'id_alphanum'} )
+	{
+	    my $alphanum = $meta->{'id_alphanum'}[0]{'values'}[0];
+	    my $id = alphanum_to_id( $alphanum );
+	    unless( $id )
+	    {
+		throw('validation',"Invalid id_alphanum");
+	    }
+
+	    my $pred = Rit::Base::Pred->get('id');
+	    $meta->{'id'} ||= [];
+	    push @{$meta->{'id'}},
+	    {
+	     match => $meta->{'id_alphanum'}[0]{'match'},
+	     values => [ $id ],
+	     prio => $meta->{'id_alphanum'}[0]{'prio'},
+	     pred_name => 'id',
+	     pred => Rit::Base::List->new([$pred]),
+	    };
+	}
+
 	if( $meta->{'id'} )
 	{
 	    foreach my $mid (@{$meta->{'id'}})
