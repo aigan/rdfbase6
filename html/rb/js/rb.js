@@ -9,7 +9,7 @@ var RBInputPopup = Class.create(
     // subj:             subj for added arc
     // rev:              if added arc is reverse
     initialize: function(button, divid, search_crit,
-			 search_type, pred_name, subj, rev)
+			 search_type, pred_name, subj, rev, seen_node)
     {
 	this.divid = divid;
 	this.search_crit = \$H(search_crit.evalJSON());
@@ -18,6 +18,7 @@ var RBInputPopup = Class.create(
 	this.pred_name = pred_name;
 	this.subj = subj;
 	this.rev = rev;
+	this.seen_node = seen_node;
 
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
@@ -164,15 +165,16 @@ var RBInputPopup = Class.create(
 
     select: function(event, name, key)
     {
+	alert(this.seen_node);
 	pps[this.divid].loadingStart();
 	new Ajax.Request('[%home%]/ajax/action/add_direct', {
 		method: 'get',
 		parameters: {
-		    subj: this.subj,
-			pred_name: this.pred_name,
-			obj: key,
-			rev: this.rev
-			
+			    subj: this.subj,
+			    pred_name: this.pred_name,
+			    obj: key,
+			    rev: this.rev,
+			    seen_node: this.seen_node
 		},
 		onComplete: function(transport)
 		{
@@ -198,10 +200,11 @@ var RBInputPopup = Class.create(
 	new Ajax.Request('[%home%]/ajax/action/create_new', {
 		method: 'get',
 		parameters: {
-		    name: value,
-			params: Object.toJSON(this.search_crit),
-			subj: this.subj,
-			pred_name: this.pred_name
+			    name: value,
+			    params: Object.toJSON(this.search_crit),
+			    subj: this.subj,
+			    pred_name: this.pred_name,
+			    seen_node: this.seen_node
 		},
 		onComplete: function(transport)
 		{
@@ -215,7 +218,7 @@ var RBInputPopup = Class.create(
 });
 
 
-function rb_remove_arc(divid, arc)
+function rb_remove_arc(divid, arc, seen_node)
 {
     if( confirm('Really remove arc?') ) {
 	loading = Builder.node('img', {
@@ -228,7 +231,10 @@ function rb_remove_arc(divid, arc)
 	
 	new Ajax.Request('[%home%]/ajax/action/remove_arc', {
 		method: 'get',
-		    parameters: { arc: arc },
+		    parameters: {
+				arc: arc,
+				seen_node: seen_node
+				},
 		    onComplete: function(transport)
 		    {
 			pps[divid].update();
