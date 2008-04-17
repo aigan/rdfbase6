@@ -120,6 +120,7 @@ sub init
 
     my $global_params =
     {
+     rb              => bless( {}, 'Rit::Base'),
      find            => sub{ Rit::Base::Resource->find(@_) },
      get             => sub{ Rit::Base::Resource->get(@_) },
      set_one         => sub{ Rit::Base::Resource->set_one(@_) },
@@ -210,6 +211,19 @@ Returns class object for L<Rit::Base::Arc>
 sub Arc ()
 {
     return 'Rit::Base::Arc';
+}
+
+######################################################################
+
+=head2 Arc_Lim
+
+Returns class object for L<Rit::Base::Arc::Lim>
+
+=cut
+
+sub Arc_Lim ()
+{
+    return 'Rit::Base::Arc::Lim';
 }
 
 ######################################################################
