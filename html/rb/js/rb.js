@@ -9,7 +9,8 @@ var RBInputPopup = Class.create(
     // subj:             subj for added arc
     // rev:              if added arc is reverse
     initialize: function(button, divid, search_crit,
-			 search_type, pred_name, subj, rev, seen_node)
+			 search_type, pred_name, subj,
+			 rev, seen_node, hide_create_button)
     {
 	this.divid = divid;
 	this.search_crit = \$H(search_crit.evalJSON());
@@ -19,6 +20,7 @@ var RBInputPopup = Class.create(
 	this.subj = subj;
 	this.rev = rev;
 	this.seen_node = seen_node;
+        this.hide_create_button = hide_create_button;
 
 	this.loading = Builder.node('img', {
 		id: 'rb_input_loading',
@@ -147,12 +149,14 @@ var RBInputPopup = Class.create(
 		}.bind(this));
 	}
 
-	var value = \$('rb_input').getValue();
-	var create_new_button = Builder.node('input', { value: 'Create a new "'+ value +'"',
+	if( !this.hide_create_button ) {
+	    var value = \$('rb_input').getValue();
+	    var create_new_button = Builder.node('input', { value: 'Create a new "'+ value +'"',
 							type: 'button' });
-	create_new_button.onclick = this.createNew.bindAsEventListener(this, value);
-	var line = Builder.node('li', create_new_button);
-	this.popup_li.appendChild(line);
+	    create_new_button.onclick = this.createNew.bindAsEventListener(this, value);
+	    var line = Builder.node('li', create_new_button);
+	    this.popup_li.appendChild(line);
+	}
 
 	if( old_list ) {
 	    Effect.BlindUp(old_list, { duration: 0.5 });
@@ -165,7 +169,6 @@ var RBInputPopup = Class.create(
 
     select: function(event, name, key)
     {
-	alert(this.seen_node);
 	pps[this.divid].loadingStart();
 	new Ajax.Request('[%home%]/ajax/action/add_direct', {
 		method: 'get',
