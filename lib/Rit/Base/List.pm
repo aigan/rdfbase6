@@ -122,7 +122,7 @@ sub new
     }
     else
     {
-	die "Malformed listref: $listref";
+	confess "Malformed listref: $listref";
     }
 }
 
@@ -219,6 +219,9 @@ C<ne>, C<gt> and C<lt> are supported, using numerical comparsion.
 If the key begins with C<predor_> the rest of the key is expected to
 be a list of predicate names separated by C<_-_>. There is a match if
 at least one of the properties matches the value.
+
+If the key is C<not>, the value should be a C<\%proplim> that is
+negated.
 
 The value can be a C<*> for matching all values of the property. That
 would be a test for the existence of that property.
