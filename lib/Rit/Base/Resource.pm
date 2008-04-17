@@ -4557,6 +4557,7 @@ sub wuirc
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
+    my $subj_id = $subj->id;
 
     my $lookup_pred = $args->{'lookup_pred'} || 'name_clean_like';
     unless( UNIVERSAL::isa( $lookup_pred, 'ARRAY' ) )
@@ -4614,7 +4615,7 @@ sub wuirc
 		    my $arc_id = $arc->id;
 		    $out .= $q->input({ type => 'button',
 					value => '-',
-					onclick => "rb_remove_arc('$divid', '$arc_id')",
+					onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
 					class => 'nopad',
 				 });
 		}
@@ -4652,13 +4653,30 @@ sub wuirc
 
 	    $out .= "
               <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
-	    $out .=
-	      "<script type=\"text/javascript\">
-                     <!--
-                         new RBInputPopup('$divid-button',
-                                  '$divid', '". to_json( $search_params ) ."',
-                                  '".to_json($lookup_pred)."', '". $pred->name ."',
-                                  '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
+	    $out .= sprintf(q{
+<script type="text/javascript">
+<!--
+  new RBInputPopup('%s','%s','%s','%s','%s',%d,%d,%d)
+//-->
+</script>
+},
+			    $divid.'-button',
+			    $divid,
+			    to_json($search_params),
+			    to_json($lookup_pred),
+			    $pred->plain,
+			    $subj->id,
+			    ($is_rev?1:0),
+			    ($subj->id||0),
+			   );
+
+#	    $out .=
+#	      "<script type=\"text/javascript\">
+#               <!--
+#                  new RBInputPopup('$divid-button',
+#                     '$divid', '". to_json( $search_params ) ."',
+#                     '".to_json($lookup_pred)."', '". $pred->name ."',
+#                     '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
 	}
 	elsif( $inputtype eq 'text' )
 	{
