@@ -712,7 +712,7 @@ sub modify
 
     $search->remove_node;
 
-    Para::Frame::Logging->this_level(4);
+#    Para::Frame::Logging->this_level(4);
     debug 3, shortmess "modify search ".query_desig( $props ); ### DEBUG
     unless( ref $props eq 'HASH' )
     {
