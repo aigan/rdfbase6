@@ -175,16 +175,16 @@ sub find_remove
 
 #######################################################################
 
-=head2 id_alfanum
+=head2 id_alphanum
 
-  $n->id_alfanum
+  $n->id_alphanum
 
 The unique node id expressed with [0-9A-Z] as a plain string, with a
 one char checksum at the end.
 
 =cut
 
-sub id_alfanum
+sub id_alphanum
 {
     my $id = $_[0]->id;
     my $str = "";
@@ -471,6 +471,20 @@ sub meets_proplim
 
 	    debug "Node ". $node->id ." failed." if $DEBUG;
 	    return 0; # test failed
+	}
+
+
+	# NEGATION
+	if( $pred_part eq 'not' )
+	{
+	    if( $node->meets_proplim( $target_value, $args_in ) )
+	    {
+		return 0;
+	    }
+	    else
+	    {
+		return 1;
+	    }
 	}
 
 
