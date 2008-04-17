@@ -424,8 +424,8 @@ sub meets_proplim
 
     if( $DEBUG )
     {
-	debug "Node ".$node->id;
-	debug "Arclim ".$arclim_in->sysdesig;
+	debug "Checking ".$node->sysdesig;
+	debug "Args ".query_desig($args_in);
     }
 
 
@@ -469,7 +469,7 @@ sub meets_proplim
 		}
 	    }
 
-	    debug "Node ". $node->id ." failed." if $DEBUG;
+	    debug $node->sysdesig ." failed." if $DEBUG;
 	    return 0; # test failed
 	}
 
@@ -479,11 +479,11 @@ sub meets_proplim
 	{
 	    if( $node->meets_proplim( $target_value, $args_in ) )
 	    {
-		return 0;
+		return 0; # test failed
 	    }
 	    else
 	    {
-		return 1;
+		next PRED; # test passed
 	    }
 	}
 
@@ -498,13 +498,13 @@ sub meets_proplim
 		{
 		    debug "No pred_part?";
 		    debug "Template: ".query_desig($proplim);
-		    debug "For node ".$node->id;
+		    debug "For ".$node->sysdesig;
 		}
 	    }
 	    die "wrong format in find: $pred_part\n";
 	}
 
-	my $rev    = $1;
+	my $rev    = $1 ? 1 : 0;
 	my $pred   = $2;
 	my $arclim = $3 || $arclim_in;
 	my $clean  = $4 || $args_in->{'clean'} || 0;
@@ -576,7 +576,7 @@ sub meets_proplim
 			confess "Matchtype not implemented: $match";
 		    }
 
-		    debug "Node ". $node->id ." failed on arc value." if $DEBUG;
+		    debug $node->sysdesig ." failed on arc value." if $DEBUG;
 		    return 0; # Failed test
 		}
 		else
@@ -594,7 +594,7 @@ sub meets_proplim
 		}
 		else
 		{
-		    debug "Node ". $node->id ." failed." if $DEBUG;
+		    debug $node->sysdesig ." failed." if $DEBUG;
 		    return 0; # Failed test
 		}
 	    }
@@ -669,38 +669,18 @@ sub meets_proplim
 	}
 	elsif( $match eq 'eq' )
 	{
-	    debug "    match is eq" if $DEBUG;
-	    if( $rev )
-	    {
-		debug "      (rev)\n" if $DEBUG;
-		# clean not sane in rev props
-		next PRED # Check next if this test pass
-		  if $target_value->has_value({$pred=>$node}, $args );
-	    }
-	    else
-	    {
-#		debug "  ===> See if ".$node->desig." has $pred ".query_desig($target_value);
-		next PRED # Check next if this test pass
-		  if $node->has_value({$pred=>$target_value}, $args );
-	    }
+	    debug "    match is eq/$rev" if $DEBUG;
+	    next PRED # Check next if this test pass
+	      if $node->has_value({$pred=>$target_value},
+					  {%$args,rev=>$rev} );
 	}
 	elsif( $match eq 'ne' )
 	{
-	    debug "    match is ne" if $DEBUG;
-	    if( $rev )
-	    {
-		debug "      (rev)" if $DEBUG;
-		# clean not sane in rev props
-		next PRED # Check next if this test pass
-		  unless $target_value->has_value({$pred=>$node}, $args );
-	    }
-	    else
-	    {
-		# Matchtype is 'eq'. Result is negated here
-
-		next PRED # Check next if this test pass
-		  unless $node->has_value({$pred=>$target_value}, $args );
-	    }
+	    debug "    match is ne/$rev" if $DEBUG;
+		# Matchtype is 'ne'. Result is negated here
+	    next PRED # Check next if this test pass
+	      unless $node->has_value({$pred=>$target_value},
+				      {%$args,$rev=>$rev} );
 	}
 	elsif( $match eq 'exist' )
 	{
@@ -754,12 +734,12 @@ sub meets_proplim
 	}
 
 	# This node failed the test
-	debug "Node ". $node->id ." failed." if $DEBUG;
+	debug $node->sysdesig ." failed." if $DEBUG;
 	return 0;
     }
 
     # All properties good
-    debug "Node ". $node->id ." passed." if $DEBUG;
+    debug $node->sysdesig ." passed." if $DEBUG;
     return 1;
 }
 
