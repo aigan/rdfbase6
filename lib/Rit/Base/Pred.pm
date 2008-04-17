@@ -321,7 +321,7 @@ sub find_by_anything
 
 
     # Special properties
-    if( $label =~ /^(id|id_alphanum|score|random)$/ )
+    if( $label =~ /^(id|score|random)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,
@@ -329,7 +329,7 @@ sub find_by_anything
 					    pred_coltype => 2, # valfloat
 					   });
     }
-    elsif( $label =~ /^(desig|loc|plain|label)$/ )
+    elsif( $label =~ /^(desig|id_alphanum|loc|plain|label)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,
