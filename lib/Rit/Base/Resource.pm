@@ -2614,17 +2614,21 @@ sub has_value
 
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
+    my $rev   = $args->{'rev'}   || 0;
+    delete( $args->{'rev'} ); ### NOT passing rev on!
 
     # Can we also handle dynamic preds like id or desig?
     my $pred = Rit::Base::Pred->get( $pred_name );
 
     $pred_name = $pred->plain;
 
+    my $revprefix = $rev ? "rev_" : "";
     if( debug > 2 )
     {
-	debug "  Checking if node $node->{'id'} has $pred_name $match($clean) ".query_desig($value);
+	debug "  Checking if node $node->{'id'} has $revprefix$pred_name $match($clean) ".query_desig($value);
     }
 
+    my @arcs_in; # Same content in diffrent parts of this method
 
     # Sub query
     if( ref $value eq 'HASH' )
@@ -2632,7 +2636,7 @@ sub has_value
 	if( debug > 3 )
 	{
 	    debug "  Checking if ".$node->desig.
-	      " has $pred_name with the props ". query_desig($value);
+	      " has $revprefix$pred_name with the props ". query_desig($value);
 	}
 
 	unless( $match eq 'eq' )
@@ -2640,23 +2644,53 @@ sub has_value
 	    confess "subquery not implemented for matchtype $match";
 	}
 
+	if( $rev )
+	{
+	    @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
+	}
+	else
+	{
+	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
+	}
+
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
 	    my @arcs;
-	    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	    if( !$rev )
 	    {
-		if( $arc->is_removal )
+		foreach my $arc ( @arcs_in )
 		{
-		    if( $arc->replaces->obj->find($value, $args)->size )
+		    if( $arc->is_removal )
+		    {
+			if( $arc->replaces->obj->find($value, $args)->size )
+			{
+			    push @arcs, $arc;
+			}
+		    }
+		    elsif( $arc->obj->find($value, $args)->size )
 		    {
 			push @arcs, $arc;
 		    }
 		}
-		elsif( $arc->obj->find($value, $args)->size )
+	    }
+	    else # rev
+	    {
+		foreach my $arc ( @arcs_in )
 		{
-		    push @arcs, $arc;
+		    if( $arc->is_removal )
+		    {
+			if( $arc->replaces->subj->find($value, $args)->size )
+			{
+			    push @arcs, $arc;
+			}
+		    }
+		    elsif( $arc->subj->find($value, $args)->size )
+		    {
+			push @arcs, $arc;
+		    }
 		}
 	    }
+
 
 	    if( @arcs )
 	    {
@@ -2669,11 +2703,24 @@ sub has_value
 	}
 	else
 	{
-	    foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	    if( !$rev )
 	    {
-		if( $arc->obj->find($value, $args)->size )
+		foreach my $arc ( @arcs_in )
 		{
-		    return $arc;
+		    if( $arc->obj->find($value, $args)->size )
+		    {
+			return $arc;
+		    }
+		}
+	    }
+	    else # rev
+	    {
+		foreach my $arc ( @arcs_in )
+		{
+		    if( $arc->subj->find($value, $args)->size )
+		    {
+			return $arc;
+		    }
 		}
 	    }
 	}
@@ -2688,7 +2735,8 @@ sub has_value
 	    my @arcs;
 	    foreach my $val (@$value )
 	    {
-		my $arc = $node->has_value({$pred_name=>$val},  $args);
+		my $arc = $node->has_value({$pred_name=>$val},
+					   {%$args,rev=>$rev});
 		push @arcs, $arc if $arc;
 	    }
 
@@ -2702,7 +2750,8 @@ sub has_value
 	{
 	    foreach my $val (@$value )
 	    {
-		my $arc = $node->has_value({$pred_name=>$val},  $args);
+		my $arc = $node->has_value({$pred_name=>$val},
+					   {%$args,rev=>$rev});
 		return $arc if $arc;
 	    }
 	}
@@ -2712,7 +2761,10 @@ sub has_value
 
     # Check the dynamic properties (methods) for the node
     # Special case for optimized name
-    if( $node->can($pred_name) and ($pred_name ne 'name') )
+    if( $node->can($pred_name)
+	and ($pred_name ne 'name')
+	and not $rev
+      )
     {
 	debug 3, "  check method $pred_name";
 	my $prop_value = $node->$pred_name( {}, $args );
@@ -2748,11 +2800,24 @@ sub has_value
 
 #    debug "  with args:\n".query_desig($args);
 
+    # @arcs_in may have been defined above
+    unless( @arcs_in )
+    {
+	if( $rev )
+	{
+	    @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
+	}
+	else
+	{
+	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
+	}
+    }
+
     if( my $uap = $args->{unique_arcs_prio} )
     {
 	my @arcs;
 #	debug "In has_value";
-	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	foreach my $arc ( @arcs_in )
 	{
 #	    debug 1, "  check arc ".$arc->id;
 	    if( $arc->is_removal )
@@ -2781,7 +2846,7 @@ sub has_value
     }
     else
     {
-	foreach my $arc ( $node->arc_list($pred_name, undef, $args)->as_array )
+	foreach my $arc ( @arcs_in )
 	{
 	    debug 3, "  check arc ".$arc->id;
 	    return $arc if $arc->value_equals( $value, $args );
