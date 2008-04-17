@@ -4558,6 +4558,7 @@ sub wuirc
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
     my $subj_id = $subj->id;
+    my $hide_create_button = $args->{'hide_create_button'} || 0;
 
     my $lookup_pred = $args->{'lookup_pred'} || 'name_clean_like';
     unless( UNIVERSAL::isa( $lookup_pred, 'ARRAY' ) )
@@ -4656,7 +4657,7 @@ sub wuirc
 	    $out .= sprintf(q{
 <script type="text/javascript">
 <!--
-  new RBInputPopup('%s','%s','%s','%s','%s',%d,%d,%d)
+  new RBInputPopup('%s','%s','%s','%s','%s',%d,%d,%d,%d)
 //-->
 </script>
 },
@@ -4668,6 +4669,7 @@ sub wuirc
 			    $subj->id,
 			    ($is_rev?1:0),
 			    ($subj->id||0),
+			    $hide_create_button,
 			   );
 
 #	    $out .=
