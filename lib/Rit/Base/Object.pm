@@ -216,7 +216,7 @@ sub as_html
 
   $o->desig()
 
-A general alfanumerical presentation of the designation of the
+A general alphanumerical presentation of the designation of the
 object. Intended for presentation and not for data manipulation.
 
 =cut
@@ -233,7 +233,7 @@ sub desig
 
   $o->sysdesig()
 
-The same as L</desig> but more suited for debugging. The alfanumerical
+The same as L</desig> but more suited for debugging. The alphanumerical
 string will include the object id number or corresponding extra info
 for identifying the object. Intended for presentation and not for data
 manipulation.
@@ -252,8 +252,8 @@ sub sysdesig
 
   $o->syskey
 
-This will generate a unique alfanumerical string that cen be used for
-discriminating this object from all other objects.  The alfanumerical
+This will generate a unique alphanumerical string that cen be used for
+discriminating this object from all other objects.  The alphanumerical
 code returned will usually include the type of object and the object
 id. Intended for data manipulation, such as caching.
 

@@ -40,7 +40,7 @@ BEGIN
 	      parse_arc_add_box is_undef arc_lock arc_unlock
 	      truncstring string parse_query_pred parse_query_prop
 	      convert_query_prop_for_creation name2url query_desig
-	      send_cache_update parse_propargs aais alfanum_to_id );
+	      send_cache_update parse_propargs aais alphanum_to_id );
 
 }
 
@@ -1185,17 +1185,17 @@ sub aais
 
 #########################################################################
 
-=head2 alfanum_to_id
+=head2 alphanum_to_id
 
-  alfanum_to_id( $alfanum )
+  alphanum_to_id( $alphanum )
 
 =cut
 
-sub alfanum_to_id
+sub alphanum_to_id
 {
-    my( $alfanum_in ) = @_;
+    my( $alphanum_in ) = @_;
 
-    my $alfanum = uc($alfanum_in);
+    my $alphanum = uc($alphanum_in);
 
     my @map = ((0..9),('A'..'Z'));
     my $pow = scalar(@map);
@@ -1205,15 +1205,15 @@ sub alfanum_to_id
 	$num{$map[$i]}=$i;
     }
 
-    my $chkchar = substr $alfanum,-1,1,'';
+    my $chkchar = substr $alphanum,-1,1,'';
 
     my $chksum = 0;
     my $id = 0;
-    my $len = length($alfanum)-1;
+    my $len = length($alphanum)-1;
 
     for(my $i=$len;$i>=0;$i--)
     {
-	my $val = $num{substr($alfanum, $i, 1)};
+	my $val = $num{substr($alphanum, $i, 1)};
 	$chksum += $val;
 	my $pos = $len-$i;
 #	print "  Pos $pos, pow $pow, val $val\n";
@@ -1233,7 +1233,7 @@ sub alfanum_to_id
     }
     else
     {
-	debug "Checksum mismatch for alfanum $alfanum; id=$id; checksum = ".$map[$chksum%$pow];
+	debug "Checksum mismatch for alphanum $alphanum; id=$id; checksum = ".$map[$chksum%$pow];
 
 	return undef;
     }

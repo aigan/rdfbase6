@@ -43,7 +43,7 @@ use Para::Frame::Utils qw( throw debug );
 use Para::Frame::List;
 
 use Rit::Base;
-use Rit::Base::Utils qw( parse_propargs alfanum_to_id is_undef );
+use Rit::Base::Utils qw( parse_propargs is_undef );
 #use Rit::Base::Constants qw( $C_email );
 #use Rit::Base::Literal::String;
 #use Rit::Base::Literal::Time qw( now ); #);

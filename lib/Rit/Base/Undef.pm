@@ -231,13 +231,13 @@ sub id
 
 #######################################################################
 
-=head2 id_alfanum
+=head2 id_alphanum
 
 returns: plain undef
 
 =cut
 
-sub id_alfanum
+sub id_alphanum
 {
     return undef;
 }
