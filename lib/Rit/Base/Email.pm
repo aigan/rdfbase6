@@ -771,7 +771,7 @@ sub send
 
 sub on_arc_add
 {
-    $_[0]->reset_cache;
+    $_[0]->reset_email_cache;
 }
 
 #######################################################################
@@ -782,16 +782,27 @@ sub on_arc_add
 
 sub on_arc_del
 {
-    $_[0]->reset_cache;
+    $_[0]->reset_email_cache;
 }
 
 #######################################################################
 
-=head2 reset_cache
+=head2 init
 
 =cut
 
-sub reset_cache
+sub init
+{
+    $_[0]->reset_email_cache;
+}
+
+#######################################################################
+
+=head2 reset_email_cache
+
+=cut
+
+sub reset_email_cache
 {
 #    debug "Resetting cached properties for email";
 
