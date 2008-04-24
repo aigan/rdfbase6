@@ -22,21 +22,29 @@
 [% hidden('id', subj.id) %]
 [% hidden('arc_id', arc.id)  %]
 
+[% IF debug_level > 1 %]
+[% WRAPPER imgexpand label='Perl hashdump' %]
+<table>
+<tr><td><pre>[% dump(node,4) %]</pre></td></tr>
+</table>
+[% END %]
+[% END %]
+<p>
 [% IF arc.inactive %]
    [% IF arc.deactivated %]
-      <p>This arc is <strong>old</strong>.</p>
+      This arc is <strong>old</strong>.
    [% ELSE %]
-   <p>This arc is <strong>inactive</strong>
+   This arc is <strong>inactive</strong>
       [% IF arc.submitted %]
          and <strong>submitted</strong>
       [% ELSE %]
          and <strong>not yet submitted</strong>
       [% END %]
-   </p>
    [% END %]
 [% ELSE %]
-<p>This is an <strong>active</strong> version.</p>
+This is an <strong>active</strong> version.
 [% END %]
+</p>
 
 <table class='admin'>
 <tr><td>Common</td><td>
