@@ -846,7 +846,16 @@ sub set_one
 
 sub form_url
 {
-    confess "fixme";
+    my( $lit ) = shift;
+
+    if( my $subj = $lit->subj )
+    {
+	return $subj->form_url(@_);
+    }
+    else
+    {
+	confess "fixme";
+    }
 }
 
 
@@ -858,7 +867,16 @@ sub form_url
 
 sub page_url_path_slash
 {
-    confess "fixme";
+    my( $lit ) = shift;
+
+    if( my $subj = $lit->subj )
+    {
+	return $subj->page_url_path_slash(@_);
+    }
+    else
+    {
+	confess "fixme";
+    }
 }
 
 
