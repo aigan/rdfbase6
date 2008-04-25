@@ -668,6 +668,7 @@ sub meets_proplim
 
 	}
 	elsif( ($match eq 'eq') or
+	       ($match eq 'ne') or
 	       ($match eq 'lt') or
 	       ($match eq 'gt')
 	     )
@@ -680,18 +681,6 @@ sub meets_proplim
 					   rev=>$rev,
 					   match=>$match,
 					  } );
-	}
-	elsif( $match eq 'ne' )
-	{
-	    debug "    match is ne/$rev (calling has_value)" if $DEBUG;
-		# Matchtype is 'ne'. Result is negated here
-	    next PRED # Check next if this test pass
-	      unless $node->has_value({$pred=>$target_value},
-				      {
-				       %$args,
-				       $rev=>$rev,
-				       match=>$match,
-				      });
 	}
 	elsif( $match eq 'exist' )
 	{
