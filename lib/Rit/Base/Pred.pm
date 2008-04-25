@@ -86,7 +86,9 @@ Inherits from L<Rit::Base::Resource>.
 
 =head2 name
 
-  $p->name
+  $p->name( \%args )
+
+Uses the name property, if existing. Defaults to the label
 
 Returns: The name of the predicate as a L<Rit::Base::Literal::String> object
 
@@ -94,23 +96,29 @@ Returns: The name of the predicate as a L<Rit::Base::Literal::String> object
 
 sub name
 {
-    my( $pred ) = @_;
+    my( $pred, $args ) = @_;
 
-    confess "not an obj: $pred" unless ref $pred;
-    return new Rit::Base::Literal::String $pred->{'label'};
+    if( $pred->has_pred('name',undef,$args) )
+    {
+	return $pred->prop('name',undef,$args);
+    }
+    else
+    {
+	return new Rit::Base::Literal::String $pred->{'label'};
+    }
 }
 
 #######################################################################
 
 =head2 value
 
-Same as L</name>
+Same as L</plain>
 
 =cut
 
 sub value
 {
-    $_[0]->name;
+    $_[0]->plain;
 }
 
 #######################################################################
@@ -119,9 +127,7 @@ sub value
 
   $p->plain
 
-Same as C<$p->name->plain>
-
-Returns: The name as a scalar string
+Returns: The label as a scalar string
 
 =cut
 
