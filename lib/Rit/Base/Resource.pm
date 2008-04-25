@@ -2609,6 +2609,7 @@ sub has_value
     confess "Not a hashref" unless ref $preds;
 
 #    Para::Frame::Logging->this_level(4);
+    my $DEBUG = Para::Frame::Logging->at_level(3);
 
     my( $pred_name, $value ) = %$preds;
 
@@ -2623,7 +2624,7 @@ sub has_value
     $pred_name = $pred->plain;
 
     my $revprefix = $rev ? "rev_" : "";
-    if( debug > 2 )
+    if( $DEBUG )
     {
 	debug "  Checking if node $node->{'id'} has $revprefix$pred_name $match($clean) ".query_desig($value);
     }
@@ -2633,7 +2634,7 @@ sub has_value
     # Sub query
     if( ref $value eq 'HASH' )
     {
-	if( debug > 3 )
+	if( $DEBUG )
 	{
 	    debug "  Checking if ".$node->desig.
 	      " has $revprefix$pred_name with the props ". query_desig($value);
@@ -2766,31 +2767,63 @@ sub has_value
 	and not $rev
       )
     {
-	debug 3, "  check method $pred_name";
+	debug "  check method $pred_name" if $DEBUG;
 	my $prop_value = $node->$pred_name( {}, $args );
-
-	if( ref $prop_value )
-	{
-	    $prop_value = $prop_value->desig;
-	}
-
-	if( $clean )
-	{
-	    $prop_value = valclean(\$prop_value);
-	    $value = valclean(\$value);
-	}
 
 	if( $match eq 'eq' )
 	{
+	    if( ref $prop_value )
+	    {
+		$prop_value = $prop_value->desig;
+	    }
+
+	    if( $clean )
+	    {
+		$prop_value = valclean(\$prop_value);
+		$value = valclean(\$value);
+	    }
+
 	    return -1 if $prop_value eq $value;
 	}
 	elsif( $match eq 'begins' )
 	{
+	    if( ref $prop_value )
+	    {
+		$prop_value = $prop_value->desig;
+	    }
+
+	    if( $clean )
+	    {
+		$prop_value = valclean(\$prop_value);
+		$value = valclean(\$value);
+	    }
+
 	    return -1 if $prop_value =~ /^\Q$value/;
 	}
 	elsif( $match eq 'like' )
 	{
+	    if( ref $prop_value )
+	    {
+		$prop_value = $prop_value->desig;
+	    }
+
+	    if( $clean )
+	    {
+		$prop_value = valclean(\$prop_value);
+		$value = valclean(\$value);
+	    }
+
 	    return -1 if $prop_value =~ /\Q$value/;
+	}
+	elsif( $match eq 'gt' )
+	{
+#	    debug "prop_value: ".datadump($prop_value,1);
+#	    debug "targ_value: ".datadump($value,1);
+	    return -1 if $prop_value > $value;
+	}
+	elsif( $match eq 'lt' )
+	{
+	    return -1 if $prop_value < $value;
 	}
 	else
 	{
@@ -2848,13 +2881,13 @@ sub has_value
     {
 	foreach my $arc ( @arcs_in )
 	{
-	    debug 3, "  check arc ".$arc->id;
+	    debug "  check arc ".$arc->id if $DEBUG;
 	    return $arc if $arc->value_equals( $value, $args );
 	}
     }
 
 
-    if( debug > 2 )
+    if( $DEBUG )
     {
 	my $value_str = defined($value)?$value:"<undef>";
 	debug "  no such value $value_str for ".$node->desig;
@@ -3157,6 +3190,7 @@ sub arc_list
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
+    my @arcs;
     if( $pred_in )
     {
 	my( $pred, $name );
@@ -3171,7 +3205,6 @@ sub arc_list
 	    $name = $pred->plain
 	}
 
-	my @arcs;
 
 #	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, query_desig($arclim));
 
@@ -3192,79 +3225,11 @@ sub arc_list
 #	    debug 1, "  No values for relprop $name found!";
 	    return Rit::Base::Arc::List->new_empty();
 	}
-
-#	debug "  applying arclim";
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
-
-	my $lr = Rit::Base::Arc::List->new(\@arcs);
-
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    $lr = $lr->unique_arcs_prio($uap);
-	}
-
-#	debug "List is now ".$lr->sysdesig;
-	if( defined $proplim ) # The Undef Literal is also an proplim
-	{
-#	    debug "Sorting out the nodes matching proplim ".query_desig($proplim);
-#	    debug "  Sorting out the nodes matching proplim\n";
-
-	    if( ref $proplim and ref $proplim eq 'HASH' )
-	    {
-		# $n->arc_list( $predname, { $pred => $value } )
-		#
-		$lr = $lr->find($proplim, $args);
-	    }
-	    elsif( not( ref $proplim) and not( length $proplim ) )
-	    {
-		# Treat as no proplim given
-	    }
-	    else
-	    {
-		# $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
-		#
-		unless( ref $proplim and ref $proplim eq 'ARRAY' )
-		{
-		    $proplim = [$proplim];
-		}
-
-#		debug "proplim: ".query_desig($proplim);
-		my $proplist = Rit::Base::List->new($proplim);
-#		debug "Proplist contains:\n".query_desig($proplist);
-
-		my @newlist;
-		my( $arc, $error ) = $lr->get_first;
-		while(! $error )
-		{
-#		    debug "  Does proplist containt the value ".$arc->value->sysdesig;
-		    # May return is_undef object
-		    # No match gives literal undef
-		    if( ref $proplist->contains( $arc->value, $args ) )
-		    {
-			push @newlist, $arc;
-#			debug "  MATCH";
-		    }
-		    ( $arc, $error ) = $lr->get_next;
-		}
-#		debug "limit done";
-
-		$lr = Rit::Base::Arc::List->new(\@newlist);
-	    }
-	}
-
-#	debug "Returning list $lr";
-	return $lr;
     }
     else
     {
 	$node->initiate_rel($proplim, $args);
 
-	if( $proplim )
-	{
-	    confess "proplim not implemented";
-	}
-
-	my @arcs;
 	if( $active )
 	{
 	    foreach my $pred_name ( keys %{$node->{'relarc'}} )
@@ -3280,20 +3245,58 @@ sub arc_list
 		push @arcs, @{ $node->{'relarc_inactive'}{$pred_name} };
 	    }
 	}
+    }
 
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
+    @arcs = grep $_->meets_arclim($arclim), @arcs;
 
-#	debug "Returnig new list";
+    my $lr = Rit::Base::Arc::List->new(\@arcs);
 
-	if( my $uap = $args->{unique_arcs_prio} )
+    if( my $uap = $args->{unique_arcs_prio} )
+    {
+	$lr = $lr->unique_arcs_prio($uap);
+    }
+
+    if( defined $proplim ) # The Undef Literal is also an proplim
+    {
+	if( ref $proplim and ref $proplim eq 'HASH' )
 	{
-	    return Rit::Base::Arc::List->new(\@arcs)->unique_arcs_prio($uap);
+	    # $n->arc_list( $predname, { $pred => $value } )
+	    #
+	    $lr = $lr->find($proplim, $args);
+	}
+	elsif( not( ref $proplim) and not( length $proplim ) )
+	{
+	    # Treat as no proplim given
 	}
 	else
 	{
-	    return Rit::Base::Arc::List->new(\@arcs);
+	    # $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
+	    #
+	    unless( ref $proplim and ref $proplim eq 'ARRAY' )
+	    {
+		$proplim = [$proplim];
+	    }
+
+	    my $proplist = Rit::Base::List->new($proplim);
+
+	    my @newlist;
+	    my( $arc, $error ) = $lr->get_first;
+	    while(! $error )
+	    {
+		# May return is_undef object
+		# No match gives literal undef
+		if( ref $proplist->contains( $arc->value, $args ) )
+		{
+		    push @newlist, $arc;
+		}
+		( $arc, $error ) = $lr->get_next;
+	    }
+
+	    $lr = Rit::Base::Arc::List->new(\@newlist);
 	}
     }
+
+    return $lr;
 }
 
 
@@ -3322,6 +3325,7 @@ sub revarc_list
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
 
+    my @arcs;
     if( $pred_in )
     {
 	my( $pred, $name );
@@ -3335,8 +3339,6 @@ sub revarc_list
 	    $pred = Rit::Base::Pred->get($pred_in);
 	    $name = $pred->plain
 	}
-
-	my @arcs;
 
 	if( $node->initiate_revprop( $pred, $proplim, $args ) )
 	{
@@ -3355,33 +3357,11 @@ sub revarc_list
 #	    debug 3, "  No values for revprop $name found!";
 	    return Rit::Base::Arc::List->new_empty();
 	}
-
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
-
-	my $lr = Rit::Base::Arc::List->new(\@arcs);
-
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    $lr = $lr->unique_arcs_prio($uap);
-	}
-
-	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
-	{
-	    $lr = $lr->find($proplim, $args);
-	}
-
-	return $lr;
     }
     else
     {
 	$node->initiate_rev($proplim, $args);
 
-	if( $proplim )
-	{
-	    die "proplim not implemented";
-	}
-
-	my @arcs;
 	if( $active )
 	{
 	    foreach my $pred_name ( keys %{$node->{'revarc'}} )
@@ -3397,18 +3377,23 @@ sub revarc_list
 		push @arcs, @{ $node->{'revarc_inactive'}{$pred_name} };
 	    }
 	}
-
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
-
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    return Rit::Base::Arc::List->new(\@arcs)->unique_arcs_prio($uap);
-	}
-	else
-	{
-	    return Rit::Base::Arc::List->new(\@arcs);
-	}
     }
+
+    @arcs = grep $_->meets_arclim($arclim), @arcs;
+
+    my $lr = Rit::Base::Arc::List->new(\@arcs);
+
+    if( my $uap = $args->{unique_arcs_prio} )
+    {
+	$lr = $lr->unique_arcs_prio($uap);
+    }
+
+    if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+    {
+	$lr = $lr->find($proplim, $args);
+    }
+
+    return $lr;
 }
 
 
