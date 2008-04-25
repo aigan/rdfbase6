@@ -18,6 +18,7 @@ Rit::Base::Literal::Bool
 
 use strict;
 use Carp;
+use utf8;
 
 BEGIN
 {
@@ -109,14 +110,32 @@ sub wuirc
 }
 
 
-
 #######################################################################
 
 =head2 as_html
 
+  $lit->as_html( \%args )
+
 =cut
 
 sub as_html
+{
+    my( $lit, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    # Maby use ☑ and ☒
+    return( $lit->plain ? '<span style="color: green;font-size:150%;padding:0;margin:0">☑</span>' :
+	    '<span style="color: red">☒</span>' );
+}
+
+
+#######################################################################
+
+=head2 some_kind_of_as_html
+
+=cut
+
+sub some_kind_of_as_html
 {
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -141,11 +160,15 @@ sub as_html
 
     while( my $arc = $arclist->get_next_nos )
     {
+	# Maby use ☑ and ☒
 	$out .= ( $arc->value->desig ? '<span style="color: green">V</span>' :
 		  '<span style="color: red">X</span>' );
     }
 
     return $out;
 }
+
+
+#######################################################################
 
 1;
