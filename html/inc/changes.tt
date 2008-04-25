@@ -1,0 +1,33 @@
+[% IF node.unseen_by(u) and node.seen_by(u) %]
+[% last = node.first_arc('seen_by',u).updated || node.created %]
+[% debug("Last is " _ last) %]
+<table class="admin">
+<tr><th colspan="3">Last seen [% last %]</th></tr>
+<tr><th>Pred</th><th>value</th><th>by</th></tr>
+[% FOREACH arc IN node.arc_list(undef,
+                 {
+                     pred_ne=['seen_by','unseen_by'],
+	             updated_gt=last,
+                  },{arclim='explicit',unique_arcs_prio=['active','removal']}).sorted('id')
+%]
+
+<tr>
+   <td>[% arc.pred.wu_jump %]</td>
+   <td>[% arc.value_as_html %]</td>
+   <td>[% arc.info_updated_html %]</td>
+</tr>
+[% END %]
+[% FOREACH arc IN node.revarc_list(undef,
+                 {
+                     pred_ne=['seen_by','unseen_by'],
+	             updated_gt=last,
+                  },{arclim='explicit',unique_arcs_prio=['active','removal']}).sorted('id')
+%]
+<tr>
+   <td>[% jump("rev_$arc.pred.plain",arc.pred.form_url) %]</td>
+   <td>[% arc.subj.as_html %]</td>
+   <td>[% arc.info_updated_html %]</td>
+</tr>
+[% END %]
+</table>
+[% END %]
