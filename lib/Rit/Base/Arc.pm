@@ -2804,10 +2804,11 @@ sub has_value
 	while(! $error )
 	{
 	    my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
-	    if( $target->equals( $val_parsed, $args ) )
-	    {
-		return $arc;
-	    }
+#	    my $match = $args->{'match'} || 'eq';
+#	    debug sprintf "CHECKS %d if %s %s %s ", $arc->id, $target->sysdesig, $match, ,query_desig($val_parsed);
+
+	    return $arc if $target->matches( $val_parsed, $args );
+#	    debug "  no match";
 	}
 	continue
 	{
@@ -2818,32 +2819,14 @@ sub has_value
 
 
     my $val_parsed = $R->get_by_anything($value, $args_valtype);
-    my $match = $args->{'match'} || 'eq';
 
-#    debug "CHECKS if target $match ".query_desig($value);
+#    my $match = $args->{'match'} || 'eq';
+#    debug sprintf "CHECKS %d if %s %s %s ", $arc->id, $target->sysdesig, $match, ,query_desig($val_parsed);
+#    debug " 1. ".datadump($target,1);
+#    debug " 2. ".datadump($val_parsed,1);
 
-    if( $match eq 'eq' )
-    {
-	return $arc if $target->equals( $val_parsed, $args );
-    }
-    elsif( $match eq 'ne' )
-    {
-	return $arc unless $target->equals( $val_parsed, {%$args,match=>'eq'} );
-    }
-    elsif( $match eq 'gt' )
-    {
-#	debug " is $val_parsed > $target ?";
-	return $arc if $target > $val_parsed;
-    }
-    elsif( $match eq 'lt' )
-    {
-	return $arc if $target < $val_parsed;
-    }
-    else
-    {
-	confess "Matchtype $match not implemented";
-    }
-
+    return $arc if $target->matches( $val_parsed, $args );
+#    debug "  no match";
     return 0;
 }
 
@@ -2957,6 +2940,11 @@ sub value_equals
 	    $val2 = $val2->plain;
 	}
 
+
+	# This part is similar to Rit::Base::Object/matches
+	#
+	#
+
 	if( $clean )
 	{
 	    $val1 = valclean(\$val1);
@@ -2981,11 +2969,27 @@ sub value_equals
 	}
 	elsif( $match eq 'gt' )
 	{
-	    return $arc if $val1 > $val2;
+	    my $coltype = $arc->coltype;
+	    if( $coltype eq 'valtext' )
+	    {
+		return $arc if $val1 gt $val2;
+	    }
+	    else # Anything else should have overloaded '>'
+	    {
+		return $arc if $val1 > $val2;
+	    }
 	}
 	elsif( $match eq 'lt' )
 	{
-	    return $arc if $val1 < $val2;
+	    my $coltype = $arc->coltype;
+	    if( $coltype eq 'valtext' )
+	    {
+		return $arc if $val1 lt $val2;
+	    }
+	    else # Anything else should have overloaded '<'
+	    {
+		return $arc if $val1 < $val2;
+	    }
 	}
 	else
 	{
