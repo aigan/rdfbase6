@@ -288,11 +288,15 @@ sub lit_revarc
 
 See L</Rit::Base::Object/is_true>
 
+Should this theck the truthiness of the plain value?
+
+Returns: 1 if plain value is true in perl boolean context
+
 =cut
 
 sub is_true
 {
-    return $_[0] ? 1 : 0;
+    return $_[0]->plain ? 1 : 0;
 }
 
 
