@@ -529,86 +529,86 @@ sub meets_proplim
 	    $pred = \@preds;
 	}
 
-	#### ARCS
-	if( ref $node eq 'Rit::Base::Arc' )
-	{
-	    ## TODO: Handle preds in the form 'obj.scof'
-
-	    if( ($match ne 'eq' and $match ne 'begins') or $clean )
-	    {
-		confess "Not implemented: $pred_part";
-	    }
-
-	    # Failes test if arc doesn't meets the arclim
-	    return 0 unless $node->meets_arclim( $arclim );
-
-	    debug "  Node is an arc" if $DEBUG;
-	    if( ($pred eq 'obj') or ($pred eq 'value') )
-	    {
-		debug "  Pred is value" if $DEBUG;
-		my $value = $node->value; # Since it's a pred
-		next PRED if $target_value eq '*'; # match all
-		if( ref $value )
-		{
-		    if( $match eq 'eq' )
-		    {
-			next PRED # Passed test
-			  if $value->equals( $target_value, $args );
-		    }
-		    elsif( $match eq 'begins' )
-		    {
-			confess "Matchtype 'begins' only allowed for strings, not ". ref $value
-			  unless( ref $value eq 'Rit::Base::Literal::String' );
-
-			if( $value->begins( $target_value, $args ) )
-			{
-			    next PRED; # Passed test
-			}
-		    }
-		    elsif( $match eq 'exist' )
-		    {
-			debug "Checking exist, target_value: $target_value" if $DEBUG;
-			next PRED
-			  unless( $target_value ); # no props exist on the value
-		    }
-		    else
-		    {
-			confess "Matchtype not implemented: $match";
-		    }
-
-		    debug $node->sysdesig ." failed on arc value." if $DEBUG;
-		    return 0; # Failed test
-		}
-		else
-		{
-		    die "not implemented";
-		}
-	    }
-	    elsif( $pred eq 'subj' )
-	    {
-		debug "  pred is subj" if $DEBUG;
-		my $subj = $node->subj;
-		if( $subj->equals( $target_value, $args ) )
-		{
-		    next PRED; # Passed test
-		}
-		else
-		{
-		    debug $node->sysdesig ." failed." if $DEBUG;
-		    return 0; # Failed test
-		}
-	    }
-	    else
-	    {
-		debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
-	    }
-	} #### END ARCS
-	elsif( ($pred eq 'subj') or ($pred eq 'obj') )
-	{
-	    debug "QUERY ".query_desig($proplim);
-	    debug  "ON ".$node->desig;
-	    confess "Call for $pred on a nonarc ".$node->desig;
-	}
+#	#### ARCS
+#	if( ref $node eq 'Rit::Base::Arc' )
+#	{
+#	    ## TODO: Handle preds in the form 'obj.scof'
+#
+#	    if( ($match ne 'eq' and $match ne 'begins') or $clean )
+#	    {
+#		confess "Not implemented: $pred_part";
+#	    }
+#
+#	    # Failes test if arc doesn't meets the arclim
+#	    return 0 unless $node->meets_arclim( $arclim );
+#
+#	    debug "  Node is an arc" if $DEBUG;
+#	    if( ($pred eq 'obj') or ($pred eq 'value') )
+#	    {
+#		debug "  Pred is value" if $DEBUG;
+#		my $value = $node->value; # Since it's a pred
+#		next PRED if $target_value eq '*'; # match all
+#		if( ref $value )
+#		{
+#		    if( $match eq 'eq' )
+#		    {
+#			next PRED # Passed test
+#			  if $value->equals( $target_value, $args );
+#		    }
+#		    elsif( $match eq 'begins' )
+#		    {
+#			confess "Matchtype 'begins' only allowed for strings, not ". ref $value
+#			  unless( ref $value eq 'Rit::Base::Literal::String' );
+#
+#			if( $value->begins( $target_value, $args ) )
+#			{
+#			    next PRED; # Passed test
+#			}
+#		    }
+#		    elsif( $match eq 'exist' )
+#		    {
+#			debug "Checking exist, target_value: $target_value" if $DEBUG;
+#			next PRED
+#			  unless( $target_value ); # no props exist on the value
+#		    }
+#		    else
+#		    {
+#			confess "Matchtype not implemented: $match";
+#		    }
+#
+#		    debug $node->sysdesig ." failed on arc value." if $DEBUG;
+#		    return 0; # Failed test
+#		}
+#		else
+#		{
+#		    die "not implemented";
+#		}
+#	    }
+#	    elsif( $pred eq 'subj' )
+#	    {
+#		debug "  pred is subj" if $DEBUG;
+#		my $subj = $node->subj;
+#		if( $subj->equals( $target_value, $args ) )
+#		{
+#		    next PRED; # Passed test
+#		}
+#		else
+#		{
+#		    debug $node->sysdesig ." failed." if $DEBUG;
+#		    return 0; # Failed test
+#		}
+#	    }
+#	    else
+#	    {
+#		debug "Asume pred '$pred' for arc is a node prop" if $DEBUG;
+#	    }
+#	} #### END ARCS
+#	elsif( ($pred eq 'subj') or ($pred eq 'obj') )
+#	{
+#	    debug "QUERY ".query_desig($proplim);
+#	    debug  "ON ".$node->desig;
+#	    confess "Call for $pred on a nonarc ".$node->desig;
+#	}
 
 
 	if( $pred =~ /^count_pred_(.*)/ )
@@ -667,20 +667,31 @@ sub meets_proplim
 	    }
 
 	}
-	elsif( $match eq 'eq' )
+	elsif( ($match eq 'eq') or
+	       ($match eq 'lt') or
+	       ($match eq 'gt')
+	     )
 	{
-	    debug "    match is eq/$rev" if $DEBUG;
+	    debug "    match is $match/$rev (calling has_value)" if $DEBUG;
 	    next PRED # Check next if this test pass
 	      if $node->has_value({$pred=>$target_value},
-					  {%$args,rev=>$rev} );
+					  {
+					   %$args,
+					   rev=>$rev,
+					   match=>$match,
+					  } );
 	}
 	elsif( $match eq 'ne' )
 	{
-	    debug "    match is ne/$rev" if $DEBUG;
+	    debug "    match is ne/$rev (calling has_value)" if $DEBUG;
 		# Matchtype is 'ne'. Result is negated here
 	    next PRED # Check next if this test pass
 	      unless $node->has_value({$pred=>$target_value},
-				      {%$args,$rev=>$rev} );
+				      {
+				       %$args,
+				       $rev=>$rev,
+				       match=>$match,
+				      });
 	}
 	elsif( $match eq 'exist' )
 	{
