@@ -2777,12 +2777,32 @@ sub has_value
 	return 0;
     }
 
-#    debug "CHECKS if target is equal to ".query_desig($value);
 
     my $val_parsed = $R->get_by_anything($value, $args_valtype);
-    if( $target->equals( $val_parsed, $args ) )
+    my $match = $args->{'match'} || 'eq';
+
+#    debug "CHECKS if target $match ".query_desig($value);
+
+    if( $match eq 'eq' )
     {
-	return $arc;
+	return $arc if $target->equals( $val_parsed, $args );
+    }
+    elsif( $match eq 'ne' )
+    {
+	return $arc unless $target->equals( $val_parsed, {%$args,match=>'eq'} );
+    }
+    elsif( $match eq 'gt' )
+    {
+#	debug " is $val_parsed > $target ?";
+	return $arc if $target > $val_parsed;
+    }
+    elsif( $match eq 'lt' )
+    {
+	return $arc if $target < $val_parsed;
+    }
+    else
+    {
+	confess "Matchtype $match not implemented";
     }
 
     return 0;
@@ -2892,6 +2912,10 @@ sub value_equals
 	{
 	    return $val1 eq $val2;
 	}
+	elsif( $match eq 'ne' )
+	{
+	    return $val1 ne $val2;
+	}
 	elsif( $match eq 'begins' )
 	{
 	    return 1 if $val1 =~ /^\Q$val2/;
@@ -2899,6 +2923,14 @@ sub value_equals
 	elsif( $match eq 'like' )
 	{
 	    return 1 if $val1 =~ /\Q$val2/;
+	}
+	elsif( $match eq 'gt' )
+	{
+	    return $arc if $val1 > $val2;
+	}
+	elsif( $match eq 'lt' )
+	{
+	    return $arc if $val1 < $val2;
 	}
 	else
 	{
@@ -4370,6 +4402,16 @@ sub init
 #	  += Time::HiRes::time() - $ts;
     }
 
+#    unless( ref $value ) ### DEBUG
+#    {
+#	my $valtype = Rit::Base::Resource->get($valtype_id);
+#	debug "  valtype is ".$valtype->sysdesig;
+#	debug "  instace class is ".$valtype->instance_class;
+#	confess "  bad value ".datadump($value,2);
+#    }
+
+
+
     # Clean out old values if this is a reset
     if( $arc->{'ioid'} )
     {
@@ -4533,6 +4575,10 @@ sub register_with_nodes
     {
 	confess "bad value ".datadump($value,2);
     }
+#    elsif(! ref $value )
+#    {
+#	confess "bad value ".datadump($value,2);
+#    }
 
     if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
     {
@@ -4542,7 +4588,7 @@ sub register_with_nodes
     {
 	# Always revarc initiated
     }
-    elsif( not $value->{'arc_id'}{$id} )
+    elsif(not( $value->{'arc_id'} and $value->{'arc_id'}{$id} ))
     {
 	if( $arc->{'active'} )
 	{
