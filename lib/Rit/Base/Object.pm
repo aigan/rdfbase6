@@ -198,7 +198,7 @@ sub is_value_node { 0 };
 
 =head2 as_html
 
-  $o->as_html()
+  $o->as_html( \%args )
 
 Defaults to L</desig>
 
@@ -346,6 +346,95 @@ Tests if two objects are the same object.
 sub equals
 {
     confess "Implement this";
+}
+
+
+#######################################################################
+
+=head2 matches
+
+  $n->matches( $value, \%args )
+
+Supported args are:
+
+  match
+
+Default match is C<eq>
+
+C<%args> must be specified
+
+Supported matches are:
+
+  eq
+  ne
+  gt
+  lt
+  begins
+  like
+
+Returns: true if C<$n $match $value>
+
+=cut
+
+sub matches
+{
+    my( $obj, $val, $args ) = @_;
+    return 0 unless defined $val;
+
+    my $match = $args->{'match'} || 'eq';
+
+    if( delete $args->{'clean'} )
+    {
+	$obj = $obj->clean;
+	$val = $val->clean;
+    }
+
+    if( $match eq 'eq' )
+    {
+	return 1 if $obj->equals( $val, $args );
+    }
+    elsif( $match eq 'ne' )
+    {
+	return 1 unless $obj->equals( $val, {%$args,match=>'eq'} );
+    }
+    elsif( $match eq 'gt' )
+    {
+	my $coltype = $obj->this_coltype;
+	if( $coltype eq 'valtext' )
+	{
+	    return 1 if $obj gt $val;
+	}
+	else # Anything else should have overloaded '>'
+	{
+	    return 1 if $obj > $val;
+	}
+    }
+    elsif( $match eq 'lt' )
+    {
+	my $coltype = $obj->this_coltype;
+	if( $coltype eq 'valtext' )
+	{
+	    return 1 if $obj lt $val;
+	}
+	else # Anything else should have overloaded '<'
+	{
+	    return 1 if $obj < $val;
+	}
+    }
+    elsif( $match eq 'begins' )
+    {
+	return 1 if $obj =~ /^\Q$val/;
+    }
+    elsif( $match eq 'like' )
+    {
+	return 1 if $obj =~ /\Q$val/;
+    }
+    else
+    {
+	confess "Matchtype $match not implemented";
+    }
+
+    return 0;
 }
 
 
@@ -530,19 +619,17 @@ sub nodes
 
 #######################################################################
 
-=head2 coltype
+=head2 this_coltype
 
-This node has the coltype C<obj>.
+Returns: The coltype of the node
 
-TODO: Should be called something else.  What to do about literals that
-may be values?
+Must be implemented in a subclass
 
 =cut
 
-sub coltype
+sub this_coltype
 {
     confess "Not implemented";
-    'obj';
 }
 
 
@@ -554,6 +641,8 @@ sub coltype
 
 Implements ne and exist => 0, otherwise false if proplim is defined
 and has content.  This is re-implemented for L<Rit::Base::Resource>.
+
+TODO: Generalize this
 
 =cut
 
