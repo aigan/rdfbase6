@@ -3869,7 +3869,7 @@ sub update
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
-	my $old = $node->arc_list( $pred_name, undef, aais($args,'explicit') );
+	my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
 	push @arcs_old, $old->as_array;
     }
 
@@ -4072,7 +4072,7 @@ sub merge_node
 
     my $move_literals = $args->{'move_literals'} || 0;
 
-    foreach my $arc ( $node1->arc_list(undef, undef, aais($args,'explicit'))->nodes )
+    foreach my $arc ( $node1->arc_list(undef, undef, ['active','explicit'])->nodes )
     {
 	my $pred_name = $arc->pred->plain;
 	if( my $obj = $arc->obj )
@@ -4088,7 +4088,7 @@ sub merge_node
 	$arc->remove( $args );
     }
 
-    foreach my $arc ( $node1->revarc_list(undef, undef, aais($args,'explicit'))->nodes )
+    foreach my $arc ( $node1->revarc_list(undef, undef, ['active','explicit'])->nodes )
     {
 	my $pred_name = $arc->pred->plain;
 	if( my $subj = $arc->subj )
@@ -4267,6 +4267,11 @@ sub wdirc
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+    unless( $args->{'arclim'}->size ) # Defaults to active arcs
+    {
+	$args->{'arclim'} =  Rit::Base::Arc::Lim->parse('active');
+    }
+
     my $out = '';
     my $is_scof = $args->{'range_scof'};
     my $is_rev = $args->{'rev'} || '';
@@ -4277,8 +4282,8 @@ sub wdirc
 	confess "Range missing";
     }
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->name, undef, 'explicit' )
-		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
+		 $subj->revarc_list( $pred->name, undef, aais($args,'explicit') )
+		 : $subj->arc_list( $pred->name, undef, aais($args,'explicit') ) );
 
     if( $is_rev )
     {
@@ -4597,6 +4602,11 @@ sub wuirc
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+    unless( $args->{'arclim'}->size ) # Defaults to active arcs
+    {
+	$args->{'arclim'} =  Rit::Base::Arc::Lim->parse('active');
+    }
+
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
     my $out = '';
@@ -4620,8 +4630,8 @@ sub wuirc
       unless( $range );
 
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->name, undef, 'explicit' )
-		 : $subj->arc_list( $pred->name, undef, 'explicit' ) );
+		 $subj->revarc_list( $pred->name, undef, aais($args,'explicit') )
+		 : $subj->arc_list( $pred->name, undef, aais($args,'explicit') ) );
 
     if( $is_rev )
     {
