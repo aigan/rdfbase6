@@ -174,7 +174,7 @@ sub clone
 
 =head2 add_intersect
 
-  $arclim->add_intersect( $limit )
+  $arclim->add_intersect( $limit, $limit2, ... )
 
 Adds the given limit to each alternative in the arclim. If arclim is
 empty the limit is used as the only alternative.
@@ -193,24 +193,27 @@ Returns: The same arclim, changed
 
 sub add_intersect
 {
-    my( $arclim, $limit ) = @_;
+    my $arclim = shift;
 
-    unless( $limit =~ /^\d+$/ )
+    while( my $limit = shift )
     {
-	$limit= $LIM{$limit};
-	die "Flag $_[1] not recognized" unless $limit;
-    }
-
-    if( @$arclim )
-    {
-	foreach(@$arclim)
+	unless( $limit =~ /^\d+$/ )
 	{
-	    $_ |= +$limit;
+	    $limit= $LIM{$limit};
+	    die "Flag $_[1] not recognized" unless $limit;
 	}
-    }
-    else
-    {
-	$arclim->[0] = $limit;
+
+	if( @$arclim )
+	{
+	    foreach(@$arclim)
+	    {
+		$_ |= +$limit;
+	    }
+	}
+	else
+	{
+	    $arclim->[0] = $limit;
+	}
     }
 
 #    debug "RETURNING ".$arclim->sysdesig;
@@ -239,7 +242,6 @@ sub incl_act
 
     my $active   = 1;
     my $inactive = 0;
-    my $other    = 0;
 
     confess "Invalid arclim ($arclim)" unless ref $arclim;
 
@@ -260,9 +262,10 @@ sub incl_act
 	    }
 	}
 
-	unless( $inactive )
+	unless( $active or $inactive )
 	{
 	    $active = 1;
+	    $inactive = 1;
 	}
     }
 
