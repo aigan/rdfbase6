@@ -457,7 +457,7 @@ sub find_by_anything
 	}
     }
 
-    # 1. obj as object
+    # 1a. obj as object
     #
     if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Resource') )
     {
@@ -471,6 +471,13 @@ sub find_by_anything
 	    debug 3, "  obj as litral";
 	    push @new, $valtype->instance_class->parse($val,$args);
 	}
+    }
+    # 1b. obj as literal
+    #
+    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Literal') )
+    {
+	debug 3, "  obj as litral";
+	push @new, $val;
     }
     #
     # 2. obj as subquery
