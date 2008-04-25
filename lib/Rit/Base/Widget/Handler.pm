@@ -29,6 +29,7 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw catch trim debug datadump );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::List;
 use Rit::Base::Arc;
