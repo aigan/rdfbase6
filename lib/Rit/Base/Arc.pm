@@ -2739,9 +2739,17 @@ sub remove_duplicates
 
   $a->has_value({ $pred => $value }, \%args )
 
-If given anything other than a hashref, calls L</value_equals> and returns the result.
+If given anything other than a hashref, calls
+L<Rit::Base::Object/matches> and returns the result.
 
+In the special case of negated pred matches:
+  $a->has_value({ ${pred}_ne => [ $val1, $val2, ... ]}, \%args)
 
+Instead of the normal OR logic:
+  if( ($prop ne $val1) or ($prop ne $val2) ...
+
+We will use AND:
+  if( ($prop ne $val1) and ($prop ne $val2) ...
 
 =cut
 
@@ -2800,6 +2808,23 @@ sub has_value
 
     if( UNIVERSAL::isa( $value, 'Para::Frame::List' ) )
     {
+	my $match = $args->{'match'} || 'eq';
+	if( $match eq 'ne' ) ### SPECIAL CASE; INVERT LOGIC
+	{
+	    $args->{'match'} = 'eq';
+	    my( $val_in, $error ) = $value->get_first;
+	    while(! $error )
+	    {
+		my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
+		return 0 if $target->matches( $val_parsed, $args );
+	    }
+	    continue
+	    {
+		( $val_in, $error ) = $value->get_next;
+	    };
+	    return $arc;
+	}
+
 	my( $val_in, $error ) = $value->get_first;
 	while(! $error )
 	{
