@@ -1104,6 +1104,41 @@ sub obj_id
 
 #######################################################################
 
+=head2 value_as_html
+
+  $a->value_as_html
+
+A designation of the value, in HTML.
+
+This will use L<Rit::Base::Resource/as_html> or any other
+implementation of C<as_html> for the value.
+
+For C<removals>, The deleted value will be displayd with a
+line-through.
+
+=cut
+
+sub value_as_html
+{
+    my( $arc ) = @_;
+
+    my $out;
+    if( $arc->is_removal )
+    {
+	$out = '<span style="text-decoration:line-through;color:red">';
+	$out .= $arc->replaces->value_as_html;
+	$out .= '</span>';
+    }
+    else
+    {
+	$out = $arc->value->as_html;
+    }
+
+    return $out;
+}
+
+#######################################################################
+
 =head2 value_desig
 
   $a->value_desig
@@ -2724,20 +2759,24 @@ sub has_value
     my( $pred_name, $value ) = each( %$val_in );
     my $target;
 
-    if( $DYNAMIC_PRED{ $pred_name } )
+    my $valtype;
+
+    if( $pred_name eq 'value' )
+    {
+	return $arc->value_equals($value, $args_in);
+    }
+    elsif( my $valtype_name = $DYNAMIC_PRED{ $pred_name } )
     {
 	$target = $arc->$pred_name();
+	$valtype = Rit::Base::Resource->get_by_label($valtype_name);
 
 #	debug "has_value TARGET is ".$target->sysdesig;
     }
-
-    unless( $target )
+    else
     {
 	return $arc->SUPER::has_value($val_in, $args);
     }
 
-    my $valtype_name = $DYNAMIC_PRED{$pred_name};
-    my $valtype = Rit::Base::Resource->get_by_label($valtype_name);
     my $args_valtype =
     {
      %$args,
@@ -2866,9 +2905,25 @@ sub value_equals
 	{
 	    return $arc->obj->equals( $val2, $args );
 	}
-	else
+	elsif( $match eq 'ne' )
+	{
+	    return not $arc->obj->equals( $val2, $args );
+	}
+	elsif( $match eq 'gt' )
+	{
+	    return( $arc->obj > $val2 );
+	}
+	elsif( $match eq 'lt' )
+	{
+	    return( $arc->obj < $val2 );
+	}
+	elsif( ($match eq 'begins') or ($match eq 'like') )
 	{
 	    return 0;
+	}
+	else
+	{
+	    confess "Matchtype $match not implemented";
 	}
     }
     elsif( ref $val2 eq 'Rit::Base::Resource' )
