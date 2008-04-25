@@ -29,7 +29,7 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
-use Rit::Base::Utils qw( );
+use Rit::Base::Utils qw( parse_propargs );
 
 use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
 # Parent overloads some operators!
@@ -154,20 +154,28 @@ sub new_from_db
 
 =head2 as_html
 
-  $a->as_html
+  $a->as_html( \%args )
 
-  $a->as_html($label_method)
+Supported args are:
+
+  method
+
+C<method> defaults to C<format>
 
 =cut
 
 sub as_html
 {
-    my( $a, $method ) = @_;
+    my( $a, $args_in ) = @_;
+
     if( $a->broken )
     {
-	my $str = $a->format;
+	my $str = $a->original;
 	return "<span style=\"color:red\">$str</a>";
     }
+
+    my( $args ) = parse_propargs($args_in);
+    my $method = $args->{'method'} || 'format';
 
     my $label;
     if( $method and $a->can($method) )
@@ -175,7 +183,6 @@ sub as_html
 	$label = $a->$method();
     }
     $label ||= $a->format;
-
 
     my $adr = $a->address;
     my $full = CGI->escapeHTML($label);
