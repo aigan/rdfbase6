@@ -66,10 +66,10 @@ use Rit::Base::Utils qw( valclean translate parse_query_props
 			 parse_propargs aais );
 
 
-use constant CLUE_NOARC => 1;
-use constant CLUE_NOUSEREVARC => 2;
-use constant CLUE_VALUENODE => 4;
-use constant CLUE_NOVALUENODE => 8;
+use constant CLUE_NOARC => 1;       # no arc
+use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
+use constant CLUE_VALUENODE => 4;   # literal resource
+use constant CLUE_NOVALUENODE => 8; # no literal resource
 
 our %UNSAVED;
 our $ID;
@@ -2851,7 +2851,9 @@ sub has_value
 	}
 	else
 	{
+#	    debug "  getting arcs for node with pred $pred_name and args ".query_desig($args);
 	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
+#	    debug "    found ".int(@arcs_in)." arcs";
 	}
     }
 
@@ -4007,6 +4009,9 @@ sub equals
   $n->vacuum( \%args )
 
 Vacuums each arc of the resource
+
+This method is called for each class, via
+L<Rit::Base::Metaclass/vacuum>
 
 Supported args are:
 
