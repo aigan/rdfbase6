@@ -1583,13 +1583,10 @@ sub contains_any_of
 
   $l->has_value($val, \%args)
 
-To be used for lists of literal resources.
+Returns true if at least one of the elements of the list has the given
+value.
 
-This calls translates to
-
-  $l->find({value => $val }, \%args )
-
-See L</find>.
+See L<Rit::Base::Resource/find> nad L<Rit::Base::Arc/has_value>.
 
 Supported args are:
 
@@ -1597,12 +1594,17 @@ Supported args are:
 
 =cut
 
-# TODO: Shouldn't this do the same as Resource->has_value() ???
-
 sub has_value
 {
     my( $l, $value, $args ) = @_;
-    $l->find({value=>$value}, $args);
+
+    my( $node, $error );
+    for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
+    {
+	return 1 if $node->has_value($value, $args);
+    }
+
+    return 0;
 }
 
 #######################################################################
