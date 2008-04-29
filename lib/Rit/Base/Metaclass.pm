@@ -161,6 +161,7 @@ sub vacuum
     foreach my $sc (@{"${class}::ISA"})
     {
 	next if $sc eq __PACKAGE__;
+	debug "  Vacuum via $sc";
 	if( my $method = $sc->can("vacuum") )
 	{
 	    &{$method}($n, @_);
