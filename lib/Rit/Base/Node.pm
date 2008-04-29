@@ -726,7 +726,11 @@ sub meets_proplim
 	    }
 
 	    next PRED # Check next if this test pass
-	      if $node->has_value({$pred=>$target_value}, $args );
+	      if $node->has_value({$pred=>$target_value},
+				  {
+				   %$args,
+				   match => $match,
+				  } );
 	}
 	else
 	{

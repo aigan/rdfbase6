@@ -192,7 +192,7 @@ END;
 [% END %]
 
 [% IF include_indirect %]
-   [% arclim = '' %]
+   [% arclim = 'active' %]
 [% ELSE %]
    [% arclim = 'adirect' %]
 [% END %]
