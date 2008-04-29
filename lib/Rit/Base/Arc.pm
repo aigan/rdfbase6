@@ -2867,8 +2867,7 @@ Supported args are
   clean
   arclim
 
-Default C<$match> is C<eq>. Other supported values are C<begins> and
-C<like>.
+Default C<$match> is C<eq>. Other supported values are C<ne>, C<gt>, C<lt>, C<begins> and C<like>.
 
 Default C<$clean> is C<false>. If C<$clean> is true, strings will be
 compared in clean mode. (You don't have to clean the C<$value> by
