@@ -474,7 +474,7 @@ sub find_by_anything
     }
     # 1b. obj as literal
     #
-    if( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Literal') )
+    elsif( ref $val and UNIVERSAL::isa( $val, 'Rit::Base::Literal') )
     {
 	debug 3, "  obj as litral";
 	push @new, $val;
@@ -571,6 +571,8 @@ sub find_by_anything
     elsif( $val =~ /^\s*(.*?)\s*\(\s*(.*?)\s*\)\s*$/ )
     {
 	debug 3, "  obj as name of obj with criterions";
+	confess "CONFUSED ($val)" if $val =~ /HASH\(0x\w+\)$/;
+
 	my $name = trim($1);
 	my $spec = trim($2);
 	my $objs;
