@@ -2620,11 +2620,26 @@ sub has_value
 #    Para::Frame::Logging->this_level(4);
     my $DEBUG = Para::Frame::Logging->at_level(3);
 
-    my( $pred_name, $value ) = %$preds;
-
     my $match = $args->{'match'} || 'eq';
     my $clean = $args->{'clean'} || 0;
     my $rev   = $args->{'rev'}   || 0;
+
+    #### NEGATION:
+    #
+    # { pred_ne = $val } is taken to match nodes that doesn't have a
+    # property with the given pred and value, rather than matching
+    # nodes that has a property with a pred that doen't have the
+    # value.
+    if( $match eq 'ne' )
+    {
+	$args->{'match'} = 'eq';
+	return( $node->has_value($preds, $args ) ? 0 : 1 );
+    }
+
+
+
+    my( $pred_name, $value ) = %$preds;
+
     delete( $args->{'rev'} ); ### NOT passing rev on!
 
     # Can we also handle dynamic preds like id or desig?
