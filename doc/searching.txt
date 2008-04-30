@@ -1,0 +1,16 @@
+$res_list->find({pred1=>$val1})
+==
+FOREACH $res
+  $res->meets_proplim({pred1=>$val1})
+
+---
+
+$res->meets_proplim({pred1=>$val1})
+==
+$res->has_value({pred1=>$val1})
+==
+FOREACH $arc IN $res->arclist($pred1)
+  $arc->value_equals($val1)
+
+---
+
