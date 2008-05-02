@@ -351,7 +351,7 @@ sub find_by_anything
 					    pred_coltype => 4, # valdate
 					   });
     }
-    elsif( $label =~ /^(owned_by|read_access|write_access|created_by|updated_by)$/ )
+    elsif( $label =~ /^(owned_by|read_access|write_access|created_by|updated_by|subj|pred|obj)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,
