@@ -26,8 +26,6 @@ use MIME::Words qw( decode_mimewords );
 use IMAP::BodyStructure;
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
-use MIME::Types;
-use CGI;
 
 BEGIN
 {
