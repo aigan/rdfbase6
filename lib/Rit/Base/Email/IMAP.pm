@@ -322,7 +322,7 @@ sub body_as_html
 	    my $name_enc = CGI->escapeHTML($name);
 	    my $desc_enc = CGI->escapeHTML($desc);
 
-	    my $type = $att->type;
+	    my $type = $att->effective_type;
 	    my $size_human = $att->size_human;
 
 	    my $url_path = $att->url_path($name);
