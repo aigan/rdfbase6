@@ -273,13 +273,45 @@ sub type
 
 =head2 effective_type
 
-TODO: Implement effective_type, as in L<MIME::Entity/effective_type>
+  $part->effective_type
+
+Mostly the same as L</type>.
+
+Any entity with an unrecognized Content-Transfer-Encoding must be
+treated as if it has a Content-Type of "application/octet-stream",
+regardless of what the Content-Type header field actually says.
+
+On the other hand; If the type is given as "application/octet-stream"
+but we recognize the file extension, the type will be given based on
+the file extension.
+
+Returns: A plain scalar string of the mime-type
+
+See also: L<MIME::Entity/effective_type>
 
 =cut
 
 sub effective_type
 {
-    return $_[0]->type;
+    my $type_name = lc $_[0]->struct->type;
+    if( $type_name eq 'application/octet-stream' )
+    {
+	$_[0]->filename =~ /\.([^\.]+)$/;
+	if( my $ext = $1 )
+	{
+	    if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
+	    {
+		$type_name = $type->type;
+	    }
+	}
+    }
+    elsif( not $MIME_TYPES->type($type_name) )
+    {
+	debug "Mime-type $type_name not recognized";
+	$type_name = 'application/octet-stream';
+    }
+
+    return $type_name;
 }
 
 
