@@ -51,6 +51,9 @@ use Rit::Base::Email::Head;
 
 use constant EA => 'Rit::Base::Literal::Email::Address';
 
+our $MIME_TYPES;
+
+
 #######################################################################
 
 =head2 new
@@ -493,15 +496,40 @@ sub filename_safe
 #    debug "Safe base name: $safe";
 #    debug "type name: $type_name";
 
+    unless( $MIME_TYPES ) # Initialize $MIME_TYPES
+    {
+	$MIME_TYPES = MIME::Types->new;
+	my @types;
 
-    my $mt = MIME::Types->new;
+	push @types, (
+		      MIME::Type->new(
+				      encoding => 'quoted-printable',
+				      extensions => ['xlsx'],
+				      type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				     ),
+		     );
+	$MIME_TYPES->addType(@types);
+
+	# Not in db! :-P
+	$MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
+    }
+
+
 
 
     # Try to figure out octet-streams
     if( $type_name eq 'application/octet-stream' )
     {
-	$type_name = $mt->mimeTypeOf($ext)->type;
-	debug "Guessing type $type_name from ext $ext for octet-stream";
+	debug "Guessing type from ext $ext for octet-stream";
+	if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
+	{
+	    $type_name = $type->type;
+	    debug "  Guessed $type_name";
+	}
+	else
+	{
+	    debug "  No type associated to ext $ext for application/octet-stream";
+	}
     }
 
 
@@ -510,14 +538,8 @@ sub filename_safe
 	$type_name = 'application/pdf';
     }
 
-    if( my $type = $mt->type($type_name) )
+    if( my $type = $MIME_TYPES->type($type_name) )
     {
-	if( $type->type eq 'message/rfc822')
-	{
-	    # Not in db! :-P
-	    $type->{'MT_extensions'} = ['eml'];
-	}
-
 	# debug "Got type $type";
 
 	if( $ext )
