@@ -2915,7 +2915,7 @@ sub has_value
 
     if( $DEBUG )
     {
-	my $value_str = defined($value)?$value:"<undef>";
+	my $value_str = query_desig($value);
 	debug "  no such value $value_str for ".$node->desig;
     }
 
