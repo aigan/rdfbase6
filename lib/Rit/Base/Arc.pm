@@ -2773,6 +2773,13 @@ sub has_value
     {
 	return $arc->value_equals($value, $args_in);
     }
+
+    #
+    #
+    ##### TODO: Move all of the below to SUPER::has_value !!!
+    #
+    #
+
     elsif( my $valtype_name = $DYNAMIC_PRED{ $pred_name } )
     {
 	$target = $arc->$pred_name();
