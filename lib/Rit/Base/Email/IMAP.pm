@@ -238,8 +238,10 @@ sub url_path
     my $email = $part->email;
     my $nid = $email->id;
 
+    # Format subject as a filename
     my $subject = $part->head->parsed_subject->plain;
-
+    $subject =~ s/\// /g;
+    $subject =~ s/\.\s*/ /g;
     my $safe = $part->filename_safe($subject,"message/rfc822");
 
     my $s = $Para::Frame::REQ->session
