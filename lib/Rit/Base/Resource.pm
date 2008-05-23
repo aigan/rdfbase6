@@ -651,15 +651,10 @@ sub find_by_anything
 
 	trim(\$val);
 
-	eval # May throw exception
+	if( my $const = $this->get_by_label($val,{nonfatal=>1}) )
 	{
-#	    debug "Getting $val from const";
-	    my $const = $this->get_by_label($val);
-	    unless( $const->{'NOT_INITIALIZED'} )
-	    {
-		@new = ( $const );
-	    }
-	};
+	    @new = ( $const );
+	}
 
 	unless( @new )
 	{
@@ -5844,17 +5839,23 @@ sub get_by_anything
 
 =head2 get_by_label
 
-  $class->get_by_label( $label )
+  $class->get_by_label( $label, \%args )
 
 Looks for a label WITH THE SPECIFIED CLASS.
 
 If called fro L<Rit::Base::Pred> it will assume it's a predicate
 
+Supported args are:
+
+  nonfatal
+
 =cut
 
 sub get_by_label
 {
-    my( $this, $label ) = @_;
+    my( $this, $label, $args ) = @_;
+
+    $args ||= {};
 
     unless( $Rit::Base::Constants::Label{$label} )
     {
@@ -5871,7 +5872,13 @@ sub get_by_label
 
 	unless( $id )
 	{
-	    confess "Constant $label doesn't exist";
+	    if( $args->{'nonfatal'} )
+	    {
+		return undef;
+	    }
+
+	    cluck "Constant $label doesn't exist";
+	    throw('notfound', "Constant $label doesn't exist");
 	}
 
 	# We have to trust that the label is of the class given with
