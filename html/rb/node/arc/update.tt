@@ -74,7 +74,7 @@ This is an <strong>active</strong> version.
       [% IF oarc.objtype %]
          [% oarc.obj.sysdesig | html %]
       [% ELSE %]
-         [% IF oarc.valtype.desig == 'textbox' %]
+         [% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
             [% oarc.value | html | html_br %]
          [% ELSE %]
             [% oarc.value | html %]</td>
@@ -90,7 +90,7 @@ This is an <strong>active</strong> version.
 </tr>
 [% ELSE %]
 <tr>
-   [% IF arc.valtype.desig == 'textbox' %]
+   [% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
       <td colspan="2">[% arc.valtype.wu_jump %]:<br>
          [% arc.value | html | html_br %]
       </td>
@@ -143,7 +143,7 @@ This is an <strong>active</strong> version.
       [% IF oarc.objtype %]
          [% oarc.obj.sysdesig | html %]
       [% ELSE %]
-         [% IF oarc.valtype.desig == 'textbox' %]
+         [% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
             [% oarc.value | html | html_br %]
          [% ELSE %]
             [% oarc.value | html %]</td>
@@ -159,7 +159,7 @@ This is an <strong>active</strong> version.
 </tr>
 [% ELSE %]
 <tr>
-   [% IF arc.valtype.desig == 'textbox' %]
+   [% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
       <td colspan="2">[% arc.valtype.wu_jump %]:<br>
          [% textarea('val', arc.value) %]
       </td>
