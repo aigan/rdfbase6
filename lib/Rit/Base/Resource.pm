@@ -647,20 +647,29 @@ sub find_by_anything
     elsif( $val !~ /^\s*\d+\s*$/ )
     {
 	debug 3, "  obj as label or name of obj";
-	# TODO: Handle empty $val
 
-	trim(\$val);
-
-	if( my $const = $this->get_by_label($val,{nonfatal=>1}) )
+	if( UNIVERSAL::isa($val, "Rit::Base::Literal" ) )
 	{
-	    @new = ( $const );
+	    $val = $val->plain;
+	}
+	elsif( not ref $val )
+	{
+	    trim(\$val);
 	}
 
-	unless( @new )
+	unless( ref $val )
 	{
-	    # Used to use find_simple.  But this is a general find
-	    # function and can not assume the simple case
-	    @new = $this->find({ name_clean => $val }, $args)->as_array;
+	    if( my $const = $this->get_by_label($val,{nonfatal=>1}) )
+	    {
+		@new = ( $const );
+	    }
+
+	    unless( @new )
+	    {
+		# Used to use find_simple.  But this is a general find
+		# function and can not assume the simple case
+		@new = $this->find({ name_clean => $val }, $args)->as_array;
+	    }
 	}
     }
     #
