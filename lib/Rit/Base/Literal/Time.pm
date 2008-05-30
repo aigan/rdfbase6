@@ -203,7 +203,15 @@ sub now
 
 sub date
 {
-    return bless(Para::Frame::Time->get(@_),'Rit::Base::Literal::Time');
+    my $time = Para::Frame::Time->get(@_);
+    if( $time )
+    {
+	return bless($time,'Rit::Base::Literal::Time');
+    }
+    else
+    {
+	return Rit::Base::Literal::Time->new(undef);
+    }
 }
 
 #######################################################################
