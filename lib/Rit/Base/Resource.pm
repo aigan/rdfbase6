@@ -5120,16 +5120,19 @@ sub find_class
 		# Should only be for classes that never should be
 		# metaclasses
 		#
+		# Those classes should also define a this_valtype()
+
 #		$Para::Frame::REQ->{RBSTAT}{'find_class use_class'} += Time::HiRes::time() - $ts;
 		if( UNIVERSAL::can($pkg, 'this_valtype') )
 		{
-		    # In case we was called from...
-		    debug "  Should we look up valtype for ".$pkg if $DEBUG;
+		    # In case we was called from RB::Resource->this_valtype
+		    $node->{'valtype'} = $pkg->this_valtype();
 		}
 		else
 		{
 		    debug "NOT able to get valtytype for $id" if $DEBUG;
 		}
+
 		return $pkg->use_class;
 	    }
 
