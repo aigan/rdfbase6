@@ -4315,8 +4315,8 @@ sub wdirc
 	confess "Range missing";
     }
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->name, undef, aais($args,'explicit') )
-		 : $subj->arc_list( $pred->name, undef, aais($args,'explicit') ) );
+		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
+		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
     if( $is_rev )
     {
@@ -4340,7 +4340,7 @@ sub wdirc
     $out .= '<ul>'
       if( $list->size > 1);
 
-    debug "Making a wdirc for ". $pred->name ." with ". $list->size ." items.  Range: ". $range->sysdesig;
+    debug "Making a wdirc for ". $pred->label ." with ". $list->size ." items.  Range: ". $range->sysdesig;
     foreach my $arc ($list->as_array)
     {
 	$out .= '<li>'
@@ -4462,6 +4462,7 @@ sub wu
     }
 
     # widget for updating subclass of range class
+    debug "Calling ". $range->instance_class ."->wuirc(". $node->desig .", ". $pred->label ."...)";
     $out .= $range->instance_class->wuirc($node, $pred, $args);
     $out .= $extra_html if $extra_html;
 
@@ -4663,8 +4664,8 @@ sub wuirc
       unless( $range );
 
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->name, undef, aais($args,'explicit') )
-		 : $subj->arc_list( $pred->name, undef, aais($args,'explicit') ) );
+		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
+		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
     if( $is_rev )
     {
@@ -4770,7 +4771,7 @@ sub wuirc
 #               <!--
 #                  new RBInputPopup('$divid-button',
 #                     '$divid', '". to_json( $search_params ) ."',
-#                     '".to_json($lookup_pred)."', '". $pred->name ."',
+#                     '".to_json($lookup_pred)."', '". $pred->label ."',
 #                     '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
 	}
 	elsif( $inputtype eq 'text' )
@@ -4794,7 +4795,7 @@ sub wuirc
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
-	    $out .= Rit::Base::Widget::wub_select( $subj, $pred->name, $range,
+	    $out .= Rit::Base::Widget::wub_select( $subj, $pred->label, $range,
 						   {
 						    %$args,
 						    header => $header,
@@ -4802,7 +4803,7 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
-	    $out .= Rit::Base::Widget::wub_select_tree( $subj, $pred->name, $range, $args );
+	    $out .= Rit::Base::Widget::wub_select_tree( $subj, $pred->label, $range, $args );
 	}
 	else
 	{
