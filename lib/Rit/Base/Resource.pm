@@ -71,7 +71,12 @@ use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
 use constant CLUE_VALUENODE => 4;   # literal resource
 use constant CLUE_NOVALUENODE => 8; # no literal resource
 
-our %UNSAVED;
+# TODO: Transactions should be local to the request!!!  But if we use
+# DB rollbacks with a DB-connection that uses ONE db transaction, it
+# will roll back ALL things since the start of the transaction.
+
+our %UNSAVED;     # The node table
+our %TRANSACTION; # The arc table
 our $ID;
 
 ### Inherit
@@ -6215,6 +6220,9 @@ sub commit
 	debug $@;
 	Rit::Base::Resource->rollback;
     }
+
+    # DB synced with arc changes in cache
+    %TRANSACTION = ();
 }
 
 
@@ -6232,6 +6240,13 @@ sub rollback
 	$node->reset_cache;
     }
     %UNSAVED = ();
+
+    foreach my $aid ( keys %TRANSACTION )
+    {
+	Rit::Base::Arc->get( $aid )->reset_cache;
+    }
+    %TRANSACTION = ();
+
 }
 
 
@@ -7092,7 +7107,7 @@ must only have ONE value. It's important for literal values.
 
 This method will return the literal valtype for value resoruces.
 
-It will retrun the C<resource> resource if a single class can't be
+It will return the C<resource> resource if a single class can't be
 identified.
 
 See also: L<Rit::Base::Literal/this_valtype>,
