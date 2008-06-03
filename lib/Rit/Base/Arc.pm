@@ -859,6 +859,7 @@ sub create
     debug "SQL $st (@values)" if $DEBUG;
 
     $sth->execute( @values );
+    $Rit::Base::Resource::TRANSACTION{ $rec->{'ver'} } = $Para::Frame::REQ;
 
     my $arc = $this->get_by_rec($rec,
 				{
@@ -1019,6 +1020,7 @@ sub set_value_node
     my $st = "update arc set obj=? where ver=?";
     my $sth = $Rit::dbix->dbh->prepare($st);
     $sth->execute( $node->id, $arc->id );
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'value_node'} = $node->id;
     $arc->{'value_node_obj'} = $node;
@@ -1051,7 +1053,7 @@ sub set_value_node
 Returns: The object L<Rit::Base::Resource> of the arc. If the arc
 points to a literal resource (value node), we will return the value
 node. Thus. You can't use this to determine if the arc ponts to a
-literal or not. Retruns L<Rit::Base::Undef> if nothing else.
+literal or not. Returns L<Rit::Base::Undef> if nothing else.
 
 =cut
 
@@ -1263,6 +1265,7 @@ sub mark_updated
     my $st = "update arc set updated=? where ver=?";
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'arc_updated'} = $date_db;
     return $arc->{'arc_updated_obj'} = $time;
@@ -2337,6 +2340,7 @@ sub deactivate
     my $st = "update arc set updated=?, deactivated=?, active='false', submitted='false' where ver=?";
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $date_db, $arc->id );
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'arc_updated'} = $date_db;
     $arc->{'arc_deactivated'} = $date_db;
@@ -2659,6 +2663,7 @@ sub reset_clean
 	      ("update arc set valclean=? where ver=?");
 #	    die if $cleaned =~ /^ritbase/;
 	    $sth->execute($cleaned, $arc->version_id);
+	    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 	    $arc->{'clean'} = $cleaned;
 
 	    $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
@@ -3322,6 +3327,7 @@ sub remove
     $res->changes_add;
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
     $sth->execute($arc_id);
+    $Rit::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
 
     debug "  init subj" if $DEBUG;
@@ -3717,6 +3723,7 @@ sub set_value
 	my $st = "update arc set $sql_set where ver=?";
 	my $sth = $dbh->prepare($st);
 	$sth->execute(@dbvalues, $arc_id);
+	$Rit::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
 	$arc->{'value'}              = $value_new;
 	$arc->{$coltype_new}         = $value_new;
@@ -3862,6 +3869,7 @@ sub submit
     my $st = "update arc set updated=?, submitted='true' where ver=?";
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'arc_updated_obj'} = $updated;
     $arc->{'arc_updated'} = $date_db;
@@ -3941,6 +3949,7 @@ sub unsubmit
     my $st = "update arc set updated=?, submitted='false' where ver=?";
     my $sth = $dbix->dbh->prepare($st);
     $sth->execute( $date_db, $arc->id );
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'arc_updated_obj'} = $updated;
     $arc->{'arc_updated'} = $date_db;
@@ -4014,6 +4023,7 @@ sub activate
 	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
 	$sth->execute( $date_db, $date_db, $activated_by_id, $aid );
+	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
 	$arc->{'arc_updated_obj'} = $updated;
 	$arc->{'arc_activated_obj'} = $updated;
@@ -4039,6 +4049,7 @@ sub activate
 	my $st = "update arc set updated=?, activated=?, activated_by=?, deactivated=?, active='false', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
 	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $aid );
+	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
 	$arc->{'arc_updated_obj'} = $updated;
 	$arc->{'arc_deactivated_obj'} = $updated;
@@ -4116,6 +4127,7 @@ sub set_replaces
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("update arc set id=?, replaces=? where ver=?");
     $sth->execute($common_id, $arc2_id, $arc->id);
+    $Rit::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 
     $arc->{'common_id'} = $common_id;
     delete $arc->{'common'};
@@ -4196,6 +4208,7 @@ sub set_implicit
 				   "updated=? ".
 				   "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
+    $Rit::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
 
     $arc->{'arc_updated_obj'} = $now;
     $arc->{'arc_updated'} = $now_db;
@@ -4272,6 +4285,7 @@ sub set_indirect
 				   "updated=? ".
 				   "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
+    $Rit::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
 
     $arc->{'arc_updated_obj'} = $now;
     $arc->{'arc_updated'} = $now_db;
@@ -4427,6 +4441,16 @@ sub init
 #	  += Time::HiRes::time() - $ts;
 	unless( $rec )
 	{
+	    if( $reset ) # NOT IN DB ANYMORE!
+	    {
+		debug "Arc $id does not exist in DB ";
+		$arc->subj->reset_cache;
+		$arc->value->reset_cache(undef);
+		$arc->{disregard} ++;
+		delete $Rit::Base::Cache::Resource{ $id };
+		return $arc;
+	    }
+
 	    confess "Arc $id not found";
 	}
     }
