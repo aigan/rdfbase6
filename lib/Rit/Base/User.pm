@@ -277,8 +277,9 @@ sub verify_password
     $password_encrypted ||= '';
 
 #    debug "Retrieving password for $u->{id}";
-    my $n_password = $u->first_prop('has_password',undef,['active']) || '';
-    unless( $n_password )
+    my @pwlist = $u->list('has_password',undef,['active'])->as_array;
+
+    unless(scalar @pwlist)
     {
 	my $uname = $u->desig;
 	confess "No desig for user" unless $uname;
@@ -286,18 +287,18 @@ sub verify_password
 	return 0;
     }
 
-    # Validating password
-    #
-    if( $password_encrypted eq passwd_crypt($n_password) )
+    foreach my $pwd (@pwlist)
     {
-	return 1;
+	# Validating password
+	#
+	if( $password_encrypted eq passwd_crypt($pwd) )
+	{
+	    return 1;
+	}
     }
-    else
-    {
-	debug datadump(\%ENV);
 
-	return 0;
-    }
+    debug datadump(\%ENV);
+    return 0;
 }
 
 #######################################################################
