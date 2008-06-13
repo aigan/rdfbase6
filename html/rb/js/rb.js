@@ -13,9 +13,9 @@ var RBInputPopup = Class.create(
 			 rev, seen_node, hide_create_button)
     {
 	this.divid = divid;
-	this.search_crit = \$H(search_crit.evalJSON());
+	this.search_crit = $H(search_crit.evalJSON());
 	this.search_type = search_type;
-	this.button = \$(button);
+	this.button = $(button);
 	this.pred_name = pred_name;
 	this.subj = subj;
 	this.rev = rev;
@@ -27,7 +27,7 @@ var RBInputPopup = Class.create(
 		style: 'display: none; position: absolute; top: 45%; left: 45%; z-index: 10',
 		src: '[%home%]/img/loading_large.gif'
 	    }, '');
-	\$(this.divid).appendChild(this.loading);
+	$(this.divid).appendChild(this.loading);
 	this.button.onclick = this.openPopup.bind(this);
     },
 
@@ -79,7 +79,7 @@ var RBInputPopup = Class.create(
     {
 	event.stop();
 
-	var value = \$('rb_input').getValue();
+	var value = $('rb_input').getValue();
 
 	var search = this.search_crit.merge({});
 
@@ -115,15 +115,15 @@ var RBInputPopup = Class.create(
 	this.popup_li.style.padding = '0';
 	this.popup_li.style.whiteSpace = 'nowrap';
 	this.popup.appendChild(this.popup_li);
-	this.result = \$A(result);
+	this.result = $A(result);
 
-	if( \$H(result[0]).get('id') == 0 ) {
-	    var line = Builder.node('li', \$H(result[0]).get('name'));
+	if( $H(result[0]).get('id') == 0 ) {
+	    var line = Builder.node('li', $H(result[0]).get('name'));
 	    this.popup_li.appendChild(line);
 	}
 	else {
 	    this.result.each( function(item) {
-		    var node = \$H(item);
+		    var node = $H(item);
 		    var name = node.get('name');
 		    var select_button = Builder.node('input', { value: 'Select', type: 'button' });
 		    select_button.onclick = this.select.bindAsEventListener(this, name, node.get('id'));
@@ -150,7 +150,7 @@ var RBInputPopup = Class.create(
 	}
 
 	if( !this.hide_create_button ) {
-	    var value = \$('rb_input').getValue();
+	    var value = $('rb_input').getValue();
 	    var create_new_button = Builder.node('input', { value: 'Create a new "'+ value +'"',
 							type: 'button' });
 	    create_new_button.onclick = this.createNew.bindAsEventListener(this, value);
@@ -229,7 +229,7 @@ function rb_remove_arc(divid, arc, seen_node)
 		style: 'display: none; position: absolute; top: 45%; left: 45%;',
 		src: '[%home%]/img/loading_large.gif'
 	    }, '');
-	\$(divid).appendChild(loading);
+	$(divid).appendChild(loading);
 	pps[divid].loadingStart();
 	
 	new Ajax.Request('[%home%]/ajax/action/remove_arc', {
@@ -254,7 +254,7 @@ var PagePart = Class.create(
 {
     initialize: function(element, update_url, params)
     {
-	this.element = \$(element);
+	this.element = $(element);
 	this.update_url = update_url;
 	this.update_params = params['params'];
 	this.is_loading = false;
@@ -270,7 +270,7 @@ var PagePart = Class.create(
 		}.bind(this));
 	}
 	if( params['update_button'] ) {
-	    this.registerUpdateButton(\$(params['update_button']));
+	    this.registerUpdateButton($(params['update_button']));
 	}
 
 	pps[element] = this;
@@ -278,7 +278,7 @@ var PagePart = Class.create(
 
     registerUpdateButton: function(button)
     {
-	this.update_button = \$(button);
+	this.update_button = $(button);
 	Event.observe(this.update_button, 'click', this.update.bind(this));
     },
 
@@ -342,10 +342,10 @@ var PagePart = Class.create(
     {
 	var form;
 	if( extra_params.form ) {
-	    form = \$( extra_params.form );
+	    form = $( extra_params.form );
 	}
 	else {
-	    form = \$( 'f' );
+	    form = $( 'f' );
 	}
 
 	if( extra_params.confirm ) {
@@ -355,7 +355,7 @@ var PagePart = Class.create(
 	}
 
 	this.loadingStart();
-	var formData = \$H(form.serialize(true)).merge({ run: action });
+	var formData = $H(form.serialize(true)).merge({ run: action });
 	formData = formData.merge(extra_params);
 
 	new Ajax.Updater( this.element, '[%home%]/clean/update_button_answer.tt', {
@@ -378,8 +378,8 @@ var PagePart = Class.create(
 		    onComplete: function(transport)
 		    {
 			this.loadingEnd();
-			\$(after).insert({ after: transport.responseText });
-			new_part = \$(after).next();
+			$(after).insert({ after: transport.responseText });
+			new_part = $(after).next();
 			prepareForm();
 			Effect.Grow(new_part, { delay: 0.5, duration: 0.5 });
 		    }.bind(this)
