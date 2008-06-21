@@ -1,0 +1,105 @@
+﻿[% META
+   title="Visa nod"
+   level = 20
+   next_action = 'node_update'
+%]
+
+[%
+   PROCESS prop_fields.tt; # From rb/inc
+%]
+
+[%
+   id = q.param('id');
+   node = get(id);
+   hidden('id', id);
+   keep = [ 'id' 'include_indirect' 'include_inactive' 'include_rev' ];
+   include_indirect = q.param('include_indirect');
+   hidden('include_indirect', include_indirect);
+   include_inactive = q.param('include_inactive');
+   hidden('include_inactive', include_inactive);
+   include_rev = q.param('include_rev');
+   hidden('include_rev', include_rev);
+%]
+
+<h2>[% node.sysdesig | html %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+[% BLOCK superclass %]
+[% FOREACH sc IN class.parents %]
+[% sc_nodes = find(code=sc.name, is='class_perl_module') %]
+[% IF sc_nodes %]
+<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.id) %]
+[% ELSE %]
+<li>$sc.name
+[% END %]
+[% IF sc.parents.size %]
+<ol>
+   [% INCLUDE superclass class=sc %]
+</ol>
+[% END %]
+</li>
+[% END %]
+[% END %]
+
+[% WRAPPER imgexpand label="Class $node.code_class.name" %]
+<h2>Parents</h2>
+<ol>[% INCLUDE superclass class=node.code_class %]</ol>
+[% END %]
+
+[% IF debug_level > 1 %]
+[% WRAPPER imgexpand label='Perl hashdump' %]
+<table>
+<tr><td><pre>[% dump(node,4) %]</pre></td></tr>
+</table>
+[% END %]
+[% END %]
+
+
+<table class="admin" style="margin-top:2em">
+  <tr>
+    <td>
+      <label for="name">name</label>
+    </td>
+    <td/>
+    <td style="width: 20ex">
+      [% node.wu('name', id => 'name', class => 'wide') %]
+    </td>
+  </tr>
+  [% FOREACH class IN node.list('is') %]
+    <tr><th colspan="2">[% class.wu_jump %]</th></tr>
+    [% FOREACH pred IN class.revlist('domain', { no_auto_show_ne => 1 }).sorted('weight') %]
+      <tr>
+	<td>
+	  <label for="[% pred.label %]">[% pred.desig %]</label>
+	</td>
+	<td>
+	  [% '*' IF pred.is_mandatory %]
+	</td>
+	<td style="width: 20ex">
+	  [% node.wu(pred.label, id => pred.label, class => 'wide') %]
+	</td>
+      </tr>
+    [% END %]
+  [% END %]
+
+  [% FOREACH class IN node.list('scof') %]
+    <tr><th colspan="2">[% class.wu_jump %]</th></tr>
+    [% FOREACH pred IN class.revlist('domain_scof', { no_auto_show_ne => 1 }).sorted('weight') %]
+      <tr>
+	<td>
+	  <label for="[% pred.label %]">[% pred.desig %]</label>
+	</td>
+	<td>
+	  [% '*' IF pred.is_mandatory %]
+	</td>
+	<td style="width: 20ex">
+	  [% node.wu(pred.label, id => pred.label, class => 'wide') %]
+	</td>
+      </tr>
+    [% END %]
+  [% END %]
+
+</table>
+
+[% step %]
