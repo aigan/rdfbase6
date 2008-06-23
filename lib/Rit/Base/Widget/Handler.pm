@@ -743,9 +743,11 @@ sub handle_query_arc_value
 	    debug "Suffix is $suffix";
 	}
 
-	#TODO: Remove from ritbase!
-	my $dirbase = $Para::Frame::CFG->{'guides'}{'logos'}
-	  or die "logos dir not defined in site.conf";
+	my $dirbase = $Para::Frame::CFG->{'images_uploaded_scp'};
+	unless( $dirbase )
+	{
+	    die "images_uploaded_scp not defined in PF::CFG";
+	}
 
 	my $index = 0;
 
