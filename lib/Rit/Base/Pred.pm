@@ -110,15 +110,28 @@ sub name
 
 #######################################################################
 
+=head2 label
+
+Returns: The label as a scalar string
+
+=cut
+
+sub label
+{
+    $_[0]->{'label'};
+}
+
+#######################################################################
+
 =head2 value
 
-Same as L</plain>
+Same as L</label>
 
 =cut
 
 sub value
 {
-    $_[0]->plain;
+    $_[0]->label;
 }
 
 #######################################################################
@@ -127,13 +140,13 @@ sub value
 
   $p->plain
 
-Returns: The label as a scalar string
+Same as L</label>
 
 =cut
 
 sub plain
 {
-    $_[0]->{'label'};
+    $_[0]->label;
 }
 
 #######################################################################
