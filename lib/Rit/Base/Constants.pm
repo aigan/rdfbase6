@@ -32,7 +32,7 @@ BEGIN
 }
 
 #use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug datadump );
+use Para::Frame::Utils qw( debug datadump catch );
 
 use Rit::Base;
 use Rit::Base::Utils qw( is_undef );
@@ -147,6 +147,35 @@ sub find
     $query->{'label_exist'} = 1;
 
     return Rit::Base::Resource->find($query, $args);
+}
+
+
+
+######################################################################
+
+=head2 get_set
+
+  Rit::Base::Constants->get_set( $label )
+
+As get(), but creates the node if not existing.
+
+=cut
+
+sub get_set
+{
+    my( $this, $label ) = @_;
+
+    my $node;
+    eval
+    {
+	$node = $this->get( $label );
+    };
+    if( my $err = catch(['notfound']) )
+    {
+	$node = Rit::Base::Resource->create({label=>$label});
+    }
+
+    return $node;
 }
 
 
