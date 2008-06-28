@@ -19,13 +19,15 @@ sorting. You may use "pg_lscluster" to list your current clusters. You
 have pg_dropcluster and pg_createcluster for creating a new cluster
 with a diffrent configuration.
 
-+ Become the postgres user and run psql
+ * Become the postgres user and run psql
 
-+ create the user for the ritbase database. See current users with
-'\du'. You may use the same username as the user under which the
-program is going to be run. "create user my_user".
+ * create the user for the ritbase database. See current users with
+   '\du'. You may use the same username as the user under which the
+   program is going to be run. "create user my_user".
 
-+ create the database with your choosen name for your project. I'm
-going to use the name rb1 in this guide. "create database rb1 with
-owner=my_user encoding='unicode';"
+ * create the database with your choosen name for your project. I'm
+   going to use the name rb1 in this guide. "create database rb1 with
+   owner=my_user encoding='unicode';"
 
+ * initialize database content with
+   bin/demo setup_db
