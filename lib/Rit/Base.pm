@@ -50,6 +50,7 @@ use Rit::Base::Widget;
 use Rit::Base::Search::Collection;
 use Rit::Base::Search::Result;
 use Rit::Base::Literal::String; # Needed by RB::Utils
+use Rit::Base::Setup;
 
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
@@ -160,6 +161,12 @@ sub init
 sub init_on_startup
 {
 #    warn "init_on_startup\n";
+
+    if( $ARGV[0] eq 'setup_db' or not $Rit::dbix->table('arc' ) )
+    {
+	Rit::Base::Setup->setup_db();
+    }
+
 
     Rit::Base::Resource->on_startup();
 #    warn "init_on_startup 2\n";
