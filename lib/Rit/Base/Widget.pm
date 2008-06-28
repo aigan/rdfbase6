@@ -27,14 +27,7 @@ BEGIN
 }
 
 use base qw( Exporter );
-BEGIN
-{
-    @Rit::Base::Widget::EXPORT_OK
-
-      = qw( wub aloc build_field_key );
-
-}
-
+our @EXPORT_OK = qw( wub aloc build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
