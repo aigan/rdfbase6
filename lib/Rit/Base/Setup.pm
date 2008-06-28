@@ -41,10 +41,12 @@ use Rit::Base::Constants;
 use Rit::Base::Literal::Class;
 
 our %NODE;
+our @NODES;
 our @ARC;
 our %VALTYPE;
 our %NOLABEL;
 our %LITERAL;
+our @LITERALS;
 
 sub setup_db
 {
@@ -62,6 +64,29 @@ sub setup_db
 
     my $rb_root = $Para::Frame::CFG->{'rb_root'}
       or die "rb_root not given in CFG";
+
+
+
+    unless( $dbix->table('arc') )
+    {
+	my $sql = "";
+	open RBSCHEMA, "$rb_root/data/schema.sql" or die $!;
+	while(<RBSCHEMA>)
+	{
+	    $sql .= $_;
+	    if( /;.*$/ )
+	    {
+		$dbh->do($sql) or die "sql error";
+		$sql = "";
+	    }
+	}
+    }
+
+
+
+
+
+
     open RBDATA, "$rb_root/data/base.data" or die $!;
     while(<RBDATA>)
     {
@@ -69,17 +94,12 @@ sub setup_db
 	last if $_ eq 'NODES';
     }
 
-    unless( $dbix->table('arc') )
-    {
-	throw 'dbi', "Tables missing in database";
-    }
-
     $dbh->do("delete from arc") or die;
     $dbh->do("delete from node") or die;
     $dbh->do("select setval('node_seq',1,false)");
 
 
-    print "Reading Nodes\n";
+    debug "Reading Nodes";
     while(<RBDATA>)
     {
 	chomp;
@@ -90,6 +110,7 @@ sub setup_db
 
 	my $id = $dbix->get_nextval('node_seq');
 
+	push @NODES, $label;
 	$NODE{$label} =
 	{
 	 label => $label,
@@ -97,10 +118,10 @@ sub setup_db
 	 node => $id,
 	};
 
-	print "$id = $label\n";
+	debug "$id = $label";
     }
 
-    print "Reading Arcs\n";
+    debug "Reading Arcs";
     my $is_literal = 0;
     while(<RBDATA>)
     {
@@ -125,11 +146,12 @@ sub setup_db
 	};
 
 	my $valdbg = $obj || $value;
-	print "Planning $subj --$pred--> $valdbg\n";
+	debug "Planning $subj --$pred--> $valdbg";
 
 	if( $is_literal )
 	{
 	    $LITERAL{$subj} = $obj;
+	    push @LITERALS, $subj;
 	}
 
 	foreach my $label ($subj, $pred, $obj)
@@ -140,13 +162,14 @@ sub setup_db
 	    unless( $NODE{$label} )
 	    {
 		my $id = $dbix->get_nextval('node_seq');
+		push @NODES, $label;
 		$NODE{$label} =
 		{
 		 label => $label,
 		 node => $id,
 		};
 
-		print "$id = $label\n";
+		debug "$id = $label";
 	    }
 	}
 
@@ -154,8 +177,8 @@ sub setup_db
 
     close RBDATA;
 
-    print "Bootstrapping literals\n";
-    foreach my $lit (keys %LITERAL)
+    debug "Bootstrapping literals";
+    foreach my $lit (@LITERALS)
     {
 	my $scof = $LITERAL{$lit};
 	if( $scof eq 'text' )
@@ -185,18 +208,18 @@ sub setup_db
 	     obj => 'literal_class',
 	    };
 
-	print "Literal $lit is a scof $scof\n";
+	debug "Literal $lit is a scof $scof";
     }
 
 
-    print "Adding nodes\n";
+    debug "Adding nodes";
     my $root = $NODE{'root'}{'node'};
     my $sth_node = $dbh->prepare('insert into node (node,label,owned_by,pred_coltype,created,created_by,updated,updated_by) values (?,?,?,?,?,?,?,?)') or die;
 
-    foreach my $rec ( values %NODE )
+    foreach my $label ( @NODES )
     {
+	my $rec = $NODE{ $label };
 	my $node = $rec->{'node'};
-	my $label = $rec->{'label'};
 	my $owned_by = $root;
 	my $pred_coltype = $rec->{'pred_coltype'} || undef;
 	my $created = $now;
@@ -207,7 +230,7 @@ sub setup_db
 	$sth_node->execute($node, $label, $owned_by, $pred_coltype, $created, $created_by, $updated, $updated_by);
     }
 
-    print "Extracting valtypes\n";
+    debug "Extracting valtypes";
     foreach my $rec ( @ARC )
     {
 	if( $rec->{'pred'} eq 'range' )
@@ -216,11 +239,11 @@ sub setup_db
 	    my $valtype_name = $rec->{'obj'};
 	    my $valtype = $NODE{$valtype_name}{'node'};
 	    $VALTYPE{$pred} = $valtype;
-	    print "Valtype $pred = $valtype\n";
+	    debug "Valtype $pred = $valtype";
 	}
     }
 
-    print "Adding arcs\n";
+    debug "Adding arcs";
     my $source = $NODE{'ritbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
     my $write_access = $NODE{'sysadmin_group'}{'node'};
@@ -299,16 +322,17 @@ sub setup_db
 
     # Initialization of constants and valtypes
     Rit::Base::Literal::Class->on_startup();
-    Rit::Base::Constants->on_startup;
+    Rit::Base::Resource->on_startup();
+    Rit::Base::Constants->on_startup();
 
     my $root_node = Rit::Base::Resource->get_by_id( $root );
-    print "Setting bg_user_code to $root\n";
+    debug "Setting bg_user_code to $root";
     $Para::Frame::CFG->{'bg_user_code'} = sub{ $root_node };
 
 
     my $req = Para::Frame::Request->new_bgrequest();
 
-    print "Infering arcs\n";
+    debug "Infering arcs";
 
     my $sth_arc_list = $dbh->prepare("select * from arc order by ver");
     $sth_arc_list->execute();
@@ -329,12 +353,12 @@ sub setup_db
 
     $dbh->commit;
 
-    print "Initiating constants again\n";
+    debug "Initiating constants again";
 
     Rit::Base::Constants->on_startup;
     $Rit::Base::IN_STARTUP = 0;
 
-    print "Done!\n";
+    debug "Done!";
 
    return;
 }
