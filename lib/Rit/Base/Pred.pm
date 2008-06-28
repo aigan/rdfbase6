@@ -31,7 +31,7 @@ use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::List;
-use Rit::Base::Utils qw( valclean translate is_undef parse_propargs );
+use Rit::Base::Utils qw( valclean is_undef parse_propargs );
 use Rit::Base::Literal::String;
 use Rit::Base::Constants qw( $C_predicate );
 

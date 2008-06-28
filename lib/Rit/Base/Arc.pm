@@ -46,7 +46,7 @@ use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Rule;
 
-use Rit::Base::Utils qw( valclean translate is_undef truncstring
+use Rit::Base::Utils qw( valclean is_undef truncstring
                          query_desig parse_propargs
                          );
 

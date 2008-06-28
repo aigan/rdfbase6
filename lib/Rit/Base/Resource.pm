@@ -59,7 +59,7 @@ use Rit::Base::Widget::Handler;
 use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
                              $C_class $C_literal_class $C_resource $C_arc );
 
-use Rit::Base::Utils qw( valclean translate parse_query_props
+use Rit::Base::Utils qw( valclean parse_query_props
 			 parse_form_field_prop is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation

@@ -39,7 +39,7 @@ use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Constants qw( $C_language $C_arc $C_class );
 
-use Rit::Base::Utils qw( valclean translate parse_query_props
+use Rit::Base::Utils qw( valclean parse_query_props
 			 parse_form_field_prop is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation

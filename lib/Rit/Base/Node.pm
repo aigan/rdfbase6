@@ -31,7 +31,7 @@ BEGIN
 use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
 
-use Rit::Base::Utils qw(valclean translate parse_query_props
+use Rit::Base::Utils qw(valclean parse_query_props
 			 parse_form_field_prop is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
