@@ -27,27 +27,26 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use base qw( Exporter );
+
+our @EXPORT_OK
+  = qw( cache_clear valclean format_phone format_zip
+	parse_query_props parse_form_field_prop
+	parse_arc_add_box is_undef arc_lock arc_unlock
+	truncstring string parse_query_pred parse_query_prop
+	convert_query_prop_for_creation name2url query_desig
+	send_cache_update parse_propargs aais alphanum_to_id );
+
+
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
 use Para::Frame::Reload;
 
-use base qw( Exporter );
-BEGIN
-{
-    @Rit::Base::Utils::EXPORT_OK
 
-	= qw( translate cache_clear valclean format_phone format_zip
-	      parse_query_props parse_form_field_prop
-	      parse_arc_add_box is_undef arc_lock arc_unlock
-	      truncstring string parse_query_pred parse_query_prop
-	      convert_query_prop_for_creation name2url query_desig
-	      send_cache_update parse_propargs aais alphanum_to_id );
-
-}
-
-use Rit::Base::Undef;
-use Rit::Base::Literal::Time qw( now );
-use Rit::Base::Literal::String;
-
+### Those modules loaded by Rit::Base later...
+#use Rit::Base::Undef;
+#use Rit::Base::Arc;
+#use Rit::Base::Literal::String;
+#
 
 
 =head1 FUNCTIONS

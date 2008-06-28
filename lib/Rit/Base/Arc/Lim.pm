@@ -27,6 +27,9 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use base qw( Exporter );
+our @EXPORT_OK = qw( limflag );
+
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 			   package_to_module );
@@ -62,12 +65,6 @@ our %REVLIM = reverse %LIM;
 
 use constant FLAGS_INACTIVE => (2+256+512+1024+2048+4096+8192+32768+65536);
 use constant FLAGS_ACTIVE   => (1+512+2048+8192+65536);
-
-use base qw( Exporter );
-BEGIN
-{
-    @Rit::Base::Arc::Lim::EXPORT_OK = qw( limflag );
-}
 
 #########################################################################
 

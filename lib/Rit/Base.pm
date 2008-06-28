@@ -36,6 +36,10 @@ use Para::Frame;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
+use Rit::Base::Utils;
+use Rit::Base::Object;
+use Rit::Base::Node;
+use Rit::Base::Undef;
 use Rit::Base::Resource;
 use Rit::Base::Arc;
 use Rit::Base::Pred;
@@ -45,6 +49,7 @@ use Rit::Base::L10N;
 use Rit::Base::Widget;
 use Rit::Base::Search::Collection;
 use Rit::Base::Search::Result;
+use Rit::Base::Literal::String; # Needed by RB::Utils
 
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
