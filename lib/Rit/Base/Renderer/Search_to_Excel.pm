@@ -34,7 +34,7 @@ sub render_output
 
     my $row = 0;
 
-    my $rows = $req->session->search_collection->result;
+    my $rows = $req->session->search_collection->result->sorted('desig');
     my $rows_count = $rows->size;
     $req->note("Writing ".$rows_count." rows");
 
