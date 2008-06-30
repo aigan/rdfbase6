@@ -142,6 +142,11 @@ sub init
     };
     Para::Frame->add_global_tt_params( $global_params );
 
+    # Adds hanlding of .js files
+    #
+    my $burner_plain = Para::Frame::Burner->get_by_type('plain');
+    $burner_plain->add_ext('js');
+
 
     Rit::Base::Widget->on_configure();
 
