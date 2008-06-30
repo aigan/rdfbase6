@@ -384,6 +384,8 @@ sub parse_arc_add_box
 {
     my( $query, $args ) = @_;
 
+    $args ||= {};
+
     my $DEBUG = 0;
     my $props = {};
 
@@ -401,7 +403,7 @@ sub parse_arc_add_box
 	{
 	    my $sprops = parse_query_props( $2, $args );
 	    my $pred = Rit::Base::Pred->get_by_anything( $pred_name, $args );
-	    my $value = $pred->valtypen->instance_class->parse($1, $args);
+	    my $value = $pred->valtype->instance_class->parse($1, $args);
 	    $value->add($sprops, $args);
 	}
 
