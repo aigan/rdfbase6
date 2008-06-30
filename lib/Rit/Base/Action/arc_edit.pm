@@ -83,7 +83,7 @@ sub handler
 	debug "New arc is ".$new->sysdesig;
 
 	# Should we transform this literal to a value node?
-	my $props = parse_arc_add_box( $literal_arcs );
+	my $props = parse_arc_add_box( $literal_arcs, $args );
 	$new->value->update( $props, $args );
 
 	if( $submit )
