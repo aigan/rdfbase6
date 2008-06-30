@@ -211,8 +211,12 @@ sub wub_select
       $singular ? 'singular' : '';
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
     my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
+    my $extra = '';
 
-    $arc ||= $subj->arc( $pred_name )
+    $extra .= ' class="'. $args->{'class'} .'"'
+      if $args->{'class'};
+
+    $arc ||= $subj->arc( $pred_name, undef, 'direct' )->get_first_nos
       if( $singular );
 
     $out .= label_from_params({
@@ -237,7 +241,7 @@ sub wub_select
     debug 2, "Building select widget for ".$subj->desig." $pred_name";
 
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-      .'pred_'. $pred_name . $if .'">';
+      .'pred_'. $pred_name . $if .'"'. $extra .'>';
 
     my $default_value = $subj->prop( $pred_name )->id ||
       $args->{'default_value'} || '';
