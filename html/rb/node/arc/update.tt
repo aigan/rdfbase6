@@ -62,7 +62,7 @@ This is an <strong>active</strong> version.
 
 <tr>
    <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
-   <td>[% arc.pred.name %]</td>
+   <td>[% arc.pred.label %]</td>
 </tr>
 
 [% IF arc.is_removal %]
@@ -127,9 +127,9 @@ This is an <strong>active</strong> version.
    <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
    <td>
    [% IF arc.is_removal %]
-      [% arc.pred.name %]
+      [% arc.pred.label %]
    [% ELSE %]
-      [% input('pred', arc.pred.name) %]
+      [% input('pred', arc.pred.label) %]
    [% END %]
    </td>
 </tr>
