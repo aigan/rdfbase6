@@ -13,11 +13,11 @@ package Rit::Base::Action::translate_page_create;
 use strict;
 
 use Para::Frame::Utils qw( throw );
+use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_webpage );
 use Rit::Base::Utils qw( is_undef parse_propargs );
-use Rit::Base::L10N qw( loc );
 
 =head1 DESCRIPTION
 
