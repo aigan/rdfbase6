@@ -763,7 +763,7 @@ sub parse_sortargs
 	};
 	if( $@ )  # Just dump any errors to log...
 	{
-	    debug "Sortarg $pred_str not a predicate: ".$@;
+	    debug "Sortarg $pred_str not a predicate";
 	}
 
 	$sortargs->[$i]->{'cmp'} = $cmp;
