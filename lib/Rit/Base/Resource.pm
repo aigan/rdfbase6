@@ -1482,7 +1482,13 @@ sub form_url
     }
     else
     {
-	my $alts = $n->list('is',undef,['active'])->sorted('weight', 'desc')->first_prop('class_form_url');
+
+	# In case we inherit in several steps, prioritise the direct
+	# is-property. The general solution would have use special
+	# sorting of arcs in order of deapth. On top of that, we would
+	# have to sort by weight for class_form_url on the same level.
+
+	my $alts = $n->arc_list('is',undef,['active'])->sorted('direct', 'desc')->vals->first_prop('class_form_url');
 #	debug $alts;
 	if( my $path_node = $alts->get_first_nos )
 	{
