@@ -31,13 +31,12 @@ BEGIN
     print "Loading ".__PACKAGE__." $VERSION\n";
 }
 
+use base qw(Para::Frame::L10N);
+
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 
 use Rit::Base::Constants qw( $C_language );
-
-
-use base qw(Para::Frame::L10N);
 
 our %TRANSLATION;
 
