@@ -500,24 +500,24 @@ sub modify_from_query
 			$key_out = 'rev_'.$key_out;
 		    }
 
-		    if( $varg->{'arclim'} )
+		    if( my $arclim = $varg->{'arclim'} || $arg->{'arclim'} )
 		    {
-			$key_out .= '_'. $varg->{'arclim'};
+			$key_out .= '_'. $arclim;
 		    }
 
-		    if( $varg->{'clean'} )
+		    if( $varg->{'clean'} || defined($arg->{'clean'}) )
 		    {
 			$key_out .= '_clean';
 		    }
 
-		    if( $varg->{'match'} )
+		    if( my $match = $varg->{'match'} || $arg->{'match'} )
 		    {
-			$key_out .= '_'. $varg->{'match'};
+			$key_out .= '_'. $match;
 		    }
 
-		    if( $varg->{'prio'} )
+		    if( my $prio = $varg->{'prio'} || $arg->{'prio'} )
 		    {
-			$key_out .= '_'. $varg->{'prio'};
+			$key_out .= '_'. $prio;
 		    }
 
 		    unless( $val_out )
@@ -525,15 +525,40 @@ sub modify_from_query
 			confess "No value part found in param $val";
 		    }
 
+
+
 		    push @{ $props{$key_out} }, $val_out;
 		}
 	    }
 	    else
 	    {
+		if( my $arclim = $arg->{'arclim'} )
+		{
+		    $key .= '_'. $arclim;
+		}
+
+		if( defined($arg->{'clean'}) )
+		{
+		    $key .= '_clean';
+		}
+
+		if( my $match = $arg->{'match'} )
+		{
+		    $key .= '_'. $match;
+		}
+
+		if( my $prio = $arg->{'prio'} )
+		{
+		    $key .= '_'. $prio;
+		}
+
 		push @{ $props{$key} }, @values;
 	    }
 	}
     }
+
+#    debug datadump(\%props);
+
     $search->modify( \%props );
 }
 
