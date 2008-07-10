@@ -1,2 +1,3 @@
+SetHandler perl-script
 PerlSetVar renderer Rit::Base::Renderer::GraphViz
 PerlSetVar loadpage no
