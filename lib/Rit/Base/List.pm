@@ -991,8 +991,6 @@ sub loc
 
 #    Para::Frame::Logging->this_level(4);
 
-    my $req = $Para::Frame::REQ;
-
     my %alts;
     my $default;
 
@@ -1065,8 +1063,17 @@ sub loc
 
 
     # TODO: Chose value even with no language priority
+    my @alternatives;
+    if( my $req = $Para::Frame::REQ )
+    {
+	@alternatives = $req->language->alternatives, 'c';
+    }
+    else
+    {
+	@alternatives = 'c';
+    }
 
-    foreach my $lang ( $req->language->alternatives, 'c' )
+    foreach my $lang ( @alternatives )
     {
 	debug 3, "Checking lang $lang";
 	# Try to handle the cases in order of commonality
