@@ -38,6 +38,7 @@ BEGIN
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
 use Para::Frame::L10N qw( loc );
+use Para::Frame::Worker;
 
 use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id ); #);
 use Rit::Base::Resource;
@@ -1152,26 +1153,31 @@ sub execute
     }
 
     my $result;
+    my $maxlimit = $search->{'maxlimit'};
 
-    if( $min_prio > 4 ) # was 5
+    if( $min_prio > 4 )
     {
-	debug "Search is to heavy! Runs in background";
-	debug $search->sysdesig;
+	$Para::Frame::REQ->note(loc("Searching")."...");
+    }
+
+    if( $min_prio > 2 ) # was 4
+    {
+#	debug "Search is to heavy! Runs in background";
+#	debug $search->sysdesig;
 #	debug $search->sql_sysdesig;
 
-	my $req = $Para::Frame::REQ;
-#	$req->note("This search may take some time!");
-	$req->note(loc("Searching")."...");
-	my $fork = $req->create_fork;
-	if( $fork->in_child )
-	{
-	    $fork->return( $search->get_result($sql, $values, 240) ); # 60
-	}
-	my $fres = $fork->yield;
-#	debug "GOT BACK <<<<<<<<<<<<-----------------";
-	$result = $fres->message;
-#	debug "Have result, will die";
-#	throw('dbi',"Timeout reached") if $fres->exception;
+#	my $req = $Para::Frame::REQ;
+#	my $fork = $req->create_fork;
+#	if( $fork->in_child )
+#	{
+#	    $fork->return( $search->get_result($sql, $values, 240, $maxlimit) ); # 60
+#	}
+#	my $fres = $fork->yield;
+#	$result = $fres->message;
+
+	( $result ) = Para::Frame::Worker->method('Rit::Base::Search', 'get_result', $sql, $values, 240, $maxlimit); # 60
+
+
     }
     else
     {
@@ -1183,9 +1189,15 @@ sub execute
 	{
 #	    debug datadump($search->{'prop'}, 2);
 	    debug 0, $search->sysdesig;
-	    debug 0, $search->sql_sysdesig;
+#	    debug 0, $search->sql_sysdesig;
 	}
+#	debug "fast search";
+
 	$result = $search->get_result($sql, $values, 30); # 10
+
+#	( $result ) = Para::Frame::Worker->method('Rit::Base::Search', 'get_result', $sql, $values, 30, $maxlimit); # 10
+
+#	debug "fast search - done";
     }
 
     $args->{'materializer'} ||= \&Rit::Base::List::materialize;
@@ -1220,7 +1232,21 @@ sub execute
 
 sub get_result
 {
-    my( $search, $sql, $values, $timeout ) = @_;
+    my( $this, $sql, $values, $timeout, $maxlimit ) = @_;
+
+    my( $class,  $search );
+
+    if( ref $this )
+    {
+	$search = $this;
+	$class = ref $this;
+	$maxlimit ||= $search->{'maxlimit'};
+    }
+    else
+    {
+	$class = $this;
+    }
+
 
     my $dbh = $Rit::dbix->dbh;
 
@@ -1265,8 +1291,11 @@ sub get_result
 	    debug "Database search took to long";
 	    debug $@;
 	    debug sprintf "Took %.2f seconds", (time - $time);
-	    debug $search->sysdesig;
-	    debug $search->sql_sysdesig;
+	    if( $search )
+	    {
+		debug $search->sysdesig;
+		debug $search->sql_sysdesig;
+	    }
 	    throw('dbi', "Database search took to long");
 	}
 
@@ -1274,7 +1303,7 @@ sub get_result
 	throw('dbi',  $@ . "Values: ".join(", ", map{defined $_ ? "'$_'" : '<undef>'} @$values)."\n");
     }
 
-    if( debug > 3 )
+    if( $search and (debug > 3) )
     {
 	my $took = time - $time;
 	debug(sprintf("Execute: %2.2f", $took));
@@ -1293,7 +1322,7 @@ sub get_result
 	}
 
 	push @result, $subj_id;
-	last if $#result >= $search->{'maxlimit'} -1;
+	last if $#result >= $maxlimit -1;
     }
     $sth->finish;
 
