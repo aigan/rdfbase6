@@ -333,11 +333,19 @@ sub set_default_propargs
     # Since subrequests from the same user may interlace with this
     # request, it must be set for the request
 
-    $Para::Frame::REQ->{'rb_default_propargs'} = undef;
-    if( $_[1] )
+    if( $Para::Frame::REQ )
     {
-	my $args = parse_propargs( $_[1] );
-	return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+	$Para::Frame::REQ->{'rb_default_propargs'} = undef;
+
+	if( $_[1] )
+	{
+	    my $args = parse_propargs( $_[1] );
+	    return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+	}
+    }
+    else
+    {
+	debug "set_default_propargs without an active REQ";
     }
 
     return undef;
@@ -353,7 +361,11 @@ For the current request
 
 sub default_propargs
 {
-    return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
+    if( $Para::Frame::REQ )
+    {
+	return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
+    }
+    return undef;
 }
 
 

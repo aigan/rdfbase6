@@ -1066,11 +1066,11 @@ sub loc
     my @alternatives;
     if( my $req = $Para::Frame::REQ )
     {
-	@alternatives = $req->language->alternatives, 'c';
+	@alternatives = ($req->language->alternatives, 'c');
     }
     else
     {
-	@alternatives = 'c';
+	@alternatives = ('c');
     }
 
     foreach my $lang ( @alternatives )
