@@ -19,8 +19,6 @@ Rit::Base::Node
 use Carp qw( cluck confess croak carp );
 use strict;
 use vars qw($AUTOLOAD);
-use Time::HiRes qw( time );
-use LWP::Simple (); # Do not import get
 
 BEGIN
 {
