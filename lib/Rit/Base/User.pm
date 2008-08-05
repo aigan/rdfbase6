@@ -115,9 +115,14 @@ sub init
 
 sub username
 {
-#    warn "in User username: ".datadump($_[0],3);
+#    debug "in User username: ".datadump($_[0],2);
+#    debug "cached ".$_[0]->{username};
+#    debug "label ".$_[0]->label;
+#    debug "short ".$_[0]->name_short->loc;
+#    debug "name ".$_[0]->name->loc;
+#    debug "cid ".$_[0]->customer_id;
 
-    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id;
+    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id->loc;
 }
 
 #######################################################################
@@ -284,6 +289,7 @@ sub verify_password
 	my $uname = $u->desig;
 	confess "No desig for user" unless $uname;
 	debug("$uname has no password");
+	cluck "no password";
 	return 0;
     }
 
