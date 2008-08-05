@@ -122,7 +122,7 @@ sub username
 #    debug "name ".$_[0]->name->loc;
 #    debug "cid ".$_[0]->customer_id;
 
-    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc || $_[0]->name->loc || $_[0]->customer_id->loc;
+    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc;
 }
 
 #######################################################################
