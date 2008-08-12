@@ -1,0 +1,53 @@
+﻿[% META
+ title="List anything"
+ level = 20
+%]
+
+[% search_result = searchobj.result;
+   search_result.reset;
+%]
+
+[% c = 0;
+   WHILE 1;
+     IF q.param("header_$c");
+       headers.$c = q.param("header_$c");
+       debug("Yes");
+       debug(q.param("header_$c"));
+     ELSE;
+       LAST;
+       debug("No");
+       debug(q.param("header_$c"));
+     END;
+     c = c+1;
+   END;
+
+   debug(dump(headers));
+%]
+
+
+<p>
+  [% c = 0 %]
+  [% WHILE( c < 10 ) %]
+    [% input("header_$c", '', label=c) %]<br/>
+    [% c = c+1 %]
+  [% END %]
+  [% submit(loc('Update')) %]
+</p>
+
+
+<table class="admin">
+  <tr>
+    <th>Namn</th>
+    [% FOREACH n IN headers.keys.sort %]
+      <th>[% headers.$n %]</th>
+    [% END %]
+  </tr>
+  [% FOREACH node IN search_result.sorted('name') %]
+    <tr>
+      <td>[% node.wu_jump %]</td>
+      [% FOREACH n IN headers.keys.sort %]
+        <td>[% node.${headers.$n} %]</td>
+      [% END %]
+    </tr>
+  [% END %]
+</table>
