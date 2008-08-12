@@ -126,6 +126,7 @@ sub new
     }
 }
 
+
 #######################################################################
 
 =head2 init
@@ -851,6 +852,7 @@ sub unique_arcs_prio
     return Rit::Base::List->new( \@arcs );
 }
 
+
 #######################################################################
 ################################  Accessors  ##########################
 
@@ -1246,6 +1248,7 @@ sub desig
     return join ' / ', @part;
 }
 
+
 #######################################################################
 
 =head2 as_html
@@ -1296,6 +1299,7 @@ sub as_html
     return join "<br/>\n", @part;
 }
 
+
 #######################################################################
 
 =head2 sysdesig
@@ -1319,6 +1323,7 @@ sub sysdesig
 	      $_;
     } $_[0]->nodes;
 }
+
 
 ######################################################################
 
@@ -1361,6 +1366,7 @@ sub nodes
     }
 }
 
+
 #######################################################################
 
 =head2 plain
@@ -1382,6 +1388,7 @@ sub plain
 	return CORE::shift->as_list(@_);
     }
 }
+
 
 #######################################################################
 
@@ -1408,6 +1415,7 @@ sub is_true
 
     return $_[0][0] ? 1 : 0;
 }
+
 
 #######################################################################
 ################################  Public methods  #####################
@@ -1614,6 +1622,7 @@ sub has_value
     return 0;
 }
 
+
 #######################################################################
 
 =head2 has_pred
@@ -1687,6 +1696,7 @@ sub has_pred
     return Rit::Base::List->new(\@grep);
 }
 
+
 #######################################################################
 
 =head2 materialize
@@ -1733,6 +1743,7 @@ sub materialize
     }
 }
 
+
 #######################################################################
 
 =head2 materialize_by_rec
@@ -1762,6 +1773,7 @@ sub materialize_by_rec
     return $node;
 }
 
+
 #######################################################################
 
 =head2 initiate_rel
@@ -1784,6 +1796,7 @@ sub initiate_rel
     }
     return $l;
 }
+
 
 #######################################################################
 
@@ -1814,6 +1827,7 @@ sub cmp_by_overload
     }
 }
 
+
 #######################################################################
 
 =head2 equals
@@ -1835,6 +1849,7 @@ sub equals
 
     return 1;
 }
+
 
 #######################################################################
 
@@ -1858,6 +1873,7 @@ sub get_first_nos
     }
 }
 
+
 #######################################################################
 
 =head2 get_next_nos
@@ -1879,6 +1895,7 @@ sub get_next_nos
 	return $val;
     }
 }
+
 
 #######################################################################
 
@@ -1902,6 +1919,37 @@ sub concatenate_by_overload
     {
 	return $lstr.$str;
     }
+}
+
+
+#######################################################################
+
+=head2 transform
+
+  $l->transform( $lookup )
+
+Returns: A new list with the nodes that is the result of the given lookup
+
+=cut
+
+sub transform
+{
+    my( $l, $lookup ) = @_;
+
+    my $l2 = $l->new([], $l->clone_props);
+
+    my( $elem, $error ) = $l->get_first;
+    while(! $error )
+    {
+	$l2->push( $elem->$lookup->as_array );
+    }
+    continue
+    {
+	( $elem, $error ) = $l->get_next;
+    }
+
+
+    return $l2;
 }
 
 
@@ -2049,276 +2097,6 @@ AUTOLOAD
     }
 }
 
-
-#######################################################################
-
-=head1 Arc methods
-
-Should only be called for lists of L<Rit::Base::Arc> elements.
-
-=cut
-
-#######################################################################
-#
-#=head2 active
-#
-#  $l->active
-#
-#Returns: A new list with the arcs that are L<Rit::Base::Arc/active>
-#
-#=cut
-#
-#sub active
-#{
-#    confess "FIXME";
-#    $_[0]->new([grep $_->active, @{$_[0]}]);
-#}
-#
-#######################################################################
-
-=head2 direct
-
-  $l->direct
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/direct>
-
-=cut
-
-sub direct
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->direct, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 submitted
-
-  $l->submitted
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/submitted>
-
-=cut
-
-sub submitted
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->submitted, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 is_new
-
-  $l->is_new
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/is_new>
-
-=cut
-
-sub is_new
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->is_new, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 old
-
-  $l->old
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/old>
-
-=cut
-
-sub old
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->old, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 inactive
-
-  $l->inactive
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/inactive>
-
-=cut
-
-sub inactive
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->inactive, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 indirect
-
-  $l->indirect
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/indirect>
-
-=cut
-
-sub indirect
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->indirect, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 not_submitted
-
-  $l->not_submitted
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/not_submitted>
-
-=cut
-
-sub not_submitted
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->not_submitted, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 explicit
-
-  $l->explicit
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/explicit>
-
-=cut
-
-sub explicit
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->explicit, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 implicit
-
-  $l->implicit
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/implicit>
-
-=cut
-
-sub implicit
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->implicit, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 not_new
-
-  $l->not_new
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/not_new>
-
-=cut
-
-sub not_new
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->not_new, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 not_old
-
-  $l->not_old
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/not_old>
-
-=cut
-
-sub not_old
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->not_old, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 not_disregarded
-
-  $l->not_disregarded
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/not_disregarded>
-
-=cut
-
-sub not_disregarded
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->not_disregarded, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 disregarded
-
-  $l->disregarded
-
-Returns: A new list with the arcs that are L<Rit::Base::Arc/disregarded>
-
-=cut
-
-sub disregarded
-{
-    cluck "FIXME";
-    $_[0]->new([grep $_->disregarded, @{$_[0]}]);
-}
-
-#######################################################################
-
-=head2 meets_arclim
-
-  $l->meets_arclim($arclim)
-
-Returns: A new list with the arcs that meets the arclim
-
-=cut
-
-sub meets_arclim
-{
-    cluck "FIXME";
-    my( $l, $arclim ) = @_;
-
-    $arclim = Rit::Base::Arc::Lim->parse($arclim);
-
-    unless( @$arclim )
-    {
-	return $l;
-    }
-
-    my @arcs;
-
-    my( $arc, $error ) = $l->get_first;
-    while(! $error )
-    {
-	if( $arc->meets_arclim( $arclim ) )
-	{
-	    CORE::push @arcs, $arc;
-	}
-
-	( $arc, $error ) = $l->get_next;
-    }
-
-    return $l->new(\@arcs);
-}
 
 #######################################################################
 
