@@ -182,8 +182,9 @@ sub reset
 
     # Removes all rb_search parts
     $search->{'rb_search'} = [];
-    $search->{'result'} = undef;
     $search->{'is_active'} = 0;
+    delete $search->{'result'};
+    delete $search->{'custom_result'};
 
 #    debug "Search collection resetted: ".datadump($search,1);
 
@@ -199,6 +200,7 @@ sub reset
 sub reset_result
 {
     delete $_[0]->{'result'};
+    delete $_[0]->{'custom_result'};
 }
 
 #######################################################################

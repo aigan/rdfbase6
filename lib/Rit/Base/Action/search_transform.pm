@@ -13,7 +13,9 @@ use strict;
 
 use Rit::Base::Search;
 
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug datadump );
+
+use Rit::Base::Utils qw( query_desig );
 
 =head1 DESCRIPTION
 
@@ -33,11 +35,14 @@ sub handler
 
     my $l = $search_col->result;
 
+    debug "Transforming list to $lookup";
+
     my $l2 = $l->transform($lookup);
 
-    $search_col->set_result( $l2 );
+#    debug datadump( $l2->{'search'}{'custom_result'}, 2 );
 
-    debug "Transforming list to $lookup";
+    $search_col->reset->set_result( $l2 );
+
 
     return "";
 }
