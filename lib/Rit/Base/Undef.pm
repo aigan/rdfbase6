@@ -288,6 +288,21 @@ sub as_list
 
 #######################################################################
 
+=head2 as_listobj
+
+  $o->as_listobj()
+
+Returns a L<Rit::Base::List>
+
+=cut
+
+sub as_listobj
+{
+    return $_[0]->list_class->new_empty();
+}
+
+#######################################################################
+
 =head2 nodes
 
 Just as L</as_list> but regards the SCALAR/ARRAY context.
