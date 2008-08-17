@@ -80,7 +80,7 @@ sub set_result
 {
     my( $search, $result_in ) = @_;
 
-    if( ref $result_in eq 'Rit::Base::List' )
+    if( UNIVERSAL::isa $result_in, 'Rit::Base::List' )
     {
 	$search->{'custom_result'} = $result_in;
     }
