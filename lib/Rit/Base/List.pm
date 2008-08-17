@@ -1938,10 +1938,22 @@ sub transform
 
     my $l2 = $l->new([], $l->clone_props);
 
+    my %seen;
+
     my( $elem, $error ) = $l->get_first;
     while(! $error )
     {
-	$l2->push( $elem->$lookup->as_array );
+	foreach my $elem2 ( $elem->$lookup->as_listobj->flatten->as_array )
+	{
+	    next unless $elem2->defined;
+	    die datadump($elem2,1) if $elem2->is_list;
+	    next if $seen{ $elem2->id };
+	    $l2->push( $elem2 );
+	    $seen{ $elem2->id } ++;
+	}
+
+#	$l2->push( $elem->$lookup->as_array );
+#	$l2->push_uniq( grep $_->defined, $elem->$lookup->flatten->as_array );
     }
     continue
     {
@@ -2031,6 +2043,13 @@ AUTOLOAD
 #	return $self->new_empty();
 	return is_undef->$propname(@_,undef);
     }
+
+    if( $propname =~ /([^\.]+)\.(.*)/ )
+    {
+	my( $first, $last ) = ( $1, $2 );
+	return $self->$first->$last(@_);
+    }
+
 
     my @list = ();
     my $list_class;
