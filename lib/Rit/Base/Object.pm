@@ -487,7 +487,7 @@ sub empty
 
 =head2 get_first
 
-  $literal->get_first()
+  $o->get_first()
 
 Gets the first value from a list, or the value itselft if it's not a
 list.
@@ -506,7 +506,7 @@ sub get_first
 
 =head2 get_first_nos
 
-  $literal->get_first_nos()
+  $o->get_first_nos()
 
 Gets the first value from a list, or the value itselft if it's not a
 list. Does not return a status code (get first with no status).
@@ -522,7 +522,7 @@ sub get_first_nos
 
 =head2 uniq
 
-  $literal->uniq()
+  $o->uniq()
 
 =cut
 
@@ -535,7 +535,7 @@ sub uniq
 
 =head2 as_list
 
-  $literal->as_list()
+  $o->as_list()
 
 Returns a referens to a list. Not a List object. The list content are
 materialized. Compatible with L<Para::Frame::List/as_list>
@@ -545,6 +545,19 @@ materialized. Compatible with L<Para::Frame::List/as_list>
 sub as_list
 {
     return [$_[0]];
+}
+
+#######################################################################
+
+=head2 flatten
+
+  $o->flatten()
+
+=cut
+
+sub flatten
+{
+    return $_[0]->list_class->new([$_[0]]);
 }
 
 #######################################################################
