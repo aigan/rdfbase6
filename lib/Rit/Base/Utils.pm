@@ -35,7 +35,7 @@ our @EXPORT_OK
 	parse_arc_add_box is_undef arc_lock arc_unlock
 	truncstring string parse_query_pred parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
-	send_cache_update parse_propargs aais alphanum_to_id );
+	send_cache_update parse_propargs aais alphanum_to_id proplim_to_arclim );
 
 
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
@@ -1159,6 +1159,38 @@ sub parse_propargs
     {
 	return $arg;
     }
+}
+
+#########################################################################
+
+=head2 proplim_to_arclim
+
+  proplim_to_arclim( \%proplim, $is_rev )
+
+Converts a proplim for use in arclist by adding obj top criterions.
+
+
+=cut
+
+sub proplim_to_arclim
+{
+    my( $proplim, $is_rev ) = @_;
+    $is_rev ||= 0;
+    return undef unless $proplim;
+
+    my $prefix = 'obj';
+    if( $is_rev )
+    {
+	$prefix = 'subj';
+    }
+
+    my %new;
+    foreach my $crit ( keys %$proplim )
+    {
+	$new{ $prefix .'.'. $crit } = $proplim->{$crit};
+    }
+
+    return \%new;
 }
 
 #########################################################################
