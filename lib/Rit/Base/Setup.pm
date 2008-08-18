@@ -317,7 +317,7 @@ sub setup_db
 
     $dbh->commit;
     $Para::Frame::DEBUG = $old_debug;
-    $ARGV[0] = 'vacuum_all'; # For not vacuuming recursively
+    $Rit::Base::VACUUM_ALL = 1; # For not vacuuming recursively
 
 
     # Initialization of constants and valtypes

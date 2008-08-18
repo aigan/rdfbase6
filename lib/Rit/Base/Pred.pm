@@ -601,7 +601,7 @@ sub vacuum_pred_arcs
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    if( $ARGV[0] eq 'vacuum_all' )
+    if( $Rit::Base::VACUUM_ALL )
     {
 	return; # On the way...
     }
