@@ -392,7 +392,8 @@ sub find
 
     my $class = ref $l;
 
-    return $class->new(\@newlist);
+    my $list_props = $l->clone_props;
+    return $class->new(\@newlist, $list_props);
 }
 
 
