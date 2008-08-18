@@ -4472,7 +4472,7 @@ sub wu
     }
 
     # widget for updating subclass of range class
-    debug "Calling ". $range->instance_class ."->wuirc(". $node->desig .", ". $pred->label ."...)";
+#    debug "Calling ". $range->instance_class ."->wuirc(". $node->desig .", ". $pred->label ."...)";
     $out .= $range->instance_class->wuirc($node, $pred, $args);
     $out .= $extra_html if $extra_html;
 

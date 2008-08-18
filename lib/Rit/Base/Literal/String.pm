@@ -790,7 +790,7 @@ sub wuirc
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];
 
-    debug "Using proplim ".query_desig($proplim); # DEBUG
+#    debug "Using proplim ".query_desig($proplim); # DEBUG
 
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
@@ -896,7 +896,6 @@ sub wuirc
 	    }
 	    else
 	    {
-		debug "HERE *** ";
 		$out .= '<li>'
 		  if( scalar(keys %$arcversions) > 1 );
 
