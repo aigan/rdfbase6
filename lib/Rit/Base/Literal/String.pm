@@ -34,7 +34,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump trim throw deunicode );
 use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
-use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs );
+use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( aloc build_field_key );
 use Rit::Base::Constants qw( );
 
@@ -790,6 +790,8 @@ sub wuirc
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];
 
+    debug "Using proplim ".query_desig($proplim); # DEBUG
+
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
@@ -804,7 +806,7 @@ sub wuirc
     {
 	my $subj_id = $subj->id;
 
-	my $arcversions =  $subj->arcversions($predname);
+	my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
 	if( scalar(keys %$arcversions) > 1 )
 	{
 	    $out .= '<ul style="list-style-type: none" class="nopad">';
@@ -894,6 +896,7 @@ sub wuirc
 	    }
 	    else
 	    {
+		debug "HERE *** ";
 		$out .= '<li>'
 		  if( scalar(keys %$arcversions) > 1 );
 
