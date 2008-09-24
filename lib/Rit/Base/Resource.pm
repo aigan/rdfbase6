@@ -22,7 +22,7 @@ use utf8;
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
-use Template::PopupTreeSelect 0.9;
+use Template::PopupTreeSelect '0.9';
 use JSON; # to_json
 
 
@@ -225,7 +225,12 @@ sub get
 	}
 	else
 	{
-	    $node = $class->get_by_anything( $val_in ) or return is_undef;
+	    unless( $node = $class->get_by_anything( $val_in ) )
+	    {
+		debug "Couldn't find $class wath is ".query_desig($val_in);
+		return is_undef;
+	    }
+
 	    $id = $node->id;
 
 	    # Cache id lookups
@@ -672,7 +677,21 @@ sub find_by_anything
 	    {
 		# Used to use find_simple.  But this is a general find
 		# function and can not assume the simple case
-		@new = $this->find({ name_clean => $val }, $args)->as_array;
+#		debug "SEARCHING for name_clean $val that is ".$valtype->sysdesig;
+		die "INVALID search; not a label or constant"
+		  if $Rit::Base::IN_STARTUP; # for $C_resource
+
+		if( $valtype->id == $C_resource->id )
+		{
+		    @new = $this->find({ name_clean => $val,
+				       }, $args)->as_array;
+		}
+		else
+		{
+		    @new = $this->find({ name_clean => $val,
+					 is => $valtype,
+				       }, $args)->as_array;
+		}
 	    }
 	}
     }
@@ -4239,55 +4258,55 @@ sub wd
     return $node->wu( $pred_name, { %$args_in, disabled => 'disabled', ajax => 0 });
 
 
-    my( $args_parsed ) = parse_propargs($args_in);
-    my $args = {%$args_parsed}; # Shallow clone
-
-    my $R = Rit::Base->Resource;
-    my $rev = 0;
-
-    if( $pred_name =~ /^rev_(.*)$/ )
-    {
-	$pred_name = $1;
-	$rev = 1;
-    }
-
-    # Should we support dynamic preds?
-    my $pred = Rit::Base::Pred->get($pred_name);
-
-    my( $range, $range_scof );
-    if( $rev )
-    {
-	$args->{'rev'} = 1;
-	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->first_prop('domain',undef,['active'])
-		   || $C_resource );
-	$range_scof = ( $args->{'range_scof'} ?
-			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('domain_scof',undef,['active']) );
-	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
-	  $range->sysdesig;
-    }
-    else
-    {
-	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-		   $pred->valtype );
-	$range_scof = ( $args->{'range_scof'} ?
-			$R->get($args->{'range_scof'}) :
-			$pred->first_prop('range_scof',undef,['active']) );
-    }
-
-    if( $range_scof )
-    {
-	$args->{'range_scof'} = $range_scof;
-	$range = $range_scof;
-    }
-    else
-    {
-	$args->{'range'} = $range;
-    }
-
-    # widget for updating subclass of range class
-    return $range->instance_class->wdirc($node, $pred, $args);
+#    my( $args_parsed ) = parse_propargs($args_in);
+#    my $args = {%$args_parsed}; # Shallow clone
+#
+#    my $R = Rit::Base->Resource;
+#    my $rev = 0;
+#
+#    if( $pred_name =~ /^rev_(.*)$/ )
+#    {
+#	$pred_name = $1;
+#	$rev = 1;
+#    }
+#
+#    # Should we support dynamic preds?
+#    my $pred = Rit::Base::Pred->get($pred_name);
+#
+#    my( $range, $range_scof );
+#    if( $rev )
+#    {
+#	$args->{'rev'} = 1;
+#	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+#		   $pred->first_prop('domain',undef,['active'])
+#		   || $C_resource );
+#	$range_scof = ( $args->{'range_scof'} ?
+#			$R->get($args->{'range_scof'}) :
+#			$pred->first_prop('domain_scof',undef,['active']) );
+#	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
+#	  $range->sysdesig;
+#    }
+#    else
+#    {
+#	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
+#		   $pred->valtype );
+#	$range_scof = ( $args->{'range_scof'} ?
+#			$R->get($args->{'range_scof'}) :
+#			$pred->first_prop('range_scof',undef,['active']) );
+#    }
+#
+#    if( $range_scof )
+#    {
+#	$args->{'range_scof'} = $range_scof;
+#	$range = $range_scof;
+#    }
+#    else
+#    {
+#	$args->{'range'} = $range;
+#    }
+#
+#    # widget for updating subclass of range class
+#    return $range->instance_class->wdirc($node, $pred, $args);
 }
 
 
@@ -4394,6 +4413,24 @@ Stands for Widget for Updating
 Calls L</wuirc> for the class given by
 C<$pred-E<gt>range-E<gt>instance_class>
 
+Supported args are
+  rev
+  format
+  range
+  range_scof
+  ajax
+  from_ajax
+  divid
+  label
+  tdlabel
+  separator
+  id
+  label_class
+
+args are forwarded to
+  wuirc
+  register_ajax_pagepart
+
 Returns: a HTML widget for updating the value
 
 =cut
@@ -4418,6 +4455,11 @@ sub wu
     my $pred = Rit::Base::Pred->get($pred_name);
 
     my( $range, $range_scof );
+
+    if( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
+    {
+	$args->{'format'} ||= $format;
+    }
 
     if( $args->{'range'} or $args->{'range_scof'} )
     {
@@ -4610,7 +4652,31 @@ Resource..
 
 All wuirc should handle: disabled
 
-Use args:
+supported args are
+  arclim
+  range_scof
+  rev
+  range
+  range_scof
+  ajax
+  divid
+  disabled
+  hide_create_button
+  arc_type
+  inputtype
+  default_value
+  header
+
+args are forwarded to
+  revarc_list
+  arc_list
+  desig
+  wub_select
+  wub_select_tree
+
+
+Args details:
+
   rev => 1
     for reverse pred
 
@@ -4732,9 +4798,19 @@ sub wuirc
 		}
 	    }
 
-	    $out .= ( $is_rev ? $check_subj->wu_jump :
-		      $item->wu_jump ) .'&nbsp;'.
-			$arc->edit_link_html;
+
+	    if( $disabled )
+	    {
+		$out .= ( $is_rev ? $check_subj->desig($args) :
+			  $item->desig($args) );
+	    }
+	    else
+	    {
+		$out .= ( $is_rev ? $check_subj->wu_jump :
+			  $item->wu_jump );
+	    }
+	    $out .= '&nbsp;' . $arc->edit_link_html;
+
 
 	    if( $list->size > 1)
 	    {
@@ -5781,6 +5857,8 @@ sub get_by_anything
 	my $msg = "";
 	if( $req and $req->is_from_client )
 	{
+	    debug "Couldn't find node that is ".query_desig([$val,$args]);
+
 	    my $result = $req->result;
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
 	    $result->{'info'}{'alternatives'}{'args'} = $args;
