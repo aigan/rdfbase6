@@ -309,7 +309,7 @@ sub wuirc
 		my $arc_id = $arc->id;
 		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
 		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") ||
-		  $arc->value || $args->{'default_value'};
+		  $arc->value->desig($args) || $args->{'default_value'};
 		$out .= &calendar($fieldname, $value_new,
 				  {
 				   id => $fieldname,
@@ -336,7 +336,8 @@ sub wuirc
 			   'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
 	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}")
-	      || $subj->prop($pred) || $args->{'default_value'};
+	      || $subj->prop($pred)->desig($args) || $args->{'default_value'};
+
 	    $out .= &calendar($fieldname, $value_new,
 			      {
 			       id => $fieldname,
