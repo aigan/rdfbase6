@@ -4312,6 +4312,68 @@ sub wd
 
 #######################################################################
 
+=head2 display
+
+  $n->display( $pred, \%args )
+
+This method parallells L</wd>, but returns a plain string
+representation, rather than a HTML widget.
+
+Supported args are
+  format
+  rev
+
+Returns: Returns a string for displaying the value
+
+=cut
+
+sub display
+{
+    my( $node, $pred_name, $args_in ) = @_;
+
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow clone
+
+#    my $R = Rit::Base->Resource;
+    my $rev = 0;
+
+    if( $pred_name =~ /^rev_(.*)$/ )
+    {
+	$pred_name = $1;
+	$rev = 1;
+    }
+
+    # Should we support dynamic preds?
+    my $pred = Rit::Base::Pred->get($pred_name);
+
+#    debug "  DISPLAY ".$pred->desig;
+
+    if( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
+    {
+	$args->{'format'} ||= $format;
+#	debug "  WITH FORMAT";
+    }
+
+    my $value;
+    if( $rev )
+    {
+	$value = $node->rev_prop($pred, undef, $args );
+    }
+    else
+    {
+	$value = $node->prop($pred, undef, $args );
+    }
+
+#    my $out = $value->desig($args);
+#    debug "  => $out";
+#    return $out;
+
+    return $value->desig($args);
+}
+
+
+#######################################################################
+
 =head wdirc
 
   $class->wdirc( $subj, $pred, \%args )
@@ -4326,6 +4388,8 @@ Example:
 
 sub wdirc
 {
+    debug "WDIRC USED";
+
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
