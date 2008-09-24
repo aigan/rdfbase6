@@ -346,7 +346,7 @@ sub parse
 
   $n->desig()
 
-The designation of the literal
+The designation of the literal, meant for human admins
 
 =cut
 
@@ -354,14 +354,12 @@ sub desig  # The designation of obj, meant for human admins
 {
     my( $val ) = @_;
 
-    #if( $val->arc('value')->realy_objtype )
-    #{
-    #	return $val->{'value'}->desig;
-    #}
-    #else
+    unless( defined $val->{'value'} )
     {
-	return $val->{'value'};
+	return "<undef>";
     }
+
+    return $val->{'value'};
 }
 
 
