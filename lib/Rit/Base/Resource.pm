@@ -1506,7 +1506,7 @@ sub form_url
 	# sorting of arcs in order of deapth. On top of that, we would
 	# have to sort by weight for class_form_url on the same level.
 
-	my $alts = $n->arc_list('is',undef,['active'])->sorted('direct', 'desc')->vals->first_prop('class_form_url');
+	my $alts = $n->arc_list('is',undef,['active'])->sorted(['direct','obj.weight'], 'desc')->vals->first_prop('class_form_url');
 #	debug $alts;
 	if( my $path_node = $alts->get_first_nos )
 	{
@@ -2132,6 +2132,8 @@ sub revlist
 	    $name = $pred->plain
 	}
 
+#	debug "revlist $name";
+
 	my( $active, $inactive ) = $arclim->incl_act;
 	my @arcs;
 
@@ -2665,8 +2667,7 @@ sub has_value
     # value.
     if( $match eq 'ne' )
     {
-	$args->{'match'} = 'eq';
-	return( $node->has_value($preds, $args ) ? 0 : 1 );
+	return( $node->has_value($preds, {%$args, match=>'eq'} ) ? 0 : 1 );
     }
 
 
@@ -2896,6 +2897,7 @@ sub has_value
 	if( $rev )
 	{
 	    @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
+#	    debug "    found ".int(@arcs_in)." arcs";
 	}
 	else
 	{
@@ -2938,10 +2940,21 @@ sub has_value
     }
     else
     {
-	foreach my $arc ( @arcs_in )
+	if( $rev )
 	{
-	    debug "  check arc ".$arc->id if $DEBUG;
-	    return $arc if $arc->value_equals( $value, $args );
+	    foreach my $arc ( @arcs_in )
+	    {
+		debug "  check arc ".$arc->id if $DEBUG;
+		return $arc if $arc->subj->equals( $value, $args );
+	    }
+	}
+	else
+	{
+	    foreach my $arc ( @arcs_in )
+	    {
+		debug "  check arc ".$arc->id if $DEBUG;
+		return $arc if $arc->value_equals( $value, $args );
+	    }
 	}
     }
 
@@ -3942,21 +3955,21 @@ sub update
 
 =head2 equals
 
-  1. $n->equals( $node2 )
+  1. $n->equals( $node2, \%args )
 
-  2. $n->equals( { $pred => $val, ... } )
+  2. $n->equals( { $pred => $val, ... }, \%args )
 
-  3. $n->equals( [ $node2, $node3, $node4, ... ] )
+  3. $n->equals( [ $node2, $node3, $node4, ... ], \%args )
 
-  4. $n->equals( $list_obj )
+  4. $n->equals( $list_obj, \%args )
 
-  5. $n->equals( $undef_obj )
+  5. $n->equals( $undef_obj, \%args )
 
-  6. $n->equals( $literal_obj )
+  6. $n->equals( $literal_obj, \%args )
 
-  7. $n->equals( $id )
+  7. $n->equals( $id, \%args )
 
-  8. $n->equals( $name )
+  8. $n->equals( $name, \%args )
 
 
 Returns true (C<1>) if the argument matches the node, and false (C<0>)
@@ -3973,9 +3986,20 @@ For case C<7> we compare the id with the node id.
 
 In cases C<6> and C<8> we searches for nodes that has the given
 C<name> and returns true if one of the elements found matches the
-node. This search is done using L</find_simple> which dosn't handle
-literal nodes.
+node.
 
+supported args are
+  match
+
+Supported matchtypes are
+  eq
+  ne
+  gt
+  lt
+  begins
+  like
+
+Default matchtype is 'eq'
 
 =cut
 
@@ -3983,13 +4007,50 @@ sub equals
 {
     my( $node, $node2, $args ) = @_;
 
+    $args ||= {};
+    my $match = $args->{'match'} || 'eq';
+
+    if( $match eq 'ne' )
+    {
+	return $node->equals($node2,{%$args, match=>'eq'}) ? 0 : 1;
+    }
+
     return 0 unless defined $node2;
+
+    my $DEBUG = 0;
 
     if( ref $node2 )
     {
 	if( UNIVERSAL::isa $node2, 'Rit::Base::Resource' )
 	{
-	    return( ($node->id == $node2->id) ? 1 : 0 );
+	    if( $DEBUG )
+	    {
+		debug "Comparing values:";
+		debug "1. ".$node->sysdesig;
+		debug "2. ".$node2->sysdesig;
+	    }
+
+	    if( $match eq 'eq' )
+	    {
+		return( ($node->id == $node2->id) ? 1 : 0 );
+	    }
+	    elsif( $match eq 'gt' )
+	    {
+		return( $node > $node2 );
+	    }
+	    elsif( $match eq 'lt' )
+	    {
+		return( $node < $node2 );
+	    }
+	    elsif( ($match eq 'begins') or ($match eq 'like') )
+	    {
+		return 0;
+	    }
+	    else
+	    {
+		confess "Matchtype $match not implemented";
+	    }
+
 	}
 	elsif( ref $node2 eq 'HASH' )
 	{
@@ -4037,7 +4098,7 @@ sub equals
 	}
     }
 
-    if( $node2 =~ /^\d+$/ )
+    if( $node2 =~ /^\d+$/ and ($match eq 'eq') )
     {
 	return( ($node->id == $node2) ? 1 : 0 );
     }
