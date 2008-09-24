@@ -201,6 +201,7 @@ sub value
     return shift;
 }
 
+
 #######################################################################
 
 =head2 syskey
@@ -212,6 +213,22 @@ Returns a unique predictable id representing this object
 sub syskey
 {
     return "undef";
+}
+
+
+#######################################################################
+
+=head2 wu_jump
+
+See L<Rit::Base::Node/wu_jump)
+
+Returns: the string '<undef>' as HTML
+
+=cut
+
+sub wu_jump
+{
+    return "<span class=\"broken\">&lt;undef&gt;</span>";
 }
 
 
