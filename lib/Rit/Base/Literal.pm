@@ -62,6 +62,11 @@ Literals.
 
 Inherits from L<Rit::Base::Object>.
 
+
+The standard XML schema datatypes are described in
+http://www.w3.org/TR/xmlschema11-2/#built-in-datatypes
+
+
 Supported args:
 
   subj_new
