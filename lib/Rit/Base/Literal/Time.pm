@@ -277,7 +277,7 @@ sub wuirc
 
 	while( my $arc = $arclist->get_next_nos )
 	{
-	    $out .= ( $arc->value->desig || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= ( $arc->value->desig($args) || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
     elsif( $subj->empty )
