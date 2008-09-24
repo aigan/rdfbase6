@@ -916,7 +916,7 @@ sub as_string
 	for( my $i = 0; $i<= $#$list; $i++)
 	{
 	    $val .= "* ";
-	    $val .= $list->[$i]->as_string;
+	    $val .= $list->[$i]->sysdesig;
 	    $val .= "\n";
 	}
     }
