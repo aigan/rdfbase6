@@ -754,6 +754,8 @@ sub modify
 	$search->set_arclim( $arclim_in );
     }
 
+    my $c_resource = Rit::Base::Resource->get_by_label('resource');
+
     foreach my $key ( keys %$props )
     {
 	# Set up values supplied
@@ -855,11 +857,39 @@ sub modify
 	    my $match  = $5 || 'eq';
 	    my $prio   = $6; #Low prio first (default later)
 
-	    if( $pred eq 'is' and $values[0] eq 'arc') # plain string
+	    if( $pred eq 'is' ) # TODO: Generalize
 	    {
-		# Set this up as a arc search
-		$search->{'query'}{'arc'} ||= {coltype=>undef};
-		next;
+		my( @newvals, $changed );
+		foreach my $val ( @values )
+		{
+		    if( $val eq 'arc') # plain string
+		    {
+			# Set this up as a arc search
+			$search->{'query'}{'arc'} ||= {coltype=>undef};
+			$changed ++;
+		    }
+		    elsif( $values[0] eq $c_resource )
+		    {
+			# used in Rit::Base::Resource->find_by_anything()
+			$changed ++;
+		    }
+		    else
+		    {
+			push @newvals, $val;
+		    }
+		}
+
+		if( $changed )
+		{
+		    if( @newvals )
+		    {
+			@values = @newvals;
+		    }
+		    else
+		    {
+			next;
+		    }
+		}
 	    }
 	    elsif( $pred =~ s/^predor_// )
 	    {
@@ -878,7 +908,8 @@ sub modify
 	    {
 		confess "not implemented: $pred";
 	    }
-	    else
+
+	    unless( $predref )
 	    {
 		# Must also take dynamic preds like 'is'
 		$pred = Rit::Base::Pred->get( $pred );
@@ -1471,12 +1502,12 @@ sub build_sql
 
 sub sql_string
 {
-    return $_[0]->{'sql_string'};
+    return $_[0]->{'sql_string'} || "";
 }
 
 sub sql_values
 {
-    return $_[0]->{'sql_values'};
+    return $_[0]->{'sql_values'} || [];
 }
 
 sub reset_sql
