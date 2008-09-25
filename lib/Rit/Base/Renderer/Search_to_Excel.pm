@@ -59,7 +59,7 @@ sub render_output
     binmode $fh;
     utf8::decode( $str );
 
-    $req->note('Klart.  Nu måste du backa tillbaka till list-sidan!');
+    $req->note('Done!');
 
     return \ $str;
 }
