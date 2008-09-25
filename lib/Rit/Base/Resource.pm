@@ -6156,7 +6156,11 @@ sub reset_cache
 {
     my( $node, $rec, $args ) = @_;
     $args ||= {};
-    return $node->initiate_cache->init($rec,{%$args,reset=>1});
+
+    # In case the rebless was triggered from another server, there may
+    # exist a new is-relation that will change the blessing
+
+   return $node->initiate_cache->rebless->init($rec,{%$args,reset=>1});
 }
 
 
