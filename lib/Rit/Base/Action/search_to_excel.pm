@@ -14,14 +14,40 @@ sub handler
 
     my $q = $req->q;
 
-    my $dir = $req->page->dir;
-    my $id = $req->id;
-    my $resp_path = $dir->url_path . "/result-$id.xls";
-    my $args = {};
-    $args->{'renderer'} = Rit::Base::Renderer::Search_to_Excel->new();
-    my $resp = $req->set_response( $resp_path, $args );
+    my $search_col = $req->session->search_collection or die "No search obj";
+    $search_col->reset_result;
 
-    "List exported to excel.";
+    unless( $search_col->is_active )
+    {
+	my $maxlim = Rit::Base::Search::TOPLIMIT;
+	debug "Setting maxlim to $maxlim";
+	$search_col->first_rb_part->{'maxlimit'} = $maxlim;
+	$search_col->execute;
+    }
+
+
+    ### Setting up file response object
+
+    my $home = $req->site->home;
+    my $id = $req->id;
+    my $resp_path = $home->url_path . "/generated/result-$id.xls";
+
+    my $args = {};
+    $args->{'req'}  = $req;
+    $args->{'url'}  = $resp_path;
+    $args->{'site'} = $req->site;
+    $args->{'renderer'} = Rit::Base::Renderer::Search_to_Excel->new();
+    my $file_resp = Para::Frame::Request::Response->new($args);
+    unless( $file_resp->render_output )
+    {
+	return "Export failed";
+    }
+
+    my $file_url = $file_resp->page_url_with_query_and_reqnum;
+    $req->session->register_result_page($file_resp, $file_url);
+    $q->param('file_download_url', $file_url);
+
+    return "List exported to excel";
 }
 
 
