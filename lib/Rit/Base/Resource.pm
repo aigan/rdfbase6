@@ -4791,6 +4791,7 @@ supported args are
   inputtype
   default_value
   header
+  item_prefix
 
 args are forwarded to
   revarc_list
@@ -4921,6 +4922,7 @@ sub wuirc
 		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
 		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
 		}
+		$out .= " ";
 	    }
 
 
@@ -4931,6 +4933,10 @@ sub wuirc
 	    }
 	    else
 	    {
+		if( my $item_prefix = $args->{'item_prefix'} )
+		{
+		    $out .= $item->$item_prefix." ";
+		}
 		$out .= ( $is_rev ? $check_subj->wu_jump :
 			  $item->wu_jump );
 	    }
