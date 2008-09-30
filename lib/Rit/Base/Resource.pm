@@ -69,6 +69,7 @@ use constant CLUE_NOARC => 1;       # no arc
 use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
 use constant CLUE_VALUENODE => 4;   # literal resource
 use constant CLUE_NOVALUENODE => 8; # no literal resource
+use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
 # TODO: Transactions should be local to the request!!!  But if we use
 # DB rollbacks with a DB-connection that uses ONE db transaction, it
@@ -5616,6 +5617,9 @@ are removed and before the calling of L</on_arc_del>.
 
 The new package are required if necessary.
 
+Supported args are
+  clue_find_class
+
 Returns: the resource object
 
 =cut
@@ -5624,10 +5628,13 @@ sub rebless
 {
     my( $node, $args_in ) = @_;
 
+    $args_in ||= {};
     my $class_old = ref $node;
-    my $class_new = $node->find_class(CLUE_NOARC|
-				      CLUE_NOUSEREVARC|
-				      CLUE_NOVALUENODE);
+    my $clue = $args_in->{'clue_find_class'} ||
+      ( CLUE_NOARC       |
+	CLUE_NOUSEREVARC |
+	CLUE_NOVALUENODE );
+    my $class_new = $node->find_class($clue);
     if( $class_old ne $class_new )
     {
 	debug "Reblessing ".$node->sysdesig;
@@ -6166,7 +6173,8 @@ sub reset_cache
     # In case the rebless was triggered from another server, there may
     # exist a new is-relation that will change the blessing
 
-   return $node->initiate_cache->rebless->init($rec,{%$args,reset=>1});
+    return $node->initiate_cache->rebless({clue_find_class => CLUE_ANYTHING})->
+      init($rec,{%$args,reset=>1});
 }
 
 
