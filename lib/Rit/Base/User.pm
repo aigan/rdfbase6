@@ -164,6 +164,12 @@ sub node
 
 =head2 level
 
+  $node->level
+
+See L<Para::Frame::User/level>
+
+Returns: The level
+
 =cut
 
 sub level
@@ -173,13 +179,13 @@ sub level
 	my $node = $_[0];
 	## See $apphome/doc/notes.txt
 	my $level;
-	if( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
-	{
-	    $level = 0;
-	}
-	elsif( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
+	if( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
 	{
 	    $level = 40;
+	}
+	elsif( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
+	{
+	    $level = 0;
 	}
 	else
 	{
