@@ -263,7 +263,7 @@ Returns: A new list with the subjs
 
 sub subjs
 {
-    $_[0]->new([map $_->subj, @{$_[0]}]);
+    Rit::Base::List->new([map $_->subj, @{$_[0]}]);
 }
 
 #######################################################################
@@ -280,7 +280,7 @@ Returns: A new list with the values
 
 sub vals
 {
-    $_[0]->new([map $_->value, @{$_[0]}]);
+    Rit::Base::List->new([map $_->value, @{$_[0]}]);
 }
 
 #######################################################################
@@ -295,7 +295,7 @@ Returns: A new list with the preds
 
 sub preds
 {
-    $_[0]->new([map $_->pred, @{$_[0]}]);
+    Rit::Base::Pred::List->new([map $_->pred, @{$_[0]}]);
 }
 
 #######################################################################
