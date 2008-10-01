@@ -54,6 +54,7 @@ use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Widget qw(build_field_key);
 use Rit::Base::Widget::Handler;
+use Rit::Base::AJAX;
 
 use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
                              $C_class $C_literal_class $C_resource $C_arc );
@@ -6009,6 +6010,7 @@ sub get_by_anything
 	    $msg .= query_desig($val);
 	    $msg .= Carp::longmess;
 	}
+#	cluck("No nodes matches query:\n$msg");
 	throw('notfound', "No nodes matches query:\n$msg");
     }
 

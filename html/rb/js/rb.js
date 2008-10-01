@@ -84,7 +84,7 @@ var RBInputPopup = Class.create(
 	var search = this.search_crit.merge({});
 
 	Effect.Appear(this.loading, { duration: 0.5 });
-	new Ajax.Request('[%home%]/ajax/lookup', {
+	new Ajax.Request('[%home%]/rb/ajax/lookup', {
 		method: 'get',
 		    parameters:
                     {
@@ -170,7 +170,7 @@ var RBInputPopup = Class.create(
     select: function(event, name, key)
     {
 	pps[this.divid].loadingStart();
-	new Ajax.Request('[%home%]/ajax/action/add_direct', {
+	new Ajax.Request('[%home%]/rb/ajax/action/add_direct', {
 		method: 'get',
 		parameters: {
 			    subj: this.subj,
@@ -200,7 +200,7 @@ var RBInputPopup = Class.create(
     {
 	Effect.Appear(this.loading, { duration: 0.5 });
 
-	new Ajax.Request('[%home%]/ajax/action/create_new', {
+	new Ajax.Request('[%home%]/rb/ajax/action/create_new', {
 		method: 'get',
 		parameters: {
 			    name: value,
@@ -232,7 +232,7 @@ function rb_remove_arc(divid, arc, seen_node)
 	$(divid).appendChild(loading);
 	pps[divid].loadingStart();
 	
-	new Ajax.Request('[%home%]/ajax/action/remove_arc', {
+	new Ajax.Request('[%home%]/rb/ajax/action/remove_arc', {
 		method: 'get',
 		    parameters: {
 				arc: arc,
@@ -372,7 +372,7 @@ var PagePart = Class.create(
     insert_wu: function( after, args_json )
     {
 	this.loadingStart();
-	new Ajax.Request('[%home%]/ajax/wu', {
+	new Ajax.Request('[%home%]/rb/ajax/wu', {
 		method: 'get',
 		    parameters: { params: args_json },
 		    onComplete: function(transport)
