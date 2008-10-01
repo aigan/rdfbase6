@@ -5222,6 +5222,7 @@ sub find_class
     $clue ||= 0;
     my $id = $node->{'id'};
 
+#    my $DEBUG = 1;
     my $DEBUG = Para::Frame::Logging->at_level(2);
 
     debug "Find class for $id (clue $clue)" if $DEBUG;
@@ -5292,13 +5293,15 @@ sub find_class
     debug "Finding the class for node $id" if $DEBUG;
 
     my $p_code = Rit::Base::Pred->get_by_label('code');
+    my $islist_arcs = $node->arc_list('is',undef,['active']);
 
-    my $islist = $node->list('is',undef,['active']);
 #    debug "got islist for $id:\n".datadump($islist->{'_DATA'},1);
-    my( $class, $islist_error ) = $islist->get_first;
+    my( $class_arc, $islist_error ) = $islist_arcs->get_first;
     my @pmodules;
     while(! $islist_error )
     {
+	my $class = $class_arc->obj;
+
 	debug "Looking at $id is $class->{id}" if $DEBUG;
 	unless( $class->{'id'} )
 	{
@@ -5357,7 +5360,7 @@ sub find_class
 	    }
 
 	    debug "  Handled by ".$pmodule_node->sysdesig if $DEBUG;
-	    push @pmodules, [$pmodule_node,$class];
+	    push @pmodules, [$pmodule_node,$class,$class_arc];
 
 	    # continue!
 	    ( $pmodule_node, $pmodule_node_list_error )
@@ -5366,7 +5369,7 @@ sub find_class
     }
     continue
     {
-	( $class, $islist_error ) = $islist->get_next;
+	( $class_arc, $islist_error ) = $islist_arcs->get_next;
     };
 
 
@@ -5382,7 +5385,22 @@ sub find_class
 	# perl modules for the class handling instances of the valtype
 	# class. In other words: the key is NOT the valtype id.
 
-	my @pmodules_sorted = sort { $a->[0]->id <=> $b->[0]->id } @pmodules;
+	# We sort on direct and obj.weight because if several classes
+	# implement a method, like desig, the one in the most relevant
+	# class should be used. The direct 'is' should be the more
+	# specialized class.
+
+#	my @pmodules_sorted = sort { $a->[0]->id <=> $b->[0]->id } @pmodules;
+
+	my @pmodules_sorted = sort
+	{
+	    $a->[2]->distance <=> $b->[2]->distance
+            ||
+	    ($b->[1]->first_prop('weight',undef,['active'])->plain||0) <=>
+	    ($a->[1]->first_prop('weight',undef,['active'])->plain||0)
+            ||
+            $a->[1]->id <=> $b->[1]->id
+	} @pmodules;
 
 	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
