@@ -528,7 +528,7 @@ sub create
 	# It's possible we are creating an arc with an undef value.
 	# That is allowed!
 
-	debug sprintf("parsing value %s (%s)", $props->{'value'}, refaddr($props->{'value'})) if $DEBUG;
+	debug sprintf("parsing value %s", $props->{'value'}) if $DEBUG;
 
 	# Returns is_undef if value undef and coltype is obj
 	$value_obj = Rit::Base::Resource->
@@ -548,6 +548,10 @@ sub create
 	    {
 		# Let given value_node override that of the value
 		$props->{'value_node'} ||= $vnode;
+
+		# The literal value must only exist in ONE (active) place
+		# We use the value_node and sets the value to undef here
+		$value_obj = is_undef;
 	    }
 	}
 
@@ -1709,6 +1713,45 @@ sub direct
 {
     my( $arc ) = @_;
     return not $arc->{'indirect'};
+}
+
+
+#######################################################################
+
+=head2 distance
+
+  $a->distance
+
+Returns: The number of arcs that inferes this arc
+
+=cut
+
+sub distance
+{
+    my( $arc ) = @_;
+    if( not $arc->{'indirect'} )
+    {
+	return 0;
+    }
+
+    if( $Rit::Base::IN_STARTUP )
+    {
+	return 1; # Avoids bootsrap recursion
+    }
+
+#    debug "Checking distance of ".$arc->sysdesig;
+
+    unless( @{$arc->{'explain'}} )
+    {
+	$arc->validate_check;
+    }
+
+    my $expl = $arc->{'explain'}[0];
+#    die datadump($expl,1) unless ref $expl->{'a'} eq 'Rit::Base::Arc';
+#    die datadump($expl,1) unless ref $expl->{'b'} eq 'Rit::Base::Arc';
+
+    return( 1 + $expl->{'a'}->distance + $expl->{'b'}->distance );
+
 }
 
 
@@ -4696,6 +4739,7 @@ sub register_with_nodes
 
     if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
     {
+#	debug "Setting arc for ".$value->sysdesig." to ".$arc->id;
 	$value->set_arc($arc);
     }
     elsif( UNIVERSAL::isa($value, "Rit::Base::Resource::Literal") )
