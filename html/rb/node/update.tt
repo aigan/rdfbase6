@@ -204,7 +204,7 @@ END;
       [% IF arc.direct %]
          [% jump('E', 'arc/update.tt', id=arc.id ) %]
       [% ELSE %]
-         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+         [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
       <td valign="top">[% pred.plain %]</td>
@@ -231,7 +231,7 @@ END;
       [% IF arc.direct %]
          [% jump('E', 'arc/update.tt', id=arc.id ) %]
       [% ELSE %]
-         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+         [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
       <td valign="top">[% pred.plain %]</td>
@@ -276,7 +276,7 @@ END;
       [% IF arc.direct %]
          [% jump('E', 'arc/update.tt', id=arc.id ) %]
       [% ELSE %]
-         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+         [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
       <td>
@@ -301,7 +301,7 @@ END;
       [% IF arc.direct %]
          [% jump('E', 'arc/update.tt', id=arc.id ) %]
       [% ELSE %]
-         [% jump('-', 'arc/update.tt', id=arc.id ) %]
+         [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
       <td>
