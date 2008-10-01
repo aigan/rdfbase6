@@ -8,7 +8,7 @@
 [% CALL search.query_setup %]
 
 <p>
-[ [% jump('List preds', 'pred_/ist.tt') %]
+[ [% jump('List preds', 'pred/list.tt') %]
 | [% jump('New search', me, run='search_clear') %]
 ]</p>
 
