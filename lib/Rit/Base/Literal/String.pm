@@ -36,7 +36,7 @@ use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( aloc build_field_key );
-use Rit::Base::Constants qw( );
+use Rit::Base::Constants qw( $C_textbox );
 
 use base qw( Rit::Base::Literal );
 
@@ -93,9 +93,13 @@ sub new
 	{
 	    $val = $$in_value;
 	}
+	elsif( ref $in_value eq 'Rit::Base::Literal::String' )
+	{
+	    $val = $in_value;
+	}
 	else
 	{
-	    confess "Invalid value: $in_value";
+	    confess "Invalid value type '". (ref $in_value) ."': $in_value";
 	}
     }
     else
@@ -727,7 +731,7 @@ sub wuirc
 	  $pattern_errmsg .'\')';
     }
 
-    my $tb = $R->get({name=>'textbox', scof=>'text'});
+    my $tb = $C_textbox;
     if( ($args->{'rows'}||0) > 1 or
 	$range->equals($tb) or
 	$range->scof($tb) )
