@@ -29,6 +29,7 @@ BEGIN
 
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Widget qw( label_from_params calendar );
+#use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( parse_propargs );
 
@@ -285,6 +286,7 @@ sub wuirc
 	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
 	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
 			  {
+			   class => $args->{'class'},
 			   id => $fieldname,
 			   size => $size,
 			  });
@@ -312,6 +314,7 @@ sub wuirc
 		  $arc->value->desig($args) || $args->{'default_value'};
 		$out .= &calendar($fieldname, $value_new,
 				  {
+				   class => $args->{'class'},
 				   id => $fieldname,
 				   size => $size,
 				  });
@@ -340,6 +343,7 @@ sub wuirc
 
 	    $out .= &calendar($fieldname, $value_new,
 			      {
+			       class => $args->{'class'},
 			       id => $fieldname,
 			       size => $size,
 			      });
