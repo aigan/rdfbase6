@@ -1952,7 +1952,7 @@ sub handle_query_newsubjs
 	}
     }
 
-    foreach my $ns (keys %keysubjs)
+    foreach my $ns (sort keys %keysubjs)
     {
 	debug "Newsubj creating a node: ". datadump $newsubj{$ns};
 	Rit::Base::Resource->create( $newsubj{$ns}, $args );
