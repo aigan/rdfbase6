@@ -5231,6 +5231,13 @@ sub find_class
     # Used in startup.
 
 
+    # Assume that we only has ONE type of arc
+    if( ref $node eq 'Rit::Base::Arc' )
+    {
+	return 'Rit::Base::Arc';
+    }
+
+
     # We assume that Arcs et al are retrieved directly. Thus,
     # only look for 'is' arcs. Pred and Rule nodes should have an
     # 'is' arc. Lastly, look if it's an arc if it's nothing else.
@@ -5478,6 +5485,7 @@ sub find_class
 	{
 	    if( $rec->{'ver'} == $id )
 	    {
+		debug "  arc" if $DEBUG;
 		$package = "Rit::Base::Arc";
 		$valtype = $C_arc;
 		$node->{'original_rec'} = $rec; # Used in Rit::Base::Arc
@@ -5486,6 +5494,7 @@ sub find_class
 	    {
 		if( Rit::Base::Literal::Class->coltype_by_valtype_id_or_obj($rec->{'valtype'}) ne 'obj' )
 		{
+		    debug "  literal" if $DEBUG;
 		    $package = "Rit::Base::Resource::Literal";
 		    $node->{'revrecs'} = [ $rec ];
 		    while( $rec = $sth_id->fetchrow_hashref )
@@ -5495,10 +5504,15 @@ sub find_class
 		}
 		else
 		{
+		    debug "  generic obj" if $DEBUG;
 		    # Ignoring data...
 		    # Avoid deep recursion
 		}
 	    }
+	}
+	elsif( $DEBUG )
+	{
+	    debug "  neither ver or obj in arc table";
 	}
 	$sth_id->finish;
     }
@@ -5646,6 +5660,8 @@ Returns: the resource object
 sub rebless
 {
     my( $node, $args_in ) = @_;
+
+#    cluck "REBLESS";
 
     $args_in ||= {};
     my $class_old = ref $node;
