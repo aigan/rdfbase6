@@ -31,7 +31,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug datadump trim throw deunicode );
+use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js );
 use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
@@ -719,13 +719,18 @@ sub wuirc
     my $pattern = $range->has_input_pattern;
     if( $pattern )
     {
-	my $pattern_errmsg = CGI->escapeHTML( $range->has_input_pattern_errmsg->loc );
+	my $pattern_errmsg = escape_js( CGI->escapeHTML(
+	  Para::Frame::L10N::loc('Input error') . "\n" .
+	      $range->has_input_pattern_errmsg->loc
+						       ));
 
 	# javascript through html escaping...
 #	debug "Pattern before escape: ". $pattern;
 	$pattern =~ s/\\/\\\\/g;
 	$pattern =~ s/\$/\\\$/g;
 #	debug "Pattern after escape: ". $pattern;
+
+	# TODO: stop the form from submitting if pattern check failed
 
 	$onchange = 'check_pattern(\''. $pattern .'\', this.value, \''.
 	  $pattern_errmsg .'\')';
