@@ -404,7 +404,7 @@ function check_pattern(pattern, text, errmsg, debug)
 	alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
     if(typeof text == "string" && text.length > 0){
 	if (text.search(pattern) == -1){
-	    alert('[% loc('Input error') %]\n'+ errmsg);
+	    alert(errmsg);
 	    return false;
 	}
 	else {
