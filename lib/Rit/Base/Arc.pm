@@ -162,11 +162,30 @@ The props:
 
   created_by : Creator. Defaults to request user or root
 
+  updated : Defaults to creation time or now.
+
+  active : Defaults to activate_new_arcs
+
+  submitted : Defaults to submit_new_arcs
+
+  common : Defaults to next new node id
+
+  replaces : Defaults to undef
+
+  source : Defaults to L</default_source>
+
+  read_access : Defaults to L</default_read_access>
+
+  write_access : Defaults to L</default_write_access>
+
+  valtype : Defaults to L<Rit::Base::Pred/valtype>
+
+
 Special args:
 
-  activate_new_arcs
+  activate_new_arcs: Sets prop active
 
-  submit_new_arcs
+  submit_new_arcs: Sets prop submitted
 
   mark_updated
 
@@ -776,6 +795,18 @@ sub create
 
     ##################### Validate and update $valtype
 
+    # $valtype is given as a prop or taken from the pred valtype
+    # $val_valtype is the detected valtype of the given value
+    # The $val_valtype must be the same or more specific than $valtype
+
+    # Except that the valtype for resources is inexact and will
+    # usually indicate the clas used for blessing the node. We must
+    # also check all the is-relations of the object. Valtypes is
+    # mostly intended for literals.
+
+    # Example: $valtype=$organization; $val_valtype=$hotel;
+    # valid because a $hotel is a subclass of $organization
+
     if( $valtype )
     {
 	if( $pred->objtype )
@@ -784,19 +815,28 @@ sub create
 	    my $val_valtype = $value_obj->this_valtype ||
 	      Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
 
-	    if( $val_valtype->id == $Rit::Base::Resource::ID )
-	    {
-		# Always valid
-	    }
-	    elsif( $valtype->id == $Rit::Base::Resource::ID )
+#	    if( $val_valtype->id == $Rit::Base::Resource::ID )
+#	    {
+#		debug "CONSIDER GIVING ".$val_valtype->sysdesig.
+#		  " the VALTYPE ".$valtype->sysdesig;
+#		# TODO: Do not accept this...
+#	    }
+
+	    if( $valtype->id == $Rit::Base::Resource::ID )
 	    {
 		# Generic, to be specified
 	    }
 	    elsif( not $valtype->equals( $val_valtype ) )
 	    {
-		if( $valtype->scof( $val_valtype ) )
+#		if( $valtype->scof( $val_valtype ) )
+		if( $val_valtype->scof( $valtype ) )
 		{
 		    # In valid range
+		}
+		elsif( $value_obj->is( $valtype ) )
+		{
+		    # In valid range
+		    $val_valtype = $valtype;
 		}
 		else
 		{
@@ -805,9 +845,12 @@ sub create
 		    my $val_valtd = $val_valtype->sysdesig;
 		    my $valtd = $valtype->sysdesig;
 		    my $vald = $value_obj->sysdesig;
-		    debug "$valtd has scofs: ". $valtype->list('scof')->desig;
-		    confess "Valtype check failed for $subjd -${predd}-> $vald ".
-		      "($valtd should have been $val_valtd)";
+		    my $err = "Valtype validation failed for\n";
+		    $err .= "  $subjd --${predd}--> $vald\n";
+		    $err .= "  The expected valtype for the arc is $valtd\n";
+		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
+		    $err .= "  $val_valtd mus be a subclass of $valtd\n";
+		    confess $err;
 		}
 	    }
 
