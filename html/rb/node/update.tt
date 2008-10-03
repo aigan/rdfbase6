@@ -82,6 +82,15 @@ END;
 <table class="admin" style="margin-top:2em">
 <tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
+<tr>
+   <td>-</td>
+   <td>this_valtype</td>
+   <td>[% node.this_valtype.wu_jump %]</td>
+   <td>core</td>
+   <td></td>
+</tr>
+
+
 [% IF node.node_rec_exist %]
    <tr>
       <td>-</td>
@@ -92,7 +101,7 @@ END;
          by [% node.created_by.wu_jump %]
       [% END %]
       </td>
-      <td>hard</td>
+      <td>core</td>
       <td rowspan="5">
       [% IF node.updated %]
          by [% node.updated_by.wu_jump %]<br/>
@@ -104,7 +113,7 @@ END;
       <td>-</td>
       <td>label</td>
       <td>[% node.label %]</td>
-      <td>hard</td>
+      <td>core</td>
    </tr>
    <tr>
       <td>-</td>
@@ -114,7 +123,7 @@ END;
          [% node.owned_by.wu_jump %]
       [% END %]
       </td>
-      <td>hard</td>
+      <td>core</td>
    </tr>
    <tr>
       <td>-</td>
@@ -124,7 +133,7 @@ END;
          [% node.read_access.wu_jump %]
       [% END %]
       </td>
-      <td>hard</td>
+      <td>core</td>
    </tr>
    <tr>
       <td>-</td>
@@ -134,7 +143,7 @@ END;
          [% node.write_access.wu_jump %]
       [% END %]
       </td>
-      <td>hard</td>
+      <td>core</td>
    </tr>
 [% END %]
 
@@ -143,14 +152,14 @@ END;
       <td>[% jump('E', node.form_url ) %]</td>
       <td>subj</td>
       <td>[% jump(node.subj.desig, me, id=node.subj.id) %]</td>
-      <td>hard</td>
+      <td>core</td>
       <td>-</td>
    </tr>
    <tr>
       <td>[% jump('E', node.form_url ) %]</td>
       <td>pred</td>
       <td>[% node.pred.wu_jump %]</td>
-      <td>hard</td>
+      <td>core</td>
       <td>-</td>
    </tr>
    [% IF node.obj %]
@@ -158,7 +167,7 @@ END;
          <td>[% jump('E', node.form_url ) %]</td>
          <td>obj</td>
          <td>[% jump(node.obj.desig, me, id=node.obj.id) %]</td>
-         <td>hard</td>
+         <td>core</td>
          <td>-</td>
       </tr>
    [% ELSE %]
@@ -166,7 +175,7 @@ END;
          <td>[% jump('E', node.form_url ) %]</td>
          <td>literal</td>
          <td>[% node.value | html %]</td>
-         <td>hard</td>
+         <td>core</td>
          <td>-</td>
       </tr>
       [% IF node.value_node %]
@@ -174,7 +183,7 @@ END;
          <td>[% jump('E', node.form_url ) %]</td>
          <td>value node</td>
          <td>[% jump(node.value_node.desig, me, id=node.value_node.id) %]</td>
-         <td>hard</td>
+         <td>core</td>
          <td>-</td>
       </tr>
       [% END %]
@@ -186,7 +195,7 @@ END;
       <td>-</td>
       <td>coltype</td>
       <td>[% node.coltype %]</td>
-      <td>hard</td>
+      <td>core</td>
       <td>-</td>
    </tr>
 [% END %]
