@@ -794,7 +794,7 @@ sub create
 	    }
 	    elsif( not $valtype->equals( $val_valtype ) )
 	    {
-		if( $val_valtype->scof( $valtype ) )
+		if( $valtype->scof( $val_valtype ) )
 		{
 		    # In valid range
 		}
@@ -805,6 +805,7 @@ sub create
 		    my $val_valtd = $val_valtype->sysdesig;
 		    my $valtd = $valtype->sysdesig;
 		    my $vald = $value_obj->sysdesig;
+		    debug "$valtd has scofs: ". $valtype->list('scof')->desig;
 		    confess "Valtype check failed for $subjd -${predd}-> $vald ".
 		      "($valtd should have been $val_valtd)";
 		}
