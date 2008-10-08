@@ -207,7 +207,9 @@ Defaults to L</desig>
 
 sub as_html
 {
-    return CGI->escapeHTML(shift->desig(@_));
+    my( $str ) = CGI->escapeHTML(shift->desig(@_));
+    $str =~ s/\r?\n/<br>/g;
+    return $str;
 }
 
 
