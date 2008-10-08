@@ -797,11 +797,6 @@ sub modify
 	{
 	    $search->order_add( \@values );
 	}
-        elsif( $key =~ m/^(obj|value)$/ )
-	{
-	    # Handled in second fase
-	    # TODO: Remove need for this?
-	}
 	elsif( $key =~ m/^(subj|pred|coltype)$/ )
 	{
 	    my $qarc = $search->{'query'}{'arc'} ||= {coltype=>undef};
@@ -891,6 +886,22 @@ sub modify
 		    }
 		}
 	    }
+	    elsif( $pred =~ /^(value|obj)$/ )
+	    {
+		# Don't want to giva value a special_id in Rit::Base::Pred
+		debug "Adding search meta '$pred'";
+		$search->{'meta'}{$pred} ||= [];
+		push @{$search->{'meta'}{$pred}},
+		{
+		 match => $match,
+		 values => \@values,
+		 prio => $prio,   # Low prio first
+		 pred_name => $pred,
+		 pred => undef,
+		};
+
+		next;
+	    }
 	    elsif( $pred =~ s/^predor_// )
 	    {
 		my( @prednames ) = split /_-_/, $pred;
@@ -949,6 +960,9 @@ sub modify
 	    }
 	    elsif( $type eq 'obj' )
 	    {
+		#### FIXME: This part not used anymore. Handled above
+
+
 		# The obj part can be specified in several ways
 		#
 		my @new;
@@ -1074,7 +1088,7 @@ sub modify
 	    $qarc->{$coltype} = $values;
 	}
 
-	foreach my $key (qw(created_by updated_by created updated id))
+	foreach my $key (qw(created_by updated_by created updated id obj value))
 	{
 	    if( $meta->{$key} )
 	    {
