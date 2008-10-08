@@ -1788,11 +1788,22 @@ sub distance
     unless( @{$arc->{'explain'}} )
     {
 	$arc->validate_check;
+
+	# indirect status may have been corrected by validate_check
+	if( not $arc->{'indirect'} )
+	{
+	    return 0;
+	}
     }
 
     my $expl = $arc->{'explain'}[0];
 #    die datadump($expl,1) unless ref $expl->{'a'} eq 'Rit::Base::Arc';
 #    die datadump($expl,1) unless ref $expl->{'b'} eq 'Rit::Base::Arc';
+
+    unless( ref($expl->{'a'}) and ref($expl->{'b'}) )
+    {
+	confess datadump([$expl,\@_], 3);
+    }
 
     return( 1 + $expl->{'a'}->distance + $expl->{'b'}->distance );
 
