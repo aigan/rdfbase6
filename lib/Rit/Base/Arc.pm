@@ -215,7 +215,7 @@ sub create
     my $req = $Para::Frame::REQ;
     my $dbix = $Rit::dbix;
 
-#    Para::Frame::Logging->this_level(3);
+#    Para::Frame::Logging->this_level(4);
     my $DEBUG = Para::Frame::Logging->at_level(3);
 
     # Clean props from array form
@@ -568,9 +568,25 @@ sub create
 		# Let given value_node override that of the value
 		$props->{'value_node'} ||= $vnode;
 
-		# The literal value must only exist in ONE (active) place
-		# We use the value_node and sets the value to undef here
-		$value_obj = is_undef;
+		if( $props->{'replaces'} )
+		{
+		    my $repl = Rit::Base::Arc->get( $props->{'replaces'} );
+		    unless( $repl->obj->equals( $vnode ) )
+		    {
+			cluck sprintf "Replacing %s with %s for %s", $repl, $vnode, $value_obj;
+		    }
+		}
+		else
+		{
+		    # The literal value must only exist in ONE (active) place
+
+		    debug "Existing: ".$vnode->sysdesig;
+		    debug "New  obj: ".$value_obj->sysdesig;
+		    debug "IGNORING VALUE";
+
+		    # We use the value_node and sets the value to undef here
+		    $value_obj = is_undef;
+		}
 	    }
 	}
 
