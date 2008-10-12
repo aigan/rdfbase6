@@ -809,97 +809,10 @@ sub create
     }
 
 
-    ##################### Validate and update $valtype
-
-    # $valtype is given as a prop or taken from the pred valtype
-    # $val_valtype is the detected valtype of the given value
-    # The $val_valtype must be the same or more specific than $valtype
-
-    # Except that the valtype for resources is inexact and will
-    # usually indicate the clas used for blessing the node. We must
-    # also check all the is-relations of the object. Valtypes is
-    # mostly intended for literals.
-
-    # Example: $valtype=$organization; $val_valtype=$hotel;
-    # valid because a $hotel is a subclass of $organization
+    ##################### valtype
 
     if( $valtype )
     {
-	if( $pred->objtype )
-	{
-	    # Fall back on 'resource' for Undef value_obj
-	    my $val_valtype = $value_obj->this_valtype ||
-	      Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
-
-#	    if( $val_valtype->id == $Rit::Base::Resource::ID )
-#	    {
-#		debug "CONSIDER GIVING ".$val_valtype->sysdesig.
-#		  " the VALTYPE ".$valtype->sysdesig;
-#		# TODO: Do not accept this...
-#	    }
-
-	    if( $valtype->id == $Rit::Base::Resource::ID )
-	    {
-		# Generic, to be specified
-	    }
-	    elsif( not $valtype->equals( $val_valtype ) )
-	    {
-#		if( $valtype->scof( $val_valtype ) )
-		if( $val_valtype->scof( $valtype ) )
-		{
-		    # In valid range
-		}
-		elsif( $value_obj->is( $valtype ) )
-		{
-		    # In valid range
-		    $val_valtype = $valtype;
-		}
-		else
-		{
-		    my $subjd = $subj->sysdesig;
-		    my $predd = $pred->plain;
-		    my $val_valtd = $val_valtype->sysdesig;
-		    my $valtd = $valtype->sysdesig;
-		    my $vald = $value_obj->sysdesig;
-		    my $err = "Valtype validation failed for\n";
-		    $err .= "  $subjd --${predd}--> $vald\n";
-		    $err .= "  The expected valtype for the arc is $valtd\n";
-		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
-		    $err .= "  $val_valtd mus be a subclass of $valtd\n";
-		    confess $err;
-		}
-	    }
-
-	    debug " Old valtype: ".$valtype->sysdesig if $DEBUG;
-	    $valtype = $val_valtype;
-	    debug " New valtype: ".$valtype->sysdesig if $DEBUG;
-
-	    ###### Validate pred range with value
-
-	    my $pred_valtype = $pred->valtype;
-	    if( $pred_valtype->id != $Rit::Base::Resource::ID )
-	    {
-		if( $value_obj->is( $pred_valtype ) )
-		{
-		    # In valid range
-		}
-		else
-		{
-		    my $subjd = $subj->sysdesig;
-		    my $predd = $pred->plain;
-		    my $val_valtd = $val_valtype->sysdesig;
-		    my $pred_valtd = $pred_valtype->sysdesig;
-		    my $vald = $value_obj->sysdesig;
-		    #throw 'validation', "Range check failed for $subjd -${predd}-> $vald ".
-		    #  "(should have been $pred_valtd)";
-		}
-	    }
-	}
-	else
-	{
-	    # Should be ok
-	}
-
 	$rec->{'valtype'} = $valtype->id;
     }
     else # Special valtype for REMOVAL arc
@@ -5151,6 +5064,8 @@ sub validate_check
     my $validated = 0;
     my $pred      = $arc->pred;
 
+    $arc->validate_valtype;
+
     debug( sprintf "  Retrieve list C for pred %s in %s",
 	  $pred->plain, $arc->sysdesig) if $DEBUG;
 
@@ -5205,6 +5120,8 @@ sub create_check
     debug( sprintf  "create_check of %s",
 	   $arc->sysdesig ) if $DEBUG;
 
+    $arc->validate_valtype;
+
     if( my $list_a = Rit::Base::Rule->list_a($pred) )
     {
 	foreach my $rule ( @$list_a )
@@ -5242,6 +5159,7 @@ sub create_check
 	# TODO: Place this in Rit::Base::Class
 	$subj->on_class_perl_module_change($arc, $pred_name, $args);
     }
+
 
     $subj->on_arc_add($arc, $pred_name, $args);
  }
@@ -5402,6 +5320,116 @@ sub validate_range
 	    my $vald = $value_obj->sysdesig;
 	    #confess "Range check failed for $subjd -${predd}-> $vald ".
 	    #  "(should have been $pred_valtd)";
+	}
+    }
+
+    return 1;
+}
+
+
+###############################################################
+
+=head2 validate_valtype
+
+  $a->validate_valtype( \%args )
+
+=cut
+
+sub validate_valtype
+{
+    my( $arc, $args ) = @_;
+
+    # Validate arc valtype
+    #
+    # $valtype is given as a prop or taken from the pred valtype
+    # $val_valtype is the detected valtype of the given value
+    # The $val_valtype must be the same or more specific than $valtype
+
+    # Except that the valtype for resources is inexact and will
+    # usually indicate the clas used for blessing the node. We must
+    # also check all the is-relations of the object. Valtypes is
+    # mostly intended for literals.
+
+    # Example: $valtype=$organization; $val_valtype=$hotel;
+    # valid because a $hotel is a subclass of $organization
+
+
+    my $valtype = $arc->valtype;
+    my $value_obj = $arc->value;
+    my $pred = $arc->pred;
+
+    if( $valtype )
+    {
+	if( $pred->objtype )
+	{
+	    # Fall back on 'resource' for Undef value_obj
+	    my $val_valtype = $value_obj->this_valtype ||
+	      Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
+
+
+	    if( $valtype->id == $Rit::Base::Resource::ID )
+	    {
+		# Generic, to be specified
+	    }
+	    elsif( not $valtype->equals( $val_valtype ) )
+	    {
+		if( $val_valtype->scof( $valtype ) )
+		{
+		    # In valid range
+		}
+		elsif( $value_obj->is( $valtype ) )
+		{
+		    # In valid range
+		    $val_valtype = $valtype;
+		}
+		else
+		{
+		    my $subjd = $arc->subj->sysdesig;
+		    my $predd = $pred->plain;
+		    my $val_valtd = $val_valtype->sysdesig;
+		    my $valtd = $valtype->sysdesig;
+		    my $vald = $value_obj->sysdesig;
+		    my $err = "Valtype validation failed for\n";
+		    $err .= "  $subjd --${predd}--> $vald\n";
+		    $err .= "  The expected valtype for the arc is $valtd\n";
+		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
+		    $err .= "  $val_valtd must be a subclass of $valtd\n";
+		    $err .= "  (do you need to use arc_lock?)\n";
+		    confess $err;
+		}
+	    }
+	}
+	else
+	{
+	    my $val_valtype = $value_obj->this_valtype;
+
+
+	    if( not $valtype->equals( $val_valtype ) )
+	    {
+		if( $val_valtype->scof( $valtype ) )
+		{
+		    # In valid range
+		}
+		elsif( $value_obj->is( $valtype ) )
+		{
+		    # In valid range
+		    $val_valtype = $valtype;
+		}
+		else
+		{
+		    my $subjd = $arc->subj->sysdesig;
+		    my $predd = $pred->plain;
+		    my $val_valtd = $val_valtype->sysdesig;
+		    my $valtd = $valtype->sysdesig;
+		    my $vald = $value_obj->sysdesig;
+		    my $err = "Valtype validation failed for\n";
+		    $err .= "  $subjd --${predd}--> $vald\n";
+		    $err .= "  The expected valtype for the arc is $valtd\n";
+		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
+		    $err .= "  $val_valtd must be a subclass of $valtd\n";
+		    confess $err;
+		}
+	    }
 	}
     }
 
