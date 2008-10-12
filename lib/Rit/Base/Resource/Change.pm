@@ -31,7 +31,7 @@ use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 			   package_to_module );
 
 use Rit::Base::Resource;
-use Rit::Base::Utils qw();
+use Rit::Base::Utils qw( arc_lock arc_unlock );
 use Rit::Base::Literal::Time qw( now );
 
 =head1 DESCRIPTION
@@ -401,6 +401,7 @@ sub autocommit
 	    debug "Submitting new arcs:";
 	}
 
+	arc_lock;
 	my( $arc, $error ) = $newarcs->get_first;
 	while(! $error )
 	{
@@ -435,6 +436,7 @@ sub autocommit
 		$item->mark_updated($args{'updated'});
 	    }
 	}
+	arc_unlock;
 	debug "- EOL";
 
     }
