@@ -1,1 +1,1 @@
-AddHandler perl-script js
+AddHandler perl-script js_tt
