@@ -5401,36 +5401,46 @@ sub validate_valtype
 	}
 	else
 	{
-	    my $val_valtype = $value_obj->this_valtype;
+	    # Example of situation:
+
+#Valtype validation failed for
+# 6904167: 43ZAFV --due--> Date 2008-10-13 08.35.19 +0200
+# The expected valtype for the arc is 1213710: date
+# The valtype of Date 2008-10-13 08.35.19 +0200 was found out to be 1213707: valdate
+# 1213707: valdate must be a subclass of 1213710: date
 
 
-	    if( not $valtype->equals( $val_valtype ) )
-	    {
-		if( $val_valtype->scof( $valtype ) )
-		{
-		    # In valid range
-		}
-		elsif( $value_obj->is( $valtype ) )
-		{
-		    # In valid range
-		    $val_valtype = $valtype;
-		}
-		else
-		{
-		    my $subjd = $arc->subj->sysdesig;
-		    my $predd = $pred->plain;
-		    my $val_valtd = $val_valtype->sysdesig;
-		    my $valtd = $valtype->sysdesig;
-		    my $vald = $value_obj->sysdesig;
-		    my $err = "Valtype validation failed for\n";
-		    $err .= "  $subjd --${predd}--> $vald\n";
-		    $err .= "  The expected valtype for the arc is $valtd\n";
-		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
-		    $err .= "  $val_valtd must be a subclass of $valtd\n";
-		    confess $err;
-		}
-	    }
-	}
+
+#	    my $val_valtype = $value_obj->this_valtype;
+#
+#
+#	    if( not $valtype->equals( $val_valtype ) )
+#	    {
+#		if( $val_valtype->scof( $valtype ) )
+#		{
+#		    # In valid range
+#		}
+#		elsif( $value_obj->is( $valtype ) )
+#		{
+#		    # In valid range
+#		    $val_valtype = $valtype;
+#		}
+#		else
+#		{
+#		    my $subjd = $arc->subj->sysdesig;
+#		    my $predd = $pred->plain;
+#		    my $val_valtd = $val_valtype->sysdesig;
+#		    my $valtd = $valtype->sysdesig;
+#		    my $vald = $value_obj->sysdesig;
+#		    my $err = "Valtype validation failed for\n";
+#		    $err .= "  $subjd --${predd}--> $vald\n";
+#		    $err .= "  The expected valtype for the arc is $valtd\n";
+#		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
+#		    $err .= "  $val_valtd must be a subclass of $valtd\n";
+#		    confess $err;
+#		}
+#	    }
+#	}
     }
 
     return 1;
