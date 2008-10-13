@@ -5440,7 +5440,7 @@ sub validate_valtype
 #		    confess $err;
 #		}
 #	    }
-#	}
+	}
     }
 
     return 1;
