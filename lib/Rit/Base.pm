@@ -167,7 +167,7 @@ sub init_on_startup
 {
 #    warn "init_on_startup\n";
 
-    if( $ARGV[0] eq 'setup_db' or not $Rit::dbix->table('arc' ) )
+    if( $ARGV[0] and $ARGV[0] eq 'setup_db' or not $Rit::dbix->table('arc' ) )
     {
 	Rit::Base::Setup->setup_db();
     }
@@ -378,6 +378,8 @@ sub send_cache_change
 	    my $daemon = $site->{'daemon'};
 	    debug "Sending update to $site->{site}";
 
+	    ### TODO: check if port and IP is the same
+	    #
 	    if( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
 	    {
 		debug "  Skipping this site";
