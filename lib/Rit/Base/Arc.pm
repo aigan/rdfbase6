@@ -4987,6 +4987,19 @@ sub unlock
 	    my( $arc, $args ) = @$params;
 	    $arc->remove_check( $args );
 	}
+
+
+	# Prioritize is-relations, since they will bee needed in other
+	# arcs validation
+	@Rit::Base::Arc::queue_check_add = sort
+	{
+	    ($b->[0]->pred->plain eq 'is')
+	      <=>
+	    ($a->[0]->pred->plain eq 'is')
+	} @Rit::Base::Arc::queue_check_add;
+
+#	debug join " + ", map{ $_->[0]->pred->plain } @Rit::Base::Arc::queue_check_add;
+
 	while( my $params = shift @Rit::Base::Arc::queue_check_add )
 	{
 	    my( $arc, $args ) = @$params;
