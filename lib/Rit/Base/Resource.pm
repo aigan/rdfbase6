@@ -5478,7 +5478,9 @@ sub find_class
 
 	# Check if this is an arc
 	#
-	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where ver=? or obj=?");
+	# Avoid large return lists. But optimize for the common case
+	#
+	my $sth_id = $Rit::dbix->dbh->prepare("select * from arc where ver=? or obj=? limit 2");
 	$sth_id->execute($id,$id);
 	my $rec = $sth_id->fetchrow_hashref;
 	if( $rec )
@@ -5496,10 +5498,16 @@ sub find_class
 		{
 		    debug "  literal" if $DEBUG;
 		    $package = "Rit::Base::Resource::Literal";
-		    $node->{'revrecs'} = [ $rec ];
-		    while( $rec = $sth_id->fetchrow_hashref )
+
+		    # We can store the revarcs for later literal init
+		    # if where only was one arc. Since we want to keep
+		    # data already retrieved, but not take the chanse
+		    # to retrieve all the data since it's often not
+		    # going to be used.
+
+		    unless( $sth_id->fetchrow_hashref )
 		    {
-			push @{$node->{'revrecs'}}, $rec;
+			$node->{'revrecs'} = [ $rec ];
 		    }
 		}
 		else
