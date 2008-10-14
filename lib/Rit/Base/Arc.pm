@@ -5005,6 +5005,11 @@ sub unlock
 	    my( $arc, $args ) = @$params;
 	    $arc->create_check( $args );
 	}
+
+	# TODO: Do all the validations AFTER the create_check, since
+	# the validation may need infered relations. Ie; move
+	# validate_valtype from create_check to here and to the
+	# corresponding place for then arc_lock isn not active.
     }
 }
 
