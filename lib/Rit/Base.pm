@@ -243,7 +243,7 @@ Returns class object for L<Rit::Base::Arc::Lim>
 
 sub Arc_Lim ()
 {
-    return 'Rit::Base::Arc::Lim';
+    return bless {}, 'Rit::Base::Arc::Lim';
 }
 
 
