@@ -8,8 +8,8 @@
 [% CALL search.query_setup %]
 
 <p>
-[ [% jump('List preds', 'pred/list.tt') %]
-| [% jump('New search', me, run='search_clear') %]
+[ [% jump('List preds', 'pred/list.tt') +%]
+| [% jump('New search', me, run='search_clear') +%]
 ]</p>
 
 [% input('query_row','', size=60) %]<br>
@@ -27,11 +27,11 @@
 
 <p>name_clean hotel<br>
 private_ne 1<br>
-arclim ['not_old']
+arclim ['not_old']<br>
 order_by name.loc
 
 <p>More info:
-<pre>
+<pre style="white-space: -moz-pre-wrap !important">
 rev
 [ pred ]
 [ [% rb.Arc_Lim.names.join(' | ') %] ]
