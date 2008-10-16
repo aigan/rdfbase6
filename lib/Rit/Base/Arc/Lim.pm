@@ -590,13 +590,13 @@ sub sysdesig
 
   $this->names
 
-Returns: a list of al lim names
+Returns: an arrayref of all lim names
 
 =cut
 
 sub names
 {
-    return keys %LIM;
+    return [keys %LIM];
 }
 
 
