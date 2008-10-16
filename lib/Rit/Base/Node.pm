@@ -1564,7 +1564,7 @@ AUTOLOAD
     # Set arclim
     #
     #                Compiles this regexp only once
-    if( $method =~ s/_(@{[join '|', Rit::Base::Arc::Lim->names]})$//o )
+    if( $method =~ s/_(@{[join '|', @{Rit::Base::Arc::Lim->names}]})$//o )
     {
  	# Arclims given in this way will override param $arclim
 	my( $args_in, $arclim ) = parse_propargs();
