@@ -1315,12 +1315,10 @@ L<List|Rit::Base::List> of nodes.  And the nodes can be given
 as anything that L</get> will accept.
 
 Specially handled props:
-
   label
-
   created
-
   updated
+  rev_...
 
 
 Special args:
@@ -1404,7 +1402,7 @@ sub create
 	}
 	elsif( $pred_name eq 'created' )
 	{
-	    $mark_updated = $vals->get_first_nos;
+	    $mark_created = $vals->get_first_nos;
 	}
 	elsif( $pred_name eq 'updated' )
 	{
@@ -3843,6 +3841,13 @@ sub revarc
 
 The value may be a list (or L<Para::Frame::List>) of values.
 
+Specially handled props:
+  label
+  created
+  updated
+  rev_...
+
+
 Supported args are:
   res
 
@@ -3864,6 +3869,9 @@ sub add
 	confess "Invalid parameter ".query_desig($props);
     }
 
+    my $mark_updated = undef; # for tagging node with timestamp
+    my $mark_created = undef; # for tagging node with timestamp
+
     foreach my $pred_name ( keys %$props )
     {
 	# Must be pred_name, not pred
@@ -3871,15 +3879,53 @@ sub add
 	# Values may be other than Resources
 	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
 
-	foreach my $val ( $vals->as_array )
+	if( $pred_name eq 'label' )
 	{
-	    Rit::Base::Arc->create({
-		subj => $node,
-		pred => $pred_name,
-		value => $val,
-	    }, $args);
-	  }
+	    if( $vals->size > 1 )
+	    {
+		confess "Can't give a node more than one label";
+	    }
+	    $node->set_label( $vals->get_first_nos );
+	}
+	elsif( $pred_name eq 'created' )
+	{
+	    $mark_created = $vals->get_first_nos;
+	}
+	elsif( $pred_name eq 'updated' )
+	{
+	    $mark_updated = $vals->get_first_nos;
+	}
+	elsif( $pred_name =~ /^rev_(.*)$/ )
+	{
+	    $pred_name = $1;
+
+	    foreach my $val ( $vals->as_array )
+	    {
+		$val->add({$pred_name => $node}, $args);
+	    }
+	}
+	else
+	{
+	    foreach my $val ( $vals->as_array )
+	    {
+		Rit::Base::Arc->create({
+					subj => $node,
+					pred => $pred_name,
+					value => $val,
+				       }, $args);
+	    }
+	}
     }
+
+    if( $mark_created or $mark_updated )
+    {
+	$node->mark_updated($mark_updated);
+	if( $mark_created )
+	{
+	    $node->{'created_obj'} = $mark_created;
+	}
+    }
+
     return $node;
 }
 
