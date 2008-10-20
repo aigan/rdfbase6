@@ -521,7 +521,7 @@ sub modify_from_query
 			$key_out .= '_'. $prio;
 		    }
 
-		    unless( $val_out )
+		    unless( length($val_out) )
 		    {
 			confess "No value part found in param $val";
 		    }
