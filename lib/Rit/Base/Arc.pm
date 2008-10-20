@@ -5082,7 +5082,11 @@ sub validate_check
     my $validated = 0;
     my $pred      = $arc->pred;
 
-    $arc->validate_valtype;
+    # validate_check is used for checking if this arc can be
+    # infered. No reason to check that it has a valid
+    # valtype. Expecially since the arc may be about to be removed and
+    # in that case probably isn't valid anymore.
+#    $arc->validate_valtype;
 
     debug( sprintf "  Retrieve list C for pred %s in %s",
 	  $pred->plain, $arc->sysdesig) if $DEBUG;
