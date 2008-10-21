@@ -14,7 +14,7 @@ Installation instructions for a new clean install
 
 Check that your database cluster is created with an lc_collate that
 sorts your utf8 strings in an appropriate way. do a "show lc_collate;"
-to find out the sorting. The cluster must be crated for the desired
+to find out the sorting. The cluster must be created for the desired
 sorting. You may use "pg_lscluster" to list your current clusters. You
 have pg_dropcluster and pg_createcluster for creating a new cluster
 with a diffrent configuration.
@@ -29,5 +29,5 @@ with a diffrent configuration.
    going to use the name rb1 in this guide. "create database rb1 with
    owner=my_user encoding='unicode';"
 
- * initialize database content with
-   bin/demo setup_db
+ * Configure demo/site.conf and initialize database content with
+   demo/rb-demo-server setup_db
