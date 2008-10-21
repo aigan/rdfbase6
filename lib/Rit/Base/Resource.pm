@@ -4917,13 +4917,14 @@ sub wuirc
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
 		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
+    # Sort out arcs on range...
     if( $is_rev )
     {
-	$list = $list->find({ subj => { $is_pred => $range }}); # Sort out arcs on range...
+	$list = $list->find({ subj => { $is_pred => $range }})->direct;
     }
     else
     {
-	$list = $list->find({ obj => { $is_pred => $range }}); # Sort out arcs on range...
+	$list = $list->find({ obj => { $is_pred => $range }})->direct;
     }
 
     my $arc_type = $args->{'arc_type'};
