@@ -19,8 +19,8 @@
 <tr>
   <th>[% sort('ID', 'id') %]</th>
   <th>[% sort('Name', 'desig') %]</th>
-  <th>[% sort('Type', 'is_direct.desig') %]</th>
-  <th>[% sort('Scof', 'scof_direct.desig') %]</th>
+  <th>[% sort('Type', 'is_adirect.desig') %]</th>
+  <th>[% sort('Scof', 'scof_adirect.desig') %]</th>
 </tr>
 
 [% FOREACH item IN search_result.from_page %]
