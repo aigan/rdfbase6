@@ -4867,7 +4867,7 @@ Args details:
     to get a select of all $n->rev_scof's.
 
   inputtype => select_tree
-    to get a select of all $n->rev_scof_direct, and then another etc.
+    to get a select of all $n->rev_scof_adirect, and then another etc.
 
   inputtype => text
     to get a text-input.

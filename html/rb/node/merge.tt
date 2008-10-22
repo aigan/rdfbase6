@@ -24,21 +24,21 @@
         <td>[% radio('id2', n.id, 0) %]</td>
 	<td><strong><code>[% n.wu_jump %]</code></strong></td>
         <td>
-        [% FOREACH is = n.is_direct;
+        [% FOREACH is = n.is_adirect;
            'is (' IF loop.first;
            is.wu_jump;
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;
 	%]
-        [% FOREACH scof = n.scof_direct;
+        [% FOREACH scof = n.scof_adirect;
            'scof (' IF loop.first;
            scof.wu_jump;
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;
 	%]
-        [% FOREACH in = n.in_region_direct;
+        [% FOREACH in = n.in_region_adirect;
            'in (' IF loop.first;
            in.wu_jump;
            ', ' UNLESS loop.last;
