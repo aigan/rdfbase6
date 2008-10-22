@@ -73,6 +73,22 @@ sub direct
 
 #######################################################################
 
+=head2 adirect
+
+  $l->adirect
+
+Returns: A new list with the arcs that are L<Rit::Base::Arc/active>
+and L<Rit::Base::Arc/direct>
+
+=cut
+
+sub adirect
+{
+    $_[0]->new([grep $_->direct, grep $_->active, @{$_[0]}]);
+}
+
+#######################################################################
+
 =head2 submitted
 
   $l->submitted
