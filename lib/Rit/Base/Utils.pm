@@ -1058,7 +1058,8 @@ sub parse_propargs
     my( $arg ) = @_;
 
     my $def_args;
-    if( $Para::Frame::U )
+    if( $Para::Frame::U and
+	UNIVERSAL::can($Para::Frame::U, 'default_propargs') )
     {
 	if( $def_args = $Para::Frame::U->default_propargs )
 	{
