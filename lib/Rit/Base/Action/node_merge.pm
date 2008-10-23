@@ -46,9 +46,14 @@ sub handler
 	    throw('incomplete', "Ange nod add slå samman med");
 
 	my $node_list = Rit::Base::Resource->find({
-	    'predor_name_-_code_-_name_short' => $desig2,
+	    'predor_name_-_code_-_name_short_clean' => $desig2,
 	});
 
+
+	unless( $node_list->size )
+	{
+	    $node_list = Rit::Base::Resource->find_by_anything($desig2);
+	}
 
 	# Remove itself
 	my @node_list_out = grep not( $node1->equals($_) ), @$node_list;
