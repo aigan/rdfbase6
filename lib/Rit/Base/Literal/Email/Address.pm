@@ -137,6 +137,8 @@ Assumes that the value from DB is correct
 
 sub new_from_db
 {
+#    cluck "empty address" unless $_[1]; ### DEBUG
+
     my $a = $_[0]->Para::Frame::Email::Address::new($_[1]);
     $a->{'valtype'} = $_[2];
     return $a;
@@ -171,7 +173,7 @@ sub as_html
     if( $a->broken )
     {
 	my $str = $a->original;
-	return "<span style=\"color:red\">$str</a>";
+	return "<span class=\"broken\">$str</a>";
     }
 
     my( $args ) = parse_propargs($args_in);
@@ -301,6 +303,41 @@ Same as L</plain>.
 sub as_string
 {
     return $_[0]->format;
+}
+
+
+#######################################################################
+
+=head3 name
+
+Overrides L<Para::Frame::Email::Address/name>. Using the name of the
+node pointing to this literal, if existing and if no name is found in
+the email itself.
+
+=cut
+
+sub name
+{
+    my( $a ) = @_;
+
+    return undef unless $a->address;
+#    debug "Finding a name for ".$a->address;
+
+    if( my $name = $a->SUPER::name )
+    {
+	return $name;
+    }
+#    elsif( my $name = $a->subj->name->loc )
+#    {
+#       return $name;
+#    }
+    elsif( my $subj = $a->subj )
+    {
+#	debug "  subj ".$subj->sysdesig;
+	return $subj->name->loc;
+    }
+
+    return undef;
 }
 
 
