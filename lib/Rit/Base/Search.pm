@@ -889,7 +889,7 @@ sub modify
 	    elsif( $pred =~ /^(value|obj)$/ )
 	    {
 		# Don't want to giva value a special_id in Rit::Base::Pred
-		debug "Adding search meta '$pred'";
+		debug 2, "Adding search meta '$pred'";
 		$search->{'meta'}{$pred} ||= [];
 		push @{$search->{'meta'}{$pred}},
 		{
@@ -1015,7 +1015,7 @@ sub modify
 		    confess "predor not supported for $pred_name";
 		}
 
-		debug "Adding search meta '$pred_name'";
+		debug 2, "Adding search meta '$pred_name'";
 		$search->{'meta'}{$pred_name} ||= [];
 		push @{$search->{'meta'}{$pred_name}},
 		{

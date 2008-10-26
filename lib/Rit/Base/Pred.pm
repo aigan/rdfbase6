@@ -658,7 +658,7 @@ sub set_coltype
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
 #    debug "Set coltype for pred ".$pred->sysdesig. " ".refaddr($pred);
-    debug "Set coltype for pred ".refaddr($pred);
+#    debug "Set coltype for pred ".refaddr($pred);
 
     unless( $pred->{'label'} )
     {
