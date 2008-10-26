@@ -99,7 +99,7 @@
    </tr>
    [% END %]
 
-   [% iss = node.arc_list('is',undef,'direct') %]
+   [% iss = node.arc_list('is',undef,'adirect') %]
    [% IF iss %]
    <tr>
       <td>ISs</td>
@@ -112,7 +112,7 @@
    </tr>
    [% END %]
 
-   [% supers = node.arc_list('scof',undef,'direct') %]
+   [% supers = node.arc_list('scof',undef,'adirect') %]
    [% IF supers %]
    <tr>
       <td>SUPERs</td>
@@ -125,7 +125,7 @@
    </tr>
    [% END %]
 
-   [% subs = node.revarc_list('scof',undef,'direct') %]
+   [% subs = node.revarc_list('scof',undef,'adirect') %]
    [% IF subs %]
    <tr>
       <td>SUBs</td>
@@ -142,7 +142,7 @@
    <tr>
       <td>CLASSES</td>
       <td>
-      [% FOREACH arc IN node.revarc_list('is',undef,'direct').sorted('subj.desig') %]
+      [% FOREACH arc IN node.revarc_list('is',undef,'adirect').sorted('subj.desig') %]
       [% arc.subj.wu_jump %]
       [% ', ' UNLESS loop.last %]
       [% END %]
