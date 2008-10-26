@@ -1,1 +1,2 @@
 AddHandler perl-script js_tt
+AddType application/x-javascript .js_tt
