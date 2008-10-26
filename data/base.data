@@ -44,13 +44,16 @@ seen_by	1
 unseen_by	1
 no_auto_show	2
 is_mandatory	2
+cyc_id		5
 
 
 ARCS
 resource	is	class
 class	is	class
 is	is	predicate
+cyc_id	is	predicate
 login_account	is	class
+login_account	cyc_id		Cyclist
 system_access_right	is	class
 is	range	class
 scof	is	predicate
@@ -58,15 +61,17 @@ scof	range	class
 member_of	is	predicate
 name	range	text
 name	is	predicate
+name	admin_comment		See cyc_id Name
 description	range	textbox
 description	is	predicate
 admin_comment	range	textbox
 admin_comment	is	predicate
+admin_comment	cyc_id		comment
 name_short	range	text
 name_short	is	predicate
 is_of_language	is	predicate
 is_of_language	domain	text
-is_of_language	range	language
+is_of_language	range	natural_language
 has_translation	is	predicate
 has_translation	range	text
 code	range	text
@@ -116,9 +121,11 @@ datatype	is	predicate
 login_account	scof	intelligent_agent
 full_access	is	system_access_right
 swedish	code		sv
-swedish	is	language
+swedish	is	natural_language
+swedish	cyc_id		SwedishLanguage
 english	code		en
-english	is	language
+english	is	natural_language
+english	cyc_id		EnglishLanguage
 guest_access	is	system_access_right
 class_handled_by_perl_module	is	predicate
 class_handled_by_perl_module	admin_comment		Bless instances in this perl class
@@ -159,6 +166,15 @@ no_auto_show	range	bool
 is_mandatory	is	predicate
 is_mandatory	domain	predicate
 is_mandatory	range	bool
+natural_language	is	class
+natural_language	cyc_id		NaturalLanguage
+rule	is	class
+intelligent_agent	is	class
+intelligent_agent	cyc_id	IntelligentAgent
+
+phone_number		Each instance of PhoneNumber is a character string that can be used to call a particular Telephone.
+phone_number	cyc_id	PhoneNumber
+
 
 111	is	syllogism
 111	pred_1	is
@@ -228,11 +244,10 @@ file	scof	text
 float	scof	valfloat
 int	scof	valfloat
 password	scof	text
-phone	scof	text
+phone_number	scof	text
 text	scof	valtext
 textbox	scof	text
 url	scof	text
-zipcode	scof	text
 image	scof	file
 website_url	scof	url
 
