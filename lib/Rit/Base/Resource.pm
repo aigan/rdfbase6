@@ -3105,6 +3105,20 @@ sub set_label
 	$node->{'label'} = $label_new;
 	$Rit::Base::Constants::Label{$label_new} = $node;
 	$node->mark_updated;
+
+	# New labels must be immideatly saved, since they may be
+	# refered to by arcs. The database has constraints for only
+	# using existing nodes as preds.
+
+	unless( $node->has_node_record )
+	{
+	    $node->save;
+
+	    # But save it again later, in the normal commit fase, then
+	    # we may have added extra metadata
+
+	    $UNSAVED{$node->id} = $node;
+	}
     }
 
     return $label_new;
