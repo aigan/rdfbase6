@@ -848,10 +848,7 @@ sub find
     }
     my $class = ref($this) || $this;
 
-    my $search = Rit::Base::Search->new({ %$args,
-					  maxlimit =>
-					  Rit::Base::Search::TOPLIMIT,
-					});
+    my $search = Rit::Base::Search->new($args);
     $search->modify($query, $args);
 
 #    if( $query->{'label'} )
