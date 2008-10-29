@@ -18,9 +18,6 @@ Rit::Base::Search::Collection
 
 use strict;
 use Carp qw( confess );
-use List::Util qw( min );
-
-use constant PAGELIMIT  => 20;
 
 BEGIN
 {
@@ -73,6 +70,13 @@ sub new
 #######################################################################
 
 =head2 set_result
+
+  $s->set_result( $rb_list )
+
+Sets a custom_result, that will be concatenated to the rb_searches by
+L<Rit::Base::Search::Result/populate_all>
+
+Returns: The result object returned by L</result>
 
 =cut
 
@@ -134,6 +138,12 @@ sub is_rb_search
 
 =head2 result
 
+  $s->result()
+
+Returns: a search result object, based on the class given in
+C<$Para::Frame::CFG-E<gt>{search_result_class}>. Defaults to
+L<Rit::Base::Search::Result>. See L<Rit::Base/init>
+
 =cut
 
 sub result
@@ -150,29 +160,17 @@ sub result
 	    new(undef, \%params );
     }
 
-    unless( $result->{'page_size'} )
-    {
-	my $limit = 20;
-	if( my $req = $Para::Frame::REQ )
-	{
-	    my $user = $req->user;
-	    if( $user and $req->is_from_client )
-	    {
-		my $q = $req->q;
-		$limit = $q->param('limit') || 20;
-		$limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
-	    }
-	}
-
-	$result->set_page_size( $limit );
-    }
-
     return $result;
 }
 
 #######################################################################
 
 =head2 reset
+
+
+Query params used:
+
+  limit : sets page_size
 
 =cut
 
@@ -186,7 +184,25 @@ sub reset
     delete $search->{'result'};
     delete $search->{'custom_result'};
 
-#    debug "Search collection resetted: ".datadump($search,1);
+    # Properties used by RB::Search::Result
+
+    delete $search->{'allow_undef'};
+    delete $search->{'page_size'};
+    delete $search->{'display_pages'};
+    delete $search->{'limit_pages'};
+    delete $search->{'limit_display'};
+
+
+    if( my $req = $Para::Frame::REQ )
+    {
+	my $user = $req->user;
+	if( $user and $req->is_from_client )
+	{
+	    my $q = $req->q;
+
+	    $search->{'page_size'} = $q->param('limit');
+	}
+    }
 
     return $search;
 }
@@ -285,6 +301,28 @@ sub rb_parts
 
 #    debug "rb_search: ".datadump($search->{'rb_search'}[0],2);
     return $search->{'rb_search'} ||= [];
+}
+
+#######################################################################
+
+=head2 custom_parts
+
+=cut
+
+sub custom_parts
+{
+    return [$_[0]->{'custom_result'}];
+}
+
+#######################################################################
+
+=head2 parts
+
+=cut
+
+sub parts
+{
+    return [ @{$_[0]->rb_parts}, @{$_[0]->custom_parts} ];
 }
 
 #######################################################################
@@ -408,6 +446,9 @@ sub form_url
 =head2 set_page_size
 
   $l->set_page_size( $page_size )
+
+This will be the default page size for the result. The result object
+can be set to a diffrent size.
 
 Sets and returns the given C<$page_size>
 
