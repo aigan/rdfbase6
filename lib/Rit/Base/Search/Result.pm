@@ -19,6 +19,7 @@ Rit::Base::Search::Result
 use strict;
 use Carp qw( confess );
 use Scalar::Util qw(weaken);
+use List::Util;
 
 BEGIN
 {
@@ -35,9 +36,14 @@ use Rit::Base::Utils qw( query_desig );
 
 use base 'Rit::Base::List';
 
+use constant PAGE_SIZE_MAX  => 20;
+use constant LIMIT_DISPLAY_MAX   => 80;
+
 #######################################################################
 
 =head2 init
+
+Initializes result object from the Collection properties
 
 =cut
 
@@ -49,10 +55,63 @@ sub init
       or confess "Obj init misses search arg ".datadump($res,1);
 #    weaken( $res->{'search'} );
 
-    $args->{'materializer'} = \&materialize;
+    $args->{'materializer'} = \&Rit::Base::List::materialize;
 
 #    debug "Initiating a new search result";
 #    debug datadump($res, 3);
+
+    my $search = $res->{'search'};
+
+
+    ### init type
+    #
+    # TODO: implemet this
+
+    ### init materializer
+    #
+    my $materializer = $args->{'materializer'} || $search->{'materializer'};
+    unless( $materializer )
+    {
+	foreach my $part ( $search->parts )
+	{
+	    my $pmat = $part->{'materializer'};
+	    $materializer ||= $pmat;
+	    unless( $materializer eq $pmat )
+	    {
+		my $out = "Materializer mismatch\n";
+		foreach my $epart ( $search->parts )
+		{
+		    $out .= " * $epart->{meterializer}\n";
+		}
+		confess $out;
+	    }
+	}
+	$res->{'materializer'} = $materializer;
+    }
+
+
+
+    ### init other properties
+    #
+    foreach my $prop (qw( allow_undef page_size display_pages limit_pages limit_display ))
+    {
+	$res->{$prop} ||= $search->{$prop} || 0;
+    }
+
+    ### init page_size
+    $res->{'page_size'} ||= PAGE_SIZE_MAX;
+    $res->{'limit_display'} ||= 100000;
+
+    ### Restrict based on root access
+    #
+    if( $Para::Frame::U and not $Para::Frame::U->has_root_access )
+    {
+	$res->{'page_size'} = List::Util::min( $res->{'page_size'}, PAGE_SIZE_MAX );
+#	debug "page_size set to ".$res->{'page_size'} ." * ".PAGE_SIZE_MAX;
+
+	$res->{'limit_display'} = List::Util::min( $res->{'limit_display'}, LIMIT_DISPLAY_MAX );
+#	debug "limit_display set to ".$res->{'limit_display'}." * ".LIMIT_DISPLAY_MAX;
+    }
 
     return $res;
 }
@@ -68,41 +127,14 @@ sub DESTROY
 
 sub clone_props
 {
+    # CHECKME: Is this used anywhere?!
+
     my( $l ) = @_;
     my $args = $l->SUPER::clone_props;
     $args->{'search'} = $l->{'search'};
     return $args;
 }
 
-
-#######################################################################
-
-=head2 materialize
-
-=cut
-
-sub materialize
-{
-    my( $l, $i ) = @_;
-
-    my $elem = $l->{'_DATA'}[$i];
-    if( ref $elem )
-    {
-	return $elem;
-    }
-    else
-    {
-#	my $ts = Time::HiRes::time();
-	my $node = Rit::Base::Resource->get( $elem );
-	if( debug > 1 )
-	{
-	    debug "Materializing Search result $i: ".$node->sysdesig;
-	}
-#	$Para::Frame::REQ->{RBSTAT}{materialize} += Time::HiRes::time() - $ts;
-	$Para::Frame::REQ->may_yield;
-	return $node;
-    }
-}
 
 #######################################################################
 
