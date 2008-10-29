@@ -23,9 +23,6 @@ use List::Util qw( min );
 use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
 
-use constant TOPLIMIT   => 100000;
-use constant MAXLIMIT   => 80;
-use constant PAGELIMIT  => 20;
 use constant BINDVALS   =>  0;
 
 
@@ -68,8 +65,6 @@ CGI query parameters reserved for use with some methods are:
 
 =cut
 
-
-$Rit::DEBUG = 0;
 
 our %DBSTAT;
 
@@ -146,19 +141,20 @@ sub result
     confess(datadump($res)) if ref $res eq 'ARRAY';
     confess(datadump($search)) unless $res;
 
-    my $limit = 20;
-    if( my $req = $Para::Frame::REQ )
-    {
-	my $user = $req->user;
-	if( $user and $req->is_from_client )
-	{
-	    my $q = $req->q;
-	    $limit = $q->param('limit') || 10;
-	    $limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
-	}
-    }
 
-    $res->set_page_size( $limit );
+## Use Search Collection Result
+#    my $limit = 20;
+#    if( my $req = $Para::Frame::REQ )
+#    {
+#	my $user = $req->user;
+#	if( $user and $req->is_from_client )
+#	{
+#	    my $q = $req->q;
+#	    $limit = $q->param('limit') || 10;
+#	    $limit = min( $limit, PAGELIMIT ) unless $user->has_root_access;
+#	}
+#    }
+#    $res->set_page_size( $limit );
 
     return $res;
 }
@@ -291,24 +287,30 @@ sub reset  # Keep this hash thingy but clear it's contents
     $args ||= {};
 
 
-    # Set MAXLIMIT.
-    # Start limited. Set it wider if search is restricted to something
-
-    if( $args->{'maxlimit'} )
-    {
-	$search->{'maxlimit'} = $args->{'maxlimit'};
-#	debug "Maxlimit set\n";
-    }
-    else
-    {
-	$search->{'maxlimit'} = MAXLIMIT;
-
-	# searching will be done before we have a user obj
-	if( my $user = $Para::Frame::REQ->user )
-	{
-	    $search->{'maxlimit'} = $user->level >= 20 ? TOPLIMIT : MAXLIMIT;
-	}
-    }
+#    # Set MAXLIMIT.
+#    # Start limited. Set it wider if search is restricted to something
+#
+#    if( $args->{'maxlimit'} )
+#    {
+#	$search->{'maxlimit'} = $args->{'maxlimit'};
+#	debug "*********** Maxlimit set\n";
+#    }
+#    else
+#    {
+#
+#	# Try to take all the search result and do limitations
+#	# afterwards by pagelimit and pagesize limit
+#	#
+#	$search->{'maxlimit'} = TOPLIMIT;
+#
+#
+##	# searching will be done before we have a user obj
+##	if( my $user = $Para::Frame::REQ->user )
+##	{
+##	    $search->{'limit_display'} = $user->level >= 20 ? TOPLIMIT : MAXLIMIT;
+##	    debug "************** limit_display set to ".$search->{'limit_display'} ;
+##	}
+#    }
 
     debug 3, "Search object resetted";
     return $search;
@@ -1246,6 +1248,7 @@ sub execute
     }
 
     $args->{'materializer'} ||= \&Rit::Base::List::materialize;
+    $args->{'limit_display'} ||= $search->{'limit_display'};
 
 
     if( $search->{'query'}{'arc'} )
@@ -1367,7 +1370,10 @@ sub get_result
 	}
 
 	push @result, $subj_id;
-	last if $#result >= $maxlimit -1;
+	if( $maxlimit )
+	{
+	    last if $#result >= $maxlimit -1;
+	}
     }
     $sth->finish;
 
