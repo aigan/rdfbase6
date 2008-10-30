@@ -836,6 +836,22 @@ sub contains_any_of
     return undef;
 }
 
+#######################################################################
+
+=head2 sort_arg
+
+  $obj->sort_arg
+
+Returns: an array ref of sortargs for the latest sorting on for the item
+
+=cut
+
+sub sort_arg
+{
+    return $_[0]->{'sort_arg'} || [];
+}
+
+
 ######################################################################
 
 1;
