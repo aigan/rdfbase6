@@ -852,6 +852,26 @@ sub sort_arg
 }
 
 
+#######################################################################
+
+=head2 random
+
+  $obj->random
+
+Stores the number in memory until next reset. The point of this is to
+keep the given order between reordering and page flipping of search
+results.
+
+Returns: an random number between 1 and 99
+
+=cut
+
+sub random
+{
+    $_[0]->{'random'} ||= int(rand(99)+1);
+}
+
+
 ######################################################################
 
 1;
