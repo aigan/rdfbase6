@@ -499,7 +499,7 @@ sub limit
   $list->sorted( { on => $prop1, dir => $dir } )
 
   $list->sorted( [{ on => $prop1, dir => $dir },
-                  { on => $prop2, dir => $dir2 },
+                  { on => $prop2, dir => $dir2, cmp => '<=>' },
                   ...
                  ] )
 
@@ -514,7 +514,8 @@ C<$prop> can be of the form C<p1.p2.p3> which translates to a property
 lookup in several steps.  For example; C<$arcs->sorted('obj.name')>
 
 The type of sort (numeric or string) is decided by the predicate type.
-Numeric predicates will give numeric sorts.
+Numeric predicates will give numeric sorts. If the sort property isn't
+a predicate, we can tell the type of value by the C<cmp> argument.
 
 Examples:
 
@@ -578,6 +579,7 @@ sub sorted
     my @props;
     foreach my $item ( $list->as_array )
     {
+	$item->{'sort_arg'} = [];
 	debug sprintf("  add item %s", $item->sysdesig) if $DEBUG;
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
@@ -630,6 +632,8 @@ sub sorted
 	    debug sprintf("      => %s", $val) if $DEBUG;
 
 	    CORE::push @{$props[$i]}, $val;
+#	    debug $item->sysdesig .' : '.$val;
+	    CORE::push @{$item->{'sort_arg'}}, $val;
 #	    CORE::push @{$props[$i]}, $item->$method;
 	}
     }
@@ -744,31 +748,36 @@ sub parse_sortargs
 
 	$on =~ /([^\.]+)$/; #match last part
 	my $pred_str = $1;
-	my $cmp = 'cmp';
 
-	# Silently ignore dynamic props (that isn't preds)
-	eval
+
+	my $cmp = $sortargs->[$i]->{'cmp'};
+	unless( $cmp )
 	{
-	    if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
-							     {
-							      %$args,
-							     }))
+	    $cmp = 'cmp';
+
+	    # Silently ignore dynamic props (that isn't preds)
+	    eval
 	    {
-		my $coltype = $pred->coltype;
-		$sortargs->[$i]->{'coltype'} = $coltype;
-
-		if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+		if( my $pred = Rit::Base::Pred->get_by_anything( $pred_str,
+								 {
+								  %$args,
+								 }))
 		{
-		    $cmp = '<=>';
+		    my $coltype = $pred->coltype;
+		    $sortargs->[$i]->{'coltype'} = $coltype;
+		    if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+		    {
+			$cmp = '<=>';
+		    }
 		}
+	    };
+	    if( $@ )  # Just dump any errors to log...
+	    {
+		debug "Sortarg $pred_str not a predicate";
 	    }
-	};
-	if( $@ )  # Just dump any errors to log...
-	{
-	    debug "Sortarg $pred_str not a predicate";
-	}
 
-	$sortargs->[$i]->{'cmp'} = $cmp;
+	    $sortargs->[$i]->{'cmp'} = $cmp;
+	}
 
 	if( $sortargs->[$i]->{'dir'} eq 'desc')
 	{
