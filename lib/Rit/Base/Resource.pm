@@ -4902,6 +4902,9 @@ sub wuirc
 	$args->{'arclim'} =  Rit::Base::Arc::Lim->parse('active');
     }
 
+    my $DEBUG = 0;
+    debug "wuirc ".$subj->desig if $DEBUG;
+
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
     my $out = '';
@@ -4923,6 +4926,8 @@ sub wuirc
 
     confess "Range missing"
       unless( $range );
+
+    debug "wuirc range ".$range->desig if $DEBUG;
 
     my $list = ( $is_rev ?
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
@@ -4949,9 +4954,12 @@ sub wuirc
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
 #    debug "  $inputtype";
 
+
     if( $list and
 	( $inputtype eq 'text' or not $singular ) )
     {
+	debug "wuirc 1" if $DEBUG;
+
 	delete $args->{'default_value'}; # No default when values exist...
 
 	$out .= "<ul id=\"$divid-list\">"
@@ -5014,45 +5022,50 @@ sub wuirc
 	}
     }
 
+    ### AJAX
+    #
     if( not $disabled and
 	( not $singular or
 	  not $list or
 	  ( $singular and $inputtype ne 'text' )))
     {
+	debug "wuirc 2" if $DEBUG;
+
 	if( $ajax and $inputtype eq 'text' )
 	{
+	    debug "wuirc 3" if $DEBUG;
+
 	    my $search_params = { $is_pred => $range->id };
+
+	    # Stringify
+	    my $default = "" . ($args->{'default_value'}||"");
 
 	    $out .= "
               <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
 	    $out .= sprintf(q{
 <script type="text/javascript">
 <!--
-  new RBInputPopup('%s','%s','%s','%s','%s',%d,%d,%d,%d)
+  new RBInputPopup('%s')
 //-->
 </script>
 },
-			    $divid.'-button',
-			    $divid,
-			    to_json($search_params),
-			    to_json($lookup_pred),
-			    $pred->plain,
-			    $subj->id,
-			    ($is_rev?1:0),
-			    ($subj->id||0),
-			    $hide_create_button,
-			   );
-
-#	    $out .=
-#	      "<script type=\"text/javascript\">
-#               <!--
-#                  new RBInputPopup('$divid-button',
-#                     '$divid', '". to_json( $search_params ) ."',
-#                     '".to_json($lookup_pred)."', '". $pred->label ."',
-#                     '". $subj->id ."'". ($is_rev ? ", 1" : "") .") //--> </script>";
+			    to_json({
+				     button => $divid.'-button',
+				     divid  => $divid,
+				     search_crit => $search_params,
+				     search_type => $lookup_pred,
+				     pred_name => $pred->plain,
+				     subj => $subj->id,
+				     rev => ($is_rev?1:0),
+				     seen_node => $subj->id,
+				     hide_create_button => $hide_create_button,
+				     default_value => $default,
+				    }));
 	}
 	elsif( $inputtype eq 'text' )
 	{
+	    debug "wuirc 4" if $DEBUG;
+
 	    my $fkeys =
 	    {
 	     subj => $subj,
@@ -5069,6 +5082,8 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'select' )
 	{
+	    debug "wuirc 5" if $DEBUG;
+
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
@@ -5080,6 +5095,8 @@ sub wuirc
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
+	    debug "wuirc 6" if $DEBUG;
+
 	    $out .= Rit::Base::Widget::wub_select_tree( $subj, $pred->label, $range, $args );
 	}
 	else
