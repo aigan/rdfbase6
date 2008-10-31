@@ -866,7 +866,7 @@ sub wuirc
 		    else
 		    {
 			$out .= &{$inputtype}("undef",
-					      $version->value,
+					      $version->value->plain,
 					      {
 					       disabled => "disabled",
 					       class => "suggestion_field",
@@ -924,7 +924,10 @@ sub wuirc
 		    $field = '-'.$field; # Don't read content
 		}
 
-		$out .= &{$inputtype}($field, $arc->value, $fargs);
+
+#		debug "Creating an input with value ".$arc->value->plain;
+
+		$out .= &{$inputtype}($field, $arc->value->plain, $fargs);
 		unless( $arc->indirect )
 		{
 		    $out .= $arc->edit_link_html;
@@ -962,7 +965,7 @@ sub wuirc
 	}
 
 	$out .= &{$inputtype}(build_field_key($props),
-			      $default,
+			      $default->plain,
 			      {
 			       class => $args->{'class'},
 			       size => $size,
