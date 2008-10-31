@@ -24,6 +24,8 @@ See L<Rit::Base::Object> for the baseclass for most classes.
 
 use vars qw( $VERSION );
 
+use JSON;
+
 BEGIN
 {
     $VERSION = "6.55";
@@ -75,6 +77,8 @@ BEGIN
 =head1 Constructors
 
 These can be called with the class name
+
+=head2 init
 
 =cut
 
@@ -140,6 +144,8 @@ sub init
      literal         => sub{ Rit::Base::Literal->new(@_) },
      parse_query_props => \&Rit::Base::Utils::parse_query_props,
      searchobj       => sub{ $Para::Frame::REQ->session->search_collection },
+     to_json         => \&JSON::to_json,
+     from_json       => \&JSON::from_json,
     };
     Para::Frame->add_global_tt_params( $global_params );
 
