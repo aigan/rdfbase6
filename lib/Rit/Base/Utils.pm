@@ -299,13 +299,16 @@ Vals can contain underscore: pred_in_region...
 
 The string can begin with C<check_>.
 
+If a second property with the same name is encountered, it will return
+the values as an arrayref.
+
 Returns:
 
 a props hash with pred/value pairs.
 
 Example:
 
-  arc___revpred_has_member__type_marketing_group
+  arc___revpred_has_member__type_marketing_group__if_a__if_b
 
   becomes:
 
@@ -313,6 +316,7 @@ Example:
     arc     => undef,
     revpred => 'has_member',
     type    => 'marketing_group',
+    if      => ['a','b'],
   }
 
 =cut
@@ -329,7 +333,21 @@ sub parse_form_field_prop
 	my( $key, $val ) = $part =~ /^([^_]+)_?(.*)/
 	    or die "Malformed part: $part\n";
 
-	$arg{$key} = $val;
+	if( exists $arg{$key} )
+	{
+	    if( (defined $arg{$key}) and (ref $arg{$key} eq 'ARRAY') )
+	    {
+		push @{$arg{$key}}, $val;
+	    }
+	    else
+	    {
+		$arg{$key} = [ $arg{$key}, $val ];
+	    }
+	}
+	else
+	{
+	    $arg{$key} = $val;
+	}
     }
     return \%arg;
 }
