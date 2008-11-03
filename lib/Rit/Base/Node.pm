@@ -146,11 +146,14 @@ For arcs, the argument C<implicit>, if given, is passed on to
 L</remove>. This will only remove arc if it no longer can be infered
 and it's not explicitly declared
 
+If the node is an arc and C<force> is not true, it will not remove an arc that is a removal or that has been deactivated.
+
 Supported args:
 
   arclim
   res
   implicit
+  force
 
 Returns: ---
 
@@ -161,9 +164,20 @@ sub find_remove
     my( $this, $props, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
+    my $force = $args->{'force'} || 0;
+
+    debug "Find for removal:\n".query_desig($props);
+    debug query_desig($args);
+
     arc_lock;
     foreach my $node ( $this->find( $props, $args )->nodes )
     {
+	if( $node->is_arc and not $force )
+	{
+	    next if $node->is_removal;
+	    next if $node->old;
+	}
+
 	$node->remove( $args );
     }
     arc_unlock;
@@ -1074,6 +1088,17 @@ sub remove
     my $changes_prev = $res->changes;
 
     debug "Removing resource ".$node->sysdesig;
+
+    if( ref $node eq 'Rit::Base::Arc' )
+    {
+	my($package, $filename, $line) = caller;
+	unless( $line == 3344 )
+	{
+	    confess "Wrong trurn";
+	}
+    }
+
+
 
     foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
 		      $node->revarc_list(undef, undef, $args)->nodes )
