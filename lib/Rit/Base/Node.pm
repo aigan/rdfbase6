@@ -30,7 +30,7 @@ use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw(valclean parse_query_props
-			 parse_form_field_prop is_undef arc_lock
+			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
 			 parse_propargs aais );
@@ -1089,16 +1089,14 @@ sub remove
 
     debug "Removing resource ".$node->sysdesig;
 
-    if( ref $node eq 'Rit::Base::Arc' )
-    {
-	my($package, $filename, $line) = caller;
-	unless( $line == 3344 )
-	{
-	    confess "Wrong trurn";
-	}
-    }
-
-
+#    if( ref $node eq 'Rit::Base::Arc' )
+#    {
+#	my($package, $filename, $line) = caller;
+#	unless( $line == 3366 )
+#	{
+#	    confess "Wrong trurn";
+#	}
+#    }
 
     foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
 		      $node->revarc_list(undef, undef, $args)->nodes )
