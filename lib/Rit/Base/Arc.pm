@@ -3185,7 +3185,7 @@ sub remove
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $DEBUG = 0;
+    my $DEBUG = 1;
 
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
@@ -4392,6 +4392,8 @@ sub get_by_rec_and_register
 	# simple check and just return arc if it looks like it's
 	# initialized.
 
+	# Re-regestring arc with nodes
+	#
 	$arc->init(@_)->register_with_nodes;
 	return $arc;
     }
@@ -5385,9 +5387,8 @@ sub validate_valtype
 	if( $pred->objtype )
 	{
 	    # Fall back on 'resource' for Undef value_obj
-	    my $val_valtype = $value_obj->this_valtype ||
-	      Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
-
+	    my $res = Rit::Base::Resource->get_by_id($Rit::Base::Resource::ID);
+	    my $val_valtype = $value_obj->this_valtype || $res;
 
 	    if( $valtype->id == $Rit::Base::Resource::ID )
 	    {
@@ -5415,7 +5416,14 @@ sub validate_valtype
 		    $err .= "  $subjd --${predd}--> $vald\n";
 		    $err .= "  The expected valtype for the arc is $valtd\n";
 		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
-		    $err .= "  $val_valtd must be a subclass of $valtd\n";
+		    if( $val_valtype->id == $Rit::Base::Resource::ID )
+		    {
+			$err .= "  Put $vald in the class $valtd\n";
+		    }
+		    else
+		    {
+			$err .= "  $val_valtd must be a subclass of $valtd\n";
+		    }
 		    $err .= "  (do you need to use arc_lock?)\n";
 		    confess $err;
 		}

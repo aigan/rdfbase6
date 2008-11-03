@@ -5654,6 +5654,7 @@ sub first_bless
 
 #    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
 
+    debug "Initiated $node->{id} as a ".ref($node);
 
     return $node;
 }
@@ -6068,6 +6069,9 @@ sub new
 
     $Rit::Base::Cache::Resource{ $id } = $node;
 
+    # initiate_cache is ONLY in RB::Resource, so it can be called
+    # before first_bless()
+    #
     $node->initiate_cache(@_);
 
 #    warn("Set up new node $node for -->$id<--\n");
