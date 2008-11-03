@@ -206,6 +206,7 @@ arc
 desig
 file
 if
+unless
 is
 lang
 newsubj
@@ -224,6 +225,38 @@ vnode
 
 A language-code; Set the language on this value (as an arc to the value-node).
 
+=head4 if
+
+Examples:
+
+  if_subj
+
+  if_obj
+
+  if_subj_obj
+
+  if_12345
+
+  if_12345_methodname
+
+You may have multipple if arguments, in which case all must be true in
+order to process the field.
+
+subj : true if subj is not empty()
+
+obj : true if obj is not empty()
+
+12345 : looks up the node with given id. If it's an arc, we check if
+it's active. If its a nother type of node, we check if its not empty.
+
+12345_methodname : methodname must be a method that doesn't take any
+arguments. It checks that the method returns a true value. Example of
+methods are; submitted, inactive, active, old, etc.
+
+=head4 unless
+
+Works like L</if> but checks for falsehood instead.
+
 =cut
 
 sub update_by_query
@@ -236,7 +269,6 @@ sub update_by_query
 
 #    debug "******** WIDGET HANDLER UPDATE BY QUERY";
 
-    arc_lock();
     my $q = $Para::Frame::REQ->q;
 
     if( $args->{'node'} )
@@ -307,24 +339,37 @@ sub update_by_query
     my $fields_handled_count = $res->fields_count;
     do
     {
-	debug 3, "----------------------";
-	debug 3, "In field handling loop";
-	debug 3, "Total fields handled: $fields_handled_count";
-	debug 3, "Handled last lopp: $fields_handled_delta";
-
-	foreach my $field (@arc_params)
+	arc_lock();
+	do
 	{
-	    if( $field =~ /^arc_.*$/ )
-	    {
-		$class->handle_query_arc( $field, $args );
-	    }
-	    # Was previously only used for locations
-	    elsif($field =~ /^prop_(.*?)/)
-	    {
-		$class->handle_query_prop( $field, $args );
-	    }
-	}
+	    debug 3, "----------------------";
+	    debug 3, "In field handling loop";
+	    debug 3, "Total fields handled: $fields_handled_count";
+	    debug 3, "Handled last lopp: $fields_handled_delta";
 
+	    foreach my $field (@arc_params)
+	    {
+		if( $field =~ /^arc_.*$/ )
+		{
+		    $class->handle_query_arc( $field, $args );
+		}
+		# Was previously only used for locations
+		elsif($field =~ /^prop_(.*?)/)
+		{
+		    $class->handle_query_prop( $field, $args );
+		}
+	    }
+
+	    my $new_count = $res->fields_count;
+	    $fields_handled_delta = $new_count - $fields_handled_count;
+	    $fields_handled_count = $new_count;
+	    if( debug > 2 )
+	    {
+		debug 1, $res->sysdesig;
+	    }
+	} while $fields_handled_delta > 0;
+
+	arc_unlock();
 	my $new_count = $res->fields_count;
 	$fields_handled_delta = $new_count - $fields_handled_count;
 	$fields_handled_count = $new_count;
@@ -410,8 +455,6 @@ sub update_by_query
 						   @row_params,
 						   @check_params );
 
-    arc_unlock();
-
     return $res->changes - $changes_prev;
 }
 
@@ -487,6 +530,7 @@ sub handle_query_arc_value
     my $parse     = $arg->{'parse'};    # how to parse the value
     my $rowno     = $arg->{'row'};      # rownumber for matching props with new/existing arcs
     my $if        = $arg->{'if'};       # Condition for update
+    my $unless    = $arg->{'unless'};   # Condition for update
 
     my $lang	  = $arg->{'lang'};	# lang-code of value (set on value/obj)
     my $file	  = $arg->{'file'};	# "filetype" for upload-fields
@@ -534,10 +578,19 @@ sub handle_query_arc_value
 	$subj = $args->{'node'} || $R->get('new');
     }
 
-    # Check conditions
-    if( $if )
+    ### Check conditions
+    #
+    $if ||= [];
+    unless( ref $if eq 'ARRAY' )
     {
-	if( $if =~ /subj/ )
+	$if = [$if];
+    }
+
+    foreach my $cond ( @$if )
+    {
+	debug "Checking condition if $cond";
+
+	if( $cond =~ /subj/ )
 	{
 	    if( $subj->empty )
 	    {
@@ -546,7 +599,7 @@ sub handle_query_arc_value
 	    }
 	}
 
-	if( $if =~ /obj/ )
+	if( $cond =~ /obj/ )
 	{
 	    my $obj = $R->get( $value );
 	    unless( $obj )
@@ -559,6 +612,117 @@ sub handle_query_arc_value
 	    {
 		debug 2, "Condition failed: $key";
 		return 0;
+	    }
+	}
+
+	if( $cond =~ /(\d+)(?:_([\w_]+))?/ )
+	{
+	    if( my $node = $R->get( $1 ) )
+	    {
+		if( my $meth = $2 )
+		{
+		    if( $node->can($meth) )
+		    {
+			unless( $node->$meth() )
+			{
+			    debug 2, "Condition failed: $key";
+			    return 0;
+			}
+		    }
+		    else
+		    {
+			debug "Node $node->{id} can't do $meth";
+			return 0;
+		    }
+		}
+		elsif( $node->is_arc )
+		{
+		    unless( $node->active )
+		    {
+			debug 2, "Condition failed: $key";
+			return 0;
+		    }
+		}
+		elsif( $node->empty )
+		{
+		    debug 2, "Condition failed: $key";
+		    return 0;
+		}
+	    }
+	    else
+	    {
+		debug 2, "Condition failed: $key (OBJ NOT FOUND)";
+		return 0;
+	    }
+	}
+    }
+
+    $unless ||= [];
+    unless( ref $unless eq 'ARRAY' )
+    {
+	$unless = [$unless];
+    }
+
+    foreach my $cond ( @$unless )
+    {
+	debug "Checking condition unless $cond";
+
+	if( $cond =~ /subj/ )
+	{
+	    unless( $subj->empty )
+	    {
+		debug 2, "Condition failed: $key";
+		return 0;
+	    }
+	}
+
+	if( $cond =~ /obj/ )
+	{
+	    my $obj = $R->get( $value );
+	    if( $obj )
+	    {
+		unless( $obj->empty )
+		{
+		    debug 2, "Condition failed: $key";
+		    return 0;
+		}
+	    }
+
+	}
+
+	if( $cond =~ /(\d+)(?:_([\w_]+))?/ )
+	{
+	    if( my $node = $R->get( $1 ) )
+	    {
+		if( my $meth = $2 )
+		{
+		    if( $node->can($meth) )
+		    {
+			if( $node->$meth() )
+			{
+			    debug 2, "Condition failed: $key";
+			    return 0;
+			}
+		    }
+		    else
+		    {
+			debug "Node $node->{id} can't do $meth";
+			return 0;
+		    }
+		}
+		elsif( $node->is_arc )
+		{
+		    if( $node->active )
+		    {
+			debug 2, "Condition failed: $key";
+			return 0;
+		    }
+		}
+		elsif( not $node->empty )
+		{
+		    debug 2, "Condition failed: $key";
+		    return 0;
+		}
 	    }
 	}
     }
@@ -1252,7 +1416,7 @@ sub handle_select_version
 
 	if( $version->submitted )
 	{
-	    $version->remove( $args );
+	    $version->remove( {%$args, recursive=>1, arclim=>['new','submitted']} );
 	}
     }
 
