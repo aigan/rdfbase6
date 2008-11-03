@@ -4001,6 +4001,7 @@ Supported args:
 
   updated - time of activation
   force
+  recursive - activate obj submitted arcs created by the same user
 
 
 Returns: the number of changes
@@ -4119,6 +4120,20 @@ sub activate
     $arc->schedule_check_create( $args );
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
+
+    my $obj = $arc->obj;
+    if( $args->{'recursive'} and $obj )
+    {
+	my $created_by = $arc->created_by;
+	foreach my $rarc ( $obj->arc_list(undef,undef,[['submitted','explicit']])->as_array )
+	{
+	    if( $rarc->created_by->equals( $created_by ) )
+	    {
+		debug "Recursive activation of submitted arc";
+		$rarc->activate($args);
+	    }
+	}
+    }
 
     return 1;
 }
