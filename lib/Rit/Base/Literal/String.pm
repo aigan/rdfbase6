@@ -814,11 +814,6 @@ sub wuirc
 	my $subj_id = $subj->id;
 
 	my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
-	if( scalar(keys %$arcversions) > 1 )
-	{
-	    $out .= '<ul style="list-style-type: none" class="nopad">';
-	}
-
 	foreach my $arc_id (keys %$arcversions)
 	{
 	    my $arc = Rit::Base::Arc->get($arc_id);
@@ -827,14 +822,14 @@ sub wuirc
 		$out .= "(".$lang->desig."): ";
 	    }
 
-	    if( (@{$arcversions->{$arc_id}} > 1) or
-		$arcversions->{$arc_id}[0]->submitted )
+	    if( $Para::Frame::U->has_root_access and ( (@{$arcversions->{$arc_id}} > 1) or
+		$arcversions->{$arc_id}[0]->submitted ) )
 	    {
 		debug "  multiple";
 
 		$out .=
 		  (
-		   "<li><table class=\"wide suggestion nopad\">".
+		   "<table class=\"wide suggestion nopad\">".
 		   "<tr><th colspan=\"2\">".
 		   aloc("Choose one").
 		   "</th></tr>"
@@ -898,14 +893,11 @@ sub wuirc
 		   Para::Frame::L10N::loc("Deactivate group").
 		   "</label>".
 		   "</td></tr>".
-		   "</table></li>"
+		   "</table><br/>"
 		  );
 	    }
 	    else
 	    {
-		$out .= '<li>'
-		  if( scalar(keys %$arcversions) > 1 );
-
 		my $field = build_field_key({arc => $arc});
 		my $fargs =
 		{
@@ -933,13 +925,10 @@ sub wuirc
 		    $out .= $arc->edit_link_html;
 		}
 
-		$out .= '</li>'
+		$out .= '<br/>'
 		  if( scalar(keys %$arcversions) > 1 );
 	    }
 	}
-
-	$out .= '</ul>'
-	  if( scalar(keys %$arcversions) > 1 );
     }
     else # no arc
     {
