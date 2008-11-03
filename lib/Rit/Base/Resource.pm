@@ -5654,7 +5654,7 @@ sub first_bless
 
 #    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
 
-    debug "Initiated $node->{id} as a ".ref($node);
+#    debug "Initiated $node->{id} as a ".ref($node);
 
     return $node;
 }
