@@ -1736,6 +1736,7 @@ sub materialize
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
 	}
 
+	# TODO: Maby not call initiate_rel for arcs
 	my $obj = Rit::Base::Resource->get( $elem,
 					    {
 					     initiate_rel =>
