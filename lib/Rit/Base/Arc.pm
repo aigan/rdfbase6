@@ -47,7 +47,7 @@ use Rit::Base::Literal::Time qw( now );
 use Rit::Base::Rule;
 
 use Rit::Base::Utils qw( valclean is_undef truncstring
-                         query_desig parse_propargs
+                         query_desig parse_propargs aais
                          );
 
 use constant CLUE_NOARC => 1;
@@ -2387,6 +2387,21 @@ sub deactivate
 
     debug 1, "Deactivated id ".$arc->sysdesig;
 
+    my $obj = $arc->obj;
+    if( $args->{'recursive'} and $obj )
+    {
+	my $created_by = $arc->created_by;
+	foreach my $rarc ( $obj->arc_list(undef,undef,[['submitted','explicit']])->as_array )
+	{
+	    if( $rarc->created_by->equals( $created_by ) )
+	    {
+		debug "Recursive deactivation of submitted arc";
+		$rarc->deactivate($args);
+	    }
+	}
+    }
+
+
     return;
 }
 
@@ -3160,6 +3175,7 @@ Supported args are:
   force_recursive
   implicit
   res
+  recursive
 
 
 Default C<$implicit> bool is false.
@@ -3185,10 +3201,15 @@ sub remove
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
+
+    if( $args->{'recursive'} )
+    {
+	return $arc->remove_recursive( $args );
+    }
 
     my $implicit = $args->{'implicit'} || 0;
     my $create_removal = 0;
@@ -3396,6 +3417,44 @@ sub remove
     delete $Rit::Base::Cache::Resource{ $arc_id };
 
     return 1; # One arc removed
+}
+
+
+#######################################################################
+
+=head2 remove_recursive
+
+  $a->remove_recursive( \%args )
+
+Called by L</remove> if given argument C<recursive>
+
+returns: -
+
+=cut
+
+sub remove_recursive
+{
+    my( $arc, $args ) = @_;
+
+    my @rarcs;
+    my $created_by = $arc->created_by;
+    if( my $obj = $arc->obj )
+    {
+	@rarcs = $obj->arc_list(undef,undef,aais($args,'explicit'))->as_array;
+    }
+
+    $args->{'recursive'} = 0;
+    $arc->remove( $args );
+    $args->{'recursive'} = 1;
+
+    foreach my $rarc ( @rarcs )
+    {
+	if( $rarc->created_by->equals( $created_by ) )
+	{
+	    debug "Recursive activation of submitted arc";
+	    $rarc->remove($args);
+	}
+    }
 }
 
 
