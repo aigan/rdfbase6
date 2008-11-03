@@ -1,0 +1,3823 @@
+2008-11-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/AJAX.pm: I18N
+
+	* html/rb/js/rb.js_tt: Making id's unique
+
+	* lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Arc.pm:
+	less debug
+
+	* lib/Rit/Base/Literal/String.pm:
+	Not showing version selection for non-root user
+
+	* lib/Rit/Base/Utils.pm: expanded parse_form_field_prop()
+
+	* lib/Rit/Base/Node.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: added method remove_recursive()
+
+	* lib/Rit/Base/Widget/Handler.pm: expanded 'if' and added 'unless'
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Widget/Handler.pm: added arc_lock()
+
+	* lib/Rit/Base/Arc.pm: Introduced recursive in activate()
+
+	* lib/Rit/Base/Resource.pm: debug
+
+	* lib/Rit/Base/Node.pm: bugfix for find_remove()
+
+	* lib/Rit/Base/List.pm: note
+
+	* lib/Rit/Base/Arc.pm: debug
+
+	* html/rb/js/rb.js_tt: undef-fix
+
+2008-10-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: stringifies values
+
+	* lib/Rit/Base/Resource.pm: RBInputPopup now takes named parameters
+
+	* lib/Rit/Base.pm: added tt functions to_json() and from_json()
+
+	* html/rb/node/list.tt: bugfix
+
+	* html/rb/js/rb.js_tt: RBInputPopup now takes named arguments
+
+2008-10-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Object.pm: Added method random()
+
+	* lib/Rit/Base/Object.pm: Added method sort_arg()
+
+	* lib/Rit/Base/List.pm: - Added sort_arg on nodes as metadata
+	- added cmp argument to sorted
+
+2008-10-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search/Result.pm:
+	Applying search result default properties on init(), taking properties from collection
+
+	* lib/Rit/Base/Search/Collection.pm:
+	Added methods parts() and custom_parts()
+
+	* lib/Rit/Base/Search.pm:
+	Moved search limitation defaults to Rit::Base::Search::Result
+
+	* lib/Rit/Base/Resource.pm: simplified
+
+2008-10-26  joli <jonas@avisita.com>
+
+	* data/base.data: development
+
+	* lib/Rit/Base/Search.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: less debug
+
+	* html/rb/js/.htaccess, html/inc/js_extra.tt: synced
+
+	* data/base.data: developed
+
+	* html/rb/node/class/index.tt: bugfix
+
+2008-10-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/AJAX.pm: Enabeling search on VD
+
+	* lib/Rit/Base/Literal/Email/Address.pm: Added method name()
+
+	* lib/Rit/Base/Renderer/AJAX.pm: added rev-support for create_new
+
+	* html/rb/js/rb.js_tt: bugfix
+
+	* lib/Rit/Base/Action/node_merge.pm:
+	Searches for merge candidates in more ways
+
+	* lib/Rit/Base/Utils.pm: bugfix
+
+2008-10-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/List.pm: Added method adirect()
+
+	* lib/Rit/Base/Resource.pm, html/rb/node/merge.tt, html/rb/node/list.tt:
+	direct -> adirect
+
+2008-10-21  joli <jonas@avisita.com>
+
+	* doc/INSTALL: docfix
+
+	* lib/Rit/Base/Resource.pm: Not showing implicit arcs in wu list
+
+	* t/01_basic.t: synced
+
+2008-10-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm, lib/Rit/Base/Arc.pm: bugfix
+
+2008-10-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: expanded add() method
+
+2008-10-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm:
+	changed return value of Rit::Base::Arc::Lim->names()
+
+	* lib/Rit/Base/Arc/Lim.pm: Changed names() behaviour
+
+	* lib/Rit/Base.pm: Compatibility with TT
+
+	* html/rb/node/search.tt: layout
+
+2008-10-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: code-note
+
+	* lib/Rit/Base/Resource.pm: optimization
+
+	* lib/Rit/Base.pm: undef-fix
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+2008-10-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: eliviate valtype check for literals...
+
+2008-10-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource/Change.pm: Bugfix
+
+	* lib/Rit/Base/Arc.pm:
+	Moved valtype validation on creation to method validate_valtype()
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* html/rb/js/.htaccess: introducing _tt-files
+
+	* html/rb/js/tip_balloon.js:
+	Renamed from tip_balloon.js to tip_balloon.js_tt
+
+	* html/rb/js/tip_balloon.js_tt:
+	Renamed file tip_balloon.js_tt, formerly tip_balloon.js
+
+	* html/rb/js/rb.js_tt: Renamed file rb.js_tt, formerly rb.js
+
+	* html/rb/js/rb.js: Renamed from rb.js to rb.js_tt
+
+2008-10-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: generalized search for obj and value in arcs
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Object.pm: display newlines in as_html()
+
+2008-10-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: docfix and better valtype check on create()
+
+	* html/rb/node/update.tt: Displaying valtype
+
+	* lib/Rit/Base/Arc.pm:
+	I think this will be correct... that it was backwards before.
+
+	* html/rb/js/slider.js, html/rb/js/sound.js: Moving scriptaculous
+
+2008-10-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	sorting keys in order to get predictable behaviour
+
+	* lib/Rit/Base/Literal/String.pm: L10N
+
+	* lib/Rit/Base/Resource.pm: rebless bugfix for arcs
+
+	* html/rb/js/rb.js: l10n
+
+	* lib/Rit/Base/Literal/Time.pm: Volvo pr...
+
+2008-10-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/List.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm:
+	Sorting classes on distance for blessing objects
+
+	* lib/Rit/Base/Pred.pm: Added dynamic property distance
+
+	* lib/Rit/Base/Arc.pm: Added method distance()
+
+	* html/rb/node/update.tt: Shows distance of each arc
+
+	* lib/Rit/Base/Literal/String.pm: safing up..
+
+	* lib/Rit/Base/Resource.pm: Moving scriptaculous to rb
+
+	* html/rb/node/search.tt: misspelled
+
+	* html/rb/ajax/.htaccess, html/inc/js_extra.tt, html/rb/js/builder.js, html/rb/js/controls.js, html/rb/js/dragdrop.js, html/rb/js/effects.js, html/rb/js/prototype.js, html/rb/js/rb.js, html/rb/js/scriptaculous.js, html/rb/js/tip_balloon.js, html/rb/js/tip_centerwindow.js, html/rb/js/tip_followscroll.js, html/rb/js/usableforms.js, html/rb/js/wz_tooltip.js:
+	Moving scriptaculous to rb
+
+2008-09-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Rebless bugfix. Adding CLUE_ANYTHING
+
+	* lib/Rit/Base/User.pm:
+	checking full_access before guest_access, just in case
+
+2008-09-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/AJAX.pm:
+	defaults ajax lookup presentation to display is-relation
+
+	* lib/Rit/Base/Resource.pm: added wuirc arc item_prefix
+
+2008-09-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/Search_to_Excel.pm: changed note
+
+	* lib/Rit/Base/Action/search_to_excel.pm: new way of giving the file
+
+	* lib/Rit/Base/Resource.pm: bugfix in reset_cache()
+
+2008-09-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: Desig for undef string
+
+	* lib/Rit/Base/Undef.pm: Added method wu_jump
+
+	* lib/Rit/Base/Resource.pm: Added reverse matching
+
+	* lib/Rit/Base/List.pm: bugfix
+
+	* lib/Rit/Base/Literal/Time.pm: forwarding args to desig in time wuirc
+
+	* lib/Rit/Base/Resource.pm: added method display()
+
+	* lib/Rit/Base/Literal/Time.pm: forwarding args to desig
+
+	* lib/Rit/Base/Search.pm: added shortcut for $c_resource in search
+
+	* lib/Rit/Base/Resource.pm: - Adding use of format in desig
+	- bugfixes
+
+	* lib/Rit/Base/Literal.pm: added doc note
+
+2008-08-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Setup.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base.pm:
+	using $Rit::Base::VACUUM_ALL
+
+	* lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Literal/String.pm:
+	using new function proplim_to_arclim()
+
+	* lib/Rit/Base/Utils.pm: Added function proplim_to_arclim()
+
+	* lib/Rit/Base/List.pm:
+	Forwards list properties in find (may result in bugs)
+
+	* lib/Rit/Base/Action/search_filter.pm: new action
+
+	* lib/Rit/Base/Search/Collection.pm, lib/Rit/Base/Action/search_transform.pm:
+	bugfix
+
+	* lib/Rit/Base/Undef.pm: Added as_listobj()
+
+	* lib/Rit/Base/Object.pm: Added flatten()
+
+	* lib/Rit/Base/List.pm: - transform() bugfix
+	- AUTOLOAD bugfix for autoloading a.b.c()
+
+2008-08-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/search_transform.pm: New action
+
+	* lib/Rit/Base/Search/Collection.pm: bugfix
+
+2008-08-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Added method transform()
+
+	* html/rb/list_anything.tt: moved from rg
+
+2008-08-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: customer_id not part of RB
+
+	* lib/Rit/Base/User.pm: bugfix
+
+2008-07-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: bugfix
+
+	* lib/Rit/Base/Search.pm: Using Worker
+
+	* lib/Rit/Base/Resource.pm: cleanup
+
+	* lib/Rit/Base/Node.pm: Removed unused modules
+
+	* lib/Rit/Base/List.pm: bugfix
+
+2008-07-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: bugfix
+
+2008-07-10  joli <jonas@avisita.com>
+
+	* html/rb/node/graph/.htaccess, html/ajax/.htaccess: bugfix
+
+2008-07-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Expanded parsing of search params
+
+2008-07-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: sorting out the best class_form_url
+
+	* lib/Rit/Base/Pred.pm: dynamic property 'direct' used in form_url()
+
+	* lib/Rit/Base/List.pm: less debug
+
+	* lib/Rit/Base/Action/translate_page_create.pm: bugfix
+
+	* lib/Rit/Base/L10N.pm: Changed load order
+
+2008-06-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/Search_to_Excel.pm: sorting results
+
+	* lib/Rit/Base/Literal/Bool.pm: fix
+
+	* lib/Rit/Base/Action/arc_edit.pm: forgotten args
+
+	* lib/Rit/Base/Widget.pm: fixing select
+
+	* lib/Rit/Base/Utils.pm: fixing typo and default
+
+	* html/rb/node/arc/update.tt: using preds label
+
+	* lib/Rit/Base.pm: js handling
+
+	* html/rb/js/.htaccess: new file
+
+2008-06-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Setup.pm: Creating tables if needed
+
+	* lib/Rit/Base.pm: Setting up db if needed
+
+	* doc/INSTALL: added note about initializing db
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+	* lib/Rit/Base/Arc/Lim.pm: Changed loading order
+
+	* lib/Rit/Base/Widget.pm: changed loading order
+
+	* lib/Rit/Base/Utils.pm: Changed loading order
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Pred.pm: bugfix
+
+	* lib/Rit/Base/Object.pm: Changed loading order
+
+	* lib/Rit/Base/Node.pm, lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base.pm: Changed loading order
+
+2008-06-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm, html/rb/node/pred/index.tt: cleanup
+
+	* lib/Rit/Base/Pred.pm: Added method label()
+
+	* lib/Rit/Base/Constants.pm: added method get_set()
+
+2008-06-21  joli <jonas@avisita.com>
+
+	* html/rb/node/form.tt: Automatic node-form
+
+2008-06-13  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js: Not special handing for '$'
+
+	* lib/Rit/Base/User.pm: bugfix
+
+2008-06-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Added better DB-transaction handling
+
+	* lib/Rit/Base/Arc.pm: Added better DB transaction handling
+
+	* lib/Rit/Base/Resource.pm: feli: label, not name.
+
+	* lib/Rit/Base/Widget.pm: ucfirst on select
+
+2008-06-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix in find_class()
+
+2008-05-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Time.pm: bugfix for handling undef times
+
+2008-05-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm:
+	Handling more types of vals in find_by_anything()
+
+2008-05-23  joli <jonas@avisita.com>
+
+	* html/rb/node/arc/update.tt: bugfix for detecting textboxes
+
+	* lib/Rit/Base/Resource.pm: Added option to make get_by_label nonfatal
+
+2008-05-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/IMAP.pm: Better filenames from email subjects
+
+2008-05-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: added note
+
+2008-05-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/Part.pm: Implemented effective_type
+
+	* lib/Rit/Base/Email/IMAP.pm: bugfix
+
+	* lib/Rit/Base/Email/RB/Part.pm, lib/Rit/Base/Email/IMAP/Head.pm:
+	cleanup
+
+	* lib/Rit/Base/Email/RB.pm: Cleanup
+
+	* lib/Rit/Base/Email/Part.pm: Added mimetype xlsx
+
+	* lib/Rit/Base/Email/IMAP.pm: cleanup
+
+	* lib/Rit/Base/Email/Head.pm: Removed unused module loading
+
+	* lib/Rit/Base/Resource.pm: debug bugfix
+
+	* lib/Rit/Base/Email.pm: removed unused module loading
+
+2008-05-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Pred.pm: extension
+
+2008-04-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Bugfix. For using old behaviour...
+
+	* doc/searching.txt: Notes about searching
+
+2008-04-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: docfix
+
+	* lib/Rit/Base/Node.pm: bugfix
+
+	* lib/Rit/Base/Metaclass.pm: more debug in vacuum()
+
+	* lib/Rit/Base/List.pm:
+	Changed behaviour of has_value() to behave as a distributed call via AUTOLOAD
+
+	* lib/Rit/Base/Arc.pm: docfix
+
+	* html/rb/node/update.tt, lib/Rit/Base/Resource.pm: bugfix
+
+2008-04-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Introduced special case in has_value
+
+	* html/inc/changes.tt: include template for viewing changes in a node
+
+	* lib/Rit/Base/Literal/Email/Address.pm:
+	Modified as_html() to macke it compatible with base as_html()
+
+	* lib/Rit/Base/Literal/Bool.pm: Added a compliant as_html()
+
+	* lib/Rit/Base/Resource.pm:
+	find_by_anything() returns literals unmodified
+
+	* lib/Rit/Base/Pred.pm: Method name() now uses prop name, if existing
+
+	* lib/Rit/Base/Object.pm: Added method matches()
+
+	* lib/Rit/Base/Node.pm: bugfix in meets_proplim()
+
+	* lib/Rit/Base/Literal.pm: Changed behaviour of is_true()
+
+	* lib/Rit/Base/Arc.pm: has_value() bugfixes
+
+	* lib/Rit/Base/Arc/Lim.pm:
+	Bugfix for incl_act() that changes behaviour of arclim 'exclude' and more...
+
+	* lib/Rit/Base/Resource.pm: arclim bugfix
+
+	* lib/Rit/Base/Arc.pm: - added method value_as_html()
+	- added matchtypes to value_equals()
+
+	* lib/Rit/Base/Resource.pm: cleaned up arc_list() and revarc_list()
+
+	* lib/Rit/Base/Node.pm:
+	Generalized meets_proplim() for handling arcs and resources equally
+
+	* lib/Rit/Base/Arc.pm:
+	Implemented more match types in has_value() and value_equals()
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+2008-04-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal.pm:
+	Expanded form_url() and page_url_path_slash()
+
+	* lib/Rit/Base/Email.pm: bugfix
+
+	* html/rb/node/arc/update.tt: Added debugging to arc view
+
+2008-04-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Pred.pm: bugfix
+
+	* lib/Rit/Base/Search.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: has_value() now handles reverese has_value
+
+	* lib/Rit/Base/Node.pm: Bugfixes
+
+	* lib/Rit/Base/Resource.pm: Added the ability to hide the create button
+
+	* html/rb/js/rb.js: Added ability to hide the create new button
+
+	* lib/Rit/Base/Renderer/AJAX.pm: Added update_seen_by to ajax
+
+	* lib/Rit/Base/Email/RB/Part.pm, lib/Rit/Base/Email/RB.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Undef.pm:
+	alfanum -> alphanum
+
+	* lib/Rit/Base/Search.pm: added id_alphanum as a dynamic pred
+
+	* lib/Rit/Base/Resource.pm: Cleaned up RBInputPopup js call
+
+	* lib/Rit/Base/Pred.pm: Added id_alphanum as a dynamic pred
+
+	* lib/Rit/Base/Object.pm: alfanum -> alphanum
+
+	* lib/Rit/Base/Node.pm: - alfanum -> alphanum
+	- added not to find()
+
+	* lib/Rit/Base/List.pm: added not to find()
+
+	* lib/Rit/Base/Email.pm: alfanum -> alphanum
+
+	* lib/Rit/Base.pm: Arc_Lim method added
+
+	* html/rb/node/search.tt: docs
+
+	* html/rb/js/rb.js: update_seen_by added
+
+2008-04-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: for images
+
+	* lib/Rit/Base/Literal/Image.pm: layout
+
+	* html/rb/js/rb.js: Safing up for idiots (read: IE)
+
+2008-04-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: oups... removed CHECKME
+
+	* lib/Rit/Base/Widget/Handler.pm: - Bugfixes for check_arc
+	- Added code notes
+
+	* lib/Rit/Base/Resource.pm:
+	Sorting classes for node in order to be consistent
+
+2008-04-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Fixed strange and probably faulty check_arc-handling.
+
+2008-04-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Address.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: added note
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm:
+	Stringifies default value before call to new()
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Node.pm:
+	Moved code_class() and code_class_desig() from Rit::Base::Resource to Rit::Base::Node
+
+2008-04-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Literal/String.pm:
+	value-node bugfixes
+
+	* lib/Rit/Base/Resource.pm: debug options in empty()
+
+	* lib/Rit/Base/Literal.pm: added note
+
+	* lib/Rit/Base/Arc.pm: valuenode bugfixes
+
+	* html/rb/js/rb.js, lib/Rit/Base/Literal/String.pm:
+	Adding js pattern matching
+
+2008-04-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: bugfix
+
+	* lib/Rit/Base/Search.pm: I18N of Searching...
+
+	* lib/Rit/Base/Arc.pm: Disables authentication check
+
+	* lib/Rit/Base/Arc.pm: valtype bugfixes
+
+	* lib/Rit/Base/Literal/Bool.pm: bugfix
+
+2008-04-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Resource/Literal.pm: spearates slots in object
+
+	* lib/Rit/Base/Setup.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: tries to make things more predictable
+
+	* lib/Rit/Base/Arc.pm, data/base.data: bugfix
+
+	* Makefile.PL: new dependency
+
+	* lib/Rit/Base/Setup.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: supporing vacuum_all
+
+	* Makefile.PL: added dependency
+
+	* lib/Rit/Base/Pred.pm: more sane
+
+	* data/base.data: synced witn new valuenodes
+
+2008-04-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Email/RB/Head.pm: less debugless
+
+	* lib/Rit/Base/Resource.pm: Added method this_valtype_reset()
+
+	* lib/Rit/Base/Literal.pm: added method this_valtype_reset()
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: find_class bugfix
+
+2008-04-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Disabled blessing shortcut
+
+	* html/rb/node/class/index.tt: Less confusing description
+
+	* lib/Rit/Base/Search.pm: spelling
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2008-04-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Node.pm: checkme checked...
+
+	* lib/Rit/Base/Action/translate_page_part.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: debug changes
+
+	* lib/Rit/Base/Node.pm: better debug
+
+	* lib/Rit/Base/List.pm: more debug
+
+	* lib/Rit/Base/Arc.pm: removing confessiong
+
+	* lib/Rit/Base/Node.pm: docfix
+
+	* lib/Rit/Base/Node.pm: deprecating find_arc
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Action/search_to_excel.pm, lib/Rit/Base/Renderer/Search_to_Excel.pm:
+	export to excel
+
+	* lib/Rit/Base/Resource.pm: better wd
+
+	* lib/Rit/Base/Action/translate_page_part.pm: bugfix
+
+2008-04-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Node.pm: avoid infinite loop
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: I want confess
+
+	* lib/Rit/Base/List.pm: spelling
+
+	* html/rb/node/pred/index.tt, html/rb/node/pred/list.tt, lib/Rit/Base/Action/node_update.pm:
+	Making preds-form a form!
+
+	* html/rb/js/rb.js: moving insertion of loading-indicator
+
+2008-04-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: Development
+
+	* lib/Rit/Base/Arc.pm: development
+
+	* lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Widget/Handler.pm:
+	Development
+
+	* lib/Rit/Base/Utils.pm: docfix
+
+	* lib/Rit/Base/Arc.pm: not validating nonactive arcs
+
+	* lib/Rit/Base/Literal/String.pm: development
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2008-04-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: simplification
+
+	* lib/Rit/Base/Arc.pm: more debug
+
+	* lib/Rit/Base/Resource.pm: Added method is_owned_by()
+
+	* lib/Rit/Base/Arc.pm: authorization change in is_owned_by()
+
+	* lib/Rit/Base/Setup.pm: handling missed replaces refs in arc table
+
+	* lib/Rit/Base/Pred.pm: undef fix
+
+	* lib/Rit/Base/Widget.pm: special handling of if in build_field_key()
+
+	* lib/Rit/Base/Resource.pm: Using build_field_key
+
+2008-03-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: more debug
+
+2008-03-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Rule.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: - Added method validate_range()
+	- development and bugfixes
+
+	* lib/Rit/Base/Resource/Literal.pm: undef fix
+
+	* lib/Rit/Base/Setup.pm: bugfix
+
+2008-03-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Literal.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Setup.pm:
+	Development and bugfixes
+
+	* html/rb/node/update.tt: bugfix
+
+	* lib/Rit/Base/Literal/Bool.pm: More participation registration
+
+	* lib/Rit/Base/Literal.pm: developement
+
+	* lib/Rit/Base/Arc.pm: development
+
+	* html/rb/node/update.tt: bugfix
+
+2008-03-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource/Literal.pm: development
+
+	* lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Search.pm: more debug
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Literal.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: development
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Object.pm: Moved list_class() from Rit::Base::Node
+
+	* lib/Rit/Base/Node.pm: Moved list_class() to Rit::Base::Object
+
+	* lib/Rit/Base/Literal.pm: bugfix
+
+	* lib/Rit/Base/List.pm:
+	AUTOLOAD tries to return lists of the right class
+
+	* lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/List.pm:
+	undef fix
+
+	* lib/Rit/Base/Arc.pm: less debug
+
+	* lib/Rit/Base/List.pm: more debug
+
+	* lib/Rit/Base/Setup.pm, lib/Rit/Base/Arc.pm: bugfix
+
+2008-03-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Setup.pm: bugfix
+
+	* lib/Rit/Base/Email.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: more debug
+
+	* lib/Rit/Base/Literal/String.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Arc.pm:
+	undef fix
+
+2008-03-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: undef fix
+
+	* lib/Rit/Base/Setup.pm: development
+
+	* lib/Rit/Base/Arc.pm: undef fix
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Setup.pm, lib/Rit/Base/Widget.pm:
+	Development and bugfixes
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: less debug
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: More unicode handling
+
+	* lib/Rit/Base/Setup.pm: Cleaning valtypes
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+2008-03-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: removed duplicate methods
+
+	* demo/lib/Rit/Base/Demo.pm, demo/rb-demo-server, html/rb/node/arc/update.tt, html/rb/node/update.tt, html/rb/translation/node.tt, lib/Rit/Base.pm, lib/Rit/Base/AJAX.pm, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/arc_list_activate.pm, lib/Rit/Base/Action/arc_list_delete.pm, lib/Rit/Base/Action/arc_list_vacuum.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_lucky.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/update_cache.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Arc/List.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Bool.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/Email/Subject.pm, lib/Rit/Base/Literal/Image.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Literal/URL.pm, lib/Rit/Base/Literal/URL/Website.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Pred/List.pm, lib/Rit/Base/Renderer/AJAX.pm, lib/Rit/Base/Renderer/GraphViz.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Change.pm, lib/Rit/Base/Resource/Literal.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Search/Collection.pm, lib/Rit/Base/Search/Result.pm, lib/Rit/Base/Session.pm, lib/Rit/Base/Setup.pm, lib/Rit/Base/Site.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/User/Meta.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Widget.pm, lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Widget/Plugins.pm:
+	New handling of valuenodes. Merged With branch v6-53.
+
+	* lib/Rit/Base/Pred.pm, lib/Rit/Base/Arc.pm: Development
+
+	* lib/Rit/Base.pm: docfix
+
+2008-03-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: maxen of input...
+
+	* html/rb/node/update.tt, html/rb/node/arc/update.tt, html/rb/translation/node.tt, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Literal.pm, lib/Rit/Base/Setup.pm:
+	Development
+
+2008-03-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Widget.pm:
+	Development
+
+2008-03-16  joli <jonas@avisita.com>
+
+	* demo/lib/Rit/Base/Demo.pm, demo/rb-demo-server, lib/Rit/Base/AJAX.pm, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/arc_list_activate.pm, lib/Rit/Base/Action/arc_list_delete.pm, lib/Rit/Base/Action/arc_list_vacuum.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_lucky.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/update_cache.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Arc/List.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Bool.pm, lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/Email/Subject.pm, lib/Rit/Base/Literal/Image.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/URL.pm, lib/Rit/Base/Literal/URL/Website.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred/List.pm, lib/Rit/Base/Renderer/AJAX.pm, lib/Rit/Base/Renderer/GraphViz.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Change.pm, lib/Rit/Base/Resource/Literal.pm, lib/Rit/Base/Search/Collection.pm, lib/Rit/Base/Search/Result.pm, lib/Rit/Base/Session.pm, lib/Rit/Base/Site.pm, lib/Rit/Base/User/Meta.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Widget.pm, lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Widget/Plugins.pm:
+	Cleaned up copyright header
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Resource.pm:
+	Development
+
+	* lib/Rit/Base.pm: less debug
+
+2008-03-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Development
+
+	* lib/Rit/Base/Arc.pm: development
+
+	* lib/Rit/Base/Resource/Literal.pm: New file.
+
+	* lib/Rit/Base/Resource/Literal.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Resource.pm, html/rb/node/arc/update.tt:
+	development
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2008-03-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm:
+	adding default 3 rows and passing on class
+
+	* lib/Rit/Base/Literal/Bool.pm: adding default_value handling
+
+	* lib/Rit/Base/Resource.pm: Expanding wd
+
+	* lib/Rit/Base/Arc.pm: Making usable from forms that others also use.
+
+	* html/rb/node/pred/list.tt: Adding pagesize
+
+2008-03-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Action/update_cache.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Setup.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm:
+	Developed valuenodes (alpha)
+
+2008-03-08  joli <jonas@avisita.com>
+
+	* Makefile.PL, html/rb/js/rb.js, lib/Rit/Base.pm, lib/Rit/Base/AJAX.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Renderer/AJAX.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Widget/Handler.pm:
+	Merged with v6-54
+
+	* lib/Rit/Base.pm: v6.54
+
+	* lib/Rit/Base/Search.pm:
+	Supporting node properties like lable, created and updated
+
+	* lib/Rit/Base/Pred.pm: Added support for more special properties
+
+2008-03-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: bugfix
+
+	* lib/Rit/Base/Node.pm: remove recognize forse_recursive
+
+2008-03-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Not sure if this is more correct...
+
+2008-03-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Use same timestamp in update_unseen_by()
+
+	* lib/Rit/Base/Resource.pm:
+	Added methods on_updated() update_seen_by() update_unseen_by() and watchers()
+
+	* lib/Rit/Base/List.pm: Better error handling in find()
+
+	* lib/Rit/Base/Renderer/AJAX.pm:
+	Handling new search_type and search_value
+
+	* lib/Rit/Base/User.pm:
+	Added on_arc_add. Better handling on changing of name_short
+
+	* lib/Rit/Base/Resource.pm: Introducing lookup_pred
+
+	* lib/Rit/Base/AJAX.pm: Converted to to_json and from_json
+
+	* html/rb/js/rb.js: using search_type and search_value as query params
+
+2008-03-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* Makefile.PL: Upgrade JSON
+
+	* lib/Rit/Base/Resource.pm: objToJson -> to_json
+
+	* lib/Rit/Base/Arc.pm: Added created_by option on create()
+
+	* lib/Rit/Base/Widget/Handler.pm: error handling
+
+	* lib/Rit/Base/Arc.pm: Merged with v6-53
+
+	* lib/Rit/Base/Arc.pm: Added force_recursive
+
+2008-02-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: make arc_unlock bug nonfatal
+
+	* lib/Rit/Base/Renderer/AJAX.pm: bugfix
+
+2008-02-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base.pm: Version 6.53
+
+	* lib/Rit/Base/Email/IMAP/Part.pm:
+	Implemented envelop() as uses in email-classifier
+
+	* lib/Rit/Base/Resource.pm: buugfix
+
+	* lib/Rit/Base/Arc.pm: docfix
+
+2008-02-24  joli <jonas@avisita.com>
+
+	* html/rb/node/update.tt: Hide node rec data if not existing
+
+2008-02-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Optimization and bugfix
+
+2008-02-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm:
+	Fixing wd and tree
+
+	* html/rb/js/rb.js: Better doc
+
+	* lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email/RB.pm:
+	Added method sysdesig()
+
+	* lib/Rit/Base/Email.pm: bugfix
+
+	* lib/Rit/Base/Literal/Email/Subject.pm: Added method as_reply()
+
+	* lib/Rit/Base/Renderer/IMAP.pm: uid_plain -> uid
+
+	* lib/Rit/Base/Email/RB/Head.pm:
+	Doin uniq on to addresses after merged to with to_obj
+
+	* lib/Rit/Base/Email/IMAP/Head.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email.pm:
+	uid_plain -> uid
+
+	* html/rb/js/rb.js: docfix
+
+2008-02-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Optimization
+
+2008-02-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/IMAP.pm: better debug
+
+	* lib/Rit/Base/Email.pm:
+	get() now gets the exact message uid and not just by message-id
+
+	* lib/Rit/Base/Email/IMAP/Head.pm: less debug
+
+	* lib/Rit/Base/Email/IMAP/Folder.pm:
+	Added method get_by_url() and equals()
+
+	* lib/Rit/Base/Email/IMAP.pm: using Folder->get_by_url
+
+	* lib/Rit/Base/Email/IMAP/Folder.pm: bugfix
+
+	* lib/Rit/Base/Email.pm: Code cleanup
+
+	* html/rb/js/rb.js: Translation
+
+	* lib/Rit/Base/Renderer/AJAX.pm, html/rb/js/rb.js:
+	Adding event-handling with person-adding...
+
+	* lib/Rit/Base/Resource.pm:
+	Added support for created and updated in cerate()
+
+	* lib/Rit/Base/Email/IMAP.pm: bugfix
+
+	* lib/Rit/Base/Email/Head.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email/IMAP/Head.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Renderer/IMAP.pm:
+	Better header handling
+
+2008-02-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email.pm, lib/Rit/Base/Email/Head.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email/IMAP/Head.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Email/RB.pm, lib/Rit/Base/Email/RB/Head.pm, lib/Rit/Base/Email/RB/Part.pm, lib/Rit/Base/Renderer/IMAP.pm:
+	Developed email handing for using Email::Classifier
+
+2008-02-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Rule.pm: bugfix
+
+	* lib/Rit/Base/Rule.pm:
+	Correcting errors, if encountered, during inference
+
+	* lib/Rit/Base/Arc.pm: Making sure obj os an id in create()
+
+	* lib/Rit/Base/Email/IMAP.pm: Don't fail even if email is removed...
+
+	* lib/Rit/Base/Utils.pm: added parse_propargs special 'all'
+
+	* lib/Rit/Base/Email.pm: Reactivate removed emails on demand
+
+2008-02-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: Rolled back the [1] stuff
+
+	* lib/Rit/Base/Utils.pm:
+	Rolled back the [1] stuff! New bugs not welcome...
+
+	* lib/Rit/Base/Email/RB/Head.pm: Supports email_to_obj property
+
+	* lib/Rit/Base/Email/IMAP.pm:
+	Check that the email realy is an (active) imap url
+
+	* lib/Rit/Base/Email.pm: Also find emails in the DB that was removed
+
+	* lib/Rit/Base/Email/IMAP/Folder.pm:
+	Added methods servername(), username() and foldername()
+
+	* lib/Rit/Base/Arc/Lim.pm: bugfix for new handling of []
+
+	* lib/Rit/Base/Email/RB/Part.pm: added folder method
+
+	* lib/Rit/Base/Arc/Lim.pm:
+	Changed lim to user [1] as default and let [] be NO limit
+
+	* lib/Rit/Base/Utils.pm:
+	Changed arclim to default to [1] rather than []
+
+	* lib/Rit/Base/Search.pm: Supports empty arclim sql's
+
+	* demo/site.conf.example:
+	Renamed file site.conf.example, formerly site.conf
+
+	* demo/site.conf: Renamed from site.conf to site.conf.example
+
+2008-02-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/IMAP/Folder.pm:
+	Taking default imap account from config
+
+	* lib/Rit/Base/Email.pm:
+	Not needing to reset cache on both arc_add and bless
+
+	* lib/Rit/Base/Email.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email/IMAP/Head.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Renderer/IMAP.pm:
+	Developed email handling
+
+2008-02-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/IMAP/Part.pm: more debug
+
+	* lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email.pm:
+	bugfix
+
+	* lib/Rit/Base/Email.pm, lib/Rit/Base/Email/Folder.pm, lib/Rit/Base/Email/Head.pm, lib/Rit/Base/Email/IMAP.pm, lib/Rit/Base/Email/IMAP/Folder.pm, lib/Rit/Base/Email/IMAP/Head.pm, lib/Rit/Base/Email/IMAP/Part.pm, lib/Rit/Base/Email/Part.pm, lib/Rit/Base/Email/RB.pm, lib/Rit/Base/Email/RB/Head.pm, lib/Rit/Base/Email/RB/Part.pm, lib/Rit/Base/Renderer/IMAP.pm:
+	Developed Email handling
+
+	* lib/Rit/Base/Email/Header.pm: Renamed from Header.pm to Head.pm
+
+	* lib/Rit/Base/Email/Head.pm: Renamed file Head.pm, formerly Header.pm
+
+2008-02-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/IMAP.pm: Moved from RG
+
+	* lib/Rit/Base/Email.pm, lib/Rit/Base/Email/Folder.pm, lib/Rit/Base/Email/Header.pm:
+	Added metadata
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Email.pm, lib/Rit/Base/Email/Folder.pm, lib/Rit/Base/Email/Header.pm, lib/Rit/Base/Literal/Email/Subject.pm, lib/Rit/Base/Literal/String.pm:
+	Moved from RG
+
+	* lib/Rit/Base/Email/Header.pm:
+	Renamed file ../../../../../rb/lib/Rit/Base/Email/Header.pm, formerly Header.pm
+
+	* lib/Rit/Base/Email/Folder.pm:
+	Renamed file Email/Folder.pm, formerly /home/jonas/RIT/rg/lib/Rit/Guides/Email/Folder.pm
+
+2008-02-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Object.pm: as_html() bugfix
+
+	* lib/Rit/Base/List.pm: Added method as_html()
+
+2008-02-08  joli <jonas@avisita.com>
+
+	* t/01_basic.t: bugfix
+
+2008-02-06  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js, lib/Rit/Base/Arc.pm, lib/Rit/Base/Renderer/AJAX.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget/Handler.pm:
+	More wu...
+
+2008-02-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm: expanding autoload
+
+2008-01-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search/Result.pm: bugfix
+
+	* lib/Rit/Base/Search/Collection.pm: bugfix + docs
+
+	* lib/Rit/Base/Action/node_search.pm: optimization
+
+	* lib/Rit/Base/Search.pm: added docs
+
+	* lib/Rit/Base/List.pm: - Added method parse_sortargs
+	- sorted() can now skip sorting if no change is going to be made
+
+	* lib/Rit/Base.pm, html/rb/node/list.tt: bugfix
+
+	* lib/Rit/Base/Resource.pm: Optimized created and updated node dates
+
+2008-01-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Setup.pm: developed valuenodes
+
+	* lib/Rit/Base/Search/Result.pm, lib/Rit/Base/Search/Collection.pm:
+	docfix
+
+	* lib/Rit/Base.pm, data/base.data: bugfix
+
+2008-01-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Undef.pm: Added method remove()
+
+	* lib/Rit/Base/Resource.pm: Added method has_node_record
+
+	* lib/Rit/Base/Node.pm:
+	Remobing rec from node table on remove if force given
+
+	* lib/Rit/Base/Literal.pm: Bugfix
+
+2008-01-25  joli <jonas@avisita.com>
+
+	* data/base.data: bugfix
+
+	* data/base.data: development
+
+	* data/schema.sql, demo/rb-demo-server, lib/Rit/Base.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Setup.pm, lib/Rit/Base/User.pm:
+	Jonas uppdateringar
+
+2008-01-22  joli <jonas@avisita.com>
+
+	* html/rb/node/pred/by_class.tt: new template
+
+	* lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Literal.pm:
+	renamed merge -> merge_node
+
+2008-01-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Search/Result.pm: less debug
+
+	* lib/Rit/Base/Constants.pm, lib/Rit/Base/Arc.pm: optimization
+
+2008-01-08  joli <jonas@avisita.com>
+
+	* html/rb/node/pred/index.tt: bugfix
+
+	* README, Makefile.PL: Added dependency
+
+2008-01-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+2007-12-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/GraphViz.pm: security
+
+2007-12-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/GraphViz.pm, html/rb/inc/node_menu.tt, html/rb/node/graph/.htaccess:
+	adding graphviz
+
+2007-12-11  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js: Foolproofing IE
+
+2007-12-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: bugfix
+
+2007-12-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm:
+	Changing wu_jump and wun_jump for also taking jump attributes
+
+	* lib/Rit/Base/Action/node_update.pm: bugfix
+
+	* lib/Rit/Base/Rule.pm: docfix
+
+2007-12-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Arc.pm:
+	Vacuum bugfixes
+
+2007-11-26  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js: Remove debug
+
+	* lib/Rit/Base/AJAX.pm, lib/Rit/Base/Renderer/AJAX.pm, lib/Rit/Base/Resource.pm:
+	Declaring imported functions
+
+	* Makefile.PL, README: Added new dependency
+
+2007-11-23  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js: confirm on action
+
+	* lib/Rit/Base/Resource.pm: wuirc...
+
+	* html/rb/js/rb.js: ajax
+
+	* html/rb/js/rb.js: dependencies
+
+	* lib/Rit/Base/Resource.pm: better showing disabled
+
+2007-11-22  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js, lib/Rit/Base/AJAX.pm, lib/Rit/Base/Renderer/AJAX.pm:
+	ajax...
+
+	* lib/Rit/Base/Renderer/AJAX.pm: fix utf-8
+
+	* html/rb/js/rb.js: add ajax
+
+	* lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Widget.pm: hiding debugs
+
+	* lib/Rit/Base/Resource.pm: Folding in wu...
+
+	* lib/Rit/Base/Arc.pm:
+	Fixing removal of value nodes and hiding of tool tips
+
+	* html/rb/js/rb.js, html/ajax/.htaccess, lib/Rit/Base/AJAX.pm, lib/Rit/Base/Renderer/AJAX.pm:
+	Adding ajax dir and handling
+
+2007-11-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Optimizing sorting of small lists
+
+	* lib/Rit/Base/Resource.pm:
+	Selecting the form_url having the highest weight
+
+	* html/rb/node/pred/index.tt: Pred info
+
+	* html/rb/inc/node_menu.tt: Removed unused feature from here...Â·
+
+2007-11-20  joli <jonas@avisita.com>
+
+	* html/rb/node/class/index.tt: Displaying classes
+
+	* lib/Rit/Base/Arc.pm: Allows creation of cyclic reference if force=1
+
+	* lib/Rit/Base/Literal/Bool.pm: less debug
+
+2007-11-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: Sanitycheck on size of alfanum id
+
+	* lib/Rit/Base/Arc/List.pm: Added methods subjs(), vals(), and preds()
+
+	* lib/Rit/Base/Arc/Lim.pm: Added method includes()
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Node.pm: Introducing arclim2
+
+2007-11-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/URL/Website.pm: Accepting numbers in domain name
+
+	* lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: Better debug
+
+	* lib/Rit/Base/Widget.pm: bugfix
+
+	* lib/Rit/Base/Literal/Time.pm: Adding default_value
+
+2007-11-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Added method handle_query_check_require()
+
+	* lib/Rit/Base/Search/Result.pm: less debug
+
+	* lib/Rit/Base/Search/Collection.pm: Setting page limit from query
+
+	* lib/Rit/Base/Action/node_search.pm: Defaults sort to desig
+
+	* lib/Rit/Base/Widget.pm: For preselected values
+
+	* lib/Rit/Base/Search.pm: Added support for listing on desig (name.loc)
+
+	* lib/Rit/Base/Resource.pm: added check
+
+	* lib/Rit/Base/Node.pm: Locks in replace
+
+	* lib/Rit/Base/Arc.pm: Added rolback() method
+
+	* lib/Rit/Base.pm: Added arcs rollback
+
+	* html/rb/node/search.tt: Added results per page box
+
+	* html/rb/node/list.tt: Prepared for sortable columns
+
+	* doc/find_doubles.sql: saved sql code
+
+2007-10-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: bugfix from new find_by_anything-exception
+
+2007-10-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: more debug
+
+	* lib/Rit/Base/List.pm: Enabled sorting of lists with other things
+
+2007-10-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix for 0
+
+2007-10-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: ugly hack to accept , in numbers
+
+	* lib/Rit/Base/Literal/String.pm: adding id
+
+	* lib/Rit/Base/Literal/Bool.pm: *** empty log message ***
+
+	* lib/Rit/Base/Literal/Bool.pm: Boolean handler
+
+2007-10-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Setup.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: precausion
+
+2007-10-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: bugfix
+
+	* lib/Rit/Base/User.pm, lib/Rit/Base/Setup.pm, demo/rb-demo-server:
+	development
+
+	* data/base.data: more literals
+
+2007-10-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: bugfix. Not removing newlines
+
+2007-10-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: better design...
+
+2007-10-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm:
+	Removes invisible chars from string in parse()
+
+	* lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Image.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Widget/Handler.pm:
+	Commenting on euach use if Rit::Base::Pred->get_by_label and changed some to get()
+
+2007-10-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: not confessing
+
+2007-10-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	moved some things here from Node/update_by_query()
+
+	* lib/Rit/Base/Node.pm: simplified method update_by_query()
+
+2007-10-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: more debug
+
+	* lib/Rit/Base/Literal/URL.pm: added method parse()
+
+	* lib/Rit/Base/Undef.pm: Bugfix
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Rule.pm: Added method on_unbless()
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Object.pm: dicfix
+
+	* lib/Rit/Base/Node.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: Added method schedule_check_remove()
+
+	* lib/Rit/Base/Resource.pm: bugfix and less debug
+
+	* lib/Rit/Base/Search.pm: confess on trying to use . in find
+
+	* lib/Rit/Base/Resource.pm: better debug
+
+2007-10-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Widget.pm: widgets...
+
+2007-10-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: - bugfixes
+	- sysdesig uses desig so that it can use overloaded behaviour
+
+	* lib/Rit/Base/Pred.pm, lib/Rit/Base/Node.pm: bugfix
+
+2007-10-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: using deunicode to repair strings
+
+	* lib/Rit/Base/Search.pm, lib/Rit/Base/Rule.pm: optimization
+
+	* lib/Rit/Base/Pred.pm: bugfix
+
+	* lib/Rit/Base/Utils.pm: removed %Rit::Base::Cache::Label
+
+	* lib/Rit/Base/User.pm, lib/Rit/Base/Search.pm: optimization
+
+	* lib/Rit/Base/Rule.pm: small optimization
+
+	* lib/Rit/Base/Resource.pm: - Generalized pred handling
+	- Misc cleanup
+	- bugfix in initiate_cache()
+	- removed %Rit::Base::Cache::Label
+	- Added method coltype_id()
+
+	* lib/Rit/Base/Pred.pm: - Added method coltype_id()
+	- reworked updating of range
+	- removed set_coltype_from_range()
+
+	* lib/Rit/Base/Literal.pm: bugfix
+
+	* lib/Rit/Base/List.pm: generalized pred handling
+
+	* lib/Rit/Base/Arc.pm: - added method previous_active_version()
+	- Giving args to create_check
+
+2007-10-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget/Handler.pm:
+	widgets...
+
+	* lib/Rit/Base/Widget/Handler.pm: handling value resources
+
+	* lib/Rit/Base/Literal/String.pm: less debug
+
+	* lib/Rit/Base/Widget/Handler.pm: handling value resources
+
+2007-10-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Literal.pm: More debug
+
+	* lib/Rit/Base/Literal.pm: wu
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base.pm: literal
+
+	* lib/Rit/Base/Arc.pm: valtype from value-literal
+
+	* lib/Rit/Base/Pred.pm: set_coltype changing to value-nodes
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2007-10-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: less debug
+
+	* lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Resource/Change.pm:
+	bugfix
+
+2007-10-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+	* lib/Rit/Base/Resource/Change.pm:
+	field_handled not just used for arc fields
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Literal/Time.pm: less debug
+
+	* lib/Rit/Base/Widget.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: Handle large lists
+
+	* lib/Rit/Base.pm: bugfix
+
+	* lib/Rit/Base/Widget/Handler.pm: less debug
+
+	* lib/Rit/Base/Node.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: less debug
+
+	* lib/Rit/Base/Arc/List.pm: bugfix, hopefully
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/List.pm:
+	Only warn for most calls to listarc methods on nonlistarc objects
+
+	* lib/Rit/Base/Arc.pm: Trust some of the changes of valtype
+
+	* lib/Rit/Base.pm: wait until done for most commits
+
+	* lib/Rit/Base/Literal/Image.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Resource.pm:
+	bugfix
+
+	* lib/Rit/Base/Literal/String.pm: temp bugfix
+
+	* lib/Rit/Base/Literal/Image.pm: bugfix
+
+	* lib/Rit/Base/Pred/List.pm: For handling pred-specific list methods
+
+	* lib/Rit/Base/Literal/Time.pm: Moved wub_date here as wuirc
+
+	* lib/Rit/Base/Literal/String.pm: Moved wub here as wuirc
+
+	* lib/Rit/Base/Literal/Image.pm:
+	Moved wub_image here from Rit::Base::Widget
+
+	* lib/Rit/Base/Literal/Class.pm: Handling value resources
+
+	* lib/Rit/Base/Arc/List.pm: Moved listarc methods from Rit::Base::List
+
+	* lib/Rit/Base/Widget.pm: Moved wub_ methods to Literal classes
+
+	* lib/Rit/Base/Resource.pm: Added list_class
+
+	* lib/Rit/Base/Pred.pm: Added list_class()
+
+	* lib/Rit/Base/Object.pm: Added method as_html()
+
+	* lib/Rit/Base/Node.pm, lib/Rit/Base/Literal.pm: Added list_class
+
+	* lib/Rit/Base/List.pm: Deprecating arclist methods in this class
+
+	* lib/Rit/Base/Arc.pm: Added list_class()
+
+2007-09-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm: - bugfix in wub_date
+	- shallow clone done in Rit::Base::Resoruce->wu()
+
+	* lib/Rit/Base/Resource.pm: wu() makes a shallow args copy
+
+	* lib/Rit/Base/Resource.pm: optimization
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	- Avoided some calls to parse_propargs()
+	- bugfix for field_handled()
+
+	* lib/Rit/Base/Resource/Change.pm: Added arc_field_handled to sysdesig
+
+	* lib/Rit/Base/Widget.pm: undef fixes
+
+	* lib/Rit/Base/Resource.pm: undef fix
+
+2007-09-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Class.pm: Don't die if a class isn't found
+
+	* lib/Rit/Base/Resource.pm: - Cleanup of method wu()
+	- Cleanup of method find_class()
+	- Don't die if a particular class isn't found
+
+	* lib/Rit/Base/Arc.pm: Reinitialize arc in case it needs it.
+
+2007-09-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm:
+	Added parse_form_field_prop functionality to modify_from_query
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: widgets..
+
+	* lib/Rit/Base/Action/node_merge.pm: bugfix
+
+	* lib/Rit/Base/Widget.pm: Added ast_type singular handling in wub_date
+
+2007-09-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm: Making shallow clone of args in wub()
+
+	* lib/Rit/Base/User.pm: Setting default propargs to undef if resetted
+
+	* lib/Rit/Base/Undef.pm: undef fixes in cmp_numeric()
+
+	* lib/Rit/Base/Resource.pm: cloning args in wu
+
+	* lib/Rit/Base/Widget.pm:
+	placing idcounter in req in order to not get mixed up with other reqs
+
+	* lib/Rit/Base/Widget.pm: Added reset_wu_row
+
+	* lib/Rit/Base/Widget.pm: undef fixes
+
+	* lib/Rit/Base/Node.pm: Changed meets_proplim() for also doing equals
+
+	* lib/Rit/Base/Arc.pm: - added method mark_updated
+
+	* lib/Rit/Base/Resource.pm: booking
+
+2007-09-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm: widgets
+
+	* html/rb/node/pred/list.tt: Added domain and range scofs in listing
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm: widgets
+
+2007-09-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm: debug
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Action/arc_list_delete.pm:
+	Careful to check that the arc still exists before removing it
+
+	* lib/Rit/Base/Arc.pm: Tries to avoid using deleted arcs in remove
+
+	* lib/Rit/Base.pm: Bump version number
+
+	* html/rb/node/new_arcs.tt: Show progress information
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm: disabled-handling
+
+	* lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Literal/String.pm: bugfix
+
+	* lib/Rit/Base/Rule.pm: Less debug
+
+	* lib/Rit/Base/Resource.pm: - bugfixes
+	- display text in textbox if rows given in wu param
+	- Comit on each 100 instead of 25 in population
+
+	* lib/Rit/Base/Node.pm: less debug
+
+	* lib/Rit/Base/Literal.pm: Display literal sysdesigs on one row
+
+	* lib/Rit/Base/Arc.pm: Bugfixes
+
+	* html/rb/node/update.tt: Added yields for long lists
+
+	* html/node_query_error.tt: bugfix
+
+2007-09-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm: Code cleanup
+
+2007-09-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Undef.pm:
+	Added a lot of list methods for making this compatible with Rit::Base::List and Rit::Base::Resoruce
+
+	* lib/Rit/Base/List.pm:
+	- Going back again to returning empty list in AUTOLOAD
+	- renaming giving CORE:: prefix tu push and shift
+
+	* lib/Rit/Base/List.pm: Reverting to previous behaviour
+
+	* lib/Rit/Base/Node.pm: exist for arc value
+
+2007-09-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm:
+	- AUTOLOAD returns empty list on empty result list
+	- Rewrote AUTOLOAD docs
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Bugfix for adding valuenodes with language
+
+	* lib/Rit/Base/Resource.pm:
+	- update() now returns the resource and not num of changes
+	- equals() will not treat literal objs as potential resources
+
+	* lib/Rit/Base/Literal.pm: bugfix for update()
+
+	* lib/Rit/Base/Arc.pm: minor debug changes
+
+2007-09-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Widget.pm: Widgets...
+
+	* lib/Rit/Base/Widget/Handler.pm: Better debug in image
+
+	* lib/Rit/Base/Resource.pm: failsafe
+
+	* lib/Rit/Base/Arc.pm: removal of value resources
+
+2007-09-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Widget.pm, lib/Rit/Base/Resource.pm:
+	arcversions
+
+	* lib/Rit/Base/Node.pm: Debugging
+
+	* lib/Rit/Base/Arc.pm: removed unneeded code
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Widget/Handler.pm: *** empty log message ***
+
+	* lib/Rit/Base/Resource.pm: added to docs
+
+2007-09-16  joli <jonas@avisita.com>
+
+	* html/rb/node/arc/update.tt: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: Hides some varnings from users
+
+	* lib/Rit/Base/Resource.pm: bugfix. getting lables confesses on failure
+
+	* lib/Rit/Base/Literal.pm: Plan to handle valuenodes
+
+	* lib/Rit/Base/Undef.pm:
+	Added methods id_alfanum(), list() and revlist()
+
+	* lib/Rit/Base/Resource.pm: Added method instance_class
+
+	* lib/Rit/Base/Node.pm: - added methods parse() and new_from_db()
+	- contruct_proplist() now handles value predicates
+
+	* lib/Rit/Base/Literal.pm: Renamed revarc to lit_revarc
+
+	* lib/Rit/Base/Arc.pm: Added som comments
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Using is_literal() for literal check, rather than id()
+
+2007-09-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Making sure that $type and $scof are classes
+
+	* lib/Rit/Base/Resource.pm:
+	equals() now uses get_by_label() and get() instead of find_simple()
+
+	* lib/Rit/Base/Node.pm, lib/Rit/Base/List.pm:
+	Using Para::Frame::Logging->at_level()
+
+	* lib/Rit/Base/Arc.pm: replaced warn with debug
+
+	* lib/Rit/Base/Widget/Handler.pm: Added form field arg parse
+
+	* lib/Rit/Base/Widget.pm: form bugfix
+
+	* lib/Rit/Base/Resource.pm: undef fix
+
+2007-09-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm: Widget updating
+
+	* lib/Rit/Base/Literal/Time.pm: bugfix
+
+2007-09-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Undef.pm: added method id()
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: classcheck in get_by_label
+
+	* lib/Rit/Base/Resource.pm: Reverting to older behaviour
+
+	* lib/Rit/Base/Undef.pm: Added methos equals()
+
+	* lib/Rit/Base/Literal/Time.pm:
+	undef times not working. Temporarily disabeling it
+
+	* lib/Rit/Base/Resource.pm: sort of hack for finding valuenodes
+
+	* lib/Rit/Base/Arc.pm: undef fix
+
+2007-09-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: debugging
+
+	* lib/Rit/Base/Literal/URL/Website.pm, lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Literal/URL.pm:
+	Developed value resources
+
+	* lib/Rit/Base/Literal/String.pm: - Removed method new_if_length()
+	- Moved method sysdesig() to Rit::Base::Literal
+	- Bugfixes
+	- Developed value resources
+
+	* lib/Rit/Base/Literal/Class.pm: more debug
+
+	* lib/Rit/Base/Arc/Lim.pm: Added method literal_meets_lim()
+
+	* lib/Rit/Base/Widget.pm: debugging
+
+	* lib/Rit/Base/Undef.pm, lib/Rit/Base/Resource.pm:
+	Developed value resources
+
+	* lib/Rit/Base/Object.pm:
+	Added methods as_listobj(), as_array(), sorted()
+
+	* lib/Rit/Base/Node.pm, lib/Rit/Base/Literal.pm:
+	Developed value resources
+
+	* lib/Rit/Base/List.pm: Moved flatten_list to Para::Frame::List/flatten
+
+	* lib/Rit/Base/Arc.pm: - bugfix
+	- Developed value resources
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm: widgets...
+
+	* lib/Rit/Base/Object.pm: compatible with Para::Frame::List
+
+	* lib/Rit/Base/Widget.pm: Setting label id...
+
+	* lib/Rit/Base/Resource.pm: Trying to make a rev-handling...
+
+2007-09-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm, lib/Rit/Base/Resource.pm:
+	*** empty log message ***
+
+	* lib/Rit/Base/Widget.pm: developing
+
+	* lib/Rit/Base/Literal/Email/Address.pm: Added method as_string()
+
+	* lib/Rit/Base/Object.pm: more debug
+
+	* lib/Rit/Base/Widget/Handler.pm: debug
+
+	* lib/Rit/Base/Arc.pm: valuenode handling in set_value
+
+	* lib/Rit/Base/Resource.pm: copy_props
+
+	* lib/Rit/Base/Widget.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: Added label as a dynamic pred
+
+	* lib/Rit/Base/List.pm: validation in equals
+
+	* lib/Rit/Base/Arc.pm: added label as a dynamic pred
+
+	* lib/Rit/Base/Pred.pm: bugfix
+
+2007-09-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/arc_add.pm:
+	addes knowledge of subj to parse_arc_add_box(() call
+
+	* lib/Rit/Base/Resource.pm: - Added args to alternatives hashes
+	- Logs large population runs
+
+	* html/rb/node/remove.tt: optimization
+
+	* lib/Rit/Base/Arc.pm: Cleanup of value setup in create()
+
+	* html/node_query_error.tt: - bugfix
+	- Added presentation of args
+
+	* lib/Rit/Base/Literal.pm, lib/Rit/Base/Arc.pm: less debug
+
+	* lib/Rit/Base/Literal/Class.pm: more debug
+
+	* lib/Rit/Base/Arc.pm: Validating coltype
+
+	* lib/Rit/Base/Arc.pm: Simplified coltype lookup
+
+	* lib/Rit/Base/Literal/URL/Website.pm: Less debug
+
+	* lib/Rit/Base/Literal/Class.pm:
+	Renamed literal_class() to instance_class()
+
+	* lib/Rit/Base/Widget.pm: less debug
+
+	* lib/Rit/Base/Utils.pm: using valtype rather than coltype
+
+	* lib/Rit/Base/Resource.pm:
+	- Replaced coltype with valtype in many places
+	- method initiate_prop() will now apply proplim in special cases
+	- Added methods this_valtype() and this_coltype()
+
+	* lib/Rit/Base/Pred.pm:
+	- valtype() will now return resource literal for pred value
+	- vacuum_pred_arcs() will ignore failed vacuums
+
+	* lib/Rit/Base/Literal.pm: - Renamed method valtype() to this_valtype()
+	- Renamed method coltype() to this_coltype()
+
+	* lib/Rit/Base/Arc.pm:
+	- Using valtype rather than coltype in many places
+	- Added method check_value()
+
+2007-09-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: Forward arguments to set_value
+
+	* lib/Rit/Base/Literal/String.pm: parse() now trims some spaces
+
+	* lib/Rit/Base/Arc/Lim.pm:
+	- Added arclim adirect for meaning active+direct
+	- sql() now alos returns an extralim flag
+
+	* lib/Rit/Base/Widget.pm:
+	Added arclim adirect for meaning active+direct
+
+	* lib/Rit/Base/Resource.pm:
+	- Added arclim adirect for meaning active+direct
+	- initiate_revprop() and initiate_rev() uses $arclim->sql()
+
+	* lib/Rit/Base/Literal.pm:
+	subj() and pred() can be called as class or object method and looks at arg arc and arg subj_new / pred_new if no arc bound to it
+
+	* lib/Rit/Base/Arc.pm: Added arg valtype in set_value
+
+	* html/rb/node/update.tt:
+	Added arclim adirect for meaning active+direct
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2007-09-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal.pm: Added methods subj(), pred()
+
+	* lib/Rit/Base/Arc.pm: giving subj and pred to Literal
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Literal/Class.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: - bugfixes
+	- added method on_class_perl_module_change()
+
+	* lib/Rit/Base/Pred.pm: bugfix
+
+	* lib/Rit/Base/Literal.pm: more debug
+
+	* lib/Rit/Base/Arc.pm: - bugfixes
+	- Added call to on_class_perl_module_change() on create_check()
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Literal/URL.pm, lib/Rit/Base/Literal/URL/Website.pm:
+	Literal types developed. Now storing valtype in object
+
+	* lib/Rit/Base/Literal/Class.pm:
+	- Moved literal_class() from Rit::Base::Resource to here
+	- Now also storing coltype name in the valtype objects
+
+	* lib/Rit/Base/Utils.pm: Check value given to valclean
+
+	* lib/Rit/Base/Search.pm: less debug
+
+	* lib/Rit/Base/Resource.pm:
+	- Changed Rit::Base::Pred->get_by_anything() to Rit::Base::Pred->get_by_label()
+	- Initiating constant label with rec already read on get_by_label()
+	- Moved literal_class() to Rit::Base::Literal::Class
+	- Added methods valtyp()
+	- Method coltype() only handles nonliteral classes
+
+	* lib/Rit/Base/Pred.pm: - find_by_anything() simplified and generalized
+	- get_by_anything() removed
+	- added methods update_arc_for_new_range(), vacuum_pred_arcs(), has_arcs(), has_active_arcs(), active_arcs()
+
+	* lib/Rit/Base/Object.pm: Added method is_literal()
+
+	* lib/Rit/Base/Literal.pm: - Added methods is_literal(), valtype()
+	- Taking default valtype from $class->default_valtype()
+
+	* lib/Rit/Base/List.pm: - find() now searches inside element lists
+	- added methods materialize_by_rec()
+	- AUTOLOAD ignores empty element lists
+
+	* lib/Rit/Base/Arc.pm: - bugfixes
+	- Now handling vacuum of some obj valtypes
+
+	* lib/Rit/Base/Arc.pm: - added method check_valtype()
+	- set_value() also sets valtype
+
+2007-09-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Widget.pm:
+	name->loc --> desig
+
+	* lib/Rit/Base/Search.pm:
+	Now explicitly sets the materializer for the search result list
+
+	* lib/Rit/Base/Resource.pm:
+	- find_by_everything() will not flatten nested lists
+	- name->loc() -> desig()
+	- desig() now uses name->loc() equivalent
+	- Loggs mesage if rolling back node table changes
+
+	* lib/Rit/Base/List.pm:
+	- Reintroduced overload stringification and concatenation
+	- No materializer used by default. You have to set it if you need it
+	- Handling loc() for lists of lists (nested)
+	- desig() now handles more types of elements
+	- AUTOLOAD simplified
+	- added method concatenate_by_overload()
+
+	* html/rb/node/update.tt, html/rb/node/remove.tt: using pred.plain
+
+	* html/inc/search_box_small.tt, html/inc/address.tt, html/inc/active_search.tt:
+	name.loc -> desig
+
+2007-09-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Pred.pm: Verify that preds are preds
+
+	* lib/Rit/Base/Literal/String.pm: Bugfix
+
+	* lib/Rit/Base/Literal.pm: docs
+
+	* lib/Rit/Base/Constants.pm: less debug
+
+	* lib/Rit/Base/Literal/URL/Website.pm: Literal class for URL websites
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* html/rb/node/update.tt, html/inc/border_bottom.tt:
+	debug -> debug_level
+
+	* lib/Rit/Base/Literal/URL.pm: docfix
+
+	* lib/Rit/Base/Literal/Class.pm: added method coltype_id
+
+	* lib/Rit/Base/Pred.pm: - bugfixes
+	- Allows changing coltype if it's not effecting any rows
+
+	* lib/Rit/Base/Resource.pm: wuirc development
+
+	* lib/Rit/Base/Arc.pm: cleaning
+
+2007-09-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/URL.pm: Moved code to Para::Frame::URI
+
+	* lib/Rit/Base/Pred.pm: undef fix
+
+	* lib/Rit/Base/Action/search_lucky.pm:
+	new action for redirecting to search result
+
+	* lib/Rit/Base/Resource.pm: set_label bugfix
+
+	* lib/Rit/Base/Literal/Class.pm: - buggfixes
+	- added methods set_valtype2name(), on_arc_add(), on_arc_del(), coltype()
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: Avoiding uneccessary DB reading on change
+
+	* lib/Rit/Base/Literal/Class.pm: Bootstrapping
+
+	* lib/Rit/Base/Pred.pm: debugging
+
+	* lib/Rit/Base/Literal/Class.pm:
+	Bootstrapping creation of literal_class
+
+	* lib/Rit/Base/Widget.pm, lib/Rit/Base/Resource.pm: undef fix
+
+	* lib/Rit/Base/Rule.pm: Changed find_class to use_class
+
+	* lib/Rit/Base/Resource.pm:
+	Looks for use_class, for speciall classes that shouldnt be metaclassees
+
+	* lib/Rit/Base/Pred.pm: Changed find_class to use_class
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Utils.pm: Goodbye to ::Compatible
+
+	* lib/Rit/Base/Search.pm: Goodby to ::Compatible
+
+	* lib/Rit/Base/Resource.pm: - Goodby to ::Compatible
+	- misc development
+
+	* lib/Rit/Base/Object.pm: Goodbye to ::Compatible
+
+	* lib/Rit/Base/List.pm: Removed old unused classes
+
+	* lib/Rit/Base/Arc.pm: Goodbye to Compatible
+
+	* lib/Rit/Base/Lazy.pm, lib/Rit/Base/Resource/Compatible.pm:
+	Removed old unused classes
+
+	* lib/Rit/Base/Literal/Class.pm: New class
+
+	* lib/Rit/Base/Widget.pm, lib/Rit/Base/Resource.pm: wuirc
+
+	* lib/Rit/Base/Resource.pm: - Introducing Rit::Base::Literal::Class
+	- Bugfixes
+
+	* lib/Rit/Base/Pred.pm: Introducing Rit::Base::Literal::Class
+
+	* lib/Rit/Base/Constants.pm:
+	Moved part of code to Rit::Base::Literal::Class
+
+	* lib/Rit/Base/Arc.pm: - bugfixes
+	- optimisation
+
+	* lib/Rit/Base.pm: Introducing Rit::Base::Literal::Class
+
+	* lib/Rit/Base/Widget.pm: label_from_params mm
+
+	* lib/Rit/Base/Resource.pm: wuirc for range_scof
+
+2007-09-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm: selector
+
+	* lib/Rit/Base/Resource.pm: wuirc
+
+	* lib/Rit/Base/Literal/Email/Address.pm: minor docfix
+
+	* lib/Rit/Base/Literal/URL.pm: Wrapper class for URI
+
+	* lib/Rit/Base/Literal/Time.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: minor docfix
+
+	* lib/Rit/Base/Resource.pm: - Adding label arg to wu_jump()
+	- removing parens from wun_jump()
+
+	* lib/Rit/Base/Pred.pm: In the middle of development
+
+	* lib/Rit/Base/Literal.pm: Loading other literal classes at compiletime
+
+	* lib/Rit/Base/List.pm: minor docfix
+
+	* lib/Rit/Base/Arc.pm: Bugfix in autoactivation of repalcement arc
+
+	* html/rb/node/arc/update.tt: Providing a link to subj FORM
+
+	* html/rb/node/update_rev.tt: Not used anymore
+
+2007-09-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: avoid undef warnings
+
+	* lib/Rit/Base/Utils.pm:
+	adding capability to query_desig() to display scalar refs
+
+	* lib/Rit/Base/Literal/String.pm: Trying to handle valuenodes
+
+	* lib/Rit/Base/Literal/Email/Address.pm:
+	Added methods as_html() and desig()
+
+	* lib/Rit/Base/Resource.pm:
+	Let get_by_anything() return is_undef if given undef
+
+2007-09-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/String.pm:
+	Buggfix
+
+	* lib/Rit/Base/Rule.pm:
+	- Added method find_class() for keeping the class on rebless
+	- Added change stats to args->res on inferences
+
+	* lib/Rit/Base/Resource.pm: Buggfix
+
+	* lib/Rit/Base/Pred.pm:
+	Added method find_class() for keeping class on reblessing...
+
+	* lib/Rit/Base/Literal.pm: Bugfix
+
+	* lib/Rit/Base/Arc.pm: - Added method find_class()
+	- Adding change stats to args->res for infered changes
+
+	* demo/rb-demo-server: Removed removed functions
+
+	* lib/Rit/Base/Literal.pm: bugfix
+
+	* lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Literal/Email/Address.pm, lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Time.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Change.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Widget/Handler.pm:
+	- Renamed Rit::Base::String -> Rit::Base::Literal::String
+	- Renamed Rit::Base::Time -> Rit::Base::Literal::Time
+	- Created Rit::Base::Literal::Email::Address
+	- Introduces db-configured literal classes
+	- Moved parsing of values to the literal classes
+
+	* lib/Rit/Base.pm: find_constants() replaced by general find()
+
+	* html/rb/node/pred/list.tt, html/rb/constant/list.tt:
+	Splitted list into pages
+
+	* lib/Rit/Base/String.pm: Renamed from String.pm to Literal/String.pm
+
+	* lib/Rit/Base/Literal/String.pm:
+	Renamed file Literal/String.pm, formerly String.pm
+
+	* lib/Rit/Base/String.pm: Added methods new_from_db() and clean_plain()
+
+	* lib/Rit/Base/Literal/Time.pm:
+	Renamed file Literal/Time.pm, formerly Time.pm
+
+	* lib/Rit/Base/Time.pm: Renamed from Time.pm to Literal/Time.pm
+
+	* lib/Rit/Base/Time.pm: Added method new_from_db()
+
+2007-08-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: bugfix
+
+	* lib/Rit/Base/Search.pm:
+	Added constant BINDVAL, set to false. All selects will be done without bound values.
+
+	* lib/Rit/Base/Resource.pm:
+	- new() now takes an argument initiate_rel for optimization.
+	- A couple of sql selects now calls execute without bind params
+
+	* lib/Rit/Base/List.pm:
+	Option for reading in the whole node with an argument to new()
+
+2007-08-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: wuirc
+
+2007-08-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm, lib/Rit/Base/Widget.pm, lib/Rit/Base/Resource.pm:
+	New widgets
+
+	* lib/Rit/Base/Rule.pm: Using List::Uniq instead of Array::Uniq
+
+	* Makefile.PL: Array::Uniq not needed
+
+2007-08-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget.pm: using images_uploaded_url
+
+	* lib/Rit/Base/Search.pm:
+	Handling negated searches and scores on exist searches
+
+	* lib/Rit/Base/Arc.pm: less debug
+
+2007-08-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Widget.pm: New widgets
+
+	* lib/Rit/Base/Action/translate_node.pm: bugfix
+
+	* lib/Rit/Base/Action/arc_list_delete.pm: getarc removed
+
+	* lib/Rit/Base/Resource.pm:
+	Renamed stmt --> rec. Now using the same variable name as in Arc
+
+	* lib/Rit/Base/Arc.pm: Handling bootstrapping of is-arcs
+
+	* lib/Rit/Base/Resource.pm: Forwarding initiation params through new()
+
+	* lib/Rit/Base/Arc.pm: Bugfixes for literals
+
+2007-08-26  joli <jonas@avisita.com>
+
+	* html/rb/node/arc/update.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/new_arcs.tt, html/rb/node/pred/list.tt, html/rb/node/update.tt, lib/Rit/Base/Resource.pm:
+	Added method wu_jump()
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_list_activate.pm, lib/Rit/Base/Action/arc_list_vacuum.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm, lib/Rit/Base/Widget/Handler.pm:
+	- Renamed find_by_label -> find_by_anything
+	- Renamed get_by_label -> get_by_anything
+	- Renamed get_by_constant_label -> get_by_label
+	- Added docs for find_by_anything
+	- find_by_anything will not trim literal strings
+
+	* lib/Rit/Base/Pred.pm: Report DBIx error on error more directly
+
+2007-08-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: Bugfixes in handle_query_row_value()
+
+	* lib/Rit/Base/Resource/Change.pm:
+	Added methods subj_id_by_row(), set_subj_id_by_row()
+
+	* lib/Rit/Base/Widget.pm: - bugfixes
+	- added functions next_wu_row(), wu_row()
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+2007-08-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Plugins.pm: Deprecated
+
+	* lib/Rit/Base/Widget/Handler.pm: A litle more controls
+
+	* lib/Rit/Base/Resource/Change.pm: More debug
+
+	* lib/Rit/Base/Widget.pm: - Discontinued TT plugin approach
+	- Removed wub_textarea()
+	- Added wub_date() and wub_image()
+
+	* lib/Rit/Base/Resource.pm: - Bugfix in prop()
+	- wu() now handle date fields
+
+	* lib/Rit/Base/Arc.pm: Inference bugfix
+
+	* lib/Rit/Base/Widget/Handler.pm: New handlng
+
+	* lib/Rit/Base/Resource/Change.pm: Changing new_handling
+
+	* lib/Rit/Base/Widget.pm: Reverts form_id() to id()
+
+	* lib/Rit/Base/Resource.pm: Deprecates form_id()
+
+	* lib/Rit/Base/Widget/Handler.pm: Changing new_handling
+
+	* lib/Rit/Base/Resource/Change.pm, lib/Rit/Base/Widget/Handler.pm:
+	Fixing...
+
+	* lib/Rit/Base/Widget.pm: - bugfix
+	- Use new method form_id()
+
+	* lib/Rit/Base/Resource.pm:
+	- $class->get('new') now creates a new empty node
+	- Added method form_id() and empty()
+	- method wu() now creates a textarea if pred valtype is textarea
+
+2007-08-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Plugins.pm: wub_area as plugin
+
+	* lib/Rit/Base/Resource.pm: Added methods wu() and arcversions()
+
+	* lib/Rit/Base/Arc.pm:
+	Added methods edit_link_html() and info_updated_html()
+
+	* lib/Rit/Base.pm: Sets up Rit::Base::Widget
+
+	* lib/Rit/Base/Widget/Plugins.pm:
+	Gives TT context to Rit::Base::Widge::wub
+
+	* lib/Rit/Base/Widget.pm: Converted TT precompile macro prop to perl
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+	* lib/Rit/Base/Widget/Handler.pm:
+	Added support for new_ and if_ in arc_ fields
+
+	* lib/Rit/Base/Resource/Change.pm:
+	Added methods arc_params_count(), field_handled(), set_field_handled(), new_key(), set_new_key()
+
+	* lib/Rit/Base/Resource.pm: Moved session_history_add
+
+	* lib/Rit/Base/Resource/Change.pm: Bugfix to make the program START
+
+2007-08-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: Moved from Rit::Base::Resource
+
+	* lib/Rit/Base/Resource/Change.pm:
+	Autocommit will now mark arc nodes as updated if they already has a node record
+
+	* lib/Rit/Base/Resource.pm:
+	 - Moved update_by_query() and related functions to Rit::Base::Widget::Handler
+	 - Added method node_rec_exist()
+
+	* lib/Rit/Base/Arc.pm: Added argument 'updated'
+
+2007-08-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm:
+	Added $node->session_history_add('updated')
+
+	* lib/Rit/Base/Resource.pm: - bugfixes in desig()
+	- Added method session_history_add()
+
+2007-08-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Time.pm:
+	Extending get() to return is_undef instead of undef
+
+	* lib/Rit/Base/Resource.pm:
+	Fixing image scaling, and layouting comment for class updating
+
+2007-08-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: undef fix
+
+	* lib/Rit/Base/Utils.pm: Added function alfanum_to_id
+
+	* lib/Rit/Base/Resource.pm: Added method id_alfanum()
+
+	* lib/Rit/Base/List.pm: Adhere to args in list construction
+
+2007-08-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Rule.pm: Method find() not needed anymore
+
+	* lib/Rit/Base/Resource.pm:
+	- Renamed method get_by_rec() to get_by_node_rec()
+	- initiate_node() now takes $rec param
+
+	* lib/Rit/Base/Pred.pm: - removed method find()
+	- method get_by_rec() renamed get_by_node_rec()
+	- bugfixes
+
+	* lib/Rit/Base/Constants.pm: Removed deprecated method new_by_rec()
+
+	* lib/Rit/Base.pm: - find_preds() and find_rules() not needed anymore
+	- added functions set_noe() and find_set()
+
+	* html/rb/node/rule/list.tt: find_rules removed
+
+	* html/rb/node/pred/list.tt: find_preds() removed
+
+2007-08-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Pred.pm: set_valtype not used. Use range instead...
+
+	* lib/Rit/Base/Setup.pm: Deems constants ready for use
+
+	* lib/Rit/Base/Pred.pm:
+	- Internaly stores predicate name in {label} instad of {name}
+	- Using method initiate_node() for initiating the predicate
+	- added methods on_bless(), on_arc_add(), set_coltype_from_range() and set_coltype()
+
+	* lib/Rit/Base.pm: Added a bootstrap indicator $Rit::Base::IN_STARTUP
+
+	* lib/Rit/Base/Utils.pm:
+	Now using default propargs in addition to specified propargs
+
+	* lib/Rit/Base/User.pm: - Getting guest from constant
+	- Parsing default propargs then setting it
+
+	* lib/Rit/Base/Setup.pm:
+	Infering extra arcs after base arcs are created
+
+	* lib/Rit/Base/Search.pm:
+	Getting special pred ids name and weight the right way
+
+	* lib/Rit/Base/Resource.pm: - Handling creation of lables
+	- getting special predicate ids name and weight the right way
+
+	* lib/Rit/Base/Constants.pm: more debug
+
+	* lib/Rit/Base/Arc.pm:
+	Added methods default_source(), default_read_access() and default_write_access()
+
+	* lib/Rit/Base.pm: added comment
+
+	* demo/site.conf: conf modified for hem.jonas.liljegren.org
+
+2007-08-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: Special handling of lable pred
+
+	* lib/Rit/Base/Search.pm: Added possibility to search on lables
+
+	* lib/Rit/Base/Arc.pm: Using configurable defaults for new arcs
+
+	* lib/Rit/Base.pm: Setting up some defaults for new arcs
+
+	* lib/Rit/Base/Constant.pm: Not used since long ago
+
+	* lib/Rit/Base/Pred.pm: removed code not needed anymore
+
+	* lib/Rit/Base.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm: Maps coltype obj to node resource
+
+	* html/rb/node/pred/list.tt, html/rb/node/arc/update.tt, html/rb/node/update.tt:
+	name.loc -> desig
+
+	* html/rb/node/new_arcs.tt: rb is not precompiled
+
+	* demo/lib/Rit/Base/Demo.pm: cleanup
+
+	* demo/rb-demo-server: bugfix
+
+	* data/base.data: bugfixes
+
+	* lib/Rit/Base/Search.pm: Removed RG-specific code
+
+	* lib/Rit/Base/L10N.pm: Using has_translation
+
+	* html/inc/border_bottom.tt: Add ritbase buttons
+
+2007-08-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: Removed RG-specific code
+
+	* lib/Rit/Base/Setup.pm: Class for createing the initial database
+
+	* html/rb/node/rule/list.tt: linkfix
+
+	* demo/lib/Rit/Base/Demo.pm, demo/rb-demo-server: development
+
+	* data/base.data: developed
+
+	* data/base.data:
+	Renamed file ../../data/base.data, formerly base_data.data
+
+	* data/schema.sql:
+	Renamed file ../../data/schema.sql, formerly schema.sql
+
+	* lib/Rit/Base/User.pm: Renamed pred password to has_pasword
+
+2007-08-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Added method initiate_cache
+
+	* lib/Rit/Base.pm: more debug
+
+2007-08-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/update_cache.pm:
+	New way of handling cache updates
+
+	* lib/Rit/Base/Arc.pm: Cache update for all changed parts
+
+	* lib/Rit/Base/Arc.pm: Also update the old obj
+
+	* lib/Rit/Base/Resource.pm:
+	Make form_url compatible with jumps same_page
+
+	* html/rb/node/merge.tt: Added menu to merge page
+
+	* lib/Rit/Base/Action/update_cache.pm:
+	Started updating for new cache_update protocol
+
+	* lib/Rit/Base/Action/arc_delete.pm: removed loading of cache_sync()
+
+	* lib/Rit/Base/Utils.pm:
+	Removed functions cache_update() and cache_sync()
+
+	* lib/Rit/Base/Resource.pm: - bugfixes
+	- new form of cache update
+
+	* lib/Rit/Base/Pred.pm, lib/Rit/Base/Arc.pm: New form of cache update
+
+	* lib/Rit/Base.pm:
+	Added code for sending cache update as background jobs
+
+	* html/rb/node/new_arcs.tt: bugfix
+
+2007-08-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: better sysdesig output
+
+	* lib/Rit/Base/Utils.pm: bugfix in query_sysdesig
+
+	* lib/Rit/Base/Resource.pm: Tries to keep params for eventual backtrack
+
+	* lib/Rit/Base/Arc.pm: less debug
+
+	* html/rb/node/new_arcs.tt: linkfix
+
+2007-08-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/update_cache.pm: Makes action more error tolerant
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/List.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: activating new notes
+
+	* lib/Rit/Base/List.pm: Added method plain
+
+	* lib/Rit/Base/Search.pm: Handling search on id
+
+2007-08-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm:
+	Should maby allow deactivation even if never activated
+
+	* lib/Rit/Base/Arc/Lim.pm: New definition of new
+
+	* lib/Rit/Base/Arc/Lim.pm: Added sql_prio() method
+
+	* lib/Rit/Base/Action/node_search.pm: Added arclim support in search
+
+	* lib/Rit/Base/Action/arc_list_activate.pm, lib/Rit/Base/Action/arc_list_delete.pm, lib/Rit/Base/Action/arc_list_vacuum.pm:
+	new mwthods for handling a list of arcs
+
+	* lib/Rit/Base/Utils.pm:
+	parse_query_props() now splits on both coma and newline
+
+	* lib/Rit/Base/Search.pm:
+	Added support for created_by and id in arc searches
+
+	* lib/Rit/Base/Resource.pm:
+	find_by_label() now also searches on constants
+
+	* lib/Rit/Base/Arc.pm: - lots of development
+	- added vacuum tests
+	- added checks in remove
+	- method has_value() now handles same format as for Resource
+
+	* lib/Rit/Base.pm: exported function parse_query_props()
+
+	* html/rb/node/arc/update.tt:
+	Handling case then this sops beeing an arc
+
+	* html/rb/node/search.tt: Added example for arclim usage
+
+	* html/rb/node/new_arcs.tt: Many new features
+
+2007-08-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search/Result.pm:
+	bugfix compatible with change in Para::Frame::List
+
+	* lib/Rit/Base/Resource.pm: - bugfix in is_value_node()
+	- lowering the priority of label in desig()
+
+	* lib/Rit/Base/List.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: bugfix in set_value()
+
+	* Makefile.PL: Added dependency on List::Util
+
+	* lib/Rit/Base/List.pm: Handle multiple values in sorting
+
+	* lib/Rit/Base/Search.pm: Apply unique_arcs_prio() for arc searches
+
+	* lib/Rit/Base/Arc.pm:
+	Removed _id suffix from common and replaced in create()
+
+	* lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Search.pm:
+	bugfix
+
+2007-07-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Value resources
+
+2007-07-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource/Change.pm:
+	Introduced argument 'activate' to autocommit
+
+	* lib/Rit/Base/Utils.pm:
+	Special handing of preds subj, pred, obj, value and coltype
+
+	* lib/Rit/Base/Rule.pm: Synced with Resource
+
+	* lib/Rit/Base/Resource.pm:
+	Moved find_remove() from Arc to Resource. Handing alternative errors. Introduces default_create argument. misc bugfixes
+
+	* lib/Rit/Base/Pred.pm:
+	Preparing for special predicates subj, pred, obj, coltype
+
+	* lib/Rit/Base/Arc.pm:
+	Integreate find() and create() for Resources and Arcs
+
+2007-07-29  joli <jonas@avisita.com>
+
+	* html/rb/node/new_arcs.tt: Better representation of object
+
+2007-07-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: bugfixes
+
+	* lib/Rit/Base/Resource.pm: - Replaced subj_id with subj, et al
+	- Reworked replace() method to use set_value() if possible
+
+	* lib/Rit/Base/Arc.pm: Replaced subj_id with subj, et al
+
+	* lib/Rit/Base/Action/translate_node.pm: it's implemented
+
+	* lib/Rit/Base/Arc.pm:
+	Better handling of directly activating new arcs. Added args activate_new_arcs and submit_new_arcs
+
+	* lib/Rit/Base/Arc/Lim.pm: Ignores empty arclims in parsing
+
+	* lib/Rit/Base/Search.pm: Added support for finding arcs
+
+	* lib/Rit/Base/Arc.pm:
+	Removed find(), find_set() and find_one(). The inherited Resource methods should work
+
+	* lib/Rit/Base.pm: find() now also gives the args param
+
+	* html/rb/node/new_arcs.tt: Listing new arcs
+
+2007-07-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: Added param check
+
+	* lib/Rit/Base/Arc.pm: added source comment
+
+2007-07-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Utils.pm: changed params for add_background_job()
+
+	* lib/Rit/Base/Arc.pm: source comment
+
+	* lib/Rit/Base.pm: Defines and implements the on_ritbase_ready hook
+
+	* lib/Rit/Base/Arc.pm:
+	Not using constants since method s can be used before constans are initiated
+
+	* lib/Rit/Base/Utils.pm, lib/Rit/Base/Arc.pm: bugfix
+
+	* html/rb/node/arc/update.tt: Tells which version the removal removes
+
+	* lib/Rit/Base/Arc.pm:
+	Also set deactivated arcs to not submittet, in case they were
+
+2007-07-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: Bugfix and docs for add_intersect()
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: Remove arcs in reverse order
+
+	* lib/Rit/Base/Arc.pm: Bugfixes
+
+	* lib/Rit/Base/Action/arc_edit.pm: Added ability to force removal
+
+	* lib/Rit/Base/Action/arc_add.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: - optimized by using pred->plain
+	- added handling of removal of value arcs
+
+	* html/rb/node/arc/update.tt:
+	Added HARD remove for removing from DB without leaving history
+
+	* html/rb/node/remove.tt: linkfix
+
+	* lib/Rit/Base/Resource.pm: arc selection
+
+	* html/rb/node/remove.tt: Also removal for submitted or new arcs
+
+	* lib/Rit/Base/Arc.pm:
+	On activate, deactivate submitted arc it replaces
+
+2007-07-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: - added name() method shortcut
+	- bugfixes
+
+2007-07-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: spelling
+
+	* lib/Rit/Base/Arc/Lim.pm: docfix
+
+	* lib/Rit/Base/Utils.pm: documented auto and relative
+
+	* lib/Rit/Base/Object.pm: Moved docs from parse_propargs to here
+
+	* lib/Rit/Base/Utils.pm: bugfix
+
+	* lib/Rit/Base/List.pm: Added example
+
+	* lib/Rit/Base.pm: bugfix
+
+2007-07-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: bugfix
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Arc/Lim.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm:
+	Arclim development
+
+2007-07-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Fixing handling of value resource
+
+2007-07-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Bugfix and sanity check
+
+	* lib/Rit/Base/Arc.pm: Bugfix for value resources
+
+2007-07-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Bugfix undefined value
+
+2007-07-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: Added arclims removal and not_removal
+
+	* lib/Rit/Base/Action/translate_page_create.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: reset_valclean() bugfix
+
+	* lib/Rit/Base/Arc/Lim.pm: - Added method sortorder()
+	- Added function arc_meets_lim()
+
+	* lib/Rit/Base/Resource.pm: Implemented unique_arcs_prio in has_value
+
+	* lib/Rit/Base/List.pm: - Added method unique_arcs_prio()
+	- Inserted may_yield() in materialization
+
+	* lib/Rit/Base/Arc.pm: Moved code to Rit::Base::Arc::Lim::arc_meets_lim
+
+	* html/rb/node/arc/update.tt, html/rb/node/update.tt:
+	Showing removals old values
+
+2007-07-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource/Change.pm: Don't activate removed arcs
+
+	* lib/Rit/Base/Arc/Lim.pm: Extended arclim parser
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/List.pm: undef fixes
+
+	* lib/Rit/Base/Arc.pm: Choosing the right arc on arc creation
+
+	* html/rb/node/update.tt: added nowrap for arc.view_flags
+
+	* lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm:
+	loc
+
+2007-07-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/translation_update.pm: bugfix
+
+	* lib/Rit/Base/Resource.pm: Make sure it's actually an arc
+
+	* lib/Rit/Base/Arc.pm:
+	Count the arc creator as owner if not yet activated
+
+	* lib/Rit/Base/Arc.pm: more debug
+
+	* lib/Rit/Base/Arc.pm: some parameter checks
+
+	* lib/Rit/Base/Resource.pm: vacuum devel
+
+	* lib/Rit/Base/Arc.pm: Developed vacuum for versioning
+
+	* lib/Rit/Base/Arc.pm: Bugfixes for removal and vacuum
+
+	* lib/Rit/Base/Rule.pm: A new year
+
+	* html/rb/node/arc/update.tt: Added delete button on more places
+
+	* lib/Rit/Base/Arc.pm: bugfixes + lots of temporary debug
+
+	* Makefile.PL: - bugfixes
+	- accept Clone 0.18
+
+	* README, demo/lib/Rit/Base/Demo.pm, demo/rb-demo-server, demo/site.conf, doc/INSTALL:
+	bootstrapping
+
+2007-06-30  joli <jonas@avisita.com>
+
+	* t/01_basic.t: Basic test of RB
+
+	* Makefile.PL, README, lib/Rit/Base.pm:
+	Crated Makefile, README and bumped version to 6.50
+
+2007-06-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/Action/vacuum.pm: loc
+
+	* lib/Rit/Base/Resource.pm: files/images in update_by_query
+
+	* lib/Rit/Base/Object.pm: meets_proplim
+
+	* lib/Rit/Base/List.pm: Undef fix
+
+	* lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/vacuum.pm:
+	Updated for versioning
+
+	* lib/Rit/Base/Action/node_suggest.pm:
+	New suggestions should use versioning system
+
+	* lib/Rit/Base/Action/node_merge.pm: Autocomitting changes
+
+	* lib/Rit/Base/Action/arc_delete.pm: autocomitting changes
+
+	* lib/Rit/Base/Arc.pm, html/rb/node/arc/update.tt: bugfix
+
+	* html/rb/node/update.tt: layout fix
+
+	* lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/node_update.pm:
+	Using parse_propargs
+
+	* lib/Rit/Base/Utils.pm:
+	- moved parse_propargs and aais from Resource to here
+	- removed new_argsres
+
+	* lib/Rit/Base/Search.pm: Support search on {exist => 0}
+
+	* lib/Rit/Base/Resource.pm: Moved aais and parse_propargs to Utils
+
+	* lib/Rit/Base/List.pm: - using parse_propargs
+	- bugfixes
+
+	* lib/Rit/Base/L10N.pm: Checking that loc input is correct utf8
+
+	* lib/Rit/Base/Arc.pm: using parse_propargs from Utils
+
+2007-06-26  joli <jonas@avisita.com>
+
+	* html/rb/node/arc/update.tt, html/rb/node/update.tt, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Utils.pm:
+	- Handling suggestions of arc removals
+	- Handling version history
+
+	* lib/Rit/Base/Object.pm: has_pred and has_value should return objects
+
+	* lib/Rit/Base/List.pm: implemented has_pred
+
+2007-06-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Rule.pm: Activate infered arcs directly
+
+	* lib/Rit/Base/Arc.pm: Versioning handling in inference
+
+	* lib/Rit/Base/Arc.pm: Value resources
+
+	* lib/Rit/Base/Pred.pm: Sanitycheck
+
+	* lib/Rit/Base/Arc.pm: Confesses on invalid valtypes
+
+	* lib/Rit/Base/Arc.pm: Defaults to not activating new arcs
+
+	* lib/Rit/Base/L10N.pm: optimization
+
+	* lib/Rit/Base/L10N.pm: Makes confused valuenode a nonfatal error
+
+	* lib/Rit/Base/Resource.pm: No authentication.
+
+2007-06-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: More about value resources...
+
+2007-06-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: path-fix
+
+	* lib/Rit/Base/Arc.pm: Bugfix
+
+	* lib/Rit/Base/Search.pm: More searches in fork
+
+	* lib/Rit/Base/Resource.pm: Customer admin mm
+
+	* html/rb/node/arc/update.tt, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Arc.pm:
+	Arclim development
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Search.pm: bugfixes
+
+	* lib/Rit/Base/Resource.pm: Update by query...
+
+2007-06-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Resource.pm:
+	Arclim development
+
+	* lib/Rit/Base/Literal.pm: Kompatibilizing
+
+	* lib/Rit/Base/Action/translate_node.pm: Arclim development
+
+	* html/rb/translation/node.tt: Translated translation form
+
+	* lib/Rit/Base/Resource.pm: Adding lang-support
+
+2007-06-11  joli <jonas@avisita.com>
+
+	* html/rb/node/remove.tt, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Arc/Lim.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Utils.pm:
+	arclim development
+
+	* html/rb/node/arc/update.tt: Always enable arc delete
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Arc/Lim.pm, lib/Rit/Base/Resource/Change.pm, html/rb/node/arc/update.tt, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_unsubmit.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Utils.pm:
+	arclim development
+
+2007-06-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc/Lim.pm: Arclim development
+
+	* lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Arc/Lim.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Change.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm:
+	arclim development
+
+2007-05-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Utils.pm:
+	Developed arclim
+
+2007-05-28  joli <jonas@avisita.com>
+
+	* doc/model.txt, html/rb/node/arc/update.tt, lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Resource/Change.pm:
+	Developed arclim
+
+2007-05-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/String.pm: Makes UTF8 errors nonfatal
+
+2007-05-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+2007-05-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/L10N.pm: utf8-fix
+
+	* lib/Rit/Base/Arc.pm: - utf8-fix
+	- buggfix
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* html/rb/node/update.tt: Marked inactive nodes
+
+	* lib/Rit/Base/Resource.pm: Development of arclim
+
+	* lib/Rit/Base/Arc.pm: Development arclim
+
+2007-05-14  joli <jonas@avisita.com>
+
+	* html/inc/prop_fields.tt, html/rb/node/update.tt: added note
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Resource.pm: Developed arclims
+
+2007-05-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Constant.pm: Not used anymore
+
+	* lib/Rit/Base/Constants.pm: Minor change
+
+	* lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/arc_submit.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/arc_activate.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Arc.pm, html/rb/node/arc/update.tt:
+	Development of activation handling
+
+2007-05-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Make arcs default to active
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Resource.pm:
+	Implemented active/inactive
+
+	* lib/Rit/Base/User.pm: Getting username from label, if existing
+
+	* html/rb/node/update.tt: Added switches for viewing selected things
+
+	* html/rb/inc/node_menu.tt: linkfix
+
+2007-05-02  joli <jonas@avisita.com>
+
+	* html/rb/node/update.tt: bugfix
+
+	* html/rb/node/update.tt: Added special properties
+
+	* html/inc/prop_fields.tt: in english
+
+	* lib/Rit/Base/Resource.pm: Better handling of saving updated node
+
+	* lib/Rit/Base/Arc.pm: Less debug
+
+	* lib/Rit/Base/Arc.pm:
+	Added methods activated(), deactivated(), unsubmitted(), activated_by(), version_id(), replaces_id(), source(), read_access(), write_access(), active(), submitted()
+
+	* html/rb/node/arc/update.tt: Synced with new rb
+
+2007-04-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm:
+	- Added methods set_label() and get_by_constant_label()
+	- Bugfixes in save()
+
+	* lib/Rit/Base/Constants.pm: Constants are now regular resource objects
+
+	* html/rb/constant/list.tt: Constants reworked
+
+	* lib/Rit/Base/Arc.pm: Bugfix
+
+	* lib/Rit/Base/List.pm: Syned numeric sort with DB
+
+	* html/rb/node/pred/list.tt: Shows domain and range
+
+2007-04-24  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Bugfixes and better debug
+
+2007-04-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Traceback on execution error
+
+	* lib/Rit/Base/Resource.pm: Better error message
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
+	* lib/Rit/Base/String.pm: Make one UTF8 error nonfatal
+
+2007-04-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/String.pm: - Upgrades incoming string if needed.
+	- encodes string to octets in syskey
+
+	* lib/Rit/Base/Arc.pm: Upgrading db string before sending to DBI
+
+2007-04-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Less debug
+
+	* lib/Rit/Base/String.pm: More error tolerant
+
+	* lib/Rit/Base/Search.pm: Less debug
+
+	* lib/Rit/Base/Resource.pm: bugfixes
+
+	* lib/Rit/Base/Arc.pm: Checking values for utf8
+
+2007-04-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Constants.pm: Bugfix
+
+	* lib/Rit/Base/Arc.pm: Undef fix
+
+	* lib/Rit/Base/String.pm: Minor change...
+
+	* lib/Rit/Base/Arc.pm: Added correction of multiple encodings
+
+	* lib/Rit/Base/Search.pm: Tuned up priority of like
+
+	* lib/Rit/Base/L10N.pm, lib/Rit/Base/Arc.pm: Less debug
+
+2007-04-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/String.pm, lib/Rit/Base/List.pm: Less debug
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/String.pm:
+	UTF8 work
+
+	* html/inc/active_search.tt, html/inc/address.tt, html/inc/prop_fields.tt, html/inc/rg_components.tt, html/inc/search_box_small.tt, html/inc/tree.tt, html/node_query_error.tt, html/rb/constant/list.tt, html/rb/inc/node_menu.tt, html/rb/node/arc/add.tt, html/rb/node/arc/update.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/pred/list.tt, html/rb/node/remove.tt, html/rb/node/rule/add.tt, html/rb/node/rule/list.tt, html/rb/node/search.tt, html/rb/node/update.tt, html/rb/node/update_rev.tt, html/rb/setup/index.tt, html/rb/translation/node.tt:
+	Added BOM for UTF8
+
+2007-04-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: This file is in utf8 now
+
+	* lib/Rit/Base/Search.pm:
+	expanded criterion_to_key to support clean and arclim
+
+	* lib/Rit/Base/Search.pm:
+	Decodes utf8 octets to char sequence for in values
+
+	* lib/Rit/Base/Resource.pm: Bugfix
+
+	* lib/Rit/Base/Utils.pm: Exporting query_desig
+
+	* lib/Rit/Base/Resource.pm: Better error reporting
+
+	* lib/Rit/Base/Search.pm, lib/Rit/Base/L10N.pm: No use utf8 needed
+
+	* lib/Rit/Base/Constants.pm: Less debug
+
+2007-04-04  joli <jonas@avisita.com>
+
+	* html/inc/active_search.tt, html/inc/address.tt, html/inc/search_box_small.tt, html/inc/tree.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/rule/add.tt, html/rb/node/search.tt, html/rb/node/update_rev.tt, html/rb/translation/node.tt, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Utils.pm:
+	Character translation to utf8
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Utils.pm:
+	Merged
+
+	* lib/Rit/Base/Action/update_cache.pm: new action
+
+	* lib/Rit/Base/Search.pm: bugfixes
+
+	* lib/Rit/Base/Resource.pm: Development
+
+	* lib/Rit/Base/Arc.pm:
+	Make a distinction of the arc as an arc creation and the arc as a node creation
+
+	* lib/Rit/Base.pm: Adds hooks for ritbase
+
+	* lib/Rit/Base/Utils.pm: Using bg_job instead of hooks.
+
+2007-04-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Convert DB values to utf8
+
+	* lib/Rit/Base/Resource.pm: Incorporating the node data in object
+
+	* lib/Rit/Base/Pred.pm: Let find_by_label() handle more forms of input
+
+2007-04-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Utils.pm:
+	Development
+
+2007-03-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Action/update_cache.pm:
+	Update cache between servers...
+
+2007-03-29  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/update_cache.pm: New file.
+
+	* lib/Rit/Base/Action/update_cache.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Pred.pm:
+	Sending update_cache between servers
+
+2007-03-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Valtype fix...
+
+2007-03-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Search.pm: Merged with version_5
+
+	* lib/Rit/Base/Search/Result.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Pred.pm:
+	Less debug
+
+	* lib/Rit/Base/Constants.pm: Added obj constant
+
+	* lib/Rit/Base/Arc.pm: - less debug
+	- added new arc properties
+
+	* lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm:
+	Moved to new database rgv6
+
+	* lib/Rit/Base.pm: Added global hash
+
+	* lib/Rit/Base/List.pm: Adding exist as match-type
+
+2007-03-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Fixing datetime-comparisons
+
+2007-03-20  joli <jonas@avisita.com>
+
+	* README, doc/model.txt, doc/model_old.sql, html/inc/active_search.tt, html/inc/address.tt, html/inc/prop_fields.tt, html/inc/rg_components.tt, html/inc/search_box_small.tt, html/inc/tree.tt, html/node_query_error.tt, html/rb/constant/list.tt, html/rb/inc/node_menu.tt, html/rb/node/arc/add.tt, html/rb/node/arc/update.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/pred/list.tt, html/rb/node/remove.tt, html/rb/node/rule/add.tt, html/rb/node/rule/list.tt, html/rb/node/search.tt, html/rb/node/update.tt, html/rb/node/update_rev.tt, html/rb/setup/index.tt, html/rb/translation/node.tt, lib/Rit/Base.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constant.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Lazy.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Compatible.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Search/Collection.pm, lib/Rit/Base/Search/Result.pm, lib/Rit/Base/Session.pm, lib/Rit/Base/Site.pm, lib/Rit/Base/String.pm, lib/Rit/Base/Time.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/User/Meta.pm, lib/Rit/Base/Utils.pm:
+	Version 6.0
+
+	* lib/Rit/Base/Constants.pm: Special case for updating DB
+
+2007-03-19  joli <jonas@avisita.com>
+
+	* html/inc/address.tt, html/rb/node/arc/add.tt, html/rb/translation/node.tt, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Utils.pm:
+	Disambiguated preds from constants
+
+2007-03-15  joli <jonas@avisita.com>
+
+	* doc/model.txt: spelling
+
+2007-03-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: Added function query_desig()
+
+	* html/rb/node/search.tt:
+	Gives example of searching reminding of _clean
+
+	* html/node_query_error.tt: Using new query_desig function
+
+2007-03-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Less debug
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+2007-03-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Only localize values in list if they are lists
+
+	* lib/Rit/Base/L10N.pm: Better debug
+
+2007-03-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Less debug
+
+	* lib/Rit/Base/Resource.pm: Bugfix
+
+	* lib/Rit/Base/Resource.pm:
+	Added proplim and arclim to a couple of more methods, for optimization
+
+	* html/rb/node/update_rev.tt: Optimized
+
+	* lib/Rit/Base/Resource.pm: - optimized desig() and sysdesig()
+	- optimized initiate_revprop()
+	- Bugfix in error reporting in AUTOLOAD
+
+	* lib/Rit/Base/List.pm: Avoud undef warnings on sort
+
+2007-03-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Adding loc_by_lang
+
+2007-02-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search/Collection.pm: Added method set_active
+
+2007-02-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Added sort method exists
+
+	* lib/Rit/Base/List.pm: Added metion of exist in sorted doc
+
+	* lib/Rit/Base/Search.pm: Handling nulls in sort
+
+2007-02-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Added more debug details
+
+	* lib/Rit/Base/Resource.pm: Added docs about rebless()
+
+	* lib/Rit/Base/Arc.pm: Reverted the last change...
+
+2007-02-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Note large init jobs
+
+	* lib/Rit/Base/Arc.pm: bugfix (hopefully)
+
+2007-02-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm:
+	Properly escape values to begins and like in find
+
+	* lib/Rit/Base/Resource.pm:
+	Expanded method has_value() to handle matchtype and clean
+
+	* lib/Rit/Base/List.pm: Expanded find() to handle matchtype like
+
+	* lib/Rit/Base/Arc.pm:
+	Expanded method value_equals() to handle clean, begins and like
+
+	* lib/Rit/Base/Resource.pm: Supports clean in has_beginning()
+
+	* lib/Rit/Base/List.pm: Grouped DEBUG in a method
+
+	* lib/Rit/Base/Arc.pm: supports clean in value_begins()
+
+	* lib/Rit/Base/Constants.pm: Debug data
+
+	* lib/Rit/Base/Rule.pm: Indentation
+
+	* lib/Rit/Base/Resource.pm: Small fixes...
+
+	* lib/Rit/Base/List.pm: bugfix
+
+	* lib/Rit/Base/List.pm: loaded valclean
+
+	* lib/Rit/Base/List.pm: implemented find( ..._begins )
+
+	* lib/Rit/Base/Arc.pm: Added method value_begins()
+
+	* lib/Rit/Base/Resource.pm: Added method has_beginning()
+
+2007-02-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm:
+	- Expansion of arclims in list() and related methos
+	- more docs
+
+2007-02-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Added method add_arc()
+
+2007-02-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Newsubj fixes
+
+	* lib/Rit/Base/Resource.pm: Fixing newsubj bug
+
+2007-02-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: Removing unused constants
+
+2007-02-05  joli <jonas@avisita.com>
+
+	* doc/model_old.sql: more stuff
+
+	* doc/model_old.sql: new doc
+
+	* lib/Rit/Base/Arc.pm: bugfix...
+
+	* lib/Rit/Base/Arc.pm: Migrating values in set_pred
+
+2007-01-31  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Resource.pm:
+	referer -> referer_path
+
+	* lib/Rit/Base/Search/Collection.pm:
+	Supporting setting page_size of result
+
+2007-01-26  joli <jonas@avisita.com>
+
+	* html/rb/inc/node_menu.tt: bugfix
+
+2007-01-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Added page_path_url_slash
+
+2007-01-22  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Added docs
+
+	* lib/Rit/Base/User.pm: fixed bug av#44322
+
+	* lib/Rit/Base/Resource.pm: - Added method code_class_desig()
+	- Catches error in AUTOLOAD
+
+	* lib/Rit/Base/Pred.pm: Less debug
+
+2007-01-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: sanitycheck
+
+	* lib/Rit/Base/Search/Collection.pm: added some methods
+
+	* lib/Rit/Base/Search.pm: bugfix ... nonfatal error handling...
+
+2007-01-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: Bugfix
+
+2006-12-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm:
+	Added methods get_first_nos() and get_next_nos()
+
+2006-12-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Less debug
+
+	* lib/Rit/Base/Search.pm, lib/Rit/Base/Action/search_execute.pm: bugfix
+
+2006-12-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_clear.pm:
+	using search_collection
+
+	* lib/Rit/Base/Action/node_search.pm: Bugfix
+
+	* lib/Rit/Base/Search/Collection.pm, lib/Rit/Base/Search/Result.pm:
+	Generalized from RG
+
+	* lib/Rit/Base/Session.pm: RB Session class
+
+	* lib/Rit/Base/Search.pm: bugfix
+
+	* html/rb/node/search.tt: linkfix
+
+	* lib/Rit/Base/Search.pm: - Added method reset_result
+	- Removed methods merge() and merge_first()
+
+	* lib/Rit/Base/List.pm: Less debug
+
+	* lib/Rit/Base/Search.pm:
+	The predlist should always be a Rit::Base::List now
+
+2006-12-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Site.pm: Inherits from Rit::Frame::Site
+
+	* lib/Rit/Base/Undef.pm, lib/Rit/Base/String.pm: Don't use Data::Dumper
+
+	* lib/Rit/Base/Search.pm:
+	Don't use Data::Dumper. Use datadump() instead
+
+	* lib/Rit/Base/Rule.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Arc.pm:
+	Don't use Data::Dumper
+
+2006-12-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: moved log_stats_commit to Rit::Guides
+
+	* lib/Rit/Base/Resource.pm: moved log_stats to Rit::Guides
+
+	* lib/Rit/Base.pm: moved log_stats_commit to Rit::Guides
+
+2006-12-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfixes and optimization
+
+2006-12-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: added doc for find_by_label
+
+	* lib/Rit/Base/Constants.pm: added doc synopsis
+
+2006-12-02  joli <jonas@avisita.com>
+
+	* lib/Rit/Base.pm, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constant.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Lazy.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Compatible.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/String.pm, lib/Rit/Base/Time.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/User/Meta.pm, lib/Rit/Base/Utils.pm:
+	Cleaned up code
+
+2006-12-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2006-11-30  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Undef.pm: Added method as_array()
+
+	* lib/Rit/Base/Resource.pm: Lots of optimizations and some bugfixes
+
+	* lib/Rit/Base/List.pm: - Small optimization
+	- Catch outdated usage of materialize()
+
+	* lib/Rit/Base/Arc.pm: Small optimization
+
+2006-11-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm: added debug
+
+	* lib/Rit/Base/Resource.pm: Bugfix
+
+	* lib/Rit/Base/Object.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: Not using Para::Frame::List inside Arc obj
+
+	* html/inc/search_box_small.tt, lib/Rit/Base/Arc.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/List.pm:
+	Changed to use get_first_nos()
+
+	* lib/Rit/Base/Object.pm: Provides a fallback get_first_nos() method
+
+2006-11-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/search_modify.pm:
+	Modified for RG... Should not be in RB
+
+	* lib/Rit/Base/Search.pm:
+	Search::Result is now integrated with Para::Frame::List
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/List.pm:
+	Rit::Base::List now inherits from Para::Frame::List
+
+	* lib/Rit/Base/Arc.pm:
+	Optimized to not use a listobject inside arc object
+
+2006-11-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Resource.pm:
+	synced with new paraframe
+
+2006-11-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Less debug
+
+2006-11-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Time.pm: Added date() function
+
+2006-11-07  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/L10N.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/Utils.pm:
+	Reworked Para::Frame::File framework
+
+2006-10-25  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/List.pm, lib/Rit/Base/Constants.pm: Less debug
+
+	* lib/Rit/Base/List.pm: May yields and progress indicators
+
+	* lib/Rit/Base/List.pm: May yield in as_list
+
+2006-10-23  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/String.pm: Adding sub begins (boolean)
+
+	* lib/Rit/Base/Literal.pm: Bugfix
+
+	* lib/Rit/Base/List.pm:
+	Adding "begins" for arcs, and increasing debuggability.
+
+	* lib/Rit/Base/Literal.pm: Added docs and defaults in method equals
+
+2006-10-16  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Metaclass.pm: Added vacuum
+
+2006-10-12  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+2006-10-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Utils.pm: Added name2url
+
+	* lib/Rit/Base/Resource.pm: Class loading optimization
+
+	* lib/Rit/Base/Search.pm: - less debug
+	- bugfix
+
+2006-10-09  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Nästa kontakt-hantering
+
+2006-10-06  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: Importation and contact_info updates...
+
+2006-09-28  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: - added constant TOPLIMIT
+	- added method result_as_rblist()
+
+	* lib/Rit/Base/Resource.pm: Using result_as_rblist
+
+2006-09-27  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base.pm:
+	Rit::Base::User -> Rit::Base::User::Meta
+
+	* lib/Rit/Base/User.pm: Let Search handle prio
+
+2006-09-26  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: Longer timeouts
+
+	* lib/Rit/Base/Resource.pm: subtle bug about defined props
+
+	* lib/Rit/Base/User.pm, lib/Rit/Base/User/Meta.pm:
+	Moved inheritance of Resource to User::Meta
+
+	* lib/Rit/Base/Resource.pm: Fixed metaclass inheritence
+
+2006-09-25  joli <jonas@avisita.com>
+
+	* html/rb/inc/node_menu.tt: using form_url
+
+	* html/inc/tree.tt, html/node_query_error.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/pred/list.tt, html/rb/node/remove.tt, lib/Rit/Base/List.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Search.pm:
+	Using form_url for link to form
+
+	* html/rb/constant/list.tt, lib/Rit/Base.pm, lib/Rit/Base/Constant.pm, lib/Rit/Base/Constants.pm:
+	Added web interface to constants
+
+	* lib/Rit/Base/User.pm: Added has_root_access()
+
+2006-09-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: added code_class() method
+
+	* html/rb/node/update.tt: shows superclasses
+
+2006-09-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/User.pm: removed old code commented out
+
+	* lib/Rit/Base/Search.pm: removed search type group
+
+	* lib/Rit/Base/Resource.pm:
+	Added the use of %Rit::Base::LOOKUP_CLASS_FOR
+
+	* lib/Rit/Base.pm:
+	added %LOOKUP_CLASS_FOR, used in Rit::Base::Resource->first_bless()
+
+	* lib/Rit/Base/Arc.pm: Delay updated_by init for bootstrapping
+
+	* lib/Rit/Base/Utils.pm: - added docs
+	- added function parse_query_pred()
+	- added function parse_query_prop()
+	- added function convert_query_prop_for_creation()
+
+	* lib/Rit/Base/Resource.pm:
+	using convert_query_prop_for_creation() function
+
+	* doc/model.txt: model changes
+
+2006-09-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/setup_db.pm: development
+
+2006-09-14  joli <jonas@avisita.com>
+
+	* doc/model.txt: changes
+
+2006-09-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search.pm: specially check for count_pred
+
+	* lib/Rit/Base/List.pm: support clean in find()
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Resource.pm: - docfix
+	- find_by_label now does seraches with clean
+
+2006-09-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Action/node_merge.pm:
+	alternatives page is the same as the referer
+
+	* lib/Rit/Base/Action/arc_edit.pm: linkfix
+
+	* lib/Rit/Base/Resource.pm:
+	PopupTreeSelect now uses the latest version, and displays the correct count
+
+	* html/rb/node/arc/update.tt, html/rb/node/arc/add.tt: linkfix
+
+	* html/rb/node/merge.tt: updated for current paraframe
+
+	* html/rb/node/list.tt: removed RG-specific code
+
+2006-09-10  joli <jonas@avisita.com>
+
+	* doc/model.txt: new doc
+
+2006-09-09  joli <jonas@avisita.com>
+
+	* README, html/rb/setup/index.tt, lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/setup_db.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Resource.pm:
+	cleaning up
+
+	* html/rb/inc/node_menu.tt:
+	Renamed file inc/node_menu.tt, formerly node/inc/node_menu.tt
+
+	* lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Lazy.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Compatible.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/String.pm, lib/Rit/Base/Time.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm:
+	Extracted from the rgv4 project tree with some initial modifications
+
+	* lib/Rit/Base/Action/arc_add.pm, lib/Rit/Base/Action/arc_delete.pm, lib/Rit/Base/Action/arc_edit.pm, lib/Rit/Base/Action/node_merge.pm, lib/Rit/Base/Action/node_search.pm, lib/Rit/Base/Action/node_suggest.pm, lib/Rit/Base/Action/node_update.pm, lib/Rit/Base/Action/rule_add.pm, lib/Rit/Base/Action/search_clear.pm, lib/Rit/Base/Action/search_execute.pm, lib/Rit/Base/Action/search_modify.pm, lib/Rit/Base/Action/translate_node.pm, lib/Rit/Base/Action/translate_page_create.pm, lib/Rit/Base/Action/translate_page_part.pm, lib/Rit/Base/Action/translate_page_part_create.pm, lib/Rit/Base/Action/translation_update.pm, lib/Rit/Base/Action/vacuum.pm, lib/Rit/Base/Arc.pm, lib/Rit/Base/Constants.pm, lib/Rit/Base/L10N.pm, lib/Rit/Base/Lazy.pm, lib/Rit/Base/List.pm, lib/Rit/Base/Literal.pm, lib/Rit/Base/Metaclass.pm, lib/Rit/Base/Node.pm, lib/Rit/Base/Object.pm, lib/Rit/Base/Pred.pm, lib/Rit/Base/Resource.pm, lib/Rit/Base/Resource/Compatible.pm, lib/Rit/Base/Rule.pm, lib/Rit/Base/Search.pm, lib/Rit/Base/String.pm, lib/Rit/Base/Time.pm, lib/Rit/Base/Undef.pm, lib/Rit/Base/User.pm, lib/Rit/Base/Utils.pm:
+	New file.
+
+	* html/inc/active_search.tt, html/inc/address.tt, html/inc/prop_fields.tt, html/inc/rg_components.tt, html/inc/search_box_small.tt, html/inc/tree.tt, html/node_query_error.tt, html/rb/node/arc/add.tt, html/rb/node/arc/update.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/pred/list.tt, html/rb/node/remove.tt, html/rb/node/rule/add.tt, html/rb/node/rule/list.tt, html/rb/node/search.tt, html/rb/node/update.tt, html/rb/node/update_rev.tt, html/rb/translation/node.tt, lib/Rit/Base.pm:
+	Extracted from the rgv4 project tree with some initial modifications
+
+	* html/inc/active_search.tt, html/inc/address.tt, html/inc/prop_fields.tt, html/inc/rg_components.tt, html/inc/search_box_small.tt, html/inc/tree.tt, html/node_query_error.tt, html/rb/node/arc/add.tt, html/rb/node/arc/update.tt, html/rb/node/list.tt, html/rb/node/merge.tt, html/rb/node/pred/list.tt, html/rb/node/remove.tt, html/rb/node/rule/add.tt, html/rb/node/rule/list.tt, html/rb/node/search.tt, html/rb/node/update.tt, html/rb/node/update_rev.tt, html/rb/translation/node.tt, lib/Rit/Base.pm:
+	New file.
+
