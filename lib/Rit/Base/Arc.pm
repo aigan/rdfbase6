@@ -3451,7 +3451,7 @@ sub remove_recursive
     {
 	if( $rarc->created_by->equals( $created_by ) )
 	{
-	    debug "Recursive activation of submitted arc";
+	    debug 1, "Recursive removal of selected arcs";
 	    $rarc->remove($args);
 	}
     }

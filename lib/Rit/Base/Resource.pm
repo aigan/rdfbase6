@@ -3618,7 +3618,7 @@ sub first_arc
 		if( $arc->meets_arclim($arclim) and
 		    $arc->value_meets_proplim($proplim) )
 		{
-		    debug "Arc ".$arc->sysdesig." meets ".$arclim->sysdesig;
+#		    debug "Arc ".$arc->sysdesig." meets ".$arclim->sysdesig;
 		    return $arc;
 		}
 	    }

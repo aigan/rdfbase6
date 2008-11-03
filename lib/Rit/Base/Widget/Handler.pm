@@ -588,7 +588,7 @@ sub handle_query_arc_value
 
     foreach my $cond ( @$if )
     {
-	debug "Checking condition if $cond";
+	debug 2, "Checking condition if $cond";
 
 	if( $cond =~ /subj/ )
 	{
@@ -665,7 +665,7 @@ sub handle_query_arc_value
 
     foreach my $cond ( @$unless )
     {
-	debug "Checking condition unless $cond";
+	debug 2, "Checking condition unless $cond";
 
 	if( $cond =~ /subj/ )
 	{
@@ -1385,10 +1385,12 @@ sub handle_select_version
 
     my @versions = $q->param( 'version_'. $arc_id );
 
-    debug "Selecting from arc: ". ($arc ? $arc->sysdesig : $value);
-    debug " selecting version: $value";
-
-    debug "List of versions: ". datadump( \@versions );
+    if( debug > 1 )
+    {
+	debug "Selecting from arc: ". ($arc ? $arc->sysdesig : $value);
+	debug " selecting version: $value";
+	debug "List of versions: ". datadump( \@versions );
+    }
 
     unless( $value eq 'deactivate' )
     {

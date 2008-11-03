@@ -166,8 +166,8 @@ sub find_remove
 
     my $force = $args->{'force'} || 0;
 
-    debug "Find for removal:\n".query_desig($props);
-    debug query_desig($args);
+#    debug "Find for removal:\n".query_desig($props);
+#    debug query_desig($args);
 
     arc_lock;
     foreach my $node ( $this->find( $props, $args )->nodes )
