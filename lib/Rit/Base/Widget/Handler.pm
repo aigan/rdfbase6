@@ -233,8 +233,10 @@ sub update_by_query
     my $args = {%$args_hash}; # Shallow clone
     my $changes_prev = $res->changes;
 
+
 #    debug "******** WIDGET HANDLER UPDATE BY QUERY";
 
+    arc_lock();
     my $q = $Para::Frame::REQ->q;
 
     if( $args->{'node'} )
@@ -407,6 +409,8 @@ sub update_by_query
     $Para::Frame::REQ->change->queue_clear_params( @arc_params,
 						   @row_params,
 						   @check_params );
+
+    arc_unlock();
 
     return $res->changes - $changes_prev;
 }
@@ -1210,6 +1214,11 @@ sub handle_select_version
 
     my $arc = Rit::Base::Arc->get( $arc_id )
       or confess("Couldn't get arc for selection from value: $value");
+
+    # For really getting a list of version, we would have to use
+    # common_id for arc_id instead of the version id that is given by
+    # $arc->id()
+
     my @versions = $q->param( 'version_'. $arc_id );
 
     debug "Selecting from arc: ". ($arc ? $arc->sysdesig : $value);
@@ -1228,7 +1237,7 @@ sub handle_select_version
 	else
 	{
 	    debug "Activating version: ". $select_version->sysdesig;
-	    $select_version->activate( $args );
+	    $select_version->activate( {%$args, recursive=>1} );
 	}
     }
 
