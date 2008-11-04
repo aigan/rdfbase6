@@ -2387,21 +2387,6 @@ sub deactivate
 
     debug 1, "Deactivated id ".$arc->sysdesig;
 
-    my $obj = $arc->obj;
-    if( $args->{'recursive'} and $obj )
-    {
-	my $created_by = $arc->created_by;
-	foreach my $rarc ( $obj->arc_list(undef,undef,[['submitted','explicit']])->as_array )
-	{
-	    if( $rarc->created_by->equals( $created_by ) )
-	    {
-		debug "Recursive deactivation of submitted arc";
-		$rarc->deactivate($args);
-	    }
-	}
-    }
-
-
     return;
 }
 
