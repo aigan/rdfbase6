@@ -29,6 +29,8 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
+use Para::Frame::Widget;
+
 use Rit::Base::Utils qw( parse_propargs );
 
 use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
@@ -187,9 +189,23 @@ sub as_html
     $label ||= $a->format;
 
     my $adr = $a->address;
-    my $full = CGI->escapeHTML($label);
+#    my $full = CGI->escapeHTML($label);
 
-    return "<a href=\"mailto:$adr\">$full</a>";
+    my %attr;
+    foreach my $key ( keys %$args )
+    {
+	if( $key =~ /^href_/ )
+	{
+	    $attr{ $key } = $args->{$key};
+	}
+    }
+    if( $args->{'id'} )
+    {
+	$attr{ id } = $args->{'id'};
+    }
+
+    return Para::Frame::Widget::jump($label, "mailto:$adr", \%attr);
+#    return "<a href=\"mailto:$adr\">$full</a>";
 }
 
 
