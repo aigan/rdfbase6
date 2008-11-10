@@ -872,6 +872,50 @@ sub random
 }
 
 
+#######################################################################
+
+=head2 per_node
+
+  $obj->per_node( \%props, \%args )
+
+Calls methods on nodes given by id. Example:
+
+  $obj->per_node( { 123 => { add => { is => 124 } } }, \%args )
+
+This will get node with id 123 and call
+   $node->add( { is => 124 }, $args );
+
+Returns: true if all methods returned true
+
+=cut
+
+sub per_node
+{
+    my( $obj, $props, $args ) = @_;
+
+    my $res = 1;
+
+    debug "per_node";
+
+    foreach my $node_id ( keys %$props )
+    {
+	debug "  $node_id";
+	my $node = Rit::Base::Resource->get( $node_id, $args );
+	foreach my $meth ( keys %{$props->{$node_id}} )
+	{
+	    debug "    $meth";
+	    my $respart = $node->$meth( $props->{$node_id}{$meth}, $args );
+	    unless( $respart )
+	    {
+		$res = 0;
+	    }
+	}
+    }
+
+    return $res;
+}
+
+
 ######################################################################
 
 1;
