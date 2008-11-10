@@ -73,22 +73,37 @@ sub wu
 		 params => ''};
     }
 
-    debug "Got args: ". datadump($args);
+#    debug "AJAX wus: ". datadump($args);
 
     my $R = Rit::Base->Resource;
-    my $pred_name = $args->{'pred_name'}
-      or throw('incomplete', "Didn't get pred_name");
+    my $out;
 
     my $subj = $R->get($args->{'subj'});
+#    debug "Subj: ". $subj;
 
-    debug "Subj: ". $subj;
-
-    my $out =  $subj->wu($pred_name, {
-				      %$args,
-				      ajax => 1,
-				      from_ajax => 1,
-				     });
-    #$out .= '<input type="button" onclick="pps[\'has_visitor\'].update()" value="o" />';
+    if( my $pred_name = $args->{'pred_name'} )
+    {
+#	debug " -> wu $pred_name";
+	$out =  $subj->wu($pred_name,
+			  {
+			      %$args,
+			      ajax => 1,
+			      from_ajax => 1,
+			  });
+    }
+    elsif( my $view = $args->{'view'} )
+    {
+#	debug " -> wn $view";
+	$out = $subj->wn({
+	    %$args,
+	    ajax => 1,
+	    from_ajax => 1,
+			 });
+    }
+    else
+    {
+	throw('incomplete', "Didn't get pred_name");
+    }
 
     return $out;
 }
