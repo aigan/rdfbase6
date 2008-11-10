@@ -1236,6 +1236,7 @@ other nodes.
 Supported args are:
 
   default
+  default_create
   arclim
   res
 
@@ -3437,7 +3438,12 @@ sub revarc_list
 	}
 	else
 	{
-#	    debug 3, "  No values for revprop $name found!";
+	    if( debug > 2 )
+	    {
+		debug 2, "  No values for revprop $name found!";
+		debug 2, "    with arclim ".$arclim->sysdesig;
+		debug 2, "    and proplim ".query_desig($proplim);
+	    }
 	    return Rit::Base::Arc::List->new_empty();
 	}
     }
@@ -4432,6 +4438,77 @@ sub wd
 
 #######################################################################
 
+=head2 wn
+
+  $n->wn( \%args )
+
+Returns: a HTML ajax widget for updating the node
+
+=cut
+
+sub wn
+{
+    my( $node, $args ) = @_;
+
+    $args ||= {};
+
+    debug "wn $node->{id} args ".datadump($args);
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+    my $disabled = $args->{'disabled'} || 0;
+
+    my $out = "";
+    my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
+    my $from_ajax = $args->{'from_ajax'};
+    my $divid = $args->{'divid'} ||
+      ( $ajax ? Rit::Base::AJAX->new_form_id() : undef );
+
+    if( $divid and not $from_ajax )
+    {
+	$args->{'divid'} = $divid;
+#	$out .= "(>$divid)";
+	$out .= '<div id="'. $divid .'" style="position: relative;">';
+    }
+
+    $out .= Para::Frame::Widget::label_from_params( $args );
+
+    my $view = $args->{'view'} ||= '';
+    if( $view )
+    {
+	my $method = "view_$view";
+
+	if( $node->can($method) )
+	{
+	    $out .= $node->$method( $args );
+	}
+	else
+	{
+	    my $noded = $node->sysdesig;
+	    die "Node $noded misses method $method";
+	}
+    }
+    else
+    {
+	    my $noded = $node->sysdesig;
+	$out .= "TODO: implement wn for $noded"
+    }
+
+    if( $divid and not $from_ajax )
+    {
+	$out .= '</div>';
+	$out .= $node->register_ajax_pagepart( $divid,
+					       {
+						%$args,
+					       });
+    }
+
+    return $out;
+}
+
+
+#######################################################################
+
 =head2 display
 
   $n->display( $pred, \%args )
@@ -4694,6 +4771,7 @@ sub wu
     if( $divid and not $from_ajax )
     {
 	$args->{'divid'} = $divid;
+#	$out .= "(>$divid)";
 	$out .= '<div id="'. $divid .'" style="position: relative;">';
     }
 
@@ -4708,8 +4786,8 @@ sub wu
 
 	if( $ajax )
 	{
-	    $out .= $node->register_ajax_pagepart( $pred_name,
-						   $divid, $args );
+	    $args->{'pred_name'} = $pred_name;
+	    $out .= $node->register_ajax_pagepart( $divid, $args );
 	}
     }
 
@@ -4752,13 +4830,24 @@ sub wuh
 
 =head2 register_ajax_pagepart
 
+  $node->register_ajax_pagepart( $pred_name, $divid, \%args )
+
+Supported args are:
+
+  arclim
+  res
+  depends_on
+  lookup_pred
+
 Returns: html-fragment of javascript-code to register a divid
 
 =cut
 
 sub register_ajax_pagepart
 {
-    my( $node, $pred_name, $divid, $args ) = @_;
+    my( $node, $divid, $args ) = @_;
+
+#    cluck "register_ajax_pagepart $divid with ".datadump($args,2);
 
     my $out = "";
     my $params = {
@@ -4795,12 +4884,22 @@ sub register_ajax_pagepart
         <!--
             new PagePart('$divid', '$home/ajax/wu',
             { params: { subj: '". $node->id ."',
-                        params: '". to_json( $params ) ."',
-                        pred_name: '$pred_name' }";
+                        params: '". to_json( $params ) ."'";
 
-    if( $args->{'depends_on'} )
+    if( my $pred_name = $args->{'pred_name'} )
     {
-	my $depends_on = $args->{'depends_on'};
+	$out .= ", pred_name: '$pred_name'";
+    }
+
+    if( my $view = $args->{'view'} )
+    {
+	$out .= ", view: '$view'";
+    }
+
+    $out .= "}";
+
+    if( my $depends_on = $args->{'depends_on'} )
+    {
 	if( ref $depends_on )
 	{
 	    debug "Ref depends_on: ". ref $depends_on;
@@ -4814,6 +4913,8 @@ sub register_ajax_pagepart
 	$out .= ", depends_on: [ $depends_on ]";
     }
     $out .= "}); //--> </script>";
+
+#    $out .= "($divid)";
 
     return $out;
 }
@@ -4851,6 +4952,7 @@ supported args are
   default_value
   header
   item_prefix
+  on_arc_add
 
 args are forwarded to
   revarc_list
@@ -4889,6 +4991,8 @@ Args details:
   lookup_pred => name_clean_like
     Coonsider using
       ['customer_id_clean','name_clean_like','name_short_clean']
+
+  on_arc_add => { ... }
 
 =cut
 
@@ -5040,6 +5144,8 @@ sub wuirc
 	    # Stringify
 	    my $default = "" . ($args->{'default_value'}||"");
 
+	    my $on_arc_add = $args->{'on_arc_add'};
+
 	    $out .= "
               <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
 	    $out .= sprintf(q{
@@ -5060,6 +5166,7 @@ sub wuirc
 				     seen_node => $subj->id,
 				     hide_create_button => $hide_create_button,
 				     default_value => $default,
+				     on_arc_add => $on_arc_add,
 				    }));
 	}
 	elsif( $inputtype eq 'text' )
@@ -7158,7 +7265,7 @@ sub initiate_revprop
 	if( $node->{'initiated_rev'} )
 	{
 	    # Keeps key nonexistent if nonexistent
-	    return $node->{'revarc_inactive'}{ $name };
+	    return $node->{'revarc'}{ $name };
 	}
     }
     elsif( $active and $inactive )
