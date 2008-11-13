@@ -401,7 +401,7 @@ sub revlist_preds
 	{
 	    if( $arc->meets_arclim($arclim) )
 	    {
-		$preds_name{$arc->pred->plain} ++;
+		$preds_name{$arc->pred->plain} = $arc->pred;
 	    }
 	}
     }
@@ -412,13 +412,12 @@ sub revlist_preds
 	{
 	    if( $arc->meets_arclim($arclim) )
 	    {
-		$preds_name{$arc->pred->plain} ++;
+		$preds_name{$arc->pred->plain} = $arc->pred;
 	    }
 	}
     }
 
-    # Only handles pred nodes
-    my @preds = map Rit::Base::Pred->get_by_label($_, $args), keys %preds_name;
+    my @preds = values %preds_name;
 
     return Rit::Base::Pred::List->new(\@preds);
 }
