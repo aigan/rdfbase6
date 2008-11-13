@@ -32,6 +32,7 @@ sub handler
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $node = Rit::Base::Resource->get( $id );
+    $node->reset_cache(undef, $args );
     $node->vacuum($args);
     $node->session_history_add('updated');
 
