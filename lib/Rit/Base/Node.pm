@@ -1101,7 +1101,7 @@ sub remove
     foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
 		      $node->revarc_list(undef, undef, $args)->nodes )
     {
-	$arc->remove( $args );
+	$arc->remove( $args ) unless $arc->implicit;
     }
 
     # Remove node
@@ -1128,6 +1128,26 @@ sub remove
     }
 
     return $res->changes - $changes_prev;
+}
+
+
+#######################################################################
+
+=head2 has_node_record
+
+  $n->has_node_record
+
+Implemented i L<Rit::Base::Resource/has_node_record>
+
+For other nodes, like literals..:
+
+Returns: false
+
+=cut
+
+sub has_node_record
+{
+    return 0;
 }
 
 
