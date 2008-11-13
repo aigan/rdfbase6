@@ -3163,13 +3163,13 @@ Supported args are:
   recursive
 
 
-Default C<$implicit> bool is false.
+Default C<implicit> bool is false.
 
 A true value means that we want to remove an L</implict> arc.
 
 A false value means that we want to remove an L</explicit> arc.
 
-The C<$implicit> is used internally to remove arcs that's no
+The C<implicit> is used internally to ONLY remove arcs that's no
 longer infered.
 
 If called with a false value, it will remove the arc only if the arc
@@ -3196,7 +3196,7 @@ sub remove
 	return $arc->remove_recursive( $args );
     }
 
-    my $implicit = $args->{'implicit'} || 0;
+    my $remove_if_no_longer_implicit = $args->{'implicit'} || 0;
     my $create_removal = 0;
     my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
     my $arc_id = $arc->id;
@@ -3207,7 +3207,7 @@ sub remove
 
 	my($package, $filename, $line) = caller;
 	debug "  called from $package, line $line";
-	debug "  implicit: $implicit";
+	debug "  remove if no longer implicit: $remove_if_no_longer_implicit";
 	debug "  force: $force".($args->{'force_recursive'}?' RECURSIVE':'');
 	debug "  active: ".$arc->active;
 	debug "  validate_check";
@@ -3223,7 +3223,8 @@ sub remove
 	    return 0;
 	}
 
-	if( ($arc->active or $arc->replaced_by->size ) and not $implicit  )
+	if( ($arc->active or $arc->replaced_by->size )
+	    and $arc->explicit and not $remove_if_no_longer_implicit )
 	{
 	    # Create removals for active explicit arcs
 
@@ -3244,21 +3245,15 @@ sub remove
 	# Can this arc be infered?
 	if( $arc->validate_check( $args ) )
 	{
-	    if( $implicit )
+	    if( $remove_if_no_longer_implicit )
 	    {
 		debug "  Arc implicit and infered" if $DEBUG;
 		return 0;
 	    }
-
-	    # Arc was explicit but is now indirect implicit
-	    debug "  Arc infered; set implicit" if $DEBUG;
-	    if( $create_removal )
-	    {
-		$arc->create_removal($args);
-		return 1;
-	    }
 	    else
 	    {
+		# Arc was explicit but is now indirect implicit
+		debug "  Arc infered; set implicit" if $DEBUG;
 		$arc->set_implicit(1);
 		return 0;
 	    }
@@ -3272,21 +3267,22 @@ sub remove
 		# disregarded.  (nested inference?)
 
 		debug "  Arc implicit but not infered" if $DEBUG;
-		$implicit ++; # Implicit remove mode
+		$remove_if_no_longer_implicit ++; # Implicit remove mode
+		$create_removal = 0;
 	    }
 	}
 
-	if( $implicit and $arc->explicit ) # remove implicit
+	if( $remove_if_no_longer_implicit and $arc->explicit ) # remove implicit
 	{
 	    debug "  removed implicit but arc explicit\n" if $DEBUG;
 	    return 0;
 	}
-	elsif( not $implicit and $arc->implicit ) # remove explicit
+	elsif( not $remove_if_no_longer_implicit and $arc->implicit ) # remove explicit
 	{
 	    debug "  Removed explicit but arc implicit\n" if $DEBUG;
 	    return 0;
 	}
-	elsif( not $implicit and $arc->indirect ) # remove explicit
+	elsif( not $remove_if_no_longer_implicit and $arc->indirect ) # remove explicit
 	{
 	    # This arc is no longer explicitly stated, but if it's
 	    # indirectly infered, it will now be implicit
