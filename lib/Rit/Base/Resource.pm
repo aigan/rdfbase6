@@ -5648,6 +5648,7 @@ sub find_class
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
 	$node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key } = $valtype;
 	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
+	cluck $key if $key eq '5254492_4244414'; ### DEBUG
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
@@ -7679,6 +7680,7 @@ sub instance_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    no strict "refs";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
+	    cluck $key if $key eq '5254492_4244414'; ### DEBUG
 	    $Rit::Base::Cache::Class{ $key } = $package;
 	    $Rit::Base::Cache::Valtype{ $key } = $_[0];
 	    1;
