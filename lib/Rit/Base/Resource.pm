@@ -35,7 +35,7 @@ BEGIN
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
-			   package_to_module timediff );
+			   package_to_module timediff compile );
 
 use Rit::Base::Node;
 use Rit::Base::Search;
@@ -5597,8 +5597,12 @@ sub find_class
 	  )
 	{
 #	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
-	    debug "Setting3 valtype for $id to $node->{valtype}{id}" if $DEBUG;
-	    debug "Based on the key $key" if $DEBUG;
+	    if( $DEBUG )
+	    {
+		debug "Setting3 valtype for $id to $node->{valtype}{id}";
+		debug "returning package $package";
+		debug "Based on the key $key";
+	    }
 	    return $package;
 	}
 
@@ -5612,18 +5616,9 @@ sub find_class
 		confess "No classname found for class $class->{id}";
 	    }
 
-	    eval
-	    {
-		require(package_to_module($classname));
-	    };
-	    if( $@ )
-	    {
-		debug $@;
-	    }
-	    else
-	    {
-		push @classnames, $classname;
-	    }
+	    my $filename = package_to_module($classname);
+	    compile( $filename );
+	    push @classnames, $classname;
 	}
 
 	no strict "refs";
@@ -5648,7 +5643,6 @@ sub find_class
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
 	$node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key } = $valtype;
 	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
-	cluck $key if $key eq '5254492_4244414'; ### DEBUG
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
@@ -7680,7 +7674,6 @@ sub instance_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    no strict "refs";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
-	    cluck $key if $key eq '5254492_4244414'; ### DEBUG
 	    $Rit::Base::Cache::Class{ $key } = $package;
 	    $Rit::Base::Cache::Valtype{ $key } = $_[0];
 	    1;
