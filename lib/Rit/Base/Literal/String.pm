@@ -953,6 +953,8 @@ sub wuirc
 	    $props->{'vnode'} = $vnode;
 	}
 
+#	debug 1, "Default value is ".$default->sysdesig; ### DEBUG
+
 	$out .= &{$inputtype}(build_field_key($props),
 			      $default->plain,
 			      {
