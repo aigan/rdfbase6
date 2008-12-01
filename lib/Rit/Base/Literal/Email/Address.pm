@@ -286,7 +286,7 @@ Just returns the plain string
 
 sub loc
 {
-    return shift->plain;
+    return shift->format;
 }
 
 
@@ -301,7 +301,7 @@ works for Undef objects.
 
 sub plain
 {
-    return $_[0]->format;
+    return $_[0]->original;
 }
 
 
