@@ -211,6 +211,10 @@ sub render_output
     {
 	# Ok
     }
+    elsif( $encoding eq 'binary' )
+    {
+	# Ok (same as 8bit)
+    }
     elsif( $encoding eq '7bit' )
     {
 	# Ok
