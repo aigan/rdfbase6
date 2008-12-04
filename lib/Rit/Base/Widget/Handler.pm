@@ -873,9 +873,11 @@ sub handle_query_arc_value
 	    my $maxw = $arg->{'maxw'};
 	    my $maxh = $arg->{'maxh'};
 
-	    my $img_file = $req->uploaded($param)->tempfilename;
+	    my $img_file = $req->uploaded($param)->tempfilename
+	      or throw('validation', "No tempfile found for $param");
 	    my $image = Image::Magick->new;
-	    $image->Read( $img_file );
+	    my $error = $image->Read( $img_file );
+	    die "Failed to open image $img_file: $error" if $error;
 	    my $w = $image->Get('width');
 	    my $h = $image->Get('height');
 
@@ -898,7 +900,7 @@ sub handle_query_arc_value
 	    $image->Scale( width => $w, height => $h );
 	    debug "Scaled to ". $image->Get('width') ." × ".
 	      $image->Get('height');
-	    my $error = $image->Write($img_file);
+	    $error = $image->Write($img_file);
 	    die "Failed to save image $img_file: $error" if $error;
 	}
 
