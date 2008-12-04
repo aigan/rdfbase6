@@ -467,11 +467,13 @@ sub charset_guess
 
 =head2 url_path
 
+  $part->url_path( $name, $type )
+
 =cut
 
 sub url_path
 {
-    my( $part, $name ) = @_;
+    my( $part, $name, $type_name ) = @_;
 
     my $email = $part->email;
     my $nid = $email->id;
@@ -480,7 +482,7 @@ sub url_path
 
     if( $name )
     {
-	my $safe = $part->filename_safe($name);
+	my $safe = $part->filename_safe($name,$type_name);
 
 	my $s = $Para::Frame::REQ->session
 	  or die "Session not found";
@@ -767,9 +769,8 @@ sub _render_texthtml
 {
     my( $part ) = @_;
 
-#    debug "  rendering texthtml";
 
-    my $url_path = $part->url_path;
+    my $url_path = $part->url_path(undef,'text/html');
 
     my $msg = qq(| <a href="$url_path">View HTML message</a>\n );
 
@@ -782,6 +783,8 @@ sub _render_texthtml
 	    $msg .= " | <a href=\"$url\">View alt in $type</a>\n";
 	}
     }
+
+#    debug "  rendering texthtml: $url_path";
 
 $msg .= <<EOT;
 <br>
