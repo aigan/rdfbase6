@@ -101,6 +101,7 @@ sub render_output
 	}
 	else
 	{
+	    $search =~ s/%20/ /g;
 	    $imap_path = $lookup->{$search};
 	}
 
@@ -116,6 +117,15 @@ sub render_output
 	{
 	    $imap_path = undef;
 	}
+
+
+#	debug "Search is $search";
+
+	if( $search =~ /\.html$/ )
+	{
+	    $type = 'text/html';
+	    debug "Setting type based on search extenstion";
+	}
     }
 
     if( $imap_path )
@@ -123,6 +133,7 @@ sub render_output
 	$part = $top->new_by_path($imap_path);
 
 	$type = $part->type;
+#	debug "part type is $type";
 	$charset = $part->charset_guess;
 
 	unless( $charset )
@@ -131,11 +142,13 @@ sub render_output
 	    $charset = "iso-8859-1";
 	}
 
-	$rend->{'content_type'} = $type;
-	$rend->{'charset'} = $charset;
-
 	$encoding = lc($part->struct->encoding);
-	debug "Metadata registred: $type - $charset";
+#	debug "Metadata registred: $type - $charset";
+    }
+    else
+    {
+	$encoding = lc($top->struct->encoding);
+	$charset = $top->charset_guess;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -189,20 +202,36 @@ sub render_output
     my $uid = $top->uid;
 
 
-    # Returning the whole message
-    unless( $imap_path )
+    my $data;
+    if( not $imap_path )
     {
-	$rend->{'content_type'} = "message/rfc822";
-	my $data = $folder->imap_cmd('message_string', $uid);
-	return \$data;
+	if( $type eq "text/html" )
+	{
+	    $data = $folder->imap_cmd('body_string', $uid);
+	}
+	else
+	{
+	    $type = "message/rfc822";
+	    $data = $folder->imap_cmd('message_string', $uid);
+	}
+    }
+    else
+    {
+#	debug "Getting bodypart $uid $imap_path";
+	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
+	#    debug "bodypart_string: ".validate_utf8( \$data );
     }
 
 
-    debug "Getting bodypart $uid $imap_path";
-    my $data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
-#    debug "bodypart_string: ".validate_utf8( \$data );
+    $rend->{'content_type'} = $type;
+    $rend->{'charset'} = $charset;
 
-    my $data_dec;
+    if( $type eq "message/rfc822" )
+    {
+#	debug "Returning the whole message (no imap_path)";
+	return \$data;
+    }
+
     if( $encoding eq 'base64' )
     {
 	$data = decode_base64($data);
@@ -229,6 +258,7 @@ sub render_output
     }
 
 #    debug "decoded data: ".validate_utf8(\$data);
+#    debug "type is $type";
 
     if( $type eq 'text/html' )
     {
