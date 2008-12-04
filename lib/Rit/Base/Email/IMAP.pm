@@ -229,20 +229,27 @@ sub generate_name
 
   $part->url_path
 
+  $part->url_path( $name, $type )
+
+Default C<$type> is message/rfc822.
+
+Default C<$name> is the subject
+
 =cut
 
 sub url_path
 {
-    my( $part ) = @_;
+    my( $part, $subject, $type_name ) = @_;
 
     my $email = $part->email;
     my $nid = $email->id;
 
     # Format subject as a filename
-    my $subject = $part->head->parsed_subject->plain;
+    $subject ||= $part->head->parsed_subject->plain;
     $subject =~ s/\// /g;
     $subject =~ s/\.\s*/ /g;
-    my $safe = $part->filename_safe($subject,"message/rfc822");
+    $type_name ||= "message/rfc822";
+    my $safe = $part->filename_safe($subject,$type_name);
 
     my $s = $Para::Frame::REQ->session
       or die "Session not found";
