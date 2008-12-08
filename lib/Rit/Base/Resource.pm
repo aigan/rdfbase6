@@ -5592,6 +5592,14 @@ sub find_class
 	} @pmodules;
 
 	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
+
+	if( $key eq 'Rit::Guides::User' ) ### DEBUG
+	{
+	    debug "Find class for $id (clue $clue)";
+	    cluck "***** User confused";
+	    debug 0, datadump( $node, 2 );
+	}
+
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
 	    ($node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key })
 	  )
