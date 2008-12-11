@@ -198,15 +198,19 @@ sub add_part
 	    $uniq = $l->{'_RG_UNIQ'} = {};
 	    foreach my $elem ( @$data )
 	    {
-		$uniq->{$elem}++;
+		my $key = UNIVERSAL::can($elem,'id') ? $elem->id : $elem;
+		$uniq->{$key}++;
+#		debug " --- ".$key;
 	    }
 	}
 
 	foreach my $elem (@$arrayref)
 	{
-	    unless( $uniq->{$elem}++ )
+	    my $key = UNIVERSAL::can($elem,'id') ? $elem->id : $elem;
+	    unless( $uniq->{$key}++ )
 	    {
 		push @$data, $elem;
+#		debug " --- ".$key;
 	    }
 	}
     }
