@@ -814,12 +814,29 @@ sub wuirc
 	my $subj_id = $subj->id;
 
 	my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
-	foreach my $arc_id (keys %$arcversions)
+	my @arcs = map Rit::Base::Arc->get($_), keys %$arcversions;
+
+#	debug "Arcs list: @arcs";
+	my $list_weight = 0;
+
+	foreach my $arc ( Rit::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'obj.weight', dir=>'desc'}])->as_array )
 	{
-	    my $arc = Rit::Base::Arc->get($arc_id);
-	    if( my $lang = $arc->value_node->is_of_language(undef,'auto') )
+	    my $arc_id = $arc->id;
+#	    debug $arc_id;
+
+	    if( my $lang = $arc->value_node->list('is_of_language', undef,'auto') )
 	    {
 		$out .= "(".$lang->desig."): ";
+	    }
+
+	    if( my $weight = $arc->value_node->prop('weight',undef,'auto') )
+	    {
+		$out .= $weight->desig . " ";
+		$list_weight = 1;
+	    }
+	    elsif( $list_weight )
+	    {
+		$out .= "0 ";
 	    }
 
 	    if( $Para::Frame::U->has_root_access and ( (@{$arcversions->{$arc_id}} > 1) or
@@ -896,7 +913,7 @@ sub wuirc
 		   "</table><br/>"
 		  );
 	    }
-	    else
+	    else ### LIST OF ACTIVE VALUES
 	    {
 		my $field = build_field_key({arc => $arc});
 		my $fargs =
@@ -1001,6 +1018,8 @@ sub wuirc
 	    }
 	}
     }
+
+#    debug "returning: $out";
 
     return $out;
 }
