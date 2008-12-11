@@ -93,6 +93,8 @@ sub set_result
 	confess "Result $result_in not handled";
     }
 
+    undef $search->{'result'};
+
     return $search->result;
 }
 
@@ -181,7 +183,7 @@ sub reset
     # Removes all rb_search parts
     $search->{'rb_search'} = [];
     $search->{'is_active'} = 0;
-    delete $search->{'result'};
+    $search->{'result'} = undef;
     delete $search->{'custom_result'};
 
     # Properties used by RB::Search::Result
@@ -254,6 +256,7 @@ sub add
     my( $search, $rb_search ) = @_;
 
     push @{$search->{'rb_search'}}, $rb_search;
+    undef $search->{'result'};
     return $search;
 }
 
@@ -272,6 +275,7 @@ sub add_first
     my( $search, $rb_search ) = @_;
 
     unshift @{$search->{'rb_search'}}, $rb_search;
+    undef $search->{'result'};
     return $search;
 }
 
@@ -333,13 +337,19 @@ sub parts
 
 sub modify
 {
-    my $parts = shift->rb_parts;
+    my( $search ) = shift @_;
+
+    my $parts = $search->rb_parts;
     debug sprintf "MODIFYING %d parts", scalar(@$parts);
     foreach my $s (@$parts)
     {
 	debug "  MODIFYING search $s";
 	$s->modify(@_);
     }
+
+    undef $search->{'result'};
+
+    return 1;
 }
 
 #######################################################################
@@ -386,6 +396,7 @@ sub execute
     }
 
     $search->{'is_active'} = 1;
+    undef $search->{'result'};
 }
 
 
