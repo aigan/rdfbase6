@@ -5595,7 +5595,14 @@ sub find_class
 
 	if( $key eq 'Rit::Guides::User' ) ### DEBUG
 	{
-	    debug "Find class for $id (clue $clue)";
+	    debug "Find class $key for $id (clue $clue)";
+	    cluck "***** User confused";
+	    debug 0, datadump( $node, 2 );
+	}
+
+	if( $key eq 'Rit::Base::Metaclass::Rit::Guides::Spatial_Thing::Addressable::Person' ) ### DEBUG
+	{
+	    debug "Find class $key for $id (clue $clue)";
 	    cluck "***** User confused";
 	    debug 0, datadump( $node, 2 );
 	}
