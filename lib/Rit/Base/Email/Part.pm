@@ -1199,6 +1199,10 @@ sub body
     {
 	return $data;
     }
+    elsif( $encoding eq 'binary' )
+    {
+	return $data;
+    }
     elsif( $encoding eq '7bit' )
     {
 	return $data;
