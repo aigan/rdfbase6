@@ -27,7 +27,7 @@ BEGIN
 }
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc build_field_key );
+our @EXPORT_OK = qw( wub aloc sloc build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -339,6 +339,31 @@ sub aloc
     }
 
     return $out . loc($text, @_);
+}
+
+
+#######################################################################
+
+sub sloc
+{
+    my $text = shift;
+    my $out = "";
+
+    if( $Para::Frame::REQ->session->admin_mode )
+    {
+	my $home = $Para::Frame::REQ->site->home_url_path;
+	$out .=
+	  (
+	   jump("Edit", "$home/admin/translation/update.tt",
+		{
+		 run => 'mark',
+		 c => $text,
+		}) .
+	   " "
+	  );
+    }
+
+    return $out;
 }
 
 
