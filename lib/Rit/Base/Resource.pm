@@ -5593,18 +5593,19 @@ sub find_class
 
 	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 
-	if( $key eq 'Rit::Guides::User' ) ### DEBUG
+	debug "Find class $key for $id (clue $clue)" if $DEBUG;
+	if( $key eq '4048179' ) ### DEBUG
 	{
 	    debug "Find class $key for $id (clue $clue)";
 	    cluck "***** User confused";
-	    debug 0, datadump( $node, 2 );
+	    debug 0, datadump( $node, 4 );
 	}
 
-	if( $key eq 'Rit::Base::Metaclass::Rit::Guides::Spatial_Thing::Addressable::Person' ) ### DEBUG
+	if( $key eq '3974047' ) ### DEBUG
 	{
 	    debug "Find class $key for $id (clue $clue)";
 	    cluck "***** User confused";
-	    debug 0, datadump( $node, 2 );
+	    debug 0, datadump( $node, 4 );
 	}
 
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
