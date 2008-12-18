@@ -408,16 +408,25 @@ sub header
 
 =head2 charset_guess
 
+  $part->charset_guess
+
+  $part->charset_guess(\%args)
+
+Args:
+
+  sample => \$data
+
 =cut
 
 sub charset_guess
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
 #    debug "Determining charset";
 
     my $struct = $part->struct;
     my $charset = lc $struct->charset;
+    $args ||= {};
 
     unless( $charset )
     {
@@ -437,7 +446,20 @@ sub charset_guess
 	my $type = lc $struct->type;
 	if( $type =~ /^text\// )
 	{
-	    my $sample = $part->body(2000);
+	    my $sample;
+	    if( $args->{'sample'} )
+	    {
+#		debug "Finding charset from provided sample";
+		$sample = ${$args->{'sample'}};
+#		debug "SAMPLE: $sample"
+	    }
+	    else
+	    {
+#		debug "Finding charset from body";
+		$sample = $part->body(2000);
+#		debug "BODY SAMPLE: $sample"
+	    }
+
 	    require Encode::Detect::Detector;
 	    $charset = lc Encode::Detect::Detector::detect($sample);
 
@@ -459,6 +481,7 @@ sub charset_guess
 	}
     }
 
+#    debug "Found charset $charset";
     return $charset;
 }
 
@@ -746,14 +769,13 @@ sub _render_textplain
 
 #    debug "  rendering textplain";
 
-    my $charset = $part->charset_guess;
-#    my $charset = $email->charset_plain($part);
+#    my $charset = $part->charset_guess;
 
     my $data_dec = $part->body;
-#    my $data_dec = $email->body($part);
     my $data_enc = CGI->escapeHTML($data_dec);
 
-    my $msg = "| $charset\n<br/>\n";
+#    my $msg = "| $charset\n<br/>\n";
+    my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
@@ -943,6 +965,12 @@ sub _render_mixed
 
 	if( $alt->disp eq 'inline' )
 	{
+	    if( $alt ne $alts[0] )
+	    {
+		$msg .= "<hr/>\n";
+	    }
+
+
 	    if( $renderer )
 	    {
 		$msg .= $alt->$renderer;
@@ -1189,34 +1217,47 @@ sub body
 
     my $data = $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 
-    my $data_dec;
-
     if( $encoding eq 'quoted-printable' )
     {
-	return decode_qp($data);
+	$data =  decode_qp($data);
     }
     elsif( $encoding eq '8bit' )
     {
-	return $data;
+	#
     }
     elsif( $encoding eq 'binary' )
     {
-	return $data;
+	#
     }
     elsif( $encoding eq '7bit' )
     {
-	return $data;
+	#
     }
     elsif( $encoding eq 'base64' )
     {
-	return decode_base64($data);
+	$data = decode_base64($data);
     }
     else
     {
 	die "encoding $encoding not supported";
     }
 
-    return $data_dec;
+    my $charset = $part->charset_guess({sample=>\$data});
+    if( $charset eq 'iso-8859-1' )
+    {
+	# No changes
+    }
+    elsif( $charset eq 'utf-8' )
+    {
+	utf8::decode( $data );
+    }
+    else
+    {
+	debug "Should decode charset $charset";
+    }
+
+
+    return $data;
 }
 
 
