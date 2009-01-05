@@ -6,7 +6,7 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -1010,7 +1010,7 @@ sub modify
 	    }
 
 	    my $pred_name = $predref->[0]->label;
-	    if( $pred_name =~ m/^(id|id_alphanum|label|created|updated|owned_by|read_access|write_access|created_by|updated_by)$/ )
+	    if( $pred_name =~ m/^(id|id_alphanum|label|created|updated|owned_by|read_access|write_access|created_by|updated_by|arc_weight)$/ )
 	    {
 		if( @$predref > 1)
 		{
@@ -1090,7 +1090,7 @@ sub modify
 	    $qarc->{$coltype} = $values;
 	}
 
-	foreach my $key (qw(created_by updated_by created updated id obj value))
+	foreach my $key (qw(created_by updated_by created updated id obj value arc_weight))
 	{
 	    if( $meta->{$key} )
 	    {
@@ -2577,6 +2577,14 @@ sub elements_arc
 	    $prio = min( $prio, 7 );
 	}
 
+	if( my $vals = $qarc->{'arc_weight'} )
+	{
+	    my $part = join " or ", map "(weight=?)", @$vals;
+	    push @parts, "($part)";
+	    push @values, @$vals;
+	    $prio = min( $prio, 8 );
+	}
+
 	if( my $coltype = $qarc->{'coltype'} )
 	{
 	    my $vals = $qarc->{$coltype};
@@ -2619,6 +2627,34 @@ sub elements_arc
 	    my $part = join " or ", map sprintf("(created_by=%s)",$dbh->quote($_)), @$vals;
 	    push @parts, "($part)";
 	    $prio = min( $prio, 5 );
+	}
+
+	if( my $vals = $qarc->{'updated_by'} )
+	{
+	    my $part = join " or ", map sprintf("(updated_by=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 5 );
+	}
+
+	if( my $vals = $qarc->{'created'} )
+	{
+	    my $part = join " or ", map sprintf("(created=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 7 );
+	}
+
+	if( my $vals = $qarc->{'updated'} )
+	{
+	    my $part = join " or ", map sprintf("(updated=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 7 );
+	}
+
+	if( my $vals = $qarc->{'arc_weight'} )
+	{
+	    my $part = join " or ", map sprintf("(weight=%s)",$dbh->quote($_)), @$vals;
+	    push @parts, "($part)";
+	    $prio = min( $prio, 8 );
 	}
 
 	if( my $coltype = $qarc->{'coltype'} )
