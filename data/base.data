@@ -145,6 +145,7 @@ login_account	class_handled_by_perl_module	103
 103	is	class_perl_module
 103	code		Rit::Base::User
 predicate	is	class
+arc	is	class
 class_form_url	is	predicate
 class_form_url	admin_comment		HTML form relative site root
 class_form_url	range	url
