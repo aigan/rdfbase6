@@ -19,6 +19,7 @@ CREATE TABLE arc (
     deactivated timestamp with time zone,
     unsubmitted timestamp with time zone,
     valtype integer NOT NULL,
+    weight integer,
     obj integer,
     valfloat double precision,
     valdate timestamp with time zone,

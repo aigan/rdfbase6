@@ -69,6 +69,7 @@ our $special_id =
  id_alphanum => -19,
  direct => -20,
  distance => -21,
+ arc_weight => -22,
 };
 
 our $special_label = { reverse %$special_id };
@@ -204,6 +205,11 @@ sub valtype
 	}
 	else
 	{
+	    unless( defined $coltype )
+	    {
+		die "Undefined coltype for pred ".datadump($pred,1);
+	    }
+
 	    return Rit::Base::Constants->get( $coltype );
 	}
     }
@@ -342,7 +348,7 @@ sub find_by_anything
 
 
     # Special properties
-    if( $label =~ /^(id|score|random|direct|distance)$/ )
+    if( $label =~ /^(id|score|random|direct|distance|arc_weight)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,

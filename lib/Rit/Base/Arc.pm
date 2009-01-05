@@ -6,7 +6,7 @@ package Rit::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -21,7 +21,7 @@ use utf8;
 use Carp qw( cluck confess carp croak shortmess );
 use strict;
 use Time::HiRes qw( time );
-use Scalar::Util qw( refaddr blessed );
+use Scalar::Util qw( refaddr blessed looks_like_number );
 
 BEGIN
 {
@@ -180,6 +180,8 @@ The props:
 
   valtype : Defaults to L<Rit::Base::Pred/valtype>
 
+  arc_weight : Defaults to C<undef>
+
 
 Special args:
 
@@ -222,7 +224,7 @@ sub create
 
     foreach my $key (qw(active submitted common id replaces source
                         read_access write_access subj pred valtype
-                        implicit value obj ))
+                        implicit value obj arc_weight ))
     {
 	if( $props->{ $key } )
 	{
@@ -306,6 +308,15 @@ sub create
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
+
+
+    ##################### arc_weight
+    if( $props->{'arc_weight'} )
+    {
+	$rec->{'weight'}  = $props->{'arc_weight'};
+    }
+    push @fields, 'weight';
+    push @values, $rec->{'weight'};
 
 
     ##################### read_access
@@ -1015,6 +1026,7 @@ sub set_value_node
 	    }
 	}
 
+	debug 1, "Blessing node $node->{id} to $class";
 	bless $node, $class;
     }
 
@@ -1686,6 +1698,40 @@ sub direct
 {
     my( $arc ) = @_;
     return not $arc->{'indirect'};
+}
+
+
+#######################################################################
+
+=head2 weight
+
+  $a->weight
+
+Returns: the arc weight
+
+May be undef
+
+=cut
+
+sub weight
+{
+    return $_[0]->{'arc_weight'};
+}
+
+
+#######################################################################
+
+=head2 arc_weight
+
+  $a->arc_weight
+
+The same as L</weight>
+
+=cut
+
+sub arc_weight
+{
+    return $_[0]->{'arc_weight'};
 }
 
 
@@ -3373,19 +3419,18 @@ sub remove
     debug "  clear arc data\n" if $DEBUG;
     foreach my $prop (qw(
 			    subj pred value value_node clean implicit
-			    indirect explain replaces source active
-			    submitted activated_by valtype
+			    indirect explain replaces source arc_weight
+			    active submitted activated_by valtype
 			    arc_created_by arc_read_access
 			    arc_write_access arc_activated
 			    arc_deactivated arc_created arc_updated
 			    unsubmitted arc_created_obj
 			    arc_updated_obj arc_activated_obj
-			    arc_deactivated_obj
-			    arc_deactivated_by_obj
+			    arc_deactivated_obj arc_deactivated_by_obj
 			    arc_unsubmitted_obj activated_by_obj
 			    arc_created_by_obj source_obj
-			    arc_read_access_obj
-			    arc_write_access_obj value_node_obj
+			    arc_read_access_obj arc_write_access_obj
+			    value_node_obj
 		       ))
     {
 	delete $arc->{$prop};
@@ -3544,11 +3589,11 @@ sub set_value
 
     my $coltype_old  = $arc->coltype;
     my $value_new;
-    if( $args->{'force_set_value'} )
+    if( $args->{'force_set_value'} ) # accept new given value
     {
 	$value_new = $value_new_in;
     }
-    else
+    else # lookup and validate the new given value
     {
 	# Doesn't work for removals
 
@@ -3600,6 +3645,9 @@ sub set_value
 	confess "We should have got a value";
     }
 
+
+    ### Set up new value node
+    #
     my $vnode_old   = $arc->value_node;
     my $vnode_new;
     if( exists $args->{'value_node'} )
@@ -3650,11 +3698,15 @@ sub set_value
     my $same_value = $value_new->equals( $value_old, $args );
 
 
+    # Are there any changes to be made?
+    #
     unless( $same_value and
 	    $valtype_new->equals( $valtype_old ) and
 	    $vnode_old->equals($vnode_new)
 	  )
     {
+	# Normal case: create a new version of the arc
+	#
 	unless( $arc->is_new or $args->{'force_set_value_same_version'} )
 	{
 	    my $new = Rit::Base::Arc->create({
@@ -3668,6 +3720,9 @@ sub set_value
 	    return $new;
 	}
 
+
+	# Changing the existing arc, in place
+	#
 	debug 3, "    Changing value\n";
 
 	# If the value is the same, or we are changing to a literal
@@ -4393,6 +4448,102 @@ sub set_indirect
 
 #######################################################################
 
+=head2 set_weight
+
+  $a->set_weight( $int, \%args )
+
+It may be set to C<undef> to unset any previous value
+
+Setting a new weight will create a new version if the arc is active.
+
+Supported args are:
+
+  force_same_version
+
+Returns: the arc with the new weight
+
+=cut
+
+sub set_weight
+{
+    my( $arc, $val_in, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
+
+    my $DEBUG = 0;
+
+    my $val = $val_in;
+    if( ref $val )
+    {
+	$val = $val_in->plain;
+    }
+
+    if( defined $val )
+    {
+	return $arc if $val == $arc->weight; # Return if no change
+	unless( looks_like_number( $val ) )
+	{
+	    throw 'validation', "String $val is not a number";
+	}
+    }
+    else
+    {
+	return $arc unless defined $arc->weight; # Return if no change
+    }
+
+    my $desc_str = defined $val ? $val : '<undef>';
+    debug "Set weight $desc_str for arc id $arc->{id}: ".$arc->desig."\n" if $DEBUG;
+
+    my $same_version = $args->{'force_same_version'} || 0;
+    unless( $same_version )
+    {
+	if( $arc->is_new )
+	{
+	    $same_version = 1;
+	}
+    }
+
+    unless( $same_version )
+    {
+	my $new = Rit::Base::Arc->create({
+					  common      => $arc->common_id,
+					  replaces    => $arc->id,
+					  subj        => $arc->{'subj'},
+					  pred        => $arc->{'pred'},
+					  value       => $arc->value,
+					  value_node  => $arc->value_node,
+					  arc_weight  => $val,
+					 }, $args );
+	return $new;
+
+    }
+
+
+
+
+    my $dbix      = $Rit::dbix;
+    my $dbh       = $dbix->dbh;
+    my $arc_ver   = $arc->version_id;
+    my $now       = now();
+    my $now_db    = $dbix->format_datetime($now);
+
+    my $sth = $dbh->prepare("update arc set weight=?, ".
+				   "updated=? ".
+				   "where ver=?");
+    $sth->execute($val, $now_db, $arc_ver);
+    $Rit::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
+
+    $arc->{'arc_updated_obj'} = $now;
+    $arc->{'arc_updated'} = $now_db;
+    $arc->{'arc_weight'} = $val;
+
+    $Rit::Base::Cache::Changes::Updated{$arc_ver} ++;
+
+    return $arc;
+}
+
+
+#######################################################################
+
 =head2 get_by_rec
 
   $n->get_by_rec( $rec, @extra )
@@ -4645,6 +4796,7 @@ sub init
     $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
     $arc->{'replaces'} = $rec->{'replaces'};
     $arc->{'source'} = $rec->{'source'};
+    $arc->{'arc_weight'} = $rec->{'weight'};
     $arc->{'active'} = $rec->{'active'};
     $arc->{'submitted'} = $rec->{'submitted'};
     $arc->{'activated_by'} = $rec->{'activated_by'};
