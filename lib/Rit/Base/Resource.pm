@@ -6,7 +6,7 @@ package Rit::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -5595,7 +5595,7 @@ sub find_class
 	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 
 	debug "Find class $key for $id (clue $clue)" if $DEBUG;
-	if( $key eq '4048179' ) ### DEBUG
+	if( $key eq '4048179' and $id != 1115 and $id != 2672015 ) ### DEBUG
 	{
 	    debug "Find class $key for $id (clue $clue)";
 	    cluck "***** User confused";
