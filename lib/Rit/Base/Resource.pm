@@ -1382,8 +1382,9 @@ sub create
 	# Check for definedness
 	foreach my $val ( $vals->as_array )
 	{
-	    debug 2, "Checking $pred_name = $val";
-	    if( ($val and ((ref $val and not $val->defined) or not length $val)) or not $val )
+	    debug 1, "Checking $pred_name = $val";
+	    # '0' is valid
+	    if( ($val and ((ref $val and not $val->defined) or not length $val)) )
 	    {
 		confess "Tried to create a node with an undefined value as $pred_name";
 	    }

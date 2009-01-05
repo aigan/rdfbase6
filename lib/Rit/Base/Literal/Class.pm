@@ -6,7 +6,7 @@ package Rit::Base::Literal::Class;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -176,10 +176,14 @@ sub set_valtype2name
 
     unless( $found )
     {
-	debug sprintf "Removing valtype %d -> %s in coltype cache",
-	  $node->id, $COLTYPE_valtype2name{ $node->id };
+	my $nid = $node->id;
+	if( $COLTYPE_valtype2name{ $nid } )
+	{
+	    debug sprintf "Removing valtype %d -> %s in coltype cache",
+	      $node->id, $COLTYPE_valtype2name{ $nid };
+	    delete $COLTYPE_valtype2name{ $nid };
+	}
 	delete $node->{'lit_coltype'};
-	delete $COLTYPE_valtype2name{ $node->id };
     }
 }
 
