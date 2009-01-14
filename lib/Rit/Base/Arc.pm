@@ -2650,7 +2650,7 @@ sub check_valtype
 		confess "FIXME";
 	    }
 	}
-	else
+	else # literal
 	{
 	    # Convert resource to a literal resource
 
@@ -2672,7 +2672,7 @@ sub check_valtype
 	{
 	    confess "FIXME for arc ".$arc->id;
 	}
-	else
+	else # literal
 	{
 	    debug 3, "Setting literal";
 	    debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
@@ -4744,7 +4744,19 @@ sub init
 		"for arc $id";
 #	    debug "Arc $id valtype is $valtype_id";
 
-	    $value = $valtype->instance_class->get_by_arc_rec($rec,$valtype);
+	    # Literals (and arcs, preds and rules) must only have one
+	    # handler class. Other resources may have many handler
+	    # classes. So do not lookup instance_class for enything
+	    # other than literals
+
+	    if( ref($valtype) eq 'Rit::Base::Literal::Class' )
+	    {
+		$value = $valtype->instance_class->get_by_arc_rec($rec,$valtype);
+	    }
+	    else
+	    {
+		$value = Rit::Base::Resource->get_by_arc_rec($rec,$valtype);
+	    }
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'arc init novalue'}
