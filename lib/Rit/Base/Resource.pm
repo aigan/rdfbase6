@@ -312,6 +312,8 @@ sub get_by_node_rec
 
 If obj is undef; returns is_undef.
 
+(C<$valtype> is not currently used by L</first_bless>)
+
 Returns: a node
 
 Exceptions: see L</init>.
@@ -330,6 +332,7 @@ sub get_by_arc_rec
     }
 
 #    debug "Arc rec $rec->{ver}";
+
     return $Rit::Base::Cache::Resource{$id} ||
       $this->new($id)->first_bless($valtype)->init;
 }
@@ -5595,20 +5598,6 @@ sub find_class
 	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 
 	debug "Find class $key for $id (clue $clue)" if $DEBUG;
-	if( $key eq '4048179' and $id != 1115 and $id != 2672015 ) ### DEBUG
-	{
-	    debug "Find class $key for $id (clue $clue)";
-	    cluck "***** User confused";
-	    debug 0, datadump( $node, 4 );
-	}
-
-	if( $key eq '3974047' ) ### DEBUG
-	{
-	    debug "Find class $key for $id (clue $clue)";
-	    cluck "***** User confused";
-	    debug 0, datadump( $node, 4 );
-	}
-
 	if( ($package = $Rit::Base::Cache::Class{ $key }) and
 	    ($node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key })
 	  )
