@@ -4,8 +4,8 @@ scof	1
 member_of	1
 resource	
 name	5
-description	5
-admin_comment	5
+description	3
+admin_comment	3
 name_short	5
 is_of_language	1
 code	5
@@ -241,16 +241,17 @@ valtext	scof	literal
 
 bool	scof	valfloat
 date	scof	valdate
+text	scof	valtext
 email_address	scof	text
 file	scof	text
 float	scof	valfloat
 int	scof	valfloat
 password	scof	text
 phone_number	scof	text
-text	scof	valtext
-textbox	scof	text
 url	scof	text
 image	scof	file
 website_url	scof	url
+text_large	scof	valbin
+textbox	scof	text_large
 
 EOF
