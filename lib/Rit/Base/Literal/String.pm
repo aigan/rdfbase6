@@ -318,6 +318,13 @@ sub parse
 	    }
 	}
     }
+    elsif( $coltype eq 'valbin' )
+    {
+	unless( length($val_mod||'') )
+	{
+	    return $class->new( undef, $valtype );
+	}
+    }
     else
     {
 	confess "coltype $coltype not handled by this class";

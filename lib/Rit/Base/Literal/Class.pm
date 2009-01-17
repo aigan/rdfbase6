@@ -358,6 +358,10 @@ sub instance_class
 	    {
 		$classname = "Rit::Base::Literal::String";
 	    }
+	    elsif( $coltype eq "valbin" )
+	    {
+		$classname = "Rit::Base::Literal::String";
+	    }
 	    else
 	    {
 		confess "Coltype $coltype not supported";

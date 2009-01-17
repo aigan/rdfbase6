@@ -150,8 +150,17 @@ sub setup_db
 
 	if( $is_literal )
 	{
-	    $LITERAL{$subj} = $obj;
+	    $LITERAL{$subj} = [$obj];
 	    push @LITERALS, $subj;
+
+	    if( $LITERAL{$obj} )
+	    {
+		foreach my $obj2 ( @{$LITERAL{$obj}} )
+		{
+		    push @{$LITERAL{$subj}}, $obj2;
+		}
+	    }
+
 	}
 
 	foreach my $label ($subj, $pred, $obj)
@@ -178,27 +187,26 @@ sub setup_db
     close RBDATA;
 
     debug "Bootstrapping literals";
+
+#    debug datadump(\@LITERALS);
+#    debug datadump(\%LITERAL);
+#    exit;
+
+
     foreach my $lit (@LITERALS)
     {
-	my $scof = $LITERAL{$lit};
-	if( $scof eq 'text' )
-	{
-	    push @ARC,
-	    {
-	     subj => $lit,
-	     pred => 'scof',
-	     obj => 'valtext',
-	    };
-	}
+	my $scofs = $LITERAL{$lit};
+	debug "Literal $lit is a scof ".$scofs->[0];
 
-	unless( $scof eq 'literal' )
+	for( my $i=1; $i<= $#$scofs; $i++ )
 	{
 	    push @ARC,
 	    {
 	     subj => $lit,
 	     pred => 'scof',
-	     obj => 'literal',
+	     obj => $scofs->[$i],
 	    };
+	    debug "Literal $lit is a scof ".$scofs->[$i];
 	}
 
 	push @ARC,
@@ -207,8 +215,6 @@ sub setup_db
 	     pred => 'is',
 	     obj => 'literal_class',
 	    };
-
-	debug "Literal $lit is a scof $scof";
     }
 
 
@@ -247,7 +253,7 @@ sub setup_db
     my $source = $NODE{'ritbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
     my $write_access = $NODE{'sysadmin_group'}{'node'};
-    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?)") or die;
+    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?)") or die;
     foreach my $rec ( @ARC )
     {
 	my $pred_name = $rec->{'pred'};
@@ -296,7 +302,7 @@ sub setup_db
 	my $ver = $dbix->get_nextval('node_seq');
 	my $pred = $NODE{$pred_name}{'node'};
 	my $valtype = $VALTYPE{$pred_name} or die "Could not find valtype for $pred_name";
-	my( $obj, $valtext, $valclean );
+	my( $obj, $valtext, $valclean, $valbin );
 
 	if( $coltype eq 'obj' )
 	{
@@ -307,12 +313,16 @@ sub setup_db
 	    $valtext = $value;
 	    $valclean = valclean( $value );
 	}
+	elsif( $coltype eq 'valbin' )
+	{
+	    $valbin = $value;
+	}
 	else
 	{
 	    die "$coltype not handled";
 	}
 
-	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean) or die;
+	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean, $valbin) or die;
     }
 
     $dbh->commit;
