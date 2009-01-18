@@ -1226,6 +1226,29 @@ sub has_value
 
     my( $pred_name, $value ) = each( %$preds );
 
+#    debug sprintf "Checking if %s  --%s--> %s", $lit->sysdesig, $pred_name, $value->sysdesig;
+
+
+    if( $pred_name eq 'is' ) # checking valtype for implicit is arcs
+    {
+	my $valtype = $lit->this_valtype;
+	unless( UNIVERSAL::isa $value, 'Rit::Base::Resource' )
+	{
+	    $value = Rit::Base::Resource->get($value);
+	}
+
+	if( $valtype->equals( $value ) )
+	{
+#	    debug "  matches valtype";
+	    return 1;
+	}
+	elsif( $valtype->scof( $value ) )
+	{
+#	    debug "  matches scof of valtype";
+	    return 1;
+	}
+    }
+
     unless( $pred_name eq 'value' )
     {
 	return $lit->node->has_value($preds, $args_in);
@@ -1279,6 +1302,18 @@ sub has_value
     {
 	confess "Matchtype $match not implemented";
     }
+}
+
+
+#######################################################################
+
+=head3 arc_weight
+
+=cut
+
+sub arc_weight
+{
+    return $_[0]->{'arc'} ? $_[0]->{'arc'}->arc_weight : undef;
 }
 
 
@@ -1588,9 +1623,11 @@ sub sysdesig  # The designation of obj, including node id
 	$out .= "$id: ";
     }
 
-    my $classname = ref $lit;
+    my $valtypename = $lit->this_valtype->desig;
+    $out .= $valtypename . " ";
 
-    $out .= $classname . " ";
+#    my $classname = ref $lit;
+#    $out .= $classname . " ";
 
     my $plain = $lit->plain;
 
