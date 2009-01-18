@@ -178,7 +178,8 @@ The props:
 
   write_access : Defaults to L</default_write_access>
 
-  valtype : Defaults to L<Rit::Base::Pred/valtype>
+  valtype : Defaults to L<Rit::Base::Literal/this_valtype>
+            or L<Rit::Base::Pred/valtype>
 
   arc_weight : Defaults to C<undef>
 
@@ -393,7 +394,14 @@ sub create
     }
     elsif( not defined $props->{'valtype'} )
     {
-	$valtype = $pred->valtype;
+	if( UNIVERSAL::isa( $props->{'value'}, "Rit::Base::Literal" ) )
+	{
+	    $valtype = $props->{'value'}->this_valtype;
+	}
+	else
+	{
+	    $valtype = $pred->valtype;
+	}
     }
     # Setting up the final valtype below
 
@@ -3174,9 +3182,9 @@ sub value_meets_proplim
 	}
     }
 
-    if( my $obj = $arc->obj )
+    if( my $val = $arc->value )
     {
-	return 1 if $obj->meets_proplim($proplim, $args_in);
+	return 1 if $val->meets_proplim($proplim, $args_in);
     }
 
     return 0;
@@ -4477,9 +4485,13 @@ sub set_weight
 	$val = $val_in->plain;
     }
 
+    my $weight_old = $arc->weight;
+
     if( defined $val )
     {
-	return $arc if $val == $arc->weight; # Return if no change
+	# Return if no change
+	return $arc if $weight_old and ($val == $weight_old);
+
 	unless( looks_like_number( $val ) )
 	{
 	    throw 'validation', "String $val is not a number";
@@ -4487,7 +4499,7 @@ sub set_weight
     }
     else
     {
-	return $arc unless defined $arc->weight; # Return if no change
+	return $arc unless defined $weight_old; # Return if no change
     }
 
     my $desc_str = defined $val ? $val : '<undef>';
