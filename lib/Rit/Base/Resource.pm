@@ -3893,6 +3893,16 @@ sub add
     my $mark_updated = undef; # for tagging node with timestamp
     my $mark_created = undef; # for tagging node with timestamp
 
+    my %extra;
+    if( $args->{'read_access'} )
+    {
+	$extra{ read_access } = $args->{'read_access'}->id;
+    }
+    if( $args->{'write_access'} )
+    {
+	$extra{ write_access } = $args->{'write_access'}->id;
+    }
+
     foreach my $pred_name ( keys %$props )
     {
 	# Must be pred_name, not pred
@@ -3933,6 +3943,7 @@ sub add
 					subj => $node,
 					pred => $pred_name,
 					value => $val,
+					%extra,
 				       }, $args);
 	    }
 	}
