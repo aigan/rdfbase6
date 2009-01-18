@@ -230,6 +230,10 @@ email	class_handled_by_perl_module	114
 114	is	class_perl_module
 114	code		Rit::Base::Email
 
+password	class_handled_by_perl_module	115
+115	is	class_perl_module
+115	code		Rit::Base::Literal::Password
+
 
 
 LITERALS
