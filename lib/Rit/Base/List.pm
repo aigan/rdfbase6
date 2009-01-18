@@ -1040,7 +1040,7 @@ sub loc
 		else
 		{
 		    CORE::push @{$alts{'c'}}, $item;
-		    #		debug 4,"Lang c: $item->{'id'} ($langs)";
+		    debug 4,"Lang c: $item ($langs)";
 		}
 	    }
 	    elsif( UNIVERSAL::isa($item, 'Rit::Base::List') )
@@ -1102,11 +1102,16 @@ sub loc
 	my %list;
 	foreach( @{$alts{$lang}} )
 	{
-	    my $weight = $_->weight->literal || 0;
+	    my $weight =
+	      ($_->is_literal ? $_->arc_weight : undef)
+		|| $_->weight->literal || 0;
+
+	    debug 4, "  $_ has weight $weight";
 	    $list{ $weight } = $_;
 	}
 
 	debug 3,"Returning (one) literal with highest weight";
+#	debug query_desig \%list;
 	# Not using ->value, since this may be a Literal
 	return $list{ List::Util::max( keys %list ) }->loc(@_);
     }
