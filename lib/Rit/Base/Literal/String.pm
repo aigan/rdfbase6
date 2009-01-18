@@ -36,7 +36,7 @@ use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( aloc build_field_key );
-use Rit::Base::Constants qw( $C_textbox );
+use Rit::Base::Constants qw( $C_textbox $C_text_large );
 
 use base qw( Rit::Base::Literal );
 
@@ -143,7 +143,6 @@ sub new
     }, $class;
 
 #    debug "Created string $val";
-
 #    debug "Returning new ".$lit->sysdesig." ".refaddr($lit);
 #    debug "  of valtype ".$lit->this_valtype->sysdesig;
 #    cluck "GOT HERE" if $lit->plain =~ /^1/;
@@ -156,13 +155,36 @@ sub new
 
 =head3 new_from_db
 
+Values from valbin those valtype is NOT a subclass of text_large, will
+not be treated as text and thus not converted from UTF8 encoding.
+
 =cut
 
 sub new_from_db
 {
     my( $class, $val, $valtype ) = @_;
 
-    if( defined $val )
+    if( $valtype->has_value({ scof => $C_text_large }) )
+    {
+	unless( utf8::decode( $val ) )
+	{
+	    debug 0, "Failed to convert to UTF8!";
+	    my $res;
+	    while( length $val )
+	    {
+		$res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
+		$res .= substr($val, 0, 1, "") if length $val;
+	    }
+	    $val = $res;
+	    debug "Conversion result: $val";
+	}
+	utf8::decode( $val );
+    }
+    elsif( $valtype->coltype eq 'valbin' )
+    {
+	# treat as non-text
+    }
+    elsif( defined $val )
     {
 	if( $val =~ /Ã./ )
 	{
