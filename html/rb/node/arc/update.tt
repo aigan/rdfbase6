@@ -185,6 +185,8 @@ This is an <strong>active</strong> version.
 [% END %]
 [% END %]
 
+<tr><td>Weight</td><td>[% arc.weight %]</td></tr>
+
 <tr><td>Replaces</td><td>
 [% IF arc.replaces_id %]
    [% jump(arc.replaces_id, me, id=arc.replaces_id) %]
