@@ -650,7 +650,14 @@ sub create
 		}
 		else
 		{
-		    $value = $value_obj->literal;
+#		    $value = $value_obj->literal;
+
+		    # Changed from literal() to plain() since
+		    # literal() fro email address objects, do not
+		    # stringify to the original strin
+		    #
+		    $value = $value_obj->plain;
+
 		    debug 2, sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
 
 		    if( $coltype eq 'valtext' )
