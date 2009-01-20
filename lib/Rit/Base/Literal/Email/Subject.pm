@@ -6,7 +6,7 @@ package Rit::Base::Literal::Email::Subject;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -31,6 +31,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim );
 
 use Rit::Base::Utils qw( is_undef );
+use Rit::Base::Constants qw( $C_text );
 
 use base qw( Rit::Base::Literal::String );
 # Parent overloads some operators!
@@ -140,7 +141,7 @@ sub new_by_raw
     my( $class, $raw ) = @_;
 
     my $subject = decode_mimewords( $raw||'' );
-    return $class->new_from_db($subject);
+    return $class->new_from_db($subject, $C_text);
 }
 
 
