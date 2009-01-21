@@ -165,7 +165,7 @@ This is an <strong>active</strong> version.
       </td>
    [% ELSE %]
       <td>[% arc.valtype.wu_jump %]</td>
-      <td>[% input('val', arc.value) %]</td>
+      <td>[% input('val', arc.value.plain) %]</td>
    [% END %]
 </tr>
 [% vnode = arc.value_node %]
