@@ -6,7 +6,7 @@ package Rit::Base::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -1516,14 +1516,18 @@ sub add
 
 =head3 vacuum
 
+This will vaccum the value but NOT the value node.
+
+Implemented in respective subclass.
+
+Returns: The vacuumed literal
+
+This will be automatically called by L<Rit::Base::Arc/vacuum>
+
 =cut
 
 sub vacuum
 {
-    if( my $arc = $_[0]->lit_revarc )
-    {
-	$arc->vacuum;
-    }
     return $_[0];
 }
 
