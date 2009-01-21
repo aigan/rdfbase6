@@ -32,6 +32,8 @@ use Para::Frame::Utils qw( debug );
 use Para::Frame::Widget;
 
 use Rit::Base::Utils qw( parse_propargs );
+use Rit::Base::Constants qw( $C_intelligent_agent );
+
 
 use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
 # Parent overloads some operators!
@@ -222,7 +224,7 @@ debugging.
 
 sub sysdesig
 {
-    my $value  = $_[0]->format;
+    my $value  = $_[0]->plain;
     return "email_address:$value";
 }
 
@@ -297,11 +299,16 @@ sub loc
 Make it a plain value.  Safer than using ->literal, since it also
 works for Undef objects.
 
+Returns: The address part L<Para::Frame::Email::Address/address>
+
+NB! Only store the address part in the DB. For broken email addresses,
+it will be the original string.
+
 =cut
 
 sub plain
 {
-    return $_[0]->original;
+    return $_[0]->address;
 }
 
 
@@ -311,8 +318,6 @@ sub plain
 
 Used in L<Para::Frame::Email::Address>. Overrides
 L<Rit::Base::Object/as_string>.
-
-Same as L</plain>.
 
 =cut
 
@@ -343,10 +348,6 @@ sub name
     {
 	return $name;
     }
-#    elsif( my $name = $a->subj->name->loc )
-#    {
-#       return $name;
-#    }
     elsif( my $subj = $a->subj )
     {
 #	debug "  subj ".$subj->sysdesig;
@@ -367,6 +368,52 @@ sub default_valtype
 {
     return Rit::Base::Literal::Class->get_by_label('email_address');
 }
+
+
+#######################################################################
+
+=head3 vacuum
+
+=cut
+
+sub vacuum
+{
+    my( $a, $args ) = @_;
+
+    my $class = ref $a;
+    my $orig = $a->original;
+    my $addr  = lc($a->address);
+
+    debug "vaccuum $orig";
+
+    if( $orig ne $addr )
+    {
+	debug "  Cleaning to $addr";
+
+	my $a_new = $class->new($addr, $a->this_valtype);
+
+	if( my $arc = $a->lit_revarc )
+	{
+	    $arc->set_value( $a_new, $args );
+
+	    if( my $name = $a->name )
+	    {
+		my $subj = $arc->subj;
+		if( $subj->has_value({'is'=>$C_intelligent_agent }, $args) )
+		{
+		    unless( $subj->prop('name',undef,$args) )
+		    {
+			$subj->add({name=>$name},
+				   { %$args,
+				     'activate_new_arcs' => 1,
+				   });
+		    }
+		}
+	    }
+	}
+    }
+}
+
 
 #######################################################################
 
