@@ -7826,6 +7826,57 @@ sub update_unseen_by
 
 
 #########################################################################
+
+=head3 update_by_query_arc
+
+=cut
+
+sub update_by_query_arc
+{
+    my( $node, $props_in, $args ) = @_;
+
+    my $value = $props_in->{'value'};
+    my $arc = $props_in->{'arc'};
+    my $pred = $props_in->{'pred'} || $arc->pred;
+    my $res = $args->{'res'};
+
+    if( $value )
+    {
+	if( ref $value )
+	{
+	    # Should already be ok...
+	    $value = Rit::Base::Resource->get( $value );
+	}
+	else
+	{
+	    my $list = Rit::Base::Resource->find_by_anything( $value, $args );
+
+	    my $props = {};
+	    if( $props_in->{'is'} )
+	    {
+		$props->{'is'} = $props_in->{'is'};
+	    }
+
+	    if( $props_in->{'scof'} )
+	    {
+		$props->{'scof'} = $props_in->{'scof'};
+	    }
+
+	    $value = $list->get($props);
+	}
+
+	$arc = $arc->set_value( $value, $args );
+    }
+    else
+    {
+	$res->add_to_deathrow( $arc );
+    }
+
+    return $arc;
+}
+
+
+#########################################################################
 ################################ misc functions #########################
 
 =head1 Functions
