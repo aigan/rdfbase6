@@ -862,6 +862,7 @@ sub handle_query_arc_value
 
     ############### File handling #####################################
     #
+    # Todo: Move this to Rit::Base::Literal::File or similar
     #
     if( $file and ref $subj ) # Skip if subj doesn't exist
     {
@@ -1089,75 +1090,13 @@ sub handle_query_arc_value
 	}
 
 
-	# set the value to obj id if obj
-	if( $coltype eq 'obj' )
-	{
-	    if( $value )
-	    {
-		if( ref $value )
-		{
-		    # Should already be ok...
-		    $value = $R->get( $value );
-		}
-		else
-		{
-		    my $list = $R->find_by_anything( $value, $args );
+	###########
+	########### SET VALUE
+	###########
 
-		    my $props = {};
-		    if( $type )
-		    {
-			$props->{'is'} = $type;
-		    }
+	$arc = $arc->value->update_by_query_arc
+	  ({arc=>$arc,value=>$value},$args);
 
-		    if( $scof )
-		    {
-			$props->{'scof'} = $scof;
-		    }
-
-		    $value = $list->get($props);
-		}
-
-		$arc = $arc->set_value( $value, $args );
-	    }
-	    else
-	    {
-		$res->add_to_deathrow( $arc );
-	    }
-	}
-	else
-	{
-	    if( ref $value )
-	    {
-		die "This must be an object. But coltype is set to $coltype: $value";
-	    }
-	    elsif( length $value )
-	    {
-		# Give the valtype of the pred. We want to use the
-		# current valtype rather than the previous one that
-		# maight not be the same.  ... unless for value
-		# nodes. But take care of that in set_value()
-
-		my $valtype = $arc->pred->valtype;
-		if( $valtype->equals('literal') )
-		{
-		    debug "arc is $arc->{id}";
-		    debug "valtype is ".$valtype->desig;
-		    debug "pred is ".$pred->desig;
-		    debug "setting value to $value"
-		}
-
-
-		$arc = $arc->set_value( $value,
-					{
-					 %$args,
-					 valtype => $valtype,
-					});
-	    }
-	    else
-	    {
-		$res->add_to_deathrow( $arc );
-	    }
-	}
 
 	# Store row info
 	if( $rowno )
