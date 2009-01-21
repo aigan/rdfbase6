@@ -2461,6 +2461,9 @@ sub deactivate
 Create or remove implicit arcs. Update implicit
 status.
 
+For ACTIVE arcs pointing at literals it will also vacuum the literal before
+validating the value.
+
 Returns: ---
 
 =cut
@@ -2521,6 +2524,12 @@ sub vacuum
 
 	if( $arc->active )
 	{
+	    my $val = $arc->value;
+	    if( $val->is_literal )
+	    {
+		$val->vacuum( $args );
+	    }
+
 	    $arc->validate_range;
 	}
     }
