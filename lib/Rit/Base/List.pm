@@ -6,7 +6,7 @@ package Rit::Base::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -363,6 +363,7 @@ sub find
 
     my @newlist;
     my $cnt = 0;
+    my $index = $l->index;
     my( $node, $error ) = $l->get_first;
 
   NODE:
@@ -386,6 +387,8 @@ sub find
 
 	( $node, $error ) = $l->get_next;
     }
+
+    $l->set_index( $index );
 
     debug "Return ".(scalar @newlist)." results for ".
       query_desig($tmpl) if $DEBUG;
@@ -826,6 +829,7 @@ sub unique_arcs_prio
 
     my %points;
 
+    my $index = $list->index;
     my( $arc, $error ) = $list->get_first;
     confess( "Not arc in unique_arcs_prio; $error - $arc" )
       unless( $error or ($arc and $arc->is_arc) );
@@ -841,6 +845,8 @@ sub unique_arcs_prio
     {
 	( $arc, $error ) = $list->get_next;
     };
+
+    $list->set_index( $index );
 
 #    debug "unique_arcs_prio";
 #    debug query_desig(\%points);
@@ -1243,6 +1249,7 @@ sub desig
     my( $list, $args_in ) = @_;
     my @part;
 
+    my $index = $list->index;
     my( $elem, $error ) = $list->get_first;
     while(! $error )
     {
@@ -1259,6 +1266,7 @@ sub desig
     {
 	( $elem, $error ) = $list->get_next;
     };
+    $list->set_index( $index );
 
     return join ' / ', @part;
 }
@@ -1283,6 +1291,7 @@ sub as_html
     my( $list, $args_in ) = @_;
     my @part;
 
+    my $index = $list->index;
     my( $elem, $error ) = $list->get_first;
     while(! $error )
     {
@@ -1310,6 +1319,7 @@ sub as_html
     {
 	( $elem, $error ) = $list->get_next;
     };
+    $list->set_index( $index );
 
     return join "<br/>\n", @part;
 }
@@ -1629,11 +1639,17 @@ sub has_value
     my( $l, $value, $args ) = @_;
 
     my( $node, $error );
+    my $index = $l->index;
     for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
     {
-	return 1 if $node->has_value($value, $args);
+	if( $node->has_value($value, $args) )
+	{
+	    $l->set_index( $index );
+	    return 1;
+	}
     }
 
+    $l->set_index( $index );
     return 0;
 }
 
@@ -1675,6 +1691,7 @@ sub has_pred
     my( $active, $inactive ) = $arclim->incl_act;
 
     my( $node, $error );
+    my $index = $l->index;
     for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
     {
 #	debug "  checking ".$node->desig;
@@ -1705,6 +1722,7 @@ sub has_pred
 	    last;
 	}
     }
+    $l->set_index( $index );
 
 #    debug "Filtering list on has_pred - done";
 
@@ -1956,6 +1974,7 @@ sub transform
 
     my %seen;
 
+    my $index = $l->index;
     my( $elem, $error ) = $l->get_first;
     while(! $error )
     {
@@ -1975,7 +1994,7 @@ sub transform
     {
 	( $elem, $error ) = $l->get_next;
     }
-
+    $l->set_index( $index );
 
     return $l2;
 }
@@ -2069,6 +2088,7 @@ AUTOLOAD
 
     my @list = ();
     my $list_class;
+    my $index = $self->index;
     my( $elem, $error ) = $self->get_first;
     while(! $error )
     {
@@ -2105,6 +2125,7 @@ AUTOLOAD
     {
 	( $elem, $error ) = $self->get_next;
     }
+    $self->set_index( $index );
 
     # Don't assume it it the same as the calle class
     $list_class ||= "Rit::Base::List";
