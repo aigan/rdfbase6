@@ -27,8 +27,10 @@ BEGIN
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim );
-use Para::Frame::Widget qw( password );
-use Rit::Base::Utils qw( is_undef );
+use Para::Frame::Widget qw( password label_from_params );
+
+use Rit::Base::Utils qw( is_undef parse_propargs proplim_to_arclim );
+use Rit::Base::Widget qw( build_field_key );
 
 use base qw( Rit::Base::Literal::String );
 # Parent overloads some operators!
@@ -170,7 +172,7 @@ sub wuirc
 #	debug "Arcs list: @arcs";
 	my $list_weight = 0;
 
-	foreach my $arc ( $subj->arc_list($predname,$proplim,$arclim) )
+	foreach my $arc ( $subj->arc_list($predname,$proplim,$arclim)->as_array )
 	{
 	    my $arc_id = $arc->id;
 #	    debug $arc_id;
@@ -208,6 +210,63 @@ sub wuirc
     }
 
     return $out;
+}
+
+
+#########################################################################
+
+=head3 update_by_query_arc
+
+=cut
+
+sub update_by_query_arc
+{
+    my( $lit, $props, $args ) = @_;
+
+    my $value = $props->{'value'};
+    my $arc = $props->{'arc'};
+    my $pred = $props->{'pred'} || $arc->pred;
+    my $res = $args->{'res'};
+
+    if( ref $value )
+    {
+	my $coltype = $pred->coltype;
+	die "This must be an object. But coltype is set to $coltype: $value";
+    }
+    elsif( length $value )
+    {
+	# Give the valtype of the pred. We want to use the
+	# current valtype rather than the previous one that
+	# maight not be the same.  ... unless for value
+	# nodes. But take care of that in set_value()
+
+	my $valtype = $pred->valtype;
+	if( $valtype->equals('literal') )
+	{
+	    debug "arc is $arc->{id}";
+	    debug "valtype is ".$valtype->desig;
+	    debug "pred is ".$pred->desig;
+	    debug "setting value to $value"
+	}
+
+
+	$arc = $arc->set_value( $value,
+				{
+				 %$args,
+				 valtype => $valtype,
+				});
+    }
+    else
+    {
+
+	# NOT adding arc to deathrow. We will not allow removing
+	# password simply because the input field is empty. It will
+	# often be empty as a securite measure
+
+	# $res->add_to_deathrow( $arc );
+    }
+
+    return $arc;
 }
 
 
