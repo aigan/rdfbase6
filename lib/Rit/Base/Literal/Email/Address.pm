@@ -6,7 +6,7 @@ package Rit::Base::Literal::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -222,7 +222,7 @@ debugging.
 
 sub sysdesig
 {
-    my $value  = shift->format;
+    my $value  = $_[0]->format;
     return "email_address:$value";
 }
 
@@ -254,7 +254,7 @@ Returns a unique predictable id representing this object
 
 sub syskey
 {
-    return shift->sysdesig;
+    return "email_address:".$_[0]->plain;
 }
 
 
