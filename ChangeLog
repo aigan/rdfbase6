@@ -1,4 +1,192 @@
+2009-01-21  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Address.pm: Added method vacuum()
+
+	* lib/Rit/Base/Literal.pm: vaccum for literals only
+
+	* lib/Rit/Base/Arc.pm: Vacuum literals
+
+	* lib/Rit/Base/Widget/Handler.pm: Using update_by_query_arc()
+
+	* lib/Rit/Base/Literal/Email/Address.pm: Basing syskey on plain()
+
+	* lib/Rit/Base/Literal/Password.pm:
+	bugfixes + added method update_by_query_arc()
+
+	* lib/Rit/Base/Resource.pm: Added method update_by_query_arc()
+
+	* lib/Rit/Base/Literal.pm: added update_by_query_arc()
+
+	* lib/Rit/Base/List.pm: Keeps list index during misc methods
+
+	* html/rb/node/arc/update.tt: Display value the same as in DB
+
+2009-01-20  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Subject.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: more debug
+
+2009-01-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm:
+	Using ->plain instead of ->leteral for strings. May brake somethings...
+
+2009-01-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm:
+	Handling texts in valbin via text_large
+
+	* lib/Rit/Base/Resource.pm:
+	Handling read_access and write_access in add()
+
+	* lib/Rit/Base/Literal.pm: - Added method arc_weight
+	- Handling dynamic is property from valtype in has_value
+
+	* lib/Rit/Base/List.pm:
+	Getting weight in loc from arc_weight if existing
+
+	* lib/Rit/Base/Arc.pm: - Getting valtype from literal, if existing
+	- handling arc weight
+
+	* html/rb/node/arc/update.tt: Displaying arc weight
+
+	* lib/Rit/Base/Literal/Password.pm: Added password literal class
+
+	* data/base.data: Added literal class for password
+
+2009-01-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/String.pm, lib/Rit/Base/Literal/Class.pm, lib/Rit/Base/Setup.pm:
+	Introducing valbin
+
+	* data/base.data: Introducing text_large
+
+2009-01-14  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Arc.pm: bugfix (blessing to the right class)
+
+2009-01-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: less debug
+
+	* lib/Rit/Base/Literal/Class.pm: bugfix
+
+	* lib/Rit/Base/Search.pm: added arc_weight
+
+	* lib/Rit/Base/Resource.pm: bugfix
+
+	* lib/Rit/Base/Pred.pm, lib/Rit/Base/Arc.pm, data/schema.sql:
+	adding weight
+
+	* data/base.data: bugfix
+
+2008-12-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: bug-trap
+
+	* lib/Rit/Base/Email/Part.pm: Better charset handling
+
+	* lib/Rit/Base/Widget.pm:
+	Adding activities and using perl instead of tt
+
+2008-12-17  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Email/Part.pm: supports binary encoding
+
+2008-12-15  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: more debug
+
+2008-12-11  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Search/Result.pm: better uniq handling
+
+	* lib/Rit/Base/Literal/String.pm: sorting widgets of multiple names
+
+	* lib/Rit/Base/Search/Collection.pm:
+	Resetts search if parts are changing
+
+2008-12-08  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: debugging
+
+2008-12-05  joli <jonas@avisita.com>
+
+	* html/rb/js/rb.js_tt: Translations of confirmation
+
+	* lib/Rit/Base/Renderer/AJAX.pm: New AJAX application handling
+
+2008-12-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Widget/Handler.pm: more error handling
+
+	* lib/Rit/Base/Renderer/IMAP.pm: Handling single-part html emails
+
+	* lib/Rit/Base/Email/Part.pm:
+	bugfix for rendering single-part html message
+
+	* lib/Rit/Base/Email/IMAP.pm:
+	url_path can be given alternative content type
+
+2008-12-03  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/IMAP.pm: support encoding binary
+
+2008-12-01  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Address.pm: bugfix
+
+	* lib/Rit/Base/Literal/String.pm: debug
+
+	* lib/Rit/Base/Email/IMAP/Folder.pm: bugfix
+
+2008-11-19  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: using compile() util
+
+2008-11-18  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Resource.pm: more debugging
+
+2008-11-13  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Node.pm: bugfix
+
+	* lib/Rit/Base/Arc.pm: Trying to be clear about what to remove
+
+	* lib/Rit/Base/Resource/Literal.pm: optimization
+
+	* lib/Rit/Base/Action/vacuum.pm: Reseting resource obj on vacuum
+
+2008-11-10  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Renderer/AJAX.pm: Introduced on_arc_add
+
+	* lib/Rit/Base/Resource.pm: - added method wn()
+	- refactoring
+	- introduced viewargument
+	- introduced on_arc_add
+
+	* lib/Rit/Base/Object.pm: Added method per_node()
+
+	* lib/Rit/Base/AJAX.pm: Introduced view argument
+
+	* html/rb/js/rb.js_tt: Added on_arc_add
+
+2008-11-05  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Literal/Email/Address.pm: Generalized as_html()
+
+2008-11-04  joli <jonas@avisita.com>
+
+	* lib/Rit/Base/Arc.pm: bugfix
+
 2008-11-03  joli <jonas@avisita.com>
+
+	* ChangeLog: Here is the changelog
 
 	* lib/Rit/Base/Renderer/AJAX.pm: I18N
 
