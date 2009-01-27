@@ -1319,6 +1319,8 @@ Specially handled props:
   label
   created
   updated
+  created_by
+  updated_by
   rev_...
 
 
@@ -1376,6 +1378,8 @@ sub create
 
     my $mark_updated = undef; # for tagging node with timestamp
     my $mark_created = undef; # for tagging node with timestamp
+    my $mark_updated_by = undef; # for tagging node with updater
+    my $mark_created_by = undef; # for tagging node with creator
 
     foreach my $pred_name ( @props_list )
     {
@@ -1410,6 +1414,14 @@ sub create
 	{
 	    $mark_updated = $vals->get_first_nos;
 	}
+	elsif( $pred_name eq 'created_by' )
+	{
+	    $mark_created_by = $vals->get_first_nos;
+	}
+	elsif( $pred_name eq 'updated_by' )
+	{
+	    $mark_updated_by = $vals->get_first_nos;
+	}
 	elsif( $pred_name =~ /^rev_(.*)$/ )
 	{
 	    $pred_name = $1;
@@ -1440,10 +1452,15 @@ sub create
 
     if( $mark_created or $mark_updated )
     {
-	$node->mark_updated($mark_updated);
+	$node->mark_updated($mark_updated, $mark_updated_by);
 	if( $mark_created )
 	{
 	    $node->{'created_obj'} = $mark_created;
+	}
+
+	if( $mark_created_by )
+	{
+	    $node->{'created_by_obj'} = $mark_created_by;
 	}
     }
 
@@ -6080,6 +6097,8 @@ sub on_bless
 Called by L<Rit::Base::Arc/create_check>. This is called after the arc
 has been created and after other arcs has been created by inference
 from this arc. It's also called after L</rebless>.
+
+Only called when arc is activated!
 
 Reimplement this.
 
