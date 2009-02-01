@@ -768,10 +768,13 @@ sub meets_proplim
 
 Supported args are:
   res
+  read_access
+  write_access
 
 Returns:
 
   The arc object
+
 
 See also L<Rit::Base::Resource/add>
 
@@ -784,6 +787,16 @@ sub add_arc
     if( scalar keys %$props > 1 )
     {
 	confess "add_arc only takes one prop";
+    }
+
+    my %extra;
+    if( $args->{'read_access'} )
+    {
+	$extra{ read_access } = $args->{'read_access'}->id;
+    }
+    if( $args->{'write_access'} )
+    {
+	$extra{ write_access } = $args->{'write_access'}->id;
     }
 
     my $arc;
@@ -804,11 +817,12 @@ sub add_arc
 	foreach my $val ( @vals_array )
 	{
 	    $arc = Rit::Base::Arc->create({
-		subj => $node,
-		pred => $pred_name,
-		value => $val,
-	    }, $args);
-	  }
+					   subj => $node,
+					   pred => $pred_name,
+					   value => $val,
+					   %extra,
+					  }, $args);
+	}
     }
 
     return $arc;
