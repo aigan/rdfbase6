@@ -6,7 +6,7 @@ package Rit::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -535,7 +535,7 @@ sub on_new_range
 {
     my( $pred, $args_in ) = @_;
 
-    debug "Updating arcs for the new range";
+    debug 1, "Updating arcs for the new range";
 
     my $C_resource = Rit::Base::Constants->get('resource');
 

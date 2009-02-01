@@ -3888,6 +3888,8 @@ Specially handled props:
 
 Supported args are:
   res
+  read_access
+  write_access
 
 Returns:
 
@@ -5892,8 +5894,8 @@ sub rebless
     my $class_new = $node->find_class($clue);
     if( $class_old ne $class_new )
     {
-	debug "Reblessing ".$node->sysdesig;
-	debug "  from $class_old\n    to $class_new";
+	debug 2, "Reblessing ".$node->sysdesig;
+	debug 2, "  from $class_old\n    to $class_new";
 	unless($class_new =~ /^Rit::Base::Metaclass::/ )
 	{
 	    eval
