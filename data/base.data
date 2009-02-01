@@ -44,34 +44,37 @@ seen_by	1
 unseen_by	1
 no_auto_show	2
 is_mandatory	2
-cyc_id	5
+has_cyc_id	5
+has_wikipedia_id	5
 
 
 ARCS
 resource	is	class
 class	is	class
 is	is	predicate
-cyc_id	is	predicate
-cyc_id	range	text
+has_cyc_id	is	predicate
+has_cyc_id	range	text
+has_wikipedia_id	is	predicate
+has_wikipedia_id	range	text
 login_account	is	class
-login_account	cyc_id		Cyclist
+login_account	has_cyc_id		Cyclist
 system_access_right	is	class
 is	range	class
 scof	is	predicate
 scof	range	class
 member_of	is	predicate
-name	range	text
+name	range	term
 name	is	predicate
-name	admin_comment		See cyc_id Name
+name	admin_comment		See has_cyc_id Name
 description	range	textbox
 description	is	predicate
 admin_comment	range	textbox
 admin_comment	is	predicate
-admin_comment	cyc_id		comment
-name_short	range	text
+admin_comment	has_cyc_id		comment
+name_short	range	term
 name_short	is	predicate
 is_of_language	is	predicate
-is_of_language	domain	text
+is_of_language	domain	valtext
 is_of_language	range	language
 has_translation	is	predicate
 has_translation	range	text
@@ -123,10 +126,12 @@ login_account	scof	intelligent_agent
 full_access	is	system_access_right
 swedish	code		sv
 swedish	is	language
-swedish	cyc_id		SwedishLanguage
+swedish	has_cyc_id		SwedishLanguage
+swedish	has_wikipedia_id		Swedish_language
 english	code		en
 english	is	language
-english	cyc_id		EnglishLanguage
+english	has_cyc_id		EnglishLanguage
+english	has_wikipedia_id		English_language
 guest_access	is	system_access_right
 class_handled_by_perl_module	is	predicate
 class_handled_by_perl_module	admin_comment		Bless instances in this perl class
@@ -135,6 +140,7 @@ class_handled_by_perl_module	range	class_perl_module
 class_perl_module	is	class
 rule	is	class
 syllogism	scof	rule
+syllogism	has_wikipedia_id		Syllogism
 syllogism	class_handled_by_perl_module	101
 101	is	class_perl_module
 101	code		Rit::Base::Rule
@@ -169,13 +175,15 @@ is_mandatory	is	predicate
 is_mandatory	domain	predicate
 is_mandatory	range	bool
 language	is	class
-language	cyc_id		NaturalLanguage
+language	has_cyc_id		NaturalLanguage
+language	has_wikipedia_id		Language
 rule	is	class
 intelligent_agent	is	class
-intelligent_agent	cyc_id		IntelligentAgent
+intelligent_agent	has_cyc_id		IntelligentAgent
 
 phone_number	admin_comment		Each instance of PhoneNumber is a character string that can be used to call a particular Telephone.
-phone_number	cyc_id		PhoneNumber
+phone_number	has_cyc_id		PhoneNumber
+phone_number	has_wikipedia_id		Telephone_number
 
 
 111	is	syllogism
@@ -246,6 +254,7 @@ valtext	scof	literal
 bool	scof	valfloat
 date	scof	valdate
 text	scof	valtext
+term	scof	valtext
 email_address	scof	text
 file	scof	text
 float	scof	valfloat
