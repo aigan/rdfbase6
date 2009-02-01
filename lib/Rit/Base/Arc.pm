@@ -22,6 +22,7 @@ use Carp qw( cluck confess carp croak shortmess );
 use strict;
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr blessed looks_like_number );
+use DBD::Pg qw(:pg_types);
 
 BEGIN
 {
@@ -258,7 +259,7 @@ sub create
     debug "About to create arc with props:\n".query_desig($props) if $DEBUG;
 #    debug "About to create arc with props:\n".datadump($props,2) if $DEBUG;
 
-    my( @fields, @values );
+    my( @fields, @values, @bindtype );
 
     my $rec = {};
 
@@ -685,6 +686,10 @@ sub create
 	    $rec->{$coltype} = $value;
 	    push @fields, $coltype;
 	    push @values, $rec->{$coltype};
+	    if( $coltype eq 'valbin' )
+	    {
+		$bindtype[$#values] = PG_BYTEA;
+	    }
 
 	    debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
 	}
@@ -860,6 +865,13 @@ sub create
     my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
     debug "SQL $st (@values)" if $DEBUG;
+
+    ### Binding SQL datatypes to values
+    for(my$i=0;$i<=$#bindtype;$i++)
+    {
+	next unless $bindtype[$i];
+	$sth->bind_param($i+1, undef, { pg_type => $bindtype[$i] } );
+    }
 
     $sth->execute( @values );
     $Rit::Base::Resource::TRANSACTION{ $rec->{'ver'} } = $Para::Frame::REQ;
@@ -5617,9 +5629,9 @@ sub validate_valtype
     # The $val_valtype must be the same or more specific than $valtype
 
     # Except that the valtype for resources is inexact and will
-    # usually indicate the clas used for blessing the node. We must
-    # also check all the is-relations of the object. Valtypes is
-    # mostly intended for literals.
+    # usually indicate one of the classes used for blessing the
+    # node. We must also check all the is-relations of the
+    # object. Valtypes is mostly intended for literals.
 
     # Example: $valtype=$organization; $val_valtype=$hotel;
     # valid because a $hotel is a subclass of $organization
