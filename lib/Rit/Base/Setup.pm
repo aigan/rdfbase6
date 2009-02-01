@@ -257,7 +257,7 @@ sub setup_db
     foreach my $rec ( @ARC )
     {
 	my $pred_name = $rec->{'pred'};
-	my $coltype_num = $NODE{$pred_name}{'pred_coltype'} or die "No coltype given for pred $pred_name";
+	my $coltype_num = $NODE{$pred_name}{'pred_coltype'} or die "No coltype given for pred $pred_name ".datadump($rec);
 	my $coltype = $Rit::Base::Literal::Class::COLTYPE_num2name{$coltype_num} or die "Coltype $coltype_num not found";
 	my $obj_in = $rec->{'obj'};
 	my $value;
@@ -355,9 +355,8 @@ sub setup_db
 
     foreach my $arc_rec (@arc_recs)
     {
-	debug "  arc ".$arc_rec->{ver};
 	my $arc = Rit::Base::Arc->get_by_rec_and_register($arc_rec);
-	debug "  ".$arc->sysdesig;
+#	debug "  ".$arc->sysdesig;
 	$arc->create_check;
     }
 
