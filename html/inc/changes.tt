@@ -13,7 +13,7 @@
 
 <tr>
    <td>[% arc.pred.wu_jump %]</td>
-   <td>[% arc.value_as_html %]</td>
+   <td>[% arc.value_diff_as_html %]</td>
    <td>[% arc.info_updated_html %]</td>
 </tr>
 [% END %]
