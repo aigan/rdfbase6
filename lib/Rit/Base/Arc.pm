@@ -956,6 +956,7 @@ sub subj
     return $arc->{'subj'} || is_undef;
 }
 
+
 #######################################################################
 
 =head2 pred
@@ -971,6 +972,7 @@ sub pred
     my( $arc ) = @_;
     return $arc->{'pred'} || is_undef ;
 }
+
 
 #######################################################################
 
@@ -995,6 +997,7 @@ sub value
     return $_[0]->{'value'};
 }
 
+
 #######################################################################
 
 =head2 value_node
@@ -1013,6 +1016,7 @@ sub value_node
 	    ? Rit::Base::Resource::Literal->get($_[0]->{'value_node'})
 	    : is_undef );
 }
+
 
 #######################################################################
 
@@ -1060,6 +1064,7 @@ sub set_value_node
     return $node->init;
 }
 
+
 #######################################################################
 
 =head2 obj
@@ -1091,6 +1096,7 @@ sub obj
     }
 }
 
+
 #######################################################################
 
 =head2 obj_id
@@ -1120,6 +1126,7 @@ sub obj_id
     }
 }
 
+
 #######################################################################
 
 =head2 value_as_html
@@ -1133,6 +1140,9 @@ implementation of C<as_html> for the value.
 
 For C<removals>, The deleted value will be displayd with a
 line-through.
+
+We method is placed in Arc rather than in Literal or other place since
+we display the html in the context of the arc status.
 
 =cut
 
@@ -1154,6 +1164,54 @@ sub value_as_html
 
     return $out;
 }
+
+
+#######################################################################
+
+=head2 value_diff_as_html
+
+  $a->value_diff_as_html
+
+A designation of the value, in HTML.
+
+This will use L<Rit::Base::Resource/as_html> or any other
+implementation of C<as_html> for the value.
+
+For C<removals>, The deleted value will be displayd with a
+line-through.
+
+We method is placed in Arc rather than in Literal or other place since
+we display the html in the context of the arc status.
+
+=cut
+
+sub value_diff_as_html
+{
+    my( $arc, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $out;
+    if( $arc->is_removal )
+    {
+	$out = '<span style="text-decoration:line-through;color:red">';
+	$out .= $arc->replaces->value_as_html( $args );
+	$out .= '</span>';
+    }
+    elsif( my $repl = $arc->replaces )
+    {
+	my $old = $repl->value( $args );
+	my $new = $arc->value( $args );
+
+	$out = $new->diff_as_html({%$args, old=>$old});
+    }
+    else
+    {
+	$out = $arc->value->as_html( $args );
+    }
+
+    return $out;
+}
+
 
 #######################################################################
 
@@ -1179,6 +1237,7 @@ sub value_desig
 	return sprintf("'%s'", truncstring($value));
     }
 }
+
 
 #######################################################################
 
@@ -1209,6 +1268,7 @@ sub value_sysdesig
     }
 }
 
+
 #######################################################################
 
 =head2 created
@@ -1232,6 +1292,7 @@ sub created
       Rit::Base::Literal::Time->get( $arc->{'arc_created'} );
 }
 
+
 #######################################################################
 
 =head2 updated
@@ -1254,6 +1315,7 @@ sub updated
     return $arc->{'arc_updated_obj'} =
       Rit::Base::Literal::Time->get( $arc->{'arc_updated'} );
 }
+
 
 #######################################################################
 
@@ -1287,6 +1349,7 @@ sub mark_updated
     return $arc->{'arc_updated_obj'} = $time;
 }
 
+
 #######################################################################
 
 =head2 activated
@@ -1310,6 +1373,7 @@ sub activated
       Rit::Base::Literal::Time->get( $arc->{'arc_activated'} );
 }
 
+
 #######################################################################
 
 =head2 deactivated
@@ -1332,6 +1396,7 @@ sub deactivated
     return $arc->{'arc_deactivated_obj'} =
       Rit::Base::Literal::Time->get( $arc->{'arc_deactivated'} );
 }
+
 
 #######################################################################
 
@@ -1387,6 +1452,7 @@ sub deactivated_by
     return $arc->{'arc_deactivated_by_obj'} = $aarc->activated_by;
 }
 
+
 #######################################################################
 
 =head2 unsubmitted
@@ -1416,6 +1482,7 @@ sub unsubmitted
       Rit::Base::Literal::Time->get( $arc->{'arc_unsubmitted'} );
 }
 
+
 #######################################################################
 
 =head2 updated_by
@@ -1430,6 +1497,7 @@ sub updated_by
 {
     return $_[0]->created_by;
 }
+
 
 #######################################################################
 
@@ -1450,6 +1518,7 @@ sub activated_by
 	  is_undef;
 }
 
+
 #######################################################################
 
 =head2 created_by
@@ -1469,6 +1538,7 @@ sub created_by
 	  is_undef;
 }
 
+
 #######################################################################
 
 =head2 version_id
@@ -1481,6 +1551,7 @@ sub version_id
 {
     return $_[0]->{'id'};
 }
+
 
 #######################################################################
 
@@ -1495,6 +1566,7 @@ sub replaces_id
     return $_[0]->{'replaces'};
 }
 
+
 #######################################################################
 
 =head2 replaces
@@ -1507,6 +1579,7 @@ sub replaces
 {
     return Rit::Base::Arc->get_by_id($_[0]->{'replaces'});
 }
+
 
 #######################################################################
 
@@ -1523,6 +1596,7 @@ sub source
       Rit::Base::Resource->get( $arc->{'source'} );
 }
 
+
 #######################################################################
 
 =head2 read_access
@@ -1538,6 +1612,7 @@ sub read_access
       Rit::Base::Resource->get( $arc->{'arc_read_access'} );
 }
 
+
 #######################################################################
 
 =head2 write_access
@@ -1552,6 +1627,7 @@ sub write_access
     return $arc->{'arc_write_access_obj'} ||=
       Rit::Base::Resource->get( $arc->{'arc_write_access'} );
 }
+
 
 #######################################################################
 
@@ -1589,6 +1665,7 @@ sub is_owned_by
 
     return $arc->subj->is_owned_by($agent);
 }
+
 
 #######################################################################
 
@@ -1639,6 +1716,7 @@ sub view_flags # To be used in admin view
     return "$state $direct $explicit";
 }
 
+
 #######################################################################
 
 =head2 implicit
@@ -1658,6 +1736,7 @@ sub implicit
     my( $arc ) = @_;
     return $arc->{'implicit'};
 }
+
 
 #######################################################################
 
@@ -2375,6 +2454,7 @@ sub explain
     return $arc->{'explain'};
 }
 
+
 #########################################################################
 ################################  Public methods  #######################
 
@@ -2546,6 +2626,7 @@ sub vacuum
 	}
     }
 }
+
 
 #######################################################################
 
@@ -2724,6 +2805,7 @@ sub check_valtype
     return 1;
 }
 
+
 #######################################################################
 
 =head2 check_value
@@ -2740,6 +2822,7 @@ sub check_value
     # TODO: Implement this
     return 0;
 }
+
 
 #######################################################################
 
@@ -2781,6 +2864,7 @@ sub reset_clean
 	}
     }
 }
+
 
 #######################################################################
 
@@ -2844,6 +2928,7 @@ sub remove_duplicates
 	$arc2->remove({%$args, force=>1});
     }
 }
+
 
 #######################################################################
 
@@ -2975,6 +3060,7 @@ sub has_value
 #    debug "  no match";
     return 0;
 }
+
 
 #######################################################################
 
@@ -3550,6 +3636,7 @@ sub create_removal
 				  }, $args);
 }
 
+
 #######################################################################
 
 =head2 update
@@ -3589,6 +3676,7 @@ sub update
     }
     return $arc;
 }
+
 
 #######################################################################
 
@@ -3982,6 +4070,7 @@ sub set_pred
     return $arc;
 }
 
+
 #######################################################################
 
 =head2 submit
@@ -4040,6 +4129,7 @@ sub submit
     return 1;
 }
 
+
 #######################################################################
 
 =head2 resubmit
@@ -4075,6 +4165,7 @@ sub resubmit
 				     }, $args );
     return $new;
 }
+
 
 #######################################################################
 
@@ -4119,6 +4210,7 @@ sub unsubmit
 
     return 1;
 }
+
 
 #######################################################################
 
@@ -4269,6 +4361,7 @@ sub activate
     return 1;
 }
 
+
 #######################################################################
 
 =head2 set_replaces
@@ -4309,6 +4402,7 @@ sub set_replaces
     return $arc;
 }
 
+
 #########################################################################
 
 =head1 Private methods
@@ -4337,6 +4431,7 @@ sub set_explicit
     defined $val or $val = 1;
     return not $arc->set_implicit( $val ? 0 : 1 );
 }
+
 
 #######################################################################
 
@@ -4414,6 +4509,7 @@ sub set_direct
     defined $val or $val = 1;
     return not $arc->set_indirect( $val ? 0 : 1 );
 }
+
 
 #######################################################################
 
@@ -5274,6 +5370,7 @@ sub unlock
     }
 }
 
+
 ###############################################################
 
 =head2 unlock_all
@@ -5294,6 +5391,7 @@ sub unlock_all
 	Rit::Base::Arc->unlock;
     }
 }
+
 
 ###############################################################
 
