@@ -19,6 +19,7 @@ Rit::Base::Object
 use strict;
 use Carp qw( cluck confess carp croak );
 use CGI;
+use Text::WordDiff;
 
 BEGIN
 {
@@ -208,8 +209,54 @@ Defaults to L</desig>
 sub as_html
 {
     my( $str ) = CGI->escapeHTML(shift->desig(@_));
-    $str =~ s/\r?\n/<br>/g;
-    return $str;
+#    $str =~ s/\r?\n/<br>/g;
+    return "<pre>".$str."</pre>";
+}
+
+
+#######################################################################
+
+=head2 diff_as_html
+
+  $o->diff_as_html( \%args )
+
+Uses L</desig> as base for displaying diffrence
+
+See L<String::ShowHTMLDiff>
+
+=cut
+
+sub diff_as_html
+{
+    my( $o, $args ) = @_;
+
+    $args ||= {};
+    my $old = $args->{'old'} || '';
+#    my $context = $args->{'context'} || qr/\w*/;
+#    my $gap = $args->{'gap'} || ' ';
+
+    if( ref $old )
+    {
+	$old = $old->desig;
+    }
+
+    my $new = $o->desig;
+
+    my $out = "";
+
+#"<style> div.file del {background-color:red} div.file ins {background-color:green}</style>";
+
+#    $old =~ s/\n*$/\n/;
+#    $new =~ s/\n*$/\n/;
+#    debug "DIFFING STRINGS:";
+#    debug "old:\n".$old."<<<";
+#    debug "new:\n".$new."<<<";
+
+    my $diff = word_diff(\$old, \$new, { STYLE => 'HTML' });
+
+#    $diff =~ s/\n/<br\/>\n/g;
+
+    return $out . "<pre>".$diff."</pre>";
 }
 
 
