@@ -1341,7 +1341,7 @@ sub handle_select_version
 	{
 	    debug "Already active version selected.";
 	}
-	else
+	elsif( $select_version->submitted )
 	{
 	    debug "Activating version: ". $select_version->sysdesig;
 	    $select_version->activate( {%$args, recursive=>1} );
