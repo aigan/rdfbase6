@@ -209,8 +209,18 @@ Defaults to L</desig>
 sub as_html
 {
     my( $str ) = CGI->escapeHTML(shift->desig(@_));
+
+    if( $str =~ /\n/ )
+    {
+	return "<pre>".$str."</pre>";
+    }
+    else
+    {
+	return $str;
+    }
+
 #    $str =~ s/\r?\n/<br>/g;
-    return "<pre>".$str."</pre>";
+#    return "<pre>".$str."</pre>";
 }
 
 
