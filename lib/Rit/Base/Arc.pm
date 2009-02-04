@@ -1190,6 +1190,9 @@ sub value_diff_as_html
     my( $arc, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+    my( $from ) = $args->{'from'};
+#    debug "Diff from ".ref($from);
+
     my $out;
     if( $arc->is_removal )
     {
@@ -1199,6 +1202,11 @@ sub value_diff_as_html
     }
     elsif( my $repl = $arc->replaces )
     {
+	if( $from )
+	{
+	    $repl = $arc->version_by_date( $from );
+	}
+
 	my $old = $repl->value( $args );
 	my $new = $arc->value( $args );
 
@@ -2055,6 +2063,41 @@ sub previous_active_version
     my $dbh = $Rit::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? and active is false and activated is not null and deactivated is not null order by deactivated desc limit 1");
     $sth->execute($arc->common_id);
+    if( my $arc_rec = $sth->fetchrow_hashref )
+    {
+	$paarc = $class->get_by_rec( $arc_rec );
+    }
+    $sth->finish;
+
+    # May be undef
+    return $paarc;
+}
+
+
+#######################################################################
+
+=head2 version_by_date
+
+  $a->version_by_date
+
+May return undef;
+
+Returns: The arc that was active at the given time.
+
+=cut
+
+sub version_by_date
+{
+    my( $arc, $time ) = @_;
+    my $class = ref($arc);
+
+    my $paarc;
+
+    my $dbh = $Rit::dbix->dbh;
+    my $sth = $dbh->prepare("select * from arc where id=? and activated <= ? and (deactivated > ? or deactivated is null)");
+
+    my $time_str = $Rit::dbix->format_datetime( $time );
+    $sth->execute($arc->common_id, $time_str, $time_str );
     if( my $arc_rec = $sth->fetchrow_hashref )
     {
 	$paarc = $class->get_by_rec( $arc_rec );
