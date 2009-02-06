@@ -144,6 +144,7 @@ sub valclean
     # Don't change valclean algoritm wihout recleaning the whole DB!
     use locale;
     use POSIX qw(locale_h);
+    my $oldlocale = setlocale(LC_ALL);
     setlocale(LC_ALL, "sv_SE");
 
     $value = lc($value);
@@ -164,6 +165,8 @@ sub valclean
     debug "    $value\n" if $DEBUG;
 
     $$origvalue = $value if ref $origvalue eq 'SCALAR';
+
+    setlocale(LC_ALL, $oldlocale);
     return $value
 }
 
@@ -184,6 +187,7 @@ sub name2url
 
     use locale;
     use POSIX qw(locale_h);
+    my $oldlocale = setlocale(LC_ALL);
     setlocale(LC_ALL, "sv_SE");
     my $url = lc($name);
 
@@ -192,6 +196,8 @@ sub name2url
     $url =~ s/[^\w\s\-~]//g;
     $url =~ s/\s+/_/g;
     $url =~ s/( ^_+ | _+$ )//gx;
+
+    setlocale(LC_ALL, $oldlocale);
 
     return $url;
 }
