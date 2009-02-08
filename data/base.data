@@ -38,6 +38,7 @@ predicate
 class_form_url	5
 has	1
 url_part	5
+has_url	5
 site_code	5
 has_translation	5
 seen_by	1
@@ -160,6 +161,9 @@ has	admin_comment		General purpose
 url_part	is	predicate
 url_part	admin_comment		Part for constructing unique URLs
 url_part	range	url
+has_url	is	predicate
+has_url	admin_comment		A salient URL of the thing
+has_url	has_cyc_id		salientURL
 site_code	is	predicate
 site_code	range	text
 unseen_by	is	predicate
