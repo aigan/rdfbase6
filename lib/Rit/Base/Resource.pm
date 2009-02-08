@@ -6703,6 +6703,8 @@ sub commit
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
 	}
+
+	%UNSAVED = ();
     };
     if( $@ )
     {
