@@ -49,6 +49,7 @@ WriteMakefile(
 	          'GraphViz'                   => 2.02,
 	          'DateTime::Incomplete'       => 0.02,
 	          'Email::Classifier'          => 0.01,
+		  'Text::WordDiff'             => 0.04,
 	      },
 	      'dist'          =>
 	      {
