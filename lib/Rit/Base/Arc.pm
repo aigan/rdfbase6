@@ -18,7 +18,7 @@ Rit::Base::Arc
 
 use utf8;
 
-use Carp qw( cluck confess carp croak shortmess );
+use Carp qw( cluck confess carp croak shortmess longmess );
 use strict;
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr blessed looks_like_number );
@@ -5755,7 +5755,19 @@ sub validate_range
 
 =head2 validate_valtype
 
-  $a->validate_valtype( \%args )
+  a) $a->validate_valtype( \%args )
+
+  b) Rit::Base::Arc->validate_valtype( \%args )
+
+The second form allows for validation of an arc before it's
+creation. In that case, the args must contain C<subj>, C<pred>,
+C<value> and C<valtype>. C<valtype> will default to pred range if not
+given.
+
+
+
+Returns: true or exception
+
 
 =cut
 
@@ -5777,10 +5789,23 @@ sub validate_valtype
     # Example: $valtype=$organization; $val_valtype=$hotel;
     # valid because a $hotel is a subclass of $organization
 
+    my( $valtype, $value_obj, $pred, $subj );
 
-    my $valtype = $arc->valtype;
-    my $value_obj = $arc->value;
-    my $pred = $arc->pred;
+    if( ref $arc )
+    {
+	$valtype = $arc->valtype;
+	$value_obj = $arc->value;
+	$pred = $arc->pred;
+	$subj = $arc->subj;
+    }
+    else
+    {
+	$value_obj = $args->{'value'} or confess "Missing value";
+	$pred = $args->{'pred'} or confess "Missing pred";
+	$subj = $args->{'subj'} or confess "Missing subj";
+
+	$valtype = $args->{'valtype'} || $pred->valtype;
+    }
 
     if( $valtype )
     {
@@ -5807,7 +5832,7 @@ sub validate_valtype
 		}
 		else
 		{
-		    my $subjd = $arc->subj->sysdesig;
+		    my $subjd = $subj->sysdesig;
 		    my $predd = $pred->plain;
 		    my $val_valtd = $val_valtype->sysdesig;
 		    my $valtd = $valtype->sysdesig;
@@ -5825,7 +5850,9 @@ sub validate_valtype
 			$err .= "  $val_valtd must be a subclass of $valtd\n";
 		    }
 		    $err .= "  (do you need to use arc_lock?)\n";
-		    confess $err;
+
+		    throw('validation',$err, \ longmess);
+#		    confess $err;
 		}
 	    }
 	}
