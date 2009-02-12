@@ -62,6 +62,7 @@ login_account	has_cyc_id		Cyclist
 system_access_right	is	class
 is	range	class
 scof	is	predicate
+scof	domain	class
 scof	range	class
 member_of	is	predicate
 name	range	term
