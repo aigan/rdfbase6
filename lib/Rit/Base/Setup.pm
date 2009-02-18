@@ -67,22 +67,24 @@ sub setup_db
 
 
 
-    unless( $dbix->table('arc') )
+    if( $dbix->table('arc') )
     {
-	my $sql = "";
-	open RBSCHEMA, "$rb_root/data/schema.sql" or die $!;
-	while(<RBSCHEMA>)
-	{
-	    $sql .= $_;
-	    if( /;.*$/ )
-	    {
-		$dbh->do($sql) or die "sql error";
-		$sql = "";
-	    }
-	}
+	$dbh->do("drop table arc") or die;
+	$dbh->do("drop table node") or die;
+	$dbh->do("drop sequence node_seq") or die;
     }
 
-
+    my $sql = "";
+    open RBSCHEMA, "$rb_root/data/schema.sql" or die $!;
+    while(<RBSCHEMA>)
+    {
+	$sql .= $_;
+	if( /;.*$/ )
+	{
+	    $dbh->do($sql) or die "sql error";
+	    $sql = "";
+	}
+    }
 
 
 
