@@ -40,7 +40,7 @@ use Para::Frame::L10N qw( loc );
 use Rit::Base;
 use Rit::Base::List;
 use Rit::Base::Utils qw( parse_propargs is_undef );
-use Rit::Base::Constants qw( $C_email );
+use Rit::Base::Constants qw( $C_email $C_text );
 use Rit::Base::Literal::String;
 use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
@@ -290,7 +290,7 @@ sub parsed_default
 	croak "field value must be a plain string";
     }
 
-    return Rit::Base::Literal::String->new_from_db($value);
+    return Rit::Base::Literal::String->new_from_db($value, $C_text);
 }
 
 
