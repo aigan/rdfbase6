@@ -79,4 +79,35 @@ nya noden.</p>
 
 <p>Alternativlista visas ifall flera träffar erhålles.</p>
 
+<h2>Noteringar</h2>
+
+<p>Denna nod kommer att deaktiveras och dess information kommer
+flyttas till den nod du väljer här.
+
+<p>Du söker upp noden genom att ange i stort sett vad som helst av
+dess benämningar. Dess namn, kod, kortnamn, label eller id.
+
+<p>Du bör för det mesta gå in på den <strong>senast</strong> skapade
+noden, av de du vill ska slås samman, och därifrån välja merge och
+söka upp den <strong>äldsta</strong> noden. Syftet är att slå samman
+noden med den andra nod som redan är den mest korrekta.
+
+<p>Om noden har literals, så som admin-kommentarer eller liknande som
+du vill behålla, som inte finns för den nod du vill slå ihop med, bör
+du välja att även flytta literals. Men då behöver du efteråt gå igenom
+noden och ta bort eventuella dubletter. Exempelvis kommer noden du
+slår ihop med att ha namn-propertis från de två och oftast ska den
+bara ha ett huvud-namn.
+
+<p>Efter en sammanslagning kan det vara en god idé att städa (vacuum)
+noden. I bästa fall ska det inte behövas. Men om noden du slår samman
+med har härledda egenskaper, och det inte ser helt rätt ut, så städa
+noden för att se ifall det korrigerar felet.
+
+<p>Sammanslagningen sker genom att alla arcs på noden deaktiveras och
+motsvarande arcs skapas hos den nya noden. Du kommer att stå som
+skapara för alla de arcs du flyttat.
+
+<p>Se också modul-manualen <code>Rit::Base::Resource/merge_node</code>
+
 [% END %]
