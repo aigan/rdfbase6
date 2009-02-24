@@ -6,7 +6,7 @@ package Rit::Base::Literal::Time;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -31,7 +31,7 @@ use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Widget qw( label_from_params calendar );
 #use Para::Frame::Reload;
 
-use Rit::Base::Utils qw( parse_propargs );
+use Rit::Base::Utils qw( parse_propargs query_desig );
 
 use base qw( Para::Frame::Time Rit::Base::Literal );
 
@@ -239,13 +239,28 @@ sub wuirc
     my $R = Rit::Base->Resource;
     my $q = $Para::Frame::REQ->q;
 
-    my $size = $args->{'size'} || 18;
-
     my $newsubj = $args->{'newsubj'};
     my $tdlabel = $args->{'tdlabel'};
     my $label = $args->{'label'};
     my $arc = $args->{'arc'};
     my $arc_type = $args->{'arc_type'} || 'singular';
+
+    my $id = $args->{'id'};
+
+    $args->{'size'} ||= 18;
+
+    my %cal_args;
+    foreach my $key qw(( size class onUpdate showsTime ))
+    {
+	next unless defined $args->{$key};
+	next unless length $args->{$key};
+
+	$cal_args{$key} = $args->{$key};
+    }
+
+
+    debug "TIME WUIRC";
+    debug query_desig($args);
 
 
     my $subj_id = $subj->id;
@@ -267,7 +282,7 @@ sub wuirc
 			       label       => $args->{'label'},
 			       tdlabel     => $args->{'tdlabel'},
 			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
+			       id          => $id,
 			       label_class => $args->{'label_class'},
 			      });
 
@@ -284,11 +299,11 @@ sub wuirc
     elsif( $subj->empty )
     {
 	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
+	$id ||= $fieldname;
 	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
 			  {
-			   class => $args->{'class'},
-			   id => $fieldname,
-			   size => $size,
+			   %cal_args,
+			   id => $id,
 			  });
 	$out .= $arc->edit_link_html
 	  if( $arc );
@@ -310,13 +325,13 @@ sub wuirc
 
 		my $arc_id = $arc->id;
 		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
+		$id ||= $fieldname;
 		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") ||
 		  $arc->value->desig($args) || $args->{'default_value'};
 		$out .= &calendar($fieldname, $value_new,
 				  {
-				   class => $args->{'class'},
+				   %cal_args,
 				   id => $fieldname,
-				   size => $size,
 				  });
 		$out .= $arc->edit_link_html
 		  if( $arc );
@@ -338,14 +353,14 @@ sub wuirc
 	    my $arc_id = ( $arc_type eq 'singular' ?
 			   'singular' : $arc ? $arc->id : '' );
 	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
+	    $id ||= $fieldname;
 	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}")
 	      || $subj->prop($pred)->desig($args) || $args->{'default_value'};
 
 	    $out .= &calendar($fieldname, $value_new,
 			      {
-			       class => $args->{'class'},
-			       id => $fieldname,
-			       size => $size,
+			       %cal_args,
+			       id => $id,
 			      });
 	    $out .= $arc->edit_link_html
 	      if( $arc );
