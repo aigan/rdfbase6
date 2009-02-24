@@ -250,7 +250,7 @@ sub wuirc
     $args->{'size'} ||= 18;
 
     my %cal_args;
-    foreach my $key qw(( size class onUpdate showsTime ))
+    foreach my $key qw(( size class onUpdate showsTime style ))
     {
 	next unless defined $args->{$key};
 	next unless length $args->{$key};
@@ -298,6 +298,18 @@ sub wuirc
     }
     elsif( $subj->empty )
     {
+#	# TODO: Make the default date work
+#	# Setting a default date and time to the calendar
+#	my $date = now();
+#	$date->add( days => 1 );
+#	$date->set(
+#		   hour => 9,
+#		   minute => 0,
+#		   second => 0,
+#		   nanosecond => 0,
+#		  );
+#	$cal_args{'date'} = $date;
+
 	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
 	$id ||= $fieldname;
 	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
