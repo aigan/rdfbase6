@@ -1,3 +1,67 @@
+2009-02-12  jonas <jonas@paranormal.se>
+
+	* data/base.data: the domain of scof is class
+
+2009-02-09  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Resource.pm: Clear %UNSAVED on commit
+
+	* lib/Rit/Base/Arc.pm:
+	Extended validate_valtype() for validating before creation
+
+	* data/base.data: Added predicate has_url
+
+	* README, Makefile.PL: Added dependency
+
+2009-02-06  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Utils.pm:
+	We must return LC_ALL to it's previous value (especially LC_NUMERIC=C).
+
+2009-02-04  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Widget/Handler.pm: bugfix
+
+	* lib/Rit/Base/Object.pm: context-dependent as_html() presentation
+
+	* lib/Rit/Base/Arc.pm: added method version_by_date()
+
+	* html/inc/changes.tt: Diffing from last seen
+
+2009-02-03  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Object.pm: Added method diff_as_html()
+
+	* lib/Rit/Base/Arc.pm: Added method value_diff_as_html()
+
+	* html/inc/changes.tt: Displaying diffs
+
+2009-02-01  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Setup.pm: debug
+
+	* lib/Rit/Base/Resource.pm, lib/Rit/Base/Pred.pm: less debug
+
+	* lib/Rit/Base/Node.pm: added to add_arc()
+
+	* lib/Rit/Base/Arc.pm: Handling encoding of bytea values in create
+
+	* data/base.data: developed
+
+2009-01-29  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Utils.pm:
+	tried to make more readable query_desig outputs
+
+2009-01-27  jonas <jonas@paranormal.se>
+
+	* lib/Rit/Base/Resource.pm:
+	Added created_by and updated_by for create() method
+
+2009-01-26  jonas <jonas@paranormal.se>
+
+	* ChangeLog: changelog update
+
 2009-01-21  joli <jonas@avisita.com>
 
 	* lib/Rit/Base/Literal/Email/Address.pm: Added method vacuum()
