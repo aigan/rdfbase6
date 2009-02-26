@@ -1207,15 +1207,16 @@ sub value_diff_as_html
 	    $repl = $arc->version_by_date( $from );
 	}
 
-	my $old = $repl->value( $args );
-	my $new = $arc->value( $args );
+	if( $repl )
+	{
+	    my $old = $repl->value( $args );
+	    my $new = $arc->value( $args );
 
-	$out = $new->diff_as_html({%$args, old=>$old});
+	    $out = $new->diff_as_html({%$args, old=>$old});
+	}
     }
-    else
-    {
-	$out = $arc->value->as_html( $args );
-    }
+
+    $out ||= $arc->value->as_html( $args );
 
     return $out;
 }
