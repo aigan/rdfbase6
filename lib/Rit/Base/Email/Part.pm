@@ -28,6 +28,7 @@ use MIME::Base64 qw( decode_base64 );
 use MIME::Types;
 use CGI;
 use Number::Bytes::Human qw(format_bytes);
+use File::MMagic::XS qw(:compat);
 
 BEGIN
 {
@@ -48,6 +49,7 @@ use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 use Rit::Base::Email::Head;
+use Rit::Base::Email::Raw::Part;
 
 use constant EA => 'Rit::Base::Literal::Email::Address';
 
@@ -110,7 +112,7 @@ sub folder
 
 sub struct
 {
-    return $_[0]->{'struct'} or die "Struct not given";
+    confess "WRONG TURN";
 }
 
 
@@ -210,22 +212,14 @@ sub first_non_multi_part
 
 =head2 parts
 
-Returns: A list of parts
+
+Returns: A list of parts, not counting itself
 
 =cut
 
 sub parts
 {
-    my( $part ) = @_;
-    my $class = ref($part);
-
-    my @parts;
-    foreach my $struct ( $part->struct->parts )
-    {
-	push @parts, $part->new($struct);
-    }
-
-    return @parts;
+    confess "NOT IMPLEMENTED";
 }
 
 
@@ -237,7 +231,7 @@ sub parts
 
 sub path
 {
-    return $_[0]->struct->part_path;
+    confess "NOT IMPLEMENTED";
 }
 
 
@@ -255,6 +249,18 @@ sub charset
 
 #######################################################################
 
+=head2 encoding
+
+=cut
+
+sub encoding
+{
+    confess "NOT IMPLEMENTED";
+}
+
+
+#######################################################################
+
 =head2 type
 
 Alias: content_type
@@ -263,7 +269,7 @@ Alias: content_type
 
 sub type
 {
-    return lc $_[0]->struct->type;
+    confess "NOT IMPLEMENTED";
 }
 
 *content_type = \&type;
@@ -293,7 +299,7 @@ See also: L<MIME::Entity/effective_type>
 
 sub effective_type
 {
-    my $type_name = lc $_[0]->struct->type;
+    my $type_name = $_[0]->type;
     if( $type_name eq 'application/octet-stream' )
     {
 	$_[0]->filename =~ /\.([^\.]+)$/;
@@ -308,10 +314,41 @@ sub effective_type
     elsif( not $MIME_TYPES->type($type_name) )
     {
 	debug "Mime-type $type_name not recognized";
-	$type_name = 'application/octet-stream';
+	$type_name = $_[0]->guess_type;
     }
 
     return $type_name;
+}
+
+
+#######################################################################
+
+=head2 guess_type
+
+  $part->guess_type
+
+Called from L</effective_type> when the content-type is not
+recognized. Guesses the content-type from the part body.
+
+Returns: A plain scalar string of the mime-type
+
+=cut
+
+sub guess_type
+{
+    my( $part ) = @_;
+
+    # For large headers...
+    my $body_part = $part->body(5000);
+
+    my $m = File::MMagic::XS->new();
+    my $res = $m->checktype_contents($$body_part);
+
+    debug "Guessed content type '$res'";
+
+    ### Check for message/rfc822
+
+    return $res || 'application/octet-stream';
 }
 
 
@@ -323,7 +360,7 @@ sub effective_type
 
 sub disp
 {
-    return lc $_[0]->struct->disp;
+    confess "NOT IMPLEMENTED";
 }
 
 
@@ -335,7 +372,28 @@ sub disp
 
 sub description
 {
-    return scalar decode_mimewords($_[0]->struct->description||'');
+    confess "NOT IMPLEMENTED";
+}
+
+
+#######################################################################
+
+=head2 size
+
+  $part->size
+
+Returns the size of the part in octets. It is I<NOT> the size of the
+data in the part, which may be encoded as quoted-printable leaving us
+without an obvious method of calculating the exact size of original
+data.
+
+NOTE: Is this the size of the body of the part??? I'll assume it is.
+
+=cut
+
+sub size
+{
+    confess "NOT IMPLEMENTED";
 }
 
 
@@ -347,7 +405,7 @@ sub description
 
 sub size_human
 {
-    my $size = $_[0]->struct->size;
+    my $size = $_[0]->size;
     if( defined $size )
     {
 	return format_bytes($size);
@@ -361,14 +419,16 @@ sub size_human
 
 =head2 complete_head
 
+Alias: header_obj()
+
 =cut
 
 sub complete_head
 {
-    return $_[0]->{'complete_head'} ||=
-      Rit::Base::Email::IMAP::Head->
-	  new_by_part( $_[0] );
+    confess "NOT IMPLEMENTED";
 }
+
+*header_obj = \&complete_head;
 
 #######################################################################
 
@@ -378,29 +438,25 @@ sub complete_head
 
 sub head
 {
-    return $_[0]->{'head'} ||=
-      Rit::Base::Email::IMAP::Head->
-	  new_by_part_env( $_[0]->struct->{'envelope'} );
+    return shift->complete_head(@_);
 }
-
-*header_obj = \&complete_head;
 
 #######################################################################
 
 =head2 header
 
+  $part->header( $name )
+
+Returns in scalar context: The first header of $name
+
+Retuns in list context: A list of all $name headers
+
 =cut
 
 sub header
 {
-    unless($_[0]->{'head'} )
-    {
-	$_[0]->{'head'} = Rit::Base::Email::IMAP::Head->
-	  new_by_part_env( $_[0]->struct->{'envelope'} );
-    }
-
     # LIST CONTEXT
-    return( $_[0]->{'head'}->header($_[1]) );
+    return( $_[0]->head->header($_[1]) );
 }
 
 
@@ -450,7 +506,7 @@ sub charset_guess
 	    if( $args->{'sample'} )
 	    {
 #		debug "Finding charset from provided sample";
-		$sample = ${$args->{'sample'}};
+		$sample = $args->{'sample'};
 #		debug "SAMPLE: $sample"
 	    }
 	    else
@@ -461,7 +517,7 @@ sub charset_guess
 	    }
 
 	    require Encode::Detect::Detector;
-	    $charset = lc Encode::Detect::Detector::detect($sample);
+	    $charset = lc Encode::Detect::Detector::detect($$sample);
 
 	    if( $charset )
 	    {
@@ -633,74 +689,98 @@ sub filename
 {
     my( $part ) = @_;
 
-    my $struct = $part->struct;
-    my $name = $struct->filename;
+    my $name = (
+		$part->disp('filename')
+		||
+		$part->disp('name')
+		||
+		$part->type('filename')
+		||
+		$part->type('name')
+	       );
 
-    unless( $name )
+    if( $name ) # decode fields
     {
-	my $display_raw = $struct->{'disp'};
-	if( UNIVERSAL::isa  $display_raw, 'ARRAY' )
-	{
-	    foreach my $elem (@$display_raw)
-	    {
-		if( UNIVERSAL::isa $elem, 'HASH' )
-		{
-		    foreach my $key ( keys %$elem )
-		    {
-			if( lc($key) eq 'filename' )
-			{
-			    $name = $elem->{$key};
-#			    debug "Filename from disp filename";
-			}
-			elsif( lc($key) eq 'name' )
-			{
-			    $name = $elem->{$key};
-#			    debug "Filename from disp name";
-			}
-		    }
-		}
-	    }
-	}
+	$name = decode_mimewords( $name );
+	utf8::upgrade( $name );
+    }
+    elsif( $part->type eq "message/rfc822" )
+    {
+	$name = $part->head->parsed_subject->plain.".eml";
     }
 
-    unless( $name )
-    {
-	if( my $params = $struct->{'params'} )
-	{
-	    foreach my $key ( keys %$params )
-	    {
-		if( lc($key) eq 'filename' )
-		{
-		    $name = $params->{$key};
-#		    debug "Filename from param filename";
-		}
-		elsif( lc($key) eq 'name' )
-		{
-		    $name = $params->{$key};
-#		    debug "Filename from param name";
-		}
-	    }
-	}
-    }
+    return lc $name;
 
-    unless( $name )
-    {
-	my $type = lc $struct->type;
-	if( $type eq "message/rfc822" )
-	{
-	    $name = $struct->{'envelope'}{'subject'} .".eml";
-	}
-    }
-
-    my $name_dec;
-    if( $name )
-    {
-	$name_dec = decode_mimewords( $name );
-
-	utf8::upgrade( $name_dec );
-    }
-
-    return $name_dec;
+#    ################
+#
+#    my $struct = $part->struct;
+#    my $name = $struct->filename;
+#
+#    unless( $name )
+#    {
+#	my $display_raw = $struct->{'disp'};
+#	if( UNIVERSAL::isa  $display_raw, 'ARRAY' )
+#	{
+#	    foreach my $elem (@$display_raw)
+#	    {
+#		if( UNIVERSAL::isa $elem, 'HASH' )
+#		{
+#		    foreach my $key ( keys %$elem )
+#		    {
+#			if( lc($key) eq 'filename' )
+#			{
+#			    $name = $elem->{$key};
+##			    debug "Filename from disp filename";
+#			}
+#			elsif( lc($key) eq 'name' )
+#			{
+#			    $name = $elem->{$key};
+##			    debug "Filename from disp name";
+#			}
+#		    }
+#		}
+#	    }
+#	}
+#    }
+#
+#    unless( $name )
+#    {
+#	if( my $params = $struct->{'params'} )
+#	{
+#	    foreach my $key ( keys %$params )
+#	    {
+#		if( lc($key) eq 'filename' )
+#		{
+#		    $name = $params->{$key};
+##		    debug "Filename from param filename";
+#		}
+#		elsif( lc($key) eq 'name' )
+#		{
+#		    $name = $params->{$key};
+##		    debug "Filename from param name";
+#		}
+#	    }
+#	}
+#    }
+#
+#    unless( $name )
+#    {
+#	my $type = lc $struct->type;
+#	if( $type eq "message/rfc822" )
+#	{
+#	    $name = $struct->{'envelope'}{'subject'} .".eml";
+#	}
+#    }
+#
+#    my $name_dec;
+#    if( $name )
+#    {
+#	$name_dec = decode_mimewords( $name );
+#
+#	utf8::upgrade( $name_dec );
+#    }
+#
+#    return $name_dec;
 }
 
 #######################################################################
@@ -772,7 +852,7 @@ sub _render_textplain
 #    my $charset = $part->charset_guess;
 
     my $data_dec = $part->body;
-    my $data_enc = CGI->escapeHTML($data_dec);
+    my $data_enc = CGI->escapeHTML($$data_dec);
 
 #    my $msg = "| $charset\n<br/>\n";
     my $msg = "<br/>\n";
@@ -830,7 +910,7 @@ sub _render_delivery_status
 #    debug "  rendering delivery_status";
 
     my $data_dec = $part->body;
-    my $data_enc = CGI->escapeHTML($data_dec);
+    my $data_enc = CGI->escapeHTML($$data_dec);
 
     my $msg = "<div style=\"background:yellow\"><h2>Delivery report</h2>\n";
     $data_enc =~ s/\n/<br>\n/g;
@@ -854,7 +934,7 @@ sub _render_headers
     my $data_dec = $part->body;
     my $msg;
 
-    my $header = Rit::Base::Email::Head->new(\$data_dec );
+    my $header = Rit::Base::Email::Head->new($$data_dec );
     unless( $header )
     {
 	$msg = "<h3>Malformed header</h3>\n";
@@ -924,7 +1004,7 @@ sub _render_alt
 
     $part->top->{'other'} = \@other;
 
-    my $type = $choice->type;
+    my $type = $choice->effective_type;
     my $path = $part->path;
 
     my $renderer = $part->select_renderer($type);
@@ -946,9 +1026,9 @@ sub _render_mixed
 {
     my( $part ) = @_;
 
-#    debug "  rendering mixed";
+    debug "  rendering mixed";
 
-#    debug $email->part_desig;
+    debug $part->desig;
 
     my @alts = $part->parts;
 
@@ -960,7 +1040,7 @@ sub _render_mixed
     {
 	my $apath = $alt->path;
 
-	my $type = $alt->type;
+	my $type = $alt->effective_type;
 	my $renderer = $part->select_renderer($type);
 
 	if( $alt->disp eq 'inline' )
@@ -999,7 +1079,7 @@ sub _render_mixed
 	}
     }
 
-#    debug "  rendering mixed - done";
+    debug "  rendering mixed - done";
 
     return $msg;
 }
@@ -1068,7 +1148,7 @@ sub _render_related
 	}
     }
 
-    my $type = $choice->type;
+    my $type = $choice->effective_type;
     my $renderer = $part->select_renderer($type);
     unless( $renderer )
     {
@@ -1122,13 +1202,15 @@ sub _render_rfc822
 {
     my( $part ) = @_;
 
-#    debug "  rendering rfc822";
+    debug "  rendering rfc822";
 
 
     my $head = $part->head;
 
     my $struct = $part->struct;
     my $env = $struct->{'envelope'};
+
+#    debug "struct is\n".datadump($struct);
 
     my $msg = "";
 
@@ -1174,14 +1256,23 @@ sub _render_rfc822
     my $head_path = $part->url_path. ".head";
     $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
 
-    my $sub = $part->new( $struct->{'bodystructure'} );
-    my $sub_path = $sub->path;
-    my $sub_type = $sub->type;
+    my $sub;
+    if( $struct->{'bodystructure'} )
+    {
+	$sub = $part->new( $struct->{'bodystructure'} );
+    }
+    else
+    {
+	$sub = Rit::Base::Email::Raw::Part::new($part, $part->body);
+    }
+
+    my $sub_type = $sub->effective_type;
 
 
     my $renderer = $sub->select_renderer($sub_type);
     unless( $renderer )
     {
+	my $sub_path = $sub->path;
 	debug "No renderer defined for $sub_type";
 	return "<code>No renderer defined for part $sub_path <strong>$sub_type</strong></code>";
     }
@@ -1206,20 +1297,12 @@ sub body
 {
     my( $part, $length ) = @_;
 
-    my $struct = $part->struct;
-
-    my $encoding = lc $struct->encoding or die;
-
-    my $folder = $part->top->folder;
-    my $uid = $part->top->uid;
-    my $path = $struct->part_path;
-#    debug "Getting bodypart $uid $path";
-
-    my $data = $folder->imap_cmd('bodypart_string', $uid, $path, $length);
+    my $encoding = $part->encoding;
+    my $dataref = $part->body_raw( $length );
 
     if( $encoding eq 'quoted-printable' )
     {
-	$data =  decode_qp($data);
+	$dataref = \ decode_qp($$dataref);
     }
     elsif( $encoding eq '8bit' )
     {
@@ -1235,21 +1318,21 @@ sub body
     }
     elsif( $encoding eq 'base64' )
     {
-	$data = decode_base64($data);
+	$dataref = \ decode_base64($$dataref);
     }
     else
     {
 	die "encoding $encoding not supported";
     }
 
-    my $charset = $part->charset_guess({sample=>\$data});
+    my $charset = $part->charset_guess({sample=>$dataref});
     if( $charset eq 'iso-8859-1' )
     {
 	# No changes
     }
     elsif( $charset eq 'utf-8' )
     {
-	utf8::decode( $data );
+	utf8::decode( $$dataref );
     }
     else
     {
@@ -1257,7 +1340,19 @@ sub body
     }
 
 
-    return $data;
+    return $dataref;
+}
+
+
+#######################################################################
+
+=head2 body_raw
+
+=cut
+
+sub body_raw
+{
+    confess "NOT IMPLEMENTED";
 }
 
 

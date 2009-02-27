@@ -232,6 +232,10 @@ sub render_output
 	return \$data;
     }
 
+    # Set encoding if missing
+    $encoding ||= '8bit'; ### Reasonable default?
+    debug "Using encoding '$encoding'";
+
     if( $encoding eq 'base64' )
     {
 	$data = decode_base64($data);
@@ -280,7 +284,9 @@ sub render_output
     }
 
 
-#    debug "Body is ".length($data)." chars long: ".validate_utf8(\$data);
+    debug "Body is ".length($data)." chars long: ".validate_utf8(\$data);
+
+#    debug $data;
 
     return \ $data;
 }

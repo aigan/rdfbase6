@@ -1,18 +1,18 @@
 #  $Id$  -*-cperl-*-
-package Rit::Base::Email::IMAP::Part;
+package Rit::Base::Email::Raw::Part;
 #=====================================================================
 #
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
 =head1 NAME
 
-Rit::Base::Email::IMAP::Part
+Rit::Base::Email::Raw::Part
 
 =head1 DESCRIPTION
 
@@ -22,6 +22,7 @@ use strict;
 use utf8;
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
+use Email::MIME;
 use MIME::Words qw( decode_mimewords );
 
 BEGIN
@@ -34,7 +35,10 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::List;
 
+use Rit::Base::Email::Raw::Head;
+
 use base qw( Rit::Base::Email::Part );
+
 
 #######################################################################
 
@@ -44,20 +48,52 @@ use base qw( Rit::Base::Email::Part );
 
 sub new
 {
-    my( $part, $struct ) = @_;
+    my( $part, $dataref ) = @_;
     my $class = ref($part) or die "Must be called by parent";
 
     my $sub = bless
     {
      email  => $part->email,
      top    => $part->top,
-     struct => $struct,
-    }, 'Rit::Base::Email::IMAP::Part';
+#     data   => $dataref,
+    }, 'Rit::Base::Email::Raw::Part';
+
+    $sub->{'em'} = Email::MIME->new($dataref);
+
+    $sub->{'part_id'} = $part->path .'.TEXT';
 
     weaken( $sub->{'email'} );
 #    weaken( $sub->{'top'} );
 
-#    debug datadump($struct);
+    return $sub;
+}
+
+
+#######################################################################
+
+=head2 new_by_em_obj
+
+=cut
+
+sub new_by_em_obj
+{
+    my( $part, $emo, $pos ) = @_;
+    my $class = ref($part) or die "Must be called by parent";
+
+    my $sub = bless
+    {
+     email  => $part->email,
+     top    => $part->top,
+    }, 'Rit::Base::Email::Raw::Part';
+
+    $sub->{'em'} = $emo;
+
+    my $path = $part->path;
+    $path =~ s/\.TEXT$//;
+    $sub->{'part_id'} = $path .'.'. $pos;
+
+    weaken( $sub->{'email'} );
+#    weaken( $sub->{'top'} );
 
     return $sub;
 }
@@ -71,37 +107,7 @@ sub new
 
 sub new_by_path
 {
-    my( $part, $path ) = @_;
-    my $class = ref($part) or die "Must be called by parent";
-
-    unless( $path )
-    {
-	return $part;
-    }
-
-    my $struct = $part->top->struct->part_at($path);
-
-    unless( $struct )
-    {
-	debug "Failed to get struct at $path";
-	debug "Top: ".$part->top;
-	debug "Top struct: ". $part->top->struct;
-	debug $part->top->desig;
-	confess datadump($part,1);
-    }
-
-    my $sub = bless
-    {
-     email  => $part->email,
-     top    => $part->top,
-     struct => $struct,
-    }, 'Rit::Base::Email::IMAP::Part';
-    weaken( $sub->{'email'} );
-#    weaken( $sub->{'top'} );
-
-#    debug datadump($struct);
-
-    return $sub;
+    confess "NOT IMPLEMENTED";
 }
 
 
@@ -127,7 +133,7 @@ sub envelope
 
 sub path
 {
-    return $_[0]->struct->part_path;
+    return $_[0]->{'part_id'};
 }
 
 
@@ -141,14 +147,28 @@ See L<Rit::Base::Email::Part/type>
 
 sub type
 {
-    my $struct = $_[0]->struct;
+    my $ct = $_[0]->{'em'}->content_type;
+
+    $ct =~ s/;\s+(.*?)\s*$//;
 
     if( $_[1] )
     {
-	return $struct->{'params'}{$_[1]};
+	my %param;
+	my $params = $1;
+	foreach my $param (split /\s*;\s*/, $params )
+	{
+	    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
+	    {
+		my $key = lc $1;
+		my $val = $2;
+		$param{ $key } = $val;
+	    }
+	}
+
+	return $param{$_[1]};
     }
 
-    return lc $struct->type;
+    return $ct;
 }
 
 
@@ -162,14 +182,31 @@ See L<Rit::Base::Email::Part/disp>
 
 sub disp
 {
-    my $struct = $_[0]->struct;
+    # scalar context
+    my $disp = $_[0]->head->
+      header('content-disposition');
+    return undef unless $disp;
+
+    $disp =~ s/;\s+(.*?)\s*$//;
 
     if( $_[1] )
     {
-	return $struct->{'disp'}->[1]->{$_[1]};
+	my %param;
+	my $params = $1;
+	foreach my $param (split /\s*;\s*/, $params )
+	{
+	    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
+	    {
+		my $key = lc $1;
+		my $val = $2;
+		$param{ $key } = $val;
+	    }
+	}
+
+	return $param{$_[1]};
     }
 
-    return lc $struct->disp;
+    return $disp;
 }
 
 
@@ -183,7 +220,13 @@ See L<Rit::Base::Email::Part/encoding>
 
 sub encoding
 {
-    return lc $_[0]->struct->encoding;
+    # scalar context
+    my $enc = $_[0]->head->
+      header('content-transfer-encoding');
+
+    debug "Got raw part encoding '$enc'";
+
+    return $enc;
 }
 
 
@@ -197,7 +240,8 @@ See L<Rit::Base::Email::Part/description>
 
 sub description
 {
-    return scalar decode_mimewords($_[0]->struct->description||'');
+    return scalar decode_mimewords( scalar $_[0]->head->
+				    header('content-description')||'' );
 }
 
 
@@ -211,12 +255,7 @@ sub body_raw
 {
     my( $part, $length ) = @_;
 
-    my $uid = $part->top->uid;
-    my $path = $part->path;
-    my $folder = $part->top->folder;
-
-    debug "Getting bodypart $uid $path ".($length||'all');
-    return \ $folder->imap_cmd('bodypart_string', $uid, $path, $length);
+    return \ $part->{'em'}->body_raw;
 }
 
 
@@ -230,7 +269,8 @@ See L<Rit::Base::Email::Part/size>
 
 sub size
 {
-    return $_[0]->struct->size;
+    my $em = $_[0]->{'em'};
+    return bytes::length( $em->{'body_raw'} || ${$em->{'body'}} );
 }
 
 
@@ -245,36 +285,8 @@ See L<Rit::Base::Email::Part/complete_head>
 sub complete_head
 {
     return $_[0]->{'complete_head'} ||=
-      Rit::Base::Email::IMAP::Head->
+      Rit::Base::Email::Raw::Head->
 	  new_by_part( $_[0] );
-}
-
-
-#######################################################################
-
-=head2 head
-
-See L<Rit::Base::Email::Part/head>
-
-=cut
-
-sub head
-{
-    return $_[0]->{'head'} ||=
-      Rit::Base::Email::IMAP::Head->
-	  new_by_part_env( $_[0]->struct->{'envelope'} );
-}
-
-
-#######################################################################
-
-=head2 struct
-
-=cut
-
-sub struct
-{
-    return $_[0]->{'struct'} or die "Struct not given";
 }
 
 
@@ -292,9 +304,11 @@ sub parts
     my $class = ref($part);
 
     my @parts;
-    foreach my $struct ( $part->struct->parts )
+    my $cnt = 0;
+    foreach my $emo ( $part->{'em'}->subparts )
     {
-	push @parts, $part->new($struct);
+	$cnt++;
+	push @parts, $part->new_by_em_obj($emo, $cnt);
     }
 
     return @parts;

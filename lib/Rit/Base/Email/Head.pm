@@ -146,6 +146,10 @@ sub parsed_field
     {
 	return $header->parsed_address($field, $value);
     }
+    elsif( $field eq "content-description" )
+    {
+	return $header->parsed_text($field, $value);
+    }
     else
     {
 	return $header->parsed_default($field, $value);
@@ -291,6 +295,37 @@ sub parsed_default
     }
 
     return Rit::Base::Literal::String->new_from_db($value, $C_text);
+}
+
+
+#######################################################################
+
+=head2 parsed_text
+
+  $header->parsed_text( $field_name, $field_value )
+
+C<$field_name> and C<$field_value> B<MUST> be given
+
+Returns: a L<Rit::Base::Literal::String>
+
+=cut
+
+sub parsed_text
+{
+    my( $header, $field_in, $value ) = @_;
+
+    if( not defined $value )
+    {
+	confess "missing field value";
+    }
+    elsif( ref($value) eq 'ARRAY' )
+    {
+	croak "field value must be a plain string";
+    }
+
+    my $dec = decode_mimewords( $value );
+
+    return Rit::Base::Literal::String->new_from_db($dec, $C_text);
 }
 
 

@@ -102,7 +102,7 @@ sub header
 
 sub body
 {
-    return $_[0]->email->prop('email_body');
+    return \ $_[0]->email->prop('email_body');
 }
 
 

@@ -60,6 +60,8 @@ sub new_by_uid
     my $raw = $folder->imap_cmd('fetch',
 				"$uid BODY.PEEK[HEADER]");
 
+    debug "New IMAP header by uid $uid"; ### DEBUG
+
     my $headers; # original string
     my $msgid;
     my $h = 0;   # in header
@@ -143,6 +145,7 @@ sub new_by_part_env
 #    debug "ENV: ".datadump($env);
 
     my $head = $class->new("");
+    return $head unless $env;
 
 
     foreach my $field (qw( date subject message-id in-reply-to ))

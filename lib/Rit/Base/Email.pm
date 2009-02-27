@@ -612,6 +612,10 @@ sub encoding_plain
 
 =head2 body
 
+  $email->body
+
+Returns: a ref to the string of the decoded body.
+
 =cut
 
 sub body
@@ -623,6 +627,10 @@ sub body
 #######################################################################
 
 =head2 body_as_html
+
+  $email->body_as_html
+
+Return: the string of the body presented as html
 
 =cut
 
