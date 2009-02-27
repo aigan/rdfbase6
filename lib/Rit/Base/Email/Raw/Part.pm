@@ -51,6 +51,7 @@ sub new
     my( $part, $dataref ) = @_;
     my $class = ref($part) or die "Must be called by parent";
 
+
     my $sub = bless
     {
      email  => $part->email,
@@ -64,6 +65,8 @@ sub new
 
     weaken( $sub->{'email'} );
 #    weaken( $sub->{'top'} );
+
+    debug "new raw part from dataref ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -94,6 +97,8 @@ sub new_by_em_obj
 
     weaken( $sub->{'email'} );
 #    weaken( $sub->{'top'} );
+
+    debug "new raw part from emo ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -139,6 +144,21 @@ sub path
 
 #######################################################################
 
+=head2 charset
+
+See L<Rit::Base::Email::Part/charset>
+
+
+=cut
+
+sub charset
+{
+    return lc $_[0]->type('charset');
+}
+
+
+#######################################################################
+
 =head2 type
 
 See L<Rit::Base::Email::Part/type>
@@ -161,6 +181,7 @@ sub type
 	    {
 		my $key = lc $1;
 		my $val = $2;
+		$val =~ s/^"(.*)"$/$1/; # non-standard variant
 		$param{ $key } = $val;
 	    }
 	}
@@ -199,6 +220,7 @@ sub disp
 	    {
 		my $key = lc $1;
 		my $val = $2;
+		$val =~ s/^"(.*)"$/$1/; # non-standard variant
 		$param{ $key } = $val;
 	    }
 	}
@@ -223,8 +245,6 @@ sub encoding
     # scalar context
     my $enc = $_[0]->head->
       header('content-transfer-encoding');
-
-    debug "Got raw part encoding '$enc'";
 
     return $enc;
 }
@@ -284,6 +304,7 @@ See L<Rit::Base::Email::Part/complete_head>
 
 sub complete_head
 {
+#    confess "FIXME";
     return $_[0]->{'complete_head'} ||=
       Rit::Base::Email::Raw::Head->
 	  new_by_part( $_[0] );
@@ -312,6 +333,20 @@ sub parts
     }
 
     return @parts;
+}
+
+
+#######################################################################
+
+=head2 embeded_rfc822_body
+
+See L<Rit::Base::Email::IMAP/embeded_rfc822_body>
+
+=cut
+
+sub embeded_rfc822_body
+{
+    confess "NOT IMPLEMENTED";
 }
 
 

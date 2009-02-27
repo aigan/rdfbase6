@@ -123,11 +123,28 @@ sub envelope
 
 =head2 path
 
+See L<Rit::Base::Email::Part/path>
+
 =cut
 
 sub path
 {
     return $_[0]->struct->part_path;
+}
+
+
+#######################################################################
+
+=head2 charset
+
+See L<Rit::Base::Email::Part/charset>
+
+
+=cut
+
+sub charset
+{
+    return lc $_[0]->struct->charset;
 }
 
 
@@ -260,9 +277,29 @@ See L<Rit::Base::Email::Part/head>
 
 sub head
 {
-    return $_[0]->{'head'} ||=
-      Rit::Base::Email::IMAP::Head->
-	  new_by_part_env( $_[0]->struct->{'envelope'} );
+    unless( $_[0]->{'head'} )
+    {
+	if( my $env = $_[0]->struct->{'envelope'} )
+	{
+	    $_[0]->{'head'} =
+	      Rit::Base::Email::IMAP::Head->
+		  new_by_part_env( $env );
+	}
+	else
+	{
+#	    debug "***********";
+
+#	    debug "/---------------------------";
+#	    debug $_[0]->path;
+#	    debug datadump $_[0]->struct;
+#	    debug substr ${$_[0]->body}, 0, 2000; ### DEBUG
+
+	    my $part = Rit::Base::Email::Raw::Part::new($_[0], $_[0]->body(5000));
+	    $_[0]->{'head'} = $part->head;
+	}
+    }
+
+    return $_[0]->{'head'};
 }
 
 
@@ -298,6 +335,50 @@ sub parts
     }
 
     return @parts;
+}
+
+
+#######################################################################
+
+=head2 embeded_rfc822_body
+
+See L<Rit::Base::Email::IMAP/embeded_rfc822_body>
+
+=cut
+
+sub embeded_rfc822_body
+{
+    if( my $bstruct = $_[0]->struct->{'bodystructure'} )
+    {
+	return $_[0]->new( $bstruct );
+    }
+
+    return Rit::Base::Email::Raw::Part::new($_[0], $_[0]->body);
+}
+
+
+#######################################################################
+
+=head2 convert_to
+
+=cut
+
+sub convert_to
+{
+    my( $part1, $part2 ) = @_;
+    my $class = ref($part2);
+
+    foreach my $key ( keys %$part1 )
+    {
+	delete $part1->{$key};
+    }
+
+    foreach my $key ( keys %$part2 )
+    {
+	$part1->{$key} = $part2->{$key};
+    }
+
+    return bless $part1, $class;
 }
 
 

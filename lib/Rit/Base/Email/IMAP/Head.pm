@@ -142,7 +142,9 @@ sub new_by_part_env
 {
     my( $class, $env ) = @_;
 
-#    debug "ENV: ".datadump($env);
+
+    debug "Initializing headers from part env";
+#    debug datadump($env);
 
     my $head = $class->new("");
     return $head unless $env;
@@ -188,6 +190,8 @@ sub new_by_part
 {
     my( $class, $part ) = @_;
 
+    debug "Initializing headers from part ".$part->path;
+
     my $email = $part->email;
     my $folder = $email->folder;
     my $uid = $part->top->uid or die "No uid";
@@ -206,7 +210,7 @@ sub new_by_part
 				  $uid, $imap_path,
 				  $chunk_size, $pos,
 				 );
-#    debug "Reading header from pos $pos";
+    debug "Reading header from pos $pos";
     while( my $len = length $chunk )
     {
 	debug "Got $len bytes";
@@ -226,6 +230,8 @@ sub new_by_part
 				   $chunk_size, $pos,
 				  );
     }
+
+    debug "Got header:\n$data";
 
     return $class->new( \$data );
 }
