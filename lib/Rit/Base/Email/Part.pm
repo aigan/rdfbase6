@@ -243,6 +243,7 @@ sub path
 
 sub charset
 {
+    confess "NOT IMPLEMENTED";
     return lc $_[0]->struct->charset;
 }
 
@@ -311,6 +312,12 @@ sub effective_type
 	    }
 	}
     }
+    elsif( $type_name eq 'multipart/mixed' )
+    {
+	# May be a nonstandard embedded rfc822
+#	debug "*** looking at mixed part";
+#	debug $_[0]->head->as_string;
+    }
     elsif( not $MIME_TYPES->type($type_name) )
     {
 	debug "Mime-type $type_name not recognized";
@@ -343,12 +350,21 @@ sub guess_type
 
     my $m = File::MMagic::XS->new();
     my $res = $m->checktype_contents($$body_part);
+    $res ||= 'application/octet-stream';
+
 
     debug "Guessed content type '$res'";
 
-    ### Check for message/rfc822
+    if( $res eq 'message/rfc822' )
+    {
+	# Assume we have to convert to raw part
+	# ... (the need for it could be checked)
+	$part->{'_convert_to_raw'} = 1;
 
-    return $res || 'application/octet-stream';
+	debug "should convert to raw part"; ### DEBUG
+    }
+
+    return $res;
 }
 
 
@@ -419,6 +435,14 @@ sub size_human
 
 =head2 complete_head
 
+  $part->complete_head()
+
+This will return the headers of the rfc822 part.
+
+
+
+Returns: a L<Rit::Base::Email::Head> object
+
 Alias: header_obj()
 
 =cut
@@ -433,6 +457,15 @@ sub complete_head
 #######################################################################
 
 =head2 head
+
+  $part->head()
+
+The returned head object may not contain all the headers. See
+L<Rit::Base::Email::IMAP::Head>
+
+See L</complete_head>.
+
+Returns: a L<Rit::Base::Email::Head> object
 
 =cut
 
@@ -478,7 +511,7 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-#    debug "Determining charset";
+    debug "Determining charset";
 
     my $struct = $part->struct;
     my $charset = lc $struct->charset;
@@ -505,15 +538,15 @@ sub charset_guess
 	    my $sample;
 	    if( $args->{'sample'} )
 	    {
-#		debug "Finding charset from provided sample";
+		debug "Finding charset from provided sample";
 		$sample = $args->{'sample'};
-#		debug "SAMPLE: $sample"
+		debug "SAMPLE: $sample"
 	    }
 	    else
 	    {
-#		debug "Finding charset from body";
+		debug "Finding charset from body";
 		$sample = $part->body(2000);
-#		debug "BODY SAMPLE: $sample"
+		debug "BODY SAMPLE: $sample"
 	    }
 
 	    require Encode::Detect::Detector;
@@ -537,7 +570,7 @@ sub charset_guess
 	}
     }
 
-#    debug "Found charset $charset";
+    debug "Found charset $charset";
     return $charset;
 }
 
@@ -631,7 +664,7 @@ sub filename_safe
 
 
     # Try to figure out octet-streams
-    if( $type_name eq 'application/octet-stream' )
+    if( $ext and ($type_name eq 'application/octet-stream') )
     {
 	debug "Guessing type from ext $ext for octet-stream";
 	if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
@@ -673,7 +706,9 @@ sub filename_safe
 	}
     }
 
-#    debug "  extension $ext";
+    $ext ||= 'bin'; # default coupled to 'application/octet-stream'
+
+    debug "  extension $ext";
 
     return $safe .'.'. $ext;
 }
@@ -847,21 +882,21 @@ sub _render_textplain
 {
     my( $part ) = @_;
 
-#    debug "  rendering textplain";
+    debug "  rendering textplain - ".$part->path;
 
-#    my $charset = $part->charset_guess;
 
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
 
-#    my $msg = "| $charset\n<br/>\n";
-    my $msg = "<br/>\n";
+    my $charset = $part->charset_guess;
+    my $msg = "| $charset\n<br/>\n";
+#    my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
-#    debug "  rendering textplain - done";
+    debug "  rendering textplain - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -886,7 +921,7 @@ sub _render_texthtml
 	}
     }
 
-#    debug "  rendering texthtml: $url_path";
+    debug "  rendering texthtml - ".$part->path." ($url_path)";
 
 $msg .= <<EOT;
 <br>
@@ -895,9 +930,9 @@ $msg .= <<EOT;
 EOT
 ;
 
-#    debug "  rendering texthtml - done";
+    debug "  rendering texthtml - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -907,7 +942,7 @@ sub _render_delivery_status
 {
     my( $part ) = @_;
 
-#    debug "  rendering delivery_status";
+    debug "  rendering delivery_status - ".$part->path;
 
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
@@ -917,9 +952,9 @@ sub _render_delivery_status
     $msg .= $data_enc;
     $msg .= "</div>\n";
 
-#    debug "  rendering delivery_status - done";
+    debug "  rendering delivery_status - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -929,7 +964,7 @@ sub _render_headers
 {
     my( $part ) = @_;
 
-#    debug "  rendering headers";
+    debug "  rendering headers - ".$part->path;
 
     my $data_dec = $part->body;
     my $msg;
@@ -945,9 +980,9 @@ sub _render_headers
 	$msg = $header->as_html;
     }
 
-#    debug "  rendering headers - done";
+    debug "  rendering headers - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -957,7 +992,7 @@ sub _render_alt
 {
     my( $part ) = @_;
 
-#    debug "  rendering alt";
+    debug "  rendering alt - ".$part->path;
 
     my @alts = $part->parts;
 
@@ -969,9 +1004,9 @@ sub _render_alt
       );
 
     my $choice = shift @alts;
-#    debug sprintf "Considering %s at %s",
-#      $choice->type,
-#	$choice->struct->part_path;
+    debug sprintf "Considering %s at %s",
+      $choice->type,
+	$choice->struct->part_path;
     my $score = $prio{ $choice->type } || 1; # prefere first part
 
     my @other;
@@ -979,7 +1014,7 @@ sub _render_alt
     foreach my $alt (@alts)
     {
 	my $type = $alt->type;
-#	debug "Considering $type at ".$alt->struct->part_path;
+	debug "Considering $type at ".$alt->struct->part_path;
 
 	unless( $type )
 	{
@@ -989,15 +1024,15 @@ sub _render_alt
 
 	if( ($prio{$type}||0) > $score )
 	{
-#	    debug sprintf "  %d is better than %d",
-#	      ($prio{$type}||1), $score;
+	    debug sprintf "  %d is better than %d",
+	      ($prio{$type}||1), $score;
 	    push @other, $choice;
 	    $choice = $alt;
 	    $score = $prio{$type};
 	}
 	else
 	{
-#	    debug "  not better";
+	    debug "  not better";
 	    push @other, $alt;
 	}
     }
@@ -1014,9 +1049,9 @@ sub _render_alt
 	return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
-#    debug "  rendering alt - done";
+    debug "  rendering alt - done";
 
-    return $choice->$renderer;
+    return $part->tick . $choice->$renderer;
 }
 
 
@@ -1026,9 +1061,9 @@ sub _render_mixed
 {
     my( $part ) = @_;
 
-    debug "  rendering mixed";
+    debug "  rendering mixed - ".$part->path;
 
-    debug $part->desig;
+#    debug $part->desig;
 
     my @alts = $part->parts;
 
@@ -1040,10 +1075,15 @@ sub _render_mixed
     {
 	my $apath = $alt->path;
 
+#	debug "MIXED part ".$alt->path;
+#	debug 0, substr $alt->complete_head->as_string, 0, 500;
+#	debug "\\-----------------";
+
+
 	my $type = $alt->effective_type;
 	my $renderer = $part->select_renderer($type);
 
-	if( $alt->disp eq 'inline' )
+	if( ($alt->disp||'') eq 'inline' )
 	{
 	    if( $alt ne $alts[0] )
 	    {
@@ -1062,7 +1102,12 @@ sub _render_mixed
 		$part->top->{'attatchemnts'}{$alt->path} = $alt;
 	    }
 	}
-	elsif( $renderer ) # Display some things anyway...
+	#
+	# Part marked as NOT inline
+	# ... but if we know how to render the part,
+	# we may want to do it anyway.
+	#
+	elsif( $renderer )
 	{
 	    if( $type eq 'message/rfc822' )
 	    {
@@ -1081,7 +1126,7 @@ sub _render_mixed
 
     debug "  rendering mixed - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -1091,7 +1136,7 @@ sub _render_related
 {
     my( $part ) = @_;
 
-#    debug "  rendering related";
+    debug "  rendering related - ".$part->path;
 
     my $path = $part->path;
 
@@ -1121,7 +1166,7 @@ sub _render_related
 	    $cid =~ s/^<//;
 	    $cid =~ s/>$//;
 	    $files{$cid} = $apath;
-#	    debug "Path $apath -> $cid";
+	    debug "Path $apath -> $cid";
 	}
     }
 
@@ -1163,9 +1208,9 @@ sub _render_related
     my $email_path = $part->email->url_path();
     $data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$files{$2}$3/gi;
 
-#    debug "  rendering related - done";
+    debug "  rendering related - done";
 
-    return $data;
+    return $part->tick . $data;
 }
 
 
@@ -1175,7 +1220,7 @@ sub _render_image
 {
     my( $part ) = @_;
 
-#    debug "  rendering image";
+    debug "  rendering image - ".$part->path;
 
     my $url_path = $part->url_path;
 
@@ -1190,9 +1235,9 @@ sub _render_image
     $part->top->{'attatchemnts'} ||= {};
     $part->top->{'attatchemnts'}{$part->path} = $part;
 
-#    debug "  rendering image - done";
+    debug "  rendering image - done";
 
-    return "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
+    return $part->tick . "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
 }
 
 
@@ -1202,37 +1247,34 @@ sub _render_rfc822
 {
     my( $part ) = @_;
 
-    debug "  rendering rfc822";
+    debug "  rendering rfc822 - ".$part->path;
 
+#    if( $part->path eq '2.2.2' ) ### DEBUG
+#    {
+#	my $struct = $part->struct;
+#	debug "struct is\n".datadump($struct);
+#	debug $part;
+#    }
 
     my $head = $part->head;
-
-    my $struct = $part->struct;
-    my $env = $struct->{'envelope'};
-
-#    debug "struct is\n".datadump($struct);
 
     my $msg = "";
 
     $msg .= "\n<br>\n<table class=\"admin\" style=\"background:#E0E0EA\">\n";
 
     my $subj_lab = CGI->escapeHTML(loc("Subject"));
-#    my $subj_val = CGI->escapeHTML(scalar decode_mimewords($env->{'subject'}));
     my $subj_val = $head->parsed_subject->as_html;
     $msg .= "<tr><td>$subj_lab</td><td width=\"100%\"><strong>$subj_val</strong></td></tr>\n";
 
     my $from_lab = CGI->escapeHTML(loc("From"));
-#    my $from_val =  CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'from'}} );
     my $from_val = $head->parsed_address('from')->as_html;
     $msg .= "<tr><td>$from_lab</td><td>$from_val</td></tr>\n";
 
     my $date_lab = CGI->escapeHTML(loc("Date"));
-#    my $date_val = CGI->escapeHTML(Rit::Base::Literal::Time->get($env->{'date'}));
     my $date_val = $head->parsed_date->as_html;
     $msg .= "<tr><td>$date_lab</td><td>$date_val</td></tr>\n";
 
     my $to_lab = CGI->escapeHTML(loc("To"));
-#    my $to_val = CGI->escapeHTML( join "<br>\n", map {scalar decode_mimewords($_->{'full'})} @{$env->{'to'}} );
     my $to_val = $head->parsed_address('to')->as_html;
     $msg .= "<tr><td>$to_lab</td><td>$to_val</td></tr>\n";
 
@@ -1242,7 +1284,7 @@ sub _render_rfc822
     # Create a path to the email
     my $email = $part->email;
     my $nid = $email->id;
-    my $subject = $part->head->parsed_subject->plain;
+    my $subject = $head->parsed_subject->plain;
     my $path = $part->path;
     my $safe = $path .'-'. $part->filename_safe($subject,"message/rfc822");
     my $s = $Para::Frame::REQ->session
@@ -1256,20 +1298,10 @@ sub _render_rfc822
     my $head_path = $part->url_path. ".head";
     $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
 
-    my $sub;
-    if( $struct->{'bodystructure'} )
-    {
-	$sub = $part->new( $struct->{'bodystructure'} );
-    }
-    else
-    {
-	$sub = Rit::Base::Email::Raw::Part::new($part, $part->body);
-    }
-
+    my $sub = $part->embeded_rfc822_body;
     my $sub_type = $sub->effective_type;
-
-
     my $renderer = $sub->select_renderer($sub_type);
+
     unless( $renderer )
     {
 	my $sub_path = $sub->path;
@@ -1281,9 +1313,9 @@ sub _render_rfc822
 
     $msg .= "</td></tr></table>\n";
 
-#    debug "  rendering rfc822 - done";
+    debug "  rendering rfc822 - done";
 
-    return $msg;
+    return $part->tick . $msg;
 }
 
 
@@ -1299,6 +1331,12 @@ sub body
 
     my $encoding = $part->encoding;
     my $dataref = $part->body_raw( $length );
+
+    unless( $encoding )
+    {
+	debug "No encoding found for body. Using 8bit";
+	$encoding = '8bit';
+    }
 
     if( $encoding eq 'quoted-printable' )
     {
@@ -1358,6 +1396,18 @@ sub body_raw
 
 #######################################################################
 
+=head2 embeded_rfc822_body
+
+=cut
+
+sub embeded_rfc822_body
+{
+    confess "NOT IMPLEMENTED";
+}
+
+
+#######################################################################
+
 =head2 desig
 
 =cut
@@ -1366,23 +1416,22 @@ sub desig
 {
     my( $part, $ident ) = @_;
 
-    my $struct = $part->struct;
     $ident ||= 0;
 
-    my $type = $struct->type     || '-';
-    my $enc = $struct->encoding  || '-';
-    my $size = $struct->size     || '-';
-    my $disp = $struct->disp     || '-';
-    my $char = $struct->charset  || '-';
-    my $file = $struct->filename || '-';
-    my $lang = $struct->{lang}   || '-';
-    my $loc = $struct->{loc}     || '-';
-    my $cid = $struct->{cid}     || '-';
-    my $desc = $struct->description || '-';
+    my $type = $part->type      || '-';
+    my $enc  = $part->encoding  || '-';
+    my $size = $part->size      || '-';
+    my $disp = $part->disp      || '-';
+    my $char = $part->charset   || '-';
+    my $file = $part->disp('filename') || '-';
+    my $path = $part->path;
 
-    my $path = $struct->part_path;
+#    my $lang = $struct->{lang}   || '-';
+#    my $loc = $struct->{loc}     || '-';
+#    my $cid = $struct->{cid}     || '-';
+#    my $desc = $struct->description || '-';
 
-    my $msg = ('  'x$ident)."$path $type $enc $size $disp $char $file $lang $loc $cid $desc\n";
+    my $msg = ('  'x$ident)."$path $type $enc $size $disp $char $file\n";
 #    debug $msg;
     $ident ++;
     foreach my $subpart ( $part->parts )
@@ -1392,6 +1441,20 @@ sub desig
     }
 
     return $msg;
+}
+
+
+#######################################################################
+
+=head2 tick
+
+=cut
+
+sub tick
+{
+    my $subn = (caller(1))[3];
+    $subn =~ s/.*:://;
+    return $_[0]->path.':'.$subn.'>';
 }
 
 
