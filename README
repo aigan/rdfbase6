@@ -11,7 +11,7 @@ PREREQUISITIES
 
     Some of the modules can be installed in debian:
 
-    apt-get install libclone-perl libdbd-pg-perl libjson-perl libgraphviz-perl libtext-worddiff-perl
+    apt-get install libclone-perl libdbd-pg-perl libjson-perl libgraphviz-perl libtext-worddiff-perl libfile-mmagic-xs-perl
 
 INSTALL
 
