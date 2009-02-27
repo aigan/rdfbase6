@@ -1,6 +1,5 @@
 [% IF node.unseen_by(u) and node.seen_by(u) %]
 [% last = node.first_arc('seen_by',u).updated || node.created %]
-[% debug("Last is " _ last) %]
 <table class="admin">
 <tr><th colspan="3">Last seen [% last %]</th></tr>
 <tr><th>Pred</th><th>value</th><th>by</th></tr>
