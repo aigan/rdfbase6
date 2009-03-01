@@ -6,7 +6,7 @@ package Rit::Base::Email::IMAP::Head;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -60,9 +60,9 @@ sub new_by_uid
     my $raw = $folder->imap_cmd('fetch',
 				"$uid BODY.PEEK[HEADER]");
 
-    debug "New IMAP header by uid $uid"; ### DEBUG
+#    debug "New IMAP head by uid $uid"; ### DEBUG
 
-    my $headers; # original string
+    my $headers = ""; # original string
     my $msgid;
     my $h = 0;   # in header
 
@@ -132,18 +132,18 @@ sub new_by_uid
 
 #######################################################################
 
-=head2 new_by_part_env
+=head2 new_body_head_by_part_env
 
 Takes a IMAP::BodyStructure::Envelope
 
 =cut
 
-sub new_by_part_env
+sub new_body_head_by_part_env
 {
     my( $class, $env ) = @_;
 
 
-    debug "Initializing headers from part env";
+#    debug "Initializing body head from part env";
 #    debug datadump($env);
 
     my $head = $class->new("");
@@ -180,17 +180,17 @@ sub new_by_part_env
 
 #######################################################################
 
-=head2 new_by_part
+=head2 new_body_head_by_part
 
 Import the full headers
 
 =cut
 
-sub new_by_part
+sub new_body_head_by_part
 {
     my( $class, $part ) = @_;
 
-    debug "Initializing headers from part ".$part->path;
+#    debug "Initializing body head from part ".$part->path;
 
     my $email = $part->email;
     my $folder = $email->folder;
@@ -234,6 +234,100 @@ sub new_by_part
     debug "Got header:\n$data";
 
     return $class->new( \$data );
+}
+
+
+#######################################################################
+
+=head2 new_by_part
+
+Import the full headers
+
+=cut
+
+sub new_by_part
+{
+    my( $class, $part ) = @_;
+
+#    debug "Initializing head from part ".$part->path;
+
+    my $email = $part->email;
+    my $folder = $email->folder;
+    my $uid = $part->top->uid or die "No uid";
+    my $imap_path = $part->path;
+
+    # Read the header, but not the body
+
+    my $raw = $folder->imap_cmd('fetch',
+				"$uid BODY.PEEK[$imap_path.HEADER]");
+
+
+    # $raw is a arrayref looking like:
+# [
+#            '42 UID FETCH 4867 BODY.PEEK[2.2.HEADER]',
+#            '* 4859 FETCH (UID 4867 BODY[2.2.HEADER]',
+#            'Received: from mail.rit.se ...
+#  MIME-Version: 1.0
+#  User-Agent: Thunderbird 2.0.0.19 (Windows/20081209)
+#  Date: Wed, 25 Feb 2009 11:30:17 +0100
+#  Reply-To: anne-louise.larsson@avisita.com
+#  X-Virus-Scanned: Debian amavisd-new at rit.se
+#  Message-ID: <49A51DB9.8000905@avisita.com>
+#  To: "conference@avisita.com >> conference" <conference@avisita.com>
+#  Organization: Avisita Travel AB
+#  X-Spam-Score: -2.498
+#  From: Anne-Louise Larsson <anne-louise.larsson@avisita.com>
+#
+#  ',
+#            ')
+#  ',
+#            '42 OK FETCH completed.
+#  '
+#          ];
+
+
+    my $headers = ""; # original string
+    my $msgid;
+    my $h = 0;   # in header
+
+    foreach my $header (map {split /\r?\n/} @$raw)
+    {
+	# little problem: Windows2003 has UID as body, not in header
+        if(
+	   $header =~ s/^\* \s+ (\d+) \s+ FETCH \s+
+                        \( (.*?) BODY\[.*?HEADER (?:\.FIELDS)? .*? \]\s*//ix)
+        {
+	    # start new message header
+            ($msgid, my $msgattrs) = ($1, $2);
+	    $h = 1;
+            $msgid = $msgattrs =~ m/\b UID \s+ (\d+)/x ? $1 : undef;
+        }
+
+        $header =~ /\S/ or next; # skip empty lines.
+
+        # ( for vi
+        if($header =~ /^\)/)  # end of this message
+        {
+	    $h = 0; # inbetween headers
+            next;
+        }
+        elsif(!$msgid && $header =~ /^\s*UID\s+(\d+)\s*\)/)
+        {
+	    $h = 0;
+            next;
+        }
+
+        unless( $h )
+        {
+	    last if $header =~ / OK /i;
+            debug(2, "found data between fetch headers: $header");
+            next;
+        }
+
+	$headers .= $header . "\n";
+    }
+
+    return $class->new( \$headers );
 }
 
 

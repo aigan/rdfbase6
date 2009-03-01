@@ -56,6 +56,7 @@ sub new
     {
      email  => $part->email,
      top    => $part->top,
+     parent => $part,
 #     data   => $dataref,
     }, 'Rit::Base::Email::Raw::Part';
 
@@ -64,9 +65,10 @@ sub new
     $sub->{'part_id'} = $part->path .'.TEXT';
 
     weaken( $sub->{'email'} );
+    weaken( $sub->{'parent'} );
 #    weaken( $sub->{'top'} );
 
-    debug "new raw part from dataref ".$sub->{'part_id'};
+#    debug "new raw part from dataref ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -87,6 +89,7 @@ sub new_by_em_obj
     {
      email  => $part->email,
      top    => $part->top,
+     parent => $part,
     }, 'Rit::Base::Email::Raw::Part';
 
     $sub->{'em'} = $emo;
@@ -96,9 +99,10 @@ sub new_by_em_obj
     $sub->{'part_id'} = $path .'.'. $pos;
 
     weaken( $sub->{'email'} );
+    weaken( $sub->{'parent'} );
 #    weaken( $sub->{'top'} );
 
-    debug "new raw part from emo ".$sub->{'part_id'};
+#    debug "new raw part from emo ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -112,7 +116,24 @@ sub new_by_em_obj
 
 sub new_by_path
 {
-    confess "NOT IMPLEMENTED";
+    my( $part, $path ) = @_;
+
+#    debug "Getting raw part $path";
+
+    if( $path =~ s/^([0-9]+)\.// )
+    {
+	my $i = $1 - 1;
+	my @parts = $part->parts;
+	return $parts[$i]->new_by_path( $path );
+    }
+    elsif( $path =~ /^([0-9]+)$/ )
+    {
+	my $i = $1 - 1;
+	my @parts = $part->parts;
+	return $parts[$i];
+    }
+
+    confess "Can't get part $path";
 }
 
 
@@ -168,6 +189,7 @@ See L<Rit::Base::Email::Part/type>
 sub type
 {
     my $ct = $_[0]->{'em'}->content_type;
+    return undef unless $ct;
 
     $ct =~ s/;\s+(.*?)\s*$//;
 
@@ -296,16 +318,16 @@ sub size
 
 #######################################################################
 
-=head2 complete_head
+=head2 head_complete
 
-See L<Rit::Base::Email::Part/complete_head>
+See L<Rit::Base::Email::Part/head_complete>
 
 =cut
 
-sub complete_head
+sub head_complete
 {
 #    confess "FIXME";
-    return $_[0]->{'complete_head'} ||=
+    return $_[0]->{'head_complete'} ||=
       Rit::Base::Email::Raw::Head->
 	  new_by_part( $_[0] );
 }
@@ -338,14 +360,15 @@ sub parts
 
 #######################################################################
 
-=head2 embeded_rfc822_body
+=head2 body_part
 
-See L<Rit::Base::Email::IMAP/embeded_rfc822_body>
+See L<Rit::Base::Email::IMAP/body_part>
 
 =cut
 
-sub embeded_rfc822_body
+sub body_part
 {
+    return undef; # FIXME
     confess "NOT IMPLEMENTED";
 }
 

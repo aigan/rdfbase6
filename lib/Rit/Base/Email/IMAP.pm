@@ -6,7 +6,7 @@ package Rit::Base::Email::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -31,7 +31,7 @@ BEGIN
 }
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug );
+use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::List;
 
 use Rit::Base;
@@ -84,16 +84,41 @@ sub new_by_email
 
 #######################################################################
 
-=head2 complete_head
+=head2 body_head_complete
 
 =cut
 
-sub complete_head
+sub body_head_complete
 {
-   return $_[0]->{'head'} ||=
+    return $_[0]->{'body_head'} ||=
       Rit::Base::Email::IMAP::Head->
 	  new_by_uid( $_[0]->folder, $_[0]->uid );
 }
+
+
+#######################################################################
+
+=head2 head_complete
+
+=cut
+
+sub head_complete
+{
+    confess "Top part has no head";
+}
+
+
+#######################################################################
+
+=head2 body_head
+
+  $part->body_head()
+
+Returns: The L<Rit::Base::Email::IMAP::Head> object
+
+=cut
+
+*body_head = \&body_head_complete;
 
 
 #######################################################################
@@ -106,30 +131,7 @@ Returns: The L<Rit::Base::Email::IMAP::Head> object
 
 =cut
 
-*head = \&complete_head;
-
-
-#######################################################################
-
-=head2 header
-
-  $email->header( $field_name )
-
-Returns: An array
-
-=cut
-
-sub header
-{
-    unless( $_[0]->{'head'} )
-    {
-	$_[0]->{'head'} = Rit::Base::Email::IMAP::Head->
-	  new_by_uid( $_[0]->folder, $_[0]->uid );
-    }
-
-    # LIST CONTEXT
-    return( $_[0]->{'head'}->header($_[1]) );
-}
+*head = \&head_complete;
 
 
 #######################################################################
@@ -245,7 +247,7 @@ sub url_path
     my $nid = $email->id;
 
     # Format subject as a filename
-    $subject ||= $part->head->parsed_subject->plain;
+    $subject ||= $part->body_head->parsed_subject->plain;
     $subject =~ s/\// /g;
     $subject =~ s/\.\s*/ /g;
     $type_name ||= "message/rfc822";
@@ -262,22 +264,6 @@ sub url_path
 
 
 #######################################################################
-#
-#=head2 body
-#
-#=cut
-#
-#sub body
-#{
-#    my( $part ) = @_;
-#    return "<not found>" unless $part->exist;
-#
-#    my $uid = $part->uid;
-#    return $part->folder->imap_cmd('body_string', $uid);
-#}
-#
-#
-#######################################################################
 
 =head2 body_as_html
 
@@ -289,8 +275,11 @@ sub body_as_html
 
     return "<strong>not found</strong>" unless $part->exist;
 
-    my $type = $part->type;
-    my $renderer = $part->select_renderer($type);
+
+    my $bp = $part->body_part;
+
+    my $type = $bp->type;
+    my $renderer = $bp->select_renderer($type);
     unless( $renderer )
     {
 	debug "No renderer defined for $type";
@@ -305,6 +294,8 @@ sub body_as_html
     my $nid = $part->email->id;
     $s->{'email_imap'}{$nid} ||= {};
 
+
+#    debug datadump( $part->struct, 20);
 #    debug $part->desig;
 
 
@@ -314,8 +305,7 @@ sub body_as_html
     my $head_path = $part->email->url_path. ".head";
     $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
 
-
-    $msg .= $part->$renderer();
+    $msg .= $bp->$renderer();
 
 #    my $msg = &{$renderer}($email, $struct);
 
@@ -364,17 +354,24 @@ sub body_as_html
 
 #######################################################################
 
-=head2 struct
+=head2 body_part
+
+
+
+This returns the part representing the body of the email.
+
+It can be called from the outmost email object (this) or from any
+rfc822 email part.
 
 =cut
 
-sub struct
+sub body_part
 {
     my( $part ) = @_;
 
-    if( $part->{'struct'} )
+    if( $part->{'body_part'} )
     {
-	return $part->{'struct'};
+	return $part->{'body_part'};
     }
 
     my $folder = $part->folder;
@@ -399,36 +396,9 @@ sub struct
     }
 
 #    debug datadump $struct;
-
 #    debug $part->part_desig( $struct );
 
-    return $part->{'struct'} = $struct;
-}
-
-
-#######################################################################
-
-=head2 charset_guess
-
-=cut
-
-sub charset_guess
-{
-    my( $part ) = @_;
-
-    my $charset = $part->charset;
-
-    unless( $charset )
-    {
-	if( $part->type =~ /^text\// )
-	{
-	    debug "Should guess charset from language";
-	    debug "Falling back on Latin-1";
-	    $charset = "iso-8859-1";
-	}
-    }
-
-    return $charset;
+    return $part->{'body_part'} = $part->new( $struct );
 }
 
 
@@ -537,8 +507,62 @@ sub sysdesig
     my( $part ) = @_;
 
     return sprintf "(%d) %s", $part->uid,
-      ($part->head->parsed_subject->plain || '<no subject>');
+      ($part->body_head->parsed_subject->plain || '<no subject>');
 }
+
+#######################################################################
+
+=head2 path
+
+See L<Rit::Base::Email::Part/path>
+
+=cut
+
+sub path
+{
+    return 'E';
+}
+
+
+#######################################################################
+
+=head2 parent
+
+=cut
+
+sub parent
+{
+    confess "parent of top?!?" unless $_[0]->{'parent'};
+}
+
+
+#######################################################################
+
+=head2 type
+
+See L<Rit::Base::Email::Part/type>
+
+=cut
+
+sub type
+{
+    return "message/rfc822";
+}
+
+
+#######################################################################
+
+=head2 desig
+
+See L<Rit::Base::Email::Part/desig>
+
+=cut
+
+sub desig
+{
+    return $_[0]->body_part->desig;
+}
+
 
 #######################################################################
 

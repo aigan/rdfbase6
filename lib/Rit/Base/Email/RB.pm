@@ -6,7 +6,7 @@ package Rit::Base::Email::RB;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -62,17 +62,17 @@ sub new_by_email
 
 #######################################################################
 
-=head2 head
+=head2 body_head_complete
 
-  $entity->head()
+  $entity->body_head_complete()
 
 Returns: The L<Rit::Base::Email::RB::Head> object
 
 =cut
 
-sub head
+sub body_head_complete
 {
-    return $_[0]->{'head'} ||=
+    return $_[0]->{'body_head'} ||=
       Rit::Base::Email::RB::Head->
 	  new_by_email( $_[0]->{'email'} );
 }
@@ -80,17 +80,17 @@ sub head
 
 #######################################################################
 
-=head2 header
+=head2 head_complete
 
-  $email->header( $field_name )
+  $entity->head_complete()
 
-Returns: An array
+Returns: The L<Rit::Base::Email::RB::Head> object
 
 =cut
 
-sub header
+sub head_complete
 {
-    return( $_[0]->head->header($_[1]) );
+    confess "Top part has no head";
 }
 
 

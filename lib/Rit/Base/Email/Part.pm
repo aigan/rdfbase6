@@ -6,7 +6,7 @@ package Rit::Base::Email::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -50,6 +50,7 @@ use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 use Rit::Base::Email::Head;
 use Rit::Base::Email::Raw::Part;
+use Rit::Base::Email::Interpart;
 
 use constant EA => 'Rit::Base::Literal::Email::Address';
 
@@ -65,6 +66,18 @@ our $MIME_TYPES;
 sub new
 {
     confess "NOT IMPLEMENTED";
+}
+
+
+#######################################################################
+
+=head2 interpart
+
+=cut
+
+sub interpart
+{
+    return Rit::Base::Email::Interpart::new(shift, @_);
 }
 
 
@@ -166,16 +179,15 @@ sub first_part_with_type
     my( $part, $type ) = @_;
     my $class = ref($part);
 
-    foreach my $struct ( $part->struct->parts )
+    foreach my $sub ( $part->parts )
     {
-	if( $struct->type =~ /^$type/ )
+	if( $sub->type =~ /^$type/ )
 	{
-	    return $part->new($struct);
+	    return $sub;
 	}
-	elsif( $struct->type =~ /^multipart\// )
+	elsif( $sub->type =~ /^multipart\// )
 	{
-	    if( my $match = $part->new($struct)->
-		first_part_with_type($type) )
+	    if( my $match = $sub->first_part_with_type($type) )
 	    {
 		return $match;
 	    }
@@ -199,9 +211,9 @@ sub first_non_multi_part
 
     if( $part->type =~ /^multipart\// )
     {
-	my( $struct ) = ($part->struct->parts)[0]
+	my( $sub ) = ($part->parts)[0]
 	  or return $part; # type may be wrong
-	return $part->new($struct)->first_non_multi_part;
+	return $sub->first_non_multi_part;
     }
 
     return $part;
@@ -237,6 +249,23 @@ sub path
 
 #######################################################################
 
+=head2 parent
+
+=cut
+
+sub parent
+{
+    unless( $_[0]->{'parent'} )
+    {
+	debug datadump $_[0];
+	confess "no parent";
+    }
+    return $_[0]->{'parent'};
+}
+
+
+#######################################################################
+
 =head2 charset
 
 =cut
@@ -244,7 +273,6 @@ sub path
 sub charset
 {
     confess "NOT IMPLEMENTED";
-    return lc $_[0]->struct->charset;
 }
 
 
@@ -257,6 +285,19 @@ sub charset
 sub encoding
 {
     confess "NOT IMPLEMENTED";
+}
+
+
+#######################################################################
+
+=head2 cid
+
+=cut
+
+sub cid
+{
+    return $_[0]->head->header('content-id') ||
+      $_[0]->head->header('content-location','cid');
 }
 
 
@@ -300,6 +341,11 @@ See also: L<MIME::Entity/effective_type>
 
 sub effective_type
 {
+    if( $_[0]->{'effective_type'} )
+    {
+	return $_[0]->{'effective_type'};
+    }
+
     my $type_name = $_[0]->type;
     if( $type_name eq 'application/octet-stream' )
     {
@@ -321,10 +367,11 @@ sub effective_type
     elsif( not $MIME_TYPES->type($type_name) )
     {
 	debug "Mime-type $type_name not recognized";
+#	cluck "HERE";
 	$type_name = $_[0]->guess_type;
     }
 
-    return $type_name;
+    return $_[0]->{'effective_type'} = $type_name;
 }
 
 
@@ -346,22 +393,21 @@ sub guess_type
     my( $part ) = @_;
 
     # For large headers...
-    my $body_part = $part->body(5000);
+    my $body_part = $part->body(5000, {unwind=>1}); # calls charset_guess
 
     my $m = File::MMagic::XS->new();
     my $res = $m->checktype_contents($$body_part);
     $res ||= 'application/octet-stream';
 
 
-    debug "Guessed content type '$res'";
+#   debug "Guessed content type '$res'";
 
     if( $res eq 'message/rfc822' )
     {
 	# Assume we have to convert to raw part
 	# ... (the need for it could be checked)
-	$part->{'_convert_to_raw'} = 1;
-
-	debug "should convert to raw part"; ### DEBUG
+#	$part->{'_convert_to_raw'} = 1;
+#	debug "should convert to raw part"; ### DEBUG
     }
 
     return $res;
@@ -433,9 +479,9 @@ sub size_human
 
 #######################################################################
 
-=head2 complete_head
+=head2 body_head_complete
 
-  $part->complete_head()
+  $part->body_head_complete()
 
 This will return the headers of the rfc822 part.
 
@@ -443,16 +489,54 @@ This will return the headers of the rfc822 part.
 
 Returns: a L<Rit::Base::Email::Head> object
 
-Alias: header_obj()
-
 =cut
 
-sub complete_head
+sub body_head_complete
 {
     confess "NOT IMPLEMENTED";
 }
 
-*header_obj = \&complete_head;
+#######################################################################
+
+=head2 body_head
+
+  $part->body_head()
+
+The returned head object may not contain all the headers. See
+L<Rit::Base::Email::IMAP::Head>
+
+See L</body_head_complete>.
+
+Returns: a L<Rit::Base::Email::Head> object
+
+=cut
+
+sub body_head
+{
+    return shift->body_head_complete(@_);
+}
+
+
+#######################################################################
+
+=head2 head_complete
+
+  $part->head_complete()
+
+This will return the head of the current part.
+
+Returns: a L<Rit::Base::Email::Head> object
+
+Alias: header_obj()
+
+=cut
+
+sub head_complete
+{
+    confess "NOT IMPLEMENTED";
+}
+
+*header_obj = \&head_complete;
 
 #######################################################################
 
@@ -463,7 +547,7 @@ sub complete_head
 The returned head object may not contain all the headers. See
 L<Rit::Base::Email::IMAP::Head>
 
-See L</complete_head>.
+See L</head_complete>.
 
 Returns: a L<Rit::Base::Email::Head> object
 
@@ -471,7 +555,7 @@ Returns: a L<Rit::Base::Email::Head> object
 
 sub head
 {
-    return shift->complete_head(@_);
+    return shift->head_complete(@_);
 }
 
 #######################################################################
@@ -488,8 +572,93 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
+    if( wantarray )
+    {
+	my( @h ) = $_[0]->head->
+	  header($_[1]);
+
+	my @res;
+
+	foreach my $str (@h )
+	{
+	    $str =~ s/;\s+(.*?)\s*$//;
+
+	    if( $_[2] )
+	    {
+		my $params = $1;
+		foreach my $param (split /\s*;\s*/, $params )
+		{
+		    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
+		    {
+			my $key = lc $1;
+			next unless $key eq $_[2];
+
+			my $val = $2;
+			$val =~ s/^"(.*)"$/$1/; # non-standard variant
+
+			push @res, $val;
+		    }
+		}
+	    }
+	    else
+	    {
+		push @res, $str;
+	    }
+	}
+
+	return @res;
+    }
+
+    # SCALAR CONTEXT
+    #
+    my $str = $_[0]->head->
+      header($_[1]);
+    return undef unless $str;
+
+    $str =~ s/;\s+(.*?)\s*$//;
+
+    if( $_[2] )
+    {
+#	my %param;
+	my $params = $1;
+	foreach my $param (split /\s*;\s*/, $params )
+	{
+	    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
+	    {
+		my $key = lc $1;
+		next unless $key eq $_[2];
+
+		my $val = $2;
+		$val =~ s/^"(.*)"$/$1/; # non-standard variant
+
+		return $val;
+#		$param{ $key } = $val;
+	    }
+	}
+
+#	return $param{$_[1]};
+    }
+
+    return $str;
+}
+
+
+#######################################################################
+
+=head2 body_header
+
+  $part->body_header( $name )
+
+Returns in scalar context: The first header of $name
+
+Retuns in list context: A list of all $name headers
+
+=cut
+
+sub body_header
+{
     # LIST CONTEXT
-    return( $_[0]->head->header($_[1]) );
+    return( $_[0]->body_head->header($_[1]) );
 }
 
 
@@ -511,42 +680,29 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-    debug "Determining charset";
+#    debug "Determining charset";
 
-    my $struct = $part->struct;
-    my $charset = lc $struct->charset;
+    my $charset = $part->charset;
     $args ||= {};
 
     unless( $charset )
     {
-	my $params = $struct->{'params'};
-	foreach my $key (keys %$params )
-	{
-	    if( lc($key) eq 'charset' )
-	    {
-		$charset = lc( $params->{$key} );
-		last;
-	    }
-	}
-    }
-
-    unless( $charset )
-    {
-	my $type = lc $struct->type;
+	my $type = $args->{'unwind'} ? $part->type :
+	  $part->effective_type;
 	if( $type =~ /^text\// )
 	{
 	    my $sample;
 	    if( $args->{'sample'} )
 	    {
-		debug "Finding charset from provided sample";
+#		debug "Finding charset from provided sample";
 		$sample = $args->{'sample'};
-		debug "SAMPLE: $sample"
+#		debug "SAMPLE: $$sample"
 	    }
 	    else
 	    {
-		debug "Finding charset from body";
-		$sample = $part->body(2000);
-		debug "BODY SAMPLE: $sample"
+#		debug "Finding charset from body";
+		$sample = $part->body(2000, {unwind=>1});
+#		debug "BODY SAMPLE: $$sample"
 	    }
 
 	    require Encode::Detect::Detector;
@@ -556,9 +712,9 @@ sub charset_guess
 	    {
 		debug "Got charset from content sample: $charset";
 	    }
-	    else
+	    elsif( $part->top ne $part->parent )
 	    {
-		$charset = $part->top->charset_guess;
+		$charset = $part->top->body_part->charset_guess;
 	    }
 
 	    unless( $charset )
@@ -570,7 +726,7 @@ sub charset_guess
 	}
     }
 
-    debug "Found charset $charset";
+#    debug "Found charset $charset";
     return $charset;
 }
 
@@ -708,7 +864,7 @@ sub filename_safe
 
     $ext ||= 'bin'; # default coupled to 'application/octet-stream'
 
-    debug "  extension $ext";
+#    debug "  extension $ext";
 
     return $safe .'.'. $ext;
 }
@@ -741,81 +897,10 @@ sub filename
     }
     elsif( $part->type eq "message/rfc822" )
     {
-	$name = $part->head->parsed_subject->plain.".eml";
+	$name = $part->body_head->parsed_subject->plain.".eml";
     }
 
     return lc $name;
-
-#    ################
-#
-#    my $struct = $part->struct;
-#    my $name = $struct->filename;
-#
-#    unless( $name )
-#    {
-#	my $display_raw = $struct->{'disp'};
-#	if( UNIVERSAL::isa  $display_raw, 'ARRAY' )
-#	{
-#	    foreach my $elem (@$display_raw)
-#	    {
-#		if( UNIVERSAL::isa $elem, 'HASH' )
-#		{
-#		    foreach my $key ( keys %$elem )
-#		    {
-#			if( lc($key) eq 'filename' )
-#			{
-#			    $name = $elem->{$key};
-##			    debug "Filename from disp filename";
-#			}
-#			elsif( lc($key) eq 'name' )
-#			{
-#			    $name = $elem->{$key};
-##			    debug "Filename from disp name";
-#			}
-#		    }
-#		}
-#	    }
-#	}
-#    }
-#
-#    unless( $name )
-#    {
-#	if( my $params = $struct->{'params'} )
-#	{
-#	    foreach my $key ( keys %$params )
-#	    {
-#		if( lc($key) eq 'filename' )
-#		{
-#		    $name = $params->{$key};
-##		    debug "Filename from param filename";
-#		}
-#		elsif( lc($key) eq 'name' )
-#		{
-#		    $name = $params->{$key};
-##		    debug "Filename from param name";
-#		}
-#	    }
-#	}
-#    }
-#
-#    unless( $name )
-#    {
-#	my $type = lc $struct->type;
-#	if( $type eq "message/rfc822" )
-#	{
-#	    $name = $struct->{'envelope'}{'subject'} .".eml";
-#	}
-#    }
-#
-#    my $name_dec;
-#    if( $name )
-#    {
-#	$name_dec = decode_mimewords( $name );
-#
-#	utf8::upgrade( $name_dec );
-#    }
-#
-#    return $name_dec;
 }
 
 #######################################################################
@@ -882,21 +967,21 @@ sub _render_textplain
 {
     my( $part ) = @_;
 
-    debug "  rendering textplain - ".$part->path;
+#    debug "  rendering textplain - ".$part->path;
 
 
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
 
     my $charset = $part->charset_guess;
-    my $msg = "| $charset\n<br/>\n";
-#    my $msg = "<br/>\n";
+#   my $msg = "| $charset\n<br/>\n";
+     my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
-    debug "  rendering textplain - done";
+#    debug "  rendering textplain - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -921,7 +1006,7 @@ sub _render_texthtml
 	}
     }
 
-    debug "  rendering texthtml - ".$part->path." ($url_path)";
+#    debug "  rendering texthtml - ".$part->path." ($url_path)";
 
 $msg .= <<EOT;
 <br>
@@ -930,9 +1015,9 @@ $msg .= <<EOT;
 EOT
 ;
 
-    debug "  rendering texthtml - done";
+#    debug "  rendering texthtml - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -942,7 +1027,7 @@ sub _render_delivery_status
 {
     my( $part ) = @_;
 
-    debug "  rendering delivery_status - ".$part->path;
+#    debug "  rendering delivery_status - ".$part->path;
 
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
@@ -952,9 +1037,9 @@ sub _render_delivery_status
     $msg .= $data_enc;
     $msg .= "</div>\n";
 
-    debug "  rendering delivery_status - done";
+#    debug "  rendering delivery_status - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -964,7 +1049,7 @@ sub _render_headers
 {
     my( $part ) = @_;
 
-    debug "  rendering headers - ".$part->path;
+#    debug "  rendering headers - ".$part->path;
 
     my $data_dec = $part->body;
     my $msg;
@@ -980,9 +1065,9 @@ sub _render_headers
 	$msg = $header->as_html;
     }
 
-    debug "  rendering headers - done";
+#    debug "  rendering headers - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -992,7 +1077,7 @@ sub _render_alt
 {
     my( $part ) = @_;
 
-    debug "  rendering alt - ".$part->path;
+#    debug "  rendering alt - ".$part->path;
 
     my @alts = $part->parts;
 
@@ -1004,9 +1089,8 @@ sub _render_alt
       );
 
     my $choice = shift @alts;
-    debug sprintf "Considering %s at %s",
-      $choice->type,
-	$choice->struct->part_path;
+#   debug sprintf "Considering %s at %s",
+#     $choice->type, $choice->path;
     my $score = $prio{ $choice->type } || 1; # prefere first part
 
     my @other;
@@ -1014,7 +1098,7 @@ sub _render_alt
     foreach my $alt (@alts)
     {
 	my $type = $alt->type;
-	debug "Considering $type at ".$alt->struct->part_path;
+#	debug "Considering $type at ".$alt->path;
 
 	unless( $type )
 	{
@@ -1024,15 +1108,15 @@ sub _render_alt
 
 	if( ($prio{$type}||0) > $score )
 	{
-	    debug sprintf "  %d is better than %d",
-	      ($prio{$type}||1), $score;
+#	    debug sprintf "  %d is better than %d",
+#	      ($prio{$type}||1), $score;
 	    push @other, $choice;
 	    $choice = $alt;
 	    $score = $prio{$type};
 	}
 	else
 	{
-	    debug "  not better";
+#	    debug "  not better";
 	    push @other, $alt;
 	}
     }
@@ -1049,9 +1133,9 @@ sub _render_alt
 	return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
-    debug "  rendering alt - done";
+#    debug "  rendering alt - done";
 
-    return $part->tick . $choice->$renderer;
+    return $choice->$renderer;
 }
 
 
@@ -1061,7 +1145,30 @@ sub _render_mixed
 {
     my( $part ) = @_;
 
-    debug "  rendering mixed - ".$part->path;
+#    debug "  rendering mixed - ".$part->path;
+
+
+    unless( $part->parent->effective_type eq 'message/rfc822' )
+    {
+	# It is possible that the parent should have been a
+	# rfc822, but that the email is malformed
+
+	# Treat this as a rfc822 if it has a subject, from or recieved
+	# header
+
+	my $h = $part->head_complete;
+	if( $h->header('received') or
+	    $h->header('from') or
+	    $h->header('subject') )
+	{
+#	    debug "Interpart a RFC822";
+	    my $rfc822 = $part->parent->interpart($part);
+	    my $msg = $rfc822->_render_rfc822;
+#	    debug "Interpart a RFC822 - done";
+	    return $msg;
+	}
+    }
+
 
 #    debug $part->desig;
 
@@ -1075,13 +1182,16 @@ sub _render_mixed
     {
 	my $apath = $alt->path;
 
-#	debug "MIXED part ".$alt->path;
-#	debug 0, substr $alt->complete_head->as_string, 0, 500;
-#	debug "\\-----------------";
-
+#	debug "  mixed part $apath";
 
 	my $type = $alt->effective_type;
 	my $renderer = $part->select_renderer($type);
+
+#	unless( $alt->disp )
+#	{
+#	    debug "No disp found";
+#	    debug $alt->head->as_string;
+#	}
 
 	if( ($alt->disp||'') eq 'inline' )
 	{
@@ -1109,14 +1219,16 @@ sub _render_mixed
 	#
 	elsif( $renderer )
 	{
-	    if( $type eq 'message/rfc822' )
-	    {
+#	    if( $type eq 'message/rfc822' or
+#		$type eq 'multipart/alternative'
+#	      )
+#	    {
 		$msg .= $alt->$renderer;
-	    }
-	    else
-	    {
-		$part->top->{'attatchemnts'}{$alt->path} = $alt;
-	    }
+#	    }
+#	    else
+#	    {
+#		$part->top->{'attatchemnts'}{$alt->path} = $alt;
+#	    }
 	}
 	else # Not requested for inline display
 	{
@@ -1124,9 +1236,9 @@ sub _render_mixed
 	}
     }
 
-    debug "  rendering mixed - done";
+#    debug "  rendering mixed - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -1136,7 +1248,7 @@ sub _render_related
 {
     my( $part ) = @_;
 
-    debug "  rendering related - ".$part->path;
+#    debug "  rendering related - ".$part->path;
 
     my $path = $part->path;
 
@@ -1156,17 +1268,17 @@ sub _render_related
     {
 	my $apath = $alt->path;
 
-	if( my $file = $alt->struct->filename )
+	if( my $file = $alt->filename )
 	{
 	    $files{$file} = $apath;
 	}
 
-	if( my $cid = $alt->struct->{'cid'} )
+	if( my $cid = $alt->cid )
 	{
 	    $cid =~ s/^<//;
 	    $cid =~ s/>$//;
 	    $files{$cid} = $apath;
-	    debug "Path $apath -> $cid";
+#	    debug "Path $apath -> $cid";
 	}
     }
 
@@ -1208,9 +1320,9 @@ sub _render_related
     my $email_path = $part->email->url_path();
     $data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$files{$2}$3/gi;
 
-    debug "  rendering related - done";
+#    debug "  rendering related - done";
 
-    return $part->tick . $data;
+    return $data;
 }
 
 
@@ -1220,7 +1332,7 @@ sub _render_image
 {
     my( $part ) = @_;
 
-    debug "  rendering image - ".$part->path;
+#    debug "  rendering image - ".$part->path;
 
     my $url_path = $part->url_path;
 
@@ -1235,9 +1347,9 @@ sub _render_image
     $part->top->{'attatchemnts'} ||= {};
     $part->top->{'attatchemnts'}{$part->path} = $part;
 
-    debug "  rendering image - done";
+#    debug "  rendering image - done";
 
-    return $part->tick . "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
+    return "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
 }
 
 
@@ -1247,7 +1359,7 @@ sub _render_rfc822
 {
     my( $part ) = @_;
 
-    debug "  rendering rfc822 - ".$part->path;
+#    debug "  rendering rfc822 - ".$part->path;
 
 #    if( $part->path eq '2.2.2' ) ### DEBUG
 #    {
@@ -1256,7 +1368,7 @@ sub _render_rfc822
 #	debug $part;
 #    }
 
-    my $head = $part->head;
+    my $head = $part->body_head;
 
     my $msg = "";
 
@@ -1298,7 +1410,7 @@ sub _render_rfc822
     my $head_path = $part->url_path. ".head";
     $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
 
-    my $sub = $part->embeded_rfc822_body;
+    my $sub = $part->body_part;
     my $sub_type = $sub->effective_type;
     my $renderer = $sub->select_renderer($sub_type);
 
@@ -1313,9 +1425,9 @@ sub _render_rfc822
 
     $msg .= "</td></tr></table>\n";
 
-    debug "  rendering rfc822 - done";
+#    debug "  rendering rfc822 - done";
 
-    return $part->tick . $msg;
+    return $msg;
 }
 
 
@@ -1327,7 +1439,7 @@ sub _render_rfc822
 
 sub body
 {
-    my( $part, $length ) = @_;
+    my( $part, $length, $args ) = @_;
 
     my $encoding = $part->encoding;
     my $dataref = $part->body_raw( $length );
@@ -1363,7 +1475,13 @@ sub body
 	die "encoding $encoding not supported";
     }
 
-    my $charset = $part->charset_guess({sample=>$dataref});
+    $args ||= {};
+#    debug "unwinding";
+    return $dataref if $args->{'unwind'};
+
+#    debug datadump $args;
+
+    my $charset = $part->charset_guess({%$args,sample=>$dataref});
     if( $charset eq 'iso-8859-1' )
     {
 	# No changes
@@ -1396,11 +1514,11 @@ sub body_raw
 
 #######################################################################
 
-=head2 embeded_rfc822_body
+=head2 body_part
 
 =cut
 
-sub embeded_rfc822_body
+sub body_part
 {
     confess "NOT IMPLEMENTED";
 }
@@ -1438,6 +1556,11 @@ sub desig
     {
 #	debug "  subpart $subpart";
 	$msg .= $subpart->desig($ident);
+    }
+
+    if( my $body_part = $part->body_part )
+    {
+	$msg .= $body_part->desig($ident);
     }
 
     return $msg;

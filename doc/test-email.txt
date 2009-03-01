@@ -1,0 +1,100 @@
+node 7513489
+
+TEXT    multipart/mixed
+1       text/plain      flowed q utf-8
+2       message/rfc822  inline 8bit
+2.TEXT  multipart/mixed "Ticket creation failed"
+2.1     text/plain      inline binary
+2.2     multipart/mixed
+2.2.1   text/plain      flowed q utf-8
+2.2.2   XXXXXX          inline q
+
+IMAP::Bodystructure
+1               multipart/mixed
+  1             text/plain      flowed q utf-8
+  2             message/rfc822  inline 8bit
+    ENV
+    2.TEXT      multipart/mixed
+      2.1       text/plain      inline binary
+      2.2       multipart/mixed
+        2.2.1   text/plain      flowed q utf-8
+        2.2.2   XXXXXX          inline q
+
+Target obj tree
+E Email
+T   Mixed  <---
+H     Head
+1     Text
+2     Email
+2.T     Mixed
+2.H       Head
+2.1       Text
+2.2       Email
+2.2.T       Mixed
+2.2.H         Head
+2.2.1         Text
+2.2.2         Email
+2.2.2.T         Mixed
+2.2.2.H           Head
+2.2.2.1           Alt
+2.2.2.1.1           Text
+2.2.2.1.2           HTML
+2.2.2.2           PDF
+
+
+Email file REAL structure:
+
+TEXT        multipart/mixed  "[Fwd: Ticket creation failed]"  This is a multi-part message in MIME format.
+1           text/plain       flowed q UTF-8                   Hej!
+2           message/rfc822   inline                           Return-Path: <studs@maggie.avisita.com>
+2.TEXT      multipart/mixed  "Ticket creation failed"         This is a multi-part message in MIME format...
+2.1         text/plain       inline binary                    Ticket could not be created due to an internal error
+2.2         multipart/mixed  "[Fwd: Personaluppgifter ..."    This is a multi-part message in MIME format.
+2.2.1       text/plain       flowed q utf-8                   --=20
+2.2.2       XXXXXX           inline q 			      MIME-Version: 1.0
+2.2.2.TEXT  multipart/mixed  "Personaluppgifter f=C3=B6r ..." This is a multi-part message in MIME format.
+2.2.2.1     multipart/alt				      *EMPTY*
+2.2.2.1.1   text/plain       q utf-8                          H=3DC3=3DA4lsningar
+2.2.2.1.2   text/html        q iso-8859-1                     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+2.2.2.2     application/oct  attachment base64		      JVBERi0xLjMNJeLjz9MNDTEgMCBvYmoKPDwKL1R ...
+
+
+Email file CORRECT structure:
+
+TEXT        multipart/mixed  "[Fwd: Ticket creation failed]"  This is a multi-part message in MIME format.
+1           text/plain       flowed q UTF-8                   Hej!
+2           message/rfc822   inline                           Return-Path: <studs@maggie.avisita.com>
+2.TEXT      multipart/mixed  "Ticket creation failed"         This is a multi-part message in MIME format...
+2.1         text/plain       inline binary                    Ticket could not be created due to an internal error
+2.2         message/rfc822   inline                           Received: from mail.rit.se ([213.88.173.41]
+2.2.TEXT    multipart/mixed  "[Fwd: Personaluppgifter ..."   This is a multi-part message in MIME format.
+2.2.1       text/plain       flowed q utf-8                   --=20
+2.2.2       message/rfc822   inline q 			      MIME-Version: 1.0
+2.2.2.TEXT  multipart/mixed  "Personaluppgifter f=C3=B6r ..." This is a multi-part message in MIME format.
+2.2.2.1     multipart/alt				      *EMPTY*
+2.2.2.1.1   text/plain       q utf-8                          H=3DC3=3DA4lsningar
+2.2.2.1.2   text/html        q iso-8859-1                     <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+2.2.2.2     application/pdf  attachment base64		      JVBERi0xLjMNJeLjz9MNDTEgMCBvYmoKPDwKL1R ...
+
+
+Class structure
+
+Email
+Email::Part
+Email::Head
+Email::IMAP
+Email::IMAP::Part
+Email::IMAP::Head
+Email::IMAP::Folder
+Email::RB
+Email::RB::Part
+Email::RB::Head
+Email::Raw::Part
+Email::Raw::Head
+
+
+$part->head             = head of the PART
+$part->header($header)  = header of the part head
+$part->head_complete    = ... complete head of the part
+
+$part->body_part        = 1 -> 1.TEXT

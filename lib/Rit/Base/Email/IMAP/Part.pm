@@ -6,7 +6,7 @@ package Rit::Base::Email::IMAP::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -51,10 +51,12 @@ sub new
     {
      email  => $part->email,
      top    => $part->top,
+     parent => $part,
      struct => $struct,
     }, 'Rit::Base::Email::IMAP::Part';
 
     weaken( $sub->{'email'} );
+    weaken( $sub->{'parent'} );
 #    weaken( $sub->{'top'} );
 
 #    debug datadump($struct);
@@ -79,13 +81,50 @@ sub new_by_path
 	return $part;
     }
 
-    my $struct = $part->top->struct->part_at($path);
+#    debug "Part ".$part->path." looking up ".$path;
+#    cluck "HERE";
+
+    my $base = $part->top->body_part;
+    my $struct = $base->struct->part_at($path);
+
+    unless( $struct )
+    {
+	my $spath = $path;
+	while( $spath =~ s/\.[^\.]+$// ) # look back
+	{
+	    if( $struct = $base->struct->part_at($spath) )
+	    {
+		debug "Found part $spath instead";
+		my $ssub = $part->new( $struct );
+#		debug "That is    ".$ssub->path;
+		next if $spath ne $ssub->path;
+
+#		debug $ssub->desig;
+		$ssub->{'parent'} = undef;
+		my $ssr = Rit::Base::Email::Raw::Part::new($ssub, $ssub->body);
+		my $rest = $path;
+		$rest =~ s/^$spath\.//;
+		debug "Looking up $rest";
+		my $sub = $ssr->new_by_path( $rest );
+		debug "Got ".$sub->desig;
+#		debug "-----------------------------------";
+#		debug datadump $sub;
+#		debug "-----------------------------------";
+
+		return $sub;
+	    }
+	}
+    }
+
+
+
+
 
     unless( $struct )
     {
 	debug "Failed to get struct at $path";
 	debug "Top: ".$part->top;
-	debug "Top struct: ". $part->top->struct;
+#	debug "Top struct: ". $part->top->struct;
 	debug $part->top->desig;
 	confess datadump($part,1);
     }
@@ -94,9 +133,11 @@ sub new_by_path
     {
      email  => $part->email,
      top    => $part->top,
+#     parent => $part,
      struct => $struct,
     }, 'Rit::Base::Email::IMAP::Part';
     weaken( $sub->{'email'} );
+#    weaken( $sub->{'parent'} );
 #    weaken( $sub->{'top'} );
 
 #    debug datadump($struct);
@@ -129,6 +170,7 @@ See L<Rit::Base::Email::Part/path>
 
 sub path
 {
+    confess "No struct" unless $_[0]->struct;
     return $_[0]->struct->part_path;
 }
 
@@ -150,6 +192,20 @@ sub charset
 
 #######################################################################
 
+=head2 cid
+
+See L<Rit::Base::Email::Part/cid>
+
+=cut
+
+sub cid
+{
+    return $_[0]->struct->{'cid'};
+}
+
+
+#######################################################################
+
 =head2 type
 
 See L<Rit::Base::Email::Part/type>
@@ -159,6 +215,7 @@ See L<Rit::Base::Email::Part/type>
 sub type
 {
     my $struct = $_[0]->struct;
+    confess "No struct" unless $struct;
 
     if( $_[1] )
     {
@@ -200,6 +257,7 @@ See L<Rit::Base::Email::Part/encoding>
 
 sub encoding
 {
+    confess "No struct" unless $_[0]->struct;
     return lc $_[0]->struct->encoding;
 }
 
@@ -232,7 +290,7 @@ sub body_raw
     my $path = $part->path;
     my $folder = $part->top->folder;
 
-    debug "Getting bodypart $uid $path ".($length||'all');
+#    debug "Getting bodypart $uid $path ".($length||'all');
     return \ $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 }
 
@@ -253,15 +311,31 @@ sub size
 
 #######################################################################
 
-=head2 complete_head
+=head2 body_head_complete
 
-See L<Rit::Base::Email::Part/complete_head>
+See L<Rit::Base::Email::Part/body_head_complete>
 
 =cut
 
-sub complete_head
+sub body_head_complete
 {
-    return $_[0]->{'complete_head'} ||=
+    return $_[0]->{'body_head'} ||=
+      Rit::Base::Email::IMAP::Head->
+	  new_body_head_by_part( $_[0] );
+}
+
+
+#######################################################################
+
+=head2 head_complete
+
+See L<Rit::Base::Email::Part/head_complete>
+
+=cut
+
+sub head_complete
+{
+    return $_[0]->{'head'} ||=
       Rit::Base::Email::IMAP::Head->
 	  new_by_part( $_[0] );
 }
@@ -269,21 +343,21 @@ sub complete_head
 
 #######################################################################
 
-=head2 head
+=head2 body_head
 
-See L<Rit::Base::Email::Part/head>
+See L<Rit::Base::Email::Part/body_head>
 
 =cut
 
-sub head
+sub body_head
 {
-    unless( $_[0]->{'head'} )
+    unless( $_[0]->{'body_head_partial'} )
     {
 	if( my $env = $_[0]->struct->{'envelope'} )
 	{
-	    $_[0]->{'head'} =
+	    $_[0]->{'body_head_partial'} =
 	      Rit::Base::Email::IMAP::Head->
-		  new_by_part_env( $env );
+		  new_body_head_by_part_env( $env );
 	}
 	else
 	{
@@ -295,11 +369,11 @@ sub head
 #	    debug substr ${$_[0]->body}, 0, 2000; ### DEBUG
 
 	    my $part = Rit::Base::Email::Raw::Part::new($_[0], $_[0]->body(5000));
-	    $_[0]->{'head'} = $part->head;
+	    $_[0]->{'body_head_partial'} = $_[0]->{'body_head'} = $part->head;
 	}
     }
 
-    return $_[0]->{'head'};
+    return $_[0]->{'body_head_partial'};
 }
 
 
@@ -340,13 +414,13 @@ sub parts
 
 #######################################################################
 
-=head2 embeded_rfc822_body
+=head2 body_part
 
-See L<Rit::Base::Email::IMAP/embeded_rfc822_body>
+See L<Rit::Base::Email::IMAP/body_part>
 
 =cut
 
-sub embeded_rfc822_body
+sub body_part
 {
     if( my $bstruct = $_[0]->struct->{'bodystructure'} )
     {

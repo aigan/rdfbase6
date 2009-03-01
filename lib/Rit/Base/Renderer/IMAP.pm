@@ -6,7 +6,7 @@ package Rit::Base::Renderer::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -88,7 +88,7 @@ sub render_output
     }
 
     my $email = Rit::Base::Resource->get($nid);
-    my $top = $email->structure;
+    my $top = $email->obj;
 
 
     my( $imap_path, $part, $type, $charset, $encoding );
@@ -132,7 +132,7 @@ sub render_output
     {
 	$part = $top->new_by_path($imap_path);
 
-	$type = $part->type;
+	$type = $part->type || '';
 #	debug "part type is $type";
 	$charset = $part->charset_guess;
 
@@ -142,13 +142,13 @@ sub render_output
 	    $charset = "iso-8859-1";
 	}
 
-	$encoding = lc($part->struct->encoding);
+	$encoding = $part->encoding;
 #	debug "Metadata registred: $type - $charset";
     }
     else
     {
-	$encoding = lc($top->struct->encoding);
-	$charset = $top->charset_guess;
+	$encoding = $top->body_part->encoding;
+	$charset = $top->body_part->charset_guess;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -188,7 +188,7 @@ sub render_output
 	$rend->{'content_type'} = "text/html";
 	$rend->{'charset'} = "UTF-8";
 
-	my $head = $part->complete_head;
+	my $head = $part->body_head_complete;
 
 	my $data = $head->as_html;
 	return \$data;
@@ -196,10 +196,10 @@ sub render_output
 
 
 
-    my $client = $req->client;
+#    my $client = $req->client;
 
-    my $folder = $top->folder;
-    my $uid = $top->uid;
+#    my $folder = $top->folder;
+#    my $uid = $top->uid;
 
 
     my $data;
@@ -207,18 +207,23 @@ sub render_output
     {
 	if( $type eq "text/html" )
 	{
-	    $data = $folder->imap_cmd('body_string', $uid);
+	    $data = $part->body;
+#	    $data = $folder->imap_cmd('body_string', $uid);
 	}
 	else
 	{
+	    # TODO: Create function for returning whole message
 	    $type = "message/rfc822";
-	    $data = $folder->imap_cmd('message_string', $uid);
+	    my $folder = $top->folder;
+	    my $uid = $top->uid;
+	    $data = \ $folder->imap_cmd('message_string', $uid);
 	}
     }
     else
     {
 #	debug "Getting bodypart $uid $imap_path";
-	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
+	$data = $part->body;
+#	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
 	#    debug "bodypart_string: ".validate_utf8( \$data );
     }
 
@@ -229,37 +234,37 @@ sub render_output
     if( $type eq "message/rfc822" )
     {
 #	debug "Returning the whole message (no imap_path)";
-	return \$data;
+	return $data;
     }
 
-    # Set encoding if missing
-    $encoding ||= '8bit'; ### Reasonable default?
-    debug "Using encoding '$encoding'";
-
-    if( $encoding eq 'base64' )
-    {
-	$data = decode_base64($data);
-    }
-    elsif( $encoding eq '8bit' )
-    {
-	# Ok
-    }
-    elsif( $encoding eq 'binary' )
-    {
-	# Ok (same as 8bit)
-    }
-    elsif( $encoding eq '7bit' )
-    {
-	# Ok
-    }
-    elsif( $encoding eq 'quoted-printable' )
-    {
-	$data = decode_qp($data);
-    }
-    else
-    {
-	die "Encoding $encoding unsupported";
-    }
+#    # Set encoding if missing
+#    $encoding ||= '8bit'; ### Reasonable default?
+#    debug "Using encoding '$encoding'";
+#
+#    if( $encoding eq 'base64' )
+#    {
+#	$data = decode_base64($data);
+#    }
+#    elsif( $encoding eq '8bit' )
+#    {
+#	# Ok
+#    }
+#    elsif( $encoding eq 'binary' )
+#    {
+#	# Ok (same as 8bit)
+#    }
+#    elsif( $encoding eq '7bit' )
+#    {
+#	# Ok
+#    }
+#    elsif( $encoding eq 'quoted-printable' )
+#    {
+#	$data = decode_qp($data);
+#    }
+#    else
+#    {
+#	die "Encoding $encoding unsupported";
+#    }
 
 #    debug "decoded data: ".validate_utf8(\$data);
 #    debug "type is $type";
@@ -269,8 +274,8 @@ sub render_output
 	use bytes; # Don't touch original encoding!
 
 	my $email_path = $top->email->url_path;
-	$data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
-	unless( $data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
+	$$data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
+	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
 	    my $subject = encode( $charset, $email->subject );
 #	    debug "Subject '$subject': ".validate_utf8(\$subject);
@@ -279,16 +284,16 @@ sub render_output
 	    my $header = "<html><title>$subject_out</title>";
 	    $header .= "<body onLoad=\"parent.onLoadPage()\">\n";
 	    my $footer = "</body></html>\n";
-	    $data = $header . $data . $footer;
+	    $$data = $header . $$data . $footer;
 	}
     }
 
 
-    debug "Body is ".length($data)." chars long: ".validate_utf8(\$data);
+    debug "Body is ".length($$data)." chars long: ".validate_utf8($data);
 
 #    debug $data;
 
-    return \ $data;
+    return $data;
 }
 
 #######################################################################

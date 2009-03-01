@@ -6,7 +6,7 @@ package Rit::Base::Email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -129,7 +129,7 @@ sub get
 #	    $folder->imap_cmd('see', $uid);
 	}
 
-	$email->{'email_structure'} =
+	$email->{'email_obj'} =
 	  Rit::Base::Email::IMAP->new_by_email($email, $head);
     }
     else
@@ -146,7 +146,7 @@ sub get
 		      activate_new_arcs => 1,
 		     });
 
-	$email->{'email_structure'} =
+	$email->{'email_obj'} =
 	  Rit::Base::Email::IMAP->new_by_email($email, $head);
     }
 
@@ -178,7 +178,7 @@ sub url_path
 
 sub folder
 {
-    return $_[0]->structure->folder;
+    return $_[0]->obj->folder;
 }
 
 
@@ -296,37 +296,37 @@ Is the content of this email availible?
 
 sub exist
 {
-    return $_[0]->structure->exist;
+    return $_[0]->obj->exist;
 }
 
 
 #######################################################################
 
-=head2 structure
+=head2 obj
 
-  $email->structure()
+  $email->obj()
 
 Returns: A specific subclass of L<Rit::Base::Email::Part>
 
 =cut
 
-sub structure
+sub obj
 {
-    unless( $_[0]->{'email_structure'} )
+    unless( $_[0]->{'email_obj'} )
     {
 	if( $_[0]->prop('has_imap_url', undef, ['not_removal'] ) )
 	{
-	    $_[0]->{'email_structure'} =
+	    $_[0]->{'email_obj'} =
 	      Rit::Base::Email::IMAP->new_by_email( $_[0] );
 	}
 	else
 	{
-	    $_[0]->{'email_structure'} =
+	    $_[0]->{'email_obj'} =
 	      Rit::Base::Email::RB->new_by_email( $_[0] );
 	}
     }
 
-    return $_[0]->{'email_structure'};
+    return $_[0]->{'email_obj'};
 }
 
 
@@ -343,7 +343,7 @@ Returns: An array ref
 
 sub header
 {
-    return $_[0]->structure->header($_[1]);
+    return $_[0]->obj->body_header($_[1]);
 }
 
 
@@ -358,7 +358,7 @@ Returns: A L<Rit::Base::Literal::Email::Subject>
 sub subject
 {
     return  $_[0]->{'email_subject'} ||=
-      $_[0]->structure->head->parsed_subject;
+      $_[0]->obj->body_head->parsed_subject;
 }
 
 
@@ -371,7 +371,7 @@ sub subject
 sub date
 {
     return $_[0]->{'email_date'} ||=
-      $_[0]->structure->head->parsed_date;
+      $_[0]->obj->body_head->parsed_date;
 }
 
 
@@ -386,7 +386,7 @@ Returns: a L<Para::Frame::List> of L<Rit::Base::Literal::Email::Address>
 sub from
 {
     return $_[0]->{'email_from'} ||=
-      $_[0]->structure->head->parsed_address('from');
+      $_[0]->obj->body_head->parsed_address('from');
 }
 
 
@@ -403,7 +403,7 @@ sub sender
     unless( defined $_[0]->{'email_sender'} )
     {
 	return $_[0]->{'email_sender'} =
-	  $_[0]->structure->head->parsed_address('sender');
+	  $_[0]->obj->body_head->parsed_address('sender');
     }
     return $_[0]->{'email_sender'};
 }
@@ -420,7 +420,7 @@ Returns: a L<Para::Frame::List> of L<Rit::Base::Literal::Email::Address>
 sub to
 {
     return $_[0]->{'email_to'} ||=
-      $_[0]->structure->head->parsed_address('to');
+      $_[0]->obj->body_head->parsed_address('to');
 }
 
 
@@ -437,7 +437,7 @@ sub bcc
     unless( defined $_[0]->{'email_bcc'} )
     {
 	return $_[0]->{'email_bcc'} =
-	  $_[0]->structure->head->parsed_address('bcc');
+	  $_[0]->obj->body_head->parsed_address('bcc');
     }
     return $_[0]->{'email_bcc'};
 }
@@ -456,7 +456,7 @@ sub cc
     unless( defined $_[0]->{'email_cc'} )
     {
 	return $_[0]->{'email_cc'} =
-	  $_[0]->structure->head->parsed_address('cc');
+	  $_[0]->obj->body_head->parsed_address('cc');
     }
     return $_[0]->{'email_cc'};
 }
@@ -475,136 +475,9 @@ sub reply_to
     unless( defined $_[0]->{'email_reply_to'} )
     {
 	return $_[0]->{'email_reply_to'} =
-	  $_[0]->structure->head->parsed_address('reply-to');
+	  $_[0]->obj->body_head->parsed_address('reply-to');
     }
     return $_[0]->{'email_reply_to'};
-}
-
-
-#######################################################################
-
-=head2 format_plain
-
-=cut
-
-sub format_plain
-{
-    die "FIXME";
-
-    my( $email ) = @_;
-
-    if( $email->prop('has_imap_url' ) )
-    {
-	unless( defined $email->{'email_format'} )
-	{
-	    return is_undef unless $email->exist;
-
-	    $email->content_type_plain;
-	}
-
-	return $email->{'email_format'};
-    }
-    else
-    {
-	return undef;
-    }
-}
-
-
-#######################################################################
-
-=head2 content_type_plain
-
-TODO: Implement effective_type, as in L<MIME::Entity/effective_type>
-
-=cut
-
-sub content_type_plain
-{
-    die "FIXME";
-
-    my( $email ) = @_;
-
-    if( $email->prop('has_imap_url' ) )
-    {
-	unless( $email->{'email_content_type'} )
-	{
-	    return is_undef unless $email->exist;
-	    my $content_type_raw = $email->header("content-type");
-	    my @parts = split /\s*;\s*/, $content_type_raw;
-
-	    $email->{'email_content_type'} = shift @parts;
-
-	    my %ctype;
-	    foreach my $part (@parts)
-	    {
-		if( $part =~ /^(.*?)\s*=\s*(.*)/ )
-		{
-		    $ctype{lc $1} = $2;
-		}
-		else
-		{
-		    die "Unparsable ctype part $part";
-		}
-	    }
-
-	    $email->{'email_charset'} = lc $ctype{'charset'} || '';
-	    $email->{'email_format'} = lc $ctype{'format'} || '';
-	}
-
-	return $email->{'email_content_type'};
-    }
-    else
-    {
-	return undef;
-    }
-}
-
-
-#######################################################################
-
-=head2 effective_type_plain
-
-TODO: Implement effective_type, as in L<MIME::Entity/effective_type>
-
-=cut
-
-sub effective_type_plain
-{
-    die "FIXME";
-
-    return $_[0]->content_type_plain;
-}
-
-
-#######################################################################
-
-=head2 encoding_plain
-
-=cut
-
-sub encoding_plain
-{
-    die "FIXME";
-
-    my( $email ) = @_;
-
-    if( $email->prop('has_imap_url' ) )
-    {
-	unless( $email->{'email_encoding'} )
-	{
-	    return is_undef unless $email->exist;
-	    my $encoding_raw =
-	      $email->header("content-transfer-encoding");
-	    $email->{'email_encoding'} = lc $encoding_raw;
-	}
-
-	return $email->{'email_encoding'};
-    }
-    else
-    {
-	return undef;
-    }
 }
 
 
@@ -620,7 +493,23 @@ Returns: a ref to the string of the decoded body.
 
 sub body
 {
-    return $_[0]->structure->body;
+    return $_[0]->obj->body_part->body;
+}
+
+
+#######################################################################
+
+=head2 as_html
+
+  $email->as_html
+
+Return: the head and body presented as html
+
+=cut
+
+sub as_html
+{
+    return $_[0]->obj->as_html;
 }
 
 
@@ -636,7 +525,7 @@ Return: the string of the body presented as html
 
 sub body_as_html
 {
-    return $_[0]->structure->body_as_html;
+    return $_[0]->obj->body_as_html;
 }
 
 
@@ -650,7 +539,7 @@ sub part
 {
     my( $email, $path ) = @_;
 
-    return $email->structure->new_by_path( $path );
+    return $email->obj->new_by_path( $path );
 }
 
 
@@ -697,7 +586,7 @@ sub sysdesig
     my( $email ) = @_;
 
     return sprintf "Email %d: %s",
-      $email->id, $email->structure->sysdesig;
+      $email->id, $email->obj->sysdesig;
 }
 
 #######################################################################
