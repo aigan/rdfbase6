@@ -132,7 +132,7 @@ sub sysdesig
 {
     my( $part ) = @_;
 
-    return($part->head->parsed_subject->plain || '<no subject>');
+    return($part->body_head->parsed_subject->plain || '<no subject>');
 }
 
 #######################################################################
