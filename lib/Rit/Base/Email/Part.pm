@@ -305,8 +305,6 @@ sub cid
 
 =head2 type
 
-Alias: content_type
-
 =cut
 
 sub type
@@ -315,6 +313,20 @@ sub type
 }
 
 *content_type = \&type;
+
+
+#######################################################################
+
+=head2 content_type
+
+Alias for L</effective_type>
+
+=cut
+
+sub type
+{
+    return shift->effective_type(@_);
+}
 
 
 #######################################################################
