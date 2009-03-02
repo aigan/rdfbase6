@@ -45,11 +45,16 @@ sub render_output
 
     foreach my $item ( $rows->as_array )
     {
+#	debug "Writing item ".$item->sysdesig;
 	my @item_row;
 	foreach my $pred (@preds)
 	{
-	    push @item_row, $item->$pred->desig;
+	    my $val = $item->$pred;
+	    $val = $val->desig if ref $val;
+#	    debug "  $pred = $val";
+	    push @item_row, $val;
 	}
+#	debug "writing @item_row";
 	$sheet->write($row++, 0, \@item_row);
 
 	$req->note("...". $row ."/". $rows_count)
