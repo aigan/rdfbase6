@@ -1605,6 +1605,20 @@ sub mime_types_init
     $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
 }
 
+
+#######################################################################
+
+=head2 sysdesig
+
+=cut
+
+sub sysdesig
+{
+    my( $part ) = @_;
+
+    return $part->generate_name;
+}
+
 #######################################################################
 
 1;
