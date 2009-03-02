@@ -312,8 +312,6 @@ sub type
     confess "NOT IMPLEMENTED";
 }
 
-*content_type = \&type;
-
 
 #######################################################################
 
@@ -323,7 +321,7 @@ Alias for L</effective_type>
 
 =cut
 
-sub type
+sub content_type
 {
     return shift->effective_type(@_);
 }
