@@ -19,9 +19,9 @@ sub handler
 
     unless( $search_col->is_active )
     {
-	my $maxlim = Rit::Base::Search::TOPLIMIT;
-	debug "Setting maxlim to $maxlim";
-	$search_col->first_rb_part->{'maxlimit'} = $maxlim;
+#	my $maxlim = Rit::Base::Search::TOPLIMIT;
+#	debug "Setting maxlim to $maxlim";
+#	$search_col->first_rb_part->{'maxlimit'} = $maxlim;
 	$search_col->execute;
     }
 
