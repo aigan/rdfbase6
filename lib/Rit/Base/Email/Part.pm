@@ -356,6 +356,8 @@ sub effective_type
 	return $_[0]->{'effective_type'};
     }
 
+    &mime_types_init unless $MIME_TYPES;
+
     my $type_name = $_[0]->type;
     if( $type_name eq 'application/octet-stream' )
     {
@@ -537,8 +539,6 @@ This will return the head of the current part.
 
 Returns: a L<Rit::Base::Email::Head> object
 
-Alias: header_obj()
-
 =cut
 
 sub head_complete
@@ -546,7 +546,20 @@ sub head_complete
     confess "NOT IMPLEMENTED";
 }
 
-*header_obj = \&head_complete;
+
+#######################################################################
+
+=head2 header_obj
+
+Alias for L</head_complete>
+
+=cut
+
+sub header_obj
+{
+    return shift->head_complete(@_);
+}
+
 
 #######################################################################
 
@@ -808,26 +821,7 @@ sub filename_safe
 #    debug "Safe base name: $safe";
 #    debug "type name: $type_name";
 
-    unless( $MIME_TYPES ) # Initialize $MIME_TYPES
-    {
-	$MIME_TYPES = MIME::Types->new;
-	my @types;
-
-	push @types, (
-		      MIME::Type->new(
-				      encoding => 'quoted-printable',
-				      extensions => ['xlsx'],
-				      type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				     ),
-		     );
-	$MIME_TYPES->addType(@types);
-
-	# Not in db! :-P
-	$MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
-    }
-
-
-
+    &mime_types_init unless $MIME_TYPES;
 
     # Try to figure out octet-streams
     if( $ext and ($type_name eq 'application/octet-stream') )
@@ -1590,6 +1584,26 @@ sub tick
     return $_[0]->path.':'.$subn.'>';
 }
 
+
+#######################################################################
+
+sub mime_types_init
+{
+    $MIME_TYPES = MIME::Types->new;
+    my @types;
+
+    push @types, (
+		  MIME::Type->new(
+				  encoding => 'quoted-printable',
+				  extensions => ['xlsx'],
+				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				 ),
+		 );
+    $MIME_TYPES->addType(@types);
+
+    # Not in db! :-P
+    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
+}
 
 #######################################################################
 
