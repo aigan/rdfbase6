@@ -354,7 +354,7 @@ sub sysdesig
 This will submit/activate all new arcs.
 
 All arc subjects will be marked with
-L<Rit::Base::Resource/mark_updated> if they already has a node record.
+L<Rit::Base::Resource/mark_updated> if they already have a node record.
 
 If the current user has root access; All submitted arcs will be activated.
 
@@ -373,6 +373,7 @@ sub autocommit
 
     my $newarcs = $c->newarcs;
     my $cnt = $newarcs->size;
+    my $u = $Para::Frame::REQ->user;
 
     $args_in ||= {};
     my %args = %$args_in;
@@ -389,7 +390,7 @@ sub autocommit
 	}
 	else
 	{
-	    $activate = $Para::Frame::REQ->user->has_root_access;
+	    $activate = $u->has_root_access;
 	}
 
 	if( $activate )
@@ -398,7 +399,7 @@ sub autocommit
 	}
 	else
 	{
-	    debug "Submitting new arcs:";
+	    debug "Submitting new arcs (and activating arcs from owned subjs):";
 	}
 
 	arc_lock;
@@ -418,7 +419,7 @@ sub autocommit
 		    $arc->submit;
 		}
 
-		if( $activate and $arc->submitted )
+		if( ( $activate or $arc->subj->is_owned_by( $u ) ) and $arc->submitted )
 		{
 		    $arc->activate;
 		    my $subj = $arc->subj;

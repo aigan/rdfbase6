@@ -28,8 +28,6 @@ sub handler
 {
     my( $req ) = @_;
 
-    throw('denied', "Nope") unless $req->session->user->level >= 20;
-
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
     my $q = $req->q;
@@ -41,6 +39,13 @@ sub handler
     }
 
     my $node = Rit::Base::Resource->get($id);
+
+    unless( $req->session->user->level >= 20
+	    or $node->is_owned_by( $req->session->user )
+	  )
+    {
+	throw('denied', "Access denied");
+    }
 
     if( $q->param('prop_label') )
     {
