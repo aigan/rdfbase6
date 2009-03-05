@@ -77,13 +77,19 @@ sub folder
 
 #######################################################################
 
-=head2 is_top
+=head2 generate_name
+
+See L<Rit::Base::Email::Part/generate_name>
 
 =cut
 
-sub is_top
+sub generate_name
 {
-    return 1;
+    my( $part ) = @_;
+
+    my $name = "email".$part->email->id;
+    $name .= "-part".$part->path;
+    return $name;
 }
 
 

@@ -923,11 +923,7 @@ Generates a non-unique message name for use for attatchemnts, et al
 
 sub generate_name
 {
-    my( $part ) = @_;
-
-    my $name = "email".$part->top->uid;
-    $name .= "-part".$part->path;
-    return $name;
+    confess "NOT IMPLEMENTED";
 }
 
 

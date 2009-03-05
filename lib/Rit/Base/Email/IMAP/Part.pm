@@ -433,6 +433,24 @@ sub body_part
 
 #######################################################################
 
+=head2 generate_name
+
+See L<Rit::Base::Email::Part/generate_name>
+
+=cut
+
+sub generate_name
+{
+    my( $part ) = @_;
+
+    my $name = "email".$part->top->uid;
+    $name .= "-part".$part->path;
+    return $name;
+}
+
+
+#######################################################################
+
 =head2 convert_to
 
 =cut
