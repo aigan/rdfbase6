@@ -92,11 +92,11 @@ sub body
 
 #######################################################################
 
-=head2 body_as_html
+=head2 as_html
 
 =cut
 
-sub body_as_html
+sub as_html
 {
     my( $part ) = @_;
 
@@ -116,7 +116,7 @@ sub sysdesig
 {
     my( $part ) = @_;
 
-    return($part->body_head->parsed_subject->plain || '<no subject>');
+    return($part->head->parsed_subject->plain || '<no subject>');
 }
 
 
