@@ -134,12 +134,14 @@ sub render_output
 
 	$type = $part->type || '';
 #	debug "part type is $type";
-	$charset = $part->charset_guess;
-
-	unless( $charset )
+	if( $type =~ m/^text\// )
 	{
-	    debug "Charset undefined. Falling back on ISO-8859-1";
-	    $charset = "iso-8859-1";
+	    $charset = $part->charset_guess;
+	    unless( $charset )
+	    {
+		debug "Charset undefined. Falling back on ISO-8859-1";
+		$charset = "iso-8859-1";
+	    }
 	}
 
 	$encoding = $part->encoding;
@@ -147,8 +149,8 @@ sub render_output
     }
     else
     {
-	$encoding = $top->body_part->encoding;
-	$charset = $top->body_part->charset_guess;
+	$encoding = $top->encoding;
+	$charset = $top->charset_guess;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -188,7 +190,7 @@ sub render_output
 	$rend->{'content_type'} = "text/html";
 	$rend->{'charset'} = "UTF-8";
 
-	my $head = $part->body_head_complete;
+	my $head = $part->head_complete;
 
 	my $data = $head->as_html;
 	return \$data;
@@ -207,7 +209,7 @@ sub render_output
     {
 	if( $type eq "text/html" )
 	{
-	    $data = $part->body;
+	    $data = $top->body;
 #	    $data = $folder->imap_cmd('body_string', $uid);
 	}
 	else
@@ -289,7 +291,11 @@ sub render_output
     }
 
 
-    debug "Body is ".length($$data)." chars long: ".validate_utf8($data);
+    debug "Body is ".length($$data)." chars long";
+    if( $type =~ /^test\// )
+    {
+	debug "  ".validate_utf8($data);
+    }
 
 #    debug $data;
 

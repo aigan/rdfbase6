@@ -100,7 +100,7 @@ sub as_html
 	$out .= "<big>Re:</big> ";
     }
 
-    $out .= $text;
+    $out .= CGI->escapeHTML($text);
 
     return $out;
 }

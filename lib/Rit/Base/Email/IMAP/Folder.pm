@@ -305,8 +305,17 @@ sub idle
 	    debug $folder->diag("Couldn't idle");
 	    debug "Disconnecting...";
 
-	    # TODO: This call sometimes hangs. We should set a timelimit
-	    $imap->disconnect;
+	    eval
+	    {
+		local $SIG{ALRM} = sub { die "timeout\n" };
+		alarm 2;
+		$imap->disconnect;
+		alarm 0;
+	    };
+	    if( $@ )
+	    {
+		debug $folder->diag($@);
+	    }
 	}
     }
     else
@@ -363,7 +372,8 @@ sub imap_cmd
 
 	if( $@ )
 	{
-	    throw 'IMAP', $folder->diag("Failed to run cmd $cmd(@_)");
+	    confess $folder->diag("Failed to run cmd $cmd(@_)");
+#	    throw 'IMAP', $folder->diag("Failed to run cmd $cmd(@_)");
 	}
     }
 

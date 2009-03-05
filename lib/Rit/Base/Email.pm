@@ -24,10 +24,6 @@ use Carp qw( croak confess cluck );
 use Template;
 use Template::Context;
 use URI;
-use MIME::Words qw( decode_mimewords );
-use IMAP::BodyStructure;
-use MIME::QuotedPrint qw(decode_qp);
-use MIME::Base64 qw( decode_base64 );
 use CGI;
 
 BEGIN
@@ -343,7 +339,7 @@ Returns: An array ref
 
 sub header
 {
-    return $_[0]->obj->body_header($_[1]);
+    return $_[0]->obj->header($_[1]);
 }
 
 
@@ -358,7 +354,7 @@ Returns: A L<Rit::Base::Literal::Email::Subject>
 sub subject
 {
     return  $_[0]->{'email_subject'} ||=
-      $_[0]->obj->body_head->parsed_subject;
+      $_[0]->obj->head->parsed_subject;
 }
 
 
@@ -371,7 +367,7 @@ sub subject
 sub date
 {
     return $_[0]->{'email_date'} ||=
-      $_[0]->obj->body_head->parsed_date;
+      $_[0]->obj->head->parsed_date;
 }
 
 
@@ -386,7 +382,7 @@ Returns: a L<Para::Frame::List> of L<Rit::Base::Literal::Email::Address>
 sub from
 {
     return $_[0]->{'email_from'} ||=
-      $_[0]->obj->body_head->parsed_address('from');
+      $_[0]->obj->head->parsed_address('from');
 }
 
 
@@ -403,7 +399,7 @@ sub sender
     unless( defined $_[0]->{'email_sender'} )
     {
 	return $_[0]->{'email_sender'} =
-	  $_[0]->obj->body_head->parsed_address('sender');
+	  $_[0]->obj->head->parsed_address('sender');
     }
     return $_[0]->{'email_sender'};
 }
@@ -420,7 +416,7 @@ Returns: a L<Para::Frame::List> of L<Rit::Base::Literal::Email::Address>
 sub to
 {
     return $_[0]->{'email_to'} ||=
-      $_[0]->obj->body_head->parsed_address('to');
+      $_[0]->obj->head->parsed_address('to');
 }
 
 
@@ -437,7 +433,7 @@ sub bcc
     unless( defined $_[0]->{'email_bcc'} )
     {
 	return $_[0]->{'email_bcc'} =
-	  $_[0]->obj->body_head->parsed_address('bcc');
+	  $_[0]->obj->head->parsed_address('bcc');
     }
     return $_[0]->{'email_bcc'};
 }
@@ -456,7 +452,7 @@ sub cc
     unless( defined $_[0]->{'email_cc'} )
     {
 	return $_[0]->{'email_cc'} =
-	  $_[0]->obj->body_head->parsed_address('cc');
+	  $_[0]->obj->head->parsed_address('cc');
     }
     return $_[0]->{'email_cc'};
 }
@@ -475,7 +471,7 @@ sub reply_to
     unless( defined $_[0]->{'email_reply_to'} )
     {
 	return $_[0]->{'email_reply_to'} =
-	  $_[0]->obj->body_head->parsed_address('reply-to');
+	  $_[0]->obj->head->parsed_address('reply-to');
     }
     return $_[0]->{'email_reply_to'};
 }
@@ -493,7 +489,7 @@ Returns: a ref to the string of the decoded body.
 
 sub body
 {
-    return $_[0]->obj->body_part->body;
+    return $_[0]->obj->body;
 }
 
 

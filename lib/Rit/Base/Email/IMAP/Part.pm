@@ -84,7 +84,7 @@ sub new_by_path
 #    debug "Part ".$part->path." looking up ".$path;
 #    cluck "HERE";
 
-    my $base = $part->top->body_part;
+    my $base = $part->top;
     my $struct = $base->struct->part_at($path);
 
     unless( $struct )

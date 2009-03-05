@@ -6,7 +6,7 @@ package Rit::Base::Email::Head;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -23,9 +23,6 @@ use utf8;
 use Carp qw( croak confess cluck );
 use URI;
 use MIME::Words qw( decode_mimewords );
-use IMAP::BodyStructure;
-use MIME::QuotedPrint qw(decode_qp);
-use MIME::Base64 qw( decode_base64 );
 
 BEGIN
 {

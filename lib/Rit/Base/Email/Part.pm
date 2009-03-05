@@ -56,6 +56,10 @@ use constant EA => 'Rit::Base::Literal::Email::Address';
 
 our $MIME_TYPES;
 
+### Inherit
+#
+use base qw( Rit::Base::Object );
+
 
 #######################################################################
 
@@ -735,9 +739,9 @@ sub charset_guess
 	    {
 		debug "Got charset from content sample: $charset";
 	    }
-	    elsif( $part->top ne $part->parent )
+	    elsif( not $part->is_top )
 	    {
-		$charset = $part->top->body_part->charset_guess;
+		$charset = $part->top->charset_guess;
 	    }
 
 	    unless( $charset )
@@ -1014,7 +1018,7 @@ sub _render_texthtml
 
 $msg .= <<EOT;
 <br>
-<iframe class="iframe_autoresize" src="$url_path" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" style="overflow:visible; display:block; position:static"></iframe>
+<iframe class="iframe_autoresize" src="$url_path" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:visible; display:block; position:static"></iframe>
 
 EOT
 ;
@@ -1152,7 +1156,7 @@ sub _render_mixed
 #    debug "  rendering mixed - ".$part->path;
 
 
-    unless( $part->parent->effective_type eq 'message/rfc822' )
+    unless( $part->is_top or $part->parent->effective_type eq 'message/rfc822' )
     {
 	# It is possible that the parent should have been a
 	# rfc822, but that the email is malformed
@@ -1174,7 +1178,7 @@ sub _render_mixed
     }
 
 
-#    debug $part->desig;
+    debug $part->desig;
 
     my @alts = $part->parts;
 
@@ -1483,6 +1487,11 @@ sub body
 #    debug "unwinding";
     return $dataref if $args->{'unwind'};
 
+    unless( $part->type =~ m/^text\// )
+    {
+	return $dataref;
+    }
+
 #    debug datadump $args;
 
     my $charset = $part->charset_guess({%$args,sample=>$dataref});
@@ -1530,11 +1539,11 @@ sub body_part
 
 #######################################################################
 
-=head2 desig
+=head2 viewtree
 
 =cut
 
-sub desig
+sub viewtree
 {
     my( $part, $ident ) = @_;
 
@@ -1559,12 +1568,12 @@ sub desig
     foreach my $subpart ( $part->parts )
     {
 #	debug "  subpart $subpart";
-	$msg .= $subpart->desig($ident);
+	$msg .= $subpart->viewtree($ident);
     }
 
     if( my $body_part = $part->body_part )
     {
-	$msg .= $body_part->desig($ident);
+	$msg .= $body_part->viewtree($ident);
     }
 
     return $msg;
@@ -1608,6 +1617,19 @@ sub mime_types_init
 
 #######################################################################
 
+=head2 desig
+
+=cut
+
+sub desig
+{
+    my( $part ) = @_;
+
+    return $part->generate_name;
+}
+
+#######################################################################
+
 =head2 sysdesig
 
 =cut
@@ -1617,6 +1639,17 @@ sub sysdesig
     my( $part ) = @_;
 
     return $part->generate_name;
+}
+
+#######################################################################
+
+=head2 is_top
+
+=cut
+
+sub is_top
+{
+    return 0;
 }
 
 #######################################################################

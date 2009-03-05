@@ -62,24 +62,6 @@ sub new_by_email
 
 #######################################################################
 
-=head2 body_head_complete
-
-  $entity->body_head_complete()
-
-Returns: The L<Rit::Base::Email::RB::Head> object
-
-=cut
-
-sub body_head_complete
-{
-    return $_[0]->{'body_head'} ||=
-      Rit::Base::Email::RB::Head->
-	  new_by_email( $_[0]->{'email'} );
-}
-
-
-#######################################################################
-
 =head2 head_complete
 
   $entity->head_complete()
@@ -90,7 +72,9 @@ Returns: The L<Rit::Base::Email::RB::Head> object
 
 sub head_complete
 {
-    confess "Top part has no head";
+    return $_[0]->{'head'} ||=
+      Rit::Base::Email::RB::Head->
+	  new_by_email( $_[0]->{'email'} );
 }
 
 

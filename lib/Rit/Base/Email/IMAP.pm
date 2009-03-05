@@ -84,54 +84,16 @@ sub new_by_email
 
 #######################################################################
 
-=head2 body_head_complete
-
-=cut
-
-sub body_head_complete
-{
-    return $_[0]->{'body_head'} ||=
-      Rit::Base::Email::IMAP::Head->
-	  new_by_uid( $_[0]->folder, $_[0]->uid );
-}
-
-
-#######################################################################
-
 =head2 head_complete
 
 =cut
 
 sub head_complete
 {
-    confess "Top part has no head";
+    return $_[0]->{'head'} ||=
+      Rit::Base::Email::IMAP::Head->
+	  new_by_uid( $_[0]->folder, $_[0]->uid );
 }
-
-
-#######################################################################
-
-=head2 body_head
-
-  $part->body_head()
-
-Returns: The L<Rit::Base::Email::IMAP::Head> object
-
-=cut
-
-*body_head = \&body_head_complete;
-
-
-#######################################################################
-
-=head2 head
-
-  $part->head()
-
-Returns: The L<Rit::Base::Email::IMAP::Head> object
-
-=cut
-
-*head = \&head_complete;
 
 
 #######################################################################
@@ -276,7 +238,7 @@ sub body_as_html
     return "<strong>not found</strong>" unless $part->exist;
 
 
-    my $bp = $part->body_part;
+    my $bp = $part;
 
     my $type = $bp->type;
     my $renderer = $bp->select_renderer($type);
@@ -306,8 +268,6 @@ sub body_as_html
     $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
 
     $msg .= $bp->$renderer();
-
-#    my $msg = &{$renderer}($email, $struct);
 
     if( keys %{$part->{'attatchemnts'}} )
     {
@@ -354,24 +314,17 @@ sub body_as_html
 
 #######################################################################
 
-=head2 body_part
-
-
-
-This returns the part representing the body of the email.
-
-It can be called from the outmost email object (this) or from any
-rfc822 email part.
+=head2 struct
 
 =cut
 
-sub body_part
+sub struct
 {
     my( $part ) = @_;
 
-    if( $part->{'body_part'} )
+    if( $part->{'struct'} )
     {
-	return $part->{'body_part'};
+	return $part->{'struct'};
     }
 
     my $folder = $part->folder;
@@ -395,10 +348,7 @@ sub body_part
 	die "No struct returned for\n$raw";
     }
 
-#    debug datadump $struct;
-#    debug $part->part_desig( $struct );
-
-    return $part->{'body_part'} = $part->new( $struct );
+    return $part->{'struct'} = $struct;
 }
 
 
@@ -512,55 +462,25 @@ sub sysdesig
 
 #######################################################################
 
-=head2 path
-
-See L<Rit::Base::Email::Part/path>
-
-=cut
-
-sub path
-{
-    return 'E';
-}
-
-
-#######################################################################
-
 =head2 parent
 
 =cut
 
 sub parent
 {
-    confess "parent of top?!?" unless $_[0]->{'parent'};
+    return is_undef;
 }
 
 
 #######################################################################
 
-=head2 type
-
-See L<Rit::Base::Email::Part/type>
+=head2 is_top
 
 =cut
 
-sub type
+sub is_top
 {
-    return "message/rfc822";
-}
-
-
-#######################################################################
-
-=head2 desig
-
-See L<Rit::Base::Email::Part/desig>
-
-=cut
-
-sub desig
-{
-    return $_[0]->body_part->desig;
+    return 1;
 }
 
 

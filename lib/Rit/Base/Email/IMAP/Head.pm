@@ -126,6 +126,8 @@ sub new_by_uid
 	$headers .= $header . "\n";
     }
 
+#    debug $headers;
+
     return $class->new( \$headers );
 }
 
@@ -190,7 +192,7 @@ sub new_body_head_by_part
 {
     my( $class, $part ) = @_;
 
-#    debug "Initializing body head from part ".$part->path;
+    debug "Initializing body head from part ".$part->path;
 
     my $email = $part->email;
     my $folder = $email->folder;
@@ -204,7 +206,7 @@ sub new_body_head_by_part
     my $data = "";
     my $pos = 0;
 
-#    debug "bodypart_string($uid,'$imap_path',$chunk_size,$pos)";
+    debug "bodypart_string($uid,'$imap_path',$chunk_size,$pos)";
 
     my $chunk = $folder->imap_cmd('bodypart_string',
 				  $uid, $imap_path,
