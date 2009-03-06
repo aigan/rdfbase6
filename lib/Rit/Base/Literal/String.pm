@@ -771,8 +771,12 @@ sub wuirc
 	$range->equals($tb) or
 	$range->scof($tb) )
     {
-	$args->{'cols'} ||= 57;
-	$args->{'size'} = $args->{'cols'};
+	unless( $args->{'class'} =~ /\bwide\b/ )
+	{
+	    $args->{'cols'} ||= 57;
+	    $args->{'size'} = $args->{'cols'};
+	    # also remove size?
+	}
 	$args->{'inputtype'} = 'textarea';
 	$args->{'rows'} ||= 3;
     }
