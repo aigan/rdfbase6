@@ -15,6 +15,7 @@ use strict;
 use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Resource::Change;
+use Rit::Base::Utils qw( arc_lock arc_unlock );
 
 =head1 DESCRIPTION
 
@@ -40,6 +41,8 @@ sub handler
 	push @arc_id_list, $1;
     }
 
+    arc_lock();
+
     foreach my $aid ( sort @arc_id_list )
     {
 	debug "Handling arc $aid";
@@ -60,6 +63,8 @@ sub handler
 	    }
 	}
     }
+
+    arc_unlock();
 
     $res->autocommit;
 
