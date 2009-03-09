@@ -243,8 +243,12 @@ sub wub_select
     $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
       .'pred_'. $pred_name . $if .'"'. $extra .'>';
 
-    my $default_value = $subj->prop( $pred_name )->id ||
-      $args->{'default_value'} || '';
+    my $default_value;
+    if( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
+    {
+	$default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
+    }
+    $default_value ||= $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if( $header );
 
@@ -272,7 +276,7 @@ sub wub_select
 
 	$out .= ' selected="selected"'
 	  if( $default_value eq $item->id or
-	      $subj->prop( $pred_name, $item ) );
+	      $subj->prop( $pred_name, $item, 'adirect' ) );
 
 	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
     }
