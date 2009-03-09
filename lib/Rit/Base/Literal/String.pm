@@ -771,7 +771,7 @@ sub wuirc
 	$range->equals($tb) or
 	$range->scof($tb) )
     {
-	unless( $args->{'class'} =~ /\bwide\b/ )
+	unless( ($args->{'class'}||'') =~ /\bwide\b/ )
 	{
 	    $args->{'cols'} ||= 57;
 	    $args->{'size'} = $args->{'cols'};
