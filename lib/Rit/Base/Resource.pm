@@ -134,7 +134,7 @@ class L</init>.
 
 If called with C<new> and given the arg C<new_class>, it will look up
 the perl package that handles that class, by calling
-L</instance_class), and blessing into that perl class.
+L</instance_class>, and blessing into that perl class.
 
 The global variable C<%Rit::Base::LOOKUP_CLASS_FOR> can be modified
 (during startup) for setting which classes it should lookup the class
