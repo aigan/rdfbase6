@@ -614,7 +614,7 @@ sub sorted
 	    {
 		if( UNIVERSAL::isa $val, 'Rit::Base::List' )
 		{
-		    $val = List::Util::min( $val->as_array );
+		    $val = List::Util::minstr( $val->as_array );
 		}
 
 		# Infinite future date
