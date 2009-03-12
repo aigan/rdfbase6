@@ -3963,8 +3963,6 @@ sub set_value
 	push( @dbparts,
 	      "$coltype_new=?",
 	      "valtype=?",
-	      "created=?",
-	      "created_by=?",
 	      "updated=?"
 	    );
 
@@ -3972,9 +3970,21 @@ sub set_value
 	      $value_db,
 	      $valtype_new->id,
 	      $now_db,
-	      $u_node->id,
-	      $now_db,
 	    );
+
+	if( $arc->is_new )
+	{
+	    push( @dbparts,
+		  "created=?",
+		  "created_by=?",
+		);
+
+	    push( @dbvalues,
+		  $now_db,
+		  $u_node->id,
+		);
+	}
+
 
 	if(     $objtype_old and  $objtype_new )
 	{
