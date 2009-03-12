@@ -919,14 +919,19 @@ sub create
     #
     $arc->register_with_nodes;
 
-
     $arc->schedule_check_create( $args );
-
-    $res->changes_add;
 
     $Rit::Base::Cache::Changes::Added{$arc->id} ++;
 
-    $res->add_newarc( $arc );
+    $res->changes_add;
+    if( $arc->active )
+    {
+	$arc->notify_change( $args );
+    }
+    else
+    {
+	$res->add_newarc( $arc );
+    }
 
     return $arc;
 }
@@ -1071,10 +1076,13 @@ sub set_value_node
 
   $a->obj
 
-Returns: The object L<Rit::Base::Resource> of the arc. If the arc
-points to a literal resource (value node), we will return the value
-node. Thus. You can't use this to determine if the arc ponts to a
-literal or not. Returns L<Rit::Base::Undef> if nothing else.
+Returns: The object L<Rit::Base::Resource> of the arc.
+
+If the arc points to a literal resource (value node), we will return
+the value node. Thus. You can't use this to determine if the arc ponts
+to a literal or not. Returns L<Rit::Base::Undef> if nothing else.
+
+For determining if the arc points at an obj, use L</objtype>.
 
 =cut
 
@@ -2522,6 +2530,11 @@ Submitted arcs are not active but will be handled here. It will be
 deactivated as is if it was active, since its been replaced by a new
 arc.
 
+The given new active arc would have triggered a L</notify_change>,
+rather than this method.
+
+Returns: nothing
+
 =cut
 
 sub deactivate
@@ -2577,6 +2590,8 @@ sub deactivate
     #
     $arc->obj->reset_cache if $arc->obj; # Literals unaffected
     $arc->subj->reset_cache;
+
+
     $arc->schedule_check_remove( $args );
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -3365,6 +3380,9 @@ history about who requested the removal and who authorized it.
 New (non-active) arcs can be removed directly by the authorized agent,
 without the creation of a removal arc.
 
+A forced removal will not trigger
+L<Rit::Base::Resource/update_unseen_by>.
+
 
 Supported args are:
 
@@ -3741,6 +3759,11 @@ Supported args are:
   valtype
   value_node
 
+If a new arc version is created, that creation may trigger a
+L</notify_change>. A foreced update will not trigger a
+L</notify_change>.
+
+
 Returns: the arc changed, or the same arc
 
 =cut
@@ -3972,18 +3995,18 @@ sub set_value
 	      $now_db,
 	    );
 
-	if( $arc->is_new )
-	{
-	    push( @dbparts,
-		  "created=?",
-		  "created_by=?",
-		);
-
-	    push( @dbvalues,
-		  $now_db,
-		  $u_node->id,
-		);
-	}
+#	if( $arc->is_new )
+#	{
+#	    push( @dbparts,
+#		  "created=?",
+#		  "created_by=?",
+#		);
+#
+#	    push( @dbvalues,
+#		  $now_db,
+#		  $u_node->id,
+#		);
+#	}
 
 
 	if(     $objtype_old and  $objtype_new )
@@ -4060,7 +4083,10 @@ sub set_value
 	debug 0, "Updated arc ".$arc->sysdesig;
 
 	$res->changes_add;
-	$res->add_newarc($arc);
+	unless( $arc->active )
+	{
+	    $res->add_newarc($arc);
+	}
     }
     else
     {
@@ -4395,6 +4421,7 @@ sub activate
     # the new arc version may INFERE the old arc
     #
     $arc->schedule_check_create( $args );
+    $arc->notify_change( $args );
 
     $Rit::Base::Cache::Changes::Updated{$arc->id} ++;
 
@@ -5674,6 +5701,36 @@ sub remove_check
     $arc->{'in_remove_check'} --;
     $arc->{'disregard'} --;
     warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+}
+
+
+###############################################################
+
+=head2 notify_change
+
+  $a->notify_change( \%args )
+
+Will mark dependant nodes as updated unless for 
+
+=cut
+
+sub notify_change
+{
+    my( $arc, $args ) = @_;
+
+    my $pred_name = $arc->pred->plain;
+
+    return if $pred_name =~ /^(un)?seen_by$/;
+
+    if( my $obj = $arc->obj ) # obj or value node
+    {
+	$obj->mark_updated if $obj->node_rec_exist;
+    }
+
+    my $subj = $arc->subj;
+    $subj->mark_updated if $subj->node_rec_exist;
+
+    return;
 }
 
 
