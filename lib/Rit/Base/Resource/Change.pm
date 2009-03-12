@@ -422,21 +422,21 @@ sub autocommit
 		if( ( $activate or $arc->subj->is_owned_by( $u ) ) and $arc->submitted )
 		{
 		    $arc->activate;
-		    my $subj = $arc->subj;
-		    $subjs_changed{ $subj->id } = $subj;
+#		    my $subj = $arc->subj;
+#		    $subjs_changed{ $subj->id } = $subj;
 		}
 	    }
 
 	    ( $arc, $error ) = $newarcs->get_next;
 	}
-	foreach my $item ( values %subjs_changed )
-	{
-	    if( $item->node_rec_exist )
-	    {
-		debug "+ ".$item->sysdesig;
-		$item->mark_updated($args{'updated'});
-	    }
-	}
+#	foreach my $item ( values %subjs_changed )
+#	{
+#	    if( $item->node_rec_exist )
+#	    {
+#		debug "+ ".$item->sysdesig;
+#		$item->mark_updated($args{'updated'});
+#	    }
+#	}
 	arc_unlock;
 	debug "- EOL";
 
