@@ -92,11 +92,11 @@ sub body
 
 #######################################################################
 
-=head2 as_html
+=head2 body_as_html
 
 =cut
 
-sub as_html
+sub body_as_html
 {
     my( $part ) = @_;
 
