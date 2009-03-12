@@ -6620,6 +6620,9 @@ sub create_rec
 
     $n->initiate_node;
 
+    delete $n->{'created'};
+    delete $n->{'created_by'};
+
     if( $first ) # ... and $last
     {
 	$n->{'created_obj'} = $first->created;
@@ -6629,7 +6632,14 @@ sub create_rec
     }
     else
     {
-	$n->mark_updated();
+	$args ||= {};
+	my $time = $args->{'time'} || now();
+	my $user = $args->{'user'} || $Para::Frame::REQ->user;
+
+	$n->{'created_obj'} = $time;
+	$n->{'created_by_obj'} = $user;
+
+	$n->mark_updated( $time, $user );
     }
 
     return $n;
@@ -6715,21 +6725,31 @@ TODO: implement args
 
 sub mark_updated
 {
-    my( $node, $time, $u ) = @_;
-    $time ||= now();
-    $u ||= $Para::Frame::REQ->user;
-    $node->initiate_node;
-    $node->{'updated_obj'} = $time;
-    $node->{'created_obj'} ||= $time;
-    $node->{'updated_by_obj'} = $u;
-    $node->{'created_by_obj'} ||= $u;
-    delete $node->{'updated'};
-    delete $node->{'created'};
-    $node->mark_unsaved;
+    my( $n, $time, $u ) = @_;
 
-    $node->session_history_add('updated');
+    $n->initiate_node;
+    if( $n->{'created'} || $n->{'created_obj'} )
+    {
+	$time ||= now();
+	$u ||= $Para::Frame::REQ->user;
 
-    debug shortmess "Mark UPDATED for ".$node->desig;
+	$n->{'updated_obj'} = $time;
+	$n->{'updated_by_obj'} = $u;
+	delete $n->{'updated'};
+	delete $n->{'updated_by'};
+    }
+    else
+    {
+	# Will call back here with created_obj set
+	$n->create_rec({time=>$time,
+			   user=> $u});
+    }
+
+    $n->mark_unsaved;
+
+    $n->session_history_add('updated');
+
+    debug shortmess "Mark UPDATED for ".$n->desig;
 
     return $time;
 }
