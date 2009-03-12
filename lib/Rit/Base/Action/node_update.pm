@@ -20,7 +20,10 @@ use Rit::Base::Utils qw( parse_propargs );
 
 =head1 DESCRIPTION
 
-Ritbase Action for editing nodes
+Ritbase Action for editing nodes.
+
+This will always create a node record for holding creatin and updated
+times.
 
 =cut
 
@@ -57,7 +60,10 @@ sub handler
 
     if( $res->changes )
     {
-	$node->mark_updated();
+	unless( $node->has_node_record )
+	{
+	    $node->create_rec;
+	}
     }
 
     $res->autocommit;
