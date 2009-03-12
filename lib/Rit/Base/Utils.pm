@@ -409,6 +409,7 @@ sub parse_arc_add_box
     my( $query, $args ) = @_;
 
     $args ||= {};
+    $query ||= '';
 
     my $DEBUG = 0;
     my $props = {};
