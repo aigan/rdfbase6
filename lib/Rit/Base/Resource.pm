@@ -1702,23 +1702,6 @@ sub empty
 
 #######################################################################
 
-=head2 has_node_record
-
-  $n->has_node_record
-
-Returns: true if node has node record
-
-=cut
-
-sub has_node_record
-{
-    $_[0]->initiate_node;
-    return $_[0]->{'initiated_node'} > 1 ? 1 : 0;
-}
-
-
-#######################################################################
-
 =head2 created
 
   $n->created
@@ -6102,6 +6085,10 @@ from this arc. It's also called after L</rebless>.
 
 Only called when arc is activated!
 
+The arc may exist from before, on_arc_add() will also be called for
+validating that everything that should have been done on adding also
+has been done, as with a vacuum().
+
 Reimplement this.
 
 C<$pred_name> is given as a shortcut for C<$arc-E<gt>pred-E<gt>name>
@@ -6592,9 +6579,89 @@ sub initiate_node
 
 #########################################################################
 
+=head2 create_rec
+
+  $node->create_rec
+
+Created a node record by using L</mark_updated>. Will select created
+and updated data from the availible arcs. Using L</mark_updated>
+defaults if no arcs exist.
+
+Returns: $node
+
+=cut
+
+sub create_rec
+{
+    my( $n, $args ) = @_;
+
+    return $n if $n->has_node_record;
+
+    my( $first, $last );
+
+    my $arcs = $n->arc_list(undef,undef,'all')
+      ->merge( $n->revarc_list(undef,undef,'all') );
+
+    # Initial value
+    $first = $last = $arcs->get_next_nos;
+
+    while( my $arc = $arcs->get_next_nos )
+    {
+	if( $arc->created < $first->created )
+	{
+	    $first = $arc;
+	}
+
+	if( $arc->updated > $last->updated )
+	{
+	    $last = $arc;
+	}
+    }
+
+    $n->initiate_node;
+
+    if( $first ) # ... and $last
+    {
+	$n->{'created_obj'} = $first->created;
+	$n->{'created_by_obj'} = $first->created_by;
+
+	$n->mark_updated( $last->updated, $last->updated_by );
+    }
+    else
+    {
+	$n->mark_updated();
+    }
+
+    return $n;
+}
+
+
+#######################################################################
+
+=head2 has_node_record
+
+  $n->has_node_record
+
+Same as L</node_rec_exist>
+
+Returns: true if node has node record
+
+=cut
+
+sub has_node_record
+{
+    $_[0]->initiate_node;
+    return $_[0]->{'initiated_node'} > 1 ? 1 : 0;
+}
+
+
+#########################################################################
+
 =head2 node_rec_exist
 
   $node->node_rec_exist
+
+Same as L</has_node_record>
 
 Returns: True if there exists a node record
 
@@ -6602,18 +6669,8 @@ Returns: True if there exists a node record
 
 sub node_rec_exist
 {
-    my( $node ) = @_;
-
-    $node->initiate_node;
-
-    if( $node->{'initiated_node'} > 1 )
-    {
-	return 1;
-    }
-    else
-    {
-	return 0;
-    }
+    $_[0]->initiate_node;
+    return $_[0]->{'initiated_node'} > 1 ? 1 : 0;
 }
 
 
@@ -6625,6 +6682,7 @@ sub node_rec_exist
 
 sub mark_unsaved
 {
+#    confess "Would mark as unsaved $_[0]->{'id'}";
     $UNSAVED{$_[0]->{'id'}} = $_[0];
 #    debug "Node $_[0]->{id} marked as unsaved now";
 }
@@ -6670,6 +6728,8 @@ sub mark_updated
     $node->mark_unsaved;
 
     $node->session_history_add('updated');
+
+    debug shortmess "Mark UPDATED for ".$node->desig;
 
     return $time;
 }
