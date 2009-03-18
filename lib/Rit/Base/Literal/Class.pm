@@ -323,7 +323,7 @@ sub instance_class
 	    };
 	    if( $@ )
 	    {
-		debug $@;
+		cluck $@;
 	    }
 	    else
 	    {
