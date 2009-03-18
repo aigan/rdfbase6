@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Node;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,15 +15,13 @@ Rit::Base::Node
 
 =cut
 
-use Carp qw( cluck confess croak carp );
+use 5.010;
 use strict;
+use warnings;
 use vars qw($AUTOLOAD);
+use base qw( Rit::Base::Object );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess croak carp );
 
 use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
@@ -35,10 +32,6 @@ use Rit::Base::Utils qw(valclean parse_query_props
 			 convert_query_prop_for_creation
 			 parse_propargs aais );
 
-
-### Inherit
-#
-use base qw( Rit::Base::Object );
 
 =head1 DESCRIPTION
 

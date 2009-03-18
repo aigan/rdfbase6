@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::Raw::Head;
 #=====================================================================
 #
@@ -18,22 +17,18 @@ Rit::Base::Email::RB::Head
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Email::Head );
+
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
 use List::Uniq qw( uniq ); # keeps first of each value
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
-
-use base qw( Rit::Base::Email::Head );
 
 
 #######################################################################

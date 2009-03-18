@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Action::search_filter;
 #=====================================================================
 #
@@ -6,10 +5,13 @@ package Rit::Base::Action::search_filter;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
+
+use 5.010;
 use strict;
+use warnings;
 
 use Rit::Base::Search;
 

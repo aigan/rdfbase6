@@ -1,8 +1,10 @@
 #!perl
 #  $Id$  -*-cperl-*-
 
+use 5.010;
 use strict;
 use warnings;
+
 use Test::Warn;
 use Test::More tests => 20;
 

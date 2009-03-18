@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Undef;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Undef;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,22 +15,11 @@ Rit::Base::Undef
 
 =cut
 
-use Carp qw( cluck );
+use 5.010;
 use strict;
-use vars qw($AUTOLOAD);
-use Scalar::Util qw( looks_like_number );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
-
+use warnings;
 use base qw( Rit::Base::Node );
-
-use Para::Frame::Reload;
-
+use vars qw($AUTOLOAD);
 use overload
     '""'   => 'as_string',
     'bool' => sub{0},
@@ -41,6 +29,12 @@ use overload
     '<=>'  => 'cmp_numeric',
     '+'    => sub{0},
     '@{}'  => sub{[]};
+
+use Carp qw( cluck );
+use Scalar::Util qw( looks_like_number );
+
+use Para::Frame::Reload;
+
 
 =head1 DESCRIPTION
 

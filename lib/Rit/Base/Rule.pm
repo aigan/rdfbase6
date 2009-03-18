@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Rule;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Rule;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,17 +15,14 @@ Rit::Base::Rule
 
 =cut
 
-use Carp qw( cluck confess );
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Resource );
 use vars qw( $INITIALIZED );
+
+use Carp qw( cluck confess );
 use List::Uniq qw( uniq );
-
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame;
 use Para::Frame::Reload;
@@ -35,10 +31,6 @@ use Para::Frame::Utils qw( debug datadump );
 use Rit::Base::Utils qw( is_undef );
 use Rit::Base::Constants qw( $C_syllogism $C_is );
 
-
-### Inherit
-#
-use base qw( Rit::Base::Resource );
 
 our( %Rules, %List_A, %List_B, %List_C );
 

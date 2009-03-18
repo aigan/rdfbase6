@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Resource::Literal;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Resource::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,15 +15,13 @@ Rit::Base::Resource::Literal
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Resource );
+
 use Carp qw( cluck confess carp shortmess longmess );
 use Scalar::Util qw( refaddr );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -42,10 +39,6 @@ use Rit::Base::Constants qw( $C_resource $C_literal );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs
                          convert_query_prop_for_creation query_desig );
-
-### Inherit
-#
-use base qw( Rit::Base::Resource );
 
 
 =head1 DESCRIPTION

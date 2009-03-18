@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::RB;
 #=====================================================================
 #
@@ -18,17 +17,15 @@ Rit::Base::Email::RB
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Email::RB::Part );
+
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
 use CGI;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug );
@@ -38,7 +35,6 @@ use Rit::Base;
 use Rit::Base::Literal::String;
 use Rit::Base::Email::Head;
 
-use base qw( Rit::Base::Email::RB::Part );
 
 #######################################################################
 

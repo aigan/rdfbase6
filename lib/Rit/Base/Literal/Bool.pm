@@ -1,4 +1,3 @@
-# $Id$
 package Rit::Base::Literal::Bool;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Literal::Bool;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,15 +15,13 @@ Rit::Base::Literal::Bool
 
 =cut
 
+use 5.010;
 use strict;
-use Carp;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Literal::String );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
@@ -32,7 +29,6 @@ use Para::Frame::Widget qw( checkbox label_from_params hidden );
 
 use Rit::Base::Utils qw( parse_propargs );
 
-use base qw( Rit::Base::Literal::String );
 
 =head1 DESCRIPTION
 

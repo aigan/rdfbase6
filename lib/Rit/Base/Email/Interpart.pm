@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::Interpart;
 #=====================================================================
 #
@@ -18,16 +17,14 @@ Rit::Base::Email::Interpart
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Email::Part );
+
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -38,8 +35,6 @@ use Rit::Base::Utils qw( parse_propargs is_undef );
 use Rit::Base::Constants qw( $C_email );
 use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
-
-use base qw( Rit::Base::Email::Part );
 
 
 #######################################################################

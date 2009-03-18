@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Metaclass;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Metaclass;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,14 +15,11 @@ Rit::Base::Metaclass
 
 =cut
 
-use Carp qw( cluck confess croak carp );
+use 5.010;
 use strict;
+use warnings;
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess croak carp );
 
 use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;

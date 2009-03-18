@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Widget::Plugins;
 #=====================================================================
 #
@@ -6,10 +5,11 @@ package Rit::Base::Widget::Plugins;
 #   Fredrik Liljegren   <fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
+use 5.010;
 use strict;
 use warnings;
 

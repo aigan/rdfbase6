@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::IMAP::Head;
 #=====================================================================
 #
@@ -18,20 +17,18 @@ Rit::Base::Email::IMAP::Head
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Email::Head );
+
 use Carp qw( croak confess cluck );
 use URI;
 use MIME::Words qw( decode_mimewords );
 use IMAP::BodyStructure;
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug idn_encode idn_decode datadump catch fqdn );
@@ -42,7 +39,6 @@ use Rit::Base::List;
 use Rit::Base::Utils qw( parse_propargs is_undef );
 use Rit::Base::Literal::String;
 
-use base qw( Rit::Base::Email::Head );
 
 
 #######################################################################

@@ -1,7 +1,8 @@
-# $Id$
 package Rit::Base::Action::search_to_excel;
 
+use 5.010;
 use strict;
+use warnings;
 
 use Para::Frame::Utils qw( debug datadump );
 

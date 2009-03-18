@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Search::Result;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Search::Result;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,16 +15,16 @@ Rit::Base::Search::Result
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base 'Rit::Base::List';
+use constant PAGE_SIZE_MAX  => 20;
+use constant LIMIT_DISPLAY_MAX   => 80;
+
 use Carp qw( confess );
 use Scalar::Util qw(weaken);
 use List::Util;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump deunicode throw );
@@ -34,10 +33,6 @@ use Para::Frame::List;
 use Rit::Base::Search::Collection;
 use Rit::Base::Utils qw( query_desig );
 
-use base 'Rit::Base::List';
-
-use constant PAGE_SIZE_MAX  => 20;
-use constant LIMIT_DISPLAY_MAX   => 80;
 
 #######################################################################
 

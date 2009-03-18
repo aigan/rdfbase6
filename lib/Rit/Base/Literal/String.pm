@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::String;
 #=====================================================================
 #
@@ -16,19 +15,23 @@ Rit::Base::Literal::String
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Literal );
+use overload
+  'cmp'  => 'cmp_string',
+  '<=>'  => 'cmp_numeric',
+  '0+'   => sub{+($_[0]->literal)},
+  '+'    => sub{$_[0]->literal + $_[1]},
+  fallback => 1,
+  ;
 
 use Carp qw( cluck confess longmess );
 use Digest::MD5 qw( md5_base64 ); #);
 use Scalar::Util qw( looks_like_number refaddr );
 use Encode; # decode FB_QUIET
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js );
@@ -37,17 +40,6 @@ use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( aloc build_field_key );
 use Rit::Base::Constants qw( $C_textbox $C_text_large );
-
-use base qw( Rit::Base::Literal );
-
-
-use overload
-  'cmp'  => 'cmp_string',
-  '<=>'  => 'cmp_numeric',
-  '0+'   => sub{+($_[0]->literal)},
-  '+'    => sub{$_[0]->literal + $_[1]},
-  fallback => 1,
-  ;
 
 =head1 DESCRIPTION
 

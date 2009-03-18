@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Widget::Handler;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Widget::Handler;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,16 +15,12 @@ Rit::Base::Widget::Handler
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
 
 use Carp qw( cluck confess croak carp shortmess );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw catch trim debug datadump );

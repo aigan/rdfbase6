@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Action::arc_submit;
 #=====================================================================
 #
@@ -6,11 +5,13 @@ package Rit::Base::Action::arc_submit;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
+use 5.010;
 use strict;
+use warnings;
 
 use Rit::Base::Arc;
 

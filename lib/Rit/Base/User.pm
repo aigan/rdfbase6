@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::User;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::User;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,17 +15,14 @@ Rit::Base::User
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw(Para::Frame::User);
 
 use DBI;
 use Carp qw( confess cluck carp );
 use Time::HiRes qw( time );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
@@ -34,8 +30,6 @@ use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig );
 use Rit::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
-
-use base qw(Para::Frame::User);
 
 
 =head1 DESCRIPTION

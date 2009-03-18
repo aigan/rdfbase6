@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::List;
 #=====================================================================
 #
@@ -16,18 +15,15 @@ Rit::Base::List
 
 =cut
 
-use Carp qw(carp croak cluck confess);
+use 5.010;
 use strict;
+use warnings;
+use base qw( Para::Frame::List Rit::Base::Object );
 use vars qw($AUTOLOAD);
+
+use Carp qw(carp croak cluck confess);
 use List::Util;
 use Scalar::Util qw(blessed);
-
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump  );
@@ -37,21 +33,17 @@ use Para::Frame::Logging;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs );
 
-### Inherit
-#
-use base qw( Para::Frame::List Rit::Base::Object );
 
 # Can't overload stringification. It's called in some stage of the
 # process before it should.
 
+#use overload 'cmp'  => 'cmp';
+#use overload 'bool' => sub{ scalar @{$_[0]} };
 use overload
   '""'         => 'desig',
   '.'          => 'concatenate_by_overload',
   'cmp'        => 'cmp_by_overload',
   'fallback'   => 0; # This and NOTHING else!
-
-#use overload 'cmp'  => 'cmp';
-#use overload 'bool' => sub{ scalar @{$_[0]} };
 
 
 =head1 DESCRIPTION

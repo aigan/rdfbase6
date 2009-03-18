@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::Time;
 #=====================================================================
 #
@@ -16,24 +15,19 @@ Rit::Base::Literal::Time
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Para::Frame::Time Rit::Base::Literal );
+
 use Carp qw( cluck carp confess );
 use DateTime::Incomplete;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
 
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Widget qw( label_from_params calendar );
 #use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( parse_propargs query_desig );
-
-use base qw( Para::Frame::Time Rit::Base::Literal );
 
 
 =head1 DESCRIPTION

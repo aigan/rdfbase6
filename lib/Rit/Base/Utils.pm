@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Utils;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,19 +15,15 @@ Rit::Base::Utils - Utility functions for RitBase
 
 =cut
 
+use 5.010;
 use strict;
-use Carp qw( cluck confess carp croak );
-use UNIVERSAL;
+use warnings;
 use utf8; # This module has utf8 chars!
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess carp croak );
+use UNIVERSAL;
 
 use base qw( Exporter );
-
 our @EXPORT_OK
   = qw( cache_clear valclean format_phone format_zip
 	parse_query_props parse_form_field_prop

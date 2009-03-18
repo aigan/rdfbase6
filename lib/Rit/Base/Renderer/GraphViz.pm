@@ -1,4 +1,3 @@
-# $Id$
 package Rit::Base::Renderer::GraphViz;
 #=====================================================================
 #
@@ -6,25 +5,22 @@ package Rit::Base::Renderer::GraphViz;
 #   Fredrik Liljegren   <fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
+use 5.010;
 use strict;
-use GraphViz;
+use warnings;
+use base 'Para::Frame::Renderer::Custom';
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use GraphViz;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump uri );
 
 use Rit::Base::Utils qw( truncstring );
 
-use base 'Para::Frame::Renderer::Custom';
 
 #######################################################################
 

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::Class;
 #=====================================================================
 #
@@ -16,14 +15,12 @@ Rit::Base::Literal::Class
 
 =cut
 
+use 5.010;
 use strict;
-use Carp qw( cluck confess longmess );
+use warnings;
+use base qw( Rit::Base::Resource );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess longmess );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug package_to_module );
@@ -31,8 +28,6 @@ use Para::Frame::Utils qw( debug package_to_module );
 use Rit::Base::Constants qw( $C_literal );
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( is_undef parse_propargs );
-
-use base qw( Rit::Base::Resource );
 
 our %COLTYPE_num2name =
 (

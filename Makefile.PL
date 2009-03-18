@@ -1,9 +1,13 @@
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-BEGIN { require 5.008 }
-use ExtUtils::MakeMaker;
+BEGIN { require 5.010 }
 
+use strict;
+use warnings;
+
+
+use ExtUtils::MakeMaker;
 use FindBin;
 
 my $pf;

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Renderer::IMAP;
 #=====================================================================
 #
@@ -18,27 +17,22 @@ Rit::Base::Renderer::IMAP
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Para::Frame::Renderer::Custom );
 
 use Encode;
 use Carp qw( croak confess cluck );
 use MIME::Base64 qw( decode_base64 );
 use MIME::QuotedPrint qw(decode_qp);
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
 use Para::Frame::Reload;
-
 use Para::Frame::Utils qw( throw debug datadump catch client_send
                            validate_utf8 );
 
 use Rit::Base::Resource;
 
-use base qw( Para::Frame::Renderer::Custom );
 
 #######################################################################
 

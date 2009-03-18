@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Search;
 #=====================================================================
 #
@@ -16,21 +15,17 @@ Rit::Base::Search - Search directly in DB
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base 'Clone'; # gives method clone()
+use constant BINDVALS   =>  0;
+
 use Carp qw( cluck confess croak carp shortmess longmess );
 use Time::HiRes qw( time );
 use List::Util qw( min );
 use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
-
-use constant BINDVALS   =>  0;
-
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
@@ -42,8 +37,6 @@ use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
 use Rit::Base::Arc::Lim;
-
-use base 'Clone'; # gives method clone()
 
 
 =head1 DESCRIPTION

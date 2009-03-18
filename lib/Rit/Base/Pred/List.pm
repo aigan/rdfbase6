@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Pred::List;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Pred::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,23 +15,17 @@ Rit::Base::Pred::List
 
 =cut
 
-use Carp qw(carp croak cluck confess);
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::List );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw(carp croak cluck confess);
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump  );
 
 use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs );
-
-### Inherit
-#
-use base qw( Rit::Base::List );
 
 
 =head1 DESCRIPTION

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Arc;
 #=====================================================================
 #
@@ -16,20 +15,26 @@ Rit::Base::Arc
 
 =cut
 
+use 5.010;
+use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Resource );
+
+use constant CLUE_NOARC => 1;
+use constant CLUE_NOUSEREVARC => 2;
+use constant CLUE_VALUENODE => 4;
+use constant CLUE_NOVALUENODE => 8;
+
+use overload 'cmp'  => sub{0};
+use overload 'ne'   => sub{1};
+use overload 'eq'   => sub{0}; # Use method ->equals()
+use overload 'fallback' => 1;
 
 use Carp qw( cluck confess carp croak shortmess longmess );
-use strict;
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr blessed looks_like_number );
 use DBD::Pg qw(:pg_types);
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
@@ -51,23 +56,10 @@ use Rit::Base::Utils qw( valclean is_undef truncstring
                          query_desig parse_propargs aais
                          );
 
-use constant CLUE_NOARC => 1;
-use constant CLUE_NOUSEREVARC => 2;
-use constant CLUE_VALUENODE => 4;
-use constant CLUE_NOVALUENODE => 8;
-
-### Inherit
-#
-use base qw( Rit::Base::Resource );
-
 # TODO:
 # Move from implicit to explicit then updating implicit properties
 # explicitly
 
-use overload 'cmp'  => sub{0};
-use overload 'ne'   => sub{1};
-use overload 'eq'   => sub{0}; # Use method ->equals()
-use overload 'fallback' => 1;
 
 ## This will make "if($arc)" false if the arc is 'removed'
 ## but you should use $arc->is_true or $arc->defined instead!

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::IMAP;
 #=====================================================================
 #
@@ -18,17 +17,16 @@ Rit::Base::Email::IMAP
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Email::IMAP::Part );
+use constant EA => 'Rit::Base::Literal::Email::Address';
+
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
 use IMAP::BodyStructure;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -43,10 +41,6 @@ use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 use Rit::Base::Email::IMAP::Folder;
 use Rit::Base::Email::IMAP::Head;
-
-use constant EA => 'Rit::Base::Literal::Email::Address';
-
-use base qw( Rit::Base::Email::IMAP::Part );
 
 #######################################################################
 

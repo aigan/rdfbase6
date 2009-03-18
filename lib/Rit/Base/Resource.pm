@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Resource;
 #=====================================================================
 #
@@ -16,21 +15,22 @@ Rit::Base::Resource
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Rit::Base::Node );
+use constant CLUE_NOARC => 1;       # no arc
+use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
+use constant CLUE_VALUENODE => 4;   # literal resource
+use constant CLUE_NOVALUENODE => 8; # no literal resource
+use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
 use Template::PopupTreeSelect '0.9';
 use JSON; # to_json
-
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
@@ -66,11 +66,6 @@ use Rit::Base::Utils qw( valclean parse_query_props
 			 parse_propargs aais );
 
 
-use constant CLUE_NOARC => 1;       # no arc
-use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
-use constant CLUE_VALUENODE => 4;   # literal resource
-use constant CLUE_NOVALUENODE => 8; # no literal resource
-use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
 # TODO: Transactions should be local to the request!!!  But if we use
 # DB rollbacks with a DB-connection that uses ONE db transaction, it
@@ -80,9 +75,6 @@ our %UNSAVED;     # The node table
 our %TRANSACTION; # The arc table
 our $ID;
 
-### Inherit
-#
-use base qw( Rit::Base::Node );
 
 =head1 DESCRIPTION
 

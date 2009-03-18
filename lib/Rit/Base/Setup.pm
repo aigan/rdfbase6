@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Setup;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -18,15 +17,11 @@ Rit::Base::Setup
 
 =cut
 
+use 5.010;
 use strict;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
-
+use warnings;
 use utf8;
+
 use DBI;
 use Carp qw( croak );
 use DateTime::Format::Pg;

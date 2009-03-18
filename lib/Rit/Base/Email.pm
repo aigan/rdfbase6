@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email;
 #=====================================================================
 #
@@ -18,19 +17,17 @@ Rit::Base::Email
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use constant EA => 'Rit::Base::Literal::Email::Address';
+
 use Carp qw( croak confess cluck );
 use Template;
 use Template::Context;
 use URI;
 use CGI;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Email::Classifier;
 
@@ -53,7 +50,6 @@ use Rit::Base::Email::Head;
 use Rit::Base::Email::IMAP::Folder;
 use Rit::Base::Email::IMAP::Head;
 
-use constant EA => 'Rit::Base::Literal::Email::Address';
 
 BEGIN
 {

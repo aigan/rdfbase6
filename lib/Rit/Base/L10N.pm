@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::L10N;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::L10N;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -20,16 +19,12 @@ Using Locale::Maketext
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
 
 use Carp qw(cluck croak carp confess );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%01d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use base qw(Para::Frame::L10N);
 

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base;
 #=====================================================================
 #
@@ -6,33 +5,15 @@ package Rit::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
-=head1 NAME
-
-Rit::Base - The ultimate database
-
-=cut
-
-=head1 DESCRIPTION
-
-See L<Rit::Base::Object> for the baseclass for most classes.
-
-=cut
-
-use vars qw( $VERSION );
+use 5.010;
+use strict;
+use warnings;
 
 use JSON;
-
-BEGIN
-{
-    $VERSION = "6.55";
-    print "Loading ".__PACKAGE__." $VERSION\n";
-
-    $Rit::Base::ioid = 0; # Internal object enumeration
-}
 
 use Para::Frame;
 use Para::Frame::Utils qw( debug );
@@ -54,11 +35,28 @@ use Rit::Base::Search::Result;
 use Rit::Base::Literal::String; # Needed by RB::Utils
 use Rit::Base::Setup;
 
+
+our $VERSION = "6.55";
+
+
+=head1 NAME
+
+Rit::Base - The ultimate database
+
+=cut
+
+=head1 DESCRIPTION
+
+See L<Rit::Base::Object> for the baseclass for most classes.
+
+=cut
+
+
 # Used in Rit::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
     (
-     Rit::Base::Resource   => 1,
-     Rit::Base::User::Meta => 1,
+     'Rit::Base::Resource'   => 1,
+     'Rit::Base::User::Meta' => 1,
     );
 
 our  $IN_STARTUP = 1; # Set to 0 after db init

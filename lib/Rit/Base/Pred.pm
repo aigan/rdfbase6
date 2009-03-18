@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Pred;
 #=====================================================================
 #
@@ -16,16 +15,15 @@ Rit::Base::Pred
 
 =cut
 
-use Carp qw( cluck confess carp croak );
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Resource );
+use constant R => 'Rit::Base::Resource';
+
+use Carp qw( cluck confess carp croak );
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
@@ -34,14 +32,6 @@ use Rit::Base::List;
 use Rit::Base::Utils qw( valclean is_undef parse_propargs );
 use Rit::Base::Literal::String;
 use Rit::Base::Constants qw( $C_predicate );
-
-
-### Inherit
-#
-use base qw( Rit::Base::Resource );
-
-
-use constant R => 'Rit::Base::Resource';
 
 
 #### INIT

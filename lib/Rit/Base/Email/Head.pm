@@ -18,17 +18,16 @@ Rit::Base::Email::Head
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
+use base qw( Email::Simple::Header );
+use constant EA => 'Rit::Base::Literal::Email::Address';
+
 use Carp qw( croak confess cluck );
 use URI;
 use MIME::Words qw( decode_mimewords );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug idn_encode idn_decode datadump catch fqdn );
@@ -43,9 +42,7 @@ use Rit::Base::Literal::Time qw( now ); #);
 use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 
-use constant EA => 'Rit::Base::Literal::Email::Address';
 
-use base qw( Email::Simple::Header );
 
 
 #######################################################################

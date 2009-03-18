@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Email::IMAP::Folder;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Email::IMAP::Folder;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,17 +15,14 @@ Rit::Base::Email::IMAP::Folder
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+
 use Carp qw( croak confess cluck );
 use Mail::IMAPClient;
 use URI;
 use URI::imap;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );

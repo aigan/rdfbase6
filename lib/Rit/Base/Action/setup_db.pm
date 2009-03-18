@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Action::setup_db;
 #=====================================================================
 #
@@ -6,11 +5,13 @@ package Rit::Base::Action::setup_db;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
+use 5.010;
 use strict;
+use warnings;
 
 use Para::Frame::Utils qw( trim );
 

@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::URL;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Literal::URL;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,24 +15,19 @@ Rit::Base::Literal::URL
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Para::Frame::URI Rit::Base::Literal::String );
+
 use Carp qw( cluck confess longmess );
 use CGI;
 use URI;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
 
 use Rit::Base::Utils qw( );
-
-use base qw( Para::Frame::URI Rit::Base::Literal::String );
-# Parent overloads some operators!
 
 
 =head1 DESCRIPTION

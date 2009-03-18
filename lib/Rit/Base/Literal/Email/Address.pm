@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::Email::Address;
 #=====================================================================
 #
@@ -16,16 +15,14 @@ Rit::Base::Literal::Email::Address
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
+
 use Carp qw( cluck confess longmess );
 use Mail::Address;
 use CGI;
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
@@ -33,10 +30,6 @@ use Para::Frame::Widget;
 
 use Rit::Base::Utils qw( parse_propargs );
 use Rit::Base::Constants qw( $C_intelligent_agent );
-
-
-use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
-# Parent overloads some operators!
 
 
 =head1 DESCRIPTION

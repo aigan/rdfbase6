@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Session;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Session;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2006-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2006-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,15 +15,10 @@ Rit::Base::Session
 
 =cut
 
+use 5.010;
 use strict;
-
+use warnings;
 use base qw( Para::Frame::Session );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug );

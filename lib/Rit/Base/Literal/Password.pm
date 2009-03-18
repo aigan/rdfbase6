@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::Password;
 #=====================================================================
 #
@@ -16,14 +15,12 @@ Rit::Base::Literal::Password
 
 =cut
 
+use 5.010;
 use strict;
-use Carp qw( cluck confess longmess );
+use warnings;
+use base qw( Rit::Base::Literal::String );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess longmess );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim );
@@ -31,9 +28,6 @@ use Para::Frame::Widget qw( password label_from_params );
 
 use Rit::Base::Utils qw( is_undef parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( build_field_key );
-
-use base qw( Rit::Base::Literal::String );
-# Parent overloads some operators!
 
 
 =head1 DESCRIPTION

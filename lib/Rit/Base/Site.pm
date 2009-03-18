@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Site;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Site;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2006-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2006-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,14 +15,12 @@ Rit::Base::Site
 
 =cut
 
-use Carp qw( cluck confess croak carp );
+use 5.010;
 use strict;
+use warnings;
+use base qw( Para::Frame::Site );
 
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
+use Carp qw( cluck confess croak carp );
 
 use Para::Frame::Utils qw( throw catch debug datadump );
 use Para::Frame::Reload;
@@ -31,9 +28,6 @@ use Para::Frame::Reload;
 use Rit::Base::Resource;
 use Rit::Base::Constants qw( $C_language );
 
-### Inherit
-#
-use base qw( Para::Frame::Site );
 
 =head1 DESCRIPTION
 

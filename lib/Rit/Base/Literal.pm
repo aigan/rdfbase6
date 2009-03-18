@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal;
 #=====================================================================
 #
@@ -16,15 +15,17 @@ Rit::Base::Literal
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Node );
+use overload
+  '""'   => 'literal',
+  fallback => 1,
+  ;
+
 use Carp qw( cluck confess carp shortmess longmess );
 use Scalar::Util qw( refaddr blessed );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -42,14 +43,6 @@ use Rit::Base::List;
 use Rit::Base::Utils qw( is_undef valclean truncstring parse_propargs
                          convert_query_prop_for_creation query_desig );
 
-### Inherit
-#
-use base qw( Rit::Base::Node );
-
-use overload
-  '""'   => 'literal',
-  fallback => 1,
-  ;
 
 =head1 DESCRIPTION
 

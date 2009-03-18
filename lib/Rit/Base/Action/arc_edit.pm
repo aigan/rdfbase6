@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Action::arc_edit;
 #=====================================================================
 #
@@ -6,11 +5,14 @@ package Rit::Base::Action::arc_edit;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
+use 5.010;
 use strict;
+use warnings;
+
 use Carp qw( confess );
 
 use Para::Frame::Utils qw( clear_params debug );

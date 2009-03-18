@@ -1,17 +1,27 @@
-# $Id$
 package Rit::Base::Renderer::Search_to_Excel;
+#=====================================================================
+#
+# AUTHOR
+#   ...
+#
+# COPYRIGHT
+#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#
+#=====================================================================
 
+use 5.010;
 use strict;
+use warnings;
 use utf8;
-use POSIX qw( locale_h );
+use base 'Para::Frame::Renderer::Custom';
 
+use POSIX qw( locale_h );
 use Spreadsheet::WriteExcel;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw );
 use Para::Frame::L10N qw( loc );
 
-use base 'Para::Frame::Renderer::Custom';
 
 #######################################################################
 

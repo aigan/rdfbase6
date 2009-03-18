@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Resource::Change;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::Resource::Change;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -16,15 +15,11 @@ Rit::Base::Resource::Change
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 
 use Carp qw( cluck confess croak carp shortmess );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump

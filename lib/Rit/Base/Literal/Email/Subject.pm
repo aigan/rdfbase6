@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package Rit::Base::Literal::Email::Subject;
 #=====================================================================
 #
@@ -16,25 +15,20 @@ Rit::Base::Literal::Email::Subject
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
+use base qw( Rit::Base::Literal::String );
+
 use Carp qw( cluck confess longmess );
 use CGI;
 use MIME::Words qw( decode_mimewords );
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim );
 
 use Rit::Base::Utils qw( is_undef );
 use Rit::Base::Constants qw( $C_text );
-
-use base qw( Rit::Base::Literal::String );
-# Parent overloads some operators!
 
 
 =head1 DESCRIPTION

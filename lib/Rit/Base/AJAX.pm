@@ -1,4 +1,3 @@
-# $Id$
 package Rit::Base::AJAX;
 #=====================================================================
 #
@@ -6,7 +5,7 @@ package Rit::Base::AJAX;
 #   Fredrik Liljegren   <fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2008 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
 #=====================================================================
 
@@ -22,15 +21,11 @@ Tie it all together, make your pages into real applications!
 
 =cut
 
+use 5.010;
 use strict;
+use warnings;
 
 use JSON; # to_json from_json
-
-BEGIN
-{
-    our $VERSION  = sprintf("%d.%02d", q$Revision$ =~ /(\d+)\.(\d+)/);
-    print "Loading ".__PACKAGE__." $VERSION\n";
-}
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
