@@ -1729,14 +1729,13 @@ sub update_by_query_arc
 	# nodes. But take care of that in set_value()
 
 	my $valtype = $pred->valtype;
-	if( $valtype->equals('literal') )
+	if( debug > 1 and $valtype->isa('Rit::Base::Literal::Class') )
 	{
 	    debug "arc is $arc->{id}";
 	    debug "valtype is ".$valtype->desig;
 	    debug "pred is ".$pred->desig;
-	    debug "setting value to $value"
+	    debug "setting value to $value";
 	}
-
 
 	$arc = $arc->set_value( $value,
 				{
