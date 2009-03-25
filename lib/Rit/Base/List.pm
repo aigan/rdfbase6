@@ -1757,7 +1757,7 @@ sub materialize
 					     initiate_rel =>
 					     $l->{'rb_initiate_rel'},
 					    });
-	if( debug > 1 )
+	if( debug > 2 )
 	{
 	    debug "Materializing element $i -> ".$obj->sysdesig;
 	}
@@ -1791,7 +1791,7 @@ sub materialize_by_rec
 
     my $node = Rit::Base::Arc->get_by_rec( $rec );
 
-    if( debug > 1 )
+    if( debug > 2 )
     {
 	debug "Materializing element $i -> ".$node->sysdesig;
     }

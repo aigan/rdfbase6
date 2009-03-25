@@ -5064,7 +5064,7 @@ sub init
 
     if( $bless_subj )
     {
-	debug 2, "Calling first_bless for $subj->{id}";
+	debug 3, "Calling first_bless for $subj->{id}";
 	$subj->first_bless->init;
     }
 

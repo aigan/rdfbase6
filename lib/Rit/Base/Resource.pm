@@ -6931,7 +6931,7 @@ sub initiate_rel
 
     my $nid = $node->id;
 
-    debug 2, "initiating $nid";
+    debug 3, "initiating $nid";
 
     if( $arclim->size )
     {
