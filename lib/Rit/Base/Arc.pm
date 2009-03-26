@@ -3768,7 +3768,8 @@ sub set_value
 #    Para::Frame::Logging->this_level(4);
 
     debug 3, sprintf "Set value of arc %s to '%s'",
-      $arc->{'id'}, ($value_new_in||'<undef>');
+      $arc->{'id'}, ((ref $value_new_in?$value_new_in->sysdesig :
+		      $value_new_in)||'<undef>');
 
     my $coltype_old  = $arc->coltype;
     my $value_new;
@@ -4865,6 +4866,8 @@ sub init
     my $bless_subj = 0; # For initiating subj
 
     $rec ||= delete $arc->{'original_rec'}; # TEST
+
+#    debug "init arc id $id";
 
     if( $rec )
     {
