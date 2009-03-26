@@ -25,6 +25,7 @@ use DateTime::Incomplete;
 
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Widget qw( label_from_params calendar );
+use Para::Frame::L10N qw( loc );
 #use Para::Frame::Reload;
 
 use Rit::Base::Utils qw( parse_propargs query_desig );
@@ -48,6 +49,9 @@ Subclass of L<Para::Frame::Time> and L<Rit::Base::Literal>.
 
   $class->parse( \$value, \%args )
 
+For dates between 1900 - 2020
+
+For dates beyond this, use RB::Literal::Time::Historic
 
 Supported args are:
   valtype
@@ -62,33 +66,49 @@ sub parse
     my( $val, $coltype, $valtype, $args ) =
       $class->extract_string($val_in, $args_in);
 
+#    debug "parsing time ".$val;
+
+    my $date;
+
     if( ref $val eq 'SCALAR' )
     {
-	return $class->new($$val, $valtype);
+	$date = $class->new($$val, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::Time" )
     {
 	if( $valtype->equals( $val->this_valtype ) )
 	{
-	    return $val;
+	    $date = $val;
 	}
 	else
 	{
-	    return $class->new($val->plain, $valtype);
+	    $date = $class->new($val->plain, $valtype);
 	}
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Literal::String" )
     {
-	return $class->new($val->plain, $valtype);
+	$date = $class->new($val->plain, $valtype);
     }
     elsif( UNIVERSAL::isa $val, "Rit::Base::Undef" )
     {
-	return $class->new(undef, $valtype);
+	$date = $class->new(undef, $valtype);
     }
     else
     {
 	confess "Can't parse $val";
     }
+
+#    debug "Returning date ".$date->sysdesig;
+
+
+    # For dates beyond this, use RB::Literal::Time::Historic
+    #
+    if( $date->year > 2020 or $date->year < 1900 )
+    {
+	throw 'validation', loc "Date [_1] out of range", $date;
+    }
+
+    return $date;
 }
 
 #######################################################################
@@ -104,7 +124,20 @@ sub new_from_db
     # Should parse faster since we know this is a PostgreSQL type
     # timestamp with time zone...
 
-    my $time = $Rit::dbix->parse_datetime($_[1], $_[0])->init;
+#    debug "new_from_db Time $_[1]";
+    my $time = $Rit::dbix->parse_datetime($_[1], $_[0]);
+#    debug "  got ".$time->sysdesig;
+
+    my $tz = undef;
+    if( $time->year > 2100 or $time->year < 1900 )
+    {
+	debug "Using floating for historical ".$time->sysdesig;
+	$tz = 'floating';
+    }
+
+    $time->init($tz);
+#    debug " after init: ".$time->sysdesig;
+
     $time->{'valtype'} = $_[2];
     return $time;
 }
