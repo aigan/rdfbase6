@@ -161,7 +161,7 @@ sub create
 
     unless( $Para::Frame::CFG->{'check_email'} )
     {
-	$email->structure->unsee;
+	$email->obj->unsee;
     }
 
     return $email;
