@@ -37,7 +37,7 @@ sub handler
 
     if( $subj_id )
     {
-	my $subj = Rit::Base::Arc->get( $subj_id ); # Arc or node
+	my $subj = Rit::Base::Resource->get( $subj_id ); # Arc or node
 	$args->{'subj_new'} = $subj;
 	my $props = parse_arc_add_box( $query, $args );
 
