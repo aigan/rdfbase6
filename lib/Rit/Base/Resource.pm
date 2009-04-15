@@ -6865,7 +6865,7 @@ sub save
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
 
-    debug "  saving created ".$node->{'created'};
+    debug "  saving created ".$node->{'created_obj'};
 
 
     my @values =
