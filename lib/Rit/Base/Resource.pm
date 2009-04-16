@@ -6833,6 +6833,8 @@ sub save
 
 #    debug "Saving node $nid with label ".$node->label;
 
+    # The field_obj variants are initiated on demand
+
     my $dbix = $Rit::dbix;
 
     $node->initiate_node;
@@ -6845,7 +6847,7 @@ sub save
 
     $node->{'read_access'}    ||= $public->id;
     $node->{'write_access'}   ||= $sysadmin_group->id;
-    $node->{'created_obj'}    ||= $now;
+    $node->{'created_obj'}    ||= $node->created || $now;
     delete $node->{'created'};
 
     if( $node->{'created_by_obj'} )
@@ -6854,7 +6856,7 @@ sub save
     }
     $node->{'created_by'}     ||= $uid;
 
-    $node->{'updated_obj'}    ||= $now;
+    $node->{'updated_obj'}    ||= $node->updated || $now;
     delete $node->{'updated'};
 
     if( $node->{'updated_by_obj'} )
@@ -6868,6 +6870,8 @@ sub save
 	$node->{'owned_by'}     = $node->{'owned_by_obj'}->id;
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
+
+    debug "  saving created ".$node->{'created'};
 
 
     my @values =
