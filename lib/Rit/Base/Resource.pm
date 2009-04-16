@@ -5046,6 +5046,14 @@ sub wuirc
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
 		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
+    if( $DEBUG )
+    {
+	debug "FOUND list ".$list->sysdesig;
+	debug "is_pred $is_pred";
+	debug "range ".$range->sysdesig;
+	debug "is_rev ".$is_rev;
+    }
+
     # Sort out arcs on range...
     if( $is_rev )
     {
@@ -5135,12 +5143,21 @@ sub wuirc
 	}
     }
 
+    if( $DEBUG )
+    {
+	debug "disabled: $disabled";
+	debug "singular: $singular";
+	debug "list: $list";
+	debug "inputtype: $inputtype";
+    }
+
+
     ### AJAX
     #
     if( not $disabled and
 	( not $singular or
 	  not $list or
-	  ( $singular and $inputtype ne 'text' )))
+	  ( $singular and ($inputtype ne 'text') )))
     {
 	debug "wuirc 2" if $DEBUG;
 
@@ -6865,7 +6882,7 @@ sub save
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
 
-    debug "  saving created ".$node->{'created'};
+    debug "  saving created ".$node->{'created_obj'};
 
 
     my @values =
