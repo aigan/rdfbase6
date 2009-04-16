@@ -4668,6 +4668,9 @@ sub wdirc
 	}
     }
 
+    $out .= '</ul>'
+      if( $list->size > 1);
+
     return $out;
 }
 
@@ -5134,6 +5137,9 @@ sub wuirc
 	    }
 	}
     }
+
+    $out .= "</ul>"
+      if( $list->size > 1);
 
     ### AJAX
     #
