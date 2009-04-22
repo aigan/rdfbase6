@@ -333,8 +333,9 @@ sub aloc
 		{
 		 run => 'mark',
 		 c => $text,
-		}) .
-	   " "
+		 href_image => "$home/pf/images/edit.gif",
+		 href_class => "paraframe_edit_link_overlay",
+		})
 	  );
     }
 
@@ -358,8 +359,9 @@ sub sloc
 		{
 		 run => 'mark',
 		 c => $text,
-		}) .
-	   " "
+		 href_image => "$home/pf/images/edit.gif",
+		 href_class => "paraframe_edit_link_overlay",
+		})
 	  );
     }
 
