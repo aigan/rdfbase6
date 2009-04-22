@@ -4668,6 +4668,9 @@ sub wdirc
 	}
     }
 
+    $out .= '</ul>'
+      if( $list->size > 1);
+
     return $out;
 }
 
@@ -5143,14 +5146,8 @@ sub wuirc
 	}
     }
 
-    if( $DEBUG )
-    {
-	debug "disabled: $disabled";
-	debug "singular: $singular";
-	debug "list: $list";
-	debug "inputtype: $inputtype";
-    }
-
+    $out .= "</ul>"
+      if( $list->size > 1);
 
     ### AJAX
     #
