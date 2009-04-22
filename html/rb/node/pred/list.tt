@@ -1,0 +1,38 @@
+﻿[% META title="List preds"
+	menu="/admin/create.tt"
+        level = 20
+%]
+
+[% order = q.param('order') || 'id' %]
+[% direction = q.param('direction');
+   pagesize = q.param('pagesize') || 10;
+%]
+
+[% preds = find(is=C.predicate).sorted(order, direction);
+   CALL preds.set_page_size( pagesize );
+%]
+
+<p>[% loc("[quant,_1,hit]", preds.size) %]<br/>
+[% preds.pagelist %]
+</p>
+
+<table>
+<tr><th>[% sort('ID','id') %]
+    <th>[% sort('Label', 'label') %]
+    <th>Domain is
+    <th>Range is
+    <th>Domain scof
+    <th>Range scof
+
+[% FOREACH pred IN preds.from_page %]
+   [% tr2 %]
+      <td>[% pred.id %]</td>
+      <td>[% pred.wu_jump %]
+      <td>[% IF pred.domain; pred.domain.wu_jump; END; %]</td>
+      <td>[% UNLESS pred.id == 4; IF pred.valtype.id == 5; 'Object'; ELSE; pred.valtype.wu_jump; END; END %]</td>
+      <td>[% IF pred.domain_scof; pred.domain_scof.wu_jump; END; %]</td>
+      <td>[% IF pred.range_scof; pred.range_scof.wu_jump; END; %]</td>
+   </td></tr>
+[% END %]
+</table>
+
