@@ -1,5 +1,5 @@
 package Rit::Base::Action::translate_node;
-#=====================================================================
+#=============================================================================
 #
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
@@ -7,7 +7,7 @@ package Rit::Base::Action::translate_node;
 # COPYRIGHT
 #   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
 #
-#=====================================================================
+#=============================================================================
 
 use 5.010;
 use strict;
