@@ -1,5 +1,5 @@
 package Rit::Base::Action::arc_list_activate;
-#=====================================================================
+#=============================================================================
 #
 # AUTHOR
 #   Jonas Liljegren   <jonas@paranormal.se>
@@ -7,7 +7,7 @@ package Rit::Base::Action::arc_list_activate;
 # COPYRIGHT
 #   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
 #
-#=====================================================================
+#=============================================================================
 
 use 5.010;
 use strict;
