@@ -1050,7 +1050,8 @@ sub loc
 		else
 		{
 		    CORE::push @{$alts{'c'}}, $item;
-		    debug 4,"Lang c: $item ($langs)";
+                    # $item may stringify to undef
+		    # debug 4, "Lang c: $item ($langs)";
 		}
 	    }
 	    elsif( UNIVERSAL::isa($item, 'Rit::Base::List') )
