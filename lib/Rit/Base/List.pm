@@ -353,6 +353,12 @@ sub find
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.
 
+    if( $l->size > 100 and $Para::Frame::REQ->is_from_client )
+    {
+        $Para::Frame::REQ->note(sprintf "Filtering %d nodes", $l->size);
+    }
+
+
     my @newlist;
     my $cnt = 0;
     my $index = $l->index;
@@ -378,6 +384,12 @@ sub find
 	}
 
 	( $node, $error ) = $l->get_next;
+
+        if( not $l->count % 500 and $Para::Frame::REQ->is_from_client )
+        {
+            $Para::Frame::REQ->note(sprintf "%5d", $l->count);
+            $Para::Frame::REQ->may_yield;
+        }
     }
 
     $l->set_index( $index );

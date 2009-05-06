@@ -751,6 +751,54 @@ sub modify
 
     my $c_resource = Rit::Base::Resource->get_by_label('resource');
 
+
+    # Handling sub-criterions
+    #
+    # Those that will give only one result should be integrated in the
+    # SQL search. Others could be added as filters on the result.
+
+    my %filter;
+
+
+    foreach my $key ( keys %$props )
+    {
+	my $query = $props->{ $key };
+        if( ref $query eq 'HASH' )
+        {
+            if( $query->{'id'} )
+            {
+                $props->{ $key } = $query->{'id'};
+                next;
+            }
+
+            my $sub = Rit::Base::Search->new($args);
+            $sub->modify($query, $args);
+            $sub->execute({%$args,maxlimit=>2});
+            my $size = $sub->result->size;
+            if( $size < 1 )
+            {
+                throw('notfound',"Sub-criterion gave no result",
+                      query_desig($query));
+            }
+            elsif( $size > 1 )
+            {
+                debug "Moving subquery for $key to post-filter";
+                $filter{ $key } = delete $props->{ $key };
+            }
+            else
+            {
+                debug "Incorporating result from subquery for $key";
+                $props->{ $key } = $sub->result->get_first_nos->id;
+            }
+        }
+    }
+
+    unless( scalar keys %$props )
+    {
+        throw('incomplete',"Tried to do a search with no props");
+    }
+
+
     foreach my $key ( keys %$props )
     {
 	# Set up values supplied
@@ -918,6 +966,7 @@ sub modify
 	    unless( $predref )
 	    {
 		# Must also take dynamic preds like 'is'
+                #debug "Looking up pred $pred";
 		$pred = Rit::Base::Pred->get( $pred );
 		$type = $pred->coltype;
 		$predref = [$pred];
@@ -1166,6 +1215,11 @@ sub modify
 	}
     }
 
+    if( keys %filter )
+    {
+        $search->{'filter'} = \%filter;
+    }
+
     return 1;
 }
 
@@ -1253,6 +1307,13 @@ sub execute
 	$search->{'result'} = Rit::Base::List->new($result, $args);
     }
 
+    if( debug > 0 )
+    {
+        my $count = $search->{'result'}->size;
+        debug "Got $count matches";
+    }
+
+
     # Filter out arcs?
     if( my $uap = $args->{unique_arcs_prio} )
     {
@@ -1263,7 +1324,19 @@ sub execute
 	}
     }
 
-    debug(4, "Got result ".datadump($search->{'result'}));
+    if( my $filter = $search->{'filter'} )
+    {
+        debug "Applying filter ".query_desig($filter);
+        my $result = $search->{'result'}->find($filter);
+        $search->{'result'} = $result;
+        debug "Filter applied";
+    }
+
+
+    if( debug > 3 )
+    {
+        debug("Got result ".datadump($search->{'result'}));
+    }
 
     return '';
 }
