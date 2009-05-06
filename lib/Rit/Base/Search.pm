@@ -795,9 +795,9 @@ sub modify
 
     unless( scalar keys %$props )
     {
-        throw('incomplete',"Tried to do a search with no props");
+        debug "  Filter is ".query_desig( \%filter );
+        debug "Tried to do a search with no props";
     }
-
 
     foreach my $key ( keys %$props )
     {
