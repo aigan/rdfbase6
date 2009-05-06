@@ -1307,7 +1307,7 @@ sub execute
 	$search->{'result'} = Rit::Base::List->new($result, $args);
     }
 
-    if( debug > 0 )
+    if( debug > 1 )
     {
         my $count = $search->{'result'}->size;
         debug "Got $count matches";
