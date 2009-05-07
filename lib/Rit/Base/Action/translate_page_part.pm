@@ -46,7 +46,14 @@ sub handler
 
     unless( $n->has_value({is=>$C_website_text}, $args) )
     {
-	throw('validation', "The node must be a website_text");
+        if( $n->has_value({is=>$C_webpage}, $args) )
+        {
+            $n->add({ is => $C_website_text });
+        }
+        else
+        {
+            throw('validation', "The node must be a website_text");
+        }
     }
 
     debug "  Translating pagepart ".$n->sysdesig;
@@ -101,7 +108,7 @@ sub handler
     $res->autocommit;
 
 
-#    $pagen->publish;
+    $pagen->publish;
 
     if( $res->changes )
     {
