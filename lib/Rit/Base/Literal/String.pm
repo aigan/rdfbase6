@@ -34,7 +34,7 @@ use Scalar::Util qw( looks_like_number refaddr );
 use Encode; # decode FB_QUIET
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js );
+use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js validate_utf8 );
 use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
@@ -159,6 +159,7 @@ sub new_from_db
     $valtype or cluck "No valtype";
     if( $valtype->has_value({ scof => $C_text_large }) )
     {
+#        debug "Got a valbin value that IS a TEXT_LARGE";
 	unless( utf8::decode( $val ) )
 	{
 	    debug 0, "Failed to convert to UTF8!";
@@ -171,11 +172,13 @@ sub new_from_db
 	    $val = $res;
 	    debug "Conversion result: $val";
 	}
-	utf8::decode( $val );
+#	utf8::decode( $val );
+#        debug validate_utf8(\$val);
     }
     elsif( $valtype->coltype eq 'valbin' )
     {
 	# treat as non-text
+        debug "Got a valbin value that is not text_large";
     }
     elsif( defined $val )
     {
