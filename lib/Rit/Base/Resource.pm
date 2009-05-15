@@ -6755,7 +6755,7 @@ sub mark_updated
 
     $n->session_history_add('updated');
 
-    debug shortmess "Mark UPDATED for ".$n->desig;
+#    debug shortmess "Mark UPDATED for ".$n->desig;
 
     return $time;
 }

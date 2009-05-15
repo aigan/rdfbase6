@@ -15,6 +15,7 @@ use warnings;
 
 use Para::Frame::Utils qw( throw trim debug datadump );
 
+use Rit::Base::Utils qw( query_desig );
 use Rit::Base::Search;
 
 =head1 DESCRIPTION
@@ -42,6 +43,23 @@ sub handler
 	next unless length $row;
 
 	my( $key, $value ) = split(/\s+/, $row, 2);
+
+        if( $value =~ /^\s*\{\s*(.*?)\s*\}\s*$/ )
+        {
+            debug "Creating subcriterion from $value";
+            my $pairs = $1;
+            my %sub;
+            foreach my $part ( split /\s*,\s*/, $pairs )
+            {
+                debug "  Processing $part";
+                my( $skey, $svalue ) = split(/\s+/, $part, 2);
+                debug "  $skey = $svalue";
+                $sub{ $skey } = $svalue;
+            }
+            $value = \%sub;
+            debug "Got ".query_desig($value);
+        }
+
 	$props->{$key} = $value;
     }
 
@@ -64,6 +82,7 @@ sub handler
 
 
     my $search = Rit::Base::Search->new($args);
+    debug "Searching with:\n".query_desig($props);
     $search->modify($props, $args);
     $search->execute($args);
     $search_col->add($search);

@@ -46,7 +46,14 @@ sub handler
 
     unless( $n->has_value({is=>$C_website_text}, $args) )
     {
-	throw('validation', "The node must be a website_text");
+        if( $n->has_value({is=>$C_webpage}, $args) )
+        {
+            $n->add({ is => $C_website_text });
+        }
+        else
+        {
+            throw('validation', "The node must be a website_text");
+        }
     }
 
     debug "  Translating pagepart ".$n->sysdesig;
@@ -78,33 +85,51 @@ sub handler
 
     #### REPAIR on demand
     #
-    my $pagen = $n;
+    my @pagen;
+
     if( $code =~ /^([^\@]+)\@(.*)$/ )
     {
 	my $pagecode = $1;
 	my $partcode = $2;
 
-	unless( $pagen = $n->first_revprop('has_member') )
+	unless( $n->first_revprop('has_member') )
 	{
-	    $pagen = Rit::Base::Resource->
-	      set_one({code => $pagecode,
-		       is => $C_webpage}, $args);
+	    my $pn = Rit::Base::Resource->
+              set_one({ code => $pagecode,
+                        is => $C_webpage,
+                      },
+                      $args);
 
-	    $pagen->add({ has_member => $n }, $args );
+	    $pn->add({ has_member => $n }, $args );
 	}
     }
-    elsif( not $pagen->has_value({is => $C_webpage }) )
+    else
     {
-	$pagen->add({ is => $C_webpage }, $args );
+        @pagen = $n;
+    }
+
+    push @pagen, $n->revlist('has_member')->as_array;
+
+
+    foreach my $pn ( @pagen )
+    {
+        if( not $pn->has_value({is => $C_webpage }) )
+        {
+            $pn->add({ is => $C_webpage }, $args );
+        }
     }
 
     $res->autocommit;
 
-
-#    $pagen->publish;
-
     if( $res->changes )
     {
+        debug "Publishing ".scalar(@pagen)." pages";
+        foreach my $pn ( @pagen )
+        {
+#            debug "  Publishing ".$pn->sysdesig;
+            $pn->publish;
+        }
+
 	return loc("Translation changed");
     }
     else

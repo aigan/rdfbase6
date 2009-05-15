@@ -38,6 +38,8 @@ warnings_like {Para::Frame->configure($cfg_in)}
   qr/^Regestring ext tt to burner html$/,
   qr/^Regestring ext css_tt to burner plain$/,
   qr/^Regestring ext js_tt to burner plain$/,
+  qr/^Regestring ext css_dtt to burner plain$/,
+  qr/^Regestring ext js_dtt to burner plain$/,
   ],
     "Configuring";
 
