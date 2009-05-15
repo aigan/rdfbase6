@@ -167,7 +167,7 @@ sub new
 	$valtype = $_[1];
     }
 
-    unless( $time )
+    unless( defined $time )
     {
 #	$time = DateTime::Incomplete->new();
 #	my $class = ref $this || $this;
