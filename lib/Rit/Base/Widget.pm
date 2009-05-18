@@ -23,7 +23,7 @@ use Carp qw( confess cluck carp );
 use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc alocpp sloc build_field_key );
+our @EXPORT_OK = qw( wub aloc sloc build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -322,75 +322,24 @@ TODO: Move template to ritbase
 sub aloc
 {
     my $text = shift;
+    my $out = "";
 
-    # TODO: Kontrollera när det är fler fält med samma text
-    #       Enligt html-def så skall två fält aldrig ha samma ID.
-    #       ...unikifiera.
+    if( $Para::Frame::REQ->session->admin_mode )
+    {
+	my $home = $Para::Frame::REQ->site->home_url_path;
+	$out .=
+	  (
+	   jump("Edit", "$home/admin/translation/update.tt",
+		{
+		 run => 'mark',
+		 c => $text,
+		 href_image => "$home/pf/images/edit.gif",
+		 href_class => "paraframe_edit_link_overlay",
+		})
+	  );
+    }
 
-    my $out
-      = CGI->span({
-                   class => "rb_translate",
-                   id    => $text,
-                  },
-                  CGI->escapeHTML( loc($text, @_) ),
-                 );
-    debug $out;
-    return $out;
-}
-
-
-##############################################################################
-
-=head2 alocpp
-
-Administrate localization of pageparts
-
-=cut
-
-sub alocpp
-{
-    my $req       = $Para::Frame::REQ;
-    my $page_base = $req->page->base;
-    return alocpp_wrapper($page_base, @_);
-}
-
-
-##############################################################################
-
-=head2 alocpp_wrapper
-
-Administrate localization of pageparts
-
-=cut
-
-sub alocpp_wrapper
-{
-    my $page_base = shift;
-    my $name      = shift;
-    my $R         = Rit::Base->Resource;
-    my $code      = $page_base;
-
-    $code .= "\@$name"
-      if $name;
-
-    debug "Looking for $code";
-
-    my $node = $R->find({ code => $code })->get_first_nos;
-
-
-    # TODO: Kontrollera när det är fler fält med samma text
-    #       Enligt html-def så skall två fält aldrig ha samma ID.
-    #       ...unikifiera.
-
-    my $out
-      = CGI->div({
-                  class => "rb_translate_pp",
-                  id    => CGI->escapeHTML( $code ),
-                 },
-                 $node->has_html_content->loc(@_),
-                );
-    debug $out;
-    return $out;
+    return $out . loc($text, @_);
 }
 
 
@@ -519,8 +468,6 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
-     'alocpp'             => \&alocpp,
-     'alocpp_wrapper'     => \&alocpp_wrapper,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,
