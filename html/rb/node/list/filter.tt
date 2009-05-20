@@ -2,7 +2,7 @@
  title="Filter list"
  level = 20
  next_action='search_filter'
- next_template='/rb/node/list.tt'
+ next_template = '~$home/rb/node/list.tt'
  focus='filter'
 %]
 
@@ -15,3 +15,9 @@
 <h2>Instruktion</h2>
 <p>Avgränsa existerande sökning till element som matchar givna kriterier.
 </p>
+
+<h3>Exempel</h3>
+<p>För att från en lista på anläggningar söka ut de som haft bokningar mellan två datum:</p>
+<pre>rev_specified_place {booking_confirmed_gt 2008-05-01, booking_confirmed_lt 2009-01-01}</pre>
+
+<p>(Detta exkluderar inte genomförda bokningar som sedan avbokats...)</p>

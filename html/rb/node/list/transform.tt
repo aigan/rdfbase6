@@ -2,7 +2,7 @@
  title="Transform list"
  level = 20
  next_action='search_transform'
- next_template='/rb/node/list.tt'
+ next_template='~$home/rb/node/list.tt'
  focus='transform'
 %]
 
