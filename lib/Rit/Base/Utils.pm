@@ -28,7 +28,7 @@ our @EXPORT_OK
   = qw( cache_clear valclean format_phone format_zip
 	parse_query_props parse_form_field_prop
 	parse_arc_add_box is_undef arc_lock arc_unlock
-	truncstring string parse_query_pred parse_query_prop
+	truncstring string parse_query_pred parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
 	send_cache_update parse_propargs aais alphanum_to_id proplim_to_arclim );
 
@@ -238,7 +238,7 @@ sub format_zip
 
   parse_query_props( $string )
 
-Splits the string to a list of values if separated by ','.
+Splits the string to a list of values if separated by C<LF>.
 
 The first part of each element should be a predicate and the rest,
 after the first space, should be the value.
@@ -247,9 +247,12 @@ Returns:
 
 a props hash with pred/value pairs.
 
+NB! Previously also split on C<,>.
+
 Example:
 
-  name Jonas Liljegren, age 33
+  name Jonas Liljegren
+  age 33
 
   becomes:
 
@@ -273,14 +276,47 @@ sub parse_query_props
     my $props = {};
 
     trim(\$prop_text);
-    foreach my $pair ( split /\s*[,\n]\s*/, $prop_text )
+    foreach my $pair ( split /\s*\r?\n\s*/, $prop_text )
     {
 	my($prop_name, $value) = split(/\s+/, $pair, 2);
 	trim(\$prop_name);
-	trim(\$value);
-	$props->{$prop_name} = $value;
+	$props->{$prop_name} = parse_query_value($value);
     }
     return $props;
+}
+
+
+##############################################################################
+
+=head2 parse_query_value
+
+used by parse_query_props
+
+=cut
+
+
+sub parse_query_value
+{
+    my( $val ) = @_;
+    trim(\$val);
+
+    if( $val =~ /^\s*\{\s*(.*?)\s*\}\s*$/ )
+    {
+        debug "Creating subcriterion from $val";
+        my $pairs = $1;
+        my %sub;
+        foreach my $part ( split /\s*,\s*/, $pairs )
+        {
+            debug "  Processing $part";
+            my( $skey, $svalue ) = split(/\s+/, $part, 2);
+            debug "  $skey = $svalue";
+            $sub{ $skey } = parse_query_value($svalue);
+        }
+        $val = \%sub;
+        debug "Got ".query_desig($val);
+    }
+
+    return $val;
 }
 
 
