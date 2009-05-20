@@ -3229,7 +3229,10 @@ sub value_equals
         if( $coltype eq 'valtext' )
         {
             $val1 = $val1->plain;
-            $val2 = $val2->plain;
+            if( ref $val2 )
+            {
+                $val2 = $val2->plain;
+            }
 
             if( $clean )
             {
