@@ -17,7 +17,7 @@ use Rit::Base::Search;
 
 use Para::Frame::Utils qw( debug datadump );
 
-use Rit::Base::Utils qw( query_desig );
+use Rit::Base::Utils qw( query_desig parse_query_props );
 
 =head1 DESCRIPTION
 
@@ -41,6 +41,16 @@ sub handler
 
 	$params->{$1} = $q->param($key);
     }
+
+    if( my $box = $q->param('filter') )
+    {
+        my $bprops = parse_query_props($box);
+        foreach my $key (keys %$bprops )
+        {
+            $params->{$key} = $bprops->{$key};
+        }
+    }
+
 
     my $l = $search_col->result;
 

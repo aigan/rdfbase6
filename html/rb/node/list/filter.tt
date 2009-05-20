@@ -1,0 +1,17 @@
+﻿[% META
+ title="Filter list"
+ level = 20
+ next_action='search_filter'
+ next_template='/rb/node/list.tt'
+ focus='filter'
+%]
+
+[% textarea('filter', '', class='wide') %]<br/>
+[% step('Filter') %]
+
+&nbsp; List has [% searchobj.result.size %] elements
+
+
+<h2>Instruktion</h2>
+<p>Avgränsa existerande sökning till element som matchar givna kriterier.
+</p>
