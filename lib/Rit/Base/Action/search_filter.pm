@@ -45,6 +45,7 @@ sub handler
     if( my $box = $q->param('filter') )
     {
         my $bprops = parse_query_props($box);
+#        debug( query_desig( $bprops ) );
         foreach my $key (keys %$bprops )
         {
             $params->{$key} = $bprops->{$key};
@@ -56,9 +57,9 @@ sub handler
 
     debug "Filtering list with ".query_desig($params);
 
-    my $l2 = $l->find($params, {clean=>1});
+    my $l2 = $l->find($params);
 
-    debug query_desig( $l2 );
+    debug "Filtered";
 
     $search_col->reset->set_result( $l2 );
 
