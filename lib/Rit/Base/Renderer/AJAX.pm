@@ -24,8 +24,16 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( arc_lock arc_unlock );
 
-use Rit::Base::Constants qw( $C_zipcode $C_city $C_country $C_person
-			     $C_organization $C_lodging $C_location );
+BEGIN {
+    my $C = Rit::Base->Constants;
+    our $C_zipcode      = $C->get('zipcode')      || undef;
+    our $C_city         = $C->get('city')         || undef;
+    our $C_country      = $C->get('country')      || undef;
+    our $C_person       = $C->get('person')       || undef;
+    our $C_organization = $C->get('organization') || undef;
+    our $C_lodging      = $C->get('lodging')      || undef;
+    our $C_location     = $C->get('location')     || undef;
+}
 
 
 ##############################################################################
@@ -277,12 +285,24 @@ sub render_output
 	if( $@ )
 	{
 	    debug "AJAX couldn't find: ". package_to_module($app);
-	    debug "Error: ". datadump( $@ );
+
+            $appbase = 'Rit::Base';
+            $app = $appbase .'::AJAX::'. $1;
+
+            eval
+            {
+                compile(package_to_module($app));
+                require(package_to_module($app));
+            };
+            if( $@ )
+            {
+                debug "AJAX couldn't find: ". package_to_module($app);
+                debug "Error: ". datadump( $@ );
+                return;
+            }
 	}
-	else
-	{
-	    $out = $app->handler( $req );
-	}
+
+        $out = $app->handler( $req );
     }
 
 
