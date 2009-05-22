@@ -26,13 +26,13 @@ use Rit::Base::Utils qw( arc_lock arc_unlock );
 
 BEGIN {
     my $C = Rit::Base->Constants;
-    our $C_zipcode      = $C->get('zipcode')      || undef;
-    our $C_city         = $C->get('city')         || undef;
-    our $C_country      = $C->get('country')      || undef;
-    our $C_person       = $C->get('person')       || undef;
-    our $C_organization = $C->get('organization') || undef;
-    our $C_lodging      = $C->get('lodging')      || undef;
-    our $C_location     = $C->get('location')     || undef;
+    our $C_zipcode      = $C->find({ label => 'zipcode'      });
+    our $C_city         = $C->find({ label => 'city'         });
+    our $C_country      = $C->find({ label => 'country'      });
+    our $C_person       = $C->find({ label => 'person'       });
+    our $C_organization = $C->find({ label => 'organization' });
+    our $C_lodging      = $C->find({ label => 'lodging'      });
+    our $C_location     = $C->find({ label => 'location'     });
 }
 
 
