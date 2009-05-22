@@ -3154,7 +3154,10 @@ sub value_equals
 	return 0;
     }
 
-#    debug "Compares arc ".$arc->sysdesig." with ".query_desig($val2);
+    if( $DEBUG )
+    {
+        debug "Compares arc ".$arc->id." with ".query_desig($val2);
+    }
 
 
     if( $arc->obj )
@@ -3202,7 +3205,9 @@ sub value_equals
     }
     else
     {
-	my $val1 = $arc->value->plain;
+        my $val1 = $arc->value;
+        my $coltype = $arc->coltype;
+
 	debug "  See if $val1 $match($clean) $val2" if $DEBUG;
 	unless( defined $val1 )
 	{
@@ -3218,20 +3223,37 @@ sub value_equals
 	    {
 		confess query_desig( $val2 );
 	    }
-
-	    $val2 = $val2->plain;
 	}
+
+
+        if( $coltype eq 'valtext' )
+        {
+            $val1 = $val1->plain;
+            if( ref $val2 )
+            {
+                $val2 = $val2->plain;
+            }
+
+            if( $clean )
+            {
+                $val1 = valclean(\$val1);
+                $val2 = valclean(\$val2);
+            }
+        }
+        elsif( $coltype eq 'valdate' )
+        {
+            unless( ref $val2 )
+            {
+                $val2 = Rit::Base::Literal::Time->parse($val2);
+            }
+        }
+
+
 
 
 	# This part is similar to Rit::Base::Object/matches
 	#
 	#
-
-	if( $clean )
-	{
-	    $val1 = valclean(\$val1);
-	    $val2 = valclean(\$val2);
-	}
 
 	if( $match eq 'eq' )
 	{
@@ -3251,19 +3273,18 @@ sub value_equals
 	}
 	elsif( $match eq 'gt' )
 	{
-	    my $coltype = $arc->coltype;
 	    if( $coltype eq 'valtext' )
 	    {
 		return $arc if $val1 gt $val2;
 	    }
 	    else # Anything else should have overloaded '>'
 	    {
+#                debug "  comparing a ".ref($val1)." with a ".ref($val2);
 		return $arc if $val1 > $val2;
 	    }
 	}
 	elsif( $match eq 'lt' )
 	{
-	    my $coltype = $arc->coltype;
 	    if( $coltype eq 'valtext' )
 	    {
 		return $arc if $val1 lt $val2;

@@ -1997,6 +1997,11 @@ sub transform
     }
     continue
     {
+        if( $Para::Frame::REQ )
+        {
+            $Para::Frame::REQ->note("...". $l->count ."/". $l->size)
+              unless( $l->count % 100 );
+        }
 	( $elem, $error ) = $l->get_next;
     }
     $l->set_index( $index );

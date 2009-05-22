@@ -49,7 +49,17 @@ sub render_output
     $req->note("Writing ".$rows_count." rows");
 
     my @preds = $q->param('list_pred');
-    my @pred_names = $q->param('list_pred_name');
+    my @pred_names;
+    if( $q->param('list_pred_name') )
+    {
+        @pred_names = $q->param('list_pred_name');
+    }
+    else
+    {
+        @pred_names = $q->param('list_pred');
+    }
+
+
 
     $sheet->write($row++, 0, \@pred_names);
 
@@ -68,7 +78,7 @@ sub render_output
 	$sheet->write($row++, 0, \@item_row);
 
 	$req->note("...". $row ."/". $rows_count)
-	  unless( $row % 10 );
+	  unless( $row % 100 );
     }
 
     binmode $fh;

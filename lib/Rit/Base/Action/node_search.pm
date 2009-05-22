@@ -15,7 +15,7 @@ use warnings;
 
 use Para::Frame::Utils qw( throw trim debug datadump );
 
-use Rit::Base::Utils qw( query_desig );
+use Rit::Base::Utils qw( query_desig parse_query_props );
 use Rit::Base::Search;
 
 =head1 DESCRIPTION
@@ -35,33 +35,7 @@ sub handler
     $query .= "\n" . join("\n", $req->q->param('query_row') );
     length $query or throw('incomplete', "Query empty");
 
-    my $props = {};
-
-    foreach my $row (split /\r?\n/, $query )
-    {
-	trim(\$row);
-	next unless length $row;
-
-	my( $key, $value ) = split(/\s+/, $row, 2);
-
-        if( $value =~ /^\s*\{\s*(.*?)\s*\}\s*$/ )
-        {
-            debug "Creating subcriterion from $value";
-            my $pairs = $1;
-            my %sub;
-            foreach my $part ( split /\s*,\s*/, $pairs )
-            {
-                debug "  Processing $part";
-                my( $skey, $svalue ) = split(/\s+/, $part, 2);
-                debug "  $skey = $svalue";
-                $sub{ $skey } = $svalue;
-            }
-            $value = \%sub;
-            debug "Got ".query_desig($value);
-        }
-
-	$props->{$key} = $value;
-    }
+    my $props = parse_query_props( $query );
 
     my $args = {};
     if( my $arclim_in = delete $props->{'arclim'} )

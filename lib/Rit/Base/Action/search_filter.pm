@@ -17,7 +17,7 @@ use Rit::Base::Search;
 
 use Para::Frame::Utils qw( debug datadump );
 
-use Rit::Base::Utils qw( query_desig );
+use Rit::Base::Utils qw( query_desig parse_query_props );
 
 =head1 DESCRIPTION
 
@@ -42,13 +42,24 @@ sub handler
 	$params->{$1} = $q->param($key);
     }
 
+    if( my $box = $q->param('filter') )
+    {
+        my $bprops = parse_query_props($box);
+#        debug( query_desig( $bprops ) );
+        foreach my $key (keys %$bprops )
+        {
+            $params->{$key} = $bprops->{$key};
+        }
+    }
+
+
     my $l = $search_col->result;
 
     debug "Filtering list with ".query_desig($params);
 
-    my $l2 = $l->find($params, {clean=>1});
+    my $l2 = $l->find($params);
 
-    debug query_desig( $l2 );
+    debug "Filtered";
 
     $search_col->reset->set_result( $l2 );
 
