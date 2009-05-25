@@ -24,8 +24,31 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( arc_lock arc_unlock );
 
-use Rit::Base::Constants qw( $C_zipcode $C_city $C_country $C_person
-			     $C_organization $C_lodging $C_location );
+##############################################################################
+# I'm sorry...  I should never have added these to RB; they are RG
+# specific.
+# TODO: FIXME!  ...move it to RG::AJAX::... instead.. or something...
+# They are used for displaying specific types of nodes in rb-lookup
+our $C_zipcode     ;
+our $C_city        ;
+our $C_country     ;
+our $C_person      ;
+our $C_organization;
+our $C_lodging     ;
+our $C_location    ;
+
+BEGIN {
+    my $C = Rit::Base->Constants;
+    $C_zipcode      = $C->find({ label => 'zipcode'      }) || undef;
+    $C_city         = $C->find({ label => 'city'         }) || undef;
+    $C_country      = $C->find({ label => 'country'      }) || undef;
+    $C_person       = $C->find({ label => 'person'       }) || undef;
+    $C_organization = $C->find({ label => 'organization' }) || undef;
+    $C_lodging      = $C->find({ label => 'lodging'      }) || undef;
+    $C_location     = $C->find({ label => 'location'     }) || undef;
+}
+##############################################################################
+
 
 
 ##############################################################################
@@ -277,12 +300,24 @@ sub render_output
 	if( $@ )
 	{
 	    debug "AJAX couldn't find: ". package_to_module($app);
-	    debug "Error: ". datadump( $@ );
+
+            $appbase = 'Rit::Base';
+            $app = $appbase .'::AJAX::'. $1;
+
+            eval
+            {
+                compile(package_to_module($app));
+                require(package_to_module($app));
+            };
+            if( $@ )
+            {
+                debug "AJAX couldn't find: ". package_to_module($app);
+                debug "Error: ". datadump( $@ );
+                return;
+            }
 	}
-	else
-	{
-	    $out = $app->handler( $req );
-	}
+
+        $out = $app->handler( $req );
     }
 
 
