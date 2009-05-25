@@ -402,7 +402,8 @@ If parse is set to value, the value are parsed recognizing:
   clean
   match
   prio
-
+  type
+  scof
 
 =cut
 
@@ -551,6 +552,26 @@ sub modify_from_query
 		push @{ $props{$key} }, @values;
 	    }
 	}
+
+        my $type = $arg->{'type'};
+        my $scof = $arg->{'scof'};
+
+        if( $type or $scof )
+        {
+            my $val = $props{$key};
+            my $crit = {'predor_name_-_code_-_name_short_clean' => $val };
+            if( $type )
+            {
+                $crit->{is} = $type;
+            }
+
+            if( $scof )
+            {
+                $crit->{scof} = $scof;
+            }
+
+            $props{$key} = $crit;
+        }
     }
 
 #    debug datadump(\%props);
@@ -1022,6 +1043,7 @@ sub modify
 
 		    if( defined $val and length $val )
 		    {
+                        debug "*********** LOOKING UP $val";
 			push @new, Rit::Base::Resource->get( $val )->id;
 		    }
 		    else
