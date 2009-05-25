@@ -741,7 +741,7 @@ sub meets_proplim
 		    debug "For node ".$node->sysdesig;
 		}
 	    }
-	    die "wrong format in find: $pred_part\n";
+	    die "wrong format in object find: $pred_part\n";
 	}
 
 	my $rev    = $1;

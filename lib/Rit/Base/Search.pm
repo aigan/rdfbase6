@@ -461,6 +461,9 @@ sub modify_from_query
 	    $parse_value = 1;
 	}
 
+        my $type = $arg->{'type'};
+        my $scof = $arg->{'scof'};
+
 	# Add values
 	foreach my $val ( @vals )
 	{
@@ -553,10 +556,7 @@ sub modify_from_query
 	    }
 	}
 
-        my $type = $arg->{'type'};
-        my $scof = $arg->{'scof'};
-
-        if( $type or $scof )
+        if( $props{$key} and ($type or $scof) )
         {
             my $val = $props{$key};
             my $crit = {'predor_name_-_code_-_name_short_clean' => $val };
@@ -570,7 +570,10 @@ sub modify_from_query
                 $crit->{scof} = $scof;
             }
 
-            $props{$key} = $crit;
+            # TODO: Maby using argument 'singular=0' for looking up
+            # criterion in a later stage
+
+            $props{$key} = Rit::Base::Resource->get($crit);
         }
     }
 
@@ -792,6 +795,8 @@ sub modify
                 next;
             }
 
+#            debug "SUBQUERY: ".query_desig($query);
+
             my $sub = Rit::Base::Search->new($args);
             $sub->modify($query, $args);
             $sub->execute({%$args,maxlimit=>2});
@@ -803,7 +808,25 @@ sub modify
             }
             elsif( $size > 1 )
             {
+                my $req = $Para::Frame::REQ;
+                if( $req and $req->is_from_client )
+                {
+                    if( my $item_id = $req->q->param('route_alternative') )
+                    {
+                        ### TODO: FIXME: Find a better selection method
+                        debug "*********** May use route_alternative $item_id";
+                        my $item = Rit::Base::Resource->get($item_id );
+                        if( $sub->result->contains($item) )
+                        {
+                            debug "Incorporating result from subquery for $key";
+                            $props->{ $key } = $sub->result->get_first_nos->id;
+                            next;
+                        }
+                    }
+                }
+
                 debug "Moving subquery for $key to post-filter";
+#                debug query_desig( $props->{ $key } );
                 $filter{ $key } = delete $props->{ $key };
             }
             else
@@ -1113,7 +1136,7 @@ sub modify
 	}
 	else
 	{
-	    die "wrong format in find: $key\n";
+	    die "wrong format in search find: $key\n";
 	}
     }
 
@@ -3535,10 +3558,16 @@ sub parse_values
 	# The string may have been octets in utf8 format but not
 	# labled as utf8
 
-	utf8::decode($_);
+        unless( defined $_ )
+        {
+            confess( datadump( $valref ) );
+        }
 
-
-	utf8::upgrade($_)
+        unless( ref $_ )
+        {
+            utf8::decode($_);
+            utf8::upgrade($_);
+        }
     }
 
     return \@values;
