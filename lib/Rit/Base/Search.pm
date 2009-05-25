@@ -1066,7 +1066,6 @@ sub modify
 
 		    if( defined $val and length $val )
 		    {
-                        debug "*********** LOOKING UP $val";
 			push @new, Rit::Base::Resource->get( $val )->id;
 		    }
 		    else
