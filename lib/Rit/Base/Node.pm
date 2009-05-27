@@ -23,14 +23,14 @@ use base qw( Rit::Base::Object );
 
 use Carp qw( cluck confess croak carp );
 
-use Para::Frame::Utils qw( throw catch debug datadump );
+use Para::Frame::Utils qw( throw catch debug datadump trim );
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw(valclean parse_query_props
 			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
-			 parse_propargs aais );
+			 parse_propargs aais parse_query_value );
 
 
 =head1 DESCRIPTION
@@ -206,6 +206,69 @@ sub id_alphanum
     }
 
     return reverse($str) . $map[$chksum % $len];
+}
+
+
+##############################################################################
+
+=head2 parse_prop
+
+  $n->parse_prop( $criterion, \%args )
+
+Parses C<$criterion>...
+
+Returns the values of the property matching the criterion.  See
+L</list> for explanation of the params.
+
+=cut
+
+sub parse_prop
+{
+    my( $node, $crit, $args_in ) = @_;
+
+    $crit or confess "No name param given";
+    return  $node->id if $crit eq 'id';
+
+    debug "Parsing $crit";
+
+    my $step;
+    if( $crit =~ s/\.(.*)// )
+    {
+        $step = $1;
+    }
+
+    my($prop_name, $proplim) = split(/\s+/, $crit, 2);
+    trim(\$prop_name);
+    if( $proplim )
+    {
+        $proplim = parse_query_value($proplim);
+    }
+
+    my $res;
+    if( $prop_name =~ s/^rev_// )
+    {
+        $res = $node->revprop( $prop_name, $proplim, $args_in );
+    }
+    else
+    {
+        if( $node->can($prop_name) )
+        {
+            debug "  Calling method $prop_name";
+            $res = $node->$prop_name($proplim, $args_in);
+        }
+        else
+        {
+            $res = $node->prop( $prop_name, $proplim, $args_in );
+        }
+    }
+
+    if( $step )
+    {
+        return $res->parse_prop( $step, $args_in );
+    }
+
+    debug "  $res";
+    return $res;
 }
 
 
