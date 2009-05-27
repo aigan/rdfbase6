@@ -302,18 +302,18 @@ sub parse_query_value
 
     if( $val =~ /^\s*\{\s*(.*?)\s*\}\s*$/ )
     {
-        debug "Creating subcriterion from $val";
+#        debug "Creating subcriterion from $val";
         my $pairs = $1;
         my %sub;
         foreach my $part ( split /\s*,\s*/, $pairs )
         {
-            debug "  Processing $part";
+#            debug "  Processing $part";
             my( $skey, $svalue ) = split(/\s+/, $part, 2);
-            debug "  $skey = $svalue";
+#            debug "  $skey = $svalue";
             $sub{ $skey } = parse_query_value($svalue);
         }
         $val = \%sub;
-        debug "Got ".query_desig($val);
+#        debug "Got ".query_desig($val);
     }
 
     return $val;
