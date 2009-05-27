@@ -69,7 +69,7 @@ sub render_output
 	my @item_row;
 	foreach my $pred (@preds)
 	{
-	    my $val = $item->$pred;
+	    my $val = $item->parse_prop($pred);
 	    $val = $val->desig if ref $val;
 #	    debug "  $pred = $val";
 	    push @item_row, $val;

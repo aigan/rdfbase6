@@ -54,7 +54,7 @@
       <td>[% node.id %]</td>
       <td>[% node.wu_jump %]</td>
       [% FOREACH n IN headers.keys.sort %]
-        <td>[% node.${headers.$n} %]</td>
+        <td>[% res=node.parse_prop(headers.$n);IF res.can('desig');res.desig|html; ELSE; res|html; END %]</td>
       [% END %]
     </tr>
   [% END %]
