@@ -850,7 +850,7 @@ sub create
 
     #####################
 
-#    debug "Would have created new arc..."; return is_undef; ### DEBUG
+#    cluck "Would have created new arc..."; return is_undef; ### DEBUG
 
     my $fields_part = join ",", @fields;
     my $values_part = join ",", map "?", @fields;
@@ -3882,9 +3882,23 @@ sub set_value
     # Falling back on old coltype/valtype in case of an Undef value
     my $coltype_new = $value_new->this_coltype || $coltype_old;
     my $valtype_old = $arc->valtype;
-    my $valtype_new = $value_new->this_valtype || $valtype_old;
+    my $valtype_new;
     my $objtype_old = ($coltype_old eq 'obj')? 1 : 0;
     my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
+
+    # Tries to mimic valtype algorithm in /create
+    if( Rit::Base::Constants->get('resource')->equals($valtype_old) )
+    {
+        $valtype_new = $valtype_old;
+    }
+    elsif( $value_new->is_literal )
+    {
+        $valtype_new = $value_new->this_valtype;
+    }
+    else
+    {
+        $valtype_new = $arc->pred->valtype;
+    }
 
 
     if( debug > 1 )
