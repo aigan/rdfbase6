@@ -20,7 +20,7 @@
 </h1>
 
 <ol>
-[% FOREACH part = result.part %]
+[% FOREACH part IN result.part %]
    <li>
       <code>[% part.type %]</code>
       <strong>--&gt;</strong>
@@ -33,7 +33,7 @@
 [% IF a.alts %]
    <h2>Alternatives</h2>
    <ol>
-   [% FOREACH part = a.alts %]
+   [% FOREACH part IN a.alts %]
       <li>[% jump(part.sysdesig, part.form_url) %]</li>
    [% END %]
    </ol>
@@ -45,10 +45,6 @@
 <p>With args:
 <pre>[% query_desig(a.args) | html %]</pre>
 </p>
-
-[% BLOCK querypart %]
-
-[% END %]
 
 <h2>Stacktrace</h2>
 <pre>[% a.trace %]</pre>
