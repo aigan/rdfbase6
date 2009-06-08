@@ -298,25 +298,51 @@ used by parse_query_props
 sub parse_query_value
 {
     my( $val ) = @_;
-    trim(\$val);
 
-    if( $val =~ /^\s*\{\s*(.*?)\s*\}\s*$/ )
+    my $arclim;
+    if( $val =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])\s*$/ )
     {
 #        debug "Creating subcriterion from $val";
         my $pairs = $1;
+        my $alim_in = $2;
         my %sub;
-        foreach my $part ( split /\s*,\s*/, $pairs )
+
+#        debug "query proplims $pairs" if $pairs;
+#        debug "query arclims $alim_in" if $alim_in;
+
+        if( $pairs )
         {
+            foreach my $part ( split /\s*,\s*/, $pairs )
+            {
 #            debug "  Processing $part";
-            my( $skey, $svalue ) = split(/\s+/, $part, 2);
+                my( $skey, $svalue ) = split(/\s+/, $part, 2);
 #            debug "  $skey = $svalue";
-            $sub{ $skey } = parse_query_value($svalue);
+                $sub{ $skey } = parse_query_value($svalue);
+            }
         }
         $val = \%sub;
+
+        if( $alim_in )
+        {
+            $arclim = Rit::Base::Arc::Lim->parse_string("[$alim_in]");
+        }
+
 #        debug "Got ".query_desig($val);
     }
+    elsif( length $val )
+    {
+        confess "Failed to parse query value $val";
+    }
 
-    return $val;
+
+    if( wantarray )
+    {
+        return( $val, $arclim );
+    }
+    else
+    {
+        return $val;
+    }
 }
 
 

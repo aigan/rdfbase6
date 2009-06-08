@@ -13,6 +13,9 @@
 [% c = 0;
    hidden( "list_pred", 'id');
    hidden( "list_pred", 'desig');
+   UNLESS q.param("header_0");
+     CALL q.param("header_0",'is [adirect]');
+   END;
    WHILE 1;
      IF q.param("header_$c");
        headers.$c = q.param("header_$c");

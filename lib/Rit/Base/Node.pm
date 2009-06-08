@@ -220,6 +220,8 @@ Parses C<$criterion>...
 Returns the values of the property matching the criterion.  See
 L</list> for explanation of the params.
 
+See also L<Rit::Base::List/parse_prop>
+
 =cut
 
 sub parse_prop
@@ -229,7 +231,8 @@ sub parse_prop
     $crit or confess "No name param given";
     return  $node->id if $crit eq 'id';
 
-    debug "Parsing $crit";
+    my( $args, $arclim ) = parse_propargs($args_in);
+#    debug "Parsing $crit";
 
     my $step;
     if( $crit =~ s/\.(.*)// )
@@ -237,37 +240,56 @@ sub parse_prop
         $step = $1;
     }
 
-    my($prop_name, $proplim) = split(/\s+/, $crit, 2);
+    my($prop_name, $propargs) = split(/\s+/, $crit, 2);
     trim(\$prop_name);
-    if( $proplim )
+    my( $proplim, $arclim2 );
+    if( $propargs )
     {
-        $proplim = parse_query_value($proplim);
+        ($proplim, $arclim2) = parse_query_value($propargs);
+        if( $arclim2 )
+        {
+            $args->{'arclim'} = $arclim2;
+        }
     }
 
     my $res;
     if( $prop_name =~ s/^rev_// )
     {
-        $res = $node->revprop( $prop_name, $proplim, $args_in );
+        $res = $node->revprop( $prop_name, $proplim, $args );
     }
     else
     {
+#        debug "node isa ".ref($node);
+#        if( $node->is_list )
+#        {
+#            my $first = $node->get_first_nos;
+#            debug "First in list isa ".ref($first);
+#        }
+
+
         if( $node->can($prop_name) )
         {
-            debug "  Calling method $prop_name";
-            $res = $node->$prop_name($proplim, $args_in);
+#            debug "  Calling method $prop_name";
+            $res = $node->$prop_name($proplim, $args);
         }
         else
         {
-            $res = $node->prop( $prop_name, $proplim, $args_in );
+#            debug "  Calling prop $prop_name";
+            $res = $node->prop( $prop_name, $proplim, $args );
         }
     }
 
     if( $step )
     {
-        return $res->parse_prop( $step, $args_in );
+#        debug "  calling $res -> $step";
+#        debug "  res is ".ref($res);
+
+        my $res2 = $res->parse_prop( $step, $args_in );
+#        debug "  res2 $res2";
+        return $res2;
     }
 
-    debug "  $res";
+#    debug "  res $res";
     return $res;
 }
 
