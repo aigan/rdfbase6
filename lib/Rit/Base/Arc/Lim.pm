@@ -127,8 +127,8 @@ sub parse
 		next unless $lim;
 		unless( $lim =~ /^\d+$/ )
 		{
+		    die "Flag $lim not recognized" unless $LIM{$lim};
 		    $lim = $LIM{$lim};
-		    die "Flag $lim not recognized" unless $lim;
 		}
 		$res_lim |= +$lim;
 	    }
