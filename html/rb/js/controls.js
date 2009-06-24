@@ -216,7 +216,8 @@ Autocompleter.Base.prototype = {
   markPrevious: function() {
     if(this.index > 0) this.index--
       else this.index = this.entryCount-1;
-    this.getEntry(this.index).scrollIntoView(true);
+    //    this.getEntry(this.index).scrollIntoView(true);
+    this.getEntry(this.index).scrollIntoView(false);
   },
   
   markNext: function() {

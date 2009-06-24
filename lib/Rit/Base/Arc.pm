@@ -850,7 +850,7 @@ sub create
 
     #####################
 
-#    debug "Would have created new arc..."; return is_undef; ### DEBUG
+#    cluck "Would have created new arc..."; return is_undef; ### DEBUG
 
     my $fields_part = join ",", @fields;
     my $values_part = join ",", map "?", @fields;
@@ -3154,7 +3154,10 @@ sub value_equals
 	return 0;
     }
 
-#    debug "Compares arc ".$arc->sysdesig." with ".query_desig($val2);
+    if( $DEBUG )
+    {
+        debug "Compares arc ".$arc->id." with ".query_desig($val2);
+    }
 
 
     if( $arc->obj )
@@ -3202,7 +3205,9 @@ sub value_equals
     }
     else
     {
-	my $val1 = $arc->value->plain;
+        my $val1 = $arc->value;
+        my $coltype = $arc->coltype;
+
 	debug "  See if $val1 $match($clean) $val2" if $DEBUG;
 	unless( defined $val1 )
 	{
@@ -3218,20 +3223,37 @@ sub value_equals
 	    {
 		confess query_desig( $val2 );
 	    }
-
-	    $val2 = $val2->plain;
 	}
+
+
+        if( $coltype eq 'valtext' )
+        {
+            $val1 = $val1->plain;
+            if( ref $val2 )
+            {
+                $val2 = $val2->plain;
+            }
+
+            if( $clean )
+            {
+                $val1 = valclean(\$val1);
+                $val2 = valclean(\$val2);
+            }
+        }
+        elsif( $coltype eq 'valdate' )
+        {
+            unless( ref $val2 )
+            {
+                $val2 = Rit::Base::Literal::Time->parse($val2);
+            }
+        }
+
+
 
 
 	# This part is similar to Rit::Base::Object/matches
 	#
 	#
-
-	if( $clean )
-	{
-	    $val1 = valclean(\$val1);
-	    $val2 = valclean(\$val2);
-	}
 
 	if( $match eq 'eq' )
 	{
@@ -3251,19 +3273,18 @@ sub value_equals
 	}
 	elsif( $match eq 'gt' )
 	{
-	    my $coltype = $arc->coltype;
 	    if( $coltype eq 'valtext' )
 	    {
 		return $arc if $val1 gt $val2;
 	    }
 	    else # Anything else should have overloaded '>'
 	    {
+#                debug "  comparing a ".ref($val1)." with a ".ref($val2);
 		return $arc if $val1 > $val2;
 	    }
 	}
 	elsif( $match eq 'lt' )
 	{
-	    my $coltype = $arc->coltype;
 	    if( $coltype eq 'valtext' )
 	    {
 		return $arc if $val1 lt $val2;
@@ -3861,9 +3882,23 @@ sub set_value
     # Falling back on old coltype/valtype in case of an Undef value
     my $coltype_new = $value_new->this_coltype || $coltype_old;
     my $valtype_old = $arc->valtype;
-    my $valtype_new = $value_new->this_valtype || $valtype_old;
+    my $valtype_new;
     my $objtype_old = ($coltype_old eq 'obj')? 1 : 0;
     my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
+
+    # Tries to mimic valtype algorithm in /create
+    if( Rit::Base::Constants->get('resource')->equals($valtype_old) )
+    {
+        $valtype_new = $valtype_old;
+    }
+    elsif( $value_new->is_literal )
+    {
+        $valtype_new = $value_new->this_valtype;
+    }
+    else
+    {
+        $valtype_new = $arc->pred->valtype;
+    }
 
 
     if( debug > 1 )

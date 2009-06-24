@@ -27,7 +27,7 @@ our @EXPORT_OK = qw( limflag );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
-			   package_to_module );
+			   package_to_module parse_perlstruct );
 
 use Rit::Base::Resource;
 use Rit::Base::Utils qw( query_desig );
@@ -72,6 +72,32 @@ sub new
     my $class = shift;
     return bless [], $class;
 }
+
+#########################################################################
+
+=head2 parse_string
+
+  Rit::Base::Arc::Lim->parse( "$arclim" )
+
+  Rit::Base::Arc::Lim->parse( "[$arclim1, $arclim2, ...]" )
+
+  Rit::Base::Arc::Lim->parse( "[ [$arclim1, $arclim2, ...], [...], ... ]" )
+
+Same as L</parse> but takes a string tather than an arrayref
+
+Returns:
+
+  $arclim
+
+=cut
+
+sub parse_string
+{
+    my( $this, $string_in ) = @_;
+
+    return $this->parse( parse_perlstruct( $string_in ) );
+}
+
 
 #########################################################################
 
@@ -127,8 +153,8 @@ sub parse
 		next unless $lim;
 		unless( $lim =~ /^\d+$/ )
 		{
+		    die "Flag $lim not recognized" unless $LIM{$lim};
 		    $lim = $LIM{$lim};
-		    die "Flag $lim not recognized" unless $lim;
 		}
 		$res_lim |= +$lim;
 	    }

@@ -26,12 +26,12 @@ use List::Util;
 use Scalar::Util qw(blessed);
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug datadump  );
+use Para::Frame::Utils qw( throw debug datadump trim  );
 use Para::Frame::List;
 use Para::Frame::Logging;
 
 use Rit::Base::Arc::Lim;
-use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs );
+use Rit::Base::Utils qw( is_undef valclean query_desig parse_propargs parse_query_value );
 
 
 # Can't overload stringification. It's called in some stage of the
@@ -1963,6 +1963,66 @@ sub concatenate_by_overload
 
 ##############################################################################
 
+=head2 parse_prop
+
+  $n->parse_prop( $criterion, \%args )
+
+Parses C<$criterion>...
+
+Returns the values of the property matching the criterion.  See
+L</list> for explanation of the params.
+
+See also L<Rit::Base::Node/parse_prop>
+
+=cut
+
+sub parse_prop
+{
+    my( $l, $crit, $args_in ) = @_;
+
+    $crit or confess "No name param given";
+
+    my( $args, $arclim ) = parse_propargs($args_in);
+#    debug "Parsing $crit for list";
+
+    my $step;
+    if( $crit =~ s/\.(.*)// )
+    {
+        $step = $1;
+    }
+
+    my($prop_name, $propargs) = split(/\s+/, $crit, 2);
+    trim(\$prop_name);
+    my( $proplim, $arclim2 );
+    if( $propargs )
+    {
+        ($proplim, $arclim2) = parse_query_value($propargs);
+        if( $arclim2 )
+        {
+            $args->{'arclim'} = $arclim2;
+        }
+    }
+
+#    debug "  Calling method $prop_name";
+    my $res = $l->$prop_name($proplim, $args);
+
+    if( $step )
+    {
+#        debug "  calling $res -> $step";
+#        debug "  res is ".ref($res);
+
+        my $res2 = $res->parse_prop( $step, $args_in );
+#        debug "  list res2 $res2";
+        return $res2;
+    }
+
+#    debug "  list res $res";
+    return $res;
+}
+
+
+##############################################################################
+
 =head2 transform
 
   $l->transform( $lookup )
@@ -1997,6 +2057,11 @@ sub transform
     }
     continue
     {
+        if( $Para::Frame::REQ )
+        {
+            $Para::Frame::REQ->note("...". $l->count ."/". $l->size)
+              unless( $l->count % 100 );
+        }
 	( $elem, $error ) = $l->get_next;
     }
     $l->set_index( $index );
@@ -2078,6 +2143,7 @@ AUTOLOAD
 	debug "Got ".$self->size." elements";
     }
 
+    confess "Self not a list: ".datadump($self) unless UNIVERSAL::isa($self,'Rit::Base::List');
     unless( $self->size )
     {
 #	return $self->new_empty();

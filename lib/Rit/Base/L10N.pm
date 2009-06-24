@@ -146,8 +146,11 @@ sub maketext
     foreach my $langcode ( @alts )
     {
 #	debug "  ... in $langcode\n";
-	unless( $value = $TRANSLATION{$phrase}{$langcode} )
+#	$value = $TRANSLATION{$phrase}{$langcode}
+
+	unless( exists $TRANSLATION{$phrase}{$langcode} )
 	{
+	    debug "Looking up phrase '$phrase' in DB";
 	    if( my $node = Rit::Base::Resource->find({ has_translation => $phrase })->get_first_nos )
 	    {
 		my $lang = Rit::Base::Resource->get({
@@ -160,6 +163,7 @@ sub maketext
 		    last;
 		}
 	    }
+	    $TRANSLATION{$phrase}{$langcode} = undef;
 	    next;
 	}
 	last;

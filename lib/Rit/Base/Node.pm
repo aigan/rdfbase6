@@ -23,14 +23,14 @@ use base qw( Rit::Base::Object );
 
 use Carp qw( cluck confess croak carp );
 
-use Para::Frame::Utils qw( throw catch debug datadump );
+use Para::Frame::Utils qw( throw catch debug datadump trim );
 use Para::Frame::Reload;
 
 use Rit::Base::Utils qw(valclean parse_query_props
 			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
-			 parse_propargs aais );
+			 parse_propargs aais parse_query_value );
 
 
 =head1 DESCRIPTION
@@ -206,6 +206,91 @@ sub id_alphanum
     }
 
     return reverse($str) . $map[$chksum % $len];
+}
+
+
+##############################################################################
+
+=head2 parse_prop
+
+  $n->parse_prop( $criterion, \%args )
+
+Parses C<$criterion>...
+
+Returns the values of the property matching the criterion.  See
+L</list> for explanation of the params.
+
+See also L<Rit::Base::List/parse_prop>
+
+=cut
+
+sub parse_prop
+{
+    my( $node, $crit, $args_in ) = @_;
+
+    $crit or confess "No name param given";
+    return  $node->id if $crit eq 'id';
+
+    my( $args, $arclim ) = parse_propargs($args_in);
+#    debug "Parsing $crit";
+
+    my $step;
+    if( $crit =~ s/\.(.*)// )
+    {
+        $step = $1;
+    }
+
+    my($prop_name, $propargs) = split(/\s+/, $crit, 2);
+    trim(\$prop_name);
+    my( $proplim, $arclim2 );
+    if( $propargs )
+    {
+        ($proplim, $arclim2) = parse_query_value($propargs);
+        if( $arclim2 )
+        {
+            $args->{'arclim'} = $arclim2;
+        }
+    }
+
+    my $res;
+    if( $prop_name =~ s/^rev_// )
+    {
+        $res = $node->revprop( $prop_name, $proplim, $args );
+    }
+    else
+    {
+#        debug "node isa ".ref($node);
+#        if( $node->is_list )
+#        {
+#            my $first = $node->get_first_nos;
+#            debug "First in list isa ".ref($first);
+#        }
+
+
+        if( $node->can($prop_name) )
+        {
+#            debug "  Calling method $prop_name";
+            $res = $node->$prop_name($proplim, $args);
+        }
+        else
+        {
+#            debug "  Calling prop $prop_name";
+            $res = $node->prop( $prop_name, $proplim, $args );
+        }
+    }
+
+    if( $step )
+    {
+#        debug "  calling $res -> $step";
+#        debug "  res is ".ref($res);
+
+        my $res2 = $res->parse_prop( $step, $args_in );
+#        debug "  res2 $res2";
+        return $res2;
+    }
+
+#    debug "  res $res";
+    return $res;
 }
 
 
@@ -405,6 +490,8 @@ sub has_revpred
 
 See L<Rit::Base::List/find> for docs.
 
+Also implements predor
+
 This also implements meets_proplim for arcs!!!
 
 Returns: boolean
@@ -494,7 +581,7 @@ sub meets_proplim
 
 
 	#                      Regexp compiles once
-	unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	unless( $pred_part =~ m/^(rev_)?(.*?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	{
 	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    unless( $pred_part )
@@ -506,11 +593,11 @@ sub meets_proplim
 		    debug "For ".$node->sysdesig;
 		}
 	    }
-	    die "wrong format in find: $pred_part\n";
+	    die "wrong format in node find: $pred_part\n";
 	}
 
 	my $rev    = $1 ? 1 : 0;
-	my $pred   = $2;
+	my $pred_in   = $2;
 	my $arclim = $3 || $arclim_in;
 	my $clean  = $4 || $args_in->{'clean'} || 0;
 	my $match  = $5 || 'eq';
@@ -527,12 +614,17 @@ sub meets_proplim
 	};
 
 
-	if( $pred =~ s/^predor_// )
+        my @preds;
+	if( $pred_in =~ s/^predor_// )
 	{
-	    my( @prednames ) = split /_-_/, $pred;
-	    my( @preds ) = map Rit::Base::Pred->get($_), @prednames;
-	    $pred = \@preds;
+	    my( @prednames ) = split /_-_/, $pred_in;
+#	    ( @preds ) = map Rit::Base::Pred->get($_), @prednames;
+	    @preds = @prednames;
 	}
+        else
+        {
+            @preds = $pred_in;
+        }
 
 #	#### ARCS
 #	if( ref $node eq 'Rit::Base::Arc' )
@@ -615,132 +707,134 @@ sub meets_proplim
 #	    confess "Call for $pred on a nonarc ".$node->desig;
 #	}
 
+        foreach my $pred ( @preds )
+        {
+            if( $pred =~ /^count_pred_(.*)/ )
+            {
+                $pred = $1;
 
-	if( $pred =~ /^count_pred_(.*)/ )
-	{
-	    $pred = $1;
+                if( $clean )
+                {
+                    confess "clean for count_pred not implemented";
+                }
 
-	    if( $clean )
-	    {
-		confess "clean for count_pred not implemented";
-	    }
+                if( $target_value eq '*' )
+                {
+                    $target_value = 0;
+                    $match = 'gt'; # TODO: checkthis
+                }
 
-	    if( $target_value eq '*' )
-	    {
-		$target_value = 0;
-		$match = 'gt'; # TODO: checkthis
-	    }
+                debug "    count pred $pred" if $DEBUG;
 
-	    debug "    count pred $pred" if $DEBUG;
+                my $count;
+                if( $rev )
+                {
+                    $count = $node->revcount($pred, $args);
+                    debug "      counted $count (rev)" if $DEBUG;
+                }
+                else
+                {
+                    $count = $node->count($pred, $args);
+                    debug "      counted $count" if $DEBUG;
+                }
 
-	    my $count;
-	    if( $rev )
-	    {
-		$count = $node->revcount($pred, $args);
-		debug "      counted $count (rev)" if $DEBUG;
-	    }
-	    else
-	    {
-		$count = $node->count($pred, $args);
-		debug "      counted $count" if $DEBUG;
-	    }
+                my $matchtype =
+                {
+                 eq    => '==',
+                 ne    => '!=',
+                 gt    => '>',
+                 lt    => '<',
+                };
 
-	    my $matchtype =
-	    {
-	     eq    => '==',
-	     ne    => '!=',
-	     gt    => '>',
-	     lt    => '<',
-	    };
+                if( my $cmp = $matchtype->{$match} )
+                {
+                    unless( $target_value =~ /^\d+/ )
+                    {
+                        throw('action', "Target value must be a number");
+                    }
 
-	    if( my $cmp = $matchtype->{$match} )
-	    {
-		unless( $target_value =~ /^\d+/ )
-		{
-		    throw('action', "Target value must be a number");
-		}
+                    if( eval "$count $cmp $target_value" )
+                    {
+                        debug 3,"      MATCH";
+                        next PRED; # test passed
+                    }
+                }
+                else
+                {
+                    confess "Matchtype '$match' not implemented";
+                }
 
-		if( eval "$count $cmp $target_value" )
-		{
-		    debug 3,"      MATCH";
-		    next PRED; # test passed
-		}
-	    }
-	    else
-	    {
-		confess "Matchtype '$match' not implemented";
-	    }
+            }
+            elsif( ($match eq 'eq') or
+                   ($match eq 'ne') or
+                   ($match eq 'lt') or
+                   ($match eq 'gt')
+                 )
+            {
+                debug "    match is $match/$rev (calling has_value)" if $DEBUG;
+                next PRED # Check next if this test pass
+                  if $node->has_value({$pred=>$target_value},
+                                      {
+                                       %$args,
+                                       rev=>$rev,
+                                       match=>$match,
+                                      } );
+            }
+            elsif( $match eq 'exist' )
+            {
+                debug "    match is exist" if $DEBUG;
+                if( $rev )
+                {
+                    if( $target_value ) # '1'
+                    {
+                        debug "Checking rev exist true" if $DEBUG;
+                        next PRED
+                          if( $node->has_revpred( $pred, {}, $args ) );
+                    }
+                    else
+                    {
+                        debug "Checking rev exist false" if $DEBUG;
+                        next PRED
+                          unless( $node->has_revpred( $pred, {}, $args ) );
+                    }
+                }
+                else
+                {
+                    if( $target_value ) # '1'
+                    {
+                        debug "Checking rel exist true (target_value: $target_value)" if $DEBUG;
+                        next PRED
+                          if( $node->has_pred( $pred, {}, $args ) );
+                    }
+                    else
+                    {
+                        debug "Checking rel exist false: unless has_pred( $pred, {}, ".
+                          $arclim_in->sysdesig .")" if $DEBUG;
+                        next PRED
+                          unless( $node->has_pred( $pred, {}, $args ) );
+                    }
+                }
+            }
+            elsif( ($match eq 'begins') or ($match eq 'like') )
+            {
+                debug "    match is $match" if $DEBUG;
+                if( $rev )
+                {
+                    confess "      rev not supported for matchtype $match";
+                }
 
-	}
-	elsif( ($match eq 'eq') or
-	       ($match eq 'ne') or
-	       ($match eq 'lt') or
-	       ($match eq 'gt')
-	     )
-	{
-	    debug "    match is $match/$rev (calling has_value)" if $DEBUG;
-	    next PRED # Check next if this test pass
-	      if $node->has_value({$pred=>$target_value},
-					  {
-					   %$args,
-					   rev=>$rev,
-					   match=>$match,
-					  } );
-	}
-	elsif( $match eq 'exist' )
-	{
-	    debug "    match is exist" if $DEBUG;
-	    if( $rev )
-	    {
-		if( $target_value ) # '1'
-		{
-		    debug "Checking rev exist true" if $DEBUG;
-		    next PRED
-		      if( $node->has_revpred( $pred, {}, $args ) );
-		}
-		else
-		{
-		    debug "Checking rev exist false" if $DEBUG;
-		    next PRED
-		      unless( $node->has_revpred( $pred, {}, $args ) );
-		}
-	    }
-	    else
-	    {
-		if( $target_value ) # '1'
-		{
-		    debug "Checking rel exist true (target_value: $target_value)" if $DEBUG;
-		    next PRED
-		      if( $node->has_pred( $pred, {}, $args ) );
-		}
-		else
-		{
-		    debug "Checking rel exist false: unless has_pred( $pred, {}, ".
-		      $arclim_in->sysdesig .")" if $DEBUG;
-		    next PRED
-		      unless( $node->has_pred( $pred, {}, $args ) );
-		}
-	    }
-	}
-	elsif( ($match eq 'begins') or ($match eq 'like') )
-	{
-	    debug "    match is $match" if $DEBUG;
-	    if( $rev )
-	    {
-		confess "      rev not supported for matchtype $match";
-	    }
-
-	    next PRED # Check next if this test pass
-	      if $node->has_value({$pred=>$target_value},
-				  {
-				   %$args,
-				   match => $match,
-				  } );
-	}
-	else
-	{
-	    confess "Matchtype '$match' not implemented";
-	}
+                next PRED # Check next if this test pass
+                  if $node->has_value({$pred=>$target_value},
+                                      {
+                                       %$args,
+                                       match => $match,
+                                      } );
+            }
+            else
+            {
+                confess "Matchtype '$match' not implemented";
+            }
+        }
 
 	# This node failed the test
 	debug $node->sysdesig ." failed." if $DEBUG;

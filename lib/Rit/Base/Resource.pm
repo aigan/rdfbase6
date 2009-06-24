@@ -6282,7 +6282,9 @@ sub get_by_anything
 	my $home = $req->site->home_url_path;
 	if( my $item_id = $req->q->param('route_alternative') )
 	{
-	    $req->q->delete('route_alternative');
+            debug "*********** USING route_alternative $item_id";
+            # Avoid cases of unending route asking
+#	    $req->q->delete('route_alternative');
 	    return Rit::Base::Resource->get( $item_id );
 	}
 

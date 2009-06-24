@@ -1,0 +1,17 @@
+﻿[% META
+ title="Transform list"
+ level = 20
+ next_action='search_transform'
+ next_template='~$home/rb/node/list.tt'
+ focus='transform'
+%]
+
+[% input('transform', '', class='wide') %]<br/>
+[% step('Transform') %]
+
+&nbsp; List has [% searchobj.result.size %] elements
+
+
+<h2>Instruktion</h2>
+<p>För att transformera en lista med anläggningar till en lista över personas kopplade till anläggningar kan man skriva: <code>has_contact.role_held_by</code>.
+</p>

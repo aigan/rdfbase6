@@ -1,0 +1,70 @@
+﻿[* META next_action = "translate_html" *]
+[% META
+   level = 20
+   title = '-
+	    id = q.param("id");
+	    n = get(id);
+	    ntitle = n.desig;
+            pred = q.param("pred");
+            DEFAULT pred = "is_of_language";
+            lc = q.param("lc");
+            DEFAULT lc = lang;
+            l = get({code=lc, is=C.language});
+	    GET loc("Translate [_1] [_2] to [_3]",
+                    locescape(ntitle),
+                    pred,
+                    l.desig);
+            '
+%]
+
+[%
+id = q.param('id');
+n = get(id);
+
+pred = q.param('pred');
+DEFAULT pred = 'is_of_language';
+
+lc = q.param('lc');
+DEFAULT lc = lang;
+l = get({code=lc, is=C.language});
+
+lc2 = q.param('lc2');
+UNLESS lc2;
+  FOREACH alt IN req.lang.alternatives;
+     NEXT IF alt == lc;
+     lc2=alt;
+     LAST;
+  END;
+END;
+l2 = get({code=lc2, is=C.language});
+
+%]
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<p style="float:right">Other languages: 
+[% FOREACH lc2n IN req.lang.alternatives %]
+   [% jump(lc2n, me, lc=lc, lc2=lc2n, id=id, pred=pred) +%]
+[%+ END %]
+</p>
+
+<h2>[% loc("Translation to [_1]", l2.name.loc) %]</h2>
+<div class="notice">[% n.list(pred, {is_of_language=l2}).loc %]</div>
+
+
+<p style="float:right;margin:0.83em 0 0 0">Other languages: 
+[% FOREACH lcn IN req.lang.alternatives %]
+   [% jump(lcn, me, lc=lcn, lc2=lc2, id=id, pred=pred) +%]
+[%+ END %]
+</p>
+
+<h2>[% loc("Translation to [_1]", l.name.loc) %]</h2>
+
+<input type="hidden" style="display:none" id="translation" name="translation" value="" />
+<script>document.getElementById('translation').value="[% n.list(pred,{is_of_language=l}).loc | replace('"', '\"') | replace("\r?\n", '\r\n') %]"</script>
+<iframe id="translation___Frame" src="[% home %]/pf/cms/fckeditor/editor/fckeditor.html?InstanceName=translation&amp;Toolbar=ParaFrame" width="100%" height="500" frameborder="0" scrolling="no"></iframe>
+
+[% hidden('id', id) %]
+[% hidden('lc', lc) %]
+
+<p>[% step %]</p>

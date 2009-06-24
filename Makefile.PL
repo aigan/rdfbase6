@@ -17,6 +17,7 @@ if( open PF_LOC, "<$FindBin::Bin/.paraframe_location" )
     chomp $pf;
 }
 
+my $pf_empty = $pf ? 0 : 1;
 $pf ||= "/usr/local/paraframe";
 
 print "Where is Para::Frame installed?\n";
@@ -28,7 +29,7 @@ $pf_in ||= $pf;
 
 push @INC, $pf_in.'/lib';
 
-if( $pf ne $pf_in )
+if( $pf_empty or $pf ne $pf_in )
 {
     open OUT, ">.paraframe_location" or die $!;
     print OUT $pf_in."\n";
@@ -44,7 +45,7 @@ WriteMakefile(
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {
-		  'Para::Frame'                => 1.04,
+		  'Para::Frame'                => 1.07,
 	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
