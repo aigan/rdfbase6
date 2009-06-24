@@ -69,6 +69,8 @@ sub render_output
 
 	$req->note("...". $row ."/". $rows_count)
 	  unless( $row % 10 );
+        $req->yield
+	  unless( $row % 10 );
     }
 
     binmode $fh;
