@@ -69,7 +69,11 @@ sub render_output
 	my @item_row;
 	foreach my $pred (@preds)
 	{
-	    my $val = $item->parse_prop($pred);
+	    #my $val = $item->parse_prop($pred);
+
+            # AUTOLOAD works.  parse_prop doesn't parse pred_direct
+            # correctly.  Fix and test that in master first :P
+	    my $val = $item->$pred;
 	    $val = $val->desig if ref $val;
 #	    debug "  $pred = $val";
 	    push @item_row, $val;
