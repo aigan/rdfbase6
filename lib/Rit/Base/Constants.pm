@@ -95,12 +95,20 @@ sub on_startup
 
     debug "Initiating constants";
 
-    no strict 'refs'; # Symbolic refs
-    foreach my $export (@Initlist)
+    eval
     {
-	debug 2, " * $export->[1]";
-	my $obj = $class->get($export->[1]);
-	*{$export->[0]} = \ $obj;
+	no strict 'refs'; # Symbolic refs
+	foreach my $export (@Initlist)
+	{
+	    debug 2, " * $export->[1]";
+	    my $obj = $class->get($export->[1]);
+	    *{$export->[0]} = \ $obj;
+	}
+    };
+    if( $@ )
+    {
+	debug $@;
+	debug "Continuing without constants";
     }
 
     debug "Initiating key nodes";
