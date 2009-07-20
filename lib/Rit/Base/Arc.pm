@@ -2952,6 +2952,7 @@ sub remove_duplicates
     # TODO: generalize this
 
     my $subj = $arc->subj;
+    my $changed = 0;
     foreach my $arc2 ( $subj->arc_list($arc->pred, undef,
 				       {
 					%$args,
@@ -2972,11 +2973,20 @@ sub remove_duplicates
 	{
 	    if( $rarc->is_removal )
 	    {
-		$rarc->remove({%$args, force=>1});
+		$changed += $rarc->remove({%$args, force=>1});
 	    }
 	}
 
-	$arc2->remove({%$args, force=>1});
+	$changed += $arc2->remove({%$args, force=>1});
+    }
+
+    # Reconstitute node status
+    #
+    if( $changed )
+    {
+	debug "Reconstituting arc ".$arc->sysdesig;
+	$arc->register_with_nodes;
+	$arc->schedule_check_create( $args );
     }
 }
 

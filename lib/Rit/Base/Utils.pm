@@ -300,7 +300,7 @@ sub parse_query_value
     my( $val ) = @_;
 
     my $arclim;
-    if( $val =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])\s*$/ )
+    if( $val =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
     {
 #        debug "Creating subcriterion from $val";
         my $pairs = $1;
@@ -329,10 +329,10 @@ sub parse_query_value
 
 #        debug "Got ".query_desig($val);
     }
-    elsif( length $val )
-    {
-        confess "Failed to parse query value $val";
-    }
+#    elsif( length $val )
+#    {
+#        confess "Failed to parse query value $val";
+#    }
 
 
     if( wantarray )

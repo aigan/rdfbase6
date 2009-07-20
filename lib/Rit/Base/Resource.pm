@@ -5662,7 +5662,8 @@ sub find_class
 	    $package = "Rit::Base::Metaclass::$classname";
 	    #	    debug "Creating package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
-	    $valtype = $pmodules_sorted[0][1];
+#	    $valtype = $pmodules_sorted[0][1];
+	    $valtype = $C_resource;
 	}
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
