@@ -47,7 +47,9 @@ no_auto_show	2
 is_mandatory	2
 has_cyc_id	5
 has_wikipedia_id	5
-
+has_pred_format	5
+has_input_pattern	5
+subclasses_are	5
 
 ARCS
 resource	is	class
@@ -57,6 +59,15 @@ has_cyc_id	is	predicate
 has_cyc_id	range	text
 has_wikipedia_id	is	predicate
 has_wikipedia_id	range	text
+has_pred_format	is	predicate
+has_pred_format	domain	predicate
+has_pred_format	range	text
+has_input_pattern	is	predicate
+has_input_pattern	domain	predicate
+has_input_pattern	range	text
+subclasses_are	is	predicate
+subclasses_are	domain	class
+subclasses_are	range	class
 login_account	is	class
 login_account	has_cyc_id		Cyclist
 system_access_right	is	class
@@ -206,6 +217,11 @@ phone_number	has_wikipedia_id		Telephone_number
 113	pred_2	is
 113	pred_3	is
 
+116	is	syllogism
+116	pred_1	scof
+116	pred_2	subclasses_are
+116	pred_3	is
+
 literal_class	is	class
 literal_class	scof	class
 literal	is	literal_class
@@ -271,5 +287,6 @@ image	scof	file
 website_url	scof	url
 text_large	scof	valbin
 textbox	scof	text_large
+text_html	scof	textbox
 
 EOF
