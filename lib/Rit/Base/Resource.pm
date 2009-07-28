@@ -2956,7 +2956,7 @@ sub has_value
     if( $DEBUG )
     {
 	my $value_str = query_desig($value);
-	debug "  no such value $value_str for ".$node->desig;
+	debug "  no such value $value_str for ".$node->{'id'};
     }
 
     return 0;
