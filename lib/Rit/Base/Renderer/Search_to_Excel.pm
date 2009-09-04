@@ -63,18 +63,22 @@ sub render_output
 
     $sheet->write($row++, 0, \@pred_names);
 
+#    debug "Wrote header";
+
     foreach my $item ( $rows->as_array )
     {
 #	debug "Writing item ".$item->sysdesig;
 	my @item_row;
 	foreach my $pred (@preds)
 	{
-	    #my $val = $item->parse_prop($pred);
+#	    debug "  parsing $pred";
 
-            # AUTOLOAD works.  parse_prop doesn't parse pred_direct
-            # correctly.  Fix and test that in master first :P
-	    my $val = $item->$pred;
-	    $val = $val->desig if ref $val;
+	    my $val = $item->parse_prop($pred);
+	    if( ref $val and $val->can('desig') )
+	    {
+		$val = $val->desig;
+	    }
+
 #	    debug "  $pred = $val";
 	    push @item_row, $val;
 	}
