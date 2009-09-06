@@ -35,11 +35,11 @@ use Encode; # decode FB_QUIET
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js validate_utf8 );
-use Para::Frame::Widget qw( input textarea hidden radio label_from_params input_image );
+use Para::Frame::Widget qw( input textarea htmlarea hidden radio label_from_params input_image );
 
 use Rit::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use Rit::Base::Widget qw( aloc build_field_key );
-use Rit::Base::Constants qw( $C_textbox $C_text_large );
+use Rit::Base::Constants qw( $C_textbox $C_text_large $C_text_html );
 
 =head1 DESCRIPTION
 
@@ -762,6 +762,12 @@ sub wuirc
     }
 
     my $tb = $C_textbox;
+    if(	not defined $args->{'class'} and
+	( $range->equals($C_text_html) or
+	  $range->scof($C_text_html) ))
+    {
+	$args->{'class'} = 'html_editable';
+    }
     if( ($args->{'rows'}||0) > 1 or
 	$range->equals($tb) or
 	$range->scof($tb) )
