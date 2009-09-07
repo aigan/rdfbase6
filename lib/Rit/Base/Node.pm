@@ -252,6 +252,15 @@ sub parse_prop
         }
     }
 
+    if( $prop_name =~ s/_(@{[join '|', @{Rit::Base::Arc::Lim->names}]})$//o )
+    {
+	if( $arclim2 )
+	{
+	    die "Do not mix arclim syntax: $prop_name";
+	}
+	$args->{'arclim'} = Rit::Base::Arc::Lim->parse($1);
+    }
+
     my $res;
     if( $prop_name =~ s/^rev_// )
     {

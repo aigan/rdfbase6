@@ -115,7 +115,7 @@ sub init
 
     Para::Frame->add_hook('done', \&on_done);
 
-    Para::Frame->add_hook('add_background_jobs', \&add_background_jobs);
+    Para::Frame->add_hook('busy_background_job', \&add_background_jobs);
 
     $Para::Frame::CFG->{'search_collection_class'} ||=
       'Rit::Base::Search::Collection';
@@ -322,12 +322,15 @@ sub add_background_jobs
 {
     my( $delta, $sysload ) = @_;
 
+#    debug "*******================************ May send_cache_change";
     if( keys %Rit::Base::Cache::Changes::Added or
 	keys %Rit::Base::Cache::Changes::Updated or
 	keys %Rit::Base::Cache::Changes::Removed )
     {
-	$Para::Frame::REQ->add_job('run_code', 'send_cache_change',
-				   \&send_cache_change);
+	send_cache_change(undef);
+#	debug "  prepending job";
+#	$Para::Frame::REQ->prepend_background_job('send_cache_change',
+#						  \&send_cache_change);
     }
 }
 
@@ -341,6 +344,8 @@ sub add_background_jobs
 sub send_cache_change
 {
     my( $req ) = @_;
+
+    $req ||= $Para::Frame::REQ || Para::Frame::Request->new_bgrequest();
 
     my @added = keys %Rit::Base::Cache::Changes::Added;
     my @removed = keys %Rit::Base::Cache::Changes::Removed;
