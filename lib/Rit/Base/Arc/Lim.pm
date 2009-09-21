@@ -83,7 +83,7 @@ sub new
 
   Rit::Base::Arc::Lim->parse( "[ [$arclim1, $arclim2, ...], [...], ... ]" )
 
-Same as L</parse> but takes a string tather than an arrayref
+Same as L</parse> but takes a string rather than an arrayref
 
 Returns:
 
