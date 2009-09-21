@@ -3387,7 +3387,9 @@ sub arclim_sql
 
     $args ||= {};
 
-    my $arclim = $args->{'arclim'} || $search->arclim;
+    my $arclim_in = $args->{'arclim'} || $search->arclim;
+    my $arclim = Rit::Base::Arc::Lim->parse($arclim_in);
+
 
 #    debug "Adding arclim_sql based on\n".datadump($arclim);
     my $sql = $arclim->sql($args);
