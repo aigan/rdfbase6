@@ -406,7 +406,7 @@ sub send_cache_change
 	    }
 		or do
 		{
-		    debug(0,"  failed: $@");
+		    debug(0,"failed send_cache_change to $site->{site}: $@");
 		};
 	}
 
