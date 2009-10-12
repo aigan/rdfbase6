@@ -23,19 +23,6 @@
 
 <p>[% submit('Sök') %]
 
-<p>Examples:
+<h2>Exempel</h2>
 
-<p>name_clean hotel<br>
-private_ne 1<br>
-arclim ['not_old']<br>
-order_by name.loc
-
-<p>More info:
-<pre style="white-space: -moz-pre-wrap !important">
-rev
-[ pred ]
-[ [% rb.Arc_Lim.names.join(' | ') %] ]
-clean
-[ eq | like | begins | gt | lt | ne | exist ]
-[ prio ]
-</pre>
+[% PROCESS rb_search_example.tt %]
