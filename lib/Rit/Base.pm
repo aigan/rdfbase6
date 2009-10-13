@@ -339,6 +339,9 @@ sub add_background_jobs
 
 =head2 send_cache_change
 
+  send_cache_change()
+  send_cache_change($req)
+
 =cut
 
 sub send_cache_change

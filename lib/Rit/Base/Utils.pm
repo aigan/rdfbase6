@@ -1045,57 +1045,6 @@ sub query_desig
 }
 
 
-##############################################################################
-
-=head2 send_cache_update
-
-  
-
-=cut
-
-sub send_cache_update
-{
-    my( $params ) = @_;
-
-    my @params;
-
-    foreach my $key ( keys %$params )
-    {
-	push @params, $key ."=". $params->{$key};
-    }
-
-    my $request = "update_cache?" . join('&', @params);
-
-    my @daemons = @{$Para::Frame::CFG->{'daemons'}};
-
-    my $send_cache = sub
-    {
-	my( $req ) = @_;
-
-	foreach my $site (@daemons)
-	{
-	    my $daemon = $site->{'daemon'};
-	    next
-	      if( grep( /$site->{'site'}/, keys %Para::Frame::Site::DATA ));
-	    debug(0,"Sending update_cache to $daemon");
-
-	    eval {
-		$req->send_to_daemon( $daemon, 'RUN_ACTION',
-				      \$request );
-	    }
-	      or do
-	      {
-		  debug(0,"Couldn't send cache_update to $daemon");
-	      }
-	  }
-	return "remove_hook";
-    };
-
-    $Para::Frame::REQ->add_background_job( 'send_cache_update', $send_cache );
-
-}
-
-
 #########################################################################
 
 =head2 parse_propargs

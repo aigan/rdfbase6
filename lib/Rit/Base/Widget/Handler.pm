@@ -34,11 +34,9 @@ use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
 use Rit::Base::Constants qw( $C_language $C_arc $C_class );
 
-use Rit::Base::Utils qw( valclean parse_query_props
-			 parse_form_field_prop is_undef arc_lock
-			 arc_unlock truncstring query_desig
-			 convert_query_prop_for_creation
-			 parse_propargs aais send_cache_update );
+use Rit::Base::Utils qw( valclean parse_form_field_prop is_undef
+			 arc_lock arc_unlock query_desig
+			 parse_propargs aais );
 
 =head1 DESCRIPTION
 
