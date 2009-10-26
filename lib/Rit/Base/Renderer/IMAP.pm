@@ -270,7 +270,7 @@ sub render_output
 	use bytes; # Don't touch original encoding!
 
 	my $email_path = $top->email->url_path;
-	$$data =~ s/(=|")\s*cid:(.+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
+	$$data =~ s/(=|")\s*cid:([^> "]+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
 	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
 	    my $subject = encode( $charset, $email->subject );

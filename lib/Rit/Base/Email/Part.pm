@@ -33,6 +33,7 @@ use MIME::Types;
 use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
+use Encode;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -330,6 +331,8 @@ sub content_type
 
   $part->effective_type
 
+  $part->effective_type( $type )
+
 Mostly the same as L</type>.
 
 Any entity with an unrecognized Content-Transfer-Encoding must be
@@ -355,7 +358,21 @@ sub effective_type
 
     &mime_types_init unless $MIME_TYPES;
 
-    my $type_name = $_[0]->type;
+    my $type_name = $_[1] || $_[0]->type;
+
+    unless( $type_name =~ /^[a-z]+\/[a-z\-\+\.0-9]+$/ )
+    {
+	debug "Mime-type $type_name malformed";
+	$type_name = 'application/octet-stream';
+    }
+
+    unless( $MIME_TYPES->type($type_name) )
+    {
+	debug "Mime-type $type_name not recognized";
+	$type_name = 'application/octet-stream';
+    }
+
+
     if( $type_name eq 'application/octet-stream' )
     {
 	$_[0]->filename =~ /\.([^\.]+)$/;
@@ -364,19 +381,14 @@ sub effective_type
 	    if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
 	    {
 		$type_name = $type->type;
+#		cluck "HERE";
+#		debug "Got type $type_name from extension";
 	    }
 	}
     }
-    elsif( $type_name eq 'multipart/mixed' )
+
+    if( $type_name eq 'application/octet-stream' )
     {
-	# May be a nonstandard embedded rfc822
-#	debug "*** looking at mixed part";
-#	debug $_[0]->head->as_string;
-    }
-    elsif( not $MIME_TYPES->type($type_name) )
-    {
-	debug "Mime-type $type_name not recognized";
-#	cluck "HERE";
 	$type_name = $_[0]->guess_type;
     }
 
@@ -700,7 +712,7 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-#    debug "Determining charset";
+#    debug "Determining charset for ".$part->path;
 
     my $charset = $part->charset;
     $args ||= {};
@@ -939,7 +951,9 @@ sub select_renderer
 	     [ qr{multipart/alternative} => '_render_alt'        ],
 	     [ qr{multipart/mixed}       => '_render_mixed'      ],
 	     [ qr{multipart/related}     => '_render_related'    ],
-	     [ qr{image/}                => '_render_image'      ],
+	     [ qr{image/gif}             => '_render_image'      ],
+	     [ qr{image/jpeg}            => '_render_image'      ],
+	     [ qr{image/png}             => '_render_image'      ],
 	     [ qr{message/rfc822}        => '_render_rfc822'     ],
 	     [ qr{multipart/parallel}    => '_render_mixed'      ],
 	     [ qr{multipart/report}      => '_render_mixed'      ],
@@ -1288,11 +1302,11 @@ sub _render_related
     }
 
     my $choice = shift @alts;
-    my $score = $prio{ $choice->type } || 1; # prefere first part
+    my $score = $prio{ $choice->effective_type } || 1; # prefere first part
 
     foreach my $alt (@alts)
     {
-	my $type = $alt->type;
+	my $type = $alt->effective_type;
 	next unless $type;
 
 	if( ($prio{$type}||0) > $score )
@@ -1443,7 +1457,8 @@ sub body
 
     unless( $encoding )
     {
-	debug "No encoding found for body. Using 8bit";
+	my $path = $part->path;
+	debug "No encoding found for body $path. Using 8bit";
 	$encoding = '8bit';
     }
 
@@ -1494,7 +1509,8 @@ sub body
     }
     else
     {
-	debug "Should decode charset $charset";
+	debug "decoding from $charset";
+	$$dataref = decode($charset,$$dataref);
     }
 
 
@@ -1595,6 +1611,11 @@ sub mime_types_init
 				  encoding => 'quoted-printable',
 				  extensions => ['xlsx'],
 				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+				 ),
+		  MIME::Type->new(
+				  encoding => 'base64',
+				  extensions => ['xcf'],
+				  type => 'image/x-xcf',
 				 ),
 		 );
     $MIME_TYPES->addType(@types);
