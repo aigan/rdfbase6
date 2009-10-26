@@ -5156,9 +5156,9 @@ sub wuirc
 #		$out .= '<br/>';
 #	    }
 	}
+	$out .= "</table>\n";
     }
 
-    $out .= "</table>\n";
 #    $out .= "</ul>"
 #      if( $list->size > 1);
 
