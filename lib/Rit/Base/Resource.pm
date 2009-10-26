@@ -4714,6 +4714,8 @@ sub wu
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
+#    debug "WU ".$node->sysdesig." --".$pred_name."-->\n".query_desig($args_in);
+
     my $R = Rit::Base->Resource;
     my $rev = $args->{'rev'} || 0;
 
@@ -5019,7 +5021,7 @@ sub wuirc
     }
 
     my $DEBUG = 0;
-    debug "wuirc ".$subj->desig if $DEBUG;
+    debug "WUIRC ".$subj->desig if $DEBUG;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -5039,6 +5041,8 @@ sub wuirc
     {
 	$lookup_pred = [$lookup_pred];
     }
+
+    $args->{'source'} = $subj;
 
     confess "Range missing"
       unless( $range );
@@ -5086,68 +5090,77 @@ sub wuirc
 
 	delete $args->{'default_value'}; # No default when values exist...
 
-	$out .= "<ul id=\"$divid-list\">"
-	  if( $list->size > 1);
+	$out .= "<table>\n";
+#	$out .= "<ul id=\"$divid-list\">"
+#	  if( $list->size > 1);
+
+#	debug "Getting table columns for ".$range->sysdesig;
+	my $columns = $range->instance_class->table_columns( $pred, $args );
+	unshift @$columns, '-arc_remove';
+	$args->{'columns'} = $columns;
 
 	foreach my $arc (@$list)
 	{
-	    $out .= '<li>'
-	      if( $list->size > 1);
+	    $out .= $arc->table_row( $args );
 
-	    my $check_subj = $arc->subj;
-	    my $item = $arc->value;
-
-	    unless( $disabled )
-	    {
-		if( $ajax )
-		{
-		    my $arc_id = $arc->id;
-		    $out .= $q->input({ type => 'button',
-					value => '-',
-					onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
-					class => 'nopad',
-				 });
-		}
-		else
-		{
-		    my $field = build_field_key({arc => $arc});
-		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
-		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
-		}
-		$out .= " ";
-	    }
-
-
-	    if( $disabled )
-	    {
-		$out .= ( $is_rev ? $check_subj->desig($args) :
-			  $item->desig($args) );
-	    }
-	    else
-	    {
-		if( my $item_prefix = $args->{'item_prefix'} )
-		{
-		    $out .= $item->$item_prefix." ";
-		}
-		$out .= ( $is_rev ? $check_subj->wu_jump :
-			  $item->wu_jump );
-	    }
-	    $out .= '&nbsp;' . $arc->edit_link_html;
-
-
-	    if( $list->size > 1)
-	    {
-		$out .= '</li>';
-	    }
-	    else
-	    {
-		$out .= '<br/>';
-	    }
+#	    $out .= '<li>'
+#	      if( $list->size > 1);
+#
+#	    my $check_subj = $arc->subj;
+#	    my $item = $arc->value;
+#
+#	    unless( $disabled )
+#	    {
+#		if( $ajax )
+#		{
+#		    my $arc_id = $arc->id;
+#		    $out .= $q->input({ type => 'button',
+#					value => '-',
+#					onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
+#					class => 'nopad',
+#				 });
+#		}
+#		else
+#		{
+#		    my $field = build_field_key({arc => $arc});
+#		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+#		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+#		}
+#		$out .= " ";
+#	    }
+#
+#
+#	    if( $disabled )
+#	    {
+#		$out .= ( $is_rev ? $check_subj->desig($args) :
+#			  $item->desig($args) );
+#	    }
+#	    else
+#	    {
+#		if( my $item_prefix = $args->{'item_prefix'} )
+#		{
+#		    $out .= $item->$item_prefix." ";
+#		}
+#		$out .= ( $is_rev ? $check_subj->wu_jump :
+#			  $item->wu_jump );
+#	    }
+#	    $out .= '&nbsp;' . $arc->edit_link_html;
+#
+#
+#	    if( $list->size > 1)
+#	    {
+#		$out .= '</li>';
+#	    }
+#	    else
+#	    {
+#		$out .= '<br/>';
+#	    }
 	}
     }
 
-    $out .= "</ul>"
-      if( $list->size > 1);
+    $out .= "</table>\n";
+#    $out .= "</ul>"
+#      if( $list->size > 1);
 
     ### AJAX
     #
@@ -5316,6 +5329,20 @@ sub tree_select_widget
 						image_path => $Para::Frame::REQ->site->home_url_path . '/images/PopupTreeSelect/',
 					       );
     return $select->output;
+}
+
+
+##############################################################################
+
+=head2 table_columns
+
+  $n->table_columns()
+
+=cut
+
+sub table_columns
+{
+    return ['desig'];
 }
 
 

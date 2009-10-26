@@ -42,6 +42,7 @@ use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Logging;
 
+use Rit::Base::Widget;
 use Rit::Base::List;
 use Rit::Base::Arc::List;
 use Rit::Base::Pred;
@@ -2285,6 +2286,104 @@ sub sysdesig_nosubj
     my( $arc ) = @_;
 
     return sprintf("%d: %s --%s--> %s (%d) #%d", $arc->{'id'}, $arc->subj->id, $arc->pred->plain, $arc->value_sysdesig, $arc->{'disregard'}, $arc->{'ioid'});
+}
+
+
+##############################################################################
+
+=head2 table_row
+
+  $a->table_row
+
+=cut
+
+sub table_row
+{
+    my( $arc, $args ) = @_;
+
+    my $out = "<tr>";
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+#    my $out = '';
+#    my $is_scof = $args->{'range_scof'};
+    my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
+#    my $is_pred = ( $is_scof ? 'scof' : 'is' );
+#    my $range = $args->{'range'} || $args->{'range_scof'};
+    my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
+    my $divid = $args->{'divid'};
+    my $disabled = $args->{'disabled'} || 0;
+    my $subj_id = $args->{'source'}->id;
+#    my $hide_create_button = $args->{'hide_create_button'} || 0;
+
+    my $check_subj = $arc->subj;
+    my $item = $arc->value;
+
+#    debug "table row for ".$arc->sysdesig;
+#    debug query_desig $args;
+
+
+    foreach my $col ( @{$args->{'columns'}} )
+    {
+	$out .= "<td>";
+	given( $col )
+	{
+	    when('-arc_remove')
+	    {
+		unless( $disabled )
+		{
+		    if( $ajax )
+		    {
+			my $arc_id = $arc->id;
+			$out .= $q->input({ type => 'button',
+					    value => '-',
+					    onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
+					    class => 'nopad',
+					  });
+		    }
+		    else
+		    {
+			my $field = Rit::Base::Widget::build_field_key({arc => $arc});
+			$out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+			$out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+		    }
+		    $out .= " ";
+		}
+	    }
+
+	    when('desig')
+	    {
+		if( $disabled )
+		{
+		    $out .= ( $is_rev ? $check_subj->desig($args) :
+			      $item->desig($args) );
+		}
+		else
+		{
+		    if( my $item_prefix = $args->{'item_prefix'} )
+		    {
+			$out .= $item->$item_prefix." ";
+		    }
+		    $out .= ( $is_rev ? $check_subj->wu_jump :
+			      $item->wu_jump );
+		}
+		$out .= '&nbsp;' . $arc->edit_link_html;
+	    }
+
+	    default
+	    {
+#		debug "Calling method $col on node ".$item->sysdesig;
+
+		$out .= ( $is_rev ? $check_subj->$col($args) :
+			  $item->$col($args) );
+	    }
+	}
+	$out .= "</td>";
+    }
+
+    $out .= "</tr>\n";
+
+    return $out;
 }
 
 
