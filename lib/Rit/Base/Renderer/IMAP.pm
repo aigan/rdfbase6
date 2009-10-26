@@ -26,8 +26,10 @@ use Encode;
 use Carp qw( croak confess cluck );
 use MIME::Base64 qw( decode_base64 );
 use MIME::QuotedPrint qw(decode_qp);
+use DateTime::Duration;
 
 use Para::Frame::Reload;
+use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( throw debug datadump catch client_send
                            validate_utf8 );
 
@@ -85,7 +87,7 @@ sub render_output
     my $top = $email->obj;
 
 
-    my( $imap_path, $part, $type, $charset, $encoding );
+    my( $imap_path, $part, $type, $encoding );
 
     if( $search )
     {
@@ -128,15 +130,15 @@ sub render_output
 
 	$type = $part->type || '';
 #	debug "part type is $type";
-	if( $type =~ m/^text\// )
-	{
-	    $charset = $part->charset_guess;
-	    unless( $charset )
-	    {
-		debug "Charset undefined. Falling back on ISO-8859-1";
-		$charset = "iso-8859-1";
-	    }
-	}
+#	if( $type =~ m/^text\// )
+#	{
+#	    $charset = $part->charset_guess;
+#	    unless( $charset )
+#	    {
+#		debug "Charset undefined. Falling back on ISO-8859-1";
+#		$charset = "iso-8859-1";
+#	    }
+#	}
 
 	$encoding = $part->encoding;
 #	debug "Metadata registred: $type - $charset";
@@ -144,7 +146,7 @@ sub render_output
     else
     {
 	$encoding = $top->encoding;
-	$charset = $top->charset_guess;
+#	$charset = $top->charset_guess;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -153,11 +155,13 @@ sub render_output
     $resp->set_header( 'Last-Modified', $updated->internet_date );
 
     my $max_age = DateTime::Duration->new(seconds => 7*24*60*60);
-    my $expire = $updated->add_duration( $max_age );
+    my $expire = now->add_duration( $max_age );
 
     $resp->set_header( 'Expires', $expire->internet_date );
     $resp->set_header( 'Cache-Control', "max-age=" . $max_age->delta_seconds );
 
+
+    $resp->set_http_status(200);
 
     if( my $client_time = $req->http_if_modified_since )
     {
@@ -173,9 +177,7 @@ sub render_output
 	}
     }
 
-    $resp->set_http_status(200);
     $resp->{'encoding'} = 'raw';
-
 
     if( $head )
     {
@@ -224,8 +226,9 @@ sub render_output
     }
 
 
+    $part ||= $top;
     $rend->{'content_type'} = $type;
-    $rend->{'charset'} = $charset;
+    $rend->{'charset'} = $part->charset_guess;
 
     if( $type eq "message/rfc822" )
     {
@@ -273,7 +276,7 @@ sub render_output
 	$$data =~ s/(=|")\s*cid:([^> "]+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
 	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
-	    my $subject = encode( $charset, $email->subject );
+	    my $subject = encode( $top->charset_guess, $email->subject );
 #	    debug "Subject '$subject': ".validate_utf8(\$subject);
 	    my $subject_out = CGI->escapeHTML($subject);
 

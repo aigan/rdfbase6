@@ -712,6 +712,11 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
+    if( my $charset = $part->{'charset'} )
+    {
+	return $charset;
+    }
+
 #    debug "Determining charset for ".$part->path;
 
     my $charset = $part->charset;
@@ -759,7 +764,7 @@ sub charset_guess
     }
 
 #    debug "Found charset $charset";
-    return $charset;
+    return $part->{'charset'} = $charset;
 }
 
 
@@ -984,7 +989,7 @@ sub _render_textplain
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
 
-    my $charset = $part->charset_guess;
+#    my $charset = $part->charset_guess;
 #   my $msg = "| $charset\n<br/>\n";
      my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
@@ -1511,6 +1516,10 @@ sub body
     {
 	debug "decoding from $charset";
 	$$dataref = decode($charset,$$dataref);
+	$part->{'charset'} = 'utf-8';
+#	debug "Setting charset of ".$part->path." to utf-8";
+#	debug datadump($part,1);
+#	debug "Charset: ".$part->charset;
     }
 
 
