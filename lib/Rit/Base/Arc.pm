@@ -2351,6 +2351,31 @@ sub table_row
 		}
 	    }
 
+	    when('-arc_updated')
+	    {
+		$out .= $arc->updated;
+	    }
+
+	    when('-arc_seen_status')
+	    {
+		die "not implemented" if $is_rev;
+		if( $check_subj->first_arc('unseen_by',$item) )
+		{
+		    if( my $seen = $check_subj->first_arc('seen_by',$item) )
+		    {
+			$out .= "last seen ".$seen->updated;
+		    }
+		    else
+		    {
+			$out .= "never seen";
+		    }
+		}
+		elsif( $check_subj->first_arc('seen_by',$item) )
+		{
+		    $out .= "up to date";
+		}
+	    }
+
 	    when('desig')
 	    {
 		if( $disabled )
@@ -2372,10 +2397,14 @@ sub table_row
 
 	    default
 	    {
-#		debug "Calling method $col on node ".$item->sysdesig;
+#		debug "Calling method $col ($is_rev) on node ".$item->sysdesig;
 
-		$out .= ( $is_rev ? $check_subj->$col($args) :
-			  $item->$col($args) );
+#		debug query_desig($args);
+		my $val = ( $is_rev ? $check_subj->$col() : $item->$col() );
+#		my $val = $item->weight($args);
+#		debug "  got ".query_desig($val);
+
+		$out .= $val;
 	    }
 	}
 	$out .= "</td>";

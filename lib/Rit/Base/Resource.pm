@@ -5095,9 +5095,11 @@ sub wuirc
 #	  if( $list->size > 1);
 
 #	debug "Getting table columns for ".$range->sysdesig;
-	my $columns = $range->instance_class->table_columns( $pred, $args );
+	my $columns = $args->{'columns'} ||
+	  $range->instance_class->table_columns( $pred, $args );
 	unshift @$columns, '-arc_remove';
 	$args->{'columns'} = $columns;
+#	debug datadump $columns;
 
 	foreach my $arc (@$list)
 	{
