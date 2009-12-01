@@ -45,7 +45,7 @@ WriteMakefile(
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {
-		  'Para::Frame'                => 1.07,
+		  'Para::Frame'                => 1.08,
 	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
@@ -56,6 +56,7 @@ WriteMakefile(
 	          'Email::Classifier'          => 0.01,
 		  'Text::WordDiff'             => 0.04,
 		  'File::MMagic::XS'           => 0.09,
+	          'Email::MIME'                => 1.902,
 	      },
 	      'dist'          =>
 	      {
