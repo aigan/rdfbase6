@@ -54,7 +54,7 @@ Inherits from L<Rit::Base::Resource>.
 
 sub on_configure
 {
-    warn "  ----------> Initializing \%Rules\n";
+#    warn "  ----------> Initializing \%Rules\n";
 
     %Rules = ();
 
