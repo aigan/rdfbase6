@@ -21,7 +21,7 @@ use 5.010;
 use strict;
 use warnings;
 use utf8;
-use base qw( Rit::Base::Email::Part );
+use base qw( Rit::Base::Email::Part Para::Frame::Email );
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
@@ -44,26 +44,28 @@ use Rit::Base::Email::Raw::Head;
 sub new
 {
     my( $part, $dataref ) = @_;
-    my $class = ref($part) or die "Must be called by parent";
+#    my $class = ref($part) or die "Must be called by parent";
 
 
-    my $sub = bless
+    my $sub = bless {}, 'Rit::Base::Email::Raw::Part';
+
+    if( ref $part )
     {
-     email  => $part->email,
-     top    => $part->top,
-     parent => $part,
-#     data   => $dataref,
-    }, 'Rit::Base::Email::Raw::Part';
+	$sub->{'email'}   = $part->email;
+	$sub->{'top'}     = $part->top;
+	$sub->{'parent'}  = $part;
+	$sub->{'part_id'} = $part->path .'.TEXT';
+	weaken( $sub->{'email'} );
+	weaken( $sub->{'parent'} );
+    }
+    else
+    {
+	$sub->{'part_id'} = '';
+	$sub->{'top'}     = $sub;
+	weaken( $sub->{'top'} );
+    }
 
     $sub->{'em'} = Email::MIME->new($dataref);
-
-    $sub->{'part_id'} = $part->path .'.TEXT';
-
-    weaken( $sub->{'email'} );
-    weaken( $sub->{'parent'} );
-#    weaken( $sub->{'top'} );
-
-#    debug "new raw part from dataref ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -365,6 +367,27 @@ sub body_part
 {
     return undef; # FIXME
     confess "NOT IMPLEMENTED";
+}
+
+
+##############################################################################
+
+=head2 body_set
+
+  $part->body_set( \$body )
+
+Calls L<Email::MIME/body_str_set>
+
+=cut
+
+sub body_set
+{
+    my( $part, $body ) = @_;
+
+    my $charset = $part->charset;
+    my $body_octets = Encode::encode($charset, $$body, 1);
+    $part->{'em'}->body_set($body_octets);
+    return 1;
 }
 
 

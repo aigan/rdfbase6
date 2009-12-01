@@ -35,6 +35,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_decode datadump catch fqdn );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::List;
+use Para::Frame::Email::Sending;
 
 use Rit::Base;
 use Rit::Base::Utils qw( parse_propargs alphanum_to_id is_undef );
@@ -49,7 +50,7 @@ use Rit::Base::Email::RB::Head;
 use Rit::Base::Email::Head;
 use Rit::Base::Email::IMAP::Folder;
 use Rit::Base::Email::IMAP::Head;
-
+use Rit::Base::Renderer::Email::From_email;
 
 BEGIN
 {
@@ -311,7 +312,13 @@ sub obj
 	    $_[0]->{'email_obj'} =
 	      Rit::Base::Email::IMAP->new_by_email( $_[0] );
 	}
-	else
+	elsif( $_[0]->prop('email_body', undef, ['not_removal'] ) )
+	{
+	    $_[0]->{'email_obj'} =
+	      Rit::Base::Email::RB->new_by_email( $_[0] );
+	}
+	elsif( $_[0]->prop('has_email_body_template_email',
+			   undef, ['not_removal'] ) )
 	{
 	    $_[0]->{'email_obj'} =
 	      Rit::Base::Email::RB->new_by_email( $_[0] );
@@ -357,6 +364,10 @@ sub subject
 ##############################################################################
 
 =head2 date
+
+The date the email was sent
+
+Returns: A L<Rit::Base::Time>
 
 =cut
 
@@ -537,6 +548,20 @@ sub part
 
 ##############################################################################
 
+=head2 raw_part
+
+=cut
+
+sub raw_part
+{
+    my( $email, $path ) = @_;
+
+    return $email->obj->raw_part;
+}
+
+
+##############################################################################
+
 =head2 vacuum
 
 Reprocesses email after arc vacuum
@@ -623,9 +648,129 @@ sub send
     my( $email, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    die "implement me";
+    my $es = Para::Frame::Email::Sending->new();
+    my $esp = $es->params;
+    my $now = now();
 
-    return "Email sent";
+    $esp->{'from'}      = $email->from->get_first_nos;
+
+    my $to_list = $email->list( 'email_to', undef, $args );
+    my $to_obj_list = $email->list( 'email_to_obj', undef, $args );
+
+    my $first_to = $to_list->get_first_nos;
+    $first_to ||= $to_obj_list->get_first_nos->email_main;
+
+    if( $email->prop('has_imap_url', undef, $args ) )
+    {
+	my $uid = $email->obj->uid;
+	my $message_string = $email->folder->imap_cmd('message_string', $uid);
+
+	if( $args->{'redirect'} )
+	{
+	    my $mid = Para::Frame::Email->generate_message_id({time=>$now});
+	    my $useragent = "ParaFrame/$Para::Frame::VERSION (Ritbase/$Rit::Base::VERSION)";
+	    my $datestr = $now->internet_date;
+
+	    my $from = $Para::Frame::REQ->user->email;
+	    $from ||= EA->new($Para::Frame::CFG->{'email'});
+
+	    unless( $first_to )
+	    {
+		throw 'validation', "No recipient given";
+	    }
+
+	    my $extra = "";
+	    $extra .= "Resent-From: $from\n";
+	    $extra .= "Resent-To: $first_to\n";
+	    $extra .= "Resent-Date: $datestr\n";
+	    $extra .= "Resent-Message-Id: <$mid>\n";
+	    $extra .= "Resent-User-Agent: $useragent\n";
+
+	    $message_string = $extra . $message_string;
+	}
+
+
+	$es->renderer->set_dataref( \$message_string );
+    }
+    elsif( $email->prop('email_body', undef, $args ) )
+    {
+	$esp->{'plaintext'} = $email->email_body;
+	$esp->{'reply_to'}  = $email->email_reply_to;
+	$esp->{'subject'}   = $email->email_subject;
+	$esp->{'template'}  = 'plaintext.tt';
+    }
+    elsif( my $te = $email->first_prop('has_email_body_template_email',
+				       undef, $args ) )
+    {
+	$esp->{'reply_to'}  = $email->email_reply_to;
+	$esp->{'subject'}   = $email->email_subject;
+
+	debug "Adding email as a template";
+
+	my $rend = Rit::Base::Renderer::Email::From_email->
+	  new({ template => $te, params => $esp });
+
+	$es->{'renderer'}  = $rend;
+    }
+    else
+    {
+	throw 'validation', "Email has no body";
+    }
+
+    my $req = $Para::Frame::REQ;
+    #debug datadump($email, 3);
+
+    debug "Sending email";
+
+    $to_list->reset;
+    while( my $to = $to_list->get_next_nos )
+    {
+	debug "To $to";
+	eval {
+	    $es->send_by_proxy({%$args, to => $to });
+	};
+	$req->may_yield;
+    }
+
+    $to_obj_list->reset;
+    while( my $to_obj = $to_obj_list->get_next_nos )
+    {
+	my $to = $to_obj->email_main;
+	debug "To $to";
+	eval {
+	    $es->send_by_proxy({%$args, to => $to });
+	};
+	$req->may_yield;
+    }
+
+    my( @good ) = $es->good;
+
+    if( @good )
+    {
+	$email->add({ email_sent => now() }, $args);
+    }
+    else
+    {
+	debug "No email sent";
+	my( @bad ) = $es->bad;
+	debug "Couldn't send to @bad" if @bad;
+	debug $es->error_msg;
+	debug $@ if $@;
+	if( $req->{'result'} )
+	{
+	    $req->{'result'}->exception if $@;
+	    if( $es->error_msg )
+	    {
+		$req->{'result'}->error('email',$es->error_msg);
+	    }
+	}
+	return 0;
+    }
+
+
+    $res->autocommit;
+
+    return 1;
 }
 
 

@@ -210,11 +210,8 @@ sub render_output
 	}
 	else
 	{
-	    # TODO: Create function for returning whole message
 	    $type = "message/rfc822";
-	    my $folder = $top->folder;
-	    my $uid = $top->uid;
-	    $data = \ $folder->imap_cmd('message_string', $uid);
+	    $data = $top->raw;
 	}
     }
     else
