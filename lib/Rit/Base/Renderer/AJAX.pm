@@ -317,7 +317,11 @@ sub render_output
             }
 	}
 
+        debug "AJAX App is $app";
+
         $out = $app->handler( $req );
+
+        debug "out is: $out";
     }
 
 

@@ -244,7 +244,7 @@ sub coltype
 {
     unless( $_[0]->{'coltype'} )
     {
-	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
+	cluck "Pred ".$_[0]->sysdesig." is missing a coltype";
     }
 
     return Rit::Base::Literal::Class->

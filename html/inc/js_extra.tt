@@ -1,4 +1,5 @@
 ﻿
+[%+ +%]
 <script type="text/javascript" src="[% home %]/rb/js/prototype.js"></script>
 <script type="text/javascript" src="[% home %]/rb/js/scriptaculous.js"></script>
 <script type="text/javascript" src="[% home %]/rb/js/rb.js_tt"></script>
