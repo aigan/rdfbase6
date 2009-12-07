@@ -47,7 +47,10 @@ sub new
 #    my $class = ref($part) or die "Must be called by parent";
 
 
-    my $sub = bless {}, 'Rit::Base::Email::Raw::Part';
+    my $sub = bless
+    {
+     redraw => 0,
+    }, 'Rit::Base::Email::Raw::Part';
 
     if( ref $part )
     {
@@ -87,6 +90,7 @@ sub new_by_em_obj
      email  => $part->email,
      top    => $part->top,
      parent => $part,
+     redraw => 0,
     }, 'Rit::Base::Email::Raw::Part';
 
     $sub->{'em'} = $emo;
@@ -293,8 +297,33 @@ sub description
 sub body_raw
 {
     my( $part, $length ) = @_;
+    $part->redraw;
 
     return \ $part->{'em'}->body_raw;
+}
+
+
+##############################################################################
+
+=head2 redraw
+
+=cut
+
+sub redraw
+{
+    my( $part ) = @_;
+
+    my $em = $part->{'em'};
+
+    if( $part->{'redraw'} )
+    {
+	debug "BODY-RAW redraw";
+	$part->{'redraw'} = 0;
+
+	$em->parts_set([$em->subparts]);
+    }
+
+    return 1;
 }
 
 
@@ -309,6 +338,7 @@ See L<Rit::Base::Email::Part/size>
 sub size
 {
     my $em = $_[0]->{'em'};
+    $_[0]->redraw;
     return bytes::length( $em->{'body_raw'} || ${$em->{'body'}} );
 }
 
@@ -387,6 +417,12 @@ sub body_set
     my $charset = $part->charset;
     my $body_octets = Encode::encode($charset, $$body, 1);
     $part->{'em'}->body_set($body_octets);
+
+    if( my $parent = $part->{'parent'} )
+    {
+	$parent->{'redraw'} = 1;
+    }
+
     return 1;
 }
 

@@ -51,15 +51,25 @@ sub render_body_from_template
 
     my $burner = $rend->set_burner_by_type('plain');
     my $parser = $burner->parser;
-    $rend->set_tt_params;
 
-   foreach my $part ( $em->parts )
+#    debug datadump($em->{'em'},1);
+#    debug "***************";
+
+    my @parts = $em->parts;
+    my @parts_in = @parts;
+    unless( @parts )
+    {
+	debug "  Single part";
+	@parts = $em;
+    }
+    foreach my $part ( @parts )
     {
 	debug " * ".$part->effective_type;
 	if( $part->type =~ /^text/ )
 	{
 	    debug "   Burning ".$part->path;
 	    my $body = $part->body;
+
 	    my $out = "";
 	    my $outref = \$out;
 	    my $parsedoc = $parser->parse( $$body, {} ) or
@@ -83,7 +93,14 @@ sub render_body_from_template
 	}
     }
 
+
+#    debug "****** RESULT:";
+#    debug datadump($em->{'em'});
+#    debug ${$em->body};
+
+
     $rend->email_clone($em);
+#    die "CHECKME";
 
     return 1;
 }
@@ -180,130 +197,6 @@ sub burn
     my( $rend, $in, $out ) = @_;
     return $rend->{'burner'}->burn($rend, $in, $rend->{'params'}, $out );
 }
-
-##############################################################################
-
-=head2 set_tt_params
-
-The standard functions availible in templates. This is called before
-the page is rendered. You should not call it by yourself.
-
-=over
-
-=item browser
-
-The L<HTTP::BrowserDetect> object.  Not in StandAlone mode.
-
-=item ENV
-
-$req->env: The Environment hash (L<http://hoohoo.ncsa.uiuc.edu/cgi/env.html>).  Only in client mode.
-
-=item home
-
-$req->site->home : L<Para::Frame::Site/home>
-
-=item lang
-
-The L<Para::Frame::Request/preffered_language> value.
-
-=item me
-
-Holds the L<Para::Frame::File/url_path_slash> for the page, except if
-an L<Para::Frame::Request/error_page_selected> in which case we set it
-to L<Para::Frame::Request/original_response> C<page>
-C<url_path_slash>.  (For making it easier to link back to the intended
-page)
-
-=item page
-
-Holds the L<Para::Frame::Request/page>
-
-=item q
-
-The L<CGI> object.  You will probably mostly use
-[% q.param() %] method. Only in client mode.
-
-=item req
-
-The C<req> object.
-
-=item site
-
-The <Para;;Frame::Site> object.
-
-=item u
-
-$req->{'user'} : The L<Para::Frame::User> object.
-
-=back
-
-=cut
-
-sub set_tt_params
-{
-    my( $rend ) = @_;
-
-    my $req = $Para::Frame::REQ;
-
-    # Keep alredy defined params  # Static within a request
-    $rend->add_params({
-	'u'               => $Para::Frame::U,
-	'lang'            => $req->language->preferred, # calculate once
-	'req'             => $req,
-    });
-}
-
-
-##############################################################################
-
-=head2 add_params
-
-  $resp->add_params( \%params )
-
-  $resp->add_params( \%params, $keep_old_flag )
-
-Adds template params. This can be variabls, objects, functions.
-
-If C<$keep_old_flag> is true, we will not replace existing params with
-the same name.
-
-=cut
-
-sub add_params
-{
-    my( $resp, $extra, $keep_old ) = @_;
-
-    my $param = $resp->{'params'} ||= {};
-
-    if( $keep_old )
-    {
-	while( my($key, $val) = each %$extra )
-	{
-	    next if $param->{$key};
-	    unless( defined $val )
-	    {
-		debug "The TT param $key has no defined value";
-		next;
-	    }
-	    $param->{$key} = $val;
-	    debug(4,"Add TT param $key: $val") if $val;
-	}
-    }
-    else
-    {
-	while( my($key, $val) = each %$extra )
-	{
-	    unless( defined $val )
-	    {
-		debug "The TT param $key has no defined value";
-		next;
-	    }
-	    $param->{$key} = $val;
-	    debug(3, "Add TT param $key: $val");
-	}
-     }
-}
-
 
 ##############################################################################
 
