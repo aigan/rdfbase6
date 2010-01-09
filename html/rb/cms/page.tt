@@ -1,0 +1,30 @@
+﻿[% META
+   title="Redigera sida"
+   level = 20
+   next_action = 'node_update'
+%]
+
+[%
+   id = q.param('id');
+   cms_page = get(id || 'new');
+   hidden('id', cms_page.id);
+%]
+
+[% IF cms_page.empty %]
+  [% cms_page.wuh('is', C.cms_page) %]
+[% END %]
+
+<table class="admin">
+  <tr><td>[% cms_page.wu('has_url', tdlabel="URL (med inledande '/')") %]</td></tr>
+  <tr><td>[% cms_page.wu('name',    tdlabel="Titel"                  ) %]</td></tr>
+  <tr><td>[% cms_page.wu('uses_template', tdlabel="Mallfil (t ex cms.tt)") %]</td></tr>
+</table>
+
+<label>Innehåll</label>
+[% cms_page.wu('has_body', class => 'mce') %]
+
+[% step %]
+
+<p>
+  <a href="[% home %][% cms_page.has_url %]">Se sidan</a>
+</p>
