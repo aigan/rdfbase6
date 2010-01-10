@@ -175,19 +175,26 @@ sub reset
 {
     my( $search ) = @_;
 
+    foreach my $key ( keys %$search )
+    {
+	delete $search->{$key};
+    }
+
+
     # Removes all rb_search parts
     $search->{'rb_search'} = [];
     $search->{'is_active'} = 0;
-    $search->{'result'} = undef;
-    delete $search->{'custom_result'};
 
-    # Properties used by RB::Search::Result
-
-    delete $search->{'allow_undef'};
-    delete $search->{'page_size'};
-    delete $search->{'display_pages'};
-    delete $search->{'limit_pages'};
-    delete $search->{'limit_display'};
+#    $search->{'result'} = undef;
+#    delete $search->{'custom_result'};
+#
+#    # Properties used by RB::Search::Result
+#
+#    delete $search->{'allow_undef'};
+#    delete $search->{'page_size'};
+#    delete $search->{'display_pages'};
+#    delete $search->{'limit_pages'};
+#    delete $search->{'limit_display'};
 
 
     if( my $req = $Para::Frame::REQ )

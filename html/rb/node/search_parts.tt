@@ -1,0 +1,122 @@
+﻿[% META title="Sök nod"
+   next_template = 'list.tt'
+   next_action = 'search_modify'
+   level = 20
+%]
+
+[% FOREACH searchpart IN searchobj.rb_parts %]
+[% IF loop.first %]
+<h2>[% loc('Show results that') %]:</h2>
+[% ELSE %]
+<div align="center">[% loc('or') %]</div>
+[% END %]
+
+[% crits = searchpart.criterions(private=1) %]
+[% IF crits %]
+
+<table width="100%">
+[% FOREACH ckey IN crits.keys %]
+   [%# NEXT IF ckey == 'inactive' %]
+   [% crit = crits.$ckey %]
+   [% IF crit.group %]
+<tr bgcolor="#EFEFEF"><td valign="top"><i>[% loc(ckey) %]</i></td>
+<td valign="top">
+      [% FOREACH groupname IN crit.group.keys %]
+         [% UNLESS loop.first %]
+            <tr bgcolor="#EFEFEF"><td valign="top"></td><td valign="top">
+         [% END %]
+
+         [% group = get(groupname) %]
+
+         [% loc(group.desig) %]</td><td valign="top">
+
+         [% FOREACH val IN crit.group.$groupname %]
+            <b>[% val.name.loc %]</b>
+            [% UNLESS loop.last %]
+               [% loc('or') %]
+            [% END %]
+         [% END %]
+
+            </td><td align="right" valign="top"><nobr>[% jump(loc('remove'), "$home/search/modify.tt",
+                        remove="group_$groupname",
+                        run='search_modify') %]</nobr>
+
+         [% UNLESS loop.last %]
+            </td></tr>
+         [% END %]
+      [% END %]
+</td>
+</tr>
+   [% END %]
+   [% IF crit.prop %]
+   <tr bgcolor="#EFEFEF"><td valign="top"><i>
+   [% IF crit.prop.0.pred.is_pred %]
+      [% IF ckey != 'id' %]
+         [% loc(ckey) %]
+      [% END %]
+   [% ELSE %]
+      [% FOREACH pred IN crit.prop.0.pred %]
+         [%+ loc(pred.plain) %]
+         [% UNLESS loop.last %]
+            [%+ loc('or') %]
+         [% END %]
+      [% END %]
+   [% END %]
+   </i></td>
+   <td valign="top">
+      [% FOREACH foo IN crit.prop %]
+         [% UNLESS loop.first %]
+            <tr bgcolor="#EFEFEF"><td valign="top"></td><td valign="top">
+         [% END %]
+         [% IF foo.pred.is_pred %]
+            [% firstpred = foo.pred %]
+         [% ELSE %]
+            [% firstpred = foo.pred.get_first_nos %]
+         [% END %]
+         [% UNLESS firstpred.is_pred; NEXT; END %]
+
+         [% IF foo.match != 'eq' %]
+            <em>[% loc(foo.match) %]</em>
+         [% ELSE %]
+            [% IF firstpred.objtype %]
+               [% val1 = get(foo.values.0) %]
+               [% val1.arc_list('scof').direct.obj.name.loc %]
+               [% val1.arc_list('is').direct.obj.name.loc %]
+               [%###  val1.arc_list('scof').direct.obj.find(private_ne = 1).name.loc %]
+               [%###  val1.arc_list('is').direct.obj.find(private_ne = 1).name.loc %]
+            [% ELSE %]
+               <em>[% loc(foo.match) %]</em>
+            [% END %]
+         [% END %]
+         </td><td valign="top">
+         [% FOREACH val IN foo.values %]
+            [% IF firstpred.objtype %]
+               <b>[% get(val).name.loc %]</b>
+            [% ELSIF firstpred.plain == 'id' %]
+               <b>[% get(val).name.loc %]</b>
+            [% ELSE %]
+               <b>[% val %]</b>
+            [% END %]
+            [% UNLESS loop.last %]
+               [%+ loc('or') %]
+            [% END %]
+         [% END %]
+
+            </td><td align="right" valign="top">[% jump(loc('remove'), "$home/search/modify.tt",
+                        remove="prop_${foo.key}",
+                        run='search_modify') %]
+         [% UNLESS loop.last %]
+            </td></tr>
+         [% END %]
+      [% END %]
+</td>
+</tr>
+   [% END %]
+[% END %]
+</table>
+
+
+[% go(loc('Show result'), searchobj.result_url, 'search_execute') %]
+
+[% END %]
+[% END %]

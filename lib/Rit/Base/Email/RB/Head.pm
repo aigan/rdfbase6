@@ -60,7 +60,7 @@ sub new_by_email
     my $to_obj_list = $email->list('email_to_obj');
     while( my $to_obj = $to_obj_list->get_next_nos )
     {
-	push @to_list, $to_obj->email_main->plain;
+	push @to_list, $to_obj->email_main->plain, $to_obj->contact_email->plain;
     }
     my @to_uniq = uniq @to_list;
 
