@@ -26,6 +26,7 @@ use Time::HiRes qw( time );
 use List::Util qw( min );
 use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
+use Encode; # encode decode
 
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
@@ -340,7 +341,7 @@ sub query_setup
     }
 
     my $q = $Para::Frame::REQ->q;
-    $q->param('query', $query);
+    $q->param('query', encode("UTF-8", $query));
 
     return $query;
 }
@@ -371,8 +372,9 @@ sub form_setup
 	my %vals = map{ $_,1 } @values;
 	foreach my $val ( @$newvals )
 	{
+	    next unless defined $val;
 	    next if $vals{$val} ++;
-	    push @values, $val;
+	    push @values, encode("UTF-8", $val);
 	}
 
 	$q->param( -name=>$prop, -values=> \@values );
@@ -1807,10 +1809,13 @@ sub rev_query
 		$props->{"path_${path}"} = $val;
 	    }
 	}
-	elsif( $cc eq 'orcer_by' )
+	elsif( $cc eq 'order_by' )
 	{
 	    # Limited support
-	    $props->{"order_by"} = $search->{'query'}{'order_by'}[0];
+	    if( my $order = $search->{'query'}{'order_by'}[0] )
+	    {
+		$props->{"order_by"} = $order;
+	    }
 	}
 	elsif( $cc eq 'prop' )
 	{

@@ -5,6 +5,7 @@
    level = 20
 %]
 
+[% CALL searchobj.first_rb_part.query_setup %]
 <p>
 [ [% jump('List preds', 'pred/list.tt') +%]
 ]</p>
