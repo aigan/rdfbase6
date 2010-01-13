@@ -16,8 +16,8 @@ sub handler
     my $q = $req->q;
 
     my $search_col = $req->session->search_collection or die "No search obj";
-    $search_col->reset_result;
 
+#    $search_col->reset_result;
     unless( $search_col->is_active )
     {
 #	my $maxlim = Rit::Base::Search::TOPLIMIT;
