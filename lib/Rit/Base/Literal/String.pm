@@ -762,9 +762,12 @@ sub wuirc
     }
 
     my $tb = $C_textbox;
+    my $tl = $C_text_large;
     if( ($args->{'rows'}||0) > 1 or
 	$range->equals($tb) or
-	$range->scof($tb) )
+	$range->scof($tb)   or
+	$range->equals($tl) or
+	$range->scof($tl) )
     {
 	unless( ($args->{'class'}||'') =~ /\bwide\b/ )
 	{
