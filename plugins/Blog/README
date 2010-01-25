@@ -1,0 +1,41 @@
+To implement:
+
+ * Adding post easily (just a form....)
+ * Adding comment without registration
+   * Captcha
+   * gravatar
+ * Post RSS
+ * Comment RSS
+ * Trackback
+ * Refback
+ * Pingback
+ * Wave connection
+
+
+Post
+Comments
+Comment spam
+Categories
+Trackbacks
+Trackback spam
+Pings
+RSS/Atom feeds
+Blogroll/lists
+News aggregation
+Moblogging
+Blacklist
+Captchas
+URL Redirection (NOFOLLOW in comments and trackbacks)
+Skins
+Post scheduling
+Bookmarklets
+...
+...............................................................................
+
+
+Plan: 
+
+Adding blog posts - "article"; inc-form to include on a page or ajax frame...
+Viewing posts - generated page
+ - Getting from auto-url in subdir... (installing .htaccess?)
+Add

@@ -1,0 +1,31 @@
+﻿[% META title = '-
+                  id = q.param("id");
+		  cms_page = get(id);
+		  GET cms_page.name;
+		 ' %]
+
+[%
+   id = q.param('id');
+   cms_page = get(id);
+%]
+
+<div class="text">
+  [% IF cms_page.name %]
+    <h1>[% cms_page.name %]</h1>
+  [% END %]
+
+  <ul>
+    [% FOREACH blog IN cms_page.is_view_for_node.rev_is %]
+      <li>${blog.name}</li>
+    [% END %]
+  </ul>
+</div>
+
+<br style="clear: both" />
+
+[% IF admin_mode %]
+  <hr/>
+  <div>
+    [% cms_page.wu_jump(label="Ändra sidan") %]
+  </div>
+[% END %]

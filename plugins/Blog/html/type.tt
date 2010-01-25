@@ -1,0 +1,41 @@
+[% META title="Blog type"
+	level=20
+	next_action='node_update'
+%]
+
+[% jump('Blog mainpage', './') %]<br/>
+
+[%
+   id = q.param('id');
+   type = get(id || 'new');
+   hidden('id', type.id);
+%]
+
+[% IF type.empty %]
+  [% type.wuh('scof', C.plugin_blog.id) %]
+[% ELSE %]
+  [% type.wun_jump %]
+[% END %]
+
+<table>
+  <tr><td>[% type.wu('name',        tdlabel='Name') %]</td></tr>
+  <tr><td>[% type.wu('description', tdlabel='Description') %]</td></tr>
+</table>
+
+<p>[% step %]</p>
+
+
+<h2>Pages showing this blog type</h2>
+<ul>
+  [% FOREACH page IN type.rev_is_view_for_node %]
+    <li>[% page.wu_jump %]</li>
+  [% END %]
+</ul>
+<p>
+  [% jump('Add page', "$home/rb/cms/page.tt", title=type.name,
+          template='/rb/plugins/Blog/default_type_template.tt',
+	  has_url ='/rb/plugins/Blog/default_type_page',
+	  view_node = type.id,
+	  )
+  %]
+</p>

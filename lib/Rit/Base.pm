@@ -34,6 +34,7 @@ use Rit::Base::Search::Collection;
 use Rit::Base::Search::Result;
 use Rit::Base::Literal::String; # Needed by RB::Utils
 use Rit::Base::Setup;
+use Rit::Base::Plugins;
 
 
 our $VERSION = "6.56";
@@ -144,6 +145,7 @@ sub init
      searchobj       => sub{ $Para::Frame::REQ->session->search_collection },
      to_json         => \&JSON::to_json,
      from_json       => \&JSON::from_json,
+     plugins         => sub{ Rit::Base::Plugins->new(@_) },
     };
     Para::Frame->add_global_tt_params( $global_params );
 

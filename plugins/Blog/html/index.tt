@@ -1,0 +1,33 @@
+[% META title="Blog plugin main page" %]
+
+<h2>Types</h2>
+
+<ul>
+  [% FOREACH type IN C.plugin_blog.rev_scof %]
+    <li>[% jump(type.name, 'type.tt', id=type.id) %]</li>
+  [% END %]
+</ul>
+
+<p>[% jump('Add blogtype', 'type.tt') %]</p>
+
+
+<h2>Blog</h2>
+
+<ul>
+  [% FOREACH blog IN C.plugin_blog.rev_is %]
+    <li>${blog.wu_jump}</li>
+  [% END %]
+</ul>
+
+<p>[% jump('Add blog', 'blog.tt') %]</p>
+
+
+<h2>Posts</h2>
+
+<ul>
+  [% FOREACH post IN C.plugin_blog_post.rev_is %]
+    <li>${post.wu_jump}</li>
+  [% END %]
+</ul>
+
+<p>[% jump('Add blog post', 'post.tt') %]</p>
