@@ -1,0 +1,32 @@
+[% META title = "Plugins" %]
+
+[% IF NOT find(label => 'plugin') %]
+  Plugin support is not initialized.  Initializing.
+  [% plugins.initiate_plugin_support %]
+  Done.
+[% END %]
+
+
+<h2>Installed</h2>
+
+
+<h2>Available</h2>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Version</th>
+    <th>Description</th>
+    <th>Install</th>
+  </tr>
+  [% FOREACH plugin IN plugins.list_available %]
+    <tr>
+      [%# <td>${plugin}</td> %]
+      <td>${plugin.name}</td>
+      <td>${plugin.version}</td>
+      <td>${plugin.description}</td>
+      <td>[% jump('Install', 'install.tt', plugin=plugin.name) %]</td>
+    </tr>
+  [% END %]
+</table>
+
