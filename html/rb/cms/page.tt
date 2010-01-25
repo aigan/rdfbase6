@@ -8,16 +8,32 @@
    id = q.param('id');
    cms_page = get(id || 'new');
    hidden('id', cms_page.id);
+
+   def_title    = q.param('title');
+   def_has_url  = q.param('has_url');
+   def_template = q.param('template');
+   view_node_id = q.param('view_node');
 %]
 
 [% IF cms_page.empty %]
   [% cms_page.wuh('is', C.cms_page) %]
+[% ELSE %]
+  [% cms_page.wun_jump %]
 [% END %]
 
+
 <table class="admin">
-  <tr><td>[% cms_page.wu('has_url', tdlabel="URL (med inledande '/')") %]</td></tr>
-  <tr><td>[% cms_page.wu('name',    tdlabel="Titel"                  ) %]</td></tr>
-  <tr><td>[% cms_page.wu('uses_template', tdlabel="Mallfil (t ex cms.tt)") %]</td></tr>
+  <tr><td>[% cms_page.wu('has_url',       default_value=def_has_url,  tdlabel="URL (med inledande '/')") %]</td></tr>
+  <tr><td>[% cms_page.wu('name',          default_value=def_title,    tdlabel="Titel"                  ) %]</td></tr>
+  <tr><td>[% cms_page.wu('uses_template', default_value=def_template, tdlabel="Mallfil (t ex cms.tt)"  ) %]</td></tr>
+  [% IF view_node_id OR cms_page.is_view_for_node %]
+    [% view_node = cms_page.is_view_for_node || get(view_node_id) %]
+    <tr>
+      <td>Vy för node</td>
+      <td>[% view_node.wu_jump %]</td>
+    </tr>
+  [% END %]
+
 </table>
 
 <label>Innehåll</label>
