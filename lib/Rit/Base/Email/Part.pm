@@ -362,8 +362,19 @@ sub effective_type
 
     unless( $type_name =~ /^[a-z]+\/[a-z\-\+\.0-9]+$/ )
     {
+	if( $type_name =~ s/\s*charset\s*=.*//i )
+	{
+#	    debug "Cleaning up mimetype";
+	    return $_[0]->effective_type($type_name);
+	}
+
 	debug "Mime-type $type_name malformed";
 	$type_name = 'application/octet-stream';
+    }
+
+    if( $type_name eq 'image/jpg' )
+    {
+	$type_name = 'image/jpeg';
     }
 
     unless( $MIME_TYPES->type($type_name) )
@@ -604,6 +615,13 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
+    debug "Getting header $_[1]";
+
+    if( $_[1] eq 'to' )
+    {
+	$_[0]->head->init_to;
+    }
+
     if( wantarray )
     {
 	my( @h ) = $_[0]->head->
@@ -1626,6 +1644,10 @@ sub mime_types_init
 				  extensions => ['xcf'],
 				  type => 'image/x-xcf',
 				 ),
+#		  MIME::Type->new(
+#				  extensions => ['jpg'],
+#				  type => 'image/jpg',
+#				 ),
 		 );
     $MIME_TYPES->addType(@types);
 

@@ -47,7 +47,7 @@ sub new_by_email
 
     my $head = $class->new("");
 
-    $email->initiate_rel;
+#    $email->initiate_rel;
 
     $head->header_set('subject', $email->list('email_subject')->as_array);
     $head->header_set('date', $email->list('email_sent')->as_array);
@@ -55,6 +55,28 @@ sub new_by_email
     $head->header_set('bcc', $email->list('email_bcc')->as_array);
     $head->header_set('reply-to', $email->list('email_reply_to')->as_array);
 
+    $head->{'rb_email'} = $email;
+
+    return $head;
+}
+
+
+##############################################################################
+
+=head2 init_to
+
+=cut
+
+sub init_to
+{
+    return if $_[0]->{'rb_head_to_initiated'};
+
+    debug "Initiating RB 'to' field";
+
+
+    my( $head ) = @_;
+
+    my $email = $head->{'rb_email'};
 
     my @to_list = $email->list('email_to')->as_array;
     my $to_obj_list = $email->list('email_to_obj');
@@ -62,13 +84,39 @@ sub new_by_email
     {
 	push @to_list, $to_obj->email_main->plain, $to_obj->contact_email->plain;
     }
-    my @to_uniq = uniq @to_list;
+    my @to_uniq = grep defined, uniq @to_list;
 
     $head->header_set('to', @to_uniq );
 
-    debug 2, "Creating TO header field with @to_uniq";
+    if( debug > 1 )
+    {
+	debug 2, "Creating TO header field with @to_uniq";
+    }
 
-    return $head;
+    $head->{'rb_head_to_initiated'} = 1;
+
+    return;
+}
+
+
+##############################################################################
+
+=head2 count_to
+
+=cut
+
+sub count_to
+{
+    if( $_[0]->{'rb_head_to_count'} )
+    {
+	return $_[0]->{'rb_head_to_count'};
+    }
+
+    my( $head ) = @_;
+    my $email = $head->{'rb_email'};
+
+    my $cnt = $email->count('email_to') + $email->count('email_to_obj');
+    return $head->{'rb_head_to_count'} = $cnt;
 }
 
 

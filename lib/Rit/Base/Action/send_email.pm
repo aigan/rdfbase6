@@ -15,7 +15,7 @@ use warnings;
 
 =head1 DESCRIPTION
 
-Ritbase Action for ssending an email represented as a node
+Ritbase Action for sending an email represented as a node
 
 =cut
 
@@ -30,6 +30,8 @@ sub handler
     my $id = $q->param('id');
 
     my $email = Rit::Base::Resource->get($id) or die;
+
+    $req->note("Sending email");
 
     if( $email->send() )
     {

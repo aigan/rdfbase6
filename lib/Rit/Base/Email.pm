@@ -289,7 +289,12 @@ Is the content of this email availible?
 
 sub exist
 {
-    return $_[0]->obj->exist;
+    if( my $obj = $_[0]->obj )
+    {
+	return $obj->exist;
+    }
+
+    return 0;
 }
 
 
@@ -322,6 +327,10 @@ sub obj
 	{
 	    $_[0]->{'email_obj'} =
 	      Rit::Base::Email::RB->new_by_email( $_[0] );
+	}
+	else
+	{
+	    $_[0]->{'email_obj'} = is_undef;
 	}
     }
 
@@ -424,6 +433,23 @@ sub to
 {
     return $_[0]->{'email_to'} ||=
       $_[0]->obj->head->parsed_address('to');
+}
+
+
+##############################################################################
+
+=head2 count_to
+
+Returns: The number of to addresses
+
+=cut
+
+sub count_to
+{
+    debug "Returning the count of to";
+    my $cnt = $_[0]->obj->head->count_to();
+    debug "counted $cnt";
+    return $cnt;
 }
 
 
@@ -602,8 +628,15 @@ sub sysdesig
 {
     my( $email ) = @_;
 
-    return sprintf "Email %d: %s",
-      $email->id, $email->obj->sysdesig;
+    if( my $obj = $email->obj )
+    {
+	return sprintf "Email %d: %s",
+	  $email->id, $email->obj->sysdesig;
+    }
+    elese
+    {
+	return "Email ".$email->id;
+    }
 }
 
 ##############################################################################
@@ -667,7 +700,7 @@ sub send
 
 	if( $args->{'redirect'} )
 	{
-	    my $mid = Para::Frame::Email->generate_message_id({time=>$now});
+	    my $mid = Para::Frame::Email::Sending->generate_message_id({time=>$now});
 	    my $useragent = "ParaFrame/$Para::Frame::VERSION (Ritbase/$Rit::Base::VERSION)";
 	    my $datestr = $now->internet_date;
 
@@ -737,6 +770,13 @@ sub send
     {
 	my $to = $to_obj->email_main;
 	debug "To $to";
+
+	unless( $to_obj_list->count % 100 )
+	{
+	    $req->note("Sent email ".$to_obj_list->count);
+	    die "cancelled" if $req->cancelled;
+	}
+
 	eval {
 	    $es->send_by_proxy({%$args, to => $to });
 	};
