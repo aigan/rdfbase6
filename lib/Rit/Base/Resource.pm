@@ -2974,6 +2974,9 @@ sub has_value
 Counts the number of properties the node has with a specific property,
 meeting the arclim.  Default arclim is C<active>.
 
+Supports subclass method implementations. Looks for $n->count_$pred
+and $n->$pred->size
+
 Examples:
 
 This can be used in C<Rit::Base::List-E<gt>find()> by count_pred
@@ -2993,6 +2996,22 @@ sub count
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
+
+    unless( ref $tmpl )
+    {
+	if( $node->can("count_$tmpl") )
+	{
+#	    debug "Counting $tmpl";
+	    my $countpred = "count_$tmpl";
+	    return $node->$countpred;
+	}
+	elsif( $node->can($tmpl) )
+	{
+#	    debug "Getting $tmpl and return its size";
+	    return $node->$tmpl->size;
+	}
+    }
+
     my $pred_id = Rit::Base::Pred->get( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
