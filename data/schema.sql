@@ -61,6 +61,7 @@ CREATE INDEX arc_valclean_idx ON arc USING btree (valclean, active);
 CREATE INDEX arc_valdate_idx ON arc USING btree (valdate, active);
 CREATE INDEX arc_valfloat_idx ON arc USING btree (valfloat, active);
 CREATE INDEX arc_valtext_idx ON arc USING btree (valtext, active);
+CREATE INDEX arc_subj_pred_idx ON arc ( subj, pred, active );
 
 CREATE INDEX node_created_by_idx ON node USING btree (created_by);
 CREATE INDEX node_created_idx ON node USING btree (created);
