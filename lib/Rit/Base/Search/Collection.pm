@@ -317,7 +317,14 @@ sub rb_parts
 
 sub custom_parts
 {
-    return [$_[0]->{'custom_result'}];
+    if( $_[0]->{'custom_result'} )
+    {
+	return [$_[0]->{'custom_result'}];
+    }
+    else
+    {
+	return [];
+    }
 }
 
 ##############################################################################
