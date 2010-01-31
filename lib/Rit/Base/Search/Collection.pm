@@ -435,8 +435,7 @@ sub set_active
 sub result_url
 {
     $_[0]->{'result_url'} = $_[1] if defined $_[1];
-    return $_[0]->{'result_url'} ||
-      $Para::Frame::REQ->site->home->url_path_slash;
+    return $_[0]->{'result_url'} || '';
 }
 
 
@@ -449,8 +448,7 @@ sub result_url
 sub form_url
 {
     $_[0]->{'form_url'} = $_[1] if defined $_[1];
-    return $_[0]->{'form_url'} ||
-      $Para::Frame::REQ->site->home->url_path_slash;
+    return $_[0]->{'form_url'} || '';
 }
 
 
