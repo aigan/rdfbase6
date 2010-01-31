@@ -1,10 +1,19 @@
 package Rit::Base::Action::search_to_excel;
+#=============================================================================
+#
+# AUTHOR
+#   Jonas Liljegren   <jonas@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
+#
+#=============================================================================
 
 use 5.010;
 use strict;
 use warnings;
 
-use Para::Frame::Utils qw( debug datadump );
+use Para::Frame::Utils qw( debug datadump catch throw );
 
 use Rit::Base::Renderer::Search_to_Excel;
 
@@ -41,7 +50,12 @@ sub handler
     my $file_resp = Para::Frame::Request::Response->new($args);
     unless( $file_resp->render_output )
     {
-	return "Export failed";
+	if( my $err = catch($@) )
+	{
+	    $req->result->error('action', $@);
+	}
+
+	throw('action', "Export failed");
     }
 
     my $file_url = $file_resp->page_url_with_query_and_reqnum;
