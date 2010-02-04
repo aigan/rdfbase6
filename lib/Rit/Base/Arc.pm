@@ -714,7 +714,16 @@ sub create
     # doesn't match on other properties. ( TODO: Also consider the
     # read_access value.)
 
+    my $do_check = 1;
+    if( $args->{'arc_create_check'} )
+    {
+	unless( $args->{'arc_create_check'}{ $value_obj->id } )
+	{
+	    $do_check = 0;
+	}
+    }
 
+    if( $do_check )
     {
 	my $subj = Rit::Base::Resource->get_by_id( $rec->{'subj'} );
 	my $pred = Rit::Base::Pred->get( $rec->{'pred'} );

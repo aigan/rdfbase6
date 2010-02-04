@@ -3346,14 +3346,8 @@ sub arc_list
 	}
     }
 
-    @arcs = grep $_->meets_arclim($arclim), @arcs;
-
-    my $lr = Rit::Base::Arc::List->new(\@arcs);
-
-    if( my $uap = $args->{unique_arcs_prio} )
-    {
-	$lr = $lr->unique_arcs_prio($uap);
-    }
+    # Proplim is probably more restricting than arclim. Thus, filter
+    # on that first
 
     if( defined $proplim ) # The Undef Literal is also an proplim
     {
@@ -3361,7 +3355,8 @@ sub arc_list
 	{
 	    # $n->arc_list( $predname, { $pred => $value } )
 	    #
-	    $lr = $lr->find($proplim, $args);
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      find($proplim, $args)->as_array;
 	}
 	elsif( not( ref $proplim) and not( length $proplim ) )
 	{
@@ -3376,11 +3371,11 @@ sub arc_list
 		$proplim = [$proplim];
 	    }
 
+	    # proplim can be given as a PF::List
 	    my $proplist = Rit::Base::List->new($proplim);
 
 	    my @newlist;
-	    my( $arc, $error ) = $lr->get_first;
-	    while(! $error )
+	    foreach my $arc ( @arcs )
 	    {
 		# May return is_undef object
 		# No match gives literal undef
@@ -3388,12 +3383,62 @@ sub arc_list
 		{
 		    push @newlist, $arc;
 		}
-		( $arc, $error ) = $lr->get_next;
 	    }
 
-	    $lr = Rit::Base::Arc::List->new(\@newlist);
+	    @arcs = @newlist;
 	}
     }
+
+
+
+    @arcs = grep $_->meets_arclim($arclim), @arcs;
+
+    my $lr = Rit::Base::Arc::List->new(\@arcs);
+
+    if( my $uap = $args->{unique_arcs_prio} )
+    {
+	$lr = $lr->unique_arcs_prio($uap);
+    }
+
+#    if( defined $proplim ) # The Undef Literal is also an proplim
+#    {
+#	if( ref $proplim and ref $proplim eq 'HASH' )
+#	{
+#	    # $n->arc_list( $predname, { $pred => $value } )
+#	    #
+#	    $lr = $lr->find($proplim, $args);
+#	}
+#	elsif( not( ref $proplim) and not( length $proplim ) )
+#	{
+#	    # Treat as no proplim given
+#	}
+#	else
+#	{
+#	    # $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
+#	    #
+#	    unless( ref $proplim and ref $proplim eq 'ARRAY' )
+#	    {
+#		$proplim = [$proplim];
+#	    }
+#
+#	    my $proplist = Rit::Base::List->new($proplim);
+#
+#	    my @newlist;
+#	    my( $arc, $error ) = $lr->get_first;
+#	    while(! $error )
+#	    {
+#		# May return is_undef object
+#		# No match gives literal undef
+#		if( ref $proplist->contains( $arc->value, $args ) )
+#		{
+#		    push @newlist, $arc;
+#		}
+#		( $arc, $error ) = $lr->get_next;
+#	    }
+#
+#	    $lr = Rit::Base::Arc::List->new(\@newlist);
+#	}
+#    }
 
     return $lr;
 }
@@ -3896,7 +3941,7 @@ See also L<Rit::Base::Node/add_arc>
 
 sub add
 {
-    my( $node, $props, $args ) = @_;
+    my( $node, $props, $args_in ) = @_;
 
     unless( UNIVERSAL::isa($props, 'HASH') )
     {
@@ -3906,6 +3951,7 @@ sub add
     my $mark_updated = undef; # for tagging node with timestamp
     my $mark_created = undef; # for tagging node with timestamp
 
+    my $args = {%$args_in}; # Shallow copy
     my %extra;
     if( $args->{'read_access'} )
     {
@@ -3950,6 +3996,49 @@ sub add
 	}
 	else
 	{
+	    my $pred = Rit::Base::Pred->get($pred_name);
+	    my $tot = $vals->size;
+
+	    if( $pred->objtype and $tot > 10 )
+	    {
+		# Pre-check for EXISTING
+		my %existing;
+		my %check;
+		my $existing_arcs = $node->arc_list($pred_name, undef, ['active', 'submitted', 'new']);
+		my( $arc, $eaerror ) = $existing_arcs->get_first;
+		while( !$eaerror )
+		{
+		    my $key = $arc->value->id;
+		    if( $existing{ $key } ++ )
+		    {
+			$check{ $key } ++;
+		    }
+		}
+		continue
+		{
+		    ( $arc, $eaerror ) = $existing_arcs->get_next;
+		};
+
+		my( $val, $verror ) = $vals->get_first;
+		while( !$verror )
+		{
+		    my $key = $val->id;
+		    if( $existing{ $key } ++ )
+		    {
+			$check{ $key } ++;
+		    }
+		}
+		continue
+		{
+		    ( $val, $verror ) = $vals->get_next;
+		};
+
+		$args->{'arc_create_check'} = \%check;
+	    }
+
+	    my $mrkp = Time::HiRes::time();
+	    my $cnt = 0;
+	    Rit::Base::Arc->lock;
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
@@ -3958,7 +4047,22 @@ sub add
 					value => $val,
 					%extra,
 				       }, $args);
+		unless( ++ $cnt % 500 )
+		{
+		    if( $Para::Frame::REQ )
+		    {
+#			$Para::Frame::REQ->note("Created $cnt of $tot");
+
+			my $mrk = Time::HiRes::time();
+			$Para::Frame::REQ->note(sprintf "Created %6d of %6d in %7.3f", $cnt, $tot, $mrk - $mrkp);
+			$mrkp = $mrk;
+			die "cancelled" if $Para::Frame::REQ->cancelled;
+			$Para::Frame::REQ->may_yield;
+		    }
+		}
+
 	    }
+	    Rit::Base::Arc->unlock;
 	}
     }
 
@@ -6930,7 +7034,7 @@ sub save
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
 
-    debug "  saving created ".$node->{'created_obj'};
+#    debug "  saving created ".$node->{'created_obj'};
 
 
     my @values =
