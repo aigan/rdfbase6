@@ -54,14 +54,16 @@ CREATE INDEX arc_createdby_idx ON arc USING btree (created_by);
 CREATE INDEX arc_deactivated_idx ON arc USING btree (deactivated);
 CREATE INDEX arc_id_idx ON arc USING btree (id);
 CREATE INDEX arc_obj_idx ON arc USING btree (obj, active);
+CREATE INDEX arc_pred_idx ON arc USING btree (pred);
 CREATE INDEX arc_source_idx ON arc USING btree (source);
 CREATE INDEX arc_subj_idx ON arc USING btree (subj, active);
+CREATE INDEX arc_subj_pred_idx ON arc ( subj, pred, active );
 CREATE INDEX arc_submitted_idx ON arc USING btree (submitted);
 CREATE INDEX arc_valclean_idx ON arc USING btree (valclean, active);
 CREATE INDEX arc_valdate_idx ON arc USING btree (valdate, active);
 CREATE INDEX arc_valfloat_idx ON arc USING btree (valfloat, active);
 CREATE INDEX arc_valtext_idx ON arc USING btree (valtext, active);
-CREATE INDEX arc_subj_pred_idx ON arc ( subj, pred, active );
+CREATE INDEX arc_replaces_idx ON arc USING btree (replaces);
 
 CREATE INDEX node_created_by_idx ON node USING btree (created_by);
 CREATE INDEX node_created_idx ON node USING btree (created);
