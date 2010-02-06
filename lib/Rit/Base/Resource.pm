@@ -1987,6 +1987,14 @@ sub list
 	    $args = $args2;
 	}
 
+
+#	### DEBUG
+#	foreach my $arc ( @arcs )
+#	{
+#	    confess(datadump($arc)) if $arc->{'disregard'};
+#	}
+
+
 	my $res = $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->value, @arcs ]);

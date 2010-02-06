@@ -1208,11 +1208,35 @@ sub remove
 #	}
 #    }
 
-    foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
-		      $node->revarc_list(undef, undef, $args)->nodes )
+
+    my $cnt = 0;
+    my @arcs = ( $node->arc_list(undef, undef, $args)->nodes,
+		 $node->revarc_list(undef, undef, $args)->nodes );
+    foreach my $arc ( @arcs )
     {
 	$arc->remove( $args ) unless $arc->implicit;
-    }
+
+	unless( ++$cnt % 100 )
+	{
+	    if( $Para::Frame::REQ )
+	    {
+		$Para::Frame::REQ->note(sprintf "Removed %6d of %6d", $cnt, $#arcs);
+#		$Para::Frame::REQ->note(sprintf "PRT1:%7.3f",$::PRT1 );
+#		$Para::Frame::REQ->note(sprintf "PRT2:%7.3f",$::PRT2 );
+#		$Para::Frame::REQ->note(sprintf "PRT3:%7.3f",$::PRT3 );
+#		$Para::Frame::REQ->note(sprintf "PRT4:%7.3f",$::PRT4 );
+#		$Para::Frame::REQ->note(sprintf "PRT5:%7.3f",$::PRT5 );
+#		$::PRT1 = 0;
+#		$::PRT2 = 0;
+#		$::PRT3 = 0;
+#		$::PRT4 = 0;
+#		$::PRT5 = 0;
+
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
+	}
+   }
 
     # Remove node
     #
