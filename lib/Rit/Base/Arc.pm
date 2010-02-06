@@ -3724,7 +3724,9 @@ sub remove
 	}
     }
 
-
+#    my $mrk = Time::HiRes::time();
+#    $::PRT1 += $mrk - $::MRK;
+#    $::MRK = $mrk;
 
     debug "  remove_check" if $DEBUG;
     $arc->remove_check( $args );
@@ -3732,9 +3734,16 @@ sub remove
     # May have been removed during remove_check
     return 1 if $arc->is_removed;
 
+#    $mrk = Time::HiRes::time();
+#    $::PRT2 += $mrk - $::MRK;
+#    $::MRK = $mrk;
+
     debug "  SUPER::remove" if $DEBUG;
     $arc->SUPER::remove();  # Removes the arc node: the arcs properties
 
+#    $mrk = Time::HiRes::time();
+#    $::PRT3 += $mrk - $::MRK;
+#    $::MRK = $mrk;
 
     ### Not important if doesn't exist in DB. For example, if the arc
     ### was rolled back before it was comitted. We can still use this
@@ -3749,11 +3758,24 @@ sub remove
     $Rit::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
 
-    debug "  init subj" if $DEBUG;
-    $arc->subj->reset_cache;
-    $arc->value->reset_cache(undef);
+#    $mrk = Time::HiRes::time();
+#    $::PRT4 += $mrk - $::MRK;
+#    $::MRK = $mrk;
+
+    debug "  Set disregard arc $arc->{id} #$arc->{ioid}\n" if $DEBUG;
+    $arc->{disregard} ++;
+
+    $arc->deregister_with_nodes();
+#    $arc->subj->reset_cache;
+#    $arc->value->reset_cache(undef);
 
     $Rit::Base::Cache::Changes::Removed{$arc_id} ++;
+
+
+#    $mrk = Time::HiRes::time();
+#    $::PRT5 += $mrk - $::MRK;
+#    $::MRK = $mrk;
+
 
     # Clear out data from arc (and arc in cache)
     #
@@ -3779,8 +3801,6 @@ sub remove
     {
 	delete $arc->{$prop};
     }
-    $arc->{disregard} ++;
-    debug "  Set disregard arc $arc->{id} #$arc->{ioid}\n" if $DEBUG;
 
     # Remove arc from cache
     #
@@ -5382,6 +5402,167 @@ sub register_with_nodes
 	delete $arc->value_node->{'new'};
     }
 
+
+    return $arc;
+}
+
+
+##############################################################################
+
+=head2 deregister_with_nodes
+
+  $a->deregister_with_nodes
+
+Must only be called then the arc no longer exists.
+
+Returns: the arc
+
+=cut
+
+sub deregister_with_nodes
+{
+    my( $arc ) = @_;
+
+    unless( $arc->{disregard} )
+    {
+	confess(sprintf "Tried to deregister active arc %s", $arc->sysdesig);
+    }
+
+
+    my $id = $arc->{'id'};
+    my $pred = $arc->pred;
+    my $subj = $arc->{'subj'};
+    my $pred_name = $pred->plain;
+#    my $coltype = $arc->coltype || ''; # coltype may be removal
+
+#    if( $arc->{'active'} )
+#    {
+#	debug "Deregister active arc $id";
+#    }
+#    else
+#    {
+#	debug "Deregister inactive arc $id";
+#    }
+
+    # Deregister the arc with the subj
+    if( $subj->{'arc_id'}{$id}  )
+    {
+	if( $arc->{'active'} )
+	{
+	    if( my $alist = $subj->{'relarc'}{ $pred_name } )
+	    {
+#		debug sprintf "  among %d %s arcs", $#$alist, $pred_name;
+
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+#		    debug "  $i: ".$alist->[$i]->{id};
+		    if( $alist->[$i]->{id} == $arc->{id} )
+		    {
+#			debug "Removed $id from ".$subj->id;
+#			debug sprintf "  compared %s with %s", $alist->[$i], $arc;
+			splice @$alist, $i, 1;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+	else
+	{
+	    if( my $alist = $subj->{'relarc_inactive'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i] eq $arc )
+		    {
+#			debug "Removed $id from ".$subj->id;
+			splice @$alist, $i, 1;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+
+	delete $subj->{'arc_id'}{$id};
+    }
+
+    # Setup Value
+    my $value = $arc->{'value'};
+
+    if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
+    {
+	$value->set_arc(undef);
+    }
+    elsif( UNIVERSAL::isa($value, "Rit::Base::Resource::Literal") )
+    {
+	my $alist = $value->{'lit_revarc_active'};
+	my $i=0;
+	while( $i<=$#$alist )
+	{
+	    if( $alist->[$i] eq $arc )
+	    {
+#		debug "Removed $id from ".$value->sysdesig;
+		splice @$alist, $i, 1;
+		last;
+	    }
+	    $i++;
+	}
+
+	$alist = $value->{'lit_revarc_inactive'};
+	$i=0;
+	while( $i<=$#$alist )
+	{
+	    if( $alist->[$i] eq $arc )
+	    {
+#		debug "Removed $id from ".$value->sysdesig;
+		splice @$alist, $i, 1;
+		last;
+	    }
+	    $i++;
+	}
+    }
+    elsif( $value->{'arc_id'} and $value->{'arc_id'}{$id} )
+    {
+	if( $arc->{'active'} )
+	{
+	    if( my $alist = $value->{'revarc'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i] eq $arc )
+		    {
+			splice @$alist, $i, 1;
+#			debug "Removed $id from ".$value->sysdesig;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+	else
+	{
+	    if( my $alist = $value->{'revarc_inactive'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i] eq $arc )
+		    {
+			splice @$alist, $i, 1;
+#			debug "Removed $id from ".$value->sysdesig;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+
+	delete $value->{'arc_id'}{$id};
+    }
 
     return $arc;
 }
