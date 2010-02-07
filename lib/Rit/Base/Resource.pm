@@ -5,7 +5,7 @@ package Rit::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -1322,6 +1322,8 @@ Special args:
 
   submit_new_arcs
 
+  create_node_rec
+
 
 Returns:
 
@@ -1342,36 +1344,42 @@ sub create
 
     my $subj_id = $Rit::dbix->get_nextval('node_seq');
 
-
-    # TODO: Handle creation with 'is' coupled to a class. Especially
-    # is $C_arc
-
     confess "invalid props: $props" unless ref $props;
 
+    my %s; #special
+    foreach my $pred_name (qw( created created_by update updated_by ))
+    {
+	$s{ $pred_name } = Para::Frame::List->
+	  new_any( $props->{ $pred_name} )->get_first_nos;
+    }
 
-#    # Any value props should be added after datatype props
-#    my @props_list;
-#    if( defined $props->{'value'} )
-#    {
-#	@props_list =  grep{ $_ ne 'value'} keys(%$props);
-#	push @props_list, 'value';
-#    }
-#    else
-#    {
-#	@props_list =  keys(%$props);
-#    }
+    ### for creating and tagging the node
+    my $create_node = $args->{'create_node_rec'};
+    if( $s{updated} or $s{created} or $s{updated_by} or $s{created_by} )
+    {
+	$create_node = 1;
+    }
+
+    $s{created} ||= $s{updated} || now();
+    $s{created_by} ||= $s{updated_by};
+    unless( $s{created_by} )
+    {
+	if( $Para::Frame::REQ and $Para::Frame::REQ->user )
+	{
+	    $s{created_by} = $Para::Frame::REQ->user;
+	}
+	else
+	{
+	    $s{created_by} = Rit::Base::Resource->get_by_label('root');
+	}
+    }
+
+
     my @props_list =  keys(%$props);
-
-
-    my $adr = undef; # Define if used
 
     # Create all props before checking
     arc_lock;
 
-    my $mark_updated = undef; # for tagging node with timestamp
-    my $mark_created = undef; # for tagging node with timestamp
-    my $mark_updated_by = undef; # for tagging node with updater
-    my $mark_created_by = undef; # for tagging node with creator
 
     foreach my $pred_name ( @props_list )
     {
@@ -1398,22 +1406,6 @@ sub create
 	    }
 	    $node->set_label( $vals->get_first_nos );
 	}
-	elsif( $pred_name eq 'created' )
-	{
-	    $mark_created = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'updated' )
-	{
-	    $mark_updated = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'created_by' )
-	{
-	    $mark_created_by = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'updated_by' )
-	{
-	    $mark_updated_by = $vals->get_first_nos;
-	}
 	elsif( $pred_name =~ /^rev_(.*)$/ )
 	{
 	    $pred_name = $1;
@@ -1421,10 +1413,12 @@ sub create
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
-		    subj    => $val,
-		    pred    => $pred_name,
-		    obj     => $subj_id,
-		}, $args);
+					subj       => $val,
+					pred       => $pred_name,
+					obj        => $subj_id,
+					created    => $s{created},
+					created_by => $s{created_by},
+				       }, $args);
 	    }
 	}
 	else
@@ -1432,28 +1426,28 @@ sub create
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
-		    subj    => $subj_id,
-		    pred    => $pred_name,
-		    value   => $val,
-		}, $args);
+					subj    => $subj_id,
+					pred    => $pred_name,
+					value   => $val,
+					created    => $s{created},
+					created_by => $s{created_by},
+				       }, $args);
 	    }
 	}
     }
 
     my $node = Rit::Base::Resource->get( $subj_id );
 
-    if( $mark_created or $mark_updated )
+    if( $create_node )
     {
-	$node->mark_updated($mark_updated, $mark_updated_by);
-	if( $mark_created )
-	{
-	    $node->{'created_obj'} = $mark_created;
-	}
+	$node->mark_updated( $s{updated}||$s{created},
+			     $s{updated_by}||$s{created_by} );
 
-	if( $mark_created_by )
-	{
-	    $node->{'created_by_obj'} = $mark_created_by;
-	}
+	$node->{'created_obj'} = Rit::Base::Literal::Time->
+	  get( $s{created} );
+
+	$node->{'created_by_obj'} = Rit::Base::Resource->
+	  get( $s{created_by} );
     }
 
     unless( @props_list )
@@ -1926,8 +1920,12 @@ sub list
 	confess "Not a resource: ".datadump($node);
     }
 
+    my $DEBUG = 0; #$DEBUG=1 if $pred_in eq 'email_to_obj';
+
     if( $pred_in )
     {
+	debug timediff "list" if $DEBUG;
+
 	my( $pred, $name );
 	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
@@ -1966,13 +1964,18 @@ sub list
 	}
 
 #	if( $node->{id} == 5 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
+	debug timediff "list initiate_prop" if $DEBUG;
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
+
+	debug timediff "list meets_arclim" if $DEBUG;
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
 	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
+
+	    debug timediff "list unique_arcs_prio" if $DEBUG;
 	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
@@ -1999,6 +2002,9 @@ sub list
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->value, @arcs ]);
 #	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
+
+	debug timediff "list res" if $DEBUG;
+
 	return $res;
     }
     else
@@ -3398,14 +3404,20 @@ sub arc_list
     }
 
 
+#    debug timediff("arc_list");
 
     @arcs = grep $_->meets_arclim($arclim), @arcs;
 
+#    debug timediff("arc_list meets_arclim");
+
     my $lr = Rit::Base::Arc::List->new(\@arcs);
+
+#    debug timediff("arc_list new list");
 
     if( my $uap = $args->{unique_arcs_prio} )
     {
 	$lr = $lr->unique_arcs_prio($uap);
+#	debug timediff("arc_list unique_arcs_prio");
     }
 
 #    if( defined $proplim ) # The Undef Literal is also an proplim
@@ -6751,10 +6763,15 @@ sub initiate_node
 =head2 create_rec
 
   $node->create_rec
+  $node->create_rec( $time, $user )
 
 Created a node record by using L</mark_updated>. Will select created
-and updated data from the availible arcs. Using L</mark_updated>
-defaults if no arcs exist.
+and updated data from the availible arcs.
+
+If both C<$time> and C<$user> is given, sets created and updated to
+the given time.
+
+Using current time and user as a fallback.
 
 Returns: $node
 
@@ -6766,7 +6783,20 @@ sub create_rec
 
     return $n if $n->has_node_record;
 
-    my( $first, $last );
+    $args ||= {};
+    if( $args->{'time'} and $args->{'user'} )
+    {
+	$n->{'created_obj'} = $args->{'time'};
+	$n->{'created_by_obj'} = $args->{'user'};
+	$n->mark_updated( $args->{'time'}, $args->{'user'} );
+	return $n;
+    }
+
+
+    my( $first, $last, $first_c, $last_u, $created, $updated );
+
+    # Since we are looking at all arcs
+
 
     my $arcs = $n->arc_list(undef,undef,'all')
       ->merge( $n->revarc_list(undef,undef,'all') );
@@ -6774,18 +6804,40 @@ sub create_rec
     # Initial value
     $first = $last = $arcs->get_next_nos;
 
+    $first_c = $first->created_iso8601;
+    $last_u  =  $last->updated_iso8601;
+
+    # Using raw time values for speed. Both
+    # Date::Manip::ParseDateString and Dte::Time is too slow.
+    #
+    # We assume that the raw time strings are comparable with gt and
+    # lt. Regardless of the timezone used for saving the date, it is
+    # returned with local time zone and will in most cases be valid
+    # for comparison.
+
     while( my $arc = $arcs->get_next_nos )
     {
-	if( $arc->created < $first->created )
+	$created = $arc->created_iso8601;
+	$updated = $arc->updated_iso8601;
+
+	confess datadump($arc,1) if ref $updated;
+
+
+	if( $created lt $first_c )
 	{
 	    $first = $arc;
+	    $first_c = $created;
 	}
 
-	if( $arc->updated > $last->updated )
+	if( $updated gt $last_u )
 	{
 	    $last = $arc;
+	    $last_u = $updated;
 	}
     }
+
+#    debug sprintf "Looking finished";
+
 
     $n->initiate_node;
 
@@ -6810,6 +6862,9 @@ sub create_rec
 
 	$n->mark_updated( $time, $user );
     }
+
+    # Either this or setting up the corresponding properties in memory
+    $n->save;
 
     return $n;
 }
@@ -7155,11 +7210,11 @@ sub initiate_rel
 	$sth_init_subj->finish;
 
 	my $rowcount = $sth_init_subj->rows;
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000 )
 	{
-	    debug "initiate_rel $node->{id}";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    debug 2, "initiate_rel $node->{id}";
+#	    debug "ARGS: ".query_desig($args);
+	    $Para::Frame::REQ->note("Populating $rowcount arcs");
 	}
 
 	my $cnt = 0;
@@ -7170,10 +7225,18 @@ sub initiate_rel
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  populated $cnt");
+		}
 	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Populating arcs done");
 	}
 
 	unless( $extralim )
@@ -7299,11 +7362,11 @@ sub initiate_rev
     $sth_init_obj->finish;
 
     my $rowcount = $sth_init_obj->rows;
-    if( ($rowcount > 100) and (debug > 2) )
+    if( $rowcount > 1000 )
     {
-	debug "initiate_rev $node->{id}";
-	debug "Populating $rowcount arcs";
-	debug "ARGS: ".query_desig($args);
+	debug 2, "initiate_rev $node->{id}";
+	$Para::Frame::REQ->note("Populating $rowcount revarcs");
+#	debug "ARGS: ".query_desig($args);
     }
 
     my $cnt = 0;
@@ -7314,10 +7377,18 @@ sub initiate_rev
 	# Handle long lists
 	unless( ++$cnt % 100 )
 	{
-	    debug 2, "Populated $cnt";
 	    $Para::Frame::REQ->may_yield;
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	    unless( $cnt % 1000 )
+	    {
+		$Para::Frame::REQ->note("  populated $cnt");
+	    }
 	}
+    }
+
+    if( $rowcount > 1000 )
+    {
+	$Para::Frame::REQ->note("Populating revarcs done");
     }
 
     unless( $extralim )
@@ -7444,7 +7515,7 @@ sub initiate_prop
 	    if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 	    {
 		my $obj_id = $proplim->id;
-		debug 2, "  rowcount > 20. Using obj_id from proplim $obj_id";
+		debug 1, "  rowcount > 20. Using obj_id from proplim $obj_id";
 		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
 		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
 		if( $arclim_sql )
@@ -7461,21 +7532,35 @@ sub initiate_prop
 	    }
 	}
 
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000  )
 	{
-	    debug "initiate_prop $node->{id} $name";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    debug 2, "initiate_prop $node->{id} $name";
+#	    debug "ARGS: ".query_desig($args);
+	    $Para::Frame::REQ->note("Populating $rowcount arcs");
 	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
 
+	my $cnt = 0;
 	foreach my $rec ( @$recs )
 	{
-	    debug "  populating with ".datadump($rec,4)
-	      if debug > 4;
-
 	    $node->populate_rel( $rec, $args );
+
+	    # Handle long lists
+	    unless( ++$cnt % 100 )
+	    {
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  populated $cnt");
+		}
+	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Populating arcs done");
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -7614,11 +7699,11 @@ sub initiate_revprop
 	my $cnt = 0;
 
 	my $rowcount = $sth_init_obj_pred->rows;
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000 )
 	{
-	    debug "initiate_revprop $node->{id} $name";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    debug 2, "initiate_revprop $node->{id} $name";
+	    $Para::Frame::REQ->note("Populating $rowcount arcs");
+#	    debug "ARGS: ".query_desig($args);
 	}
 
 	foreach my $rec ( @$recs )
@@ -7628,10 +7713,18 @@ sub initiate_revprop
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  populated $cnt");
+		}
 	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Populating arcs done");
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";

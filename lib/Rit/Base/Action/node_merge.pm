@@ -5,7 +5,7 @@ package Rit::Base::Action::node_merge;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -27,8 +27,7 @@ Ritbase Action for merging nodes
 sub handler
 {
     my( $req ) = @_;
-
-    throw('denied', "Nope") unless $req->session->user->level >= 20;
+    $req->require_root_access;
 
     my $q = $req->q;
     my $id = $q->param('id');

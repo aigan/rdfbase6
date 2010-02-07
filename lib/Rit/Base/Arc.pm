@@ -5,7 +5,7 @@ package Rit::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -420,26 +420,29 @@ sub create
 
 
     ##################### updated
+    my $updated;
     if( $props->{'created'} )
     {
-	$rec->{'updated'} = Rit::Base::Literal::Time->
+	$updated = Rit::Base::Literal::Time->
 	  get($props->{'created'});
     }
     elsif( $args->{'updated'} )
     {
-	$rec->{'updated'} = Rit::Base::Literal::Time->
+	$updated = Rit::Base::Literal::Time->
 	  get($args->{'updated'});
     }
     else
     {
-	$rec->{'updated'} = now();
+	$updated = now();
     }
+
+    $rec->{'updated'} = $dbix->format_datetime( $updated );
     push @fields, 'updated';
-    push @values, $dbix->format_datetime($rec->{'updated'});
+    push @values, $rec->{'updated'};
 
     $rec->{'created'} = $rec->{'updated'};
     push @fields, 'created';
-    push @values, $dbix->format_datetime($rec->{'created'});
+    push @values, $rec->{'created'};
 
 
     ##################### implicit
@@ -1314,6 +1317,28 @@ sub created
 
 ##############################################################################
 
+=head2 created_iso8601
+
+  $a->created_iso8601
+
+PostgreSQL seems to always return times in the current local timezone,
+regardless of timezone used to store the date. This makes it useful
+for sorting and comparison. It also uses space to separate date and
+time.
+
+Returns: The time as a string in ISO 8601 format, or undef
+
+=cut
+
+sub created_iso8601
+{
+    return $_[0]->{'arc_created'} ||=
+      $Rit::dbix->format_datetime( $_[0]->{'arc_created_obj'} );
+}
+
+
+##############################################################################
+
 =head2 updated
 
   $a->updated
@@ -1333,6 +1358,28 @@ sub updated
 
     return $arc->{'arc_updated_obj'} =
       Rit::Base::Literal::Time->get( $arc->{'arc_updated'} );
+}
+
+
+##############################################################################
+
+=head2 updated_iso8601
+
+  $a->updated_iso8601
+
+PostgreSQL seems to always return times in the current local timezone,
+regardless of timezone used to store the date. This makes it useful
+for sorting and comparison. It also uses space to separate date and
+time.
+
+Returns: The time as a string in ISO 8601 format, or undef
+
+=cut
+
+sub updated_iso8601
+{
+    return $_[0]->{'arc_updated'} ||=
+      $Rit::dbix->format_datetime( $_[0]->{'arc_updated_obj'} );
 }
 
 
@@ -3250,9 +3297,10 @@ sub has_value
     my $val_parsed = $R->get_by_anything($value, $args_valtype);
 
 #    my $match = $args->{'match'} || 'eq';
-#    debug sprintf "CHECKS %d if %s %s %s ", $arc->id, $target->sysdesig, $match, ,query_desig($val_parsed);
+#    debug sprintf "CHECKS %d %s if %s %s %s ", $arc->id, $pred_name, $target->sysdesig, $match, ,query_desig($val_parsed);
 #    debug " 1. ".datadump($target,1);
 #    debug " 2. ".datadump($val_parsed,1);
+#    debug datadump($arc,1);
 
     return $arc if $target->matches( $val_parsed, $args );
 #    debug "  no match";
@@ -5475,7 +5523,7 @@ sub deregister_with_nodes
 		my $i=0;
 		while( $i<=$#$alist )
 		{
-		    if( $alist->[$i] eq $arc )
+		    if( $alist->[$i]->{id} eq $arc->{id} )
 		    {
 #			debug "Removed $id from ".$subj->id;
 			splice @$alist, $i, 1;
@@ -5502,7 +5550,7 @@ sub deregister_with_nodes
 	my $i=0;
 	while( $i<=$#$alist )
 	{
-	    if( $alist->[$i] eq $arc )
+	    if( $alist->[$i]->{id} eq $arc->{id} )
 	    {
 #		debug "Removed $id from ".$value->sysdesig;
 		splice @$alist, $i, 1;
@@ -5515,7 +5563,7 @@ sub deregister_with_nodes
 	$i=0;
 	while( $i<=$#$alist )
 	{
-	    if( $alist->[$i] eq $arc )
+	    if( $alist->[$i]->{id} eq $arc->{id} )
 	    {
 #		debug "Removed $id from ".$value->sysdesig;
 		splice @$alist, $i, 1;
@@ -5533,7 +5581,7 @@ sub deregister_with_nodes
 		my $i=0;
 		while( $i<=$#$alist )
 		{
-		    if( $alist->[$i] eq $arc )
+		    if( $alist->[$i]->{id} eq $arc->{id} )
 		    {
 			splice @$alist, $i, 1;
 #			debug "Removed $id from ".$value->sysdesig;
@@ -5550,7 +5598,7 @@ sub deregister_with_nodes
 		my $i=0;
 		while( $i<=$#$alist )
 		{
-		    if( $alist->[$i] eq $arc )
+		    if( $alist->[$i]->{id} eq $arc->{id} )
 		    {
 			splice @$alist, $i, 1;
 #			debug "Removed $id from ".$value->sysdesig;

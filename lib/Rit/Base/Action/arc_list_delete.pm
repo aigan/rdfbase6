@@ -5,7 +5,7 @@ package Rit::Base::Action::arc_list_delete;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -26,6 +26,7 @@ Ritbase Action for removing arcs
 sub handler
 {
     my( $req ) = @_;
+    $req->require_root_access;
 
     my $q = $req->q;
 

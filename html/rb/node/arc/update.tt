@@ -231,11 +231,11 @@ This is an <strong>active</strong> version.
 [% hidden('remove',0) %]
 [% IF u.has_root_access %]
    [% hidden('force',0) %]
-   <span style="float: right">[% go("HARD Delete", me, 'arc_edit', remove=1, force=1, href_class="alert") %]</span>
+   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1, tag_attr={class="alert",style="float:right"}) %]
 [% END %]
 [% IF arc.inactive %]
    [% UNLESS arc.deactivated %]
-      <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, href_class="alert") %]</span>
+      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr=>{class="alert",style="float:right"}) %]
    [% END %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
@@ -259,7 +259,7 @@ This is an <strong>active</strong> version.
       [% step("Save") %]
    [% END %]
 [% ELSE %]
-   <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, href_class="alert") %]</span>
+   <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="alert"}) %]</span>
    [% step("Save as a new version") %]
 [% END %]
 </p>

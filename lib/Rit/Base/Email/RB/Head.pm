@@ -5,7 +5,7 @@ package Rit::Base::Email::RB::Head;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -28,7 +28,7 @@ use Scalar::Util qw(weaken);
 use List::Uniq qw( uniq ); # keeps first of each value
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug );
+use Para::Frame::Utils qw( throw debug timediff );
 
 use Rit::Base;
 use Rit::Base::List;
@@ -72,19 +72,47 @@ sub init_to
     return if $_[0]->{'rb_head_to_initiated'};
 
     debug "Initiating RB 'to' field";
+#    cluck "Initiating RB 'to' field";
 
 
     my( $head ) = @_;
 
     my $email = $head->{'rb_email'};
 
+#    debug timediff('init_to');
+#    $Para::Frame::REQ->may_yield;
+
     my @to_list = $email->list('email_to')->as_array;
+
+#    debug timediff('init_to email_to');
+#    $Para::Frame::REQ->may_yield;
+
     my $to_obj_list = $email->list('email_to_obj');
+
+#    debug timediff('init_to email_to_obj');
+#    $Para::Frame::REQ->may_yield;
+
+    if( $to_obj_list->size > 1000 )
+    {
+	$Para::Frame::REQ->note(sprintf "Email has %d recipients",
+				$to_obj_list->size);
+    }
+
     while( my $to_obj = $to_obj_list->get_next_nos )
     {
 	push @to_list, $to_obj->email_main->plain, $to_obj->contact_email->plain;
+
+	unless( $to_obj_list->count % 1000 )
+	{
+	    $Para::Frame::REQ->note("  at recipient ".$to_obj_list->count);
+	    $Para::Frame::REQ->may_yield;
+	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	}
     }
     my @to_uniq = grep defined, uniq @to_list;
+
+#    debug timediff('init_to to_list');
+#    $Para::Frame::REQ->may_yield;
 
     $head->header_set('to', @to_uniq );
 
