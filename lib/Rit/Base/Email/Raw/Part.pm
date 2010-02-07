@@ -320,10 +320,31 @@ sub redraw
 	debug "BODY-RAW redraw";
 	$part->{'redraw'} = 0;
 
-	$em->parts_set([$em->subparts]);
+	$part->redraw_subpart( $em );
+
+#	die "CHECKME".datadump $part;
     }
 
     return 1;
+}
+
+
+##############################################################################
+
+=head2 redraw_subpart
+
+=cut
+
+sub redraw_subpart
+{
+    my( $part, $emp ) = @_;
+
+    foreach my $ems ( $emp->subparts )
+    {
+	$part->redraw_subpart( $ems );
+    }
+
+    $emp->parts_set([$emp->subparts]);
 }
 
 
