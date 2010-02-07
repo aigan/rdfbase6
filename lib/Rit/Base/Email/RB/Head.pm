@@ -98,7 +98,8 @@ sub init_to
 				$to_obj_list->size);
     }
 
-    while( my $to_obj = $to_obj_list->get_next_nos )
+    my( $to_obj, $to_err ) = $to_obj_list->get_first;
+    while( !$to_err )
     {
 	push @to_list, $to_obj->email_main->plain, $to_obj->contact_email->plain;
 
@@ -108,6 +109,8 @@ sub init_to
 	    $Para::Frame::REQ->may_yield;
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
 	}
+
+	($to_obj, $to_err) = $to_obj_list->get_next;
     }
     my @to_uniq = grep defined, uniq @to_list;
 
