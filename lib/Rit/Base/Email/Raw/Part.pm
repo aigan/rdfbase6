@@ -24,7 +24,7 @@ use utf8;
 use base qw( Rit::Base::Email::Part Para::Frame::Email );
 
 use Carp qw( croak confess cluck );
-use Scalar::Util qw(weaken);
+use Scalar::Util qw( weaken reftype );
 use Email::MIME;
 use MIME::Words qw( decode_mimewords );
 
@@ -320,12 +320,98 @@ sub redraw
 	debug "BODY-RAW redraw";
 	$part->{'redraw'} = 0;
 
+#	debug $part->desig;
+#	debug $part->viewtree;
+#	debug datadump($em->{'body_raw'},1);
+#	warn $part->explain($em);
+#	die "CHECKME";
+
 	$part->redraw_subpart( $em );
 
-#	die "CHECKME".datadump $part;
+#	debug datadump $part;
+#	debug $part->viewtree;
+#	debug datadump($em->{'body_raw'},1);
+#	warn $part->explain($em);
+#	die "CHECKME";
     }
 
     return 1;
+}
+
+sub explain
+{
+    my( $part, $n, $l ) = @_;
+
+    $l ||= 0;
+
+    my $out = ""; #"  "x$l . ref($n)."\n";
+    $l++;
+
+    given( reftype $n )
+    {
+	when('SCALAR')
+	{
+	    my $str = $$n;
+	    my $len = length($str);
+	    $str =~ s/\r?\n/\\n/g;
+	    if( $len > 20 )
+	    {
+		$str =~ s/.*\[%/[%/ or
+		  $str =~ s/.*mailto:webb/mailto:webb/;
+		$out .= "  "x$l.$len.") ".substr($str,0,20)."...\n";
+	    }
+	    else
+	    {
+		$out .= "  "x$l.$len.") ".$str."\n";
+	    }
+	}
+	when('HASH')
+	{
+	    foreach my $key ( keys %$n )
+	    {
+		next if $key eq 'header';
+		next if $key eq 'ct';
+		next if $key eq 'mycrlf';
+		my $val = $n->{$key};
+		my $type = ref($val) || 'str';
+		$out .= "  "x$l.$key." = ".$type."\n";
+		$out .= $part->explain($val,$l);
+	    }
+	}
+	when('ARRAY')
+	{
+	    my $cnt = 0;
+	    foreach my $val ( @$n )
+	    {
+		$out .= "  "x$l.sprintf "#%3d\n",$cnt;
+		$out .= $part->explain($val,$l, $cnt);
+		$cnt++;
+		last if $cnt > 1;
+	    }
+	}
+	when(undef)
+	{
+	    my $str = $n;
+	    my $len = length($str);
+	    $str =~ s/\r?\n/\\n/g;
+	    if( $len > 20 )
+	    {
+		$str =~ s/.*\[%/[%/ or
+		  $str =~ s/.*mailto:webb/mailto:webb/;
+		$out .= "  "x$l.$len.") ".substr($str,0,20)."...\n";
+	    }
+	    else
+	    {
+		$out .= "  "x$l.$len.") ".$str."\n";
+	    }
+	}
+	default
+	{
+	    $out .= "  "x$l.ref($n)."\n";
+	}
+    }
+
+    return $out;
 }
 
 
@@ -344,7 +430,7 @@ sub redraw_subpart
 	$part->redraw_subpart( $ems );
     }
 
-    $emp->parts_set([$emp->subparts]);
+    $emp->parts_set([$emp->subparts]) if $emp->subparts;
 }
 
 
