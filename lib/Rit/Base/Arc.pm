@@ -349,6 +349,8 @@ sub create
     my $pred_name = $pred->plain;
 
     $rec->{'pred'} = $pred_id;
+    confess "Invalid pred $pred_id" if $pred_id < 1;
+
 
     push @fields, 'pred';
     push @values, $rec->{'pred'};
