@@ -5,7 +5,7 @@ package Rit::Base::Renderer::Email::From_email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -47,52 +47,20 @@ sub render_body_from_template
 
     debug "RB render_body_from_template";
 
+#    $rend->add_params({'optout'=>sub{$rend->optout_widget(@_)}});
+
     my $em = $rend->{'template'}->raw_part;
-
     my $burner = $rend->set_burner_by_type('plain');
-    my $parser = $burner->parser;
 
-#    debug datadump($em->{'em'},1);
-#    debug "***************";
 
-    my @parts = $em->parts;
-    my @parts_in = @parts;
-    unless( @parts )
+    unless( $em->parts )
     {
-	debug "  Single part";
-	@parts = $em;
-    }
-    foreach my $part ( @parts )
-    {
-	debug " * ".$part->effective_type;
-	if( $part->type =~ /^text/ )
-	{
-	    debug "   Burning ".$part->path;
-	    my $body = $part->body;
-
-	    my $out = "";
-	    my $outref = \$out;
-	    my $parsedoc = $parser->parse( $$body, {} ) or
-	      throw('template', "parse error: ".$parser->error);
-	    my $doc = Template::Document->new($parsedoc) or
-	      throw('template', $Template::Document::ERROR);
-	    $rend->burn($doc, $outref) or return 0;
-
-#	    debug "---";
-#	    debug $$outref;
-#	    debug "Charset: ".$part->charset;
-#	    debug "em ct: ".$part->{'em'}->content_type;
-#	    use Email::MIME::ContentType;
-#	    debug datadump(parse_content_type($part->{'em'}->content_type));
-#	    debug datadump($part->{'em'}->header_obj);
-
-	    $part->body_set( $outref );
-
-#	    debug ${$part->body};
-#	    die "CHECKME";
-	}
+	$rend->render_part($em);
     }
 
+    $rend->render_parts($em);
+
+#die "CHECKME";
 
 #    debug "****** RESULT:";
 #    debug datadump($em->{'em'});
@@ -103,6 +71,69 @@ sub render_body_from_template
 #    die "CHECKME";
 
     return 1;
+}
+
+
+##############################################################################
+
+=head2 render_parts
+
+=cut
+
+sub render_parts
+{
+    my( $rend, $pp, $level ) = @_; # parent part
+
+    $level ||= 1;
+#    debug "Render part, level $level";
+
+    foreach my $part ( $pp->parts )
+    {
+	$rend->render_part($part);
+	$rend->render_parts($part, $level+1);
+    }
+}
+
+
+##############################################################################
+
+=head2 render_part
+
+=cut
+
+sub render_part
+{
+    my( $rend, $part ) = @_; # parent part
+
+    my $parser = $rend->burner->parser;
+
+    debug sprintf "%s %s", $part->path, $part->effective_type;
+    if( $part->type =~ /^text/ )
+    {
+	debug "   Burning ".$part->path;
+	my $body = $part->body;
+
+	my $out = "";
+	my $outref = \$out;
+	my $parsedoc = $parser->parse( $$body, {} ) or
+	  throw('template', "parse error: ".$parser->error);
+	my $doc = Template::Document->new($parsedoc) or
+	  throw('template', $Template::Document::ERROR);
+	$rend->burn($doc, $outref) or return 0;
+
+#	    debug "---";
+#	    debug $$outref;
+#	    debug "Charset: ".$part->charset;
+#	    debug "em ct: ".$part->{'em'}->content_type;
+#	    use Email::MIME::ContentType;
+#	    debug datadump(parse_content_type($part->{'em'}->content_type));
+#	    debug datadump($part->{'em'}->header_obj);
+
+	$part->body_set( $outref );
+
+#	    debug ${$part->body};
+#	    die "CHECKME";
+    }
 }
 
 
