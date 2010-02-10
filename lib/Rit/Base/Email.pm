@@ -5,7 +5,7 @@ package Rit::Base::Email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -588,6 +588,18 @@ sub raw_part
 
 ##############################################################################
 
+=head2 match
+
+=cut
+
+sub match
+{
+    return shift->obj->match(@_);
+}
+
+
+##############################################################################
+
 =head2 vacuum
 
 Reprocesses email after arc vacuum
@@ -667,12 +679,17 @@ sub desig
 
 =head2 send
 
+  $email->send( \%args )
+
 Send the e-mail.  Sets sent date.
 
 Supported args are:
 
   redirect: true for setting header for redirecting the email. Must be
             used if using proxy and to header differs from reciever
+
+
+  params: extra params for the email template
 
 =cut
 
@@ -681,7 +698,8 @@ sub send
     my( $email, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs($args_in);
 
-    my $es = Para::Frame::Email::Sending->new();
+    my $esp_in = $args->{'params'};
+    my $es = Para::Frame::Email::Sending->new($esp_in);
     my $esp = $es->params;
     my $now = now();
 

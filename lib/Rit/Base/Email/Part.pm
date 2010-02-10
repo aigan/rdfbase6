@@ -5,7 +5,7 @@ package Rit::Base::Email::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -1692,6 +1692,39 @@ sub is_top
 {
     return 0;
 }
+
+##############################################################################
+
+=head2 match
+
+Expecting the normal case of html email and/or plain text email
+
+=cut
+
+sub match
+{
+    my( $part, $qx_in ) = @_;
+
+    my $part_plain = $part->first_part_with_type('text/plain');
+    my $part_html = $part->first_part_with_type('text/html');
+
+    my $qx = qr/$qx_in/;
+
+    if( ${$part_html->body} =~ $qx )
+    {
+	debug "match in html part";
+	return 1;
+    }
+    elsif( ${$part_plain->body} =~ $qx )
+    {
+	debug "match in plain part";
+	return 1;
+    }
+
+    debug "No match in html or plain";
+    return 0;
+}
+
 
 ##############################################################################
 
