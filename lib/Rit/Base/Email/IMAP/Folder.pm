@@ -296,7 +296,7 @@ sub idle
 	{
 	    debug "Starts ideling ($folder->{'idle'})";
 	}
-	else
+	elsif( $imap->IsConnected ) # could change on $imap->idle
 	{
 	    debug $folder->diag("Couldn't idle");
 	    debug "Disconnecting...";
@@ -312,6 +312,11 @@ sub idle
 	    {
 		debug $folder->diag($@);
 	    }
+	}
+	else
+	{
+	    debug "Lost connection to ".$folder->sysdesig;
+	    debug "But keeps it that way for now...";
 	}
     }
     else

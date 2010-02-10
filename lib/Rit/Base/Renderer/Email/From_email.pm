@@ -119,7 +119,8 @@ sub render_part
 	  throw('template', "parse error: ".$parser->error);
 	my $doc = Template::Document->new($parsedoc) or
 	  throw('template', $Template::Document::ERROR);
-	$rend->burn($doc, $outref) or return 0;
+	$rend->burn($doc, $outref) or
+	  throw('template', $Template::Document::ERROR);
 
 #	    debug "---";
 #	    debug $$outref;

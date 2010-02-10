@@ -773,18 +773,20 @@ sub send
 
     debug "Sending email";
 
-    $to_list->reset;
-    while( my $to = $to_list->get_next_nos )
+    my( $to, $to_err ) = $to_list->get_first;
+    while( !$to_err )
     {
 	debug "To $to";
 	eval {
 	    $es->send_by_proxy({%$args, to => $to });
 	};
 	$req->may_yield;
+	( $to, $to_err ) = $to_list->get_next;
     }
 
     $to_obj_list->reset;
-    while( my $to_obj = $to_obj_list->get_next_nos )
+    my( $to_obj, $to_obj_err ) = $to_obj_list->get_first;
+    while( !$to_obj_err )
     {
 	my $to = $to_obj->email_main;
 	debug "To $to";
@@ -799,6 +801,7 @@ sub send
 	    $es->send_by_proxy({%$args, to => $to });
 	};
 	$req->may_yield;
+	( $to_obj, $to_obj_err ) = $to_obj_list->get_next;
     }
 
     my( @good ) = $es->good;
