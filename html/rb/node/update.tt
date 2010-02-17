@@ -245,7 +245,7 @@ END;
 
 [% IF include_inactive %]
 [% FOREACH pred IN node.list_preds('','inactive').sorted %]
-   [% prop_cnt = node.count(pred,arclim) %]
+   [% prop_cnt = node.count(pred,'inactive') %]
    [% IF prop_cnt > 10 AND show_pred != pred.plain %]
       <tr>
       <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
@@ -331,7 +331,7 @@ END;
 
 [% IF include_inactive %]
 [% FOREACH pred IN node.revlist_preds('','inactive').sorted %]
-   [% prop_cnt = node.revcount(pred,arclim) %]
+   [% prop_cnt = node.revcount(pred,'inactive') %]
    [% IF prop_cnt > 10 AND show_pred != pred.plain %]
       <tr>
       <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
