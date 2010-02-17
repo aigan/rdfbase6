@@ -1117,7 +1117,7 @@ sub loc
 	      ($_->is_literal ? $_->arc_weight : undef)
 		|| $_->weight->literal || 0;
 
-	    debug 4, "  $_ has weight $weight";
+	    debug 4, "  $_ has weight $weight" if $weight;
 	    $list{ $weight } = $_;
 	}
 
