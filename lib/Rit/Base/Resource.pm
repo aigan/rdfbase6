@@ -5862,8 +5862,16 @@ sub find_class
 	    }
 
 	    my $filename = package_to_module($classname);
-	    compile( $filename );
-	    push @classnames, $classname;
+	    eval{ compile( $filename ) };
+	    if( $@ )
+	    {
+		warn "****  IGNORING perl class $filename\n";
+		warn "****  ".$@;
+	    }
+	    else
+	    {
+		push @classnames, $classname;
+	    }
 	}
 
 	no strict "refs";
