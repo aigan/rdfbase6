@@ -1351,6 +1351,7 @@ sub create
     {
 	$s{ $pred_name } = Para::Frame::List->
 	  new_any( $props->{ $pred_name} )->get_first_nos;
+	delete( ${$props}{$pred_name} );
     }
 
     ### for creating and tagging the node
@@ -3202,6 +3203,51 @@ sub desig  # The designation of obj, meant for human admins
 
 ##############################################################################
 
+=head2 safedesig
+
+  $n->safedesig( \%args )
+
+As L</sysdesig>, but only gives data from what is availible in memory.
+
+=cut
+
+sub safedesig
+{
+    my( $node, $args ) = @_;
+
+    my $desig;
+
+    if( $node->{'relarc'}{'name'} )
+    {
+	$desig = $node->list('name',undef,$args)->loc();
+    }
+    elsif( $node->{'relarc'}{'name_short'} )
+    {
+	$desig = $node->list('name_short',undef,$args)->loc();
+    }
+    elsif( $desig = $node->label )
+    {
+	# That's good
+    }
+    elsif( $node->{'relarc'}{'code'} )
+    {
+	$desig = $node->list('code',undef,$args)->loc;
+    }
+    else
+    {
+	$desig = $node->id;
+    }
+
+    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    utf8::upgrade($desig);
+#    debug "Returning desig $desig";
+
+    return truncstring( \$desig );
+}
+
+
+##############################################################################
+
 =head2 sysdesig
 
   $n->sysdesig( \%args )
@@ -3971,7 +4017,9 @@ sub add
     my $mark_updated = undef; # for tagging node with timestamp
     my $mark_created = undef; # for tagging node with timestamp
 
-    my $args = {%$args_in}; # Shallow copy
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow copy
+
     my %extra;
     if( $args->{'read_access'} )
     {
@@ -4243,8 +4291,8 @@ sub equals
 	    if( $DEBUG )
 	    {
 		debug "Comparing values:";
-		debug "1. ".$node->sysdesig;
-		debug "2. ".$node2->sysdesig;
+		debug "1. ".$node->safedesig;
+		debug "2. ".$node2->safedesig;
 	    }
 
 	    if( $match eq 'eq' )
@@ -6001,6 +6049,7 @@ sub on_class_perl_module_change
     }
     else
     {
+	# TODO: only get nodes in memory
 	my $childs = $node->revlist('is');
 	while( my $child = $childs->get_next_nos )
 	{
@@ -7212,9 +7261,8 @@ sub initiate_rel
 	my $rowcount = $sth_init_subj->rows;
 	if( $rowcount > 1000 )
 	{
-	    debug 2, "initiate_rel $node->{id}";
-#	    debug "ARGS: ".query_desig($args);
-	    $Para::Frame::REQ->note("Populating $rowcount arcs");
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
 	}
 
 	my $cnt = 0;
@@ -7229,14 +7277,14 @@ sub initiate_rel
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 		unless( $cnt % 1000 )
 		{
-		    $Para::Frame::REQ->note("  populated $cnt");
+		    $Para::Frame::REQ->note("  loaded $cnt");
 		}
 	    }
 	}
 
 	if( $rowcount > 1000 )
 	{
-	    $Para::Frame::REQ->note("Populating arcs done");
+	    $Para::Frame::REQ->note("Loading arcs done for".$node->safedesig);
 	}
 
 	unless( $extralim )
@@ -7365,7 +7413,8 @@ sub initiate_rev
     if( $rowcount > 1000 )
     {
 	debug 2, "initiate_rev $node->{id}";
-	$Para::Frame::REQ->note("Populating $rowcount revarcs");
+	$Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
+				$node->safedesig);
 #	debug "ARGS: ".query_desig($args);
     }
 
@@ -7381,14 +7430,15 @@ sub initiate_rev
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
 	    unless( $cnt % 1000 )
 	    {
-		$Para::Frame::REQ->note("  populated $cnt");
+		$Para::Frame::REQ->note("  loaded $cnt");
 	    }
 	}
     }
 
     if( $rowcount > 1000 )
     {
-	$Para::Frame::REQ->note("Populating revarcs done");
+	$Para::Frame::REQ->note("Loading reverse arcs done for ".
+				$node->safedesig);
     }
 
     unless( $extralim )
@@ -7510,12 +7560,12 @@ sub initiate_prop
 	$sth_init_subj_pred->finish;
 
 	my $rowcount = $sth_init_subj_pred->rows;
-	if( $rowcount > 20 )
+	if( $rowcount > 100 )
 	{
 	    if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 	    {
 		my $obj_id = $proplim->id;
-		debug 1, "  rowcount > 20. Using obj_id from proplim $obj_id";
+		debug 1, "  rowcount > 100. Using obj_id from proplim $obj_id";
 		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
 		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
 		if( $arclim_sql )
@@ -7536,7 +7586,8 @@ sub initiate_prop
 	{
 	    debug 2, "initiate_prop $node->{id} $name";
 #	    debug "ARGS: ".query_desig($args);
-	    $Para::Frame::REQ->note("Populating $rowcount arcs");
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
 	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
@@ -7553,14 +7604,15 @@ sub initiate_prop
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 		unless( $cnt % 1000 )
 		{
-		    $Para::Frame::REQ->note("  populated $cnt");
+		    $Para::Frame::REQ->note("  loaded $cnt");
 		}
 	    }
 	}
 
 	if( $rowcount > 1000 )
 	{
-	    $Para::Frame::REQ->note("Populating arcs done");
+	    $Para::Frame::REQ->note("Loading arcs done for ".
+				    $node->safedesig);
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -7702,7 +7754,8 @@ sub initiate_revprop
 	if( $rowcount > 1000 )
 	{
 	    debug 2, "initiate_revprop $node->{id} $name";
-	    $Para::Frame::REQ->note("Populating $rowcount arcs");
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
 #	    debug "ARGS: ".query_desig($args);
 	}
 
@@ -7717,14 +7770,15 @@ sub initiate_revprop
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 		unless( $cnt % 1000 )
 		{
-		    $Para::Frame::REQ->note("  populated $cnt");
+		    $Para::Frame::REQ->note("  loaded $cnt");
 		}
 	    }
 	}
 
 	if( $rowcount > 1000 )
 	{
-	    $Para::Frame::REQ->note("Populating arcs done");
+	    $Para::Frame::REQ->note("Loading arcs done for ".
+				    $node->safedesig);
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
