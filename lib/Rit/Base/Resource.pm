@@ -4121,7 +4121,7 @@ sub add
 		    {
 #			$Para::Frame::REQ->note("Created $cnt of $tot");
 
-			unless( ++ $cnt % 500 )
+			unless( $cnt % 500 )
 			{
 			    my $mrk = Time::HiRes::time();
 			    $Para::Frame::REQ->note(sprintf "Created %6d of %6d in %7.3f", $cnt, $tot, $mrk - $mrkp);
