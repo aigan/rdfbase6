@@ -171,7 +171,7 @@ sub as_html
     if( $a->broken )
     {
 	my $str = $a->original;
-	return "<span class=\"broken\">$str</a>";
+	return "<span class=\"broken\">$str</span>";
     }
 
     my( $args ) = parse_propargs($args_in);
