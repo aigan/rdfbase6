@@ -798,7 +798,10 @@ sub send
 	}
 
 	eval {
-	    $es->send_by_proxy({%$args, to => $to });
+	    $es->send_by_proxy({%$args,
+				to => $to,
+				to_obj => $to_obj,
+			       });
 	};
 	$req->may_yield;
 	( $to_obj, $to_obj_err ) = $to_obj_list->get_next;
