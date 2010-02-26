@@ -1125,6 +1125,22 @@ sub wul
 
 ##############################################################################
 
+=head3 as_html
+
+=cut
+
+sub as_html
+{
+    my $vt = $_[0]->this_valtype;
+
+    return $_[0] if $vt->equals($C_text_html );
+    return $_[0] if $vt->has_value({scof=>$C_text_html});
+    return shift->SUPER::as_html(@_);
+}
+
+
+##############################################################################
+
 =head3 default_valtype
 
 =cut
@@ -1133,6 +1149,7 @@ sub default_valtype
 {
     return Rit::Base::Literal::Class->get_by_label('valtext');
 }
+
 
 ##############################################################################
 

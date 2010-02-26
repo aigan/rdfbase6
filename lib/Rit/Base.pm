@@ -287,6 +287,8 @@ sub Constants ()
 
 Returns class object for L<Rit::Base::Literal>
 
+See also L<Rit::Base::Utils/string>
+
 =cut
 
 sub Literal ()

@@ -25,17 +25,17 @@ use UNIVERSAL;
 
 use base qw( Exporter );
 our @EXPORT_OK
-  = qw( cache_clear valclean format_phone format_zip
-	parse_query_props parse_form_field_prop
-	parse_arc_add_box is_undef arc_lock arc_unlock
-	truncstring string parse_query_pred parse_query_value parse_query_prop
+  = qw( cache_clear valclean format_phone format_zip parse_query_props
+	parse_form_field_prop parse_arc_add_box is_undef arc_lock
+	arc_unlock truncstring string html parse_query_pred
+	parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
-	send_cache_update parse_propargs aais alphanum_to_id proplim_to_arclim );
+	send_cache_update parse_propargs aais alphanum_to_id
+	proplim_to_arclim );
 
 
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
 use Para::Frame::Reload;
-
 
 ### Those modules loaded by Rit::Base later...
 #use Rit::Base::Undef;
@@ -903,6 +903,24 @@ Calls L<Rit::Base::Literal::String/new> with C<$string>.
 sub string
 {
     return Rit::Base::Literal::String->new(@_);
+}
+
+
+##############################################################################
+
+=head2 html
+
+  html($string)
+
+Calls L<Rit::Base::Literal::String/new> with C<$string> and valtype
+C<text_html>.
+
+=cut
+
+sub html
+{
+    state $text_html = Rit::Base::Constants->get('text_html');
+    return Rit::Base::Literal::String->new(@_,$text_html);
 }
 
 
