@@ -30,7 +30,7 @@
 [% FOREACH sc IN class.parents %]
 [% sc_nodes = find(code=sc.name, is='class_perl_module') %]
 [% IF sc_nodes %]
-<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.id) %]
+<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.get_first_nos.id) %]
 [% ELSE %]
 <li>$sc.name
 [% END %]
