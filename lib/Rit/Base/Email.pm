@@ -839,6 +839,54 @@ sub send
 
 
 ##############################################################################
+
+=head2 validate_as_template
+
+  $email->validate_as_template( \%args )
+
+to_obj
+
+=cut
+
+sub validate_as_template
+{
+    my( $email, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
+
+    my $esp_in = $args->{'params'};
+    my $es = Para::Frame::Email::Sending->new($esp_in);
+    my $esp = $es->params;
+    my $now = now();
+
+    $esp->{'from'}      = $email->from->get_first_nos;
+
+    my $to_list = $email->list( 'email_to', undef, $args );
+    my $to_obj_list = $email->list( 'email_to_obj', undef, $args );
+
+    my $to_obj = $to_obj_list->get_first_nos || $args->{'to_obj'};
+    my $to = $to_obj->first_prop('email_main');
+
+    $esp->{'reply_to'}  = $email->email_reply_to;
+    $esp->{'subject'}   = $email->email_subject || "Test subject";
+
+    my $rend = Rit::Base::Renderer::Email::From_email->
+      new({ template => $email, params => $esp });
+
+    $es->{'renderer'}  = $rend;
+
+    my $from_addr = Para::Frame::Email::Address->parse( $esp->{'from'} );
+    $from_addr or throw('mail', "Failed to parse address $esp->{'from'}\n");
+    $esp->{'from_addr'} = $from_addr;
+    $esp->{'envelope_from_addr'} = $from_addr;
+    my( $to_addr ) = Para::Frame::Email::Address->parse( $to );
+    $to_addr or throw('mail',"Failed parsing $to\n");
+
+    my $dataref = $es->renderer->render_message($to_addr);
+    return 1;
+}
+
+
+##############################################################################
 #
 #=head2 on_bless
 #
