@@ -5502,7 +5502,7 @@ sub arcversions
 
 =head2 tree_select_widget
 
-  $n->tree_select_widget( $pred, \%args )
+  $n->tree_select_widget( $pred, $sub, \%args )
 
 Returns: a HTML widget that draws the C<scof> tree.
 
@@ -5510,12 +5510,34 @@ Returns: a HTML widget that draws the C<scof> tree.
 
 sub tree_select_widget
 {
-    my( $node, $pred_in, $args ) = @_;
+    my( $node, $args ) = @_;
 
-    my $pred = Rit::Base::Pred->get($pred_in)
-      or die "no pred ($pred_in)";
+    my $pred;
+    if( $args->{'pred'} )
+    {
+	$pred = Rit::Base::Pred->get($args->{'pred'})
+	  or die "no pred ".$args->{'pred'};
+    }
 
-    my $data = $node->tree_select_data($pred, $args);
+    my $pred2;
+    if( $args->{'pred2'} )
+    {
+	$pred2 = Rit::Base::Pred->get($args->{'pred2'})
+	  or die "no pred2 ".$args->{'pred2'};
+    }
+
+    my $sub;
+    if( $args->{'sub'} )
+    {
+	$sub = Rit::Base::Pred->get($args->{'sub'})
+	  or die "no sub ".$args->{'sub'};
+    }
+    else
+    {
+	$sub = Rit::Base::Pred->get('scof');
+    }
+
+    my $data = $node->tree_select_data($pred, $sub, $pred2, $args);
 
     my $select = Template::PopupTreeSelect->new(
 						name => 'Ritbase_tsw',
@@ -5547,7 +5569,7 @@ sub table_columns
 
 =head2 tree_select_data
 
-  $n->tree_select_data( $pred, \%args )
+  $n->tree_select_data( $pred, $sub, \%args )
 
 Used by L</tree_select_widget>
 
@@ -5555,24 +5577,39 @@ Used by L</tree_select_widget>
 
 sub tree_select_data
 {
-    my( $node, $pred, $args_in ) = @_;
+    my( $node, $pred, $sub, $pred2, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    $pred or confess "param pred missing";
-
     my $id = $node->id;
-    my $pred_id = $pred->id;
-
     my $name = $node->prop('name', undef, $args)->loc;
     debug 2, "Processing treepart $id: $name";
-    my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
-    my $cnt = $rec->{'cnt'};
-    debug 3, "                    $id: $cnt nodes";
+    my $label;
     my $flags = " ";
     $flags .= 'p' if $node->private;
     $flags .= 'i' if $node->inactive;
 
-    my $label = sprintf("%s (%d) %s", $name, $cnt, $flags);
+    if( $pred )
+    {
+	my $pred_id = $pred->id;
+	my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
+	my $cnt = $rec->{'cnt'};
+	debug 3, "                    $id: $cnt nodes";
+
+	if( $pred2 )
+	{
+	    my $pred2_id = $pred2->id;
+	    my $rec2 = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred2_id, $id);
+	    my $cnt2 = $rec2->{'cnt'};
+	    debug 3, "                    $id: $cnt2 nodes";
+	    $cnt = $cnt.'/'.$cnt2;
+	}
+
+	$label = sprintf("%s (%s) %s", $name, $cnt, $flags);
+    }
+    else
+    {
+	$label = sprintf("%s %s", $name, $flags);
+    }
 
     my $data =
     {
@@ -5580,7 +5617,7 @@ sub tree_select_data
      value  => $id,
     };
 
-    my $childs = $node->revlist('scof', undef, aais($args,'adirect'));
+    my $childs = $node->revlist($sub, undef, aais($args,'adirect'));
 
     if( $childs->size )
     {
@@ -5590,7 +5627,7 @@ sub tree_select_data
 	foreach my $subnode ( $childs->nodes )
 	{
 	    push @{ $data->{children} },
-	      $subnode->tree_select_data($pred, $args);
+	      $subnode->tree_select_data($pred, $sub, $pred2, $args);
 	}
     }
 
