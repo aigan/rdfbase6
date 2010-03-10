@@ -12,13 +12,11 @@
    id = q.param('id');
    node = get(id);
    hidden('id', id);
-   keep = [ 'id' 'include_indirect' 'include_inactive' 'include_rev' 'show_pred' ];
+   keep = [ 'id' 'include_indirect' 'include_inactive' 'show_pred' ];
    include_indirect = q.param('include_indirect');
    hidden('include_indirect', include_indirect);
    include_inactive = q.param('include_inactive');
    hidden('include_inactive', include_inactive);
-   include_rev = q.param('include_rev');
-   hidden('include_rev', include_rev);
    show_pred = q.param('show_pred');
 %]
 
@@ -39,12 +37,6 @@ IF include_indirect;
    jump('*indirect*', me, keep_params=keep, tag_attr={class='selected'}, include_indirect=0);
 ELSE;
    jump('indirect', me, keep_params=keep, tag_attr={class=''}, include_indirect=1);
-END;
-' | ';
-IF include_rev;
-   jump('*reverse*', me, keep_params=keep, tag_attr={class='selected'}, include_rev=0);
-ELSE;
-   jump('reverse', me, keep_params=keep, tag_attr={class=''}, include_rev=1);
 END;
 +%]
 ]</p>
@@ -292,7 +284,6 @@ END;
 
 </table>
 
-[% IF include_rev %]
 <table class="admin" style="margin-top:2em">
 <tr><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
 [% FOREACH pred IN node.revlist_preds('',arclim).sorted %]
@@ -366,6 +357,5 @@ END;
 [% END %]
 
 </table>
-[% END %]
 
 
