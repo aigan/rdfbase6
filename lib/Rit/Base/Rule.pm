@@ -274,21 +274,7 @@ sub create
 
     if( $vacuum )
     {
-	debug "Vacuuming DB for new rule";
-
-	my $dbh = $Rit::dbix->dbh;
-	my $sth = $dbh->prepare( "select * from arc where pred=?" );
-	foreach my $pred_id ( uniq sort $a->id, $b->id, $c->id )
-	{
-	    # TODO: create_check for rels instead
-	    $sth->execute( $pred_id );
-	    while( my( $rec ) = $sth->fetchrow_hashref )
-	    {
-		Rit::Base::Arc->get_by_rec( $rec )->vacuum;
-	    }
-	    $sth->finish;
-	}
-	debug "Vacuuming DB for new rule - DONE";
+	$rule->vacuum;
     }
 
     return $rule;
@@ -826,6 +812,29 @@ sub remove_infered_rel
 				    });
     }
 
+}
+
+
+##############################################################################
+
+=head2 vacuum
+
+=cut
+
+sub vacuum
+{
+    my( $rule, $args_in ) = @_;
+
+    foreach my $pred ( uniq sort
+		       $rule->first_prop('pred_1'),
+		       $rule->first_prop('pred_2'),
+		       $rule->first_prop('pred_3'),
+		     )
+    {
+	$pred->vacuum_pred_arcs;
+    }
+
+    return $rule->SUPER::vacuum( $args_in );
 }
 
 

@@ -5624,7 +5624,7 @@ sub tree_select_data
 	debug 2, "                   $id got ".($childs->size)." childs";
 	$data->{children} = [];
 
-	foreach my $subnode ( $childs->nodes )
+	foreach my $subnode ( $childs->sorted->nodes )
 	{
 	    push @{ $data->{children} },
 	      $subnode->tree_select_data($pred, $sub, $pred2, $args);

@@ -3789,7 +3789,14 @@ sub remove
 #    $::MRK = $mrk;
 
     debug "  SUPER::remove" if $DEBUG;
-    $arc->SUPER::remove();  # Removes the arc node: the arcs properties
+    $arc->SUPER::remove( $args );  # Removes the arc node: the arcs properties
+
+    debug "  remove replaced by" if $DEBUG;
+    foreach my $repl ( $arc->replaced_by->nodes )
+    {
+	$repl->remove( $args );
+    }
+
 
 #    $mrk = Time::HiRes::time();
 #    $::PRT3 += $mrk - $::MRK;
