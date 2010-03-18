@@ -1390,7 +1390,7 @@ sub create
 	# Check for definedness
 	foreach my $val ( $vals->as_array )
 	{
-	    debug 1, "Checking $pred_name = $val";
+	    debug 1, "Checking $pred_name = ".query_desig($val);
 	    # '0' is valid
 	    if( ($val and ((ref $val and not $val->defined) or not length $val)) )
 	    {

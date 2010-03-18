@@ -934,6 +934,14 @@ sub html
 
 sub query_desig
 {
+    my $out = query_desig_block(@_);
+    $out =~ s/^\s*\n*//;
+    $out =~ s/\n\s*$//;
+    return $out;
+}
+
+sub query_desig_block
+{
     my( $query, $args, $ident ) = @_;
 
     my $DEBUG = 0;
