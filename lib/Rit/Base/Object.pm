@@ -198,6 +198,10 @@ sub is_value_node { 0 };
 
   $o->as_html( \%args )
 
+Preformatted text should use E<lt>preE<gt> to preserve indentation.
+
+This default will only preserve linefeed.
+
 Defaults to L</desig>
 
 =cut
@@ -205,18 +209,8 @@ Defaults to L</desig>
 sub as_html
 {
     my( $str ) = CGI->escapeHTML(shift->desig(@_));
-
-    if( $str =~ /\n/ )
-    {
-	return "<pre>".$str."</pre>";
-    }
-    else
-    {
-	return $str;
-    }
-
-#    $str =~ s/\r?\n/<br>/g;
-#    return "<pre>".$str."</pre>";
+    $str =~ s/\r?\n/<br\/>/g;
+    return $str;
 }
 
 
