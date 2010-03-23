@@ -704,6 +704,7 @@ Supported args are:
   class
   default_value
   vnode
+  multi
 
 
 
@@ -834,6 +835,8 @@ sub wuirc
 
 #    debug "Using proplim ".query_desig($proplim); # DEBUG
 
+    my $multi = $args->{'multi'} || 0;
+    my $no_arc = 0; # for adding a second input field
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
@@ -982,7 +985,12 @@ sub wuirc
 	    }
 	}
     }
-    else # no arc
+    else
+    {
+	$no_arc = 1;
+    }
+
+    if( $no_arc or $multi )
     {
 	my $def_value = $args->{'default_value'};
 	if( UNIVERSAL::can($def_value, 'plain') )
