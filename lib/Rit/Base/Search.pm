@@ -838,6 +838,17 @@ sub modify
                 $props->{ $key } = $sub->result->get_first_nos->id;
             }
         }
+	elsif( $key =~ /^([^\.]+)\./ )
+	{
+	    debug "Moving multistep query $key to filter";
+
+	    # Keep first part. Put the rest in filter
+	    my $first = $1;
+	    $filter{ $key } = delete $props->{ $key };
+	    $first =~ s/[\{\[]+.*//; # Remove special formatting
+	    $props->{ $first . '_exist' } = 1;
+
+	}
     }
 
     unless( scalar keys %$props )
@@ -1006,6 +1017,14 @@ sub modify
 		confess "not implemented: $pred";
 	    }
 	    elsif( $pred =~ /\./ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\{/ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\[/ )
 	    {
 		confess "not implemented: $pred";
 	    }

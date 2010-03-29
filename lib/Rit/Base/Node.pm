@@ -503,6 +503,8 @@ Also implements predor
 
 This also implements meets_proplim for arcs!!!
 
+Also implements the form mypred1{is this}.that
+
 Returns: boolean
 
 =cut
@@ -542,15 +544,24 @@ sub meets_proplim
 
 	    # Target value may be a plain scalar or undef or an object !!!
 
-	if( $pred_part =~ /^(\w+)\.(.*)/ )
+	if( $pred_part =~ /^([^\.]+)\.(.*)/ )
 	{
 	    my $pred_first = $1;
 	    my $pred_after = $2;
 
 	    debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
 
+	    my( $proplim, $arclim2);
+	    if( $pred_first =~ /^(.+?)([\{\[].+)$/ )
+	    {
+		$pred_first = $1;
+		( $proplim, $arclim2 ) = parse_query_value($2);
+		debug "Using proplim ".query_desig($proplim);
+	    }
+	    # TODO: Use alos arclim
+
 	    # It may be a method for the node class
-	    my $subres = $node->$pred_first(undef, $args_in);
+	    my $subres = $node->$pred_first($proplim, $args_in);
 
 	    unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
 	    {
