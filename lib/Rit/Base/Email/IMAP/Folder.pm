@@ -5,7 +5,7 @@ package Rit::Base::Email::IMAP::Folder;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -290,7 +290,7 @@ sub idle
 
     # Check connection
     my $imap = $folder->{'imap'};
-    if( $imap->IsConnected )
+    if( $imap and $imap->IsConnected )
     {
 	if( $folder->{'idle'} = $imap->idle )
 	{
@@ -363,6 +363,11 @@ sub imap_cmd
     my( $folder, $cmd ) = (shift, shift );
 
     my $imap = $folder->{'imap'};
+    unless( $imap and $imap->IsConnected )
+    {
+	$folder->connect;
+    }
+
     my $res = $imap->$cmd(@_);
     unless( defined $res )
     {
