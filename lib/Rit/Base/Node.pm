@@ -444,7 +444,7 @@ sub has_pred
 {
     my( $node ) = shift;
 
-    if( $node->list(@_)->size )
+    if( $node->first_prop(@_)->size )
     {
 	return $node;
     }
@@ -478,7 +478,7 @@ sub has_revpred
 {
     my( $node ) = shift;
 
-    if( $node->revlist(@_)->size )
+    if( $node->first_revprop(@_)->size )
     {
 	return $node;
     }
