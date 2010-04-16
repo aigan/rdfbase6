@@ -811,7 +811,7 @@ sub send
 
     if( @good )
     {
-	$email->add({ email_sent => now() }, $args);
+	$email->add({ email_sent => now() }, {%$args, activate_new_arcs=>1});
     }
     else
     {
