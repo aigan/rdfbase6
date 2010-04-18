@@ -279,6 +279,22 @@ sub desig
 
 ##############################################################################
 
+=head2 longdesig
+
+  $o->longdesig()
+
+May give a longer name of the object. Defaults to L</desig>
+
+=cut
+
+sub longdesig
+{
+    return shift->desig(@_);
+}
+
+
+##############################################################################
+
 =head2 safedesig
 
   $o->safedesig()
