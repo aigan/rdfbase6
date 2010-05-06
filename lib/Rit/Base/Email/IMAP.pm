@@ -336,6 +336,7 @@ sub raw
 
     my $folder = $part->folder;
     my $uid = $part->uid;
+    debug "Getting raw email from IMAP";
     return \ $folder->imap_cmd('message_string', $uid);
 }
 

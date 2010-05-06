@@ -29,6 +29,12 @@ use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_deco
 use Para::Frame::L10N qw( loc );
 use Scalar::Util qw(weaken);
 
+########
+#
+# Stores email template email in $rend->{'template_raw'}
+#
+#########
+
 
 our %KEEP =
   ( 'mime-version' => 1,
@@ -47,9 +53,9 @@ sub render_body_from_template
 
     debug "RB render_body_from_template";
 
-#    $rend->add_params({'optout'=>sub{$rend->optout_widget(@_)}});
-
-    my $em = $rend->{'template'}->raw_part;
+    # Important for not retrieving the template over IMAP multiple times
+    #
+    my $em = $rend->{'template_raw'} ||= $rend->{'template'}->raw_part;
     my $burner = $rend->set_burner_by_type('plain');
 
 
@@ -60,15 +66,7 @@ sub render_body_from_template
 
     $rend->render_parts($em);
 
-#die "CHECKME";
-
-#    debug "****** RESULT:";
-#    debug datadump($em->{'em'});
-#    debug ${$em->body};
-
-
     $rend->email_clone($em);
-#    die "CHECKME";
 
     return 1;
 }
