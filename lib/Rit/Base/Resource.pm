@@ -56,7 +56,7 @@ use Rit::Base::Widget qw(build_field_key);
 use Rit::Base::Widget::Handler;
 use Rit::Base::AJAX;
 
-use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
+use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate $C_root
                              $C_class $C_literal_class $C_resource $C_arc );
 
 use Rit::Base::Utils qw( valclean parse_query_props
@@ -1371,7 +1371,7 @@ sub create
 	}
 	else
 	{
-	    $s{created_by} = Rit::Base::Resource->get_by_label('root');
+	    $s{created_by} = $C_root;
 	}
     }
 
@@ -8189,6 +8189,8 @@ sub update_seen_by
     my( $node, $user, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
     $user ||= $Para::Frame::U;
+    return $user if $user->id == $C_root->id;
+
     $node->add({'seen_by'=>$user},
 		 {
 		  %$args,

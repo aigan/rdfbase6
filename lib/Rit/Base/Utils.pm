@@ -947,19 +947,39 @@ sub query_desig_block
     my $DEBUG = 0;
 
     $ident ||= 0;
-    $query ||= '<undef>';
+    $query //= '<undef>';
+    unless( length $query ){ $query='<empty>' }
     my $out = "";
 #    warn "query_desig on level $ident for ".datadump($query,1);
 
     if( ref $query )
     {
-	if( ref $query eq 'HASH' )
+	if( UNIVERSAL::can($query, 'sysdesig') )
+	{
+	    warn "  sysdesig $query\n" if $DEBUG > 1;
+	    my $val = $query->sysdesig( $args, $ident );
+	    warn "  sysdesig gave '$val'\n" if $DEBUG > 1;
+	    if( $val =~ /\n.*?\n/s )
+	    {
+		warn "g\n" if $DEBUG;
+		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+	    }
+	    else
+	    {
+		warn "h\n" if $DEBUG;
+		$val =~ s/\n*$/\n/;
+		$val =~ s/\s+/ /g;
+		$val =~ s/^\s+//g;
+		$out .= '  'x$ident . $val."\n";
+	    }
+	}
+	elsif( UNIVERSAL::isa($query,'HASH') )
 	{
 	    foreach my $key ( keys %$query )
 	    {
-		warn "  hash $key\n" if $DEBUG > 1;
-		my $val = query_desig($query->{$key}, $args, $ident+1);
-		warn "  gave '$val'\n" if $DEBUG > 1;
+		warn "  hash elem $key\n" if $DEBUG > 1;
+		my $val = query_desig_block($query->{$key}, $args, $ident+1);
+		warn "  hash elem gave '$val'\n" if $DEBUG > 1;
 		$val =~ s/^\n//;
 		$val =~ s/\n$//;
 		if( $val =~ /\n.*?\n/s )
@@ -979,13 +999,13 @@ sub query_desig_block
 		}
 	    }
 	}
-	elsif( ref $query eq 'ARRAY' )
+	elsif( UNIVERSAL::isa($query,'ARRAY') )
 	{
 	    foreach my $val ( @$query )
 	    {
-		warn "  array $val\n" if $DEBUG > 1;
-		my $val = query_desig($val, $args, $ident+1);
-		warn "  gave  '$val'\n" if $DEBUG > 1;
+		warn "  array elem $val\n" if $DEBUG > 1;
+		my $val = query_desig_block($val, $args, $ident+1);
+		warn "  array elem gave '$val'\n" if $DEBUG > 1;
 		$val =~ s/^\n//;
 		$val =~ s/\n$//;
 		if( $val =~ /\n.*?\n/s )
@@ -1004,10 +1024,10 @@ sub query_desig_block
 		}
 	    }
 	}
-	elsif( ref $query eq 'SCALAR' )
+	elsif( UNIVERSAL::isa($query, 'SCALAR') )
 	{
 	    warn "  scalar $query\n" if $DEBUG > 1;
-	    my $val = query_desig($$query, $args, $ident+1);
+	    my $val = query_desig_block($$query, $args, $ident+1);
 	    warn "  gave   '$val'\n" if $DEBUG > 1;
 	    if( $val =~ /\n.*?\n/s )
 	    {
@@ -1017,25 +1037,6 @@ sub query_desig_block
 	    else
 	    {
 		warn "f\n" if $DEBUG;
-		$val =~ s/\n*$/\n/;
-		$val =~ s/\s+/ /g;
-		$val =~ s/^\s+//g;
-		$out .= '  'x$ident . $val."\n";
-	    }
-	}
-	elsif( UNIVERSAL::can($query, 'sysdesig') )
-	{
-	    warn "  sysdesig $query\n" if $DEBUG > 1;
-	    my $val = $query->sysdesig( $args, $ident );
-	    warn "  gave     '$val'\n" if $DEBUG > 1;
-	    if( $val =~ /\n.*?\n/s )
-	    {
-		warn "g\n" if $DEBUG;
-		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-	    }
-	    else
-	    {
-		warn "h\n" if $DEBUG;
 		$val =~ s/\n*$/\n/;
 		$val =~ s/\s+/ /g;
 		$val =~ s/^\s+//g;
