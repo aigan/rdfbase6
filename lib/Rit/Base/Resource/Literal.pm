@@ -443,7 +443,7 @@ sub revcount
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
-    my $list = $node->revlist($tmpl, $args_in);
+    my $list = $node->revlist($tmpl, undef, $args_in);
     return $list->size;
 }
 
