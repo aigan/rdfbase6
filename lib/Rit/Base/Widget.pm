@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 use Carp qw( confess cluck carp );
-use CGI;
+#use CGI;
 
 use base qw( Exporter );
 our @EXPORT_OK = qw( wub aloc sloc build_field_key );

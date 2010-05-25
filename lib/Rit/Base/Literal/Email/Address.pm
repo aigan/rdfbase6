@@ -22,7 +22,7 @@ use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;
-use CGI;
+#use CGI;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );

@@ -27,7 +27,7 @@ use Carp qw( croak confess cluck );
 use Template;
 use Template::Context;
 use URI;
-use CGI;
+#use CGI;
 
 use Email::Classifier;
 
