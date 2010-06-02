@@ -5919,25 +5919,29 @@ sub find_class
 	if( $classnames[1] ) # Multiple inheritance
 	{
 	    $package = "Rit::Base::Metaclass::$key";
-#	    debug "Creating package $package";
+#	    debug "Creating a package $package";
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
 				    @classnames,
 				    "Rit::Base::Resource");
-	    $valtype = $C_resource;
+	    $valtype = $Rit::Base::Constants::Label{'resource'};
 	}
 	elsif( $classnames[0] ) # Single inheritance
 	{
 	    my $classname = $classnames[0];
 	    $package = "Rit::Base::Metaclass::$classname";
-	    #	    debug "Creating package $package";
+#	    debug "Creating b package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 #	    $valtype = $pmodules_sorted[0][1];
-	    $valtype = $C_resource;
+	    $valtype = $Rit::Base::Constants::Label{'resource'};
 	}
+
+#	confess "BOGUS VALTYPE ".datadump($valtype) unless
+#	  UNIVERSAL::isa($valtype,'Rit::Base::Resource');
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
 	$node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key } = $valtype;
 	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
+	debug "Based on the key $key" if $DEBUG;
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
@@ -8165,6 +8169,7 @@ sub instance_class
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 	    $Rit::Base::Cache::Class{ $key } = $package;
 	    $Rit::Base::Cache::Valtype{ $key } = $_[0];
+#	    debug "Setting_ic valtype for $key to $_[0]->{id}";
 	    1;
 	};
 	if( $@ )
