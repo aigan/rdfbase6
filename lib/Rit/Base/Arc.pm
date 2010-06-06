@@ -3641,7 +3641,7 @@ sub remove
     my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
     my $arc_id = $arc->id;
 
-    if( $DEBUG )
+    if( $DEBUG and not $remove_if_no_longer_implicit )
     {
 	debug "REQ REM ARC ".$arc->sysdesig;
 
@@ -3687,7 +3687,7 @@ sub remove
 	{
 	    if( $remove_if_no_longer_implicit )
 	    {
-		debug "  Arc implicit and infered" if $DEBUG;
+		debug "  Arc implicit and infered" if $DEBUG > 1;
 		return 0;
 	    }
 	    else
@@ -3714,7 +3714,7 @@ sub remove
 
 	if( $remove_if_no_longer_implicit and $arc->explicit ) # remove implicit
 	{
-	    debug "  removed implicit but arc explicit\n" if $DEBUG;
+	    debug "  removed implicit but arc explicit\n" if $DEBUG > 1;
 	    return 0;
 	}
 	elsif( not $remove_if_no_longer_implicit and $arc->implicit ) # remove explicit
@@ -3862,6 +3862,10 @@ sub remove
     # Remove arc from cache
     #
     delete $Rit::Base::Cache::Resource{ $arc_id };
+
+    # Do not try to vacuum this
+    #
+    $res->{'vacuumed'}{$arc->{'id'}} ++;
 
     return 1; # One arc removed
 }

@@ -6652,7 +6652,8 @@ sub get_by_label
 		return undef;
 	    }
 
-	    cluck "Constant $label doesn't exist";
+	    cluck "Constant $label doesn't exist"
+	      unless $Rit::Base::IN_SETUP_DB;
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 

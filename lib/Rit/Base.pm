@@ -204,6 +204,7 @@ sub init_on_startup
 #    warn "init_on_startup 5\n";
 
     $Rit::Base::IN_STARTUP = 0;
+    $Rit::Base::IN_SETUP_DB = 0;
 
 #    warn "calling on_ritbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
