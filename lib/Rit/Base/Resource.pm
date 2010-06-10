@@ -4894,6 +4894,7 @@ Supported args are
   separator
   id
   label_class
+  default_value
 
 args are forwarded to
   wuirc
@@ -6635,6 +6636,8 @@ sub get_by_label
 	{
 	    confess "label must be a plain string";
 	}
+
+	utf8::upgrade($label); # for Pg export
 	my $sth = $Rit::dbix->dbh->prepare(
 		  "select * from node where label=?");
 	$sth->execute( $label );
@@ -6649,7 +6652,8 @@ sub get_by_label
 		return undef;
 	    }
 
-	    cluck "Constant $label doesn't exist";
+	    cluck "Constant $label doesn't exist"
+	      unless $Rit::Base::IN_SETUP_DB;
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 

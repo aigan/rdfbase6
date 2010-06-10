@@ -25,7 +25,7 @@ use base qw( Rit::Base::Email::RB::Part );
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use CGI;
+#use CGI;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug );

@@ -1109,7 +1109,7 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
-all: Sets arclim to [['active'}, ['inactive'] and
+all: Sets arclim to [['active'], ['inactive']] and
 unique_arcs_prio to ['active'].
 
 Arguments from L<Rit::Base::User/default_propargs> are used for any

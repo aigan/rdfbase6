@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 use Carp qw( cluck confess carp croak );
-use CGI;
+#use CGI;
 use Text::WordDiff;
 
 use Para::Frame::Reload;

@@ -48,6 +48,7 @@ sub setup_db
     my $dbix = $Rit::dbix;
     my $dbh = $dbix->dbh;
     my $now = DateTime::Format::Pg->format_datetime(now);
+    $Rit::Base::IN_SETUP_DB = 1;
 
 
     my $old_debug = $Para::Frame::DEBUG;
