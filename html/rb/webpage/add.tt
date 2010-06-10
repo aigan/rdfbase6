@@ -1,0 +1,28 @@
+﻿[% META title="Add page"
+   next_action = 'node_update'
+   focus = 'query_row'
+   level=20
+%]
+   <p>
+   [ [% jump('List',"$home/rb/webpage/list.tt") %]
+   | [%+ jump('Add',"$home/rb/webpage/add.tt") %]
+   ]</p>
+
+
+[% prev_id = q.param('id') %]
+[% prev = get(prev_id) %]
+[% IF prev.is(C.webpage) %]
+<p>Created [% prev.wu_jump %]</p>
+[% END %]
+
+[% node = get('new') %]
+[% hidden('id',node.id) %]
+[% hidden('prop_is',C.webpage.id) %]
+[% hidden('prop_is',C.website_text.id) %]
+
+<table>
+<tr><td>Title</td><td>[% node.wu('name') %]</td></tr>
+<tr><td>Code</td><td>[% node.wu('code') %]</td><td>Example: <code>/dir/file@partname</code></td></tr>
+</table>
+
+<p>[% step('Create') %]</p>

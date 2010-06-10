@@ -2,6 +2,11 @@
         level = 20
 %]
 
+   <p>
+   [ [% jump('List',"$home/rb/webpage/list.tt") %]
+   | [%+ jump('Add',"$home/rb/webpage/add.tt") %]
+   ]</p>
+
 
 [% USE Sorted_table('code');
    DEFAULT pagesize=200;
