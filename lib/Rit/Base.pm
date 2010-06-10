@@ -172,7 +172,7 @@ sub init_on_startup
 #    warn "init_on_startup\n";
 
     if( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
-	  and not $ARGV[1] )
+	  and $ARGV[1] and $ARGV[1] eq 'clear' )
 	or not $Rit::dbix->table('arc') )
     {
 	Rit::Base::Setup->setup_db();
