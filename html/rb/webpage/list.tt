@@ -1,0 +1,34 @@
+[% META title="List pages"
+        level = 20
+%]
+
+
+[% USE Sorted_table('code');
+   DEFAULT pagesize=200;
+   pages = C.webpage.revlist('is').sorted(order, direction);
+   CALL pages.set_page_size( pagesize );
+%]
+
+<p>[% loc("[quant,_1,hit]", pages.size) %]<br/>
+[% pages.pagelist %]
+</p>
+
+<table>
+<tr><th>WT</th>
+    <th>[% sort('ID','id') %]
+    <th>[% sort('Name', 'name.loc') %]
+    <th>[% sort('Code', 'code') %]
+
+[% FOREACH page IN pages.from_page %]
+   [% tr2 %]
+      <td>[% IF page.is(C.website_text);'WT';END %]</td>
+      <td>[% page.wu_jump(label=page.id) %]</td>
+      <td>[% page.name.loc %]</td>
+      <td>[% page.code %]</td>
+   </tr>
+   [% FOREACH mp IN page.has_member.sorted %]
+      <tr><td colspan="3"></td><td>[% mp.wu_jump %]</td></tr>
+   [% END %]
+[% END %]
+</table>
+
