@@ -16,6 +16,9 @@ Rit::Base::Email::Head
 
 =head1 DESCRIPTION
 
+The 'to' header may be initialized on demand for cases of really large
+lists.
+
 =cut
 
 use 5.010;
@@ -245,6 +248,7 @@ sub parsed_address
 	    confess "missing field name";
 	}
 
+	$header->init_to if $field_in eq 'to';
 	$value = [ $header->header($field_in) ];
     }
     elsif( not( ref($value) eq 'ARRAY' ) )
@@ -320,6 +324,31 @@ sub parsed_text
     my $dec = decode_mimewords( $value );
 
     return Rit::Base::Literal::String->new_from_db($dec, $C_text);
+}
+
+
+##############################################################################
+
+=head2 init_to
+
+=cut
+
+sub init_to
+{
+    return 1;
+}
+
+
+##############################################################################
+
+=head2 count_to
+
+=cut
+
+sub count_to
+{
+    $_[0]->init_to();
+    return scalar @{[$_[0]->header('to')]};
 }
 
 

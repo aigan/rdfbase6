@@ -1117,7 +1117,7 @@ sub loc
 	      ($_->is_literal ? $_->arc_weight : undef)
 		|| $_->weight->literal || 0;
 
-	    debug 4, "  $_ has weight $weight";
+	    debug 4, "  $_ has weight $weight" if $weight;
 	    $list{ $weight } = $_;
 	}
 
@@ -1281,10 +1281,10 @@ sub desig
 
 =head2 as_html
 
-  $l->as_html
+  $l->as_html( \%args )
 
 Return a SCALAR string with the elements html representations concatenated with
-C<'E<lt>brE<gt>'>.
+C<'E<lt>brE<gt>'> or with the content of arg C<join>.
 
 See L<Rit::Base::Object/desig>
 
@@ -1294,6 +1294,7 @@ sub as_html
 {
 #    debug "in list desig";
     my( $list, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
     my @part;
 
     my $index = $list->index;
@@ -1304,7 +1305,7 @@ sub as_html
 	{
 	    if( UNIVERSAL::isa $elem, 'Rit::Base::Object' )
 	    {
-		CORE::push @part, $elem->as_html($args_in);
+		CORE::push @part, $elem->as_html($args);
 	    }
 	    elsif( $elem->can('as_html') )
 	    {
@@ -1326,7 +1327,8 @@ sub as_html
     };
     $list->set_index( $index );
 
-    return join "<br/>\n", @part;
+    my $join = $args->{'join'} || "<br/>\n";
+    return join $join, @part;
 }
 
 

@@ -21,10 +21,10 @@ use 5.010;
 use strict;
 use warnings;
 use utf8;
-use base qw( Rit::Base::Email::Part );
+use base qw( Rit::Base::Email::Part Para::Frame::Email );
 
 use Carp qw( croak confess cluck );
-use Scalar::Util qw(weaken);
+use Scalar::Util qw( weaken reftype );
 use Email::MIME;
 use MIME::Words qw( decode_mimewords );
 
@@ -44,26 +44,31 @@ use Rit::Base::Email::Raw::Head;
 sub new
 {
     my( $part, $dataref ) = @_;
-    my $class = ref($part) or die "Must be called by parent";
+#    my $class = ref($part) or die "Must be called by parent";
 
 
     my $sub = bless
     {
-     email  => $part->email,
-     top    => $part->top,
-     parent => $part,
-#     data   => $dataref,
+     redraw => 0,
     }, 'Rit::Base::Email::Raw::Part';
 
+    if( ref $part )
+    {
+	$sub->{'email'}   = $part->email;
+	$sub->{'top'}     = $part->top;
+	$sub->{'parent'}  = $part;
+	$sub->{'part_id'} = $part->path .'.TEXT';
+	weaken( $sub->{'email'} );
+	weaken( $sub->{'parent'} );
+    }
+    else
+    {
+	$sub->{'part_id'} = '';
+	$sub->{'top'}     = $sub;
+	weaken( $sub->{'top'} );
+    }
+
     $sub->{'em'} = Email::MIME->new($dataref);
-
-    $sub->{'part_id'} = $part->path .'.TEXT';
-
-    weaken( $sub->{'email'} );
-    weaken( $sub->{'parent'} );
-#    weaken( $sub->{'top'} );
-
-#    debug "new raw part from dataref ".$sub->{'part_id'};
 
     return $sub;
 }
@@ -85,6 +90,7 @@ sub new_by_em_obj
      email  => $part->email,
      top    => $part->top,
      parent => $part,
+     redraw => 0,
     }, 'Rit::Base::Email::Raw::Part';
 
     $sub->{'em'} = $emo;
@@ -291,8 +297,140 @@ sub description
 sub body_raw
 {
     my( $part, $length ) = @_;
+    $part->redraw;
 
     return \ $part->{'em'}->body_raw;
+}
+
+
+##############################################################################
+
+=head2 redraw
+
+=cut
+
+sub redraw
+{
+    my( $part ) = @_;
+
+    my $em = $part->{'em'};
+
+    if( $part->{'redraw'} )
+    {
+	debug "BODY-RAW redraw";
+	$part->{'redraw'} = 0;
+
+#	debug $part->desig;
+#	debug $part->viewtree;
+#	debug datadump($em->{'body_raw'},1);
+#	warn $part->explain($em);
+#	die "CHECKME";
+
+	$part->redraw_subpart( $em );
+
+#	debug datadump $part;
+#	debug $part->viewtree;
+#	debug datadump($em->{'body_raw'},1);
+#	warn $part->explain($em);
+#	die "CHECKME";
+    }
+
+    return 1;
+}
+
+sub explain
+{
+    my( $part, $n, $l ) = @_;
+
+    $l ||= 0;
+
+    my $out = ""; #"  "x$l . ref($n)."\n";
+    $l++;
+
+    given( reftype $n )
+    {
+	when('SCALAR')
+	{
+	    my $str = $$n;
+	    my $len = length($str);
+	    $str =~ s/\r?\n/\\n/g;
+	    if( $len > 20 )
+	    {
+		$str =~ s/.*\[%/[%/ or
+		  $str =~ s/.*mailto:webb/mailto:webb/;
+		$out .= "  "x$l.$len.") ".substr($str,0,20)."...\n";
+	    }
+	    else
+	    {
+		$out .= "  "x$l.$len.") ".$str."\n";
+	    }
+	}
+	when('HASH')
+	{
+	    foreach my $key ( keys %$n )
+	    {
+		next if $key eq 'header';
+		next if $key eq 'ct';
+		next if $key eq 'mycrlf';
+		my $val = $n->{$key};
+		my $type = ref($val) || 'str';
+		$out .= "  "x$l.$key." = ".$type."\n";
+		$out .= $part->explain($val,$l);
+	    }
+	}
+	when('ARRAY')
+	{
+	    my $cnt = 0;
+	    foreach my $val ( @$n )
+	    {
+		$out .= "  "x$l.sprintf "#%3d\n",$cnt;
+		$out .= $part->explain($val,$l, $cnt);
+		$cnt++;
+		last if $cnt > 1;
+	    }
+	}
+	when(undef)
+	{
+	    my $str = $n;
+	    my $len = length($str);
+	    $str =~ s/\r?\n/\\n/g;
+	    if( $len > 20 )
+	    {
+		$str =~ s/.*\[%/[%/ or
+		  $str =~ s/.*mailto:webb/mailto:webb/;
+		$out .= "  "x$l.$len.") ".substr($str,0,20)."...\n";
+	    }
+	    else
+	    {
+		$out .= "  "x$l.$len.") ".$str."\n";
+	    }
+	}
+	default
+	{
+	    $out .= "  "x$l.ref($n)."\n";
+	}
+    }
+
+    return $out;
+}
+
+
+##############################################################################
+
+=head2 redraw_subpart
+
+=cut
+
+sub redraw_subpart
+{
+    my( $part, $emp ) = @_;
+
+    foreach my $ems ( $emp->subparts )
+    {
+	$part->redraw_subpart( $ems );
+    }
+
+    $emp->parts_set([$emp->subparts]) if $emp->subparts;
 }
 
 
@@ -307,6 +445,7 @@ See L<Rit::Base::Email::Part/size>
 sub size
 {
     my $em = $_[0]->{'em'};
+    $_[0]->redraw;
     return bytes::length( $em->{'body_raw'} || ${$em->{'body'}} );
 }
 
@@ -365,6 +504,33 @@ sub body_part
 {
     return undef; # FIXME
     confess "NOT IMPLEMENTED";
+}
+
+
+##############################################################################
+
+=head2 body_set
+
+  $part->body_set( \$body )
+
+Calls L<Email::MIME/body_str_set>
+
+=cut
+
+sub body_set
+{
+    my( $part, $body ) = @_;
+
+    my $charset = $part->charset;
+    my $body_octets = Encode::encode($charset, $$body, 1);
+    $part->{'em'}->body_set($body_octets);
+
+    if( my $parent = $part->{'parent'} )
+    {
+	$parent->{'redraw'} = 1;
+    }
+
+    return 1;
 }
 
 

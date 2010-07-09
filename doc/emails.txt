@@ -1,0 +1,24 @@
+Several roles can have the same e-mail
+The e-mail is uniquely identified by it's address (uri)
+Each e-mail can have metadata about it's status
+
+(17.13.41) jonas: Kommer ihåg var det var jag pausade när jag senast höll på med e-postlistor
+(17.14.12) jonas: Faktum att flera noder kan ha properties med samma e-postadress
+(17.14.25) jonas: och att dessa e-postadresser kan ha metadata. Så de är literal nodes
+(17.14.53) jonas: Men så som jag implementerat literals så är de separata för varje property
+(17.18.01) jonas: antingen får jag göra om det där
+(17.18.23) jonas: eller ändra så att emails är egna noder och inte literals
+(17.18.56) jonas: eller hantera varje property som sin egen e-mail även om det blir flera instanser av dem då som var och en behöver uppdateras med ny status
+(17.53.51) jonas: Finns i RG bara 5 exempel på där olika aktiva noder pekar på samma literal node, och i alla dessa fall var det egentligen onödigt...
+(18.04.42) jonas: Tror bästa är att göra emails till egna objekt
+
+select subj, pred, obj, valtext from arc where active is true and pred=231 and valtext in (select valtext from arc where active is true and pred=231 group by valtext having count(valtext)>1) order by valtext;
+
+1449 e-postadresser finns i flera email_main. Ännu fler dubletter ifall man tar med properties med andra predikat. Dessa borde vara e-postobjekt.
+
+524 email_main properties har e-postadresser som inkluderar namn och e-postadressen i <>. Dessa borde konverteras till normaliserade objekt med namnet i egen property.
+
+
+Gör detta innan vi lägger på metadata på e-postadresserna.
+
+1084 gamla contact_email.

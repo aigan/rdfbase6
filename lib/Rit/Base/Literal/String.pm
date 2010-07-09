@@ -5,7 +5,7 @@ package Rit::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -704,6 +704,7 @@ Supported args are:
   class
   default_value
   vnode
+  multi
 
 
 
@@ -834,6 +835,8 @@ sub wuirc
 
 #    debug "Using proplim ".query_desig($proplim); # DEBUG
 
+    my $multi = $args->{'multi'} || 0;
+    my $no_arc = 0; # for adding a second input field
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
@@ -978,11 +981,16 @@ sub wuirc
 		}
 
 		$out .= '<br/>'
-		  if( scalar(keys %$arcversions) > 1 );
+		  if( scalar(keys %$arcversions) > 1 or $multi );
 	    }
 	}
     }
-    else # no arc
+    else
+    {
+	$no_arc = 1;
+    }
+
+    if( $no_arc or $multi )
     {
 	my $def_value = $args->{'default_value'};
 	if( UNIVERSAL::can($def_value, 'plain') )
@@ -1125,6 +1133,22 @@ sub wul
 
 ##############################################################################
 
+=head3 as_html
+
+=cut
+
+sub as_html
+{
+    my $vt = $_[0]->this_valtype;
+
+    return $_[0] if $vt->equals($C_text_html );
+    return $_[0] if $vt->has_value({scof=>$C_text_html});
+    return shift->SUPER::as_html(@_);
+}
+
+
+##############################################################################
+
 =head3 default_valtype
 
 =cut
@@ -1133,6 +1157,7 @@ sub default_valtype
 {
     return Rit::Base::Literal::Class->get_by_label('valtext');
 }
+
 
 ##############################################################################
 

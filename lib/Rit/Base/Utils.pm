@@ -25,17 +25,17 @@ use UNIVERSAL;
 
 use base qw( Exporter );
 our @EXPORT_OK
-  = qw( cache_clear valclean format_phone format_zip
-	parse_query_props parse_form_field_prop
-	parse_arc_add_box is_undef arc_lock arc_unlock
-	truncstring string parse_query_pred parse_query_value parse_query_prop
+  = qw( cache_clear valclean format_phone format_zip parse_query_props
+	parse_form_field_prop parse_arc_add_box is_undef arc_lock
+	arc_unlock truncstring string html parse_query_pred
+	parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
-	send_cache_update parse_propargs aais alphanum_to_id proplim_to_arclim );
+	send_cache_update parse_propargs aais alphanum_to_id
+	proplim_to_arclim );
 
 
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
 use Para::Frame::Reload;
-
 
 ### Those modules loaded by Rit::Base later...
 #use Rit::Base::Undef;
@@ -908,6 +908,24 @@ sub string
 
 ##############################################################################
 
+=head2 html
+
+  html($string)
+
+Calls L<Rit::Base::Literal::String/new> with C<$string> and valtype
+C<text_html>.
+
+=cut
+
+sub html
+{
+    state $text_html = Rit::Base::Constants->get('text_html');
+    return Rit::Base::Literal::String->new(@_,$text_html);
+}
+
+
+##############################################################################
+
 =head2 query_desig
 
   query_desig($query, \%args, $ident)
@@ -916,24 +934,52 @@ sub string
 
 sub query_desig
 {
+    my $out = query_desig_block(@_);
+    $out =~ s/^\s*\n*//;
+    $out =~ s/\n\s*$//;
+    return $out;
+}
+
+sub query_desig_block
+{
     my( $query, $args, $ident ) = @_;
 
     my $DEBUG = 0;
 
     $ident ||= 0;
-    $query ||= '<undef>';
+    $query //= '<undef>';
+    unless( length $query ){ $query='<empty>' }
     my $out = "";
 #    warn "query_desig on level $ident for ".datadump($query,1);
 
     if( ref $query )
     {
-	if( ref $query eq 'HASH' )
+	if( UNIVERSAL::can($query, 'sysdesig') )
+	{
+	    warn "  sysdesig $query\n" if $DEBUG > 1;
+	    my $val = $query->sysdesig( $args, $ident );
+	    warn "  sysdesig gave '$val'\n" if $DEBUG > 1;
+	    if( $val =~ /\n.*?\n/s )
+	    {
+		warn "g\n" if $DEBUG;
+		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+	    }
+	    else
+	    {
+		warn "h\n" if $DEBUG;
+		$val =~ s/\n*$/\n/;
+		$val =~ s/\s+/ /g;
+		$val =~ s/^\s+//g;
+		$out .= '  'x$ident . $val."\n";
+	    }
+	}
+	elsif( UNIVERSAL::isa($query,'HASH') )
 	{
 	    foreach my $key ( keys %$query )
 	    {
-		warn "  hash $key\n" if $DEBUG > 1;
-		my $val = query_desig($query->{$key}, $args, $ident+1);
-		warn "  gave '$val'\n" if $DEBUG > 1;
+		warn "  hash elem $key\n" if $DEBUG > 1;
+		my $val = query_desig_block($query->{$key}, $args, $ident+1);
+		warn "  hash elem gave '$val'\n" if $DEBUG > 1;
 		$val =~ s/^\n//;
 		$val =~ s/\n$//;
 		if( $val =~ /\n.*?\n/s )
@@ -953,13 +999,13 @@ sub query_desig
 		}
 	    }
 	}
-	elsif( ref $query eq 'ARRAY' )
+	elsif( UNIVERSAL::isa($query,'ARRAY') )
 	{
 	    foreach my $val ( @$query )
 	    {
-		warn "  array $val\n" if $DEBUG > 1;
-		my $val = query_desig($val, $args, $ident+1);
-		warn "  gave  '$val'\n" if $DEBUG > 1;
+		warn "  array elem $val\n" if $DEBUG > 1;
+		my $val = query_desig_block($val, $args, $ident+1);
+		warn "  array elem gave '$val'\n" if $DEBUG > 1;
 		$val =~ s/^\n//;
 		$val =~ s/\n$//;
 		if( $val =~ /\n.*?\n/s )
@@ -978,10 +1024,10 @@ sub query_desig
 		}
 	    }
 	}
-	elsif( ref $query eq 'SCALAR' )
+	elsif( UNIVERSAL::isa($query, 'SCALAR') )
 	{
 	    warn "  scalar $query\n" if $DEBUG > 1;
-	    my $val = query_desig($$query, $args, $ident+1);
+	    my $val = query_desig_block($$query, $args, $ident+1);
 	    warn "  gave   '$val'\n" if $DEBUG > 1;
 	    if( $val =~ /\n.*?\n/s )
 	    {
@@ -991,25 +1037,6 @@ sub query_desig
 	    else
 	    {
 		warn "f\n" if $DEBUG;
-		$val =~ s/\n*$/\n/;
-		$val =~ s/\s+/ /g;
-		$val =~ s/^\s+//g;
-		$out .= '  'x$ident . $val."\n";
-	    }
-	}
-	elsif( UNIVERSAL::can($query, 'sysdesig') )
-	{
-	    warn "  sysdesig $query\n" if $DEBUG > 1;
-	    my $val = $query->sysdesig( $args, $ident );
-	    warn "  gave     '$val'\n" if $DEBUG > 1;
-	    if( $val =~ /\n.*?\n/s )
-	    {
-		warn "g\n" if $DEBUG;
-		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-	    }
-	    else
-	    {
-		warn "h\n" if $DEBUG;
 		$val =~ s/\n*$/\n/;
 		$val =~ s/\s+/ /g;
 		$val =~ s/^\s+//g;
@@ -1082,7 +1109,7 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
-all: Sets arclim to [['active'}, ['inactive'] and
+all: Sets arclim to [['active'], ['inactive']] and
 unique_arcs_prio to ['active'].
 
 Arguments from L<Rit::Base::User/default_propargs> are used for any

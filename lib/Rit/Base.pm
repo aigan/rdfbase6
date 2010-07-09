@@ -36,7 +36,7 @@ use Rit::Base::Literal::String; # Needed by RB::Utils
 use Rit::Base::Setup;
 
 
-our $VERSION = "6.56";
+our $VERSION = "6.57";
 
 
 =head1 NAME
@@ -172,7 +172,7 @@ sub init_on_startup
 #    warn "init_on_startup\n";
 
     if( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
-	  and not $ARGV[1] )
+	  and $ARGV[1] and $ARGV[1] eq 'clear' )
 	or not $Rit::dbix->table('arc') )
     {
 	Rit::Base::Setup->setup_db();
@@ -204,6 +204,7 @@ sub init_on_startup
 #    warn "init_on_startup 5\n";
 
     $Rit::Base::IN_STARTUP = 0;
+    $Rit::Base::IN_SETUP_DB = 0;
 
     ###################################### Make upgrade handling
     {
@@ -301,6 +302,8 @@ sub Constants ()
 =head2 Literal
 
 Returns class object for L<Rit::Base::Literal>
+
+See also L<Rit::Base::Utils/string>
 
 =cut
 

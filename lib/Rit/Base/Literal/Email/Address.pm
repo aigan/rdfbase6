@@ -5,7 +5,7 @@ package Rit::Base::Literal::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -22,7 +22,7 @@ use base qw( Rit::Base::Literal::String Para::Frame::Email::Address );
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;
-use CGI;
+#use CGI;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug );
@@ -158,6 +158,7 @@ sub new_from_db
 Supported args are:
 
   method
+  tag_*
 
 C<method> defaults to C<format>
 
@@ -170,7 +171,7 @@ sub as_html
     if( $a->broken )
     {
 	my $str = $a->original;
-	return "<span class=\"broken\">$str</a>";
+	return "<span class=\"broken\">$str</span>";
     }
 
     my( $args ) = parse_propargs($args_in);
@@ -189,7 +190,13 @@ sub as_html
     my %attr;
     foreach my $key ( keys %$args )
     {
+	# DEPRECATED
 	if( $key =~ /^href_/ )
+	{
+	    $attr{ $key } = $args->{$key};
+	}
+
+	if( $key =~ /^tag_/ )
 	{
 	    $attr{ $key } = $args->{$key};
 	}

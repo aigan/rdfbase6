@@ -21,7 +21,7 @@ use warnings;
 use base qw( Rit::Base::Literal::String );
 
 use Carp qw( cluck confess longmess );
-use CGI;
+#use CGI;
 use MIME::Words qw( decode_mimewords );
 
 use Para::Frame::Reload;

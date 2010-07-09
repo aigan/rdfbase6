@@ -30,7 +30,7 @@
 [% FOREACH sc IN class.parents %]
 [% sc_nodes = find(code=sc.name, is='class_perl_module') %]
 [% IF sc_nodes %]
-<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.id) %]
+<li>[% jump(sc.name, "$home/rb/node/update.tt", id=sc_nodes.get_first_nos.id) %]
 [% ELSE %]
 <li>$sc.name
 [% END %]
@@ -50,52 +50,10 @@
 
 
 <table class="admin" style="margin-top:2em">
-   <tr>
-      <td>created</td>
-      <td>
-      [% IF node.created %]
-         [% node.created %]
-         by [% node.created_by.wu_jump %]
-      [% END %]
-      </td>
-   </tr>
-   <tr>
-      <td>updated</td>
-      <td>
-      [% IF node.updated %]
-	 [% node.updated %]
-         by [% node.updated_by.wu_jump %]
-      [% END %] 
-      </td>
-   </tr>
    [% IF node.label %]
    <tr>
       <td>label</td>
       <td>[% node.label %]</td>
-   </tr>
-   [% END %]
-   <tr>
-      <td>owned_by</td>
-      <td>
-      [% IF node.owned_by %]
-         [% node.owned_by.wu_jump %]
-      [% END %]
-      </td>
-   </tr>
-   [% IF node.read_access %]
-   <tr>
-      <td>read_access</td>
-      <td>
-         [% node.read_access.wu_jump %]
-      </td>
-   </tr>
-   [% END %]
-   [% IF node.write_access %]
-   <tr>
-      <td>write_access</td>
-      <td>
-         [% node.write_access.wu_jump %]
-      </td>
    </tr>
    [% END %]
 
@@ -182,5 +140,66 @@
       </td>
    </tr>
    [% END %]
+
+   [% IF node.class_form_url %]
+   <tr>
+      <td>Form URL</td>
+      <td>[% node.class_form_url.as_html %]</td>
+   </tr>
+   [% END %]
+
+   [% IF node.class_handled_by_perl_module %]
+   <tr>
+      <td>Perl class</td>
+      <td>[% node.class_handled_by_perl_module.wu_jump %]</td>
+   </tr>
+   [% END %]
+
+</table>
+
+<table class="admin" style="margin-top:2em">
+   <tr>
+      <td>created</td>
+      <td>
+      [% IF node.created %]
+         [% node.created %]
+         by [% node.created_by.wu_jump %]
+      [% END %]
+      </td>
+   </tr>
+   <tr>
+      <td>updated</td>
+      <td>
+      [% IF node.updated %]
+	 [% node.updated %]
+         by [% node.updated_by.wu_jump %]
+      [% END %] 
+      </td>
+   </tr>
+   <tr>
+      <td>owned_by</td>
+      <td>
+      [% IF node.owned_by %]
+         [% node.owned_by.wu_jump %]
+      [% END %]
+      </td>
+   </tr>
+   [% IF node.read_access %]
+   <tr>
+      <td>read_access</td>
+      <td>
+         [% node.read_access.wu_jump %]
+      </td>
+   </tr>
+   [% END %]
+   [% IF node.write_access %]
+   <tr>
+      <td>write_access</td>
+      <td>
+         [% node.write_access.wu_jump %]
+      </td>
+   </tr>
+   [% END %]
+
 
 </table>

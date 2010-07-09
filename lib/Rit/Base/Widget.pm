@@ -5,7 +5,7 @@ package Rit::Base::Widget;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 use Carp qw( confess cluck carp );
-use CGI;
+#use CGI;
 
 use base qw( Exporter );
 our @EXPORT_OK = qw( wub aloc sloc build_field_key );
@@ -374,8 +374,8 @@ sub sloc
 		{
 		 run => 'mark',
 		 c => $text,
-		 href_image => "$home/pf/images/edit.gif",
-		 href_class => "paraframe_edit_link_overlay",
+		 tag_attr => {class => "paraframe_edit_link_overlay"},
+		 tag_image => "$home/pf/images/edit.gif",
 		})
 	  );
     }

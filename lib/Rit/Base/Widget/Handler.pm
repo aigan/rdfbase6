@@ -5,7 +5,7 @@ package Rit::Base::Widget::Handler;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -1211,7 +1211,7 @@ sub handle_query_arc_value
 			       Para::Frame::Widget::jump('visa',
 							 $item->form_url->as_string,
 							 {
-							  href_target => '_blank',
+							  tag_attr => {target => '_blank'},
 							 }
 							);
 			     return "$tstr $link - ($view)";

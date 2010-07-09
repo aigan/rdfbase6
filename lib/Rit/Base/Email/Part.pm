@@ -5,7 +5,7 @@ package Rit::Base::Email::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -30,7 +30,7 @@ use MIME::Words qw( decode_mimewords );
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
 use MIME::Types;
-use CGI;
+#use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
 use Encode;
@@ -362,8 +362,19 @@ sub effective_type
 
     unless( $type_name =~ /^[a-z]+\/[a-z\-\+\.0-9]+$/ )
     {
+	if( $type_name =~ s/\s*charset\s*=.*//i )
+	{
+#	    debug "Cleaning up mimetype";
+	    return $_[0]->effective_type($type_name);
+	}
+
 	debug "Mime-type $type_name malformed";
 	$type_name = 'application/octet-stream';
+    }
+
+    if( $type_name eq 'image/jpg' )
+    {
+	$type_name = 'image/jpeg';
     }
 
     unless( $MIME_TYPES->type($type_name) )
@@ -604,6 +615,13 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
+    debug "Getting header $_[1]";
+
+    if( $_[1] eq 'to' )
+    {
+	$_[0]->head->init_to;
+    }
+
     if( wantarray )
     {
 	my( @h ) = $_[0]->head->
@@ -1626,6 +1644,10 @@ sub mime_types_init
 				  extensions => ['xcf'],
 				  type => 'image/x-xcf',
 				 ),
+#		  MIME::Type->new(
+#				  extensions => ['jpg'],
+#				  type => 'image/jpg',
+#				 ),
 		 );
     $MIME_TYPES->addType(@types);
 
@@ -1670,6 +1692,39 @@ sub is_top
 {
     return 0;
 }
+
+##############################################################################
+
+=head2 match
+
+Expecting the normal case of html email and/or plain text email
+
+=cut
+
+sub match
+{
+    my( $part, $qx_in ) = @_;
+
+    my $part_plain = $part->first_part_with_type('text/plain');
+    my $part_html = $part->first_part_with_type('text/html');
+
+    my $qx = qr/$qx_in/;
+
+    if( ${$part_html->body} =~ $qx )
+    {
+	debug "match in html part";
+	return 1;
+    }
+    elsif( ${$part_plain->body} =~ $qx )
+    {
+	debug "match in plain part";
+	return 1;
+    }
+
+    debug "No match in html or plain";
+    return 0;
+}
+
 
 ##############################################################################
 

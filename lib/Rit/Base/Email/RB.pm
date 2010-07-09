@@ -25,7 +25,7 @@ use base qw( Rit::Base::Email::RB::Part );
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use CGI;
+#use CGI;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug );
@@ -82,7 +82,24 @@ sub head_complete
 
 sub body
 {
-    return \ $_[0]->email->prop('email_body');
+    my( $part ) = @_;
+
+    if( my $raw = $part->email->first_prop('email_body') )
+    {
+	return \ $raw;
+    }
+    elsif( my $tmple = $part->email->first_prop
+	   ('has_email_body_template_email') )
+    {
+	my $tmpleo = $part->{'template_email_obj'} ||=
+	  Rit::Base::Email::IMAP->new_by_email( $tmple );
+
+	debug "Getting raw body of ".$tmpleo->sysdesig;
+	debug "That has path ".$tmpleo->path;
+	return $tmpleo->body_raw;
+    }
+
+    return \ undef;
 }
 
 
@@ -96,9 +113,21 @@ sub body_as_html
 {
     my( $part ) = @_;
 
-    my $data = CGI->escapeHTML($part->{'email'}->prop('email_body'));
-    $data =~ s/\n/<br>\n/g;
-    return $data;
+    if( my $raw = $part->email->first_prop('email_body') )
+    {
+	my $data = CGI->escapeHTML( $raw );
+	$data =~ s/\n/<br>\n/g;
+	return $data;
+    }
+    elsif( my $tmple = $part->email->first_prop
+	   ('has_email_body_template_email') )
+    {
+	my $tmpleo = $part->{'template_email_obj'} ||=
+	  Rit::Base::Email::IMAP->new_by_email( $tmple );
+	return $tmpleo->body_as_html;
+    }
+
+    return "";
 }
 
 
@@ -125,6 +154,18 @@ sub sysdesig
 sub is_top
 {
     return 1;
+}
+
+
+##############################################################################
+
+=head2 type
+
+=cut
+
+sub type
+{
+    return 'text/plain';
 }
 
 

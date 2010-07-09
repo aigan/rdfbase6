@@ -1,0 +1,95 @@
+Hojs.
+
+För att kunna använda de fina formulär-funktionerna i rb, så behöver vi
+också en bättre rättighetskontroll.  Formulärfälten är ju gjorda för
+update_by_query...
+
+Att bara kolla på om användaren har rättigheter att ändra på en node
+räcker inte långt...
+
+Jag fick tanken att man kan göra en specifik action ändå, istället för
+node_update, där man gör en permission-check i standardiserad form, typ:
+
+    my $allowed_preds   = {
+			   is          => $C_proposition,
+			   name        => '*',
+			   subsides_in => '*',
+			   has_body    => '*',
+			  };
+
+    my $node = Rit::Base::Resource->get($id);
+    if( $node->check_query_permissions( $allowed_preds ) )
+    {
+	$node->update_by_query($args);
+	$res->autocommit( activate => 1 );
+    }
+    else....
+
+
+Vad tror du om det?
+
+Dvs lägga till check_query_permissions som kan loopa igenom alla
+parametrar och kolla så att inget lurigt händer...
+
+=================
+
+CMS
+
+Jag tänker mig lite i stil med WebGUI..  Man skapar en sida, varpå man
+kan sätta en url (relativt home) och eventuellt en (eller flera?)
+platser i en trädstruktur som kan användas för meny.  Varje sida har en
+övergripande layout med utrymmen för "artiklar", per default den
+struktur som är i paraframes templates...  En artikel kan vara ren html
+eller genereras av nån modul/plugin.
+
+När en sida requestas och det inte råkar finnas en fil där i trädet,
+görs en uppslagning på url, och eventuellt kan man för pluginnens skull
+också söka på del-url om inte hela url'en hittas på en page; så att ett
+plugin t ex kan implementera sin egen sökning.  Dvs
+
+  Om vi har dessa noder:
+
+ name Min info-sida
+ url /info
+ is page
+ has_body <div><h1>Info</...
+
+ name Bloggar
+ scof page
+ base_url /blog
+
+Så kan en request av "/blog/2009/11/En-blog-om-ritbase" kolla upp först
+om det finns en page med hela denna url, och annars kolla om det finns
+en page eller page-klass som har base_url "/blog/2009/11", "/blog/2009"
+eller "/blog" eller "" innan den hivar ut en 404.  I det här fallet
+hanteras ju "/blog" så... En sida ska ju också kunna sätta lite
+variabler och bränna en tt...  Variablerna behöver kanske inte ha egna
+predikat, så man slipper skapa predikat varje gång man lägger till en
+sidvariabel. Då kan en blog-sida t ex ha:
+  <h1>[% title %]</h1>
+  <div>[% text %]</div>
+
+...fast det var ett dåligt exempel, då de likaväl skulle kunna få
+medskickat en blog-node och använda blog.name och blog.has_body...
+
+
+Plugin
+
+Plugins tänker jag att de kan ligga i egen katalog under rb/plugins och
+sedan länkas in i lib, inc mm vid installation.  Det enda som krävs av
+ett plugin är då att det skall ha en plugin_handle.pm i sin
+huvudkatalog, med funktioner "install" "uninstall" och kanske "info".
+install kan då skapa noder och göra länkar in i rb's katalogstruktur.
+Då kan man lätt göra en sida som listar vilka plugins som finns
+tillgängliga, visa info och erbjuda install-knapp för dem.
+
+...just ja, dependencies... Ett plugin ska kunna bero på andra plugins..
+och på cpan-paket...
+
+===========
+
+(14.51.09) fiddur: Jag har inte ändrat den sedan i går.  Den gjorde ju någon manuell hantering som inte gick tillbaka till login.tt eller error.tt heller
+(14.51.14) fiddur: ja, det var login, mm
+(14.51.20) jonas: ok
+(14.51.20) jonas: tack
+(14.51.25) fiddur: Den ska ju bara ta hand om de url'er där det finns en cms_page.

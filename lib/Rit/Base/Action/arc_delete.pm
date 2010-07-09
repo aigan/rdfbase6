@@ -5,7 +5,7 @@ package Rit::Base::Action::arc_delete;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -21,6 +21,7 @@ use Rit::Base::Resource::Change;
 sub handler
 {
     my( $req ) = @_;
+    $req->require_root_access;
 
     my $q = $req->q;
 
@@ -37,9 +38,23 @@ sub handler
 	push @arcs, $arc;
     }
 
+    my $args = { res => $res };
+    if( $q->param('force') )
+    {
+	$args->{'force'} = 1;
+    }
+
+    my $cnt = 0;
     foreach my $arc ( @arcs )
     {
-	$arc->remove( { res => $res } );
+	$arc->remove( $args );
+
+	unless( ++$cnt % 100 )
+	{
+	    $req->note(sprintf "Removed %6d of %6d", $cnt, $#arcs);
+	    $req->may_yield;
+	    die "cancelled" if $req->cancelled;
+	}
     }
 
     $res->autocommit;

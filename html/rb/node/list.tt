@@ -40,7 +40,7 @@
 </p>
 
 
-<p>[% search_result.size %] [%+ loc("hits") %].</p>
+<p>[% loc("[quant,_1,hit]",  search_result.size) %]</p>
 
 <p align="center">[% search_result.pagelist %]</p>
 

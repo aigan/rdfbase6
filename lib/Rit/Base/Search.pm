@@ -26,6 +26,7 @@ use Time::HiRes qw( time );
 use List::Util qw( min );
 use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
+use Encode; # encode decode
 
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
@@ -340,7 +341,7 @@ sub query_setup
     }
 
     my $q = $Para::Frame::REQ->q;
-    $q->param('query', $query);
+    $q->param('query', encode("UTF-8", $query));
 
     return $query;
 }
@@ -359,6 +360,7 @@ sub form_setup
 
     my $q = $Para::Frame::REQ->q;
     my $props = $search->rev_query('full');
+
     foreach my $prop ( keys %$props )
     {
 	my( @values ) = $q->param($prop);
@@ -370,8 +372,9 @@ sub form_setup
 	my %vals = map{ $_,1 } @values;
 	foreach my $val ( @$newvals )
 	{
+	    next unless defined $val;
 	    next if $vals{$val} ++;
-	    push @values, $val;
+	    push @values, encode("UTF-8", $val);
 	}
 
 	$q->param( -name=>$prop, -values=> \@values );
@@ -835,6 +838,17 @@ sub modify
                 $props->{ $key } = $sub->result->get_first_nos->id;
             }
         }
+	elsif( $key =~ /^([^\.]+)\./ )
+	{
+	    debug "Moving multistep query $key to filter";
+
+	    # Keep first part. Put the rest in filter
+	    my $first = $1;
+	    $filter{ $key } = delete $props->{ $key };
+	    $first =~ s/[\{\[]+.*//; # Remove special formatting
+	    $props->{ $first . '_exist' } = 1;
+
+	}
     }
 
     unless( scalar keys %$props )
@@ -1003,6 +1017,14 @@ sub modify
 		confess "not implemented: $pred";
 	    }
 	    elsif( $pred =~ /\./ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\{/ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\[/ )
 	    {
 		confess "not implemented: $pred";
 	    }
@@ -1806,10 +1828,13 @@ sub rev_query
 		$props->{"path_${path}"} = $val;
 	    }
 	}
-	elsif( $cc eq 'orcer_by' )
+	elsif( $cc eq 'order_by' )
 	{
 	    # Limited support
-	    $props->{"order_by"} = $search->{'query'}{'order_by'}[0];
+	    if( my $order = $search->{'query'}{'order_by'}[0] )
+	    {
+		$props->{"order_by"} = $order;
+	    }
 	}
 	elsif( $cc eq 'prop' )
 	{
@@ -1823,6 +1848,7 @@ sub rev_query
 		my $values = $prop->{'values'};
 #		my $val = $values->[0]; # Limited support
 		my $prio = $prop->{'prio'};
+		my $clean = $prop->{'clean'};
 
 #		debug "VALUES: @$values";
 
@@ -1885,6 +1911,11 @@ sub rev_query
 			$str .= $p;
 		    }
 
+		    if( $clean )
+		    {
+			$str .= '_clean';
+		    }
+
 		    if( $match eq 'eq' )
 		    {
 			push @alts, [$str, $values];
@@ -1937,9 +1968,11 @@ $prop is the value node
 
 sub criterions
 {
-    my( $search ) = @_;
+    my( $search, $args ) = @_;
 
-#    debug "Getting criterions";
+    debug "Getting criterions";
+
+    $args ||= {};
 
     my $ecrits = {};
 
@@ -1960,7 +1993,10 @@ sub criterions
 #		debug "Considering $prop";
 		# Do not include private parts, since criterions is
 		# for public presentation
-		next if $prop->{'private'};
+		unless( $args->{'private'} )
+		{
+		    next if $prop->{'private'};
+		}
 
 		my $rev = $prop->{'rev'};
 		my $preds = $prop->{'pred'};

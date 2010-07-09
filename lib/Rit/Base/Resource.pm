@@ -5,7 +5,7 @@ package Rit::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -56,7 +56,7 @@ use Rit::Base::Widget qw(build_field_key);
 use Rit::Base::Widget::Handler;
 use Rit::Base::AJAX;
 
-use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate
+use Rit::Base::Constants qw( $C_language $C_valtext $C_valdate $C_root
                              $C_class $C_literal_class $C_resource $C_arc );
 
 use Rit::Base::Utils qw( valclean parse_query_props
@@ -1322,6 +1322,8 @@ Special args:
 
   submit_new_arcs
 
+  create_node_rec
+
 
 Returns:
 
@@ -1342,36 +1344,43 @@ sub create
 
     my $subj_id = $Rit::dbix->get_nextval('node_seq');
 
-
-    # TODO: Handle creation with 'is' coupled to a class. Especially
-    # is $C_arc
-
     confess "invalid props: $props" unless ref $props;
 
+    my %s; #special
+    foreach my $pred_name (qw( created created_by update updated_by ))
+    {
+	$s{ $pred_name } = Para::Frame::List->
+	  new_any( $props->{ $pred_name} )->get_first_nos;
+	delete( ${$props}{$pred_name} );
+    }
 
-#    # Any value props should be added after datatype props
-#    my @props_list;
-#    if( defined $props->{'value'} )
-#    {
-#	@props_list =  grep{ $_ ne 'value'} keys(%$props);
-#	push @props_list, 'value';
-#    }
-#    else
-#    {
-#	@props_list =  keys(%$props);
-#    }
+    ### for creating and tagging the node
+    my $create_node = $args->{'create_node_rec'};
+    if( $s{updated} or $s{created} or $s{updated_by} or $s{created_by} )
+    {
+	$create_node = 1;
+    }
+
+    $s{created} ||= $s{updated} || now();
+    $s{created_by} ||= $s{updated_by};
+    unless( $s{created_by} )
+    {
+	if( $Para::Frame::REQ and $Para::Frame::REQ->user )
+	{
+	    $s{created_by} = $Para::Frame::REQ->user;
+	}
+	else
+	{
+	    $s{created_by} = $C_root;
+	}
+    }
+
+
     my @props_list =  keys(%$props);
-
-
-    my $adr = undef; # Define if used
 
     # Create all props before checking
     arc_lock;
 
-    my $mark_updated = undef; # for tagging node with timestamp
-    my $mark_created = undef; # for tagging node with timestamp
-    my $mark_updated_by = undef; # for tagging node with updater
-    my $mark_created_by = undef; # for tagging node with creator
 
     foreach my $pred_name ( @props_list )
     {
@@ -1381,7 +1390,7 @@ sub create
 	# Check for definedness
 	foreach my $val ( $vals->as_array )
 	{
-	    debug 1, "Checking $pred_name = $val";
+	    debug 1, "Checking $pred_name = ".query_desig($val);
 	    # '0' is valid
 	    if( ($val and ((ref $val and not $val->defined) or not length $val)) )
 	    {
@@ -1398,22 +1407,6 @@ sub create
 	    }
 	    $node->set_label( $vals->get_first_nos );
 	}
-	elsif( $pred_name eq 'created' )
-	{
-	    $mark_created = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'updated' )
-	{
-	    $mark_updated = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'created_by' )
-	{
-	    $mark_created_by = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'updated_by' )
-	{
-	    $mark_updated_by = $vals->get_first_nos;
-	}
 	elsif( $pred_name =~ /^rev_(.*)$/ )
 	{
 	    $pred_name = $1;
@@ -1421,10 +1414,12 @@ sub create
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
-		    subj    => $val,
-		    pred    => $pred_name,
-		    obj     => $subj_id,
-		}, $args);
+					subj       => $val,
+					pred       => $pred_name,
+					obj        => $subj_id,
+					created    => $s{created},
+					created_by => $s{created_by},
+				       }, $args);
 	    }
 	}
 	else
@@ -1432,28 +1427,28 @@ sub create
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
-		    subj    => $subj_id,
-		    pred    => $pred_name,
-		    value   => $val,
-		}, $args);
+					subj    => $subj_id,
+					pred    => $pred_name,
+					value   => $val,
+					created    => $s{created},
+					created_by => $s{created_by},
+				       }, $args);
 	    }
 	}
     }
 
     my $node = Rit::Base::Resource->get( $subj_id );
 
-    if( $mark_created or $mark_updated )
+    if( $create_node )
     {
-	$node->mark_updated($mark_updated, $mark_updated_by);
-	if( $mark_created )
-	{
-	    $node->{'created_obj'} = $mark_created;
-	}
+	$node->mark_updated( $s{updated}||$s{created},
+			     $s{updated_by}||$s{created_by} );
 
-	if( $mark_created_by )
-	{
-	    $node->{'created_by_obj'} = $mark_created_by;
-	}
+	$node->{'created_obj'} = Rit::Base::Literal::Time->
+	  get( $s{created} );
+
+	$node->{'created_by_obj'} = Rit::Base::Resource->
+	  get( $s{created_by} );
     }
 
     unless( @props_list )
@@ -1926,8 +1921,12 @@ sub list
 	confess "Not a resource: ".datadump($node);
     }
 
+    my $DEBUG = 0; #$DEBUG=1 if $pred_in eq 'email_to_obj';
+
     if( $pred_in )
     {
+	debug timediff "list" if $DEBUG;
+
 	my( $pred, $name );
 	if( UNIVERSAL::isa($pred_in,'Rit::Base::Pred') )
 	{
@@ -1966,13 +1965,18 @@ sub list
 	}
 
 #	if( $node->{id} == 5 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
+	debug timediff "list initiate_prop" if $DEBUG;
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
+
+	debug timediff "list meets_arclim" if $DEBUG;
 
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
 	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
+
+	    debug timediff "list unique_arcs_prio" if $DEBUG;
 	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
@@ -1987,10 +1991,21 @@ sub list
 	    $args = $args2;
 	}
 
+
+#	### DEBUG
+#	foreach my $arc ( @arcs )
+#	{
+#	    confess(datadump($arc)) if $arc->{'disregard'};
+#	}
+
+
 	my $res = $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
 		map $_->value, @arcs ]);
 #	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
+
+	debug timediff "list res" if $DEBUG;
+
 	return $res;
     }
     else
@@ -2974,6 +2989,9 @@ sub has_value
 Counts the number of properties the node has with a specific property,
 meeting the arclim.  Default arclim is C<active>.
 
+Supports subclass method implementations. Looks for $n->count_$pred
+and $n->$pred->size
+
 Examples:
 
 This can be used in C<Rit::Base::List-E<gt>find()> by count_pred
@@ -2993,6 +3011,22 @@ sub count
     {
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
+
+    unless( ref $tmpl )
+    {
+	if( $node->can("count_$tmpl") )
+	{
+#	    debug "Counting $tmpl";
+	    my $countpred = "count_$tmpl";
+	    return $node->$countpred;
+	}
+	elsif( $node->can($tmpl) )
+	{
+#	    debug "Getting $tmpl and return its size";
+	    return $node->$tmpl->size;
+	}
+    }
+
     my $pred_id = Rit::Base::Pred->get( $tmpl )->id;
 
     my $arclim_sql = $arclim->sql;
@@ -3169,6 +3203,51 @@ sub desig  # The designation of obj, meant for human admins
 
 ##############################################################################
 
+=head2 safedesig
+
+  $n->safedesig( \%args )
+
+As L</sysdesig>, but only gives data from what is availible in memory.
+
+=cut
+
+sub safedesig
+{
+    my( $node, $args ) = @_;
+
+    my $desig;
+
+    if( $node->{'relarc'}{'name'} )
+    {
+	$desig = $node->list('name',undef,$args)->loc();
+    }
+    elsif( $node->{'relarc'}{'name_short'} )
+    {
+	$desig = $node->list('name_short',undef,$args)->loc();
+    }
+    elsif( $desig = $node->label )
+    {
+	# That's good
+    }
+    elsif( $node->{'relarc'}{'code'} )
+    {
+	$desig = $node->list('code',undef,$args)->loc;
+    }
+    else
+    {
+	$desig = $node->id;
+    }
+
+    $desig = $desig->loc if ref $desig; # Could be a Literal Resource
+    utf8::upgrade($desig);
+#    debug "Returning desig $desig";
+
+    return truncstring( \$desig );
+}
+
+
+##############################################################################
+
 =head2 sysdesig
 
   $n->sysdesig( \%args )
@@ -3327,14 +3406,8 @@ sub arc_list
 	}
     }
 
-    @arcs = grep $_->meets_arclim($arclim), @arcs;
-
-    my $lr = Rit::Base::Arc::List->new(\@arcs);
-
-    if( my $uap = $args->{unique_arcs_prio} )
-    {
-	$lr = $lr->unique_arcs_prio($uap);
-    }
+    # Proplim is probably more restricting than arclim. Thus, filter
+    # on that first
 
     if( defined $proplim ) # The Undef Literal is also an proplim
     {
@@ -3342,7 +3415,8 @@ sub arc_list
 	{
 	    # $n->arc_list( $predname, { $pred => $value } )
 	    #
-	    $lr = $lr->find($proplim, $args);
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      find($proplim, $args)->as_array;
 	}
 	elsif( not( ref $proplim) and not( length $proplim ) )
 	{
@@ -3357,11 +3431,11 @@ sub arc_list
 		$proplim = [$proplim];
 	    }
 
+	    # proplim can be given as a PF::List
 	    my $proplist = Rit::Base::List->new($proplim);
 
 	    my @newlist;
-	    my( $arc, $error ) = $lr->get_first;
-	    while(! $error )
+	    foreach my $arc ( @arcs )
 	    {
 		# May return is_undef object
 		# No match gives literal undef
@@ -3369,12 +3443,68 @@ sub arc_list
 		{
 		    push @newlist, $arc;
 		}
-		( $arc, $error ) = $lr->get_next;
 	    }
 
-	    $lr = Rit::Base::Arc::List->new(\@newlist);
+	    @arcs = @newlist;
 	}
     }
+
+
+#    debug timediff("arc_list");
+
+    @arcs = grep $_->meets_arclim($arclim), @arcs;
+
+#    debug timediff("arc_list meets_arclim");
+
+    my $lr = Rit::Base::Arc::List->new(\@arcs);
+
+#    debug timediff("arc_list new list");
+
+    if( my $uap = $args->{unique_arcs_prio} )
+    {
+	$lr = $lr->unique_arcs_prio($uap);
+#	debug timediff("arc_list unique_arcs_prio");
+    }
+
+#    if( defined $proplim ) # The Undef Literal is also an proplim
+#    {
+#	if( ref $proplim and ref $proplim eq 'HASH' )
+#	{
+#	    # $n->arc_list( $predname, { $pred => $value } )
+#	    #
+#	    $lr = $lr->find($proplim, $args);
+#	}
+#	elsif( not( ref $proplim) and not( length $proplim ) )
+#	{
+#	    # Treat as no proplim given
+#	}
+#	else
+#	{
+#	    # $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
+#	    #
+#	    unless( ref $proplim and ref $proplim eq 'ARRAY' )
+#	    {
+#		$proplim = [$proplim];
+#	    }
+#
+#	    my $proplist = Rit::Base::List->new($proplim);
+#
+#	    my @newlist;
+#	    my( $arc, $error ) = $lr->get_first;
+#	    while(! $error )
+#	    {
+#		# May return is_undef object
+#		# No match gives literal undef
+#		if( ref $proplist->contains( $arc->value, $args ) )
+#		{
+#		    push @newlist, $arc;
+#		}
+#		( $arc, $error ) = $lr->get_next;
+#	    }
+#
+#	    $lr = Rit::Base::Arc::List->new(\@newlist);
+#	}
+#    }
 
     return $lr;
 }
@@ -3877,7 +4007,7 @@ See also L<Rit::Base::Node/add_arc>
 
 sub add
 {
-    my( $node, $props, $args ) = @_;
+    my( $node, $props, $args_in ) = @_;
 
     unless( UNIVERSAL::isa($props, 'HASH') )
     {
@@ -3886,6 +4016,9 @@ sub add
 
     my $mark_updated = undef; # for tagging node with timestamp
     my $mark_created = undef; # for tagging node with timestamp
+
+    my( $args_parsed ) = parse_propargs($args_in);
+    my $args = {%$args_parsed}; # Shallow copy
 
     my %extra;
     if( $args->{'read_access'} )
@@ -3931,6 +4064,49 @@ sub add
 	}
 	else
 	{
+	    my $pred = Rit::Base::Pred->get($pred_name);
+	    my $tot = $vals->size;
+
+	    if( $pred->objtype and $tot > 10 )
+	    {
+		# Pre-check for EXISTING
+		my %existing;
+		my %check;
+		my $existing_arcs = $node->arc_list($pred_name, undef, ['active', 'submitted', 'new']);
+		my( $arc, $eaerror ) = $existing_arcs->get_first;
+		while( !$eaerror )
+		{
+		    my $key = $arc->value->id;
+		    if( $existing{ $key } ++ )
+		    {
+			$check{ $key } ++;
+		    }
+		}
+		continue
+		{
+		    ( $arc, $eaerror ) = $existing_arcs->get_next;
+		};
+
+		my( $val, $verror ) = $vals->get_first;
+		while( !$verror )
+		{
+		    my $key = $val->id;
+		    if( $existing{ $key } ++ )
+		    {
+			$check{ $key } ++;
+		    }
+		}
+		continue
+		{
+		    ( $val, $verror ) = $vals->get_next;
+		};
+
+		$args->{'arc_create_check'} = \%check;
+	    }
+
+	    my $mrkp = Time::HiRes::time();
+	    my $cnt = 0;
+	    Rit::Base::Arc->lock;
 	    foreach my $val ( $vals->as_array )
 	    {
 		Rit::Base::Arc->create({
@@ -3939,7 +4115,26 @@ sub add
 					value => $val,
 					%extra,
 				       }, $args);
+		unless( ++ $cnt % 100 )
+		{
+		    if( $Para::Frame::REQ )
+		    {
+#			$Para::Frame::REQ->note("Created $cnt of $tot");
+
+			unless( $cnt % 500 )
+			{
+			    my $mrk = Time::HiRes::time();
+			    $Para::Frame::REQ->note(sprintf "Created %6d of %6d in %7.3f", $cnt, $tot, $mrk - $mrkp);
+			    $mrkp = $mrk;
+			}
+
+			die "cancelled" if $Para::Frame::REQ->cancelled;
+			$Para::Frame::REQ->may_yield;
+		    }
+		}
+
 	    }
+	    Rit::Base::Arc->unlock;
 	}
     }
 
@@ -4100,8 +4295,8 @@ sub equals
 	    if( $DEBUG )
 	    {
 		debug "Comparing values:";
-		debug "1. ".$node->sysdesig;
-		debug "2. ".$node2->sysdesig;
+		debug "1. ".$node->safedesig;
+		debug "2. ".$node2->safedesig;
 	    }
 
 	    if( $match eq 'eq' )
@@ -4699,6 +4894,7 @@ Supported args are
   separator
   id
   label_class
+  default_value
 
 args are forwarded to
   wuirc
@@ -5307,7 +5503,7 @@ sub arcversions
 
 =head2 tree_select_widget
 
-  $n->tree_select_widget( $pred, \%args )
+  $n->tree_select_widget( $pred, $sub, \%args )
 
 Returns: a HTML widget that draws the C<scof> tree.
 
@@ -5315,12 +5511,34 @@ Returns: a HTML widget that draws the C<scof> tree.
 
 sub tree_select_widget
 {
-    my( $node, $pred_in, $args ) = @_;
+    my( $node, $args ) = @_;
 
-    my $pred = Rit::Base::Pred->get($pred_in)
-      or die "no pred ($pred_in)";
+    my $pred;
+    if( $args->{'pred'} )
+    {
+	$pred = Rit::Base::Pred->get($args->{'pred'})
+	  or die "no pred ".$args->{'pred'};
+    }
 
-    my $data = $node->tree_select_data($pred, $args);
+    my $pred2;
+    if( $args->{'pred2'} )
+    {
+	$pred2 = Rit::Base::Pred->get($args->{'pred2'})
+	  or die "no pred2 ".$args->{'pred2'};
+    }
+
+    my $sub;
+    if( $args->{'sub'} )
+    {
+	$sub = Rit::Base::Pred->get($args->{'sub'})
+	  or die "no sub ".$args->{'sub'};
+    }
+    else
+    {
+	$sub = Rit::Base::Pred->get('scof');
+    }
+
+    my $data = $node->tree_select_data($pred, $sub, $pred2, $args);
 
     my $select = Template::PopupTreeSelect->new(
 						name => 'Ritbase_tsw',
@@ -5352,7 +5570,7 @@ sub table_columns
 
 =head2 tree_select_data
 
-  $n->tree_select_data( $pred, \%args )
+  $n->tree_select_data( $pred, $sub, \%args )
 
 Used by L</tree_select_widget>
 
@@ -5360,24 +5578,39 @@ Used by L</tree_select_widget>
 
 sub tree_select_data
 {
-    my( $node, $pred, $args_in ) = @_;
+    my( $node, $pred, $sub, $pred2, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    $pred or confess "param pred missing";
-
     my $id = $node->id;
-    my $pred_id = $pred->id;
-
     my $name = $node->prop('name', undef, $args)->loc;
     debug 2, "Processing treepart $id: $name";
-    my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
-    my $cnt = $rec->{'cnt'};
-    debug 3, "                    $id: $cnt nodes";
+    my $label;
     my $flags = " ";
     $flags .= 'p' if $node->private;
     $flags .= 'i' if $node->inactive;
 
-    my $label = sprintf("%s (%d) %s", $name, $cnt, $flags);
+    if( $pred )
+    {
+	my $pred_id = $pred->id;
+	my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
+	my $cnt = $rec->{'cnt'};
+	debug 3, "                    $id: $cnt nodes";
+
+	if( $pred2 )
+	{
+	    my $pred2_id = $pred2->id;
+	    my $rec2 = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred2_id, $id);
+	    my $cnt2 = $rec2->{'cnt'};
+	    debug 3, "                    $id: $cnt2 nodes";
+	    $cnt = $cnt.'/'.$cnt2;
+	}
+
+	$label = sprintf("%s (%s) %s", $name, $cnt, $flags);
+    }
+    else
+    {
+	$label = sprintf("%s %s", $name, $flags);
+    }
 
     my $data =
     {
@@ -5385,17 +5618,17 @@ sub tree_select_data
      value  => $id,
     };
 
-    my $childs = $node->revlist('scof', undef, aais($args,'adirect'));
+    my $childs = $node->revlist($sub, undef, aais($args,'adirect'));
 
     if( $childs->size )
     {
 	debug 2, "                   $id got ".($childs->size)." childs";
 	$data->{children} = [];
 
-	foreach my $subnode ( $childs->nodes )
+	foreach my $subnode ( $childs->sorted->nodes )
 	{
 	    push @{ $data->{children} },
-	      $subnode->tree_select_data($pred, $args);
+	      $subnode->tree_select_data($pred, $sub, $pred2, $args);
 	}
     }
 
@@ -5671,33 +5904,45 @@ sub find_class
 	    }
 
 	    my $filename = package_to_module($classname);
-	    compile( $filename );
-	    push @classnames, $classname;
+	    eval{ compile( $filename ) };
+	    if( $@ )
+	    {
+		warn "****  IGNORING perl class $filename\n";
+		warn "****  ".$@;
+	    }
+	    else
+	    {
+		push @classnames, $classname;
+	    }
 	}
 
 	no strict "refs";
 	if( $classnames[1] ) # Multiple inheritance
 	{
 	    $package = "Rit::Base::Metaclass::$key";
-#	    debug "Creating package $package";
+#	    debug "Creating a package $package";
 	    @{"${package}::ISA"} = ("Rit::Base::Metaclass",
 				    @classnames,
 				    "Rit::Base::Resource");
-	    $valtype = $C_resource;
+	    $valtype = $Rit::Base::Constants::Label{'resource'};
 	}
 	elsif( $classnames[0] ) # Single inheritance
 	{
 	    my $classname = $classnames[0];
 	    $package = "Rit::Base::Metaclass::$classname";
-	    #	    debug "Creating package $package";
+#	    debug "Creating b package $package";
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 #	    $valtype = $pmodules_sorted[0][1];
-	    $valtype = $C_resource;
+	    $valtype = $Rit::Base::Constants::Label{'resource'};
 	}
+
+#	confess "BOGUS VALTYPE ".datadump($valtype) unless
+#	  UNIVERSAL::isa($valtype,'Rit::Base::Resource');
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
 	$node->{'valtype'} = $Rit::Base::Cache::Valtype{ $key } = $valtype;
 	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
+	debug "Based on the key $key" if $DEBUG;
 	return $Rit::Base::Cache::Class{ $key } = $package;
     }
 
@@ -5858,6 +6103,7 @@ sub on_class_perl_module_change
     }
     else
     {
+	# TODO: only get nodes in memory
 	my $childs = $node->revlist('is');
 	while( my $child = $childs->get_next_nos )
 	{
@@ -6390,7 +6636,7 @@ sub get_by_label
 	{
 	    confess "label must be a plain string";
 	}
-        confess unless( $Rit::dbix->dbh );
+	utf8::upgrade($label); # for Pg export
 	my $sth = $Rit::dbix->dbh->prepare(
 		  "select * from node where label=?");
 	$sth->execute( $label );
@@ -6405,7 +6651,8 @@ sub get_by_label
 		return undef;
 	    }
 
-	    cluck "Constant $label doesn't exist";
+	    cluck "Constant $label doesn't exist"
+	      unless $Rit::Base::IN_SETUP_DB;
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 
@@ -6621,10 +6868,15 @@ sub initiate_node
 =head2 create_rec
 
   $node->create_rec
+  $node->create_rec( $time, $user )
 
 Created a node record by using L</mark_updated>. Will select created
-and updated data from the availible arcs. Using L</mark_updated>
-defaults if no arcs exist.
+and updated data from the availible arcs.
+
+If both C<$time> and C<$user> is given, sets created and updated to
+the given time.
+
+Using current time and user as a fallback.
 
 Returns: $node
 
@@ -6636,7 +6888,20 @@ sub create_rec
 
     return $n if $n->has_node_record;
 
-    my( $first, $last );
+    $args ||= {};
+    if( $args->{'time'} and $args->{'user'} )
+    {
+	$n->{'created_obj'} = $args->{'time'};
+	$n->{'created_by_obj'} = $args->{'user'};
+	$n->mark_updated( $args->{'time'}, $args->{'user'} );
+	return $n;
+    }
+
+
+    my( $first, $last, $first_c, $last_u, $created, $updated );
+
+    # Since we are looking at all arcs
+
 
     my $arcs = $n->arc_list(undef,undef,'all')
       ->merge( $n->revarc_list(undef,undef,'all') );
@@ -6644,18 +6909,40 @@ sub create_rec
     # Initial value
     $first = $last = $arcs->get_next_nos;
 
+    $first_c = $first->created_iso8601;
+    $last_u  =  $last->updated_iso8601;
+
+    # Using raw time values for speed. Both
+    # Date::Manip::ParseDateString and Dte::Time is too slow.
+    #
+    # We assume that the raw time strings are comparable with gt and
+    # lt. Regardless of the timezone used for saving the date, it is
+    # returned with local time zone and will in most cases be valid
+    # for comparison.
+
     while( my $arc = $arcs->get_next_nos )
     {
-	if( $arc->created < $first->created )
+	$created = $arc->created_iso8601;
+	$updated = $arc->updated_iso8601;
+
+	confess datadump($arc,1) if ref $updated;
+
+
+	if( $created lt $first_c )
 	{
 	    $first = $arc;
+	    $first_c = $created;
 	}
 
-	if( $arc->updated > $last->updated )
+	if( $updated gt $last_u )
 	{
 	    $last = $arc;
+	    $last_u = $updated;
 	}
     }
+
+#    debug sprintf "Looking finished";
+
 
     $n->initiate_node;
 
@@ -6680,6 +6967,9 @@ sub create_rec
 
 	$n->mark_updated( $time, $user );
     }
+
+    # Either this or setting up the corresponding properties in memory
+    $n->save;
 
     return $n;
 }
@@ -6912,7 +7202,7 @@ sub save
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
 
-    debug "  saving created ".$node->{'created_obj'};
+#    debug "  saving created ".$node->{'created_obj'};
 
 
     my @values =
@@ -7025,11 +7315,10 @@ sub initiate_rel
 	$sth_init_subj->finish;
 
 	my $rowcount = $sth_init_subj->rows;
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000 )
 	{
-	    debug "initiate_rel $node->{id}";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
 	}
 
 	my $cnt = 0;
@@ -7040,10 +7329,18 @@ sub initiate_rel
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  loaded $cnt");
+		}
 	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Loading arcs done for".$node->safedesig);
 	}
 
 	unless( $extralim )
@@ -7169,11 +7466,12 @@ sub initiate_rev
     $sth_init_obj->finish;
 
     my $rowcount = $sth_init_obj->rows;
-    if( ($rowcount > 100) and (debug > 2) )
+    if( $rowcount > 1000 )
     {
-	debug "initiate_rev $node->{id}";
-	debug "Populating $rowcount arcs";
-	debug "ARGS: ".query_desig($args);
+	debug 2, "initiate_rev $node->{id}";
+	$Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
+				$node->safedesig);
+#	debug "ARGS: ".query_desig($args);
     }
 
     my $cnt = 0;
@@ -7184,10 +7482,19 @@ sub initiate_rev
 	# Handle long lists
 	unless( ++$cnt % 100 )
 	{
-	    debug 2, "Populated $cnt";
 	    $Para::Frame::REQ->may_yield;
 	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	    unless( $cnt % 1000 )
+	    {
+		$Para::Frame::REQ->note("  loaded $cnt");
+	    }
 	}
+    }
+
+    if( $rowcount > 1000 )
+    {
+	$Para::Frame::REQ->note("Loading reverse arcs done for ".
+				$node->safedesig);
     }
 
     unless( $extralim )
@@ -7309,12 +7616,12 @@ sub initiate_prop
 	$sth_init_subj_pred->finish;
 
 	my $rowcount = $sth_init_subj_pred->rows;
-	if( $rowcount > 20 )
+	if( $rowcount > 100 )
 	{
 	    if( UNIVERSAL::isa $proplim, "Rit::Base::Resource" )
 	    {
 		my $obj_id = $proplim->id;
-		debug 2, "  rowcount > 20. Using obj_id from proplim $obj_id";
+		debug 1, "  rowcount > 100. Using obj_id from proplim $obj_id";
 		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
 		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
 		if( $arclim_sql )
@@ -7331,21 +7638,37 @@ sub initiate_prop
 	    }
 	}
 
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000  )
 	{
-	    debug "initiate_prop $node->{id} $name";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    debug 2, "initiate_prop $node->{id} $name";
+#	    debug "ARGS: ".query_desig($args);
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
 	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
 
+	my $cnt = 0;
 	foreach my $rec ( @$recs )
 	{
-	    debug "  populating with ".datadump($rec,4)
-	      if debug > 4;
-
 	    $node->populate_rel( $rec, $args );
+
+	    # Handle long lists
+	    unless( ++$cnt % 100 )
+	    {
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  loaded $cnt");
+		}
+	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Loading arcs done for ".
+				    $node->safedesig);
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -7484,11 +7807,12 @@ sub initiate_revprop
 	my $cnt = 0;
 
 	my $rowcount = $sth_init_obj_pred->rows;
-	if( ($rowcount > 100) and (debug > 2) )
+	if( $rowcount > 1000 )
 	{
-	    debug "initiate_revprop $node->{id} $name";
-	    debug "Populating $rowcount arcs";
-	    debug "ARGS: ".query_desig($args);
+	    debug 2, "initiate_revprop $node->{id} $name";
+	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+				    $node->safedesig);
+#	    debug "ARGS: ".query_desig($args);
 	}
 
 	foreach my $rec ( @$recs )
@@ -7498,10 +7822,19 @@ sub initiate_revprop
 	    # Handle long lists
 	    unless( ++$cnt % 100 )
 	    {
-		debug 2, "Populated $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
+		unless( $cnt % 1000 )
+		{
+		    $Para::Frame::REQ->note("  loaded $cnt");
+		}
 	    }
+	}
+
+	if( $rowcount > 1000 )
+	{
+	    $Para::Frame::REQ->note("Loading arcs done for ".
+				    $node->safedesig);
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";
@@ -7839,6 +8172,7 @@ sub instance_class
 	    @{"${package}::ISA"} = ($classname, "Rit::Base::Resource");
 	    $Rit::Base::Cache::Class{ $key } = $package;
 	    $Rit::Base::Cache::Valtype{ $key } = $_[0];
+#	    debug "Setting_ic valtype for $key to $_[0]->{id}";
 	    1;
 	};
 	if( $@ )
@@ -7863,6 +8197,8 @@ sub update_seen_by
     my( $node, $user, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
     $user ||= $Para::Frame::U;
+    return $user if $user->id == $C_root->id;
+
     $node->add({'seen_by'=>$user},
 		 {
 		  %$args,
