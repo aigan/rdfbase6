@@ -205,6 +205,21 @@ sub init_on_startup
 
     $Rit::Base::IN_STARTUP = 0;
 
+    ###################################### Make upgrade handling
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        my( $args, $arclim, $res ) = Rit::Base::Utils::parse_propargs('auto');
+        my $R = Rit::Base->Resource;
+        $R->find_set({
+                      label => 'translation_label',
+                      is => 'predicate',
+                      range => 'text',
+                     }, $args);
+        $res->autocommit({ activate => 1 });
+        $req->done;
+    }
+    ########################################
+
 #    warn "calling on_ritbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
 #    warn "done init_on_startup\n";

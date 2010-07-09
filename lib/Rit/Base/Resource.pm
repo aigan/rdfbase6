@@ -6390,6 +6390,7 @@ sub get_by_label
 	{
 	    confess "label must be a plain string";
 	}
+        confess unless( $Rit::dbix->dbh );
 	my $sth = $Rit::dbix->dbh->prepare(
 		  "select * from node where label=?");
 	$sth->execute( $label );

@@ -91,6 +91,8 @@ is_of_language	domain	valtext
 is_of_language	range	language
 has_translation	is	predicate
 has_translation	range	text
+translation_label is predicate
+translation_label range text
 code	range	text
 code	is	predicate
 note	range	text
