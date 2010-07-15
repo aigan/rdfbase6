@@ -93,3 +93,18 @@ och på cpan-paket...
 (14.51.20) jonas: ok
 (14.51.20) jonas: tack
 (14.51.25) fiddur: Den ska ju bara ta hand om de url'er där det finns en cms_page.
+
+==============
+
+(10.59.37) Fredrik: Vad gäller RB har jag ett problem med att den i min cms-lösning ibland byter ett sidnamn med avslutande / till ett utan, eller vice versa... och då måste jag starta om ekoby för att ydala ska ha korrekta urler
+(11.00.27) jonas: när det inte är verkliga kataloer behöver den ha ett anant sätt att veta vad som är vad...
+(11.00.30) Fredrik: Dvs, länken går till http://ydalaby.se/nyheter/bud_pa_fastighet  t ex, men det blir http://ydalaby.se/nyheter/bud_pa_fastighet/?pfport.... 
+(11.01.04) Fredrik: men jag vet inte vad som gör att den slår över till det läget... just nu verkar alla länkar fungera korrekt, emn när den väl börjat med en länk att lägga på / så gör den det konsekvent.
+(11.01.48) jonas: automagiskt ja. Men det är nog bara för virituella filer...
+(11.02.14) jonas: hur ska den veta..?
+(11.02.19) Fredrik: Det gör att google rapporterar det som ett crawl-error... http://ydalaby.se/kontakt står det i min sitemap, men om det blir med / så blir det en redirect, och man ska inte ha utbytta sidor i sin sitemap :P
+(11.02.31) Fredrik: Jo, det är bara för mina genererade sidor förstås
+(11.02.58) Fredrik: Du får gärna se över min CMS.pm, det är säkert flera saker den gör fel där... jag bara modifierade tills det verkade fungera.
+(11.03.02) jonas: det är det som är problemet. Den kan inte kolla om det ska vara en dir eller inte
+(11.03.59) jonas: ok. Jag ska kolla på det
+=============
