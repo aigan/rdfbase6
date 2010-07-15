@@ -35,6 +35,7 @@ filefield input_image label_from_params );
 use Rit::Base;
 use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais );
+use Rit::Base::L10N;
 #use Rit::Base::Constants qw( );
 
 =head1 DESCRIPTION
@@ -321,25 +322,39 @@ TODO: Move template to ritbase
 
 sub aloc
 {
-    my $text = shift;
-    my $out = "";
+    my $phrase = shift;
+    #my $out = "";
+    #
+    #if( $Para::Frame::REQ->session->admin_mode )
+    #{
+    #    my $home = $Para::Frame::REQ->site->home_url_path;
+    #    $out .=
+    #      (
+    #       jump("Edit", "$home/admin/translation/update.tt",
+    #    	{
+    #    	 run => 'mark',
+    #    	 c => $phrase,
+    #    	 href_image => "$home/pf/images/edit.gif",
+    #    	 href_class => "paraframe_edit_link_overlay",
+    #    	})
+    #      );
+    #}
 
-    if( $Para::Frame::REQ->session->admin_mode )
-    {
-	my $home = $Para::Frame::REQ->site->home_url_path;
-	$out .=
-	  (
-	   jump("Edit", "$home/admin/translation/update.tt",
-		{
-		 run => 'mark',
-		 c => $text,
-		 tag_attr => {class => "paraframe_edit_link_overlay"},
-		 tag_image => "$home/pf/images/edit.gif",
-		})
-	  );
+    if( $Para::Frame::REQ->session->admin_mode ) {
+        my $id = Rit::Base::L10N::find_translation_node_id($phrase);
+
+        unless( $id ) {
+            my $R = Rit::Base->Resource;
+            my $node = $R->create({ translation_label => $phrase }, { activate_new_arcs => 1 });
+
+            $id = $node->id;
+        }
+
+        return '<span class="translatable" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
     }
-
-    return $out . loc($text, @_);
+    else {
+        loc($phrase, @_);
+    }
 }
 
 

@@ -6636,7 +6636,6 @@ sub get_by_label
 	{
 	    confess "label must be a plain string";
 	}
-
 	utf8::upgrade($label); # for Pg export
 	my $sth = $Rit::dbix->dbh->prepare(
 		  "select * from node where label=?");
