@@ -4325,7 +4325,7 @@ sub equals
 	{
 	    return Rit::Base::List->new([$node])->find($node2, $args)->size;
 	}
-	elsif( ref $node2 eq 'Rit::Base::List' )
+	elsif( UNIVERSAL::isa($node2, 'Rit::Base::List') )
 	{
 	    foreach my $val ( $node2->as_array )
 	    {
@@ -4363,7 +4363,7 @@ sub equals
 	{
 #	    die "not implemented: $node2";
 	    debug "While comparing $node->{id} with other";
-	    confess "not implemented: ".datadump($node2);
+	    confess "not implemented: ".datadump($node2,1);
 	}
     }
 
