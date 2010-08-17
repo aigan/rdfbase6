@@ -1575,7 +1575,7 @@ sub contains_any_of
 
     if( ref $tmpl )
     {
-	if( ref $tmpl eq 'Rit::Base::List' )
+	if( UNIVERSAL::isa $tmpl, 'Rit::Base::List' )
 	{
 	    foreach my $val (@{$tmpl->as_list})
 	    {
