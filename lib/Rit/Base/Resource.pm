@@ -5704,6 +5704,13 @@ sub find_class
 	return 'Rit::Base::Arc';
     }
 
+#    # May only be necessary for PgLite DB bootstrap
+#    if( ref $node eq 'Rit::Base::Pred' )
+#    {
+#	debug "Special pred rule";
+#	return 'Rit::Base::Pred';
+#    }
+
 
     # We assume that Arcs et al are retrieved directly. Thus,
     # only look for 'is' arcs. Pred and Rule nodes should have an
@@ -6149,6 +6156,8 @@ sub rebless
     my( $node, $args_in ) = @_;
 
 #    cluck "REBLESS";
+#    Para::Frame::Logging->this_level(4); ### DEBUG
+
 
     $args_in ||= {};
     my $class_old = ref $node;

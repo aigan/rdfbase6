@@ -6278,6 +6278,11 @@ sub validate_valtype
 
     my( $valtype, $value_obj, $pred, $subj );
 
+
+    # Do not validate during startup, for bootstrapping
+    #
+    return 1 if $Rit::Base::IN_STARTUP;
+
     if( ref $arc )
     {
 	$valtype = $arc->valtype;
