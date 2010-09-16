@@ -50,6 +50,7 @@ has_wikipedia_id	5
 has_pred_format	5
 has_input_pattern	5
 subclasses_are	5
+translation_label	5
 
 ARCS
 is	is	predicate

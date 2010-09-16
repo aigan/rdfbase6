@@ -73,8 +73,9 @@ my $burner = Para::Frame::Burner->get_by_type('html');
 
 # Configure database
 #
-unlink "$troot/pglite";
-my $dbconnect = "dbi:PgLite:dbname=$troot/pglite";
+
+my $dbconnect = Rit::Base::Setup->dbconnect;
+
 $Rit::dbix = Para::Frame::DBIx ->
   new({
        connect => $dbconnect,
@@ -84,7 +85,8 @@ $Rit::dbix = Para::Frame::DBIx ->
 Para::Frame->startup;
 
 $Rit::dbix->connect;
-Rit::Base::Setup->setup_db('pglite');
+
+Rit::Base::Setup->setup_db();
 $Rit::dbix->commit;
 
 
