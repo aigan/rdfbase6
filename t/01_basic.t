@@ -37,6 +37,7 @@ warnings_like {Para::Frame->configure($cfg_in)}
   qr/^Stringify now set$/,
   qr/^Regestring ext tt to burner html$/,
   qr/^Regestring ext html_tt to burner html$/,
+  qr/^Regestring ext xtt to burner html$/,
   qr/^Regestring ext css_tt to burner plain$/,
   qr/^Regestring ext js_tt to burner plain$/,
   qr/^Regestring ext css_dtt to burner plain$/,

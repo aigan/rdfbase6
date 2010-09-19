@@ -367,7 +367,7 @@ sub setup_db
 
     debug "Done!";
 
-   return;
+   return 1;
 }
 
 
