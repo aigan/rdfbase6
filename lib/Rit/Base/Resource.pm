@@ -227,6 +227,7 @@ sub get
 
 	    $id = $node->id;
 
+	    confess "no id for $node" unless $id; ### DEBUG
 	    # Cache id lookups
 	    #
 #	    debug "Got $id: Caching node $id: $node";
@@ -6969,7 +6970,8 @@ sub create_rec
     {
 	$args ||= {};
 	my $time = $args->{'time'} || now();
-	my $user = $args->{'user'} || $Para::Frame::REQ->user;
+	my $user = $args->{'user'} ||
+	  $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
 
 	$n->{'created_obj'} = $time;
 	$n->{'created_by_obj'} = $user;
@@ -7179,7 +7181,7 @@ sub save
 
     $node->initiate_node;
 
-    my $u = $Para::Frame::REQ->user;
+    my $u = $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
     my $uid = $u->id;
     my $now = now();
     my $public = Rit::Base::Constants->get('public');
@@ -7989,7 +7991,7 @@ sub dereference_nesting
 sub session_history_add
 {
     my( $node, $table ) = @_;
-    if( $Para::Frame::REQ->is_from_client )
+    if( $Para::Frame::REQ and $Para::Frame::REQ->is_from_client )
     {
 	$table ||= 'visited';
 	my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
