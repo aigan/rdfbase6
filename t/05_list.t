@@ -1,5 +1,5 @@
 #!perl
-#  $Id$  -*-cperl-*-
+# -*-cperl-*-
 
 use 5.010;
 use strict;
@@ -9,7 +9,7 @@ use Cwd qw( abs_path );
 our $CFG;
 
 use Test::Warn;
-use Test::More tests => 20;
+use Test::More tests => 6;
 
 
 BEGIN
@@ -27,8 +27,29 @@ BEGIN
     open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
 }
 
+
+
+# Capture STDOUT
+$|=1;
+my $stdout = "";
+open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
+close STDOUT;
+open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
+
+
+sub clear_stdout
+{
+    close STDOUT;
+    $stdout="";
+    open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
+}
+
 use Para::Frame::DBIx;
+use Para::Frame::Utils qw( debug );
+
 use Rit::Base;
+use Rit::Base::Utils qw( is_undef parse_propargs );
+use Rit::Base::User::Meta;
 
 my $troot = '/tmp/rbtest';
 my $cfg_in =
@@ -40,6 +61,7 @@ my $cfg_in =
  dir_var           => $troot.'/var',
  'port'            => 9999,
  'debug'           => 1,
+ 'user_class'      => 'Rit::Base::User::Meta',
 };
 
 warnings_like {Para::Frame->configure($cfg_in)}
@@ -64,7 +86,6 @@ warning_like {
 
 
 my $cfg = $Para::Frame::CFG;
-my $burner = Para::Frame::Burner->get_by_type('html');
 
 my $dbconnect = Rit::Base::Setup->dbconnect;
 
@@ -78,26 +99,103 @@ warnings_like
 }[
   qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
   qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
- ], "startup";
+ ], "DBIx config";
 
+
+Para::Frame->add_hook('on_startup', sub
+		      {
+			  $Rit::dbix->connect;
+		      });
+
+warnings_like
+{
+    Rit::Base->init();
+}[
+  qr/^Adding hooks for Rit::Base$/,
+  qr/^Regestring ext js to burner plain$/,
+  qr/^Done adding hooks for Rit::Base$/,
+ ], "RB Init";
 
 warnings_like
 {
     Para::Frame->startup;
 }[
   qr/^Connected to port 9999$/,
+  qr/^Initiating valtypes$/,
+  qr/^Initiating constants$/,
+  qr/^Initiating key nodes$/,
+  qr/^$/,
+  qr/^1 Done in /,
   qr/^Setup complete, accepting connections$/,
  ], "startup";
 
+is( $stdout, "MAINLOOP 1\nSTARTED\n", "startup output" );
+clear_stdout();
 
-$Rit::dbix->connect;
 
 ###########
 
 
-my $d1 = Rit::Base::Literal::Time->parse('2010-02-01');
-my $d2 = Rit::Base::Literal::Time->parse('2010-03-01');
 
-my $l1 = Rit::Base::List->new($d1,$d2);
+# [% propositions = find({ is => C.proposition }).sorted('has_predicted_resolution_date') %]
 
-diag($d1);
+my $req = Para::Frame::Request->new_bgrequest();
+
+my( $args, $arclim, $res ) = parse_propargs('auto');
+$req->user->set_default_propargs({
+				  %$args,
+				  activate_new_arcs => 1,
+				 });
+
+
+
+
+my $R = Rit::Base->Resource;
+my $L = Rit::Base->Literal;
+my $C = Rit::Base->Constants;
+
+my $Class = $C->get('class');
+my $Pred = $C->get('predicate');
+my $Date = $C->get('date');
+
+my $d1 = Rit::Base::Literal::Time->parse('2010-03-01');
+my $d2 = Rit::Base::Literal::Time->parse('2010-02-01');
+
+my $MyThing =
+  $R->find_set({
+		label => 'MyThing',
+		is => $Class,
+	       });
+
+$R->find_set({
+	      label => 'has_some_date',
+	      is => $Pred,
+	      domain => $MyThing,
+	      range => $Date,
+	     });
+
+my $a =
+  $R->find_set({
+		has_some_date => $d1,
+		is => $MyThing,
+		name => 'rbt-1a',
+	       });
+
+my $b =
+  $R->find_set({
+		is => $MyThing,
+		name => 'rbt-1b',
+	       });
+
+my $c =
+  $R->find_set({
+		has_some_date => $d2,
+		is => $MyThing,
+		name => 'rbt-1c',
+	       });
+
+my $l1 = $R->find({ is => $MyThing })->sorted('has_some_date');
+
+diag($l1);
+
+1;
