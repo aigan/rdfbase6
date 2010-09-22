@@ -805,6 +805,42 @@ sub parse_sortargs
 
 ##############################################################################
 
+=head2 uniq
+
+  $l->uniq()
+
+Returns a list with multiple list items filtered out. Operates on the
+unmaterialized items. Populates the list.
+
+For more than one element, returns a list.  If nothing was filtered,
+returns the same object.
+
+For less than one element, returns L<Rit::Base::Undef>.
+
+For just one element, returns the element.
+
+=cut
+
+sub uniq
+{
+    my $l = $_[0]->SUPER::uniq();
+    my $s = $l->size;
+    if( $s > 1 )
+    {
+        return $l;
+    }
+    elsif( $s < 1 )
+    {
+        return is_undef;
+    }
+    else
+    {
+        return $l->get_first_nos;
+    }
+}
+
+##############################################################################
+
 =head2 unique_arcs_prio
 
   $list->unique_arcs_prio( \@arcproperties )
