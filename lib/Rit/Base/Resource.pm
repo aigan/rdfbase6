@@ -820,6 +820,11 @@ sub find
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
+#    if( $args->{arc_active_on_date} )
+#    {
+#	debug "Will filter on arc_active_on_date";
+#    }
+
     ## Default criterions
     my $default = $args->{'default'} || {};
     foreach my $key ( keys %$default )
@@ -1979,6 +1984,13 @@ sub list
 
 	    debug timediff "list unique_arcs_prio" if $DEBUG;
 	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      arc_active_on_date($aod)->as_array;
+
+	    debug timediff "list arc_active_on_date" if $DEBUG;
+	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
 	{
@@ -2171,6 +2183,11 @@ sub revlist
 	{
 	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
+	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      arc_active_on_date($aod)->as_array;
 	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
@@ -2395,6 +2412,10 @@ sub first_prop
 
 	return $best_arc->value;
     }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->list($pred, $proplim, $args)->get_first_nos;
+    }
 
 
     # No unique filter
@@ -2546,6 +2567,10 @@ sub first_revprop
 	}
 
 	return $best_arc->subj;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->revlist($pred, $proplim, $args)->get_first_nos;
     }
 
 
@@ -2722,7 +2747,10 @@ sub has_value
 	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
 	}
 
-	if( my $uap = $args->{unique_arcs_prio} )
+	my $uap = $args->{unique_arcs_prio};
+	my $aod = $args->{arc_active_on_date};
+
+	if( $uap or $aod )
 	{
 	    my @arcs;
 	    if( !$rev )
@@ -2763,10 +2791,18 @@ sub has_value
 
 	    if( @arcs )
 	    {
-		foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
-				  unique_arcs_prio($uap)->as_array )
+		if( $uap )
 		{
-		    return $arc unless $arc->is_removal;
+		    foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
+				      unique_arcs_prio($uap)->as_array )
+		    {
+			return $arc unless $arc->is_removal;
+		    }
+		}
+		elsif( $aod )
+		{
+		    return Rit::Base::Arc::List->new(\@arcs)->
+		      arc_active_on_date($aod)->get_first_nos;
 		}
 	    }
 	}
@@ -2813,6 +2849,22 @@ sub has_value
 	    {
 		return Rit::Base::Arc::List->new(\@arcs)->
 		  unique_arcs_prio($uap)->get_first_nos;
+	    }
+	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    my @arcs;
+	    foreach my $val (@$value )
+	    {
+		my $arc = $node->has_value({$pred_name=>$val},
+					   {%$args,rev=>$rev});
+		push @arcs, $arc if $arc;
+	    }
+
+	    if( @arcs )
+	    {
+		return Rit::Base::Arc::List->new(\@arcs)->
+		  arc_active_on_date($aod)->get_first_nos;
 	    }
 	}
 	else
@@ -2917,7 +2969,10 @@ sub has_value
 	}
     }
 
-    if( my $uap = $args->{unique_arcs_prio} )
+    my $uap = $args->{unique_arcs_prio};
+    my $aod = $args->{arc_active_on_date};
+
+    if( $uap or $aod )
     {
 	my @arcs;
 #	debug "In has_value";
@@ -2941,10 +2996,18 @@ sub has_value
 
 	if( @arcs )
 	{
-	    foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
-			      unique_arcs_prio($uap)->as_array )
+	    if( $uap )
 	    {
-		return $arc unless $arc->is_removal;
+		foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
+				  unique_arcs_prio($uap)->as_array )
+		{
+		    return $arc unless $arc->is_removal;
+		}
+	    }
+	    elsif( $aod )
+	    {
+		return Rit::Base::Arc::List->new(\@arcs)->
+		  arc_active_on_date($aod)->get_first_nos;
 	    }
 	}
     }
@@ -3339,7 +3402,7 @@ If given C<$value> or C<\@values>, returns those arcs that has any of
 the given values. Similar to L</has_value> but returns a list instad
 of a single arc.
 
-unique_arcs_prio filter is applied BEFORE proplim. That means that we
+unique_arcs_prio filter is applied AFTER proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
 =cut
@@ -3465,6 +3528,10 @@ sub arc_list
     {
 	$lr = $lr->unique_arcs_prio($uap);
 #	debug timediff("arc_list unique_arcs_prio");
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	$lr = $lr->arc_active_on_date($aod);
     }
 
 #    if( defined $proplim ) # The Undef Literal is also an proplim
@@ -3603,6 +3670,10 @@ sub revarc_list
     {
 	$lr = $lr->unique_arcs_prio($uap);
     }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	$lr = $lr->arc_active_on_date($aod);
+    }
 
     if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
@@ -3721,6 +3792,10 @@ sub first_arc
 	}
 
 	return $best_arc;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->arc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 
@@ -3870,6 +3945,10 @@ sub first_revarc
 	}
 
 	return $best_arc;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->revarc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 

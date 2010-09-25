@@ -5,7 +5,7 @@ package Rit::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -1225,7 +1225,12 @@ sub parse_propargs
 	}
     }
 
-
+    if( $arg->{arc_active_on_date} )
+    {
+	$arg->{'arclim'} = $arclim =
+	  Rit::Base::Arc::Lim->parse([1,4096]); # active or old
+	delete $arg->{unique_arcs_prio};
+    }
 
 
     if( wantarray )
