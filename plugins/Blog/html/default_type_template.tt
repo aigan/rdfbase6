@@ -2,26 +2,41 @@
                   id = q.param("id");
 		  cms_page = get(id);
 		  GET cms_page.name;
-		 ' %]
+		 ' 
+         feed_id = '-
+                    id = q.param("id");
+		    cms_page = get(id);
+		    type = cms_page.is_view_for_node.get_first_nos;
+		    GET type.id;
+		   '
+%]
 
 [%
    id = q.param('id');
    cms_page = get(id);
+   type = cms_page.is_view_for_node;
 %]
 
-<div class="text">
-  [% IF cms_page.name %]
-    <h1>[% cms_page.name %]</h1>
-  [% END %]
+<h1 class="right_float date" style="border: none">
+  <a href="$home/feed?id=${type.id}">
+    <img src="$home/rb/img/atom.png" alt="Atom feed"
+	 style="width: .9em; height: .9em; bottom: .1em; position: relative" />
+  </a>
+</h1>
+[% IF cms_page.name %]
+  <h1>[% cms_page.name %]</h1>
+[% END %]
 
-  <ul>
-    [% FOREACH blog IN cms_page.is_view_for_node.rev_is %]
-      <li>${blog.name}</li>
+<ul>
+  [% FOREACH blog IN cms_page.is_view_for_node.rev_is %]
+    [% FOREACH blog_page IN blog.rev_is_view_for_node %]
+      <li>
+	[% jump(blog_page.desig, blog_page.has_url) %]
+	[% IF admin_mode; ' ('; blog.wu_jump(label='Form'); ')'; END %]
+      </li>
     [% END %]
-  </ul>
-</div>
-
-<br style="clear: both" />
+  [% END %]
+</ul>
 
 [% IF admin_mode %]
   <hr/>

@@ -19,10 +19,39 @@
 [% END %]
 
 <table>
-  <tr><td>[% blog.wu('is', arctype='singular', range_scof=C.plugin_blog, tdlabel="Type") %]</td></tr>
-  <tr><td>[% blog.wu('name', tdlabel="Name") %]</td></tr>
-  <tr><td>[% blog.wu('description', tdlabel="Description") %]</td></tr>
+  <tr><td>
+    [% blog.wu('is', arctype='singular',
+               range_scof=C.plugin_blog, tdlabel="Type")
+    %]
+  </td></tr>
+  <tr><td>[% blog.wu('name',                       tdlabel="Name"       ) %]</td></tr>
+  <tr><td>[% blog.wu('has_plugin_blog_base_url',   tdlabel='Base URL'   ) %]</td></tr>
+  <tr><td>[% blog.wu('instances_default_template', tdlabel='Template'   ) %]</td></tr>
+  <tr><td>[% blog.wu('description',                tdlabel="Description") %]</td></tr>
+  <tr><td>
+    [% blog.wu('has_member',  tdlabel="Owner"
+               range=C.login_account,
+              )
+    %]
+  </td></tr>
   <tr><td>Owner, permissions....</td></tr>
 </table>
+
+<h2>Pages showing this blog</h2>
+<ul>
+  [% FOREACH bpage IN blog.rev_is_view_for_node %]
+    <li>[% bpage.wu_jump %]</li>
+  [% END %]
+</ul>
+[% UNLESS blog.empty %]
+  <p>
+    [% jump('Add page', "$home/rb/cms/page.tt", title=blog.name,
+            template  ='/rb/plugins/Blog/default_blog_template.tt',
+            has_url   = blog.has_plugin_blog_base_url,
+            view_node = blog.id,
+  	  )
+    %]
+  </p>
+[% END %]
 
 [% step %]

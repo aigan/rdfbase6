@@ -18,8 +18,8 @@
 [% END %]
 
 <table>
-  <tr><td>[% type.wu('name',        tdlabel='Name') %]</td></tr>
-  <tr><td>[% type.wu('description', tdlabel='Description') %]</td></tr>
+  <tr><td>[% type.wu('name',                     tdlabel='Name'       ) %]</td></tr>
+  <tr><td>[% type.wu('description',              tdlabel='Description') %]</td></tr>
 </table>
 
 <p>[% step %]</p>
@@ -27,8 +27,8 @@
 
 <h2>Pages showing this blog type</h2>
 <ul>
-  [% FOREACH page IN type.rev_is_view_for_node %]
-    <li>[% page.wu_jump %]</li>
+  [% FOREACH tpage IN type.rev_is_view_for_node %]
+    <li>[% tpage.wu_jump %]</li>
   [% END %]
 </ul>
 <p>

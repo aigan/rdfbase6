@@ -1,0 +1,52 @@
+﻿[% META title = '-
+                  id = q.param("id");
+		  cms_page = get(id);
+		  GET cms_page.name;
+		 '
+         feed_id = '-
+                    id = q.param("id");
+		    cms_page = get(id);
+		    blog = cms_page.is_view_for_node.get_first_nos;
+		    GET blog.id;
+		   '
+%]
+
+[%
+   id = q.param('id');
+   cms_page = get(id);
+
+   blog = cms_page.is_view_for_node.get_first_nos;
+
+   is_owner = blog.has_member(u);
+%]
+
+[% IF blog.name %]
+  <h1 class="right_float date" style="border: none">
+    <a href="$home/feed?id=${blog.id}">
+      <img src="$home/rb/img/atom.png" alt="Atom feed"
+	   style="width: .9em; height: .9em; bottom: .1em; position: relative" />
+    </a>
+  </h1>
+  <h1>[% blog.name %]</h1>
+[% END %]
+
+<p>
+  [% blog.description #| HTML %]
+</p>
+
+[% FOREACH post IN blog.revlist('plugin_blog_post_is_in_blog', has_url_exist=1).sorted('has_date', 'desc') %]
+  <div class="blog_post_short bbottom">
+    <h3 class="right_float date">[% post.has_date %]</h3>
+    <h3>
+      [% jump(post.desig, "$home${post.has_url}") %]
+      [% IF is_owner; ' ('; post.wu_jump(label='Form'); ')'; END %]
+    </h3>
+
+    <p>
+      [% post.description | html %]
+    </p>
+    <p class="right">
+      [% jump('Läs mer...', "$home${post.has_url}") %]
+    </p>
+  </div>
+[% END %]
