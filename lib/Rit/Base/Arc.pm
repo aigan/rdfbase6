@@ -5,7 +5,7 @@ package Rit::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -42,6 +42,7 @@ use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Logging;
 
+use Rit::Base::Widget;
 use Rit::Base::List;
 use Rit::Base::Arc::List;
 use Rit::Base::Pred;
@@ -348,6 +349,8 @@ sub create
     my $pred_name = $pred->plain;
 
     $rec->{'pred'} = $pred_id;
+    confess "Invalid pred $pred_id" if $pred_id < 1;
+
 
     push @fields, 'pred';
     push @values, $rec->{'pred'};
@@ -419,26 +422,29 @@ sub create
 
 
     ##################### updated
+    my $updated;
     if( $props->{'created'} )
     {
-	$rec->{'updated'} = Rit::Base::Literal::Time->
+	$updated = Rit::Base::Literal::Time->
 	  get($props->{'created'});
     }
     elsif( $args->{'updated'} )
     {
-	$rec->{'updated'} = Rit::Base::Literal::Time->
+	$updated = Rit::Base::Literal::Time->
 	  get($args->{'updated'});
     }
     else
     {
-	$rec->{'updated'} = now();
+	$updated = now();
     }
+
+    $rec->{'updated'} = $dbix->format_datetime( $updated );
     push @fields, 'updated';
-    push @values, $dbix->format_datetime($rec->{'updated'});
+    push @values, $rec->{'updated'};
 
     $rec->{'created'} = $rec->{'updated'};
     push @fields, 'created';
-    push @values, $dbix->format_datetime($rec->{'created'});
+    push @values, $rec->{'created'};
 
 
     ##################### implicit
@@ -713,7 +719,16 @@ sub create
     # doesn't match on other properties. ( TODO: Also consider the
     # read_access value.)
 
+    my $do_check = 1;
+    if( $args->{'arc_create_check'} )
+    {
+	unless( $args->{'arc_create_check'}{ $value_obj->id } )
+	{
+	    $do_check = 0;
+	}
+    }
 
+    if( $do_check )
     {
 	my $subj = Rit::Base::Resource->get_by_id( $rec->{'subj'} );
 	my $pred = Rit::Base::Pred->get( $rec->{'pred'} );
@@ -1304,6 +1319,28 @@ sub created
 
 ##############################################################################
 
+=head2 created_iso8601
+
+  $a->created_iso8601
+
+PostgreSQL seems to always return times in the current local timezone,
+regardless of timezone used to store the date. This makes it useful
+for sorting and comparison. It also uses space to separate date and
+time.
+
+Returns: The time as a string in ISO 8601 format, or undef
+
+=cut
+
+sub created_iso8601
+{
+    return $_[0]->{'arc_created'} ||=
+      $Rit::dbix->format_datetime( $_[0]->{'arc_created_obj'} );
+}
+
+
+##############################################################################
+
 =head2 updated
 
   $a->updated
@@ -1323,6 +1360,28 @@ sub updated
 
     return $arc->{'arc_updated_obj'} =
       Rit::Base::Literal::Time->get( $arc->{'arc_updated'} );
+}
+
+
+##############################################################################
+
+=head2 updated_iso8601
+
+  $a->updated_iso8601
+
+PostgreSQL seems to always return times in the current local timezone,
+regardless of timezone used to store the date. This makes it useful
+for sorting and comparison. It also uses space to separate date and
+time.
+
+Returns: The time as a string in ISO 8601 format, or undef
+
+=cut
+
+sub updated_iso8601
+{
+    return $_[0]->{'arc_updated'} ||=
+      $Rit::dbix->format_datetime( $_[0]->{'arc_updated_obj'} );
 }
 
 
@@ -2083,6 +2142,8 @@ sub previous_active_version
 
 May return undef;
 
+See also L<Rit::Base::Arc::List/arc_active_on_date>
+
 Returns: The arc that was active at the given time.
 
 =cut
@@ -2285,6 +2346,133 @@ sub sysdesig_nosubj
     my( $arc ) = @_;
 
     return sprintf("%d: %s --%s--> %s (%d) #%d", $arc->{'id'}, $arc->subj->id, $arc->pred->plain, $arc->value_sysdesig, $arc->{'disregard'}, $arc->{'ioid'});
+}
+
+
+##############################################################################
+
+=head2 table_row
+
+  $a->table_row
+
+=cut
+
+sub table_row
+{
+    my( $arc, $args ) = @_;
+
+    my $out = "<tr>";
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+#    my $out = '';
+#    my $is_scof = $args->{'range_scof'};
+    my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
+#    my $is_pred = ( $is_scof ? 'scof' : 'is' );
+#    my $range = $args->{'range'} || $args->{'range_scof'};
+    my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
+    my $divid = $args->{'divid'};
+    my $disabled = $args->{'disabled'} || 0;
+    my $subj_id = $args->{'source'}->id;
+#    my $hide_create_button = $args->{'hide_create_button'} || 0;
+
+    my $check_subj = $arc->subj;
+    my $item = $arc->value;
+
+#    debug "table row for ".$arc->sysdesig;
+#    debug query_desig $args;
+
+
+    foreach my $col ( @{$args->{'columns'}} )
+    {
+	$out .= "<td>";
+	given( $col )
+	{
+	    when('-arc_remove')
+	    {
+		unless( $disabled )
+		{
+		    if( $ajax )
+		    {
+			my $arc_id = $arc->id;
+			$out .= $q->input({ type => 'button',
+					    value => '-',
+					    onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
+					    class => 'nopad',
+					  });
+		    }
+		    else
+		    {
+			my $field = Rit::Base::Widget::build_field_key({arc => $arc});
+			$out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+			$out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+		    }
+		    $out .= " ";
+		}
+	    }
+
+	    when('-arc_updated')
+	    {
+		$out .= $arc->updated;
+	    }
+
+	    when('-arc_seen_status')
+	    {
+		die "not implemented" if $is_rev;
+		if( $check_subj->first_arc('unseen_by',$item) )
+		{
+		    if( my $seen = $check_subj->first_arc('seen_by',$item) )
+		    {
+			$out .= "last seen ".$seen->updated;
+		    }
+		    else
+		    {
+			$out .= "never seen";
+		    }
+		}
+		elsif( $check_subj->first_arc('seen_by',$item) )
+		{
+		    $out .= "up to date";
+		}
+	    }
+
+	    when('desig')
+	    {
+		if( $disabled )
+		{
+		    $out .= ( $is_rev ? $check_subj->desig($args) :
+			      $item->desig($args) );
+		}
+		else
+		{
+		    if( my $item_prefix = $args->{'item_prefix'} )
+		    {
+			$out .= $item->$item_prefix." ";
+		    }
+		    $out .= ( $is_rev ? $check_subj->wu_jump :
+			      $item->wu_jump );
+		}
+		$out .= '&nbsp;' . $arc->edit_link_html;
+	    }
+
+	    default
+	    {
+#		debug "Calling method $col ($is_rev) on node ".$item->sysdesig;
+
+#		debug query_desig($args);
+		my $val = ( $is_rev ? $check_subj->$col() : $item->$col() );
+#		my $val = $item->weight($args);
+#		debug "  got ".query_desig($val);
+
+		$out .= $val;
+	    }
+	}
+	$out .= "</td>";
+    }
+
+    $out .= "</tr>\n";
+
+    return $out;
 }
 
 
@@ -3113,9 +3301,10 @@ sub has_value
     my $val_parsed = $R->get_by_anything($value, $args_valtype);
 
 #    my $match = $args->{'match'} || 'eq';
-#    debug sprintf "CHECKS %d if %s %s %s ", $arc->id, $target->sysdesig, $match, ,query_desig($val_parsed);
+#    debug sprintf "CHECKS %d %s if %s %s %s ", $arc->id, $pred_name, $target->sysdesig, $match, ,query_desig($val_parsed);
 #    debug " 1. ".datadump($target,1);
 #    debug " 2. ".datadump($val_parsed,1);
+#    debug datadump($arc,1);
 
     return $arc if $target->matches( $val_parsed, $args );
 #    debug "  no match";
@@ -3454,7 +3643,7 @@ sub remove
     my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
     my $arc_id = $arc->id;
 
-    if( $DEBUG )
+    if( $DEBUG and not $remove_if_no_longer_implicit )
     {
 	debug "REQ REM ARC ".$arc->sysdesig;
 
@@ -3500,7 +3689,7 @@ sub remove
 	{
 	    if( $remove_if_no_longer_implicit )
 	    {
-		debug "  Arc implicit and infered" if $DEBUG;
+		debug "  Arc implicit and infered" if $DEBUG > 1;
 		return 0;
 	    }
 	    else
@@ -3527,7 +3716,7 @@ sub remove
 
 	if( $remove_if_no_longer_implicit and $arc->explicit ) # remove implicit
 	{
-	    debug "  removed implicit but arc explicit\n" if $DEBUG;
+	    debug "  removed implicit but arc explicit\n" if $DEBUG > 1;
 	    return 0;
 	}
 	elsif( not $remove_if_no_longer_implicit and $arc->implicit ) # remove explicit
@@ -3587,7 +3776,9 @@ sub remove
 	}
     }
 
-
+#    my $mrk = Time::HiRes::time();
+#    $::PRT1 += $mrk - $::MRK;
+#    $::MRK = $mrk;
 
     debug "  remove_check" if $DEBUG;
     $arc->remove_check( $args );
@@ -3595,9 +3786,23 @@ sub remove
     # May have been removed during remove_check
     return 1 if $arc->is_removed;
 
-    debug "  SUPER::remove" if $DEBUG;
-    $arc->SUPER::remove();  # Removes the arc node: the arcs properties
+#    $mrk = Time::HiRes::time();
+#    $::PRT2 += $mrk - $::MRK;
+#    $::MRK = $mrk;
 
+    debug "  SUPER::remove" if $DEBUG;
+    $arc->SUPER::remove( $args );  # Removes the arc node: the arcs properties
+
+    debug "  remove replaced by" if $DEBUG;
+    foreach my $repl ( $arc->replaced_by->nodes )
+    {
+	$repl->remove( $args );
+    }
+
+
+#    $mrk = Time::HiRes::time();
+#    $::PRT3 += $mrk - $::MRK;
+#    $::MRK = $mrk;
 
     ### Not important if doesn't exist in DB. For example, if the arc
     ### was rolled back before it was comitted. We can still use this
@@ -3612,11 +3817,24 @@ sub remove
     $Rit::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
 
-    debug "  init subj" if $DEBUG;
-    $arc->subj->reset_cache;
-    $arc->value->reset_cache(undef);
+#    $mrk = Time::HiRes::time();
+#    $::PRT4 += $mrk - $::MRK;
+#    $::MRK = $mrk;
+
+    debug "  Set disregard arc $arc->{id} #$arc->{ioid}\n" if $DEBUG;
+    $arc->{disregard} ++;
+
+    $arc->deregister_with_nodes();
+#    $arc->subj->reset_cache;
+#    $arc->value->reset_cache(undef);
 
     $Rit::Base::Cache::Changes::Removed{$arc_id} ++;
+
+
+#    $mrk = Time::HiRes::time();
+#    $::PRT5 += $mrk - $::MRK;
+#    $::MRK = $mrk;
+
 
     # Clear out data from arc (and arc in cache)
     #
@@ -3642,12 +3860,14 @@ sub remove
     {
 	delete $arc->{$prop};
     }
-    $arc->{disregard} ++;
-    debug "  Set disregard arc $arc->{id} #$arc->{ioid}\n" if $DEBUG;
 
     # Remove arc from cache
     #
     delete $Rit::Base::Cache::Resource{ $arc_id };
+
+    # Do not try to vacuum this
+    #
+    $res->{'vacuumed'}{$arc->{'id'}} ++;
 
     return 1; # One arc removed
 }
@@ -5252,6 +5472,167 @@ sub register_with_nodes
 
 ##############################################################################
 
+=head2 deregister_with_nodes
+
+  $a->deregister_with_nodes
+
+Must only be called then the arc no longer exists.
+
+Returns: the arc
+
+=cut
+
+sub deregister_with_nodes
+{
+    my( $arc ) = @_;
+
+    unless( $arc->{disregard} )
+    {
+	confess(sprintf "Tried to deregister active arc %s", $arc->sysdesig);
+    }
+
+
+    my $id = $arc->{'id'};
+    my $pred = $arc->pred;
+    my $subj = $arc->{'subj'};
+    my $pred_name = $pred->plain;
+#    my $coltype = $arc->coltype || ''; # coltype may be removal
+
+#    if( $arc->{'active'} )
+#    {
+#	debug "Deregister active arc $id";
+#    }
+#    else
+#    {
+#	debug "Deregister inactive arc $id";
+#    }
+
+    # Deregister the arc with the subj
+    if( $subj->{'arc_id'}{$id}  )
+    {
+	if( $arc->{'active'} )
+	{
+	    if( my $alist = $subj->{'relarc'}{ $pred_name } )
+	    {
+#		debug sprintf "  among %d %s arcs", $#$alist, $pred_name;
+
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+#		    debug "  $i: ".$alist->[$i]->{id};
+		    if( $alist->[$i]->{id} == $arc->{id} )
+		    {
+#			debug "Removed $id from ".$subj->id;
+#			debug sprintf "  compared %s with %s", $alist->[$i], $arc;
+			splice @$alist, $i, 1;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+	else
+	{
+	    if( my $alist = $subj->{'relarc_inactive'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i]->{id} eq $arc->{id} )
+		    {
+#			debug "Removed $id from ".$subj->id;
+			splice @$alist, $i, 1;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+
+	delete $subj->{'arc_id'}{$id};
+    }
+
+    # Setup Value
+    my $value = $arc->{'value'};
+
+    if( UNIVERSAL::isa($value, "Rit::Base::Literal") )
+    {
+	$value->set_arc(undef);
+    }
+    elsif( UNIVERSAL::isa($value, "Rit::Base::Resource::Literal") )
+    {
+	my $alist = $value->{'lit_revarc_active'};
+	my $i=0;
+	while( $i<=$#$alist )
+	{
+	    if( $alist->[$i]->{id} eq $arc->{id} )
+	    {
+#		debug "Removed $id from ".$value->sysdesig;
+		splice @$alist, $i, 1;
+		last;
+	    }
+	    $i++;
+	}
+
+	$alist = $value->{'lit_revarc_inactive'};
+	$i=0;
+	while( $i<=$#$alist )
+	{
+	    if( $alist->[$i]->{id} eq $arc->{id} )
+	    {
+#		debug "Removed $id from ".$value->sysdesig;
+		splice @$alist, $i, 1;
+		last;
+	    }
+	    $i++;
+	}
+    }
+    elsif( $value->{'arc_id'} and $value->{'arc_id'}{$id} )
+    {
+	if( $arc->{'active'} )
+	{
+	    if( my $alist = $value->{'revarc'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i]->{id} eq $arc->{id} )
+		    {
+			splice @$alist, $i, 1;
+#			debug "Removed $id from ".$value->sysdesig;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+	else
+	{
+	    if( my $alist = $value->{'revarc_inactive'}{ $pred_name } )
+	    {
+		my $i=0;
+		while( $i<=$#$alist )
+		{
+		    if( $alist->[$i]->{id} eq $arc->{id} )
+		    {
+			splice @$alist, $i, 1;
+#			debug "Removed $id from ".$value->sysdesig;
+			last;
+		    }
+		    $i++;
+		}
+	    }
+	}
+
+	delete $value->{'arc_id'}{$id};
+    }
+
+    return $arc;
+}
+
+
+##############################################################################
+
 =head2 disregard
 
   $a->disregard
@@ -5898,6 +6279,11 @@ sub validate_valtype
     # valid because a $hotel is a subclass of $organization
 
     my( $valtype, $value_obj, $pred, $subj );
+
+
+    # Do not validate during startup, for bootstrapping
+    #
+    return 1 if $Rit::Base::IN_STARTUP;
 
     if( ref $arc )
     {

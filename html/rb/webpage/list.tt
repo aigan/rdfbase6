@@ -1,0 +1,58 @@
+[% META title="List pages"
+        level = 20
+%]
+
+   <p>
+   [ [% jump('List',"$home/rb/webpage/list.tt") %]
+   | [%+ jump('Add',"$home/rb/webpage/add.tt") %]
+   ]</p>
+
+
+[% USE Sorted_table('code');
+   DEFAULT pagesize=200;
+   pages = C.webpage.revlist('is').sorted(order, direction);
+   CALL pages.set_page_size( pagesize );
+%]
+
+<p>[% loc("[quant,_1,hit]", pages.size) %]<br/>
+[% pages.pagelist %]
+</p>
+
+<table>
+<tr><th>WpiF</th>
+    <th>[% sort('ID','id') %]
+    <th>[% sort('Name', 'name.loc') %]
+    <th>[% sort('Code', 'code') %]
+
+[% FOREACH page IN pages.from_page %]
+   [% tr2 %]
+      [%
+      id = page.id;
+      place = page.code.loc;
+      ppath = place.replace('@.*','');
+      plink = ppath _ '.tt';
+      %]
+      <td>[% IF page.is(C.website_text);
+                jump('Wp',"$home/w/", id=id);
+                jump('iF',"$home/i/", id=id);
+             END %]</td>
+      <td>[% page.wu_jump(label=id) %]</td>
+      <td>[% page.name.loc %]</td>
+      <td>[% IF ppath; jump(place, "$home$plink"); ELSE; place; END %]</td>
+   </tr>
+   [% FOREACH mp IN page.has_member.sorted %]
+      <tr><td colspan="3"></td><td>[% mp.wu_jump %]</td></tr>
+   [% END %]
+[% END %]
+</table>
+
+<h2>Instructions</h2>
+<table class="admin">
+<tr><td>Wp</td><td>Link to bordered webpage in the <code>/w/</code> dir</td></tr>
+<tr><td>iF</td><td>Link to content without borders in the <code>/i/</code> dir</td></tr>
+<tr><td>/<em>path</em></td><td>Link to the page in the corresponding place</td></tr>
+<tr><td>/<em>path</em> <code>@</code> <em>label</em></td><td><em>label</em> is a separate subsection in the page with the /<em>path</em></td></tr>
+<tr><td><code>@</code><em>label</em></td><td>Used for content not bound to a specific page</td></tr>
+<tr><td><em>#####</em></td><td>Link to the form for changing the text and title</td></tr>
+
+</table>

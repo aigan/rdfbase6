@@ -5,7 +5,7 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -26,13 +26,14 @@ use Time::HiRes qw( time );
 use List::Util qw( min );
 use Scalar::Util qw( refaddr );
 #use Sys::SigAction qw( set_sig_handler );
+use Encode; # encode decode
 
 use Para::Frame::Utils qw( throw debug datadump ); #);
 use Para::Frame::Reload;
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Worker;
 
-use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id ); #);
+use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id parse_propargs ); #);
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -340,7 +341,7 @@ sub query_setup
     }
 
     my $q = $Para::Frame::REQ->q;
-    $q->param('query', $query);
+    $q->param('query', encode("UTF-8", $query));
 
     return $query;
 }
@@ -359,6 +360,7 @@ sub form_setup
 
     my $q = $Para::Frame::REQ->q;
     my $props = $search->rev_query('full');
+
     foreach my $prop ( keys %$props )
     {
 	my( @values ) = $q->param($prop);
@@ -370,8 +372,9 @@ sub form_setup
 	my %vals = map{ $_,1 } @values;
 	foreach my $val ( @$newvals )
 	{
+	    next unless defined $val;
 	    next if $vals{$val} ++;
-	    push @values, $val;
+	    push @values, encode("UTF-8", $val);
 	}
 
 	$q->param( -name=>$prop, -values=> \@values );
@@ -753,7 +756,8 @@ Returns: 1
 
 sub modify
 {
-    my( $search, $props, $args ) = @_;
+    my( $search, $props, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     $search->remove_node;
 
@@ -772,6 +776,12 @@ sub modify
     {
 	$search->set_arclim( $arclim_in );
     }
+
+    if( my $aod = $args->{arc_active_on_date} )
+    {
+	$search->set_arc_active_on_date($aod);
+    }
+
 
     my $c_resource = Rit::Base::Resource->get_by_label('resource');
 
@@ -835,6 +845,17 @@ sub modify
                 $props->{ $key } = $sub->result->get_first_nos->id;
             }
         }
+	elsif( $key =~ /^([^\.]+)\./ )
+	{
+	    debug "Moving multistep query $key to filter";
+
+	    # Keep first part. Put the rest in filter
+	    my $first = $1;
+	    $filter{ $key } = delete $props->{ $key };
+	    $first =~ s/[\{\[]+.*//; # Remove special formatting
+	    $props->{ $first . '_exist' } = 1;
+
+	}
     }
 
     unless( scalar keys %$props )
@@ -1003,6 +1024,14 @@ sub modify
 		confess "not implemented: $pred";
 	    }
 	    elsif( $pred =~ /\./ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\{/ )
+	    {
+		confess "not implemented: $pred";
+	    }
+	    elsif( $pred =~ /\[/ )
 	    {
 		confess "not implemented: $pred";
 	    }
@@ -1365,6 +1394,14 @@ sub execute
 	{
 	    $search->{'result'} =
 	      $search->{'result'}->unique_arcs_prio($uap);
+	}
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	if( $search->{'query'}{'arc'} )
+	{
+	    $search->{'result'} =
+	      $search->{'result'}->arc_active_on_date($aod);
 	}
     }
 
@@ -1806,10 +1843,13 @@ sub rev_query
 		$props->{"path_${path}"} = $val;
 	    }
 	}
-	elsif( $cc eq 'orcer_by' )
+	elsif( $cc eq 'order_by' )
 	{
 	    # Limited support
-	    $props->{"order_by"} = $search->{'query'}{'order_by'}[0];
+	    if( my $order = $search->{'query'}{'order_by'}[0] )
+	    {
+		$props->{"order_by"} = $order;
+	    }
 	}
 	elsif( $cc eq 'prop' )
 	{
@@ -1823,6 +1863,7 @@ sub rev_query
 		my $values = $prop->{'values'};
 #		my $val = $values->[0]; # Limited support
 		my $prio = $prop->{'prio'};
+		my $clean = $prop->{'clean'};
 
 #		debug "VALUES: @$values";
 
@@ -1885,6 +1926,11 @@ sub rev_query
 			$str .= $p;
 		    }
 
+		    if( $clean )
+		    {
+			$str .= '_clean';
+		    }
+
 		    if( $match eq 'eq' )
 		    {
 			push @alts, [$str, $values];
@@ -1937,9 +1983,11 @@ $prop is the value node
 
 sub criterions
 {
-    my( $search ) = @_;
+    my( $search, $args ) = @_;
 
-#    debug "Getting criterions";
+    debug "Getting criterions";
+
+    $args ||= {};
 
     my $ecrits = {};
 
@@ -1960,7 +2008,10 @@ sub criterions
 #		debug "Considering $prop";
 		# Do not include private parts, since criterions is
 		# for public presentation
-		next if $prop->{'private'};
+		unless( $args->{'private'} )
+		{
+		    next if $prop->{'private'};
+		}
 
 		my $rev = $prop->{'rev'};
 		my $preds = $prop->{'pred'};
@@ -3341,7 +3392,7 @@ sub set_arclim
 
 #    if( (ref $arclim eq 'ARRAY') and ( @$arclim == 0 ) )
 #    {
-#        cluck "Setting arclim to ".$arclim->sysdesig;
+#    debug "Setting arclim to ".$arclim->sysdesig;
 #    }
 
     return $search->{'arclim'} = $arclim;
@@ -3361,6 +3412,25 @@ See L<Rit::Base::Arc::Lim/limflag>
 sub arclim
 {
     return $_[0]->{'arclim'} ||= Rit::Base::Arc::Lim->new;
+}
+
+
+##############################################################################
+
+=head2 set_arc_active_on_date
+
+  $search->set_arclim( $date )
+
+See L<Rit::Base::Arc::List/arc_active_on_date>
+
+=cut
+
+sub set_arc_active_on_date
+{
+    my( $search, $date ) = @_;
+
+    return $search->{'arc_active_on_date'} =
+      $Rit::dbix->format_datetime($date);
 }
 
 
@@ -3387,10 +3457,13 @@ sub arclim_sql
 
     $args ||= {};
 
-    my $arclim = $args->{'arclim'} || $search->arclim;
+    my $arclim_in = $args->{'arclim'} || $search->arclim;
+    my $arclim = Rit::Base::Arc::Lim->parse($arclim_in);
+
 
 #    debug "Adding arclim_sql based on\n".datadump($arclim);
-    my $sql = $arclim->sql($args);
+    my $sql = $arclim->sql({%$args,
+			    active_on_date=>$search->{'arc_active_on_date'}});
 #    debug "  -> ".$sql;
 
     return $sql ? "and $sql" : '';

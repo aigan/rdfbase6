@@ -286,7 +286,7 @@ sub body_raw
     my $path = $part->path;
     my $folder = $part->top->folder;
 
-#    debug "Getting bodypart $uid $path ".($length||'all');
+    debug "Getting bodypart $uid $path ".($length||'all');
     return \ $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 }
 

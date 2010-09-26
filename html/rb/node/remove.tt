@@ -36,6 +36,7 @@
       [% END %]
       <td>[% jump(arc.view_flags, 'arc/update.tt', id=arc.id) %]</td>
       </tr>
+      [% IF loop.index % 100; CALL req.may_yield; END %]
    [% END %]
 [% END %]
 </table>
@@ -62,10 +63,13 @@
       <td valign="top">[% pred.plain %]</td>
       <td>[% jump(arc.view_flags, 'arc/update.tt', id=arc.id) %]</td>
       </tr>
+      [% IF loop.index % 100; CALL req.may_yield; END %]
    [% END %]
 [% END %]
 </table>
 
 
-<p>[% step('Delete') %]
-
+<p>[% hidden('force',0) %]
+[% go("HARD Delete", me, 'arc_delete', force=1, tag_attr={class="alert",style="float:right"}) %]
+[% step('Delete') %]
+</p>

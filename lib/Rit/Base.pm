@@ -37,7 +37,7 @@ use Rit::Base::Setup;
 use Rit::Base::Plugins;
 
 
-our $VERSION = "6.56";
+our $VERSION = "6.57";
 
 
 =head1 NAME
@@ -116,7 +116,7 @@ sub init
 
     Para::Frame->add_hook('done', \&on_done);
 
-    Para::Frame->add_hook('add_background_jobs', \&add_background_jobs);
+    Para::Frame->add_hook('busy_background_job', \&add_background_jobs);
 
     $Para::Frame::CFG->{'search_collection_class'} ||=
       'Rit::Base::Search::Collection';
@@ -174,7 +174,7 @@ sub init_on_startup
 #    warn "init_on_startup\n";
 
     if( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
-	  and not $ARGV[1] )
+	  and $ARGV[1] and $ARGV[1] eq 'clear' )
 	or not $Rit::dbix->table('arc') )
     {
 	Rit::Base::Setup->setup_db();
@@ -206,6 +206,22 @@ sub init_on_startup
 #    warn "init_on_startup 5\n";
 
     $Rit::Base::IN_STARTUP = 0;
+    $Rit::Base::IN_SETUP_DB = 0;
+
+    ###################################### Make upgrade handling
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        my( $args, $arclim, $res ) = Rit::Base::Utils::parse_propargs('auto');
+        my $R = Rit::Base->Resource;
+        $R->find_set({
+                      label => 'translation_label',
+                      is => 'predicate',
+                      range => 'text',
+                     }, $args);
+        $res->autocommit({ activate => 1 });
+        $req->done;
+    }
+    ########################################
 
 #    warn "calling on_ritbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
@@ -289,6 +305,8 @@ sub Constants ()
 
 Returns class object for L<Rit::Base::Literal>
 
+See also L<Rit::Base::Utils/string>
+
 =cut
 
 sub Literal ()
@@ -324,12 +342,15 @@ sub add_background_jobs
 {
     my( $delta, $sysload ) = @_;
 
+#    debug "*******================************ May send_cache_change";
     if( keys %Rit::Base::Cache::Changes::Added or
 	keys %Rit::Base::Cache::Changes::Updated or
 	keys %Rit::Base::Cache::Changes::Removed )
     {
-	$Para::Frame::REQ->add_job('run_code', 'send_cache_change',
-				   \&send_cache_change);
+	send_cache_change(undef);
+#	debug "  prepending job";
+#	$Para::Frame::REQ->prepend_background_job('send_cache_change',
+#						  \&send_cache_change);
     }
 }
 
@@ -338,11 +359,16 @@ sub add_background_jobs
 
 =head2 send_cache_change
 
+  send_cache_change()
+  send_cache_change($req)
+
 =cut
 
 sub send_cache_change
 {
     my( $req ) = @_;
+
+    $req ||= $Para::Frame::REQ || Para::Frame::Request->new_bgrequest();
 
     my @added = keys %Rit::Base::Cache::Changes::Added;
     my @removed = keys %Rit::Base::Cache::Changes::Removed;
@@ -403,7 +429,7 @@ sub send_cache_change
 	    }
 		or do
 		{
-		    debug(0,"  failed: $@");
+		    debug(0,"failed send_cache_change to $site->{site}: $@");
 		};
 	}
 

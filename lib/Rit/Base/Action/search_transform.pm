@@ -43,7 +43,17 @@ sub handler
 
 #    debug datadump( $l2->{'search'}{'custom_result'}, 2 );
 
+
     $search_col->reset->set_result( $l2 );
+    if( my $form_url = $req->q->param('search_form') )
+    {
+	$search_col->form_url( $form_url );
+    }
+
+    if( my $result_url = $req->q->param('search_result') )
+    {
+	$search_col->result_url( $result_url );
+    }
 
 
     return "";

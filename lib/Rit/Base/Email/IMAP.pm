@@ -41,6 +41,7 @@ use Rit::Base::Literal::Email::Address;
 use Rit::Base::Literal::Email::Subject;
 use Rit::Base::Email::IMAP::Folder;
 use Rit::Base::Email::IMAP::Head;
+use Rit::Base::Email::Raw::Part;
 
 ##############################################################################
 
@@ -303,6 +304,52 @@ sub body_as_html
     }
 
     return $msg;
+}
+
+
+##############################################################################
+
+=head2 body_raw
+
+=cut
+
+sub body_raw
+{
+    my( $part ) = @_;
+
+    my $uid = $part->top->uid;
+    my $folder = $part->top->folder;
+
+    return \ $folder->imap_cmd('body_string', $uid);
+}
+
+
+##############################################################################
+
+=head2 raw
+
+=cut
+
+sub raw
+{
+    my( $part ) = @_;
+
+    my $folder = $part->folder;
+    my $uid = $part->uid;
+    debug "Getting raw email from IMAP";
+    return \ $folder->imap_cmd('message_string', $uid);
+}
+
+
+##############################################################################
+
+=head2 raw_part
+
+=cut
+
+sub raw_part
+{
+    return Rit::Base::Email::Raw::Part->new( $_[0]->raw );
 }
 
 

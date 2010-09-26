@@ -146,19 +146,22 @@ sub maketext
     foreach my $langcode ( @alts )
     {
 #	debug "  ... in $langcode\n";
-#	$value = $TRANSLATION{$phrase}{$langcode}
+	$value = $TRANSLATION{$phrase}{$langcode};
 
 	unless( exists $TRANSLATION{$phrase}{$langcode} )
 	{
 	    debug "Looking up phrase '$phrase' in DB";
-	    if( my $node = Rit::Base::Resource->find({ has_translation => $phrase })->get_first_nos )
+	    if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos )
 	    {
+                debug "Found a node: " . $node->sysdesig;
 		my $lang = Rit::Base::Resource->get({
 						     code => $langcode,
 						     is => $C_language,
 						     });
+                debug "Found a lang: " . $lang->sysdesig;
 		if( my $trans = $node->has_translation({is_of_language=>$lang})->plain )
 		{
+                    debug "Found a trans: $trans";
 		    $value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($trans);
 		    last;
 		}
@@ -171,6 +174,23 @@ sub maketext
 
     return $lh->compute($value, \$phrase, @_);
 }
+
+
+##############################################################################
+
+sub find_translation_node_id
+{
+    my( $phrase ) = @_;
+
+    unless( exists $TRANSLATION{$phrase}{'node_id'} ) {
+        if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos ) {
+            $TRANSLATION{$phrase}{'node_id'} = $node->id;
+        }
+    }
+
+    return $TRANSLATION{$phrase}{'node_id'};
+}
+
 
 
 ##############################################################################

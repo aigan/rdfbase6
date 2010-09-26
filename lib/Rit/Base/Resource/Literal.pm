@@ -5,7 +5,7 @@ package Rit::Base::Resource::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -184,6 +184,11 @@ sub literal_list
 	@arcs = Rit::Base::Arc::List->new(\@arcs)->
 	  unique_arcs_prio($uap)->as_array;
     }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	@arcs = Rit::Base::Arc::List->new(\@arcs)->
+	  arc_active_on_date($aod)->as_array;
+    }
 
     return Rit::Base::List->new([map $_->value, @arcs]);
 }
@@ -347,6 +352,11 @@ sub revlist
 	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
 	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      arc_active_on_date($aod)->as_array;
+	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
 	{
@@ -443,7 +453,7 @@ sub revcount
 	throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
-    my $list = $node->revlist($tmpl, $args_in);
+    my $list = $node->revlist($tmpl, undef, $args_in);
     return $list->size;
 }
 
@@ -518,6 +528,11 @@ sub revarc_list
 	{
 	    $lr = $lr->unique_arcs_prio($uap);
 	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    $lr = $lr->arc_active_on_date($aod);
+	}
+
 
 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
 	{
@@ -551,6 +566,10 @@ sub revarc_list
 	if( my $uap = $args->{unique_arcs_prio} )
 	{
 	    return Rit::Base::Arc::List->new(\@arcs)->unique_arcs_prio($uap);
+	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    return Rit::Base::Arc::List->new(\@arcs)->arc_active_on_date($aod);
 	}
 	else
 	{

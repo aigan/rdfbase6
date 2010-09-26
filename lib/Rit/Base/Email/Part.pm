@@ -5,7 +5,7 @@ package Rit::Base::Email::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -30,9 +30,10 @@ use MIME::Words qw( decode_mimewords );
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
 use MIME::Types;
-use CGI;
+#use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
+use Encode;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -330,6 +331,8 @@ sub content_type
 
   $part->effective_type
 
+  $part->effective_type( $type )
+
 Mostly the same as L</type>.
 
 Any entity with an unrecognized Content-Transfer-Encoding must be
@@ -355,7 +358,32 @@ sub effective_type
 
     &mime_types_init unless $MIME_TYPES;
 
-    my $type_name = $_[0]->type;
+    my $type_name = $_[1] || $_[0]->type;
+
+    unless( $type_name =~ /^[a-z]+\/[a-z\-\+\.0-9]+$/ )
+    {
+	if( $type_name =~ s/\s*charset\s*=.*//i )
+	{
+#	    debug "Cleaning up mimetype";
+	    return $_[0]->effective_type($type_name);
+	}
+
+	debug "Mime-type $type_name malformed";
+	$type_name = 'application/octet-stream';
+    }
+
+    if( $type_name eq 'image/jpg' )
+    {
+	$type_name = 'image/jpeg';
+    }
+
+    unless( $MIME_TYPES->type($type_name) )
+    {
+	debug "Mime-type $type_name not recognized";
+	$type_name = 'application/octet-stream';
+    }
+
+
     if( $type_name eq 'application/octet-stream' )
     {
 	$_[0]->filename =~ /\.([^\.]+)$/;
@@ -364,19 +392,14 @@ sub effective_type
 	    if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
 	    {
 		$type_name = $type->type;
+#		cluck "HERE";
+#		debug "Got type $type_name from extension";
 	    }
 	}
     }
-    elsif( $type_name eq 'multipart/mixed' )
+
+    if( $type_name eq 'application/octet-stream' )
     {
-	# May be a nonstandard embedded rfc822
-#	debug "*** looking at mixed part";
-#	debug $_[0]->head->as_string;
-    }
-    elsif( not $MIME_TYPES->type($type_name) )
-    {
-	debug "Mime-type $type_name not recognized";
-#	cluck "HERE";
 	$type_name = $_[0]->guess_type;
     }
 
@@ -592,6 +615,13 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
+    debug "Getting header $_[1]";
+
+    if( $_[1] eq 'to' )
+    {
+	$_[0]->head->init_to;
+    }
+
     if( wantarray )
     {
 	my( @h ) = $_[0]->head->
@@ -700,7 +730,12 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-#    debug "Determining charset";
+    if( my $charset = $part->{'charset'} )
+    {
+	return $charset;
+    }
+
+#    debug "Determining charset for ".$part->path;
 
     my $charset = $part->charset;
     $args ||= {};
@@ -747,7 +782,7 @@ sub charset_guess
     }
 
 #    debug "Found charset $charset";
-    return $charset;
+    return $part->{'charset'} = $charset;
 }
 
 
@@ -939,7 +974,9 @@ sub select_renderer
 	     [ qr{multipart/alternative} => '_render_alt'        ],
 	     [ qr{multipart/mixed}       => '_render_mixed'      ],
 	     [ qr{multipart/related}     => '_render_related'    ],
-	     [ qr{image/}                => '_render_image'      ],
+	     [ qr{image/gif}             => '_render_image'      ],
+	     [ qr{image/jpeg}            => '_render_image'      ],
+	     [ qr{image/png}             => '_render_image'      ],
 	     [ qr{message/rfc822}        => '_render_rfc822'     ],
 	     [ qr{multipart/parallel}    => '_render_mixed'      ],
 	     [ qr{multipart/report}      => '_render_mixed'      ],
@@ -970,7 +1007,7 @@ sub _render_textplain
     my $data_dec = $part->body;
     my $data_enc = CGI->escapeHTML($$data_dec);
 
-    my $charset = $part->charset_guess;
+#    my $charset = $part->charset_guess;
 #   my $msg = "| $charset\n<br/>\n";
      my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
@@ -1288,11 +1325,11 @@ sub _render_related
     }
 
     my $choice = shift @alts;
-    my $score = $prio{ $choice->type } || 1; # prefere first part
+    my $score = $prio{ $choice->effective_type } || 1; # prefere first part
 
     foreach my $alt (@alts)
     {
-	my $type = $alt->type;
+	my $type = $alt->effective_type;
 	next unless $type;
 
 	if( ($prio{$type}||0) > $score )
@@ -1443,7 +1480,8 @@ sub body
 
     unless( $encoding )
     {
-	debug "No encoding found for body. Using 8bit";
+	my $path = $part->path;
+	debug "No encoding found for body $path. Using 8bit";
 	$encoding = '8bit';
     }
 
@@ -1494,7 +1532,12 @@ sub body
     }
     else
     {
-	debug "Should decode charset $charset";
+	debug "decoding from $charset";
+	$$dataref = decode($charset,$$dataref);
+	$part->{'charset'} = 'utf-8';
+#	debug "Setting charset of ".$part->path." to utf-8";
+#	debug datadump($part,1);
+#	debug "Charset: ".$part->charset;
     }
 
 
@@ -1596,6 +1639,15 @@ sub mime_types_init
 				  extensions => ['xlsx'],
 				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 				 ),
+		  MIME::Type->new(
+				  encoding => 'base64',
+				  extensions => ['xcf'],
+				  type => 'image/x-xcf',
+				 ),
+#		  MIME::Type->new(
+#				  extensions => ['jpg'],
+#				  type => 'image/jpg',
+#				 ),
 		 );
     $MIME_TYPES->addType(@types);
 
@@ -1640,6 +1692,39 @@ sub is_top
 {
     return 0;
 }
+
+##############################################################################
+
+=head2 match
+
+Expecting the normal case of html email and/or plain text email
+
+=cut
+
+sub match
+{
+    my( $part, $qx_in ) = @_;
+
+    my $part_plain = $part->first_part_with_type('text/plain');
+    my $part_html = $part->first_part_with_type('text/html');
+
+    my $qx = qr/$qx_in/;
+
+    if( ${$part_html->body} =~ $qx )
+    {
+	debug "match in html part";
+	return 1;
+    }
+    elsif( ${$part_plain->body} =~ $qx )
+    {
+	debug "match in plain part";
+	return 1;
+    }
+
+    debug "No match in html or plain";
+    return 0;
+}
+
 
 ##############################################################################
 

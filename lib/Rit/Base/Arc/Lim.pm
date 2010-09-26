@@ -5,7 +5,7 @@ package Rit::Base::Arc::Lim;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -83,7 +83,7 @@ sub new
 
   Rit::Base::Arc::Lim->parse( "[ [$arclim1, $arclim2, ...], [...], ... ]" )
 
-Same as L</parse> but takes a string tather than an arrayref
+Same as L</parse> but takes a string rather than an arrayref
 
 Returns:
 
@@ -451,6 +451,13 @@ sub sql
     {
 	$sql = "${pf}active is true";
     }
+
+    if( my $aod = $args->{active_on_date} )
+    {
+	$sql .= " and ${pf}activated <= '$aod' and (${pf}deactivated > '$aod' or ${pf}deactivated is null)";
+	$extralim++;
+    }
+
 
     if( wantarray )
     {

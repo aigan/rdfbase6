@@ -5,37 +5,19 @@
    level = 20
 %]
 
-[% CALL search.query_setup %]
-
+[% CALL searchobj.first_rb_part.query_setup %]
 <p>
 [ [% jump('List preds', 'pred/list.tt') +%]
-| [% jump('New search', me, run='search_clear') +%]
 ]</p>
 
-[% input('query_row','', size=60) %]<br>
+[% input('query_row','', size=42) %]<br>
 
 [% textarea('query', undef, cols=60, rows=10) %]
 
 <p>Resultat per sida [% input('limit',50, size=5) %]
 
-[% hidden("search_form", "$home/rb/node/search.tt") %]
-[% hidden("search_result", "$home/rb/node/list.tt") %]
-
 <p>[% submit('Sök') %]
 
-<p>Examples:
+<h2>Exempel</h2>
 
-<p>name_clean hotel<br>
-private_ne 1<br>
-arclim ['not_old']<br>
-order_by name.loc
-
-<p>More info:
-<pre style="white-space: -moz-pre-wrap !important">
-rev
-[ pred ]
-[ [% rb.Arc_Lim.names.join(' | ') %] ]
-clean
-[ eq | like | begins | gt | lt | ne | exist ]
-[ prio ]
-</pre>
+[% PROCESS rb_search_example.tt %]

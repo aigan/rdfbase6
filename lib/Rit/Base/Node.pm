@@ -252,6 +252,15 @@ sub parse_prop
         }
     }
 
+    if( $prop_name =~ s/_(@{[join '|', @{Rit::Base::Arc::Lim->names}]})$//o )
+    {
+	if( $arclim2 )
+	{
+	    die "Do not mix arclim syntax: $prop_name";
+	}
+	$args->{'arclim'} = Rit::Base::Arc::Lim->parse($1);
+    }
+
     my $res;
     if( $prop_name =~ s/^rev_// )
     {
@@ -435,7 +444,7 @@ sub has_pred
 {
     my( $node ) = shift;
 
-    if( $node->list(@_)->size )
+    if( $node->first_prop(@_)->size )
     {
 	return $node;
     }
@@ -469,7 +478,7 @@ sub has_revpred
 {
     my( $node ) = shift;
 
-    if( $node->revlist(@_)->size )
+    if( $node->first_revprop(@_)->size )
     {
 	return $node;
     }
@@ -493,6 +502,8 @@ See L<Rit::Base::List/find> for docs.
 Also implements predor
 
 This also implements meets_proplim for arcs!!!
+
+Also implements the form mypred1{is this}.that
 
 Returns: boolean
 
@@ -533,15 +544,24 @@ sub meets_proplim
 
 	    # Target value may be a plain scalar or undef or an object !!!
 
-	if( $pred_part =~ /^(\w+)\.(.*)/ )
+	if( $pred_part =~ /^([^\.]+)\.(.*)/ )
 	{
 	    my $pred_first = $1;
 	    my $pred_after = $2;
 
 	    debug "  Found a nested pred_part: $pred_first -> $pred_after" if $DEBUG;
 
+	    my( $proplim, $arclim2);
+	    if( $pred_first =~ /^(.+?)([\{\[].+)$/ )
+	    {
+		$pred_first = $1;
+		( $proplim, $arclim2 ) = parse_query_value($2);
+		debug "Using proplim ".query_desig($proplim);
+	    }
+	    # TODO: Use alos arclim
+
 	    # It may be a method for the node class
-	    my $subres = $node->$pred_first(undef, $args_in);
+	    my $subres = $node->$pred_first($proplim, $args_in);
 
 	    unless(  UNIVERSAL::isa($subres, 'Rit::Base::List') )
 	    {
@@ -1199,11 +1219,35 @@ sub remove
 #	}
 #    }
 
-    foreach my $arc ( $node->arc_list(undef, undef, $args)->nodes,
-		      $node->revarc_list(undef, undef, $args)->nodes )
+
+    my $cnt = 0;
+    my @arcs = ( $node->arc_list(undef, undef, $args)->nodes,
+		 $node->revarc_list(undef, undef, $args)->nodes );
+    foreach my $arc ( @arcs )
     {
 	$arc->remove( $args ) unless $arc->implicit;
-    }
+
+	unless( ++$cnt % 100 )
+	{
+	    if( $Para::Frame::REQ )
+	    {
+		$Para::Frame::REQ->note(sprintf "Removed %6d of %6d", $cnt, $#arcs);
+#		$Para::Frame::REQ->note(sprintf "PRT1:%7.3f",$::PRT1 );
+#		$Para::Frame::REQ->note(sprintf "PRT2:%7.3f",$::PRT2 );
+#		$Para::Frame::REQ->note(sprintf "PRT3:%7.3f",$::PRT3 );
+#		$Para::Frame::REQ->note(sprintf "PRT4:%7.3f",$::PRT4 );
+#		$Para::Frame::REQ->note(sprintf "PRT5:%7.3f",$::PRT5 );
+#		$::PRT1 = 0;
+#		$::PRT2 = 0;
+#		$::PRT3 = 0;
+#		$::PRT4 = 0;
+#		$::PRT5 = 0;
+
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
+	}
+   }
 
     # Remove node
     #

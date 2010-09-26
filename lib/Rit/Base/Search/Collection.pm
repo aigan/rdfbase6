@@ -175,19 +175,26 @@ sub reset
 {
     my( $search ) = @_;
 
+    foreach my $key ( keys %$search )
+    {
+	delete $search->{$key};
+    }
+
+
     # Removes all rb_search parts
     $search->{'rb_search'} = [];
     $search->{'is_active'} = 0;
-    $search->{'result'} = undef;
-    delete $search->{'custom_result'};
 
-    # Properties used by RB::Search::Result
-
-    delete $search->{'allow_undef'};
-    delete $search->{'page_size'};
-    delete $search->{'display_pages'};
-    delete $search->{'limit_pages'};
-    delete $search->{'limit_display'};
+#    $search->{'result'} = undef;
+#    delete $search->{'custom_result'};
+#
+#    # Properties used by RB::Search::Result
+#
+#    delete $search->{'allow_undef'};
+#    delete $search->{'page_size'};
+#    delete $search->{'display_pages'};
+#    delete $search->{'limit_pages'};
+#    delete $search->{'limit_display'};
 
 
     if( my $req = $Para::Frame::REQ )
@@ -310,7 +317,14 @@ sub rb_parts
 
 sub custom_parts
 {
-    return [$_[0]->{'custom_result'}];
+    if( $_[0]->{'custom_result'} )
+    {
+	return [$_[0]->{'custom_result'}];
+    }
+    else
+    {
+	return [];
+    }
 }
 
 ##############################################################################
@@ -428,8 +442,7 @@ sub set_active
 sub result_url
 {
     $_[0]->{'result_url'} = $_[1] if defined $_[1];
-    return $_[0]->{'result_url'} ||
-      $Para::Frame::REQ->site->home->url_path_slash;
+    return $_[0]->{'result_url'} || '';
 }
 
 
@@ -442,8 +455,7 @@ sub result_url
 sub form_url
 {
     $_[0]->{'form_url'} = $_[1] if defined $_[1];
-    return $_[0]->{'form_url'} ||
-      $Para::Frame::REQ->site->home->url_path_slash;
+    return $_[0]->{'form_url'} || '';
 }
 
 

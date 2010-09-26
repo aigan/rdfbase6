@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 use Carp qw( cluck confess carp croak );
-use CGI;
+#use CGI;
 use Text::WordDiff;
 
 use Para::Frame::Reload;
@@ -198,6 +198,10 @@ sub is_value_node { 0 };
 
   $o->as_html( \%args )
 
+Preformatted text should use E<lt>preE<gt> to preserve indentation.
+
+This default will only preserve linefeed.
+
 Defaults to L</desig>
 
 =cut
@@ -205,18 +209,8 @@ Defaults to L</desig>
 sub as_html
 {
     my( $str ) = CGI->escapeHTML(shift->desig(@_));
-
-    if( $str =~ /\n/ )
-    {
-	return "<pre>".$str."</pre>";
-    }
-    else
-    {
-	return $str;
-    }
-
-#    $str =~ s/\r?\n/<br>/g;
-#    return "<pre>".$str."</pre>";
+    $str =~ s/\r?\n/<br\/>/g;
+    return $str;
 }
 
 
@@ -280,6 +274,36 @@ object. Intended for presentation and not for data manipulation.
 sub desig
 {
     confess "implement this";
+}
+
+
+##############################################################################
+
+=head2 longdesig
+
+  $o->longdesig()
+
+May give a longer name of the object. Defaults to L</desig>
+
+=cut
+
+sub longdesig
+{
+    return shift->desig(@_);
+}
+
+
+##############################################################################
+
+=head2 safedesig
+
+  $o->safedesig()
+
+=cut
+
+sub safedesig
+{
+    return shift->sysdesig(@_);
 }
 
 

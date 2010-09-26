@@ -805,6 +805,42 @@ sub parse_sortargs
 
 ##############################################################################
 
+=head2 uniq
+
+  $l->uniq()
+
+Returns a list with multiple list items filtered out. Operates on the
+unmaterialized items. Populates the list.
+
+For more than one element, returns a list.  If nothing was filtered,
+returns the same object.
+
+For less than one element, returns L<Rit::Base::Undef>.
+
+For just one element, returns the element.
+
+=cut
+
+sub uniq
+{
+    my $l = $_[0]->SUPER::uniq();
+    my $s = $l->size;
+    if( $s > 1 )
+    {
+        return $l;
+    }
+    elsif( $s < 1 )
+    {
+        return is_undef;
+    }
+    else
+    {
+        return $l->get_first_nos;
+    }
+}
+
+##############################################################################
+
 =head2 unique_arcs_prio
 
   $list->unique_arcs_prio( \@arcproperties )
@@ -1117,7 +1153,7 @@ sub loc
 	      ($_->is_literal ? $_->arc_weight : undef)
 		|| $_->weight->literal || 0;
 
-	    debug 4, "  $_ has weight $weight";
+	    debug 4, "  $_ has weight $weight" if $weight;
 	    $list{ $weight } = $_;
 	}
 
@@ -1281,10 +1317,10 @@ sub desig
 
 =head2 as_html
 
-  $l->as_html
+  $l->as_html( \%args )
 
 Return a SCALAR string with the elements html representations concatenated with
-C<'E<lt>brE<gt>'>.
+C<'E<lt>brE<gt>'> or with the content of arg C<join>.
 
 See L<Rit::Base::Object/desig>
 
@@ -1294,6 +1330,7 @@ sub as_html
 {
 #    debug "in list desig";
     my( $list, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
     my @part;
 
     my $index = $list->index;
@@ -1304,7 +1341,7 @@ sub as_html
 	{
 	    if( UNIVERSAL::isa $elem, 'Rit::Base::Object' )
 	    {
-		CORE::push @part, $elem->as_html($args_in);
+		CORE::push @part, $elem->as_html($args);
 	    }
 	    elsif( $elem->can('as_html') )
 	    {
@@ -1326,7 +1363,8 @@ sub as_html
     };
     $list->set_index( $index );
 
-    return join "<br/>\n", @part;
+    my $join = $args->{'join'} || "<br/>\n";
+    return join $join, @part;
 }
 
 
@@ -1573,7 +1611,7 @@ sub contains_any_of
 
     if( ref $tmpl )
     {
-	if( ref $tmpl eq 'Rit::Base::List' )
+	if( UNIVERSAL::isa $tmpl, 'Rit::Base::List' )
 	{
 	    foreach my $val (@{$tmpl->as_list})
 	    {

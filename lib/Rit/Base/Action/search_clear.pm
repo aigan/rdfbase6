@@ -28,14 +28,23 @@ sub handler
     my $search_col = $req->session->search_collection;
     $search_col->reset;
 
+    my $q = $req->q;
+
     if( my $form_url = $req->q->param('search_form') )
     {
 	$search_col->form_url( $form_url );
     }
-    else
+#    else
+#    {
+#	$search_col->form_url( $req->referer_path );
+#    }
+
+    if( my $result_url = $req->q->param('search_result') )
     {
-	$search_col->form_url( $req->referer_path );
+	$search_col->result_url( $result_url );
     }
+
+
 
     return "";
 }

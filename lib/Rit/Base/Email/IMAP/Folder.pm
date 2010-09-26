@@ -5,7 +5,7 @@ package Rit::Base::Email::IMAP::Folder;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -290,13 +290,13 @@ sub idle
 
     # Check connection
     my $imap = $folder->{'imap'};
-    if( $imap->IsConnected )
+    if( $imap and $imap->IsConnected )
     {
 	if( $folder->{'idle'} = $imap->idle )
 	{
 	    debug "Starts ideling ($folder->{'idle'})";
 	}
-	else
+	elsif( $imap->IsConnected ) # could change on $imap->idle
 	{
 	    debug $folder->diag("Couldn't idle");
 	    debug "Disconnecting...";
@@ -312,6 +312,11 @@ sub idle
 	    {
 		debug $folder->diag($@);
 	    }
+	}
+	else
+	{
+	    debug "Lost connection to ".$folder->sysdesig;
+	    debug "But keeps it that way for now...";
 	}
     }
     else
@@ -358,6 +363,11 @@ sub imap_cmd
     my( $folder, $cmd ) = (shift, shift );
 
     my $imap = $folder->{'imap'};
+    unless( $imap and $imap->IsConnected )
+    {
+	$folder->connect;
+    }
+
     my $res = $imap->$cmd(@_);
     unless( defined $res )
     {

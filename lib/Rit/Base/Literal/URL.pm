@@ -21,7 +21,7 @@ use warnings;
 use base qw( Para::Frame::URI Rit::Base::Literal::String );
 
 use Carp qw( cluck confess longmess );
-use CGI;
+#use CGI;
 use URI;
 
 use Para::Frame::Reload;

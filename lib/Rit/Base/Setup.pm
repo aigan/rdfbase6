@@ -5,7 +5,7 @@ package Rit::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -48,6 +48,7 @@ sub setup_db
     my $dbix = $Rit::dbix;
     my $dbh = $dbix->dbh;
     my $now = DateTime::Format::Pg->format_datetime(now);
+    $Rit::Base::IN_SETUP_DB = 1;
 
 
     my $old_debug = $Para::Frame::DEBUG;
@@ -366,7 +367,7 @@ sub setup_db
 
     debug "Done!";
 
-   return;
+   return 1;
 }
 
 
@@ -744,6 +745,30 @@ sub convert_valuenodes
     debug "COMMIT";
     $Para::Frame::REQ->done;
 }
+
+##############################################################################
+
+sub dbconnect
+{
+    my %db;
+    if( open RB_DB, '<', $::CFG->{'rb_root'}."/.rb_dbconnect" )
+    {
+        while(<RB_DB>)
+        {
+            /(\w+)=(.*)\n/;
+            $db{$1}=$2;
+        }
+    }
+
+    return [ sprintf( "dbi:Pg:dbname=%s;host=%s;port=%d",
+                      $db{name},
+                      $db{host},
+                      $db{port},
+                    ),
+             $db{user}, $db{pass},
+           ];
+}
+
 
 ##############################################################################
 
