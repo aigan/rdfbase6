@@ -4894,7 +4894,7 @@ sub register_ajax_pagepart
     $out .=
       "<script type=\"text/javascript\">
         <!--
-            new PagePart('$divid', '$home/ajax/wu',
+            new PagePart('$divid', '$home/rb/ajax/wu',
             { params: { subj: '". $node->id ."',
                         params: '". to_json( $params ) ."'";
 

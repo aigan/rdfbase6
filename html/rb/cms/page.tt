@@ -23,11 +23,12 @@
 
 
 <table class="admin">
-  <tr><td>[% cms_page.wu('has_url',       default_value=def_has_url,  tdlabel="URL (med inledande '/')") %]</td></tr>
-  <tr><td>[% cms_page.wu('name',          default_value=def_title,    tdlabel="Titel"                  ) %]</td></tr>
-  <tr><td>[% cms_page.wu('uses_template', default_value=def_template, tdlabel="Mallfil (t ex cms.tt)"  ) %]</td></tr>
+  <tr><td>[% cms_page.wu('has_url',       default_value=def_has_url,  tdlabel="URL (with leading '/')") %]</td></tr>
+  <tr><td>[% cms_page.wu('name',          default_value=def_title,    tdlabel="Title"                 ) %]</td></tr>
+  <tr><td>[% cms_page.wu('uses_template', default_value=def_template, tdlabel="Template (e.g. cms.tt)") %]</td></tr>
   [% IF view_node_id OR cms_page.is_view_for_node %]
     [% view_node = cms_page.is_view_for_node || get(view_node_id) %]
+    [% cms_page.wuh('is_view_for_node', view_node.id) %]
     <tr>
       <td>Vy för node</td>
       <td>[% view_node.wu_jump %]</td>
@@ -36,7 +37,7 @@
 
 </table>
 
-<label>Innehåll</label>
+<label>Content</label>
 [% cms_page.wu('has_body', class => 'mce') %]
 
 [% step %]

@@ -1,10 +1,13 @@
 package Rit::Base::CMS;
-
-=head1 NAME
-
-Rit::Base::CMS
-
-=cut
+#=============================================================================
+#
+# AUTHOR
+#   Fredrik Liljegren   <jonas@liljegren.org>
+#
+# COPYRIGHT
+#   Copyright (C) 2009-2010 Fredrik Liljegren.
+#
+#=============================================================================
 
 use 5.010;
 use strict;
@@ -16,6 +19,48 @@ use Para::Frame::Utils qw( throw catch debug datadump deunicode );
 use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( valclean parse_propargs query_desig );
+
+
+=head1 NAME
+
+Rit::Base::CMS
+
+=cut
+
+=head1 DESCRIPTION
+
+This code requires the following nodes setup:
+
+label          => 'cms_page',
+is             => 'class',
+class_form_url => 'rb/cms/page.tt',
+
+label  => 'has_url',
+is     => 'predicate',
+domain => 'cms_page',
+range  => 'text',
+
+label  => 'is_view_for_node',
+is     => 'predicate',
+domain => 'cms_page',
+range  => 'resource',
+
+label  => 'uses_template',
+is     => 'predicate',
+domain => 'cms_page',
+range  => 'text',
+
+label       => 'message',
+is          => 'class',
+description => 'A message is a page_part, could be a forum-message.',
+
+label  => 'has_body',
+is     => 'predicate',
+domain => 'message',
+
+
+=cut
+
 
 ##############################################################################
 
@@ -53,19 +98,20 @@ sub find
         return $target_in;
     }
 
-    debug "Test from CMS 1";
-
-    #my $add_blog = $R->find_set({
-    #                             is   => 'cms_page',
-    #                             name => 'Add blog post',
-    #                             uses_template => 
-    #                            }, $args);
-
+    debug "Test from CMS 1; target_in is ". $target_in->path;
+    debug "Test from CMS 1; p_in target is ". $p_in->target->path;
 
     my $page = $R->find({
                          is  => 'cms_page',
                          has_url => $target_path,
                         }, $args)->get_first_nos;
+
+    if( not $page and $target_path =~ /^(.*)\/index.tt$/ ) {
+	$page = $R->find({
+			  is  => 'cms_page',
+			  has_url => $1,
+			 }, $args)->get_first_nos;
+    }
 
     if( $page )
     {
@@ -85,7 +131,7 @@ sub find
         debug "Found no page with url $target_path...";
     }
 
-
+    return;
 
 
     #my $target_path = $target_in->path_slash;
@@ -158,34 +204,34 @@ sub find
 1;
 
 # ##############################################################################
-# 
+#
 # =head2 item_by_path
-# 
+#
 # Looking up an item corresponding to a path
-# 
+#
 # =cut
-# 
+#
 # sub item_by_path
 # {
 #     my( $class, $path ) = @_;
-# 
+#
 #     # Looking at the normalized URL
 #     unless( $path =~ m(^(?:/preview/(\d+))?/([^/]+)(?:/([^/]+))?(?:/(.*))?) )
 #     {
 #         debug "  path not handled by Go";
 #         return undef;
 #     }
-# 
+#
 # #    $C_city->initiate_rev;
-# 
+#
 #     my $req = $Para::Frame::REQ;
 #     my $uid = $req->session->user->id;
-# 
+#
 #     my $target_uid = $1;
 #     my $city_part  = $2;
 #     my $name_part  = $3;
 #     my $rest       = $4;
-# 
+#
 #     if( 0 )
 #     {
 #         debug "==== Lookup item by path";
@@ -195,38 +241,38 @@ sub find
 #         debug "name = ".($name_part||'');
 #         debug "rest = ".($rest||'');
 #     }
-# 
+#
 #     my $city;
 #     my $item;
-# 
+#
 #     my $go_prefix;
 #     my $args = {};
 #     if( $target_uid ) # for previews
 #     {
 #         $go_prefix = "/preview/$target_uid";
 #         $args = parse_propargs('relative');
-# 
+#
 #         if( $uid != $target_uid )
 #         {
 #             throw('denied',"This page is restricted");
 #         }
-# 
+#
 # #       debug("args is  ".datadump($args,3));
 #     }
-# 
+#
 #     my $go_args =
 #     {
 #      %$args,
 #      go_prefix => $go_prefix,
 #     };
-# 
+#
 # #    debug query_desig( $go_args );
-# 
-# 
+#
+#
 #     #### Looking up City
 #     #
 # #    my( $cityalts ) = $C_city->revlist('is',{url_part => $city_part},$args);
-# 
+#
 #     my( $cityalts ) = Rit::Base::Resource->find({
 #                                                  is=>$C_city,
 #                                                  url_part => $city_part,
@@ -238,7 +284,7 @@ sub find
 #     else
 #     {
 #         my $city_part_clean = clean_part($city_part);
-# 
+#
 # #       $cityalts = $C_city->revlist('is',{name_clean => $city_part_clean},$args);
 #         $cityalts = Rit::Base::Resource->find({
 #                                                name_clean => $city_part_clean,
@@ -248,9 +294,9 @@ sub find
 # #                                        name_clean => $city_part_clean,
 # #                                        is=> $C_city->id,
 # #                                       });
-# 
+#
 #         my @maby;
-# 
+#
 #         foreach my $city_maby ( $cityalts->nodes )
 #         {
 #             debug "  Considering ".$city_maby->desig;
@@ -266,7 +312,7 @@ sub find
 #                 push @maby, $city_maby;
 #             }
 #         }
-# 
+#
 #         unless( $city )
 #         {
 #             if( $city = $maby[0] )
@@ -276,17 +322,17 @@ sub find
 #             }
 #         }
 #     }
-# 
+#
 #     unless( $city )
 #     {
 #         debug "No city $city_part found";
 #         return undef;
 # #       throw 'notfound', "City $city_part not found";
 #     }
-# 
+#
 #     debug "===> City ".$city->desig;
-# 
-# 
+#
+#
 #     #### Lookup item in city
 #     #
 #     #
@@ -294,21 +340,21 @@ sub find
 #     {
 #         # Get alternatives
 #         my $trc = $C_tourist_related_client;
-# 
+#
 # #       my( $alts ) = $city->revlist('in_region',
 # #                                    {
 # #                                     is => $trc,
 # #                                     url_part => $name_part,
 # #                                     inactive_ne => 1,
 # #                                    }, $args );
-# 
+#
 #         my( $alts ) = Rit::Base::Resource->find({
 #                                                  is => $trc,
 #                                                  url_part => $name_part,
 #                                                  in_region => $city,
 #                                                  inactive_ne => 1,
 #                                                 }, $args);
-# 
+#
 #         if( $alts )
 #         {
 #             $item = $alts->get_first_nos;
@@ -325,14 +371,14 @@ sub find
 #                 $beginning .= "" . shift @words;
 #                 push @variants, join '', $beginning, $city_part, @words;
 #             }
-# 
+#
 #             my @maby;
-# 
+#
 #           VARIANT:
 #             foreach my $name_part_clean (@variants)
 #             {
 #                 debug "  Searching for variant $name_part_clean";
-# 
+#
 #                 $alts = Rit::Base::Resource->find({
 #                                                    name_clean => $name_part_clean,
 #                                                    is=> $trc,
@@ -358,7 +404,7 @@ sub find
 #                     }
 #                 }
 #             }
-# 
+#
 #             # No primary match. Using any secondary match
 #             unless( $item )
 #             {
@@ -366,7 +412,7 @@ sub find
 #                 $item = $maby[0];
 #             }
 #         }
-# 
+#
 #         unless( $item )
 #         {
 #             throw 'notfound', "Business $name_part not found in $city_part";
@@ -376,21 +422,21 @@ sub find
 #     {
 #         $item = $city;
 #     }
-# 
+#
 #     return( $item, $rest, $args, $go_args );
 # }
-# 
+#
 # ##############################################################################
-# 
+#
 # =head2 clean_part
-# 
+#
 # =cut
-# 
+#
 # sub clean_part
 # {
 #     my $clean = $_[0];
 #     $clean =~ s/_/ /g;
 #     return valclean($clean);
 # }
-# 
+#
 # ##############################################################################

@@ -2,7 +2,7 @@ package Rit::Base::Renderer::AJAX;
 #=============================================================================
 #
 # AUTHOR
-#   Fredrik Liljegren   <fredrik@paranormal.se>
+#   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
 #   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
@@ -238,45 +238,14 @@ sub render_output
 	    my @list;
 	    while( my $node = $result->get_next_nos )
 	    {
-		if( $node->is($C_person) )
-		{
-		    my $item = {
-				id   => $node->id,
-				name => $node->desig,
-				org => $node->rev_is_persona_of->rev_role_held_by->revlist('has_contact')->flatten->uniq->desig,
-				form_url => $node->form_url->as_string,
-			       };
-		    push @list, $item;
-		}
-		elsif( $node->is($C_organization) )
-		{
-		    my $address = $node->address->loc .' - '.
-		      $node->in_region({ is => $C_zipcode })->code->loc
-			.' '.
-			  $node->in_region({ is => $C_city })->desig
-			    .' - '.
-			      $node->in_region({ is => $C_country })->desig;
-
-		    my $item = {
-				id       => $node->id,
-				name     => $node->desig,
-				form_url => $node->form_url->as_string,
-				address  => $address,
-			       };
-		    push @list, $item;
-		}
-		else
-		{
-		    my $item = {
-				id       => $node->id,
-				name     => $node->desig,
-				is      => $node->is_direct->desig,
-				form_url => $node->form_url->as_string,
-			       };
-		    push @list, $item;
-		}
+		my $item = {
+			    id       => $node->id,
+			    name     => $node->desig,
+			    is      => $node->is_direct->desig,
+			    form_url => $node->form_url->as_string,
+			   };
+		push @list, $item;
 	    }
-	    debug "To json? ". datadump(\@list);
 	    $out = to_json( \@list );
 	}
 	else
