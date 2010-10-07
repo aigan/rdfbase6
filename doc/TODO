@@ -110,3 +110,5 @@ och på cpan-paket...
 =============
 Du frågade om önskemål för rb/pf...  Jag skulle gärna se möjligheten att ange datum i arclim, för att kunna se vilka kopplingar som var aktiva vid en viss tidpunkt :)
 =============
+
+så kan du se skillnaderna mellan cms och master med git diff origin/cms origin/master

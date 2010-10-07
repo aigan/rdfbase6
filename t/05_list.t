@@ -7,6 +7,7 @@ use warnings;
 use Cwd qw( abs_path );
 
 our $CFG;
+$|=1;
 
 use Test::Warn;
 use Test::More tests => 6;
@@ -27,22 +28,21 @@ BEGIN
     open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
 }
 
+sub capture_out
+{
+    $::OUT = "";
+    open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
+    close STDOUT;
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
+}
 
-
-# Capture STDOUT
-$|=1;
-my $stdout = "";
-open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
-close STDOUT;
-open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
-
-
-sub clear_stdout
+sub clear_out
 {
     close STDOUT;
-    $stdout="";
-    open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
+    $::OUT = "";
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
+
 
 use Para::Frame::DBIx;
 use Para::Frame::Utils qw( debug );
@@ -50,6 +50,8 @@ use Para::Frame::Utils qw( debug );
 use Rit::Base;
 use Rit::Base::Utils qw( is_undef parse_propargs );
 use Rit::Base::User::Meta;
+
+capture_out();
 
 my $troot = '/tmp/rbtest';
 my $cfg_in =
@@ -129,8 +131,8 @@ warnings_like
   qr/^Setup complete, accepting connections$/,
  ], "startup";
 
-is( $stdout, "MAINLOOP 1\nSTARTED\n", "startup output" );
-clear_stdout();
+is( $::OUT, "MAINLOOP 1\nSTARTED\n", "startup output" );
+clear_out();
 
 
 ###########

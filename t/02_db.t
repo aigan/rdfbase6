@@ -1,5 +1,5 @@
 #!perl
-#  $Id$  -*-cperl-*-
+# -*-cperl-*-
 
 use 5.010;
 use strict;
@@ -7,9 +7,10 @@ use warnings;
 use Cwd qw( abs_path );
 
 our $CFG;
+$|=1;
 
 use Test::Warn;
-use Test::More tests => 4;
+use Test::More tests => 9;
 
 BEGIN
 {
@@ -24,13 +25,29 @@ BEGIN
     $CFG->{'rb_root'} = abs_path("$FindBin::Bin/../");
     push @INC, $CFG->{'rb_root'}."/lib";
 
-#    use_ok('Rit::Base');
-
     open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
 }
 
-use Para::Frame::DBIx;
-use Rit::Base; ## TEST
+use_ok('Rit::Base');
+use_ok('Para::Frame::DBIx');
+use Para::Frame::Utils qw( datadump );
+
+sub capture_out
+{
+    $::OUT = "";
+    open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
+    close STDOUT;
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
+}
+
+sub clear_out
+{
+    close STDOUT;
+    $::OUT = "";
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
+}
+
+capture_out();
 
 
 #warning_like {Para::Frame::Site->add({})} qr/^Registring site [\w\.]+$/, "Adding site";
@@ -71,7 +88,7 @@ warning_like {
   } qr/^Registring site RB Test$/, "Adding site";
 
 
-my $cfg = $Para::Frame::CFG;
+#my $cfg = $Para::Frame::CFG;
 my $burner = Para::Frame::Burner->get_by_type('html');
 
 
@@ -88,7 +105,7 @@ warnings_like
 }[
   qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
   qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
- ], "startup";
+ ], "DBIx config";
 
 
 warnings_like
@@ -98,6 +115,10 @@ warnings_like
   qr/^Connected to port 9999$/,
   qr/^Setup complete, accepting connections$/,
  ], "startup";
+
+
+is( $::OUT, "STARTED\n", "startup output" );
+clear_out();
 
 
 $Rit::dbix->connect;
@@ -145,12 +166,12 @@ $Rit::dbix->connect;
 # ], "DB Setup";
 
 
+# Start by a sample test of the resulting DB
+my $C = Rit::Base->Constants;
+is($C->get('has_access_right')->is->label,'predicate', 'DB Setup ok');
+
 $Rit::dbix->commit;
 
-
-#my $dbh = $Rit::dbix->dbh;
-#print $dbh;
-
-#print "EOT\n";
-
+is( $::OUT, "", "end output" );
+clear_out();
 1;

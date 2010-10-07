@@ -12,6 +12,8 @@ use FindBin;
 
 ##########
 
+umask 07; # Secret files
+
 my $pf;
 if( open PF_LOC, "<$FindBin::Bin/.paraframe_location" )
 {
@@ -97,7 +99,8 @@ print "DB password for user $db_user_in?\n";
 my $db_pass_in = '';
 while(not $db_pass_in )
 {
-    print "[$db_pass] ";
+    my $db_pass_show = '*'x length($db_pass);
+    print "[$db_pass_show] ";
     $db_pass_in = <STDIN>;
     $db_pass_in =~ s/\/?\s*\n*$//;
     $db_pass_in =~ s/^\s+//;
