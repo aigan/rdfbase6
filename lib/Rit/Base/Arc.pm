@@ -2142,6 +2142,8 @@ sub previous_active_version
 
 May return undef;
 
+See also L<Rit::Base::Arc::List/arc_active_on_date>
+
 Returns: The arc that was active at the given time.
 
 =cut

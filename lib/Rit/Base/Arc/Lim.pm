@@ -5,7 +5,7 @@ package Rit::Base::Arc::Lim;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -451,6 +451,13 @@ sub sql
     {
 	$sql = "${pf}active is true";
     }
+
+    if( my $aod = $args->{active_on_date} )
+    {
+	$sql .= " and ${pf}activated <= '$aod' and (${pf}deactivated > '$aod' or ${pf}deactivated is null)";
+	$extralim++;
+    }
+
 
     if( wantarray )
     {

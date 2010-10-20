@@ -227,6 +227,7 @@ sub get
 
 	    $id = $node->id;
 
+	    confess "no id for $node" unless $id; ### DEBUG
 	    # Cache id lookups
 	    #
 #	    debug "Got $id: Caching node $id: $node";
@@ -818,6 +819,11 @@ sub find
 
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
+
+#    if( $args->{arc_active_on_date} )
+#    {
+#	debug "Will filter on arc_active_on_date";
+#    }
 
     ## Default criterions
     my $default = $args->{'default'} || {};
@@ -1978,6 +1984,13 @@ sub list
 
 	    debug timediff "list unique_arcs_prio" if $DEBUG;
 	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      arc_active_on_date($aod)->as_array;
+
+	    debug timediff "list arc_active_on_date" if $DEBUG;
+	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
 	{
@@ -2170,6 +2183,11 @@ sub revlist
 	{
 	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
 	      unique_arcs_prio($uap)->as_array;
+	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    @arcs = Rit::Base::Arc::List->new(\@arcs)->
+	      arc_active_on_date($aod)->as_array;
 	}
 
 	if( my $arclim2 = $args->{'arclim2'} )
@@ -2394,6 +2412,10 @@ sub first_prop
 
 	return $best_arc->value;
     }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->list($pred, $proplim, $args)->get_first_nos;
+    }
 
 
     # No unique filter
@@ -2545,6 +2567,10 @@ sub first_revprop
 	}
 
 	return $best_arc->subj;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->revlist($pred, $proplim, $args)->get_first_nos;
     }
 
 
@@ -2721,7 +2747,10 @@ sub has_value
 	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
 	}
 
-	if( my $uap = $args->{unique_arcs_prio} )
+	my $uap = $args->{unique_arcs_prio};
+	my $aod = $args->{arc_active_on_date};
+
+	if( $uap or $aod )
 	{
 	    my @arcs;
 	    if( !$rev )
@@ -2762,10 +2791,18 @@ sub has_value
 
 	    if( @arcs )
 	    {
-		foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
-				  unique_arcs_prio($uap)->as_array )
+		if( $uap )
 		{
-		    return $arc unless $arc->is_removal;
+		    foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
+				      unique_arcs_prio($uap)->as_array )
+		    {
+			return $arc unless $arc->is_removal;
+		    }
+		}
+		elsif( $aod )
+		{
+		    return Rit::Base::Arc::List->new(\@arcs)->
+		      arc_active_on_date($aod)->get_first_nos;
 		}
 	    }
 	}
@@ -2812,6 +2849,22 @@ sub has_value
 	    {
 		return Rit::Base::Arc::List->new(\@arcs)->
 		  unique_arcs_prio($uap)->get_first_nos;
+	    }
+	}
+	elsif( my $aod = $args->{arc_active_on_date} )
+	{
+	    my @arcs;
+	    foreach my $val (@$value )
+	    {
+		my $arc = $node->has_value({$pred_name=>$val},
+					   {%$args,rev=>$rev});
+		push @arcs, $arc if $arc;
+	    }
+
+	    if( @arcs )
+	    {
+		return Rit::Base::Arc::List->new(\@arcs)->
+		  arc_active_on_date($aod)->get_first_nos;
 	    }
 	}
 	else
@@ -2916,7 +2969,10 @@ sub has_value
 	}
     }
 
-    if( my $uap = $args->{unique_arcs_prio} )
+    my $uap = $args->{unique_arcs_prio};
+    my $aod = $args->{arc_active_on_date};
+
+    if( $uap or $aod )
     {
 	my @arcs;
 #	debug "In has_value";
@@ -2940,10 +2996,18 @@ sub has_value
 
 	if( @arcs )
 	{
-	    foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
-			      unique_arcs_prio($uap)->as_array )
+	    if( $uap )
 	    {
-		return $arc unless $arc->is_removal;
+		foreach my $arc ( Rit::Base::Arc::List->new(\@arcs)->
+				  unique_arcs_prio($uap)->as_array )
+		{
+		    return $arc unless $arc->is_removal;
+		}
+	    }
+	    elsif( $aod )
+	    {
+		return Rit::Base::Arc::List->new(\@arcs)->
+		  arc_active_on_date($aod)->get_first_nos;
 	    }
 	}
     }
@@ -3338,7 +3402,7 @@ If given C<$value> or C<\@values>, returns those arcs that has any of
 the given values. Similar to L</has_value> but returns a list instad
 of a single arc.
 
-unique_arcs_prio filter is applied BEFORE proplim. That means that we
+unique_arcs_prio filter is applied AFTER proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
 =cut
@@ -3464,6 +3528,10 @@ sub arc_list
     {
 	$lr = $lr->unique_arcs_prio($uap);
 #	debug timediff("arc_list unique_arcs_prio");
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	$lr = $lr->arc_active_on_date($aod);
     }
 
 #    if( defined $proplim ) # The Undef Literal is also an proplim
@@ -3602,6 +3670,10 @@ sub revarc_list
     {
 	$lr = $lr->unique_arcs_prio($uap);
     }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	$lr = $lr->arc_active_on_date($aod);
+    }
 
     if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
@@ -3720,6 +3792,10 @@ sub first_arc
 	}
 
 	return $best_arc;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->arc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 
@@ -3869,6 +3945,10 @@ sub first_revarc
 	}
 
 	return $best_arc;
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	return $node->revarc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 
@@ -5300,59 +5380,6 @@ sub wuirc
 	foreach my $arc (@$list)
 	{
 	    $out .= $arc->table_row( $args );
-
-#	    $out .= '<li>'
-#	      if( $list->size > 1);
-#
-#	    my $check_subj = $arc->subj;
-#	    my $item = $arc->value;
-#
-#	    unless( $disabled )
-#	    {
-#		if( $ajax )
-#		{
-#		    my $arc_id = $arc->id;
-#		    $out .= $q->input({ type => 'button',
-#					value => '-',
-#					onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
-#					class => 'nopad',
-#				 });
-#		}
-#		else
-#		{
-#		    my $field = build_field_key({arc => $arc});
-#		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
-#		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
-#		}
-#		$out .= " ";
-#	    }
-#
-#
-#	    if( $disabled )
-#	    {
-#		$out .= ( $is_rev ? $check_subj->desig($args) :
-#			  $item->desig($args) );
-#	    }
-#	    else
-#	    {
-#		if( my $item_prefix = $args->{'item_prefix'} )
-#		{
-#		    $out .= $item->$item_prefix." ";
-#		}
-#		$out .= ( $is_rev ? $check_subj->wu_jump :
-#			  $item->wu_jump );
-#	    }
-#	    $out .= '&nbsp;' . $arc->edit_link_html;
-#
-#
-#	    if( $list->size > 1)
-#	    {
-#		$out .= '</li>';
-#	    }
-#	    else
-#	    {
-#		$out .= '<br/>';
-#	    }
 	}
 	$out .= "</table>\n";
     }
@@ -6969,7 +6996,8 @@ sub create_rec
     {
 	$args ||= {};
 	my $time = $args->{'time'} || now();
-	my $user = $args->{'user'} || $Para::Frame::REQ->user;
+	my $user = $args->{'user'} ||
+	  $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
 
 	$n->{'created_obj'} = $time;
 	$n->{'created_by_obj'} = $user;
@@ -7179,7 +7207,7 @@ sub save
 
     $node->initiate_node;
 
-    my $u = $Para::Frame::REQ->user;
+    my $u = $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
     my $uid = $u->id;
     my $now = now();
     my $public = Rit::Base::Constants->get('public');
@@ -7989,7 +8017,7 @@ sub dereference_nesting
 sub session_history_add
 {
     my( $node, $table ) = @_;
-    if( $Para::Frame::REQ->is_from_client )
+    if( $Para::Frame::REQ and $Para::Frame::REQ->is_from_client )
     {
 	$table ||= 'visited';
 	my $list = $Para::Frame::REQ->session->{'nodes'}{$table}

@@ -286,8 +286,8 @@ sub wuirc
     }
 
 
-    debug "TIME WUIRC";
-    debug query_desig($args);
+#    debug "TIME WUIRC";
+#    debug query_desig($args);
 
 
     my $subj_id = $subj->id;

@@ -5,7 +5,7 @@ package Rit::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -236,6 +236,8 @@ sub objtype
 The retuned value will be one of C<obj>, C<valtext>,
 C<valdate>, C<valfloat> or C<valbin>.
 
+See L<Rit::Base::Literal::Class> for the coltypes.
+
 Returns: A scalar string
 
 =cut
@@ -256,6 +258,8 @@ sub coltype
 =head2 coltype_id
 
   $p->coltype_id()
+
+See L<Rit::Base::Literal::Class> for the coltypes.
 
 Returns: An integer as a scalar string
 

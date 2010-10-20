@@ -2,6 +2,8 @@ Installation instructions for a new clean install
 
  * Install paraframe
 
+ * Setup the database. See DATABASE below
+
  * Check the dependencies for this package by doing
    + perl Makefile.PL
    + make test
@@ -10,7 +12,34 @@ Installation instructions for a new clean install
    not handled by the makefile. You can also use perldoc on the actual
    files.
 
- * Create a PostgreSQL database with utf8 encoding:
+ * Configure demo/site.conf and initialize database content with
+   demo/rb-demo-server setup_db
+
+
+
+
+DATABASE
+--------
+
+These instructions are for a default Debian PostgreSQL installation
+with a Debian default pg_hba.conf
+
+$ su
+# su postgres
+$ psql
+# create user "rb";
+# alter user "rb" with password 'YOUR_SECRET_PASSWORD';
+# create database "rb-test" with owner "rb";
+# create database "YOUR_PROJECT_NAME" with owner "rb";
+# \q
+$ exit
+# exit
+
+This should give you a user rb with a database rb-test.
+
+Details:
+
+RB will only work with PostgreSQL. Use at least version 8.
 
 Check that your database cluster is created with an lc_collate that
 sorts your utf8 strings in an appropriate way. do a "show lc_collate;"
@@ -19,15 +48,12 @@ sorting. You may use "pg_lscluster" to list your current clusters. You
 have pg_dropcluster and pg_createcluster for creating a new cluster
 with a diffrent configuration.
 
- * Become the postgres user and run psql
+ * Inside psql, use \l for listing the existing databases. Change the
+   current connected database with \c. See \? for help.
 
- * create the user for the ritbase database. See current users with
-   '\du'. You may use the same username as the user under which the
-   program is going to be run. "create user my_user".
+ * See current users with '\du'. You may use the same username as the
+   user under which the program is going to be run.
 
- * create the database with your choosen name for your project. I'm
-   going to use the name rb1 in this guide. "create database rb1 with
-   owner=my_user encoding='unicode';"
-
- * Configure demo/site.conf and initialize database content with
-   demo/rb-demo-server setup_db
+ * The database 'rb-test' is used for automated tests and it is also
+   used for the demo server.  You should create your own database for
+   your project.

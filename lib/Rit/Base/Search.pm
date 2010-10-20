@@ -5,7 +5,7 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -33,7 +33,7 @@ use Para::Frame::Reload;
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Worker;
 
-use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id ); #);
+use Rit::Base::Utils qw( valclean query_desig parse_form_field_prop alphanum_to_id parse_propargs ); #);
 use Rit::Base::Resource;
 use Rit::Base::Pred;
 use Rit::Base::List;
@@ -756,7 +756,8 @@ Returns: 1
 
 sub modify
 {
-    my( $search, $props, $args ) = @_;
+    my( $search, $props, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     $search->remove_node;
 
@@ -775,6 +776,12 @@ sub modify
     {
 	$search->set_arclim( $arclim_in );
     }
+
+    if( my $aod = $args->{arc_active_on_date} )
+    {
+	$search->set_arc_active_on_date($aod);
+    }
+
 
     my $c_resource = Rit::Base::Resource->get_by_label('resource');
 
@@ -1387,6 +1394,14 @@ sub execute
 	{
 	    $search->{'result'} =
 	      $search->{'result'}->unique_arcs_prio($uap);
+	}
+    }
+    elsif( my $aod = $args->{arc_active_on_date} )
+    {
+	if( $search->{'query'}{'arc'} )
+	{
+	    $search->{'result'} =
+	      $search->{'result'}->arc_active_on_date($aod);
 	}
     }
 
@@ -3377,7 +3392,7 @@ sub set_arclim
 
 #    if( (ref $arclim eq 'ARRAY') and ( @$arclim == 0 ) )
 #    {
-#        cluck "Setting arclim to ".$arclim->sysdesig;
+#    debug "Setting arclim to ".$arclim->sysdesig;
 #    }
 
     return $search->{'arclim'} = $arclim;
@@ -3397,6 +3412,25 @@ See L<Rit::Base::Arc::Lim/limflag>
 sub arclim
 {
     return $_[0]->{'arclim'} ||= Rit::Base::Arc::Lim->new;
+}
+
+
+##############################################################################
+
+=head2 set_arc_active_on_date
+
+  $search->set_arclim( $date )
+
+See L<Rit::Base::Arc::List/arc_active_on_date>
+
+=cut
+
+sub set_arc_active_on_date
+{
+    my( $search, $date ) = @_;
+
+    return $search->{'arc_active_on_date'} =
+      $Rit::dbix->format_datetime($date);
 }
 
 
@@ -3428,7 +3462,8 @@ sub arclim_sql
 
 
 #    debug "Adding arclim_sql based on\n".datadump($arclim);
-    my $sql = $arclim->sql($args);
+    my $sql = $arclim->sql({%$args,
+			    active_on_date=>$search->{'arc_active_on_date'}});
 #    debug "  -> ".$sql;
 
     return $sql ? "and $sql" : '';

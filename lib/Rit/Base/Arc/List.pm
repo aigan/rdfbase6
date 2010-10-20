@@ -5,7 +5,7 @@ package Rit::Base::Arc::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -421,6 +421,49 @@ sub unique_arcs_prio
     }
 
     return Rit::Base::Arc::List->new( \@arcs );
+}
+
+
+##############################################################################
+
+=head2 arc_active_on_date
+
+  $list->arc_active_on_date( $date )
+
+  $args = parse_propargs({ arc_active_on_date => $date })
+
+See also L<Rit::Base::Arc/version_by_date>
+
+Returns: A L<Rit::Base::Arc::List> with the active arc, or an empty
+list if none found.
+
+=cut
+
+sub arc_active_on_date
+{
+    my( $list, $date ) = @_;
+
+    my @arcs;
+
+    my( $arc, $error ) = $list->get_first;
+    while(! $error )
+    {
+	next unless $arc->activated <= $date;
+	if( $arc->deactivated )
+	{
+	    next unless $arc->deactivated > $date;
+	}
+	next if $arc->is_removal;
+
+#	debug "Found an arc active on $date: ".$arc->sysdesig;
+	push @arcs, $arc;
+    }
+    continue
+    {
+	( $arc, $error ) = $list->get_next;
+    };
+
+    return Rit::Base::Arc::List->new(\@arcs);
 }
 
 ##############################################################################

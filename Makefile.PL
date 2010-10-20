@@ -10,6 +10,10 @@ use warnings;
 use ExtUtils::MakeMaker;
 use FindBin;
 
+##########
+
+umask 07; # Secret files
+
 my $pf;
 if( open PF_LOC, "<$FindBin::Bin/.paraframe_location" )
 {
@@ -35,6 +39,88 @@ if( $pf_empty or $pf ne $pf_in )
     print OUT $pf_in."\n";
     close OUT;
 }
+
+##########
+
+print "\nRB database connection\n";
+print "See doc/INSTALL for details\n";
+
+my( $db_connect, $db_host, $db_name, $db_port, $db_user, $db_pass );
+if( open RB_DB, "<$FindBin::Bin/.rb_dbconnect" )
+{
+    $db_connect = join "", <RB_DB>;
+
+    $db_connect =~ /host=(.*)\nport=(.*)\nname=(.*)\nuser=(.*)\npass=(.*)\n/;
+
+    $db_host = $1;
+    $db_port = $2;
+    $db_name = $3;
+    $db_user = $4;
+    $db_pass = $5;
+
+}
+
+my $db_connect_empty = $db_connect ? 0 : 1;
+
+$db_host ||= 'localhost';
+print "DB host?\n";
+print "[$db_host] ";
+my $db_host_in = <STDIN>;
+$db_host_in =~ s/\/?\s*\n*$//;
+$db_host_in =~ s/^\s+//;
+$db_host_in ||= $db_host;
+
+$db_port ||= 5432;
+print "DB port?\n";
+print "[$db_port] ";
+my $db_port_in = <STDIN>;
+$db_port_in =~ s/\/?\s*\n*$//;
+$db_port_in =~ s/^\s+//;
+$db_port_in ||= $db_port;
+
+$db_name ||= 'rb-test';
+print "DB name for the test and demo?\n";
+print "[$db_name] ";
+my $db_name_in = <STDIN>;
+$db_name_in =~ s/\/?\s*\n*$//;
+$db_name_in =~ s/^\s+//;
+$db_name_in ||= $db_name;
+
+$db_user ||= 'rb';
+print "DB user?\n";
+print "[$db_user] ";
+my $db_user_in = <STDIN>;
+$db_user_in =~ s/\/?\s*\n*$//;
+$db_user_in =~ s/^\s+//;
+$db_user_in ||= $db_user;
+
+$db_pass ||= '';
+print "DB password for user $db_user_in?\n";
+my $db_pass_in = '';
+while(not $db_pass_in )
+{
+    my $db_pass_show = '*'x length($db_pass);
+    print "[$db_pass_show] ";
+    $db_pass_in = <STDIN>;
+    $db_pass_in =~ s/\/?\s*\n*$//;
+    $db_pass_in =~ s/^\s+//;
+    $db_pass_in ||= $db_pass;
+}
+
+my $db_connect_in = sprintf "host=%s\nport=%d\nname=%s\nuser=%s\npass=%s\n",
+  $db_host_in, $db_port_in, $db_name_in, $db_user_in, $db_pass_in;
+
+
+if( $db_connect_empty or $db_connect ne $db_connect_in )
+{
+    open OUT, ">.rb_dbconnect" or die $!;
+    print OUT $db_connect_in;
+    close OUT;
+}
+
+print "\n";
+
+##########
 
 WriteMakefile(
 	      'NAME'	       => 'Rit::Base',

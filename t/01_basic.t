@@ -4,6 +4,7 @@
 use 5.010;
 use strict;
 use warnings;
+use Cwd qw( abs_path );
 
 use Test::Warn;
 use Test::More tests => 20;
@@ -19,6 +20,8 @@ BEGIN
     my $pf = <PF_LOC>;
     chomp( $pf );
     push @INC, $pf.'/lib';
+    my $rb_root = abs_path("$FindBin::Bin/../");
+    push @INC, $rb_root."/lib";
 
     use_ok('Rit::Base');
 
@@ -37,6 +40,7 @@ warnings_like {Para::Frame->configure($cfg_in)}
   qr/^Stringify now set$/,
   qr/^Regestring ext tt to burner html$/,
   qr/^Regestring ext html_tt to burner html$/,
+  qr/^Regestring ext xtt to burner html$/,
   qr/^Regestring ext css_tt to burner plain$/,
   qr/^Regestring ext js_tt to burner plain$/,
   qr/^Regestring ext css_dtt to burner plain$/,
