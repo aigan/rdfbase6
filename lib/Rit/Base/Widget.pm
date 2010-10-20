@@ -87,11 +87,20 @@ sub wub_select_tree
     my $out = "";
     my $R = Rit::Base->Resource;
 
+#    $out .= "in wub_select_tree $pred_name for ".$subj->sysdesig." type ".$type->desig;
+
+    my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
+    my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
     my $rev = $args->{'is_rev'} || '';
-    my $arc_type = $args->{'arc_id'} || '';
-    my $arc_id = $args->{'arc_id'} ||
-      ( $arc_type eq 'singular' ? 'singular' : '' );
+    my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
+    my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
+
+
+    debug "singular ".($singular ? "YES" : "NO");
 
     unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
     {
@@ -106,7 +115,7 @@ sub wub_select_tree
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( $args->{'disabled'} and $args->{'disabled'} eq 'disabled' )
+    if( $disabled and $set_value )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -130,35 +139,41 @@ sub wub_select_tree
     {
 	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
-	my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-	  .'pred_'. $pred_name .'='. $subtype->id;
+        if( $set_value )
+        {
+            my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+              .'pred_'. $pred_name .'='. $subtype->id;
 
-	unless( $subtype->rev_scof )
-	{
-	    $out .= " value=\"$value\"";
-	}
+            unless( $subtype->rev_scof )
+            {
+                $out .= " value=\"$value\"";
+            }
 
-	if( $val_query )
-	{
-	    if( $val_query eq $subtype->id )
-	    {
-		$out .= ' selected="selected"';
-	    }
-	}
-	elsif( $subj->has_value({ $pred_name => $subtype }) or
-	       $subj->has_value({ $pred_name => { scof => $subtype } })
-	     )
-	{
-	    $out .= ' selected="selected"';
-	    $arc = $subj->arc( $pred_name, $subtype );
-	}
+            if( $val_query )
+            {
+                if( $val_query eq $subtype->id )
+                {
+                    $out .= ' selected="selected"';
+                }
+            }
+            elsif( $subj->has_value({ $pred_name => $subtype }) or
+                   $subj->has_value({ $pred_name => { scof => $subtype } })
+                 )
+            {
+                $out .= ' selected="selected"';
+                $arc = $subj->arc( $pred_name, $subtype );
+            }
+        }
 
 	$out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
     }
     $out .= '</select>';
 
-    $out .= $arc->edit_link_html
-      if( $arc );
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
+    }
 
     $out .= '<div rel="nop-'. $type->id .'-'. $subj->id .'" style="display: none"></div>'; # usableforms quirk...
 

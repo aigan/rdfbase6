@@ -5380,59 +5380,6 @@ sub wuirc
 	foreach my $arc (@$list)
 	{
 	    $out .= $arc->table_row( $args );
-
-#	    $out .= '<li>'
-#	      if( $list->size > 1);
-#
-#	    my $check_subj = $arc->subj;
-#	    my $item = $arc->value;
-#
-#	    unless( $disabled )
-#	    {
-#		if( $ajax )
-#		{
-#		    my $arc_id = $arc->id;
-#		    $out .= $q->input({ type => 'button',
-#					value => '-',
-#					onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
-#					class => 'nopad',
-#				 });
-#		}
-#		else
-#		{
-#		    my $field = build_field_key({arc => $arc});
-#		    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
-#		    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
-#		}
-#		$out .= " ";
-#	    }
-#
-#
-#	    if( $disabled )
-#	    {
-#		$out .= ( $is_rev ? $check_subj->desig($args) :
-#			  $item->desig($args) );
-#	    }
-#	    else
-#	    {
-#		if( my $item_prefix = $args->{'item_prefix'} )
-#		{
-#		    $out .= $item->$item_prefix." ";
-#		}
-#		$out .= ( $is_rev ? $check_subj->wu_jump :
-#			  $item->wu_jump );
-#	    }
-#	    $out .= '&nbsp;' . $arc->edit_link_html;
-#
-#
-#	    if( $list->size > 1)
-#	    {
-#		$out .= '</li>';
-#	    }
-#	    else
-#	    {
-#		$out .= '<br/>';
-#	    }
 	}
 	$out .= "</table>\n";
     }
