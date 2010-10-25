@@ -139,26 +139,26 @@ sub wub_select_tree
     {
 	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
-        if( $set_value )
+        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+          .'pred_'. $pred_name .'='. $subtype->id;
+
+        unless( $subtype->rev_scof )
         {
-            my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-              .'pred_'. $pred_name .'='. $subtype->id;
+            $out .= " value=\"$value\"";
+        }
 
-            unless( $subtype->rev_scof )
+        if( $val_query )
+        {
+            if( $val_query eq $subtype->id )
             {
-                $out .= " value=\"$value\"";
+                $out .= ' selected="selected"';
             }
-
-            if( $val_query )
-            {
-                if( $val_query eq $subtype->id )
-                {
-                    $out .= ' selected="selected"';
-                }
-            }
-            elsif( $subj->has_value({ $pred_name => $subtype }) or
-                   $subj->has_value({ $pred_name => { scof => $subtype } })
-                 )
+        }
+        elsif( $set_value )
+        {
+            if( $subj->has_value({ $pred_name => $subtype }) or
+                $subj->has_value({ $pred_name => { scof => $subtype } })
+              )
             {
                 $out .= ' selected="selected"';
                 $arc = $subj->arc( $pred_name, $subtype );
