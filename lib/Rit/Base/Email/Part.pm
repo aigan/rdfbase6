@@ -738,6 +738,14 @@ sub charset_guess
 #    debug "Determining charset for ".$part->path;
 
     my $charset = $part->charset;
+    # windows-1252 is backward compatible with Latin-1 for all
+    # printable chars and many texts that are windows-1252 is labeld
+    # as Latin-1
+    if( $charset eq 'iso-8859-1' )
+    {
+        $charset = 'windows-1252';
+    }
+
     $args ||= {};
 
     unless( $charset )
@@ -1571,6 +1579,138 @@ sub body_part
 
 ##############################################################################
 
+=head2 guess_content_part
+
+=cut
+
+sub guess_content_part
+{
+    my( $part ) = @_;
+
+    my $ctype = "text/plain";
+
+    # Prefere html for some systems
+    my $return_path = $part->header('return-path')||'';
+    if( $return_path =~ /\@live\.\w\w\w?>/ )
+    {
+        $ctype = "text/html";
+    }
+
+    my( $cpart );
+    if( $part->effective_type eq $ctype )
+    {
+        $cpart = $part;
+    }
+    elsif( $part->effective_type =~ /multipart/i )
+    {
+	($cpart) = $part->first_part_with_type($ctype);
+    }
+
+    return $cpart;
+}
+
+
+##############################################################################
+
+=head2 body_as_text
+
+=cut
+
+sub body_as_text
+{
+    my( $part ) = shift @_;
+
+    my $ctype = $part->effective_type;
+    if( $ctype eq 'text/plain' )
+    {
+        return( $part->body(@_), 'plain');
+    }
+    elsif( $ctype eq 'text/html' )
+    {
+        debug "Returning body as text from html";
+        require HTML::TreeBuilder;
+        my $tree = HTML::TreeBuilder->new_from_content($part->body(@_));
+        require HTML::FormatText;
+        my $formatter = HTML::FormatText->new(leftmargin => 0,
+                                              rightmargin => 1000);
+        return( \ $formatter->format($tree), 'html');
+    }
+    else
+    {
+        debug "Content-type $ctype not handled in body_as_text";
+        return( $part->body(@_), undef );
+    }
+}
+
+
+##############################################################################
+
+=head2 body_extract
+
+=cut
+
+sub body_extract
+{
+    my( $part ) = @_;
+
+    # Tested on 17026070 18606427 18606412 18603873 18603623 18603599
+    # 17484078 17511721* 18380590* 18571911 6256684* 7485060* 7545438*
+
+    my $cpart = $_[0]->guess_content_part;
+    my( $bodyr, $ct_source ) = $cpart->body_as_text(8000);
+    my $str = $$bodyr;
+    my $length = length($str);
+    my $trunc = 0;
+
+    # Remove header
+    #
+    $str =~ s/^\s*//;
+    my @p; # Paragraphs of content
+    for(0..2)
+    {
+        $str =~ s/^(.*?(\h*\r?\n)+)//s or last;
+        push @p, $1;
+    }
+    push @p, $str if length($str);
+
+    for( my $i=0; $i<=$#p; $i++ )
+    {
+        my $len1 = length($p[$i]);
+        my $len2 = length($p[$i+1]||'');
+#        debug "Part $i: ".$p[$i];
+
+        if( $len1 < 40 and $len2-$len1 > 20 )
+        {
+#            debug "  len ".$len1;
+#            debug "  next is ".$len2;
+            debug "Cutting out header: ".$p[$i];
+            $p[$i] = '';
+            $trunc ++;
+            next;
+        }
+
+        last;
+    }
+    $str = join '', @p;
+
+    my $body = $part->footer_remove($str);
+
+    # Reformat
+    $body =~ s/(\h*\r?\n){2,}/\n\n/g;
+    $body =~ s/\s*$//;
+    if( $ct_source eq 'plain' )
+    {
+        $body =~ s/^(.{70,}?)\h*\r?\n(\S+)/$1 $2/mg;
+    }
+
+#    if( $trunc ){ $body .= " \x{2026}" }
+
+    return $body;
+}
+
+
+##############################################################################
+
 =head2 viewtree
 
 =cut
@@ -1723,6 +1863,55 @@ sub match
 
     debug "No match in html or plain";
     return 0;
+}
+
+
+##############################################################################
+
+=head2 footer_remove
+
+  $body = footer_remove(\$str)
+
+=cut
+
+sub footer_remove
+{
+    my( $part, $str ) = @_;
+
+    $str =~ s/^(--|____).*//ms;
+
+    ### Find common ending phrases
+
+    $str =~ s/\v+\s*( Med.vänlig.hälsning
+              | Bästa.hälsningar
+              | Best.Regards
+              | Mvh\s*
+              | Med.vänliga.hälsningar
+              | Vänligen\h*\v
+              | \/\/\s*\w\w+
+              ).*//soxi;
+
+    ### Remove comments
+    $str =~ s/\v+>+.*//soxi;
+
+    # Find common ending politeness phrases
+    #
+    $str =~ s/\v+\s*( Tack.(för.hjälpen.)?på.förhand
+              | Tack
+              )\W*\s*$//soxi;
+
+#    # Name without phrase
+#    if( my $from = $part->head->parsed_address('from')->get_first_nos )
+#    {
+#        if( my $name = $from->name )
+#        {
+#            debug "Posted by $name";
+#            $str =~ s/\v+\s*$name.*$//im;
+#        }
+#    }
+
+
+    return $str;
 }
 
 

@@ -560,6 +560,22 @@ sub body_as_html
 
 ##############################################################################
 
+=head2 body_extract
+
+  $email->body_extract
+
+Return: the string of an extract of the body
+
+=cut
+
+sub body_extract
+{
+    return $_[0]->obj->body_extract;
+}
+
+
+##############################################################################
+
 =head2 part
 
 =cut

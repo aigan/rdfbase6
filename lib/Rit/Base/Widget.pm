@@ -34,7 +34,7 @@ filefield input_image label_from_params );
 
 use Rit::Base;
 use Rit::Base::Arc;
-use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais );
+use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use Rit::Base::L10N;
 #use Rit::Base::Constants qw( );
 
@@ -83,6 +83,8 @@ sub wub_select_tree
     my( $subj, $pred_name, $type, $args ) = @_;
 
     ### Given args MUST have been initialized and localizes!
+
+    debug "wub_select_tree $pred_name";
 
     my $out = "";
     my $R = Rit::Base->Resource;
@@ -211,7 +213,8 @@ sub wub_select
     my $R = Rit::Base->Resource;
     my $req = $Para::Frame::REQ;
 
-    unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
+    unless( UNIVERSAL::isa $type, 'Rit::Base::Object' and
+            $type->size )
     {
 	confess "type missing: ".datadump($type,2);
     }
@@ -221,9 +224,13 @@ sub wub_select
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
       $singular ? 'singular' : '';
+    my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
     my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
     my $extra = '';
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
 
     $extra .= ' class="'. $args->{'class'} .'"'
       if $args->{'class'};
@@ -239,7 +246,7 @@ sub wub_select
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if( $disabled )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -264,9 +271,18 @@ sub wub_select
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if( $header );
 
-    my $is_pred = ( $args->{'range_scof'} ? 'scof' : 'is' );
-    my $items = $type->revlist($is_pred, undef, $args)->
-      sorted(['name_short', 'desig', 'label']);
+    my( $range, $range_pred ) = range_pred($args);
+    $range_pred ||= 'is';
+
+#    debug "TYPE ".$type;
+#    debug "RANGE_PRED ".$range_pred;
+    my $rev_range_pred = 'rev_'.$range_pred;
+    $rev_range_pred =~ s/^rev_rev_//;
+
+    my $items = $type->$rev_range_pred(undef, $args)->sorted->as_listobj;
+#      sorted(['name_short', 'desig', 'label'])->as_listobj;
+
+#    debug "ITEMS ".$items->sysdesig;
 
     $req->may_yield;
     die "cancelled" if $req->cancelled;
@@ -286,15 +302,22 @@ sub wub_select
 
 	$out .= '<option value="'. $item->id .'"';
 
-	$out .= ' selected="selected"'
-	  if( $default_value eq $item->id or
-	      $subj->prop( $pred_name, $item, 'adirect' ) );
+        if( $set_value )
+        {
+            $out .= ' selected="selected"'
+              if( $default_value eq $item->id or
+                  $subj->prop( $pred_name, $item, 'adirect' ) );
+        }
 
-	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
+#	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
+	$out .= '>'.$item->desig.'</option>';
     }
     $out .= '</select>';
-    $out .= $arc->edit_link_html
-      if( $arc );
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
+    }
 
     return $out;
 }

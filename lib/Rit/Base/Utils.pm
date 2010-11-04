@@ -31,7 +31,7 @@ our @EXPORT_OK
 	parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
 	send_cache_update parse_propargs aais alphanum_to_id
-	proplim_to_arclim );
+	proplim_to_arclim range_pred );
 
 
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
@@ -1352,6 +1352,34 @@ sub alphanum_to_id
 
 	return undef;
     }
+}
+
+##############################################################################
+
+=head2 range_pred
+
+  my( $range, $range_pred ) = range_pred(\%args)
+
+=cut
+
+sub range_pred
+{
+    if( my $range = $_[0]->{'range'} )
+    {
+        return( $range, 'is' );
+    }
+
+    while( my($key,$val) = each %{$_[0]} )
+    {
+#        debug "Looking for range in $key -> $val";
+        if( $key =~ /^range_(.*)/ )
+        {
+            keys %{$_[0]}; # reset 'each' iterator
+            return( $val, $1 );
+        }
+    }
+
+    return;
 }
 
 ##############################################################################

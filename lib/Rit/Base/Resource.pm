@@ -63,7 +63,7 @@ use Rit::Base::Utils qw( valclean parse_query_props
 			 parse_form_field_prop is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
-			 parse_propargs aais );
+			 parse_propargs aais range_pred );
 
 
 
@@ -190,6 +190,11 @@ sub get
 #	    debug "Got     $id";
 	    return $val_in;
 	}
+
+#        if( ref $val_in )
+#        {
+#            confess "invalid value in get() ".datadump($val_in,1);
+#        }
 
 	if( $val_in eq 'new' ) # Minimal init for empty node
 	{
@@ -4879,27 +4884,23 @@ sub wdirc
 	$args->{'arclim'} =  Rit::Base::Arc::Lim->parse('active');
     }
 
+    my( $range, $range_pred ) = range_pred($args)
+      or confess "Range missing";
+
     my $out = '';
-    my $is_scof = $args->{'range_scof'};
     my $is_rev = $args->{'rev'} || '';
-    my $is_pred = ( $is_scof ? 'scof' : 'is' );
-    my $range = $args->{'range'} || $args->{'range_scof'};
-    unless( $range )
-    {
-	confess "Range missing";
-    }
     my $list = ( $is_rev ?
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
 		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
     if( $is_rev )
     {
-	$list = $list->find({ subj => { $is_pred => $range }}) # Sort out arcs on range...
+	$list = $list->find({ subj => { $range_pred => $range }}) # Sort out arcs on range...
 	  if( $range and $range ne $C_resource );
     }
     else
     {
-	$list = $list->find({ obj => { $is_pred => $range }}) # Sort out arcs on range...
+	$list = $list->find({ obj => { $range_pred => $range }}) # Sort out arcs on range...
 	  if( $range and $range ne $C_resource );
     }
 
@@ -5005,43 +5006,66 @@ sub wu
     # Should we support dynamic preds?
     my $pred = Rit::Base::Pred->get($pred_name);
 
-    my( $range, $range_scof );
+    my( $range, $range_pred ) = range_pred($args);
+    my( $range_is, $range_scof, $range_class );
 
     if( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
     {
 	$args->{'format'} ||= $format;
     }
 
-    if( $args->{'range'} or $args->{'range_scof'} )
+    if( $range )
     {
-	$range = $args->{'range'} ? $R->get($args->{'range'}) : undef;
-	$range_scof = $args->{'range_scof'} ?
-	  $R->get($args->{'range_scof'}) : undef;
+        $range = $R->get($range) unless ref $range;
+        given($range_pred)
+        {
+            when('is'){ $range_is = $range }
+            when('scof'){ $range_scof = $range }
+        }
     }
     elsif( $rev )
     {
-	$range = $pred->first_prop('domain',undef,['active'])
-	  || $C_resource;
-	$range_scof = $pred->first_prop('domain_scof',undef,['active']);
-
+        $range_is = $pred->first_prop('domain',undef,['active'])
+          || $C_resource;
+        $range_scof = $pred->first_prop('domain_scof',undef,['active']);
 	#debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
 	#  $range->sysdesig;
     }
     else
     {
-	$range = $pred->valtype;
+	$range_is = $pred->valtype;
 	$range_scof = $pred->first_prop('range_scof',undef,['active']);
     }
 
-    if( $range_scof )
+    unless( $range_pred )
     {
-	$args->{'range_scof'} = $range_scof;
-	$range = $range_scof;
+        if( $range_scof )
+        {
+            $range_pred = 'scof';
+            $range = $range_scof;
+        }
+        else
+        {
+            $range_pred = 'is';
+            $range = $range_is;
+        }
+    }
+
+    if( $range->is_resource )
+    {
+        $range_class = $range->instance_class;
     }
     else
     {
-	$args->{'range'} = $range;
+        $range_class = 'Rit::Base::Resource';
     }
+
+    my $range_key = 'range_'.$range_pred;
+    $range_key =~ s/^range_is$/range/;
+
+    $args->{$range_key} = $range;
+#    debug "Setting $range_key to ".$range->sysdesig;
+
 
     # Wrap in for ajax
     my $out = "";
@@ -5067,7 +5091,7 @@ sub wu
 
     # widget for updating subclass of range class
 #    debug "Calling ". $range->instance_class ."->wuirc(". $node->desig .", ". $pred->label ."...)";
-    $out .= $range->instance_class->wuirc($node, $pred, $args);
+    $out .= $range_class->wuirc($node, $pred, $args);
     $out .= $extra_html if $extra_html;
 
     if( $divid and not $from_ajax )
@@ -5291,21 +5315,24 @@ sub wuirc
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
+#    debug "args:".query_desig($args);
+
     unless( $args->{'arclim'}->size ) # Defaults to active arcs
     {
 	$args->{'arclim'} =  Rit::Base::Arc::Lim->parse('active');
     }
 
     my $DEBUG = 0;
-    debug "WUIRC ".$subj->desig if $DEBUG;
+    debug "WUIRC ".$pred->label." ".$subj->desig if $DEBUG;
+
+    my( $range, $range_pred ) = range_pred($args)
+      or confess "Range missing ".datadump($args,1);
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
     my $out = '';
     my $is_scof = $args->{'range_scof'};
     my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
-    my $is_pred = ( $is_scof ? 'scof' : 'is' );
-    my $range = $args->{'range'} || $args->{'range_scof'};
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
@@ -5320,43 +5347,39 @@ sub wuirc
 
     $args->{'source'} = $subj;
 
-    confess "Range missing"
-      unless( $range );
-
-    debug "wuirc range ".$range->desig if $DEBUG;
-
     my $list = ( $is_rev ?
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
 		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
-
-    if( $DEBUG )
-    {
-	debug "FOUND list ".$list->sysdesig;
-	debug "is_pred $is_pred";
-	debug "range ".$range->sysdesig;
-	debug "is_rev ".$is_rev;
-    }
-
-    # Sort out arcs on range...
-    if( $is_rev )
-    {
-	$list = $list->find({ subj => { $is_pred => $range }})->direct;
-    }
-    else
-    {
-	$list = $list->find({ obj => { $is_pred => $range }})->direct;
-    }
 
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
 
 #    debug "Selecting inputtype for ".$pred->desig;
-#    debug "  range: ".$range->sysdesig;
-#    debug "  is_pred: ".$is_pred;
     my $inputtype = $args->{'inputtype'} ||
-      ( ( $range->revcount($is_pred) < 25 ) ?
+      ( ( $range->revcount($range_pred) < 25 ) ?
 	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
-#    debug "  $inputtype";
+
+
+   if( $DEBUG )
+    {
+	debug "FOUND list ".$list->sysdesig;
+	debug "range_pred $range_pred";
+	debug "range ".$range->sysdesig;
+	debug "is_rev ".$is_rev;
+        debug "arc_type ".$arc_type;
+        debug "singular ".$singular;
+        debug "inputtype ".$inputtype;
+    }
+
+    # Sort out arcs on range...
+    if( $is_rev )
+    {
+	$list = $list->find({ subj => { $range_pred => $range }})->direct;
+    }
+    else
+    {
+	$list = $list->find({ obj => { $range_pred => $range }})->direct;
+    }
 
 
     if( $list and
@@ -5400,7 +5423,7 @@ sub wuirc
 	{
 	    debug "wuirc 3" if $DEBUG;
 
-	    my $search_params = { $is_pred => $range->id };
+	    my $search_params = { $range_pred => $range->id };
 
 	    # Stringify
 	    my $default = "" . ($args->{'default_value'}||"");

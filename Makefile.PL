@@ -143,6 +143,7 @@ WriteMakefile(
 		  'Text::WordDiff'             => 0.04,
 		  'File::MMagic::XS'           => 0.09,
 	          'Email::MIME'                => 1.902,
+                  'HTML::FormatText'           => 2.04,
 	      },
 	      'dist'          =>
 	      {

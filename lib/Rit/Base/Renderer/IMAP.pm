@@ -216,7 +216,7 @@ sub render_output
     }
     else
     {
-#	debug "Getting bodypart $uid $imap_path";
+#	debug "Getting bodypart ".$top->uid." $imap_path";
 	$data = $part->body;
 #	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
 	#    debug "bodypart_string: ".validate_utf8( \$data );
