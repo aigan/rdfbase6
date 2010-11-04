@@ -560,17 +560,31 @@ sub body_as_html
 
 ##############################################################################
 
-=head2 body_extract
+=head2 body_as_html
 
-  $email->body_extract
+  $email->body_as_html
 
-Return: the string of an extract of the body
+Return: the string of the body presented as html
 
 =cut
 
-sub body_extract
+sub body_as_html
 {
-    return $_[0]->obj->body_extract;
+    return $_[0]->obj->body_as_html;
+}
+
+
+##############################################################################
+
+=head2 attachments_as_html
+
+  $email->attachments_as_html
+
+=cut
+
+sub attachments_as_html
+{
+    return $_[0]->obj->attachments_as_html;
 }
 
 

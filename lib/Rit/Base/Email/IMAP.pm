@@ -170,7 +170,7 @@ sub top
 
   $part->generate_name
 
-Generates a non-unique message name for use for attatchemnts, et al
+Generates a non-unique message name for use for attachemnts, et al
 
 =cut
 
@@ -264,44 +264,7 @@ sub body_as_html
 
     $msg .= $bp->$renderer();
 
-    if( keys %{$part->{'attatchemnts'}} )
-    {
-	$msg .= "<ol>\n";
-
-	foreach my $att ( sort values %{$part->{'attatchemnts'}} )
-	{
-	    my $name = $att->filename || $att->generate_name;
-	    my $desc = $att->description;
-
-	    my $name_enc = CGI->escapeHTML($name);
-	    my $desc_enc = CGI->escapeHTML($desc);
-
-	    my $type = $att->effective_type;
-	    my $size_human = $att->size_human;
-
-	    my $url_path = $att->url_path($name);
-	    my $path = $att->path;
-
-	    my $mouse_over =
-	      "onmouseover=\"TagToTip('email_file_$nid/$path')\"";
-
-	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
-	    if( $desc and ($desc ne $name ) )
-	    {
-		$desig .= "<br>\n$desc";
-	    }
-
-	    $msg .= "<li $mouse_over>$desig</li>\n";
-
-	    ## Adding tooltip
-	    $msg .= "<span id=\"email_file_$nid/$path\" style=\"display: none\">";
-	    $msg .= "$name_enc<br>\n";
-	    $msg .= "Type: $type<br>\n";
-	    $msg .= "Size: $size_human<br>\n";
-	    $msg .= "</span>";
-	}
-	$msg .= "</ol>\n";
-    }
+    $msg .= $bp->attachments_as_html();
 
     return $msg;
 }

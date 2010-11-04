@@ -953,7 +953,7 @@ sub filename
 
   $part->generate_name
 
-Generates a non-unique message name for use for attatchemnts, et al
+Generates a non-unique message name for use for attachemnts, et al
 
 =cut
 
@@ -1218,7 +1218,7 @@ sub _render_mixed
 
     my $msg = "";
 
-    $part->top->{'attatchemnts'} ||= {};
+    $part->top->{'attachemnts'} ||= {};
 
     foreach my $alt (@alts)
     {
@@ -1251,7 +1251,7 @@ sub _render_mixed
 	    {
 		debug "No renderer defined for $type";
 		$msg .= "<code>No renderer defined for part $apath <strong>$type</strong></code>";
-		$part->top->{'attatchemnts'}{$alt->path} = $alt;
+		$part->top->{'attachemnts'}{$alt->path} = $alt;
 	    }
 	}
 	#
@@ -1269,12 +1269,12 @@ sub _render_mixed
 #	    }
 #	    else
 #	    {
-#		$part->top->{'attatchemnts'}{$alt->path} = $alt;
+#		$part->top->{'attachemnts'}{$alt->path} = $alt;
 #	    }
 	}
 	else # Not requested for inline display
 	{
-	    $part->top->{'attatchemnts'}{$alt->path} = $alt;
+	    $part->top->{'attachemnts'}{$alt->path} = $alt;
 	}
     }
 
@@ -1386,8 +1386,8 @@ sub _render_image
 
     my $desig_out = CGI->escapeHTML($desig);
 
-    $part->top->{'attatchemnts'} ||= {};
-    $part->top->{'attatchemnts'}{$part->path} = $part;
+    $part->top->{'attachemnts'} ||= {};
+    $part->top->{'attachemnts'}{$part->path} = $part;
 
 #    debug "  rendering image - done";
 
@@ -1653,7 +1653,7 @@ sub body_extract
 {
     my( $part ) = @_;
 
-    # Tested on 17026070 18606427 18606412 18603873 18603623 18603599
+    # Tested on 17026070 18603873 18603623 18603599
     # 17484078 17511721* 18380590* 18571911 6256684* 7485060* 7545438*
 
     my $cpart = $_[0]->guess_content_part;
@@ -1863,6 +1863,98 @@ sub match
 
     debug "No match in html or plain";
     return 0;
+}
+
+
+##############################################################################
+
+=head2 attachments
+
+=cut
+
+sub attachments
+{
+    my( $part ) = @_;
+
+    my $top = $part->top;
+    my $attachments = $top->{'attachemnts'};
+    unless( $attachments )
+    {
+        my $type = $top->type;
+        my $renderer = $top->select_renderer($type);
+        unless( $renderer )
+        {
+            debug "No renderer defined for $type";
+            return "";
+        }
+
+        # Somewhat wasteful. Should maby optimize for only getting
+        # attachments
+        #
+        $top->$renderer({only_attachments=>1});
+
+        $attachments = $top->{'attachemnts'};
+    }
+
+    return $attachments;
+}
+
+
+##############################################################################
+
+=head2 attachments_as_html
+
+=cut
+
+sub attachments_as_html
+{
+    my( $part ) = @_;
+    my $atts = $part->attachments;
+
+    my $msg = "";
+
+    if( keys %$atts )
+    {
+        my $nid = $part->email->id;
+
+	$msg .= "<ol>\n";
+
+	foreach my $att ( sort values %$atts )
+	{
+	    my $name = $att->filename || $att->generate_name;
+	    my $desc = $att->description;
+
+	    my $name_enc = CGI->escapeHTML($name);
+	    my $desc_enc = CGI->escapeHTML($desc);
+
+	    my $type = $att->effective_type;
+	    my $size_human = $att->size_human;
+
+	    my $url_path = $att->url_path($name);
+	    my $path = $att->path;
+
+	    my $mouse_over =
+	      "onmouseover=\"TagToTip('email_file_$nid/$path')\"";
+
+	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
+	    if( $desc and (lc($desc) ne lc($name) ) )
+	    {
+		$desig .= "<br>\n$desc";
+	    }
+
+	    $msg .= "<li $mouse_over>$desig</li>\n";
+
+	    ## Adding tooltip
+	    $msg .= "<span id=\"email_file_$nid/$path\" style=\"display: none\">";
+	    $msg .= "$name_enc<br>\n";
+	    $msg .= "Type: $type<br>\n";
+	    $msg .= "Size: $size_human<br>\n";
+	    $msg .= "</span>";
+	}
+	$msg .= "</ol>\n";
+    }
+
+    return $msg;
 }
 
 
