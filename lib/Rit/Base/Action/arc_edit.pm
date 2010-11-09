@@ -37,6 +37,7 @@ sub handler
     my $pred_name      = $q->param('pred');
     my $value          = $q->param('val');
     my $literal_arcs   = $q->param('literal_arcs');
+    my $weight         = $q->param('weight') || 0;
     my $explicit       = $q->param('explicit') || 0;
     my $check_explicit = $q->param('check_explicit');
     my $force          = $q->param('force');
@@ -93,6 +94,19 @@ sub handler
 	{
 	    $arc->submit;
 	}
+
+        my $weight_old = $arc->weight || 0;
+        if( $weight != $weight_old )
+        {
+            if( $new->equals($arc ) )
+            {
+                $new = $new->set_weight($weight, $args); # New version
+            }
+            else
+            {
+                $new->set_weight($weight, {%$args,force_same_version=>1});
+            }
+        }
 
 	$arc->subj->session_history_add('updated');
 

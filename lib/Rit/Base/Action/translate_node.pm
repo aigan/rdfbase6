@@ -5,7 +5,7 @@ package Rit::Base::Action::translate_node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-20010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -54,11 +54,12 @@ sub handler
 	debug "Checking $aid";
 
 	my $arc = Rit::Base::Arc->get_by_id( $aid );
+        my $arc_in = $arc;
 
 	my $val_new = $q->param("arc_${aid}_val");
 	trim(\$val_new);
-	my $weight_in = $q->param("arc_${aid}_weight");
-	my $weight_new = Rit::Base::Literal::String->new($weight_in)||is_undef;
+	my $weight_new = $q->param("arc_${aid}_weight") || 0;
+#	my $weight_new = Rit::Base::Literal::String->new($weight_in)||is_undef;
 
 	if( my $obj = $arc->value_node )
 	{
@@ -68,27 +69,35 @@ sub handler
 		next;
 	    }
 
-	    my $val_old = $obj->desig($args);
+	    my $val_old = $obj->first_literal->desig($args);
 	    if( $val_new ne $val_old )
 	    {
-		$arc->set_value($val_new, $args);
+                die "'$val_old' != '$val_new'";
+		$arc = $arc->set_value($val_new, $args);
 	    }
 
 #	    debug "BEFORE ".datadump($obj, 2); ### DEBUG
-	    my $weight_old = $obj->first_prop('weight');
+	    my $weight_old = $arc->weight || $obj->first_prop('weight') || 0;
 	    debug "  old weight is $weight_old";
 	    debug "  new weight is $weight_new";
 	    if( $weight_new != $weight_old )
 	    {
 #		debug "AFTER ".datadump($obj, 2); ### DEBUG
-		if( $weight_new->defined )
-		{
-		    $obj->update({ 'weight' => $weight_new }, $args);
-		}
-		else
-		{
-		    $obj->arc('weight')->remove( $args );
-		}
+
+                $arc->set_weight($weight_new, $args);
+                if( my $aw = $obj->arc('weight') )
+                {
+                    $aw->remove( $args );
+                }
+
+#		if( $weight_new->defined )
+#		{
+#		    $obj->update({ 'weight' => $weight_new }, $args);
+#		}
+#		else
+#		{
+#		    $obj->arc('weight')->remove( $args );
+#		}
 	    }
 	}
 	else # Not a value node
@@ -102,6 +111,7 @@ sub handler
 	    my $val_old = $arc->value;
 	    if( $val_new ne $val_old )
 	    {
+                die "'$val_old' != '$val_new'";
 		$arc = $arc->set_value($val_new, $args);
 	    }
 
@@ -116,11 +126,14 @@ sub handler
 		$props->{'is_of_language'} = $l;
 	    }
 
-	    if( my $weight_new = $q->param("arc_${aid}_weight") )
+            my $weight_old = $arc->weight || 0;
+            my $weight_new = $q->param("arc_${aid}_weight") || 0;
+	    if( $weight_new != $weight_old )
 	    {
-		$props->{'weight'} = $weight_new;
+                $arc = $arc->set_weight($weight_new, $args);
 	    }
 
+#            debug "updating value with ".datadump($props,1);
 	    $arc->value->update($props, $args);
 	}
     }
@@ -129,7 +142,8 @@ sub handler
     trim(\$new_val);
     if( length $new_val ) # Create new translation
     {
-	my $arc = $n->add_arc({ $p->plain => $new_val }, $args );
+        my $weight_new = $q->param("new_weight") || 0;
+	my $arc = $n->add_arc({ $p->plain => $new_val }, {%$args, arc_weight => $weight_new} );
 	# The arc may already exist
 
 	my $props = {};
@@ -141,11 +155,6 @@ sub handler
 					     },
 					    $args );
 	    $props->{'is_of_language'} = $l;
-	}
-
-	if( my $weight_new = $q->param("new_weight") )
-	{
-	    $props->{'weight'} = $weight_new;
 	}
 
 	$arc->value->update($props, $args);

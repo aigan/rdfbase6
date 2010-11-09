@@ -5,7 +5,7 @@ package Rit::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
 #
 #=============================================================================
 
@@ -877,6 +877,7 @@ Supported args are:
   res
   read_access
   write_access
+  weight
 
 Returns:
 
@@ -904,6 +905,10 @@ sub add_arc
     if( $args->{'write_access'} )
     {
 	$extra{ write_access } = $args->{'write_access'}->id;
+    }
+    if( $args->{'weight'} )
+    {
+	$extra{ arc_weight } = $args->{'weight'};
     }
 
     my $arc;

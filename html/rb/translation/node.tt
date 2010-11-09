@@ -7,13 +7,13 @@
 
 [% id = q.param('id') %]
 [% node = get(id) %]
-[% pred = 'name' %]
+[% predid = q.param('pred') %]
+[% IF predid; pred = get(predid, is=>C.predicate).label; ELSE; pred='name'; END %]
 
 [% hidden('pred', pred) %]
 [% hidden('id', id) %]
 
-
-<h1>[% loc("Update translation of [_1]: [_2]", id, node.${pred}.loc) %]</h1>
+<h1>[% loc("Update translation of [_1]: [_2]", id, node.${pred}.loc) %] <em>[% pred %]</em></h1>
 
 <p>[% PROCESS node_menu.tt %]</p>
 
@@ -21,7 +21,7 @@
 
 <table>
 <tr><th>[% loc('Language') %] <th>Arc <th>[% loc('Text') %] <th>[% loc('Prio') %]
-[% FOREACH arc IN node.arc_list(pred).sorted(['value_node.is_of_language.code',{on='value_node.weight' dir='desc'}]) %]
+[% FOREACH arc IN node.arc_list(pred).sorted(['value_node.is_of_language.code',{on='weight' dir='desc'}]) %]
    [% aid = arc.id %]
    [% tr2%]
    [% l = arc.value_node.is_of_language %]
@@ -33,7 +33,7 @@
    [% END %]
    <td>[% jump(aid, "$home/rb/node/arc/update.tt", id=aid) %]
    <td>[% input("arc_${aid}_val", arc.value) %]
-   <td align="right">[% select("arc_${aid}_weight", arc.obj.weight, {''='-','1'=1,'2'=2}, undef,undef,'-') %]
+   <td align="right">[% select("arc_${aid}_weight", (arc.weight||arc.obj.weight), {''='-','1'=1,'2'=2}, undef,undef,'-') %]
 [% END %]
 <tr>
 <td>[% select('new_is_of_language', '', langlist)%]
