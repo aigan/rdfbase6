@@ -1606,6 +1606,8 @@ sub guess_content_part
 	($cpart) = $part->first_part_with_type($ctype);
     }
 
+    $cpart ||= $part->first_non_multi_part() || $part;
+
     return $cpart;
 }
 
@@ -1934,7 +1936,7 @@ sub attachments_as_html
 	    my $path = $att->path;
 
 	    my $mouse_over =
-	      "onmouseover=\"TagToTip('email_file_$nid/$path')\"";
+	      "onmouseover=\"TagToTip('email_file_$nid/$path',DELAY,1000,OFFSETY,20)\"";
 
 	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
 	    if( $desc and (lc($desc) ne lc($name) ) )
