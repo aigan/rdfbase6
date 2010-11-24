@@ -1936,7 +1936,7 @@ sub attachments_as_html
 	    my $path = $att->path;
 
 	    my $mouse_over =
-	      "onmouseover=\"TagToTip('email_file_$nid/$path',DELAY,1000,OFFSETY,20)\"";
+	      "onmouseover=\"TagToTip('email_file_$nid/$path',DELAY,1000,OFFSETY,20,DURATION,10000)\"";
 
 	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
 	    if( $desc and (lc($desc) ne lc($name) ) )
