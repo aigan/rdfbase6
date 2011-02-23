@@ -26,6 +26,7 @@ use base qw( Para::Frame::Renderer::Email );
 use Carp qw( croak confess cluck );
 use Template::Exception;
 use Email::MIME;
+use Clone qw(clone);
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_decode datadump catch );
@@ -58,9 +59,9 @@ sub render_body_from_template
 
     # Important for not retrieving the template over IMAP multiple times
     #
-    my $em = $rend->{'template_raw'} ||= $rend->{'template'}->raw_part;
+    $rend->{'template_raw'} ||= $rend->{'template'}->raw_part;
+    my $em = clone($rend->{'template_raw'}); ### COPY template
     my $burner = $rend->set_burner_by_type('plain');
-
 
     unless( $em->parts )
     {
@@ -68,8 +69,7 @@ sub render_body_from_template
     }
 
     $rend->render_parts($em);
-
-    $rend->email_clone($em);
+    $rend->email_clone($em); # TODO: avoid copy
 
     return 1;
 }

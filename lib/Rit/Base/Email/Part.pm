@@ -102,7 +102,7 @@ sub new_by_path
 
 sub top
 {
-    return $_[0]->{'top'} or die "Top part not given";
+    return( $_[0]->{'top'} or die "Top part not given");
 }
 
 
@@ -1855,14 +1855,20 @@ sub match
 
     my $qx = qr/$qx_in/;
 
-    if( ${$part_html->body} =~ $qx )
+    if( $part_html and ${$part_html->body} =~ $qx )
     {
 	debug "match in html part";
 	return 1;
     }
-    elsif( ${$part_plain->body} =~ $qx )
+    elsif( $part_plain and ${$part_plain->body} =~ $qx )
     {
 	debug "match in plain part";
+	return 1;
+    }
+    elsif( $part->effective_type =~ /^text\// and
+           ${$part->body} =~ $qx )
+    {
+        debug "match in only part";
 	return 1;
     }
 
