@@ -39,7 +39,7 @@ use Rit::Base::Literal::String; # Needed by RB::Utils
 use Rit::Base::Setup;
 
 
-our $VERSION = "6.57";
+our $VERSION = "6.58";
 
 
 =head1 NAME

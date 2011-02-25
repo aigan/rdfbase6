@@ -4083,6 +4083,7 @@ Supported args are:
   res
   read_access
   write_access
+  arc_weight
 
 Returns:
 
@@ -4116,6 +4117,10 @@ sub add
     if( $args->{'write_access'} )
     {
 	$extra{ write_access } = $args->{'write_access'}->id;
+    }
+    if( $args->{'arc_weight'} )
+    {
+	$extra{ arc_weight } = int( $args->{'arc_weight'} );
     }
 
     foreach my $pred_name ( keys %$props )

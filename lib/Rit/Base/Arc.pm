@@ -766,6 +766,11 @@ sub create
 		next unless ($arc->obj_id||0) == $rec->{'obj'};
 	    }
 
+	    # undef weight is not the same as weight 0, but treat them
+	    # as the same in this check
+	    #
+	    next if ($rec->{'weight'}||0) != ($arc->weight||0);
+
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
 
 	    if( $arc->active )
@@ -874,7 +879,7 @@ sub create
     my $values_part = join ",", map "?", @fields;
     my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
-    debug "SQL $st (@values)" if $DEBUG;
+    debug sprintf "SQL %s (%s)", $st, join ',', map {defined($_)? $_ : 'null'} @values if $DEBUG;
 
     ### Binding SQL datatypes to values
     for(my$i=0;$i<=$#bindtype;$i++)

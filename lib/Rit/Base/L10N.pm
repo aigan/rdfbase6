@@ -108,6 +108,8 @@ sub maketext
 #    debug "  >>$phrase ($len2/$len1)";
 #    debug "-------->> Translating $phrase @_";
 
+    my $DEBUG = Para::Frame::Logging->at_level(2);
+
     if( $phrase =~ /Ã/ )
     {
 	confess "Encoded but not marked as encoded ($phrase)";
@@ -153,18 +155,18 @@ sub maketext
 
 	unless( exists $TRANSLATION{$phrase}{$langcode} )
 	{
-	    debug "Looking up phrase '$phrase' in DB";
+	    debug "Looking up phrase '$phrase' in DB" if $DEBUG;
 	    if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos )
 	    {
-                debug "Found a node: " . $node->sysdesig;
+                debug "Found a node: " . $node->sysdesig if $DEBUG;
 		my $lang = Rit::Base::Resource->get({
 						     code => $langcode,
 						     is => $C_language,
 						     });
-                debug "Found a lang: " . $lang->sysdesig;
+                debug "Found a lang: " . $lang->sysdesig if $DEBUG;
 		if( my $trans = $node->has_translation({is_of_language=>$lang})->plain )
 		{
-                    debug "Found a trans: $trans";
+                    debug "Found a trans: $trans" if $DEBUG;
 		    $value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($trans);
 		    last;
 		}
