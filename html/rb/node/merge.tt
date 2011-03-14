@@ -38,13 +38,6 @@
            ') ' IF loop.last;
            END;
 	%]
-        [% FOREACH in = n.in_region_adirect;
-           'in (' IF loop.first;
-           in.wu_jump;
-           ', ' UNLESS loop.last;
-           ') ' IF loop.last;
-           END;
-	%]
         </td>
         <td><small>node [% n.id %]</small></td>
       </tr>
