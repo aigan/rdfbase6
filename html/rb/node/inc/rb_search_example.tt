@@ -1,4 +1,4 @@
-<p><pre>name_clean hotel
+﻿<p><pre>name_clean hotel
 private_ne 1
 arclim ['not_old']
 order_by name.loc

@@ -66,7 +66,7 @@ resource representing the user class.
 
 =head2 get
 
-This will call back to L</find_by_anything>.
+This will call back to L<Rit::Base::Resource/get>.
 
 =cut
 
@@ -306,7 +306,7 @@ sub verify_password
 	}
     }
 
-    debug datadump(\%ENV);
+    debug "Verifying password failed:\n".datadump(\%ENV);
     return 0;
 }
 
