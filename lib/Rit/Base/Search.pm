@@ -399,6 +399,17 @@ Recognized parts are:
   rev
   prop
   parse
+  remove
+
+remove calls L</broaden>.
+Example:
+  [% FOREACH ckey IN crits.keys %]
+     [% NEXT UNLESS ckey == 'departure' %]
+     [% crit = crits.$ckey %]
+     [% FOREACH foo IN crit.prop %]
+        [% hidden("remove", "prop_${foo.key}") %]
+     [% END %]
+  [% END %]
 
 If parse is set to value, the value are parsed recognizing:
 
