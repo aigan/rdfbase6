@@ -128,6 +128,8 @@ sub init
       'Rit::Base::Literal::Email::Subject';
     $Para::Frame::CFG->{'email_class'} ||=
       'Rit::Base::Email';
+    $Para::Frame::CFG->{'daemons'} ||= [];
+
 
 
     my $global_params =
