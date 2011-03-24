@@ -23,7 +23,7 @@ use strict;
 use warnings;
 
 use Carp qw( confess cluck carp );
-#use CGI;
+use CGI;
 
 use base qw( Exporter );
 our @EXPORT_OK = qw( wub aloc sloc build_field_key );
@@ -391,7 +391,8 @@ sub aloc
             $id = $node->id;
         }
 
-        return '<span class="translatable" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+        return '<span class="translatable" title="'.CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
+	  '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
     }
     else {
         loc($phrase, @_);
