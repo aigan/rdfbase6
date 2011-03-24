@@ -339,6 +339,7 @@ sub set_ctype
 {
     my( $rend, $ctype ) = @_;
 
+    $ctype = $rend->{'ctype'} || $ctype || '';
     if( $rend->{'ctype'} eq 'json' )
     {
 	$ctype->set("application/json; charset=UTF-8");

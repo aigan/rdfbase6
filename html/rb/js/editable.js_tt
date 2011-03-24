@@ -1,0 +1,28 @@
+// jQuery(document).ready( rb_make_editable );
+
+function rb_make_editable()
+{
+    jQuery('.html_editable').wysiwyg();
+
+    jQuery('.translatable').editable('[%home%]/ajax/app/translate_string', {
+        tooltip : '[% loc('Click to edit') %]'
+    });
+
+    jQuery('.editable').editable('[%home%]/ajax/app/arc_update', { 
+        type      : 'wysiwyg',
+        cancel    : 'Cancel',
+        submit    : 'OK',
+        indicator : '<img src="[%home%]/img/loading_small.gif" />',
+        tooltip   : '[% loc('Click to edit') %]',
+        onblur    : 'ignore',
+    });
+
+    jQuery('.new_arc').editable('[%home%]/ajax/app/arc_create', { 
+        type      : 'wysiwyg',
+        cancel    : 'Cancel',
+        submit    : 'OK',
+        indicator : '<img src="[%home%]/img/loading_small.gif" />',
+        tooltip   : '[% loc('Click to edit') %]',
+        onblur    : 'ignore',
+    });
+}
