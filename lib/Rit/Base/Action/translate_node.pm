@@ -114,7 +114,7 @@ sub handler
 	    my $val_old = $arc->value;
 	    if( $val_new ne $val_old )
 	    {
-                die "'$val_old' != '$val_new'";
+                debug "'$val_old' != '$val_new'"; # New value trimmed?
 		$arc = $arc->set_value($val_new, $args);
 	    }
 
