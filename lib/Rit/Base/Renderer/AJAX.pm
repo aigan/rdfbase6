@@ -19,6 +19,7 @@ use utf8;
 use base 'Para::Frame::Renderer::Custom';
 
 use JSON; # to_json from_json
+#use Carp qw( cluck );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
@@ -339,7 +340,11 @@ sub set_ctype
 {
     my( $rend, $ctype ) = @_;
 
-    $ctype = $rend->{'ctype'} || $ctype || '';
+    unless( $ctype )
+    {
+        die "No ctype given to set";
+    }
+
     if( $rend->{'ctype'} eq 'json' )
     {
 	$ctype->set("application/json; charset=UTF-8");
