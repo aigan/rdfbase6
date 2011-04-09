@@ -737,6 +737,26 @@ sub wdirc
 
 ##############################################################################
 
+=head2 loc
+
+  $n->loc( \%args )
+
+Asking to translate this word.  But there is only one value.
+
+Used by L<Rit::Base::List/loc>.
+
+Returns: A plain string
+
+=cut
+
+#sub loc
+#{
+#    return shift->first_literal->plain;
+#}
+
+
+##############################################################################
+
 1;
 
 =head1 SEE ALSO

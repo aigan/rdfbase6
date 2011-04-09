@@ -3382,6 +3382,7 @@ Returns: A plain string
 sub loc
 {
     return shift->value->loc(@_);
+#    return shift->desig; # ????
 }
 
 

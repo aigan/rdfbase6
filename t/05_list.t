@@ -69,13 +69,13 @@ my $cfg_in =
 warnings_like {Para::Frame->configure($cfg_in)}
 [ qr/^Timezone set to /,
   qr/^Stringify now set$/,
-  qr/^Regestring ext tt to burner html$/,
-  qr/^Regestring ext html_tt to burner html$/,
-  qr/^Regestring ext xtt to burner html$/,
-  qr/^Regestring ext css_tt to burner plain$/,
-  qr/^Regestring ext js_tt to burner plain$/,
-  qr/^Regestring ext css_dtt to burner plain$/,
-  qr/^Regestring ext js_dtt to burner plain$/,
+  qr/^Registring ext tt to burner html$/,
+  qr/^Registring ext html_tt to burner html$/,
+  qr/^Registring ext xtt to burner html$/,
+  qr/^Registring ext css_tt to burner plain$/,
+  qr/^Registring ext js_tt to burner plain$/,
+  qr/^Registring ext css_dtt to burner plain$/,
+  qr/^Registring ext js_dtt to burner plain$/,
   ],
     "Configuring";
 
@@ -84,7 +84,7 @@ warning_like {
 			    'code'       => 'rbtest',
 			    'name'       => 'RB Test',
 			   })
-  } qr/^Registring site RB Test$/, "Adding site";
+  } qr/^Registring site /, "Adding site";
 
 
 my $cfg = $Para::Frame::CFG;
@@ -114,7 +114,7 @@ warnings_like
     Rit::Base->init();
 }[
   qr/^Adding hooks for Rit::Base$/,
-  qr/^Regestring ext js to burner plain$/,
+  qr/^Registring ext js to burner plain$/,
   qr/^Done adding hooks for Rit::Base$/,
  ], "RB Init";
 
