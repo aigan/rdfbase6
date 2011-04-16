@@ -3365,27 +3365,27 @@ sub syskey
 
 
 ##############################################################################
-
-=head2 loc
-
-  $n->loc( \%args )
-
-Asking to translate this word.  But there is only one value.  This is
-probably a lone literal resource.
-
-Used by L<Rit::Base::List/loc>.
-
-Returns: A plain string
-
-=cut
-
-sub loc
-{
-    return shift->value->loc(@_);
-#    return shift->desig; # ????
-}
-
-
+#
+#=head2 loc
+#
+#  $n->loc( \%args )
+#
+#Asking to translate this word.  But there is only one value.  This is
+#probably a lone literal resource.
+#
+#Used by L<Rit::Base::List/loc>.
+#
+#Returns: A plain string
+#
+#=cut
+#
+#sub loc
+#{
+#    return shift->value->loc(@_);
+##    return shift->desig; # ????
+#}
+#
+#
 ##############################################################################
 
 =head2 arc_list
@@ -6773,9 +6773,6 @@ sub reset_cache
 {
     my( $node, $rec, $args ) = @_;
     $args ||= {};
-
-    # Translation caches unhooked...
-    %Rit::Base::L10N::TRANSLATION = ();
 
     # In case the rebless was triggered from another server, there may
     # exist a new is-relation that will change the blessing

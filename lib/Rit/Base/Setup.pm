@@ -34,7 +34,7 @@ use Para::Frame::Utils qw( debug datadump throw );
 use Para::Frame::Time qw( now );
 
 use Rit::Base;
-use Rit::Base::Utils qw( valclean );
+use Rit::Base::Utils qw( valclean parse_propargs query_desig );
 use Rit::Base::Constants;
 use Rit::Base::Literal::Class;
 
@@ -770,6 +770,69 @@ sub dbconnect
                     ),
              $db{user}, $db{pass},
            ];
+}
+
+
+##############################################################################
+
+sub upgrade_db
+{
+    my $C = Rit::Base->Constants;
+    my $R = Rit::Base->Resource;
+    my $rb = $C->get('ritbase');
+    my( $args, $arclim, $res ) = parse_propargs('auto');
+
+
+    unless( $C->get('has_version') )
+    {
+	$R->create({
+		    label       => 'has_version',
+		    is          => 'predicate',
+		    range       => $C->get('int'),
+		   }, $args);
+    }
+
+    my $ver = $rb->has_version->literal || 0;
+    debug "Ritbase DB version is ".$ver;
+
+    if( $ver < 1 )
+    {
+	my $req = Para::Frame::Request->new_bgrequest();
+	my $class = $C->get('class');
+	my $chbpm = 'class_handled_by_perl_module';
+	my $term = $C->get('term');
+
+	my $tr_module =
+	  $R->find_set({
+			code => 'Rit::Base::Translatable',
+			is   => 'class_perl_module',
+		       }, $args);
+
+	my $tr = $R->find_set({label => 'translatable'}, $args)
+	  ->update({
+		    is             => $class,
+		    $chbpm         => $tr_module,
+		   }, $args);
+
+	$C->get('has_translation')->update({'domain' => $tr},$args);
+
+	$C->get('translation_label')->update({'domain' => $tr,
+					      'range' => $term,
+					     },$args);
+
+
+	my $trl = $R->find({translation_label_exist=>1});
+	while( my $trn = $trl->get_next_nos )
+	{
+	    $trn->update({is=>$tr},$args);
+	}
+
+	$rb->update({ has_version => 1 },$args);
+#	Para::Frame->flag_restart();
+	$res->autocommit;
+	$req->done;
+    }
+
 }
 
 

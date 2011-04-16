@@ -51,6 +51,8 @@ has_pred_format	5
 has_input_pattern	5
 subclasses_are	5
 translation_label	5
+has_version	5
+translatable
 
 ARCS
 is	is	predicate
@@ -91,9 +93,11 @@ is_of_language	is	predicate
 is_of_language	domain	valtext
 is_of_language	range	language
 has_translation	is	predicate
+has_translation	domain	translatable
 has_translation	range	text
 translation_label	is	predicate
-translation_label	range	text
+translation_label	domain	translatable
+translation_label	range	term
 code	range	text
 code	is	predicate
 note	range	text
@@ -199,6 +203,8 @@ language	has_wikipedia_id		Language
 rule	is	class
 intelligent_agent	is	class
 intelligent_agent	has_cyc_id		IntelligentAgent
+has_version	is	predicate
+has_version	range	int
 
 phone_number	admin_comment		Each instance of PhoneNumber is a character string that can be used to call a particular Telephone.
 phone_number	has_cyc_id		PhoneNumber

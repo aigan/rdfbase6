@@ -35,6 +35,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 
 use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Utils qw( is_undef );
 
 our %TRANSLATION;
 
@@ -93,6 +94,13 @@ sub get_handle
 
 =head2 maketext
 
+  $lh->maketext( $phrase, @args )
+
+Usually called from Para::Frame::L10N::loc( $phrase, @args )
+
+C<$phrase> may be a translatable node
+
+
 =cut
 
 sub maketext
@@ -115,6 +123,7 @@ sub maketext
 	confess "Encoded but not marked as encoded ($phrase)";
     }
 
+    my $node;
     if( ref $phrase )
     {
 	if( ref $phrase eq 'Rit::Base::List' )
@@ -125,17 +134,22 @@ sub maketext
 	{
 	    $phrase = $phrase->literal;
 	}
-	elsif( UNIVERSAL::isa $phrase, 'Rit::Base::Node' )
+	elsif( UNIVERSAL::isa $phrase, 'Rit::Base::Object' )
 	{
-	    if( my $val = $phrase->value )
+	    if( $phrase->is_value_node )
 	    {
-		return $val;
+		return $phrase->first_literal;
 	    }
 
-	    my $val = $phrase->id;
-
-	    debug "----------> During maketext: node $val is not a value resource";
-	    return $val;
+	    if( my $label = $phrase->first_prop('translation_label')->plain )
+	    {
+		$node = $phrase;
+		$phrase = $label;
+	    }
+	    else
+	    {
+		confess "Can't translate: ".$phrase->sysdesig;
+	    }
 	}
 	else
 	{
@@ -156,18 +170,25 @@ sub maketext
 	unless( exists $TRANSLATION{$phrase}{$langcode} )
 	{
 	    debug "Looking up phrase '$phrase' in DB" if $DEBUG;
-	    if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos )
+	    $node ||= Rit::Base::Resource->
+	      find({ translation_label => $phrase })->get_first_nos;
+	    if( $node )
 	    {
                 debug "Found a node: " . $node->sysdesig if $DEBUG;
-		my $lang = Rit::Base::Resource->get({
-						     code => $langcode,
-						     is => $C_language,
-						     });
+		my $lang = $C_language->first_revprop('is',{code => $langcode});
+
+#		Rit::Base::Resource->get({
+#						     code => $langcode,
+#						     is => $C_language,
+#						     });
                 debug "Found a lang: " . $lang->sysdesig if $DEBUG;
-		if( my $trans = $node->has_translation({is_of_language=>$lang})->plain )
+		if( my $trans = $node->first_prop('has_translation',
+						  {is_of_language=>$lang}
+						 )->plain )
 		{
                     debug "Found a trans: $trans" if $DEBUG;
-		    $value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($trans);
+		    $value = $TRANSLATION{$phrase}{$langcode} =
+		      $lh->_compile($trans);
 		    last;
 		}
 	    }
@@ -186,14 +207,46 @@ sub maketext
 sub find_translation_node_id
 {
     my( $phrase ) = @_;
+#    debug "find_translation_node_id $phrase";
 
-    unless( exists $TRANSLATION{$phrase}{'node_id'} ) {
-        if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos ) {
+    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    {
+#	debug "  looking for translation_label in DB";
+        if( my $node = Rit::Base::Resource->
+	    find({ translation_label => $phrase })->get_first_nos )
+	{
+#	    debug "    found ".$node->sysdesig;
             $TRANSLATION{$phrase}{'node_id'} = $node->id;
         }
+	else
+	{
+#	    debug "    non found";
+	    $TRANSLATION{$phrase}{'node_id'} = 0;
+	}
     }
 
     return $TRANSLATION{$phrase}{'node_id'};
+}
+
+
+##############################################################################
+
+sub find_translation_node
+{
+    my( $phrase ) = @_;
+#    debug "find_translation_node $phrase";
+
+    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    {
+	find_translation_node_id( $phrase );
+    }
+
+    if( my $id = $TRANSLATION{$phrase}{'node_id'} )
+    {
+	return Rit::Base::Resource->get($id);
+    }
+
+    return is_undef;
 }
 
 

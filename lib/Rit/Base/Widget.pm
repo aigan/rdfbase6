@@ -26,7 +26,7 @@ use Carp qw( confess cluck carp );
 use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc sloc build_field_key );
+our @EXPORT_OK = qw( wub aloc locn sloc build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -39,7 +39,7 @@ use Rit::Base;
 use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use Rit::Base::L10N;
-#use Rit::Base::Constants qw( );
+use Rit::Base::Constants qw( $C_translatable );
 
 =head1 DESCRIPTION
 
@@ -59,7 +59,7 @@ REPLACED prop_fields.tt
  * prop_tree_wh --------------
 
 
-REPLACED rg_rg_components.tt
+REPLACED rg_components.tt
 
  * aloc         => aloc
 
@@ -327,67 +327,27 @@ sub wub_select
 
 
 ##############################################################################
-#
-#=head2 wub_tree
-#
-#Create a ul of elements that are scof to n
-#
-#Creates a sub-ul for elements with their own scof's
-#
-#=cut
-#
-#sub wub_tree
-#{
-#    my( $pred, $args_in ) = @_;
-#    my( $args ) = parse_propargs($args_in);
-#
-#    my $out = "";
-#    my $R = Rit::Base->Resource;
-#    my $q = $Para::Frame::REQ->q;
-#
-#    my $subj = $args->{'subj'} or confess "subj missing";
-#
-#    return $out;
-#}
-#
-#
-##############################################################################
 
 =head2 aloc
 
 Administrate localization
-
-TODO: Move template to ritbase
 
 =cut
 
 sub aloc
 {
     my $phrase = shift;
-    #my $out = "";
-    #
-    #if( $Para::Frame::REQ->session->admin_mode )
-    #{
-    #    my $home = $Para::Frame::REQ->site->home_url_path;
-    #    $out .=
-    #      (
-    #       jump("Edit", "$home/admin/translation/update.tt",
-    #    	{
-    #    	 run => 'mark',
-    #    	 c => $phrase,
-    #    	 href_image => "$home/pf/images/edit.gif",
-    #    	 href_class => "paraframe_edit_link_overlay",
-    #    	})
-    #      );
-    #}
 
-    if( $Para::Frame::REQ->session->admin_mode ) {
+    if( $Para::Frame::REQ->session->admin_mode )
+    {
         my $id = Rit::Base::L10N::find_translation_node_id($phrase);
 
-        unless( $id ) {
+        unless( $id )
+	{
             my $R = Rit::Base->Resource;
-            my $node = $R->create({ translation_label => $phrase }, { activate_new_arcs => 1 });
-
+            my $node = $R->create({ translation_label => $phrase,
+				    is => $C_translatable,
+				  }, { activate_new_arcs => 1 });
             $id = $node->id;
         }
 
@@ -397,6 +357,33 @@ sub aloc
     else {
         loc($phrase, @_);
     }
+}
+
+
+##############################################################################
+
+=head2 locn
+
+localization node
+
+=cut
+
+sub locn
+{
+    my $phrase = shift;
+#    debug "locn $phrase";
+    my $node = Rit::Base::L10N::find_translation_node($phrase);
+    unless( $node )
+    {
+#	debug "  creates and returns new translatable node";
+	return Rit::Base::Resource->create({
+					    translation_label => $phrase,
+					    is => $C_translatable,
+					   },
+					   { activate_new_arcs => 1 });
+    }
+
+    return $node;
 }
 
 
@@ -525,6 +512,7 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
+     'locn'               => \&locn,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,

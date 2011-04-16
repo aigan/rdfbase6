@@ -22,7 +22,7 @@ use JSON;
 use Para::Frame::Utils qw( debug throw datadump );
 use Para::Frame::L10N qw( loc );
 
-use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Constants qw( $C_language $C_translatable );
 use Rit::Base::Utils qw( parse_propargs );
 
 
@@ -72,7 +72,7 @@ sub handler
                                          is   => $C_language,
                                         });
 
-    my $trans = $node->has_translation({ is_of_language => $lang })->get_first_nos;
+    my $trans = $node->first_prop('has_translation',{ is_of_language => $lang });
 
     if( $trans ) {
         debug "Trans är " . $trans->sysdesig;
@@ -81,13 +81,15 @@ sub handler
     else {
         $trans = Rit::Base::Literal::String->new( $new );
         debug "Trans är " . $trans->sysdesig;
-        $node->add({ has_translation => $trans }, $args);
+        $node->add({ has_translation => $trans,
+		     is => $C_translatable,
+		   }, $args);
         $trans->add({ is_of_language => $lang }, $args);
     }
 
     $res->autocommit({ activate => 1 });
 
-    return loc( $node->translation_label ); # Redo translation, to get [_1] etc right.
+    return $node->loc(qw([_1] [_2] [_3] [_4] [_5]));
 }
 
 
