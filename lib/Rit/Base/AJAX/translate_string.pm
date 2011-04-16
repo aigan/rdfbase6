@@ -52,6 +52,7 @@ sub handler
 
     debug "Got id   : $id";
     debug "Got value: $new";
+    debug "Language : $lang_code";
 
     if( $id =~ /^translate_(.*)$/ ) {
         $id = $1;

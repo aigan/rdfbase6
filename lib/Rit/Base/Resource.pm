@@ -6774,6 +6774,9 @@ sub reset_cache
     my( $node, $rec, $args ) = @_;
     $args ||= {};
 
+    # Translation caches unhooked...
+    %Rit::Base::L10N::TRANSLATION = ();
+
     # In case the rebless was triggered from another server, there may
     # exist a new is-relation that will change the blessing
 
