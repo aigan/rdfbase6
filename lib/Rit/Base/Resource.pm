@@ -6716,11 +6716,10 @@ sub get_by_label
 	{
 	    if( $args->{'nonfatal'} )
 	    {
+		debug "!!!! Constant $label doesn't exist";
 		return undef;
 	    }
 
-	    cluck "Constant $label doesn't exist"
-	      unless $Rit::Base::IN_SETUP_DB;
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 

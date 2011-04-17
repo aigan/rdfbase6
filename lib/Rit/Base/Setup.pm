@@ -782,8 +782,9 @@ sub upgrade_db
     my $rb = $C->get('ritbase');
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
+    $Rit::Base::IN_SETUP_DB = 1;
 
-    unless( $C->get('has_version') )
+    unless( $R->find({label=>'has_version'}) )
     {
 	$R->create({
 		    label       => 'has_version',
@@ -797,6 +798,10 @@ sub upgrade_db
 
     if( $ver < 1 )
     {
+#	my $root = $R->get_by_label('root');
+
+	debug "Setup db? ".$Rit::Base::IN_SETUP_DB;
+
 	my $req = Para::Frame::Request->new_bgrequest();
 	my $class = $C->get('class');
 	my $chbpm = 'class_handled_by_perl_module';
@@ -828,7 +833,7 @@ sub upgrade_db
 	}
 
 	$rb->update({ has_version => 1 },$args);
-#	Para::Frame->flag_restart();
+	Para::Frame->flag_restart();
 	$res->autocommit;
 	$req->done;
     }

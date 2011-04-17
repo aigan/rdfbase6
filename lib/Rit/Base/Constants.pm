@@ -104,7 +104,7 @@ sub on_startup
 	foreach my $export (@Initlist)
 	{
 	    debug 2, " * $export->[1]";
-	    my $obj = $class->get($export->[1]);
+	    my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
 	    *{$export->[0]} = \ $obj;
 	}
     };
@@ -233,8 +233,8 @@ croaks if constant doesn't exist
 
 sub get
 {
-    my( $this, $label ) = @_;
-    return Rit::Base::Resource->get_by_label( $label );
+    shift;
+    return Rit::Base::Resource->get_by_label( @_ );
 }
 
 
