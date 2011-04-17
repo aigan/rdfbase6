@@ -13,7 +13,7 @@
 [% hidden('pred', pred) %]
 [% hidden('id', id) %]
 
-<h1>[% loc("Update translation of [_1]: [_2]", id, node.${pred}.loc) %] <em>[% pred %]</em></h1>
+<h1>[% loc("Update translation of [_1]: [_2]", id, node.desig) %] <em>[% pred %]</em></h1>
 
 <p>[% PROCESS node_menu.tt %]</p>
 

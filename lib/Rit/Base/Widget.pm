@@ -26,7 +26,7 @@ use Carp qw( confess cluck carp );
 use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc locn sloc build_field_key );
+our @EXPORT_OK = qw( wub aloc locn sloc alocpp build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -415,6 +415,62 @@ sub sloc
 
 ##############################################################################
 
+=head2 alocpp
+
+  alocpp($name, @args)
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database. If in admin mode, prepends a text edit link
+
+=cut
+
+sub alocpp
+{
+    my( $name ) = shift;
+
+    my $req = $Para::Frame::REQ;
+
+    my $code = $req->page->base;
+    if( $name )
+    {
+	$code = $code.'#'.$name;
+    }
+
+    my $node = Rit::Base::Resource->find({code=>$code})->get_first_nos;
+    my $out = "";
+
+    if( $req->session->{'admin_mode'} )
+    {
+	my $home = $req->site->home_url_path;
+
+	if( $node )
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  id => $node->id,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+	else
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  code => $code,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+    }
+
+    ### TEST: change to list...
+    return $out . $node->first_prop('has_html_content')->loc(@_);
+#    return $out . $req->{'lang'}->maketext($name, @_);
+}
+
+
+##############################################################################
+
 =head2 reset_wu_row
 
 =cut
@@ -513,6 +569,7 @@ sub on_configure
 
      'aloc'               => \&aloc,
      'locn'               => \&locn,
+     'alocpp'             => \&alocpp,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,

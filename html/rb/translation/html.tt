@@ -1,28 +1,36 @@
-﻿[* META next_action = "translate_html" *]
-[% META
+﻿[% META
    level = 20
    title = '-
 	    id = q.param("id");
-	    n = get(id);
-	    ntitle = n.desig;
-            pred = q.param("pred");
-            DEFAULT pred = "is_of_language";
+            IF id;
+	       n = get(id);
+	       ntitle = n.desig;
+            END;
+	    DEFAULT ntitle = q.param("code");
             lc = q.param("lc");
             DEFAULT lc = lang;
             l = get({code=lc, is=C.language});
-	    GET loc("Translate [_1] [_2] to [_3]",
+	    GET loc("Update [_1] in [_3]",
                     locescape(ntitle),
                     pred,
                     l.desig);
             '
+   next_action = "translate_page_part"
 %]
 
 [%
-id = q.param('id');
-n = get(id);
+code_in = q.param('code');
+IF code_in;
+   n = set_one({code => code_in, is => 'website_text'}, { activate_new_arcs => 1});
+   id = n.id;
+ELSE;
+   id = q.param('id');
+   n = get(id);
+END;
+node = n;
 
 pred = q.param('pred');
-DEFAULT pred = 'is_of_language';
+DEFAULT pred = 'has_html_content';
 
 lc = q.param('lc');
 DEFAULT lc = lang;
@@ -36,21 +44,40 @@ UNLESS lc2;
      LAST;
   END;
 END;
+DEFAULT lc2=lc;
 l2 = get({code=lc2, is=C.language});
 
+place = n.code.loc;
+ppath = place.replace('#.*','');
+plink = ppath _ '.tt';
 %]
 
 <p>[% PROCESS node_menu.tt %]</p>
 
+[ [% jump("W-page", "$home/rb/w/", id=id) +%]
+| [% jump("iFrame", "$home/rb/i/", id=id) +%]
+]
+
+<h2>
+[% id %] &nbsp;
+[% jump(place, "$home$plink", run='remove_step') %]
+</h2>
+
+[% previous = n.list(pred, {is_of_language=l2}).loc %]
+[% IF previous %]
 <p style="float:right">Other languages: 
 [% FOREACH lc2n IN req.lang.alternatives %]
    [% jump(lc2n, me, lc=lc, lc2=lc2n, id=id, pred=pred) +%]
 [%+ END %]
 </p>
-
-<h2>[% loc("Translation to [_1]", l2.name.loc) %]</h2>
+<h2>[% loc("Content in [_1]", l2.wu_jump) %]</h2>
 <div class="notice">[% n.list(pred, {is_of_language=l2}).loc %]</div>
+[% ELSE %]<p>No previous content</p>[% END %]
 
+<p>[% jump("Content title", "$home/rb/translation/node.tt", id=id, run='mark') %]:
+[%+ IF n.name %]<span style="font-size:xx-large">[% n.name.loc | html %]</span>
+[% ELSE %]none[% END %]
+</p>
 
 <p style="float:right;margin:0.83em 0 0 0">Other languages: 
 [% FOREACH lcn IN req.lang.alternatives %]
@@ -58,7 +85,7 @@ l2 = get({code=lc2, is=C.language});
 [%+ END %]
 </p>
 
-<h2>[% loc("Translation to [_1]", l.name.loc) %]</h2>
+<h2>[% loc("Content in [_1]", l.wu_jump) %]</h2>
 
 <input type="hidden" style="display:none" id="translation" name="translation" value="" />
 <script>document.getElementById('translation').value="[% n.list(pred,{is_of_language=l}).loc | replace('"', '\"') | replace("\r?\n", '\r\n') %]"</script>

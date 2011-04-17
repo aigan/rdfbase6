@@ -1,0 +1,12 @@
+[%
+id = q.param('id');
+hidden('id',id);
+pagenode = get(id);
+IF pagenode.name;
+   '<h1>';pagenode.name.loc;'</h1>';
+END;
+IF admin_mode;
+   jump("Edit", "$home/rb/translation/html.tt", id=pagenode.id, tag_image="$home/pf/images/edit.gif", tag_attr={class="paraframe_edit_link_overlay"});
+END;
+pagenode.has_html_content.loc;
+%]

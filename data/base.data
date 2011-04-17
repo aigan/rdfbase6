@@ -53,6 +53,8 @@ subclasses_are	5
 translation_label	5
 has_version	5
 translatable
+has_html_content	3
+has_member	1
 
 ARCS
 is	is	predicate
@@ -205,11 +207,18 @@ intelligent_agent	is	class
 intelligent_agent	has_cyc_id		IntelligentAgent
 has_version	is	predicate
 has_version	range	int
-
 phone_number	admin_comment		Each instance of PhoneNumber is a character string that can be used to call a particular Telephone.
 phone_number	has_cyc_id		PhoneNumber
 phone_number	has_wikipedia_id		Telephone_number
-
+website_text	is	class
+website_text	class_form_url		rb/translation/html.tt
+webpage	is	class
+has_html_content	is	predicate
+has_html_content	description		HTML box of content on a web page
+has_html_content	domain	website_text
+has_html_content	range	text_html
+has_member	is	predicate
+ritbase	has_version	2
 
 111	is	syllogism
 111	pred_1	is

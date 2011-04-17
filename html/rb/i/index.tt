@@ -1,0 +1,7 @@
+[%
+pagenode = get(q.param('id'));
+IF pagenode.name;
+   '<h1>';pagenode.name.loc;'</h1>';
+END;
+pagenode.has_html_content.loc;
+%]

@@ -42,37 +42,6 @@ our %TRANSLATION;
 
 ##############################################################################
 
-=head2 alocpp
-
-  alocpp($name, @args)
-
-Same as L<Para::Frame::L10N::loc>, but looks up the translation from
-the database. If in admin mode, prepends a text edit link
-
-=cut
-
-sub alocpp
-{
-    my( $name ) = shift;
-
-    my $req = $Para::Frame::REQ;
-
-    my $out = "";
-
-    debug "Checking session admin mode";
-
-    if( $req->session->{'admin_mode'} )
-    {
-	my $home = $req->site->home_url_path;
-	$out .= Para::Frame::Widget->jump("E", "$home/pf/cms/admin_loc.tt");
-    }
-
-    return $out . $req->{'lang'}->maketext($name, @_);
-}
-
-
-##############################################################################
-
 =head2 get_handle
 
 Replaces Locale::Metatext get_handle

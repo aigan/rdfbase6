@@ -798,8 +798,6 @@ sub upgrade_db
 
     if( $ver < 1 )
     {
-#	my $root = $R->get_by_label('root');
-
 	debug "Setup db? ".$Rit::Base::IN_SETUP_DB;
 
 	my $req = Para::Frame::Request->new_bgrequest();
@@ -833,7 +831,49 @@ sub upgrade_db
 	}
 
 	$rb->update({ has_version => 1 },$args);
-	Para::Frame->flag_restart();
+	Para::Frame->flag_restart(); # Added constants
+	$res->autocommit;
+	$req->done;
+    }
+
+    if( $ver < 2 )
+    {
+	my $req = Para::Frame::Request->new_bgrequest();
+	my $class = $C->get('class');
+	my $wt = $C->get('website_text')->
+	  update({
+		  is => $class,
+		  class_form_url => "rb/translation/html.tt",
+		 },$args);
+	$C->get('webpage')->
+	  update({ is => $class }, $args);
+
+	my $hhc = $R->find_set({
+				label       => 'has_html_content',
+				is          => 'predicate',
+				domain      => $wt,
+				range       => $C->get('text_html'),
+			       }, $args);
+
+	$hhc->update({description=>'HTML box of content on a web page'},$args);
+
+	my $hhc = $R->find_set({
+				label       => 'has_member',
+				is          => 'predicate',
+				range       => $C->get('resource'),
+			       }, $args);
+
+
+	my $wtl = $wt->revlist('is');
+	while( my $wtn = $wtl->get_next_nos )
+	{
+	    my $code = $wtn->first_prop('code')->plain;
+	    next unless $code =~ /\@/;
+	    $code =~ s/\@/#/;
+	    $wtn->update({code=>$code},$args);
+	}
+
+	$rb->update({ has_version => 2 },$args);
 	$res->autocommit;
 	$req->done;
     }

@@ -29,12 +29,12 @@
       [%
       id = page.id;
       place = page.code.loc;
-      ppath = place.replace('@.*','');
+      ppath = place.replace('#.*','');
       plink = ppath _ '.tt';
       %]
       <td>[% IF page.is(C.website_text);
-                jump('Wp',"$home/w/", id=id);
-                jump('iF',"$home/i/", id=id);
+                jump('Wp',"$home/rb/w/", id=id);
+                jump('iF',"$home/rb/i/", id=id);
              END %]</td>
       <td>[% page.wu_jump(label=id) %]</td>
       <td>[% page.name.loc %]</td>
@@ -51,8 +51,8 @@
 <tr><td>Wp</td><td>Link to bordered webpage in the <code>/w/</code> dir</td></tr>
 <tr><td>iF</td><td>Link to content without borders in the <code>/i/</code> dir</td></tr>
 <tr><td>/<em>path</em></td><td>Link to the page in the corresponding place</td></tr>
-<tr><td>/<em>path</em> <code>@</code> <em>label</em></td><td><em>label</em> is a separate subsection in the page with the /<em>path</em></td></tr>
-<tr><td><code>@</code><em>label</em></td><td>Used for content not bound to a specific page</td></tr>
-<tr><td><em>#####</em></td><td>Link to the form for changing the text and title</td></tr>
+<tr><td>/<em>path</em> <code>#</code> <em>label</em></td><td><em>label</em> is a separate subsection in the page with the /<em>path</em></td></tr>
+<tr><td><code>#</code><em>label</em></td><td>Used for content not bound to a specific page</td></tr>
+<tr><td><em>.........</em></td><td>Link to the form for changing the text and title</td></tr>
 
 </table>
