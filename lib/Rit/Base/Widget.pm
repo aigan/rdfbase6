@@ -26,7 +26,7 @@ use Carp qw( confess cluck carp );
 use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc locn sloc alocpp build_field_key );
+our @EXPORT_OK = qw( wub aloc locn locnl sloc alocpp build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -389,6 +389,34 @@ sub locn
 
 ##############################################################################
 
+=head2 locnl
+
+localization node localization text. (Lock'n'Load)
+
+Creates a node if missing and uses it.
+
+=cut
+
+sub locnl
+{
+    my $phrase = shift;
+    my $node = Rit::Base::L10N::find_translation_node($phrase);
+    unless( $node )
+    {
+#	debug "  creates and returns new translatable node";
+	return Rit::Base::Resource->create({
+					    translation_label => $phrase,
+					    is => $C_translatable,
+					   },
+					   { activate_new_arcs => 1 });
+    }
+
+    return $node->loc(@_);
+}
+
+
+##############################################################################
+
 sub sloc
 {
     my $text = shift;
@@ -569,6 +597,7 @@ sub on_configure
 
      'aloc'               => \&aloc,
      'locn'               => \&locn,
+     'locnl'              => \&locnl,
      'alocpp'             => \&alocpp,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
