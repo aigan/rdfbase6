@@ -590,7 +590,7 @@ sub sorted
     foreach my $item ( $list->as_array )
     {
 	$item->{'sort_arg'} = [];
-	debug sprintf("  add item %s", $item->sysdesig) if $DEBUG;
+	debug sprintf("  add item %s", $item->safedesig) if $DEBUG;
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
 	    my $method = $sortargs->[$i]{'on'};
@@ -642,7 +642,7 @@ sub sorted
 	    debug sprintf("      => %s", $val) if $DEBUG;
 
 	    CORE::push @{$props[$i]}, $val;
-#	    debug $item->sysdesig .' : '.$val;
+#	    debug $item->safedesig .' : '.$val;
 	    CORE::push @{$item->{'sort_arg'}}, $val;
 #	    CORE::push @{$props[$i]}, $item->$method;
 	}
@@ -653,12 +653,12 @@ sub sorted
 	debug "And the props is: \n";
 	for( my $i=0; $i<=$#$list; $i++ )
 	{
-	    my $out = "  ".$list->[$i]->desig.": ";
+	    my $out = "  ".$list->[$i]->safedesig.": ";
 	    for( my $x=0; $x<=$#props; $x++ )
 	    {
 		if( ref $props[$x][$i] )
 		{
-		    $out .= $props[$x][$i]->desig .' - ';
+		    $out .= $props[$x][$i]->safedesig .' - ';
 		}
 		else
 		{
@@ -882,7 +882,7 @@ sub unique_arcs_prio
     {
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
-#	debug "Sort $sor: ".$arc->sysdesig;
+#	debug "Sort $sor: ".$arc->safedesig;
 #	$points{ $cid }[ $sor ] = $arc;
 	$points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
     }

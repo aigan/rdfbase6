@@ -404,11 +404,11 @@ sub locnl
     unless( $node )
     {
 #	debug "  creates and returns new translatable node";
-	return Rit::Base::Resource->create({
-					    translation_label => $phrase,
-					    is => $C_translatable,
-					   },
-					   { activate_new_arcs => 1 });
+	$node = Rit::Base::Resource->create({
+					     translation_label => $phrase,
+					     is => $C_translatable,
+					    },
+					    { activate_new_arcs => 1 });
     }
 
     return $node->loc(@_);
