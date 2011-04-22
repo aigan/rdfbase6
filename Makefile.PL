@@ -95,7 +95,7 @@ $db_user_in =~ s/^\s+//;
 $db_user_in ||= $db_user;
 
 $db_pass ||= '';
-print "DB password for user $db_user_in?\n";
+print "DB password for user $db_user_in? (user - for no password)\n";
 my $db_pass_in = '';
 while(not $db_pass_in )
 {
@@ -144,6 +144,9 @@ WriteMakefile(
 		  'File::MMagic::XS'           => 0.09,
 	          'Email::MIME'                => 1.902,
                   'HTML::FormatText'           => 2.04,
+	          'IMAP::BodyStructure'        => 1.01,
+	          'Mail::IMAPClient'           => 3.25,
+	          'URI::imap'                  => 1.01,
 	      },
 	      'dist'          =>
 	      {

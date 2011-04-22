@@ -1803,8 +1803,11 @@ sub materialize
 	# Handle long lists
 	unless( $i % 25 )
 	{
-	    $Para::Frame::REQ->may_yield;
-	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	    if( $Para::Frame::REQ )
+	    {
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
 	}
 
 	# TODO: Maby not call initiate_rel for arcs

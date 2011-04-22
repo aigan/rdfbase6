@@ -361,7 +361,7 @@ sub sql
 	    $extralim++;
 	}
 
-	if(  $_ & $LIM{'created_by_me'} )
+	if(  $_ & $LIM{'created_by_me'} and $Para::Frame::REQ )
 	{
 	    my $uid = $Para::Frame::REQ->user->id;
 	    push @crit, "${pf}created_by=$uid";

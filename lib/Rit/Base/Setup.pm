@@ -46,6 +46,10 @@ our %NOLABEL;
 our %LITERAL;
 our @LITERALS;
 
+#
+# For resetting an existing datbase use "setup_db clear"
+#
+
 sub setup_db
 {
     my $dbix = $Rit::dbix;
@@ -64,9 +68,7 @@ sub setup_db
     my $rb_root = $Para::Frame::CFG->{'rb_root'}
       or die "rb_root not given in CFG";
 
-
-
-    if( $dbix->table('arc') )
+    if( $dbix->table('arc') ) # setup_db clear
     {
 	$dbh->do("drop table arc") or die;
 	$dbh->do("drop table node") or die;
@@ -254,7 +256,7 @@ sub setup_db
     my $source = $NODE{'ritbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
     my $write_access = $NODE{'sysadmin_group'}{'node'};
-    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?)") or die;
+    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin,valfloat) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?,?)") or die;
     foreach my $rec ( @ARC )
     {
 	my $pred_name = $rec->{'pred'};
@@ -303,7 +305,7 @@ sub setup_db
 	my $ver = $dbix->get_nextval('node_seq');
 	my $pred = $NODE{$pred_name}{'node'};
 	my $valtype = $VALTYPE{$pred_name} or die "Could not find valtype for $pred_name";
-	my( $obj, $valtext, $valclean, $valbin );
+	my( $obj, $valtext, $valclean, $valbin, $valfloat );
 
 	if( $coltype eq 'obj' )
 	{
@@ -318,12 +320,16 @@ sub setup_db
 	{
 	    $valbin = $value;
 	}
+	elsif( $coltype eq 'valfloat' )
+	{
+	    $valfloat = $value;
+	}
 	else
 	{
 	    die "$coltype not handled";
 	}
 
-	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean, $valbin) or die;
+	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean, $valbin, $valfloat) or die;
     }
 
     $dbh->commit;
@@ -763,6 +769,8 @@ sub dbconnect
         }
     }
 
+    $db{pass} = undef if $db{pass} eq '-';
+
     return [ sprintf( "dbi:Pg:dbname=%s;host=%s;port=%d",
                       $db{name},
                       $db{host},
@@ -782,24 +790,23 @@ sub upgrade_db
     my $rb = $C->get('ritbase');
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
+    # A new clean setup should bring version up to current on its own
+    return if $Rit::Base::IN_SETUP_DB;
+
+
     $Rit::Base::IN_SETUP_DB = 1;
 
-    unless( $R->find({label=>'has_version'}) )
-    {
-	$R->create({
-		    label       => 'has_version',
-		    is          => 'predicate',
-		    range       => $C->get('int'),
-		   }, $args);
-    }
+    $R->find_set({
+		  label       => 'has_version',
+		  is          => 'predicate',
+		  range       => $C->get('int'),
+		 }, $args);
 
     my $ver = $rb->has_version->literal || 0;
     debug "Ritbase DB version is ".$ver;
 
     if( $ver < 1 )
     {
-	debug "Setup db? ".$Rit::Base::IN_SETUP_DB;
-
 	my $req = Para::Frame::Request->new_bgrequest();
 	my $class = $C->get('class');
 	my $chbpm = 'class_handled_by_perl_module';
@@ -857,11 +864,11 @@ sub upgrade_db
 
 	$hhc->update({description=>'HTML box of content on a web page'},$args);
 
-	my $hhc = $R->find_set({
-				label       => 'has_member',
-				is          => 'predicate',
-				range       => $C->get('resource'),
-			       }, $args);
+	$R->find_set({
+		      label       => 'has_member',
+		      is          => 'predicate',
+		      range       => $C->get('resource'),
+		     }, $args);
 
 
 	my $wtl = $wt->revlist('is');

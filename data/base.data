@@ -51,7 +51,7 @@ has_pred_format	5
 has_input_pattern	5
 subclasses_are	5
 translation_label	5
-has_version	5
+has_version	2
 translatable
 has_html_content	3
 has_member	1
@@ -91,15 +91,6 @@ admin_comment	is	predicate
 admin_comment	has_cyc_id		comment
 name_short	range	term
 name_short	is	predicate
-is_of_language	is	predicate
-is_of_language	domain	valtext
-is_of_language	range	language
-has_translation	is	predicate
-has_translation	domain	translatable
-has_translation	range	text
-translation_label	is	predicate
-translation_label	domain	translatable
-translation_label	range	term
 code	range	text
 code	is	predicate
 note	range	text
@@ -218,7 +209,21 @@ has_html_content	description		HTML box of content on a web page
 has_html_content	domain	website_text
 has_html_content	range	text_html
 has_member	is	predicate
-ritbase	has_version	2
+has_member	range	resource
+ritbase	has_version		2
+is_of_language	is	predicate
+is_of_language	domain	valtext
+is_of_language	range	language
+121	code		Rit::Base::Translatable
+121	is	class_perl_module
+translatable	is	class
+translatable	class_handled_by_perl_module	121
+has_translation	is	predicate
+has_translation	domain	translatable
+has_translation	range	text
+translation_label	is	predicate
+translation_label	domain	translatable
+translation_label	range	term
 
 111	is	syllogism
 111	pred_1	is
@@ -280,6 +285,8 @@ email	class_handled_by_perl_module	114
 password	class_handled_by_perl_module	115
 115	is	class_perl_module
 115	code		Rit::Base::Literal::Password
+
+
 
 
 
