@@ -24,23 +24,23 @@
     <th>[% sort('Name', 'name.loc') %]
     <th>[% sort('Code', 'code') %]
 
-[% FOREACH page IN pages.from_page %]
+[% FOREACH p IN pages.from_page %]
    [% tr2 %]
       [%
-      id = page.id;
-      place = page.code.loc;
+      id = p.id;
+      place = p.code.loc;
       ppath = place.replace('#.*','');
       plink = ppath _ '.tt';
       %]
-      <td>[% IF page.is(C.website_text);
+      <td>[% IF p.is(C.website_text);
                 jump('Wp',"$home/rb/w/", id=id);
                 jump('iF',"$home/rb/i/", id=id);
              END %]</td>
-      <td>[% page.wu_jump(label=id) %]</td>
-      <td>[% page.name.loc %]</td>
+      <td>[% p.wu_jump(label=id) %]</td>
+      <td>[% p.name.loc %]</td>
       <td>[% IF ppath; jump(place, "$home$plink"); ELSE; place; END %]</td>
    </tr>
-   [% FOREACH mp IN page.has_member.sorted %]
+   [% FOREACH mp IN p.has_member.sorted %]
       <tr><td colspan="3"></td><td>[% mp.wu_jump %]</td></tr>
    [% END %]
 [% END %]
