@@ -131,7 +131,7 @@ WriteMakefile(
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {
-		  'Para::Frame'                => 1.11,
+		  'Para::Frame'                => 1.17,
 	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,

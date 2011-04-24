@@ -1,4 +1,4 @@
-﻿[% META
+[% META
     title ='-
 		id = q.param("id");
                 node = get(id);

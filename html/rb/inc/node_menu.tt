@@ -1,4 +1,4 @@
-﻿[% base = "$home/rb/node" %]
+[% base = "$home/rb/node" %]
 [ [%+ jump('FORM', node.form_url) +%]
 | [%+ jump('Node', "$base/update.tt", id=id) +%]
 | [%+ jump('Graph', "$base/graph/", id=id) +%]

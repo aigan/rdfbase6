@@ -1,4 +1,4 @@
-﻿[% META title="Slå samman noder"
+[% META title="Slå samman noder"
 	next_action = 'node_merge'
 	default_template = 'update.tt'
 	focus = 'node2'

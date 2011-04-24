@@ -18,7 +18,7 @@ use warnings;
 
 use JSON;
 
-use Para::Frame;
+use Para::Frame 1.17;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 

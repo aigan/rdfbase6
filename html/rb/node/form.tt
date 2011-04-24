@@ -1,4 +1,4 @@
-﻿[% META
+[% META
    title="Visa nod"
    level = 20
    next_action = 'node_update'

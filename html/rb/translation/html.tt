@@ -1,4 +1,4 @@
-﻿[% META
+[% META
    level = 20
    title = '-
 	    id = q.param("id");
