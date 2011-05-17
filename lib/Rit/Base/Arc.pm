@@ -5847,36 +5847,44 @@ sub unlock
 	warn "  Arc lock on level $cnt, called from $package, line $line\n";
     }
 
+    return if $Rit::Base::Arc::lock_check_active; # Avoid recursion
+
     if( $cnt == 0 )
     {
-	while( my $params = shift @Rit::Base::Arc::queue_check_remove )
-	{
-	    my( $arc, $args ) = @$params;
-	    $arc->remove_check( $args );
-	}
+        $Rit::Base::Arc::lock_check_active = 1;
+        eval
+        {
+            while( my $params = shift @Rit::Base::Arc::queue_check_remove )
+            {
+                my( $arc, $args ) = @$params;
+                $arc->remove_check( $args );
+            }
 
 
-	# Prioritize is-relations, since they will bee needed in other
-	# arcs validation
-	@Rit::Base::Arc::queue_check_add = sort
-	{
-	    ($b->[0]->pred->plain eq 'is')
-	      <=>
-	    ($a->[0]->pred->plain eq 'is')
-	} @Rit::Base::Arc::queue_check_add;
+            # Prioritize is-relations, since they will bee needed in other
+            # arcs validation
+            @Rit::Base::Arc::queue_check_add = sort
+            {
+                ($b->[0]->pred->plain eq 'is')
+                  <=>
+                    ($a->[0]->pred->plain eq 'is')
+                } @Rit::Base::Arc::queue_check_add;
 
-#	debug join " + ", map{ $_->[0]->pred->plain } @Rit::Base::Arc::queue_check_add;
+            #debug join " + ", map{ $_->[0]->pred->plain } @Rit::Base::Arc::queue_check_add;
 
-	while( my $params = shift @Rit::Base::Arc::queue_check_add )
-	{
-	    my( $arc, $args ) = @$params;
-	    $arc->create_check( $args );
-	}
+            while( my $params = shift @Rit::Base::Arc::queue_check_add )
+            {
+                my( $arc, $args ) = @$params;
+                $arc->create_check( $args );
+            }
 
-	# TODO: Do all the validations AFTER the create_check, since
-	# the validation may need infered relations. Ie; move
-	# validate_valtype from create_check to here and to the
-	# corresponding place for then arc_lock isn not active.
+            # TODO: Do all the validations AFTER the create_check, since
+            # the validation may need infered relations. Ie; move
+            # validate_valtype from create_check to here and to the
+            # corresponding place for then arc_lock isn not active.
+        };
+        $Rit::Base::Arc::lock_check_active = 0;
+        die $@ if $@;
     }
 }
 

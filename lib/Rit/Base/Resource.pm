@@ -684,7 +684,7 @@ sub find_by_anything
 		# Used to use find_simple.  But this is a general find
 		# function and can not assume the simple case
 #		debug "SEARCHING for name_clean $val that is ".$valtype->sysdesig;
-		die "INVALID search; not a label or constant"
+		confess "INVALID search; not a label or constant"
 		  if $Rit::Base::IN_STARTUP; # for $C_resource
 
 		if( $valtype->id == $C_resource->id )
@@ -4304,6 +4304,7 @@ sub update
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
+        next if $pred_name eq 'label';
 	my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
 	push @arcs_old, $old->as_array;
     }
@@ -6148,8 +6149,8 @@ sub on_class_perl_module_change
     # should be the same even after an update since the key is based
     # on the current combination of classes.
 
-    # Check out new module
-    my $modules = $node->list('class_handled_by_perl_module',undef,'relative');
+    # Check out new module  ### Must only handle objective (active) relations
+    my $modules = $node->list('class_handled_by_perl_module',undef,'solid');
     while( my $module = $modules->get_next_nos )
     {
 	eval

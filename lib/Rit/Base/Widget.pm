@@ -26,7 +26,7 @@ use Carp qw( confess cluck carp );
 use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc locn locnl sloc alocpp build_field_key );
+our @EXPORT_OK = qw( wub aloc locn locnl sloc locpp alocpp locppg alocppg build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -338,7 +338,9 @@ sub aloc
 {
     my $phrase = shift;
 
-    if( $Para::Frame::REQ->session->admin_mode )
+    my $compiled = $Para::Frame::REQ->site->is_compiled;
+
+    if( $compiled or $Para::Frame::REQ->session->admin_mode )
     {
         my $id = Rit::Base::L10N::find_translation_node_id($phrase);
 
@@ -351,11 +353,21 @@ sub aloc
             $id = $node->id;
         }
 
-        return '<span class="translatable" title="'.CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
-	  '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+        my $out = "";
+
+        $out .= "[% IF admin_mode %]" if $compiled;
+
+        $out .= '<span class="translatable" title="'.
+          CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
+            '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+
+        $out .= "[% END %]" if $compiled;
+
+        return $out;
     }
-    else {
-        loc($phrase, @_);
+    else
+    {
+        return loc($phrase, @_);
     }
 }
 
@@ -422,9 +434,14 @@ sub sloc
     my $text = shift;
     my $out = "";
 
-    if( $Para::Frame::REQ->session->admin_mode )
+    my $compiled = ($Para::Frame::REQ->site->is_compiled
+      and not $Para::Frame::File::COMPILING);
+
+    if( $compiled or $Para::Frame::REQ->session->admin_mode )
     {
 	my $home = $Para::Frame::REQ->site->home_url_path;
+
+        $out .= "[% IF admin_mode %]" if $compiled;
 	$out .=
 	  (
 	   jump("Edit", "$home/admin/translation/update.tt",
@@ -435,6 +452,8 @@ sub sloc
 		 tag_image => "$home/pf/images/edit.gif",
 		})
 	  );
+
+        $out .= "[% END %]" if $compiled;
     }
 
     return $out;
@@ -443,9 +462,40 @@ sub sloc
 
 ##############################################################################
 
+=head2 locpp
+
+  locpp($name, @args)
+
+Localization for page-part.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database.
+
+=cut
+
+sub locpp
+{
+    my( $name ) = shift;
+
+    my $req = $Para::Frame::REQ;
+
+    my $code = $req->page->base;
+    if( $name )
+    {
+	$code = $code.'#'.$name;
+    }
+
+    return alocpp_raw($code,1,@_);
+}
+
+
+##############################################################################
+
 =head2 alocpp
 
   alocpp($name, @args)
+
+Administrate localization for page-part.
 
 Same as L<Para::Frame::L10N::loc>, but looks up the translation from
 the database. If in admin mode, prepends a text edit link
@@ -464,13 +514,86 @@ sub alocpp
 	$code = $code.'#'.$name;
     }
 
+    return alocpp_raw($code,0,@_);
+}
+
+
+##############################################################################
+
+=head2 locppg
+
+  locpp($name, @args)
+
+Localization for page-part -- global.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database.
+
+=cut
+
+sub alocppg
+{
+    return alocpp_raw('#'.shift, 1, @_);
+}
+
+
+##############################################################################
+
+=head2 alocppg
+
+  alocpp($name, @args)
+
+Administrate localization for page-part -- global.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database. If in admin mode, prepends a text edit link
+
+=cut
+
+sub alocppg
+{
+    return alocpp_raw('#'.shift, 0, @_);
+}
+
+
+##############################################################################
+
+sub alocpp_raw
+{
+    my( $code, $no_admin ) = (shift, shift);
+
+    my $req = $Para::Frame::REQ;
     my $node = Rit::Base::Resource->find({code=>$code})->get_first_nos;
+    my $site = $req->site;
+    my $home = $site->home_url_path;
+
     my $out = "";
 
-    if( $req->session->{'admin_mode'} )
+    if( $site->is_compiled and not $no_admin )
     {
-	my $home = $req->site->home_url_path;
-
+        $out .= "[% IF admin_mode %]";
+        if( $node )
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  id => $node->id,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+	else
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  code => $code,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+        $out .= "[% END %]";
+    }
+    elsif( $req->session->{'admin_mode'} and not $no_admin )
+    {
 	if( $node )
 	{
 	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
@@ -596,9 +719,13 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
+     'sloc'               => \&sloc,
      'locn'               => \&locn,
      'locnl'              => \&locnl,
+     'locpp'              => \&locpp,
+     'locppg'             => \&locppg,
      'alocpp'             => \&alocpp,
+     'alocppg'            => \&alocppg,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,

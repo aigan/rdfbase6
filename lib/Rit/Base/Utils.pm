@@ -1112,6 +1112,8 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
+solid: Sets arclim to ['active] and unique_arcs_prio to ['active'].
+
 all: Sets arclim to [['active'], ['inactive']] and
 unique_arcs_prio to ['active'].
 
@@ -1184,6 +1186,11 @@ sub parse_propargs
 	    # active or (not_old and created_by_me)
 	    $arclim = [1, 8192+16384];
 	    $unique = [1024, 256, 1]; # new, submitted, active
+	}
+	elsif( $arg eq 'solid' )
+	{
+	    $arclim = [1]; # active
+	    $unique = [1]; # active
 	}
 	elsif( $arg eq 'all' )
 	{

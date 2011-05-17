@@ -782,25 +782,36 @@ sub dbconnect
 
 
 ##############################################################################
-
 sub upgrade_db
 {
     my $C = Rit::Base->Constants;
     my $R = Rit::Base->Resource;
-    my $rb = $C->get('ritbase');
-    my( $args, $arclim, $res ) = parse_propargs('auto');
+    my( $args, $arclim, $res ) = parse_propargs({
+                                                 activate_new_arcs => 1,
+                                                 arclim => ['active'],
+                                                 unique_arcs_prio => ['active'],
+                                                });
 
     # A new clean setup should bring version up to current on its own
     return if $Rit::Base::IN_SETUP_DB;
-
-
     $Rit::Base::IN_SETUP_DB = 1;
 
-    $R->find_set({
-		  label       => 'has_version',
-		  is          => 'predicate',
-		  range       => $C->get('int'),
-		 }, $args);
+    ### PRE 0 DB setup
+    $R->find_set({label => 'ritbase'});
+    my $int = $R->find_set({scof=>$C->get('valfloat'),name=>'int'});
+    my $rb = $C->get('ritbase');
+    my $pred = $C->get('predicate');
+
+    unless( $R->find({label => 'has_version'}) )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        $R->find_set({
+                      label       => 'has_version',
+                      is          => $pred,
+                      range       => $int,
+                     }, $args);
+        $req->done;
+    }
 
     my $ver = $rb->has_version->literal || 0;
     debug "Ritbase DB version is ".$ver;
@@ -810,7 +821,19 @@ sub upgrade_db
 	my $req = Para::Frame::Request->new_bgrequest();
 	my $class = $C->get('class');
 	my $chbpm = 'class_handled_by_perl_module';
-	my $term = $C->get('term');
+
+        my $term = $R->find_set({label => 'term'});
+
+        $term->update({scof => $C->get('valtext')},$args);
+
+        $C->get('name')->update({range=>$term},$args);
+        Rit::Base::Resource->commit(); # Heavy update
+
+        $C->get('name_short')->update({range => $term},$args);
+        Rit::Base::Resource->commit();
+
+        $int->update({label => 'int'}, $args);
+
 
 	my $tr_module =
 	  $R->find_set({
@@ -824,12 +847,23 @@ sub upgrade_db
 		    $chbpm         => $tr_module,
 		   }, $args);
 
+
+        $R->find_set({label => 'has_translation'},$args)
+          ->update({
+                    label => 'has_translation',
+                    is => $pred,
+                    range => $C->get('text'),
+                   },$args);
+
 	$C->get('has_translation')->update({'domain' => $tr},$args);
 
-	$C->get('translation_label')->update({'domain' => $tr,
-					      'range' => $term,
-					     },$args);
+        $R->find_set({label => 'translation_label'}, $args );
 
+	$C->get('translation_label')->update({
+                                              'domain' => $tr,
+					      'range' => $term,
+                                              is => $pred,
+					     },$args);
 
 	my $trl = $R->find({translation_label_exist=>1});
 	while( my $trn = $trl->get_next_nos )
@@ -864,17 +898,17 @@ sub upgrade_db
 
 	$hhc->update({description=>'HTML box of content on a web page'},$args);
 
-	$R->find_set({
-		      label       => 'has_member',
-		      is          => 'predicate',
-		      range       => $C->get('resource'),
-		     }, $args);
-
+	$R->find_set({label       => 'has_member'},$args)
+          ->update({
+                    label       => 'has_member',
+                    is          => 'predicate',
+                    range       => $C->get('resource'),
+                   }, $args);
 
 	my $wtl = $wt->revlist('is');
 	while( my $wtn = $wtl->get_next_nos )
 	{
-	    my $code = $wtn->first_prop('code')->plain;
+	    my $code = $wtn->first_prop('code')->plain or next;
 	    next unless $code =~ /\@/;
 	    $code =~ s/\@/#/;
 	    $wtn->update({code=>$code},$args);

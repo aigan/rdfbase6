@@ -1018,10 +1018,18 @@ sub replace
     # go through the new values and remove existing values from the
     # remove list and add nonexisting values to the add list
 
+    my( $pred, $valtype );
     foreach my $pred_name ( keys %$props )
     {
 	debug 3, "  pred: $pred_name";
-	# Only handles pred nodes
+
+        if( $pred_name eq 'label' )
+        {
+            my $val = $props->{'label'}->get_first_nos;
+            $add{'label'}{$val} = $val;
+            next;
+        }
+
 	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 	my $valtype = $pred->valtype;
 
@@ -1154,6 +1162,10 @@ sub replace
 
 		delete $del_pred{$pred_name};
 	    }
+	    elsif( $pred_name eq 'label' )
+            {
+                $node->set_label( $value );
+            }
 	    else
 	    {
 		Rit::Base::Arc->create({
@@ -1512,18 +1524,26 @@ sub construct_proplist
 		if( $pred_name eq 'value' )
 		{
 		    $valtype = $node->this_valtype( $args );
+                    $val = $valtype->instance_class->
+                      parse( $val,
+                             {
+                              valtype => $valtype,
+                             });
 		}
+		elsif( $pred_name eq 'label' )
+                {
+                    #$valtype = Rit::Base::Constants->get('term');
+                }
 		else
 		{
 		    # Only handles pred nodes
 		    $valtype = Rit::Base::Pred->get_by_label($pred_name)->valtype;
+                    $val = $valtype->instance_class->
+                      parse( $val,
+                             {
+                              valtype => $valtype,
+                             });
 		}
-
-		$val = $valtype->instance_class->
-		  parse( $val,
-			 {
-			  valtype => $valtype,
-			 });
 	    }
 	}
 
