@@ -391,7 +391,7 @@ sub unique_arcs_prio
     my %points;
 
     my( $arc, $error ) = $list->get_first;
-    confess( "Not arc in unique_arcs_prio; $error - $arc" )
+    confess( "Not arc in unique_arcs_prio; $error - ".$arc->sysdesig )
       unless( $error or ($arc and $arc->is_arc) );
     while(! $error )
     {
