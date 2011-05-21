@@ -391,16 +391,13 @@ sub unique_arcs_prio
     my %points;
 
     my( $arc, $error ) = $list->get_first;
-    if( $arc and not $arc->is_arc )
-    {
-	unless( $arc->{disregard} )
-	{
-	    confess "Not arc in unique_arcs_prio; $error - ".$arc->sysdesig;
-	}
-    }
     while(! $error )
     {
-	next unless $arc->is_arc;
+	unless( $arc->is_arc ) # Might have been recently removed
+	{
+	    cluck "Not arc in unique_arcs_prio; $error - ".$arc->sysdesig;
+	    next;
+	}
 
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
