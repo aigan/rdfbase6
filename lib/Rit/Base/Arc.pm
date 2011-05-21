@@ -910,7 +910,7 @@ sub create
 				 value => $value_obj,
 				});
 
-    if( $arc->active and $props->{'arc_weight'} == -1 )
+    if( $arc->active and ($props->{'arc_weight'}||0) == -1 )
     {
         $arc->set_weight(-1, $args); # Trigger resort
     }

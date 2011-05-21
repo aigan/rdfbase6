@@ -798,7 +798,7 @@ sub upgrade_db
 
     ### PRE 0 DB setup
     $R->find_set({label => 'ritbase'});
-    my $int = $R->find_set({scof=>$C->get('valfloat'),name=>'int'});
+    my $int = $R->get({label=>'int'}) || $R->get({scof=>$C->get('valfloat'),name=>'int'});
     my $rb = $C->get('ritbase');
     my $pred = $C->get('predicate');
 

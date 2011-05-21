@@ -55,11 +55,36 @@ has_version	2
 translatable
 has_html_content	3
 has_member	1
+domain_card_min	2
+domain_card_max	2
+range_card_min	2
+range_card_max	2
+literal_compare_clean	2
 
 ARCS
 is	is	predicate
 resource	is	class
 class	is	class
+domain_card_min	is	predicate
+domain_card_min	domain	predicate
+domain_card_min	range	int
+domain_card_min	range_card_max	1
+domain_card_max	is	predicate
+domain_card_max	domain	predicate
+domain_card_max	range	int
+domain_card_max	range_card_max	1
+range_card_min	is	predicate
+range_card_min	domain	predicate
+range_card_min	range	int
+range_card_min	range_card_max	1
+range_card_max	is	predicate
+range_card_max	domain	predicate
+range_card_max	range	int
+range_card_max	range_card_max	1
+literal_compare_clean	is	predicate
+literal_compare_clean	domain	predicate
+literal_compare_clean	range	bool
+literal_compare_clean	range_card_max	1
 has_cyc_id	is	predicate
 has_cyc_id	range	text
 has_wikipedia_id	is	predicate
@@ -84,6 +109,7 @@ member_of	is	predicate
 name	range	term
 name	is	predicate
 name	admin_comment		See has_cyc_id Name
+name	literal_compare_clean	1
 description	range	textbox
 description	is	predicate
 admin_comment	range	textbox
@@ -99,30 +125,37 @@ domain	is	predicate
 domain	range	class
 domain	domain	predicate
 domain	admin_comment		Domain of predicate has this type
+domain	range_card_max	1
 range	is	predicate
 range	range	class
 range	domain	predicate
 range	admin_comment		Range of predicate has this type
+range	range_card_max	1
 domain_scof	is	predicate
 domain_scof	range	class
 domain_scof	domain	predicate
 domain_scof	admin_comment		Domain of predicate has this scof
+domain_scof	range_card_max	1
 range_scof	is	predicate
 range_scof	range	class
 range_scof	domain	predicate
 range_scof	admin_comment		Range of predicate has this scof
+range_scof	range_card_max	1
 pred_1	is	predicate
 pred_1	range	predicate
 pred_1	domain	rule
 pred_1	admin_comment		First predicate is
+pred_1	range_card_max	1
 pred_2	is	predicate
 pred_2	range	predicate
 pred_2	domain	rule
 pred_2	admin_comment		Second predicate is
+pred_2	range_card_max	1
 pred_3	is	predicate
 pred_3	range	predicate
 pred_3	domain	rule
 pred_3	admin_comment		Third predicate is
+pred_3	range_card_max	1
 has_password	range	password
 has_password	is	predicate
 has_access_right	is	predicate
@@ -130,6 +163,7 @@ has_access_right	domain	login_account
 has_access_right	range	system_access_right
 weight	range	int
 weight	is	predicate
+weight	range_card_max	1
 private	range	bool
 private	admin_comment		Not for public consumption
 private	is	predicate
@@ -150,6 +184,7 @@ class_handled_by_perl_module	is	predicate
 class_handled_by_perl_module	admin_comment		Bless instances in this perl class
 class_handled_by_perl_module	domain	class
 class_handled_by_perl_module	range	class_perl_module
+class_handled_by_perl_module	range_card_max	1
 class_perl_module	is	class
 rule	is	class
 syllogism	scof	rule
@@ -173,11 +208,13 @@ has	admin_comment		General purpose
 url_part	is	predicate
 url_part	admin_comment		Part for constructing unique URLs
 url_part	range	url
+url_part	range_card_max	1
 has_url	is	predicate
 has_url	admin_comment		A salient URL of the thing
 has_url	has_cyc_id		salientURL
 site_code	is	predicate
 site_code	range	text
+site_code	range_card_max	1
 unseen_by	is	predicate
 unseen_by	range	login_account
 unseen_by	admin_comment		Persons that hasn't seen the CURRENT version of this node
@@ -198,6 +235,7 @@ intelligent_agent	is	class
 intelligent_agent	has_cyc_id		IntelligentAgent
 has_version	is	predicate
 has_version	range	int
+has_version	range_card_max	1
 phone_number	admin_comment		Each instance of PhoneNumber is a character string that can be used to call a particular Telephone.
 phone_number	has_cyc_id		PhoneNumber
 phone_number	has_wikipedia_id		Telephone_number
@@ -210,7 +248,7 @@ has_html_content	domain	website_text
 has_html_content	range	text_html
 has_member	is	predicate
 has_member	range	resource
-ritbase	has_version		2
+ritbase	has_version		3
 is_of_language	is	predicate
 is_of_language	domain	valtext
 is_of_language	range	language
@@ -224,6 +262,7 @@ has_translation	range	text
 translation_label	is	predicate
 translation_label	domain	translatable
 translation_label	range	term
+translation_label	range_card_max	1
 
 111	is	syllogism
 111	pred_1	is

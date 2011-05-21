@@ -126,12 +126,17 @@ warnings_like
   qr/^Initiating valtypes$/,
   qr/^Initiating constants$/,
   qr/^Initiating key nodes$/,
-  qr/^$/,
-  qr/^1 Done in /,
+  qr/^Ritbase DB version is 3$/,
+#  qr/^$/,
+#  qr/^1 Done in /,
   qr/^Setup complete, accepting connections$/,
  ], "startup";
 
-is( $::OUT, "MAINLOOP 1\nSTARTED\n", "startup output" );
+#$Para::Frame::DEBUG = 1;
+#Para::Frame->startup;
+
+#is( $::OUT, "MAINLOOP 1\nSTARTED\n", "startup output" );
+is( $::OUT, "STARTED\n", "startup output" );
 clear_out();
 
 

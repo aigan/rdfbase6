@@ -1341,7 +1341,7 @@ sub execute
 	$Para::Frame::REQ->note(loc("Searching")."...");
     }
 
-    if( $min_prio > 2 ) # was 4
+    if( $min_prio > 2 and not $Rit::Base::IN_SETUP_DB  ) # was 4
     {
 #	debug "Search is to heavy! Runs in background";
 #	debug $search->sysdesig;
