@@ -37,7 +37,7 @@ our @EXPORT_OK
 	proplim_to_arclim range_pred );
 
 
-use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
+use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode validate_utf8 );
 use Para::Frame::Reload;
 
 ### Those modules loaded by Rit::Base later...
@@ -182,6 +182,7 @@ Converts a name to a reasonable string to use in an url
 sub name2url
 {
     my( $name ) = deunicode( @_ );
+    utf8::upgrade($name); # As utf8 but only with Latin1 chars
 
     use locale;
     use POSIX qw(locale_h);

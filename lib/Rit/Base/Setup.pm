@@ -919,6 +919,52 @@ sub upgrade_db
 	$req->done;
     }
 
+    if( $ver < 3 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        my $pred = $C->get('predicate');
+        my $int = $C->get('int');
+        my $bool = $C->get('bool');
+
+        foreach my $label (qw( domain_card_min domain_card_max
+                               range_card_min range_card_max
+                            ))
+        {
+            $R->find_set({
+                          label       => $label,
+                          is          => $pred,
+                          domain      => $pred,
+                          range       => $int,
+                         }, $args);
+        }
+
+        $R->find_set({
+                      label       => 'literal_compare_clean',
+                      is          => $pred,
+                      domain      => $pred,
+                      range       => $bool,
+                     }, $args);
+
+
+         # AD range_card_max
+        foreach my $label (qw( domain range domain_scof range_scof pred_1 pred_2 pred_3 weight class_handled_by_perl_module url_part site_code has_version translation_label domain_card_min domain_card_max range_card_min range_card_max literal_compare_clean ))
+        {
+            $C->get($label)->update({range_card_max => 1},$args);
+        }
+
+
+        # AD literal_compare_clean
+        foreach my $label (qw( name ))
+        {
+            $C->get($label)->update({literal_compare_clean => 1},$args);
+        }
+
+
+
+	$rb->update({ has_version => 3 },$args);
+	$res->autocommit;
+	$req->done;
+    }
 }
 
 

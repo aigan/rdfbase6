@@ -860,7 +860,7 @@ sub wuirc
 #	debug "Arcs list: @arcs";
 	my $list_weight = 0;
 
-	foreach my $arc ( Rit::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'obj.weight', dir=>'desc'}])->as_array )
+	foreach my $arc ( Rit::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'weight', dir=>'desc'},{on=>'obj.weight', dir=>'desc'}])->as_array )
 	{
 	    my $arc_id = $arc->id;
 #	    debug $arc_id;
@@ -870,7 +870,12 @@ sub wuirc
 		$out .= "(".$lang->desig."): ";
 	    }
 
-	    if( my $weight = $arc->value_node->prop('weight',undef,'auto') )
+	    if( my $weight = $arc->weight )
+	    {
+		$out .= $weight. " ";
+		$list_weight = 1;
+	    }
+	    elsif( $weight = $arc->value_node->prop('weight',undef,'auto') )
 	    {
 		$out .= $weight->desig . " ";
 		$list_weight = 1;

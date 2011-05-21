@@ -531,7 +531,7 @@ the database.
 
 =cut
 
-sub alocppg
+sub locppg
 {
     return alocpp_raw('#'.shift, 1, @_);
 }

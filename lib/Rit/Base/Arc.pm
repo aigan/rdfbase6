@@ -179,7 +179,8 @@ The props:
             or L<Rit::Base::Pred/valtype>
 
   arc_weight : Defaults to C<undef>
-
+               -1 for placing the arc last, upon activation,
+               changing the other properties as needed
 
 Special args:
 
@@ -306,15 +307,6 @@ sub create
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
-
-
-    ##################### arc_weight
-    if( $props->{'arc_weight'} )
-    {
-	$rec->{'weight'}  = $props->{'arc_weight'};
-    }
-    push @fields, 'weight';
-    push @values, $rec->{'weight'};
 
 
     ##################### read_access
@@ -769,7 +761,9 @@ sub create
 	    # undef weight is not the same as weight 0, but treat them
 	    # as the same in this check
 	    #
-	    next if ($rec->{'weight'}||0) != ($arc->weight||0);
+            my $rec_weight = $props->{'arc_weight'}||0;
+            $rec_weight = 0 if $rec_weight == -1;
+	    next if $rec_weight != ($arc->weight||0);
 
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
 
@@ -839,6 +833,11 @@ sub create
 		    $arc->mark_updated;
 		}
 
+                if( ($props->{'arc_weight'}||0) == -1 )
+                {
+                    $arc->set_weight(-1, $args);
+                }
+
 		return $arc;
 	    }
 	}
@@ -870,6 +869,20 @@ sub create
     push @values, $rec->{'valtype'};
 
 
+    ##################### arc_weight
+    if( $props->{'arc_weight'} )
+    {
+	$rec->{'weight'}  = $props->{'arc_weight'};
+
+        # Use -1 to place arc last
+        if( $rec->{'active'} and $props->{'arc_weight'} == -1 )
+        {
+            $rec->{'weight'} = 0; # Resort other arcs after creation
+        }
+    }
+    push @fields, 'weight';
+    push @values, $rec->{'weight'};
+
 
     #####################
 
@@ -897,13 +910,20 @@ sub create
 				 value => $value_obj,
 				});
 
+    if( $arc->active and $props->{'arc_weight'} == -1 )
+    {
+        $arc->set_weight(-1, $args); # Trigger resort
+    }
+
     # If the arc was requested to be cerated active, but wasn't
     # becasue it was replacing another arc, we will activate it now
 
     if( $props->{'active'} and not $arc->active )
     {
-	# Arc should have been submitted instead.
-	$arc->activate( $args );
+	# Arc should have been submitted instead. But it might have
+	# been deactivated during a resort or other operation.
+        #
+	$arc->activate( $args ) if $arc->submitted;
     }
 
 
@@ -4597,6 +4617,7 @@ sub activate
 
 	unless( $arc->submitted )
 	{
+            cluck "Missed to validate arc";
 	    throw('validation', "Arc $aid is not yet submitted");
 	}
     }
@@ -4611,15 +4632,22 @@ sub activate
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
 
+    my $weight = $arc->weight;
+    my $weight_last = 0;
+    if( ($weight||0) == -1 )
+    {
+        $weight = 0;
+        $weight_last = 1;
+    }
 
     if( $arc->{'valtype'} ) # Not a REMOVAL arc
     {
 	# Replaces is already set if this version is based on another
 	# It may be another version than the currently active one
 
-	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
+	my $st = "update arc set updated=?, activated=?, activated_by=?, weight=?, active='true', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $aid );
+	$sth->execute( $date_db, $date_db, $activated_by_id, $weight, $aid );
 	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
 	$arc->{'arc_updated_obj'} = $updated;
@@ -4703,6 +4731,11 @@ sub activate
 		$rarc->activate($args);
 	    }
 	}
+    }
+
+    if( $weight_last )
+    {
+        $arc->set_weight(-1, $args); # Trigger a resort
     }
 
     return 1;
@@ -4935,6 +4968,11 @@ It may be set to C<undef> to unset any previous value
 
 Setting a new weight will create a new version if the arc is active.
 
+Setting the weight to -1 will give it a weight of 0 and resort other
+arcs of the subject with the same predicate, to put this arc
+last. This will only be done for active arcs. Non-active arcs will
+have a weight of -1 until they are activated.
+
 Supported args are:
 
   force_same_version
@@ -4960,6 +4998,12 @@ sub set_weight
 
     if( defined $val )
     {
+        if( $val == -1 and $arc->active )
+        {
+            $val = 0;
+            $arc->weight_last( $args );
+        }
+
 	# Return if no change
 	return $arc if $weight_old and ($val == $weight_old);
 
@@ -5024,6 +5068,38 @@ sub set_weight
     return $arc;
 }
 
+
+##############################################################################
+
+=head2 weight_last
+
+  $arc->weight_last( \%args )
+
+Increases the weight of all other arcs from the same subject with the
+same predicate, by 1.
+
+Use $arc->set_weight(-1) to trigger this resort, since this method
+does not touch this arc.
+
+The method only works on active arcs.
+
+=cut
+
+sub weight_last
+{
+    my( $arc, $args ) = @_;
+
+    debug "Resorting, ending with ".$arc->sysdesig;
+
+    foreach my $oa ( $arc->subj->arc_list($arc->pred,undef,'active')->nodes )
+    {
+        next if $oa->equals($arc);
+        my $weight = $oa->weight||0;
+        $oa->set_weight($weight+1, $args);
+    }
+
+    return $arc;
+}
 
 ##############################################################################
 

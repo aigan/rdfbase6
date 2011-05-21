@@ -4084,7 +4084,7 @@ Supported args are:
   res
   read_access
   write_access
-  arc_weight
+  arc_weight  (-1 for placing the arc last)
 
 Returns:
 
