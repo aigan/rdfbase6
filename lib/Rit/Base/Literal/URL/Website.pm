@@ -57,6 +57,8 @@ Will use L<Rit::Base::Resource/get_by_anything> for lists and queries.
 The valtype may be given for cases there the class handles several
 valtypes.
 
+Longest TLD name: museum
+
 =cut
 
 sub parse
@@ -91,7 +93,7 @@ sub parse
 	unless( $scheme =~ /^https?$/ )
 	{
 	    my $str = $url->as_string;
-	    if( $str =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z]{2,5}):(\d+)//i )
+	    if( $str =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z]{2,6}):(\d+)//i )
 	    {
 		my $host = $1;
 		my $port = $2;
@@ -116,7 +118,7 @@ sub parse
     {
 	my $path = $url->path || '';
 	debug 3, "Initial path is $path";
-	if( $path =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z]{2,5}\b)//i )
+	if( $path =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z]{2,6}\b)//i )
 	{
 	    my $host = $1;
 	    $url->host($host);
@@ -141,7 +143,7 @@ sub parse
     if( my $host = $url->host )
     {
 	debug 3, "Host is now $host";
-	unless( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z]{2,5}$/ )
+	unless( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z]{2,6}$/ )
 	{
 	    throw 'validation', loc "Malformed hostname in website URL $url";
 	}
