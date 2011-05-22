@@ -144,7 +144,7 @@ sub parse
     if( my $host = $url->host )
     {
 	debug 3, "Host is now $host";
-	unless( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}$/ )
+	unless( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}$/i )
 	{
 	    throw 'validation', loc "Malformed hostname in website URL $url";
 	}
