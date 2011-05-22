@@ -4744,6 +4744,64 @@ sub activate
 
 ##############################################################################
 
+=head2 reactivate
+
+  $a->reactivate( \%args )
+
+Tries to undo changes to the arc.
+
+=cut
+
+sub reactivate
+{
+    my( $arc, $args ) = @_;
+
+    confess "args missing" unless $args;
+    my $rargs = {%$args, force=>1};
+    my $larcs = $arc->replaced_by->sorted( 'id', 'desc' );
+    foreach my $larc ( $larcs->nodes )
+    {
+	$larc->remove($rargs);
+    }
+
+    if( $arc->old )
+    {
+	my $dbix = $Rit::dbix;
+	my $updated = $args->{'updated'} || now();
+	my $updated_db = $dbix->format_datetime($updated);
+	my $aid = $arc->id;
+
+	my $st = "update arc set updated=?, active='true', deactivated=null where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $updated_db, $aid );
+	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+
+	$arc->{'arc_updated_obj'} = $updated_db;
+	delete $arc->{'arc_deactivated_obj'};
+	delete $arc->{'arc_deactivated'};
+	$arc->{'active'} = 1;
+
+	# Reset caches
+	#
+	$arc->obj->reset_cache if $arc->obj;
+	$arc->subj->reset_cache;
+
+	# Runs create_check AFTER deactivation of other arc version, since
+	# the new arc version may INFERE the old arc
+	#
+	$arc->schedule_check_create( $args );
+	$arc->notify_change( $args );
+
+	debug "Reactivated ".$arc->sysdesig;
+    }
+
+    return $arc;
+}
+
+
+
+##############################################################################
+
 =head2 set_replaces
 
   $a->set_replaces( $arc2, \%args )
