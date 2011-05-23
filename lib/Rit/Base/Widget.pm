@@ -39,7 +39,7 @@ use Rit::Base;
 use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use Rit::Base::L10N;
-use Rit::Base::Constants qw( $C_translatable );
+use Rit::Base::Constants qw( $C_translatable $C_has_translation );
 
 =head1 DESCRIPTION
 
@@ -361,7 +361,12 @@ sub aloc
           CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
             '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
 
-        $out .= "[% END %]" if $compiled;
+        if( $compiled )
+        {
+            $out .= "[% ELSE %]";
+            $out .= loc($phrase, @_);
+            $out .= "[% END %]";
+        }
 
         return $out;
     }
@@ -440,14 +445,15 @@ sub sloc
     if( $compiled or $Para::Frame::REQ->session->admin_mode )
     {
 	my $home = $Para::Frame::REQ->site->home_url_path;
+        my $id = Rit::Base::L10N::find_translation_node_id( $text );
 
         $out .= "[% IF admin_mode %]" if $compiled;
 	$out .=
 	  (
-	   jump("Edit", "$home/admin/translation/update.tt",
+	   jump("Edit", "$home/rb/translation/node.tt",
 		{
-		 run => 'mark',
-		 c => $text,
+                 id => $id,
+                 pred => $C_has_translation->id,
 		 tag_attr => {class => "paraframe_edit_link_overlay"},
 		 tag_image => "$home/pf/images/edit.gif",
 		})

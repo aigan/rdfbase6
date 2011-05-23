@@ -57,7 +57,7 @@ sub import
     my $callpkg = caller();
     no strict 'refs'; # Symbolic refs
 
-    my $temp = bless{NOT_INITIALIZED=>1};
+#    my $temp = bless{NOT_INITIALIZED=>1};
 
     my $updating_db = 0;
     if( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
@@ -80,6 +80,7 @@ sub import
 	    push @Initlist, ["$callpkg\::C_$1", $1];
 
 	    # Temporary placeholder
+            my $temp = bless{label=>$1,NOT_INITIALIZED=>1};
 	    *{"$callpkg\::C_$1"} = \ $temp;
 	}
     }
@@ -130,6 +131,18 @@ sub new ()
     return bless {};
 }
 
+
+######################################################################
+
+=head2 hurry_init
+
+=cut
+
+sub hurry_init
+{
+    debug "Emergancy instantiation of constant ".$_[0]->{label};
+    return $_[0]->get($_[0]->{label},{nonfatal=>1});
+}
 
 ######################################################################
 

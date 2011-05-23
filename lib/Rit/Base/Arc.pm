@@ -3392,7 +3392,7 @@ sub value_equals
 	if( $DEBUG )
 	{
 	    debug "Comparing values:";
-	    debug "1. ".$arc->obj->sysdesig;
+	    debug "1. ".$arc->obj->safedesig;
 	    debug "2. ".query_desig($val2);
 	}
 

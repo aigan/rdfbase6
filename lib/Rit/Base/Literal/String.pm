@@ -562,7 +562,7 @@ sub loc
 	}
 	else
 	{
-	    debug "String '$str' not marked as UTF8; upgrading";
+#	    debug "String '$str' not marked as UTF8; upgrading";
 	    utf8::upgrade($str);
 	}
 	return $str;

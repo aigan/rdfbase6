@@ -4385,6 +4385,13 @@ sub equals
 
     if( ref $node2 )
     {
+        ### Handle some bootstrap issues...
+        if( ref $node2 eq 'Rit::Base::Constants' )
+        {
+            $node2 = $node2->hurry_init;
+        }
+
+
 	if( UNIVERSAL::isa $node2, 'Rit::Base::Resource' )
 	{
 	    if( $DEBUG )
