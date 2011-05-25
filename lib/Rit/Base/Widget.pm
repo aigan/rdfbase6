@@ -338,9 +338,7 @@ sub aloc
 {
     my $phrase = shift;
 
-    my $compiled = $Para::Frame::REQ->site->is_compiled;
-
-    if( $compiled or $Para::Frame::REQ->session->admin_mode )
+    if( $Para::Frame::REQ->session->admin_mode )
     {
         my $id = Rit::Base::L10N::find_translation_node_id($phrase);
 
@@ -355,18 +353,9 @@ sub aloc
 
         my $out = "";
 
-        $out .= "[% IF admin_mode %]" if $compiled;
-
         $out .= '<span class="translatable" title="'.
           CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
             '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
-
-        if( $compiled )
-        {
-            $out .= "[% ELSE %]";
-            $out .= loc($phrase, @_);
-            $out .= "[% END %]";
-        }
 
         return $out;
     }

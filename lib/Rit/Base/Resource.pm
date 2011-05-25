@@ -4568,6 +4568,10 @@ sub merge_node
 
     foreach my $arc ( $node1->arc_list(undef, undef, ['active','explicit'])->nodes )
     {
+        # See if arc still is active
+        next unless $arc->active;
+        next if $arc->disregard;
+
 	my $pred_name = $arc->pred->plain;
 	if( my $obj = $arc->obj )
 	{

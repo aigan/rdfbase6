@@ -1541,6 +1541,7 @@ sub construct_proplist
                     $val = $valtype->instance_class->
                       parse( $val,
                              {
+                              %$args,
                               valtype => $valtype,
                              });
 		}
