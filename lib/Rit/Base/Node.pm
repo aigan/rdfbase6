@@ -29,6 +29,7 @@ use Carp qw( cluck confess croak carp );
 use Para::Frame::Utils qw( throw catch debug datadump trim );
 use Para::Frame::Reload;
 
+use Rit::Base::Arc::Lim;
 use Rit::Base::Utils qw(valclean parse_query_props
 			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
@@ -602,9 +603,10 @@ sub meets_proplim
 	    }
 	}
 
+#        debug "ARCLIM regexp: @{[join '|', keys %Rit::Base::Arc::Lim::LIM]}";
 
 	#                      Regexp compiles once
-	unless( $pred_part =~ m/^(rev_)?(.*?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	unless( $pred_part =~ m/^(rev_)?(.*?)(?:_(@{[join '|', keys %Rit::Base::Arc::Lim::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	{
 	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    unless( $pred_part )

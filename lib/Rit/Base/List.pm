@@ -230,7 +230,7 @@ The actual comparsion for the C<eq> and C<ne> matchtypes are done by
 the L<Rit::Base::Resource/has_value> method.
 
 If an element in the list is a L<Rit::Base::List>, it will be searchd
-in teh same way.
+in the same way.
 
 The supported args are:
 
