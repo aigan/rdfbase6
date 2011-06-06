@@ -5,7 +5,10 @@ package Rit::Base::Arc::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -388,10 +391,14 @@ sub unique_arcs_prio
     my %points;
 
     my( $arc, $error ) = $list->get_first;
-    confess( "Not arc in unique_arcs_prio; $error - $arc" )
-      unless( $error or ($arc and $arc->is_arc) );
     while(! $error )
     {
+	unless( $arc->is_arc ) # Might have been recently removed
+	{
+	    cluck "Not arc in unique_arcs_prio; $error - ".$arc->sysdesig;
+	    next;
+	}
+
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
 #	debug "Sort $sor: ".$arc->sysdesig;

@@ -5,7 +5,10 @@ package Rit::Base::Renderer::AJAX;
 #   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -16,6 +19,7 @@ use utf8;
 use base 'Para::Frame::Renderer::Custom';
 
 use JSON; # to_json from_json
+#use Carp qw( cluck );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
@@ -308,6 +312,11 @@ sub render_output
 sub set_ctype
 {
     my( $rend, $ctype ) = @_;
+
+    unless( $ctype )
+    {
+        die "No ctype given to set";
+    }
 
     if( $rend->{'ctype'} eq 'json' )
     {

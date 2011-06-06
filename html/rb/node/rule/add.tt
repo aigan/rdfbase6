@@ -1,4 +1,4 @@
-﻿[% META title="Add rule"
+[% META title="Add rule"
    default_template = 'list.tt'
    next_action = 'rule_add'
    menu="/admin/rule/list.tt"

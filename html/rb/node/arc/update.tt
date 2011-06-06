@@ -1,4 +1,4 @@
-﻿[% META otitle="Arc edit"
+[% META otitle="Arc edit"
    	next_action = 'arc_edit'
 	default_template = 'update.tt'
         level = 1
@@ -185,7 +185,7 @@ This is an <strong>active</strong> version.
 [% END %]
 [% END %]
 
-<tr><td>Weight</td><td>[% arc.weight %]</td></tr>
+<tr><td>Weight</td><td>[% input('weight', arc.weight) %]</td></tr>
 
 <tr><td>Replaces</td><td>
 [% IF arc.replaces_id %]

@@ -7,6 +7,7 @@ use warnings;
 use Cwd qw( abs_path );
 
 our $CFG;
+$|=1;
 
 use Test::Warn;
 use Test::More tests => 6;
@@ -27,22 +28,21 @@ BEGIN
     open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
 }
 
+sub capture_out
+{
+    $::OUT = "";
+    open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
+    close STDOUT;
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
+}
 
-
-# Capture STDOUT
-$|=1;
-my $stdout = "";
-open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
-close STDOUT;
-open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
-
-
-sub clear_stdout
+sub clear_out
 {
     close STDOUT;
-    $stdout="";
-    open STDOUT, ">:scalar", \$stdout   or die "Can't dup STDOUT to scalar: $!";
+    $::OUT = "";
+    open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
+
 
 use Para::Frame::DBIx;
 use Para::Frame::Utils qw( debug );
@@ -50,6 +50,8 @@ use Para::Frame::Utils qw( debug );
 use Rit::Base;
 use Rit::Base::Utils qw( is_undef parse_propargs );
 use Rit::Base::User::Meta;
+
+capture_out();
 
 my $troot = '/tmp/rbtest';
 my $cfg_in =
@@ -67,13 +69,13 @@ my $cfg_in =
 warnings_like {Para::Frame->configure($cfg_in)}
 [ qr/^Timezone set to /,
   qr/^Stringify now set$/,
-  qr/^Regestring ext tt to burner html$/,
-  qr/^Regestring ext html_tt to burner html$/,
-  qr/^Regestring ext xtt to burner html$/,
-  qr/^Regestring ext css_tt to burner plain$/,
-  qr/^Regestring ext js_tt to burner plain$/,
-  qr/^Regestring ext css_dtt to burner plain$/,
-  qr/^Regestring ext js_dtt to burner plain$/,
+  qr/^Registring ext tt to burner html$/,
+  qr/^Registring ext html_tt to burner html$/,
+  qr/^Registring ext xtt to burner html$/,
+  qr/^Registring ext css_tt to burner plain$/,
+  qr/^Registring ext js_tt to burner plain$/,
+  qr/^Registring ext css_dtt to burner plain$/,
+  qr/^Registring ext js_dtt to burner plain$/,
   ],
     "Configuring";
 
@@ -82,7 +84,7 @@ warning_like {
 			    'code'       => 'rbtest',
 			    'name'       => 'RB Test',
 			   })
-  } qr/^Registring site RB Test$/, "Adding site";
+  } qr/^Registring site /, "Adding site";
 
 
 my $cfg = $Para::Frame::CFG;
@@ -112,7 +114,7 @@ warnings_like
     Rit::Base->init();
 }[
   qr/^Adding hooks for Rit::Base$/,
-  qr/^Regestring ext js to burner plain$/,
+  qr/^Registring ext js to burner plain$/,
   qr/^Done adding hooks for Rit::Base$/,
  ], "RB Init";
 
@@ -124,13 +126,18 @@ warnings_like
   qr/^Initiating valtypes$/,
   qr/^Initiating constants$/,
   qr/^Initiating key nodes$/,
-  qr/^$/,
-  qr/^1 Done in /,
+  qr/^Ritbase DB version is 3$/,
+#  qr/^$/,
+#  qr/^1 Done in /,
   qr/^Setup complete, accepting connections$/,
  ], "startup";
 
-is( $stdout, "MAINLOOP 1\nSTARTED\n", "startup output" );
-clear_stdout();
+#$Para::Frame::DEBUG = 1;
+#Para::Frame->startup;
+
+#is( $::OUT, "MAINLOOP 1\nSTARTED\n", "startup output" );
+is( $::OUT, "STARTED\n", "startup output" );
+clear_out();
 
 
 ###########

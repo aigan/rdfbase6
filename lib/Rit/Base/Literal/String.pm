@@ -5,7 +5,10 @@ package Rit::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -559,7 +562,7 @@ sub loc
 	}
 	else
 	{
-	    debug "String '$str' not marked as UTF8; upgrading";
+#	    debug "String '$str' not marked as UTF8; upgrading";
 	    utf8::upgrade($str);
 	}
 	return $str;
@@ -862,7 +865,7 @@ sub wuirc
 #	debug "Arcs list: @arcs";
 	my $list_weight = 0;
 
-	foreach my $arc ( Rit::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'obj.weight', dir=>'desc'}])->as_array )
+	foreach my $arc ( Rit::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'weight', dir=>'desc'},{on=>'obj.weight', dir=>'desc'}])->as_array )
 	{
 	    my $arc_id = $arc->id;
 #	    debug $arc_id;
@@ -872,7 +875,12 @@ sub wuirc
 		$out .= "(".$lang->desig."): ";
 	    }
 
-	    if( my $weight = $arc->value_node->prop('weight',undef,'auto') )
+	    if( my $weight = $arc->weight )
+	    {
+		$out .= $weight. " ";
+		$list_weight = 1;
+	    }
+	    elsif( $weight = $arc->value_node->prop('weight',undef,'auto') )
 	    {
 		$out .= $weight->desig . " ";
 		$list_weight = 1;

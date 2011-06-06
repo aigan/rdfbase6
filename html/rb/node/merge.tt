@@ -1,4 +1,4 @@
-﻿[% META title="Slå samman noder"
+[% META title="Slå samman noder"
 	next_action = 'node_merge'
 	default_template = 'update.tt'
 	focus = 'node2'
@@ -34,13 +34,6 @@
         [% FOREACH scof = n.scof_adirect;
            'scof (' IF loop.first;
            scof.wu_jump;
-           ', ' UNLESS loop.last;
-           ') ' IF loop.last;
-           END;
-	%]
-        [% FOREACH in = n.in_region_adirect;
-           'in (' IF loop.first;
-           in.wu_jump;
            ', ' UNLESS loop.last;
            ') ' IF loop.last;
            END;

@@ -1,11 +1,11 @@
-﻿[% META title="List preds"
+[% META title="List preds"
 	menu="/admin/create.tt"
         level = 20
 %]
 
 [% order = q.param('order') || 'id' %]
 [% direction = q.param('direction');
-   pagesize = q.param('pagesize') || 10;
+   pagesize = q.param('pagesize') || 100;
 %]
 
 [% preds = find(is=C.predicate).sorted(order, direction);

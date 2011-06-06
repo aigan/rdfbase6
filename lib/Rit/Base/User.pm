@@ -5,7 +5,10 @@ package Rit::Base::User;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -63,7 +66,7 @@ resource representing the user class.
 
 =head2 get
 
-This will call back to L</find_by_anything>.
+This will call back to L<Rit::Base::Resource/get>.
 
 =cut
 
@@ -303,7 +306,7 @@ sub verify_password
 	}
     }
 
-    debug datadump(\%ENV);
+    debug "Verifying password failed:\n".datadump(\%ENV);
     return 0;
 }
 
@@ -389,6 +392,30 @@ sub on_arc_add
     {
 	delete $u->{username};
     }
+
+    $u->clear_caches;
+}
+
+##############################################################################
+
+=head2 on_arc_del
+
+=cut
+
+sub on_arc_del
+{
+    shift->clear_caches(@_);
+}
+
+##############################################################################
+
+=head2 clear_caches
+
+=cut
+
+sub clear_caches
+{
+    delete  $_[0]->{'level'};
 }
 
 ##############################################################################

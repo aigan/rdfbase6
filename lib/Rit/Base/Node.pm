@@ -5,7 +5,10 @@ package Rit::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -26,6 +29,7 @@ use Carp qw( cluck confess croak carp );
 use Para::Frame::Utils qw( throw catch debug datadump trim );
 use Para::Frame::Reload;
 
+use Rit::Base::Arc::Lim;
 use Rit::Base::Utils qw(valclean parse_query_props
 			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
@@ -599,9 +603,10 @@ sub meets_proplim
 	    }
 	}
 
+#        debug "ARCLIM regexp: @{[join '|', keys %Rit::Base::Arc::Lim::LIM]}";
 
 	#                      Regexp compiles once
-	unless( $pred_part =~ m/^(rev_)?(.*?)(?:_(@{[join '|', keys %Rit::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	unless( $pred_part =~ m/^(rev_)?(.*?)(?:_(@{[join '|', keys %Rit::Base::Arc::Lim::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	{
 	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    unless( $pred_part )
@@ -877,6 +882,7 @@ Supported args are:
   res
   read_access
   write_access
+  weight
 
 Returns:
 
@@ -904,6 +910,10 @@ sub add_arc
     if( $args->{'write_access'} )
     {
 	$extra{ write_access } = $args->{'write_access'}->id;
+    }
+    if( $args->{'weight'} )
+    {
+	$extra{ arc_weight } = $args->{'weight'};
     }
 
     my $arc;
@@ -1010,10 +1020,18 @@ sub replace
     # go through the new values and remove existing values from the
     # remove list and add nonexisting values to the add list
 
+    my( $pred, $valtype );
     foreach my $pred_name ( keys %$props )
     {
 	debug 3, "  pred: $pred_name";
-	# Only handles pred nodes
+
+        if( $pred_name eq 'label' )
+        {
+            my $val = $props->{'label'}->get_first_nos;
+            $add{'label'}{$val} = $val;
+            next;
+        }
+
 	my $pred = Rit::Base::Pred->get_by_label( $pred_name );
 	my $valtype = $pred->valtype;
 
@@ -1146,6 +1164,10 @@ sub replace
 
 		delete $del_pred{$pred_name};
 	    }
+	    elsif( $pred_name eq 'label' )
+            {
+                $node->set_label( $value );
+            }
 	    else
 	    {
 		Rit::Base::Arc->create({
@@ -1504,18 +1526,27 @@ sub construct_proplist
 		if( $pred_name eq 'value' )
 		{
 		    $valtype = $node->this_valtype( $args );
+                    $val = $valtype->instance_class->
+                      parse( $val,
+                             {
+                              valtype => $valtype,
+                             });
 		}
+		elsif( $pred_name eq 'label' )
+                {
+                    #$valtype = Rit::Base::Constants->get('term');
+                }
 		else
 		{
 		    # Only handles pred nodes
 		    $valtype = Rit::Base::Pred->get_by_label($pred_name)->valtype;
+                    $val = $valtype->instance_class->
+                      parse( $val,
+                             {
+                              %$args,
+                              valtype => $valtype,
+                             });
 		}
-
-		$val = $valtype->instance_class->
-		  parse( $val,
-			 {
-			  valtype => $valtype,
-			 });
 	    }
 	}
 

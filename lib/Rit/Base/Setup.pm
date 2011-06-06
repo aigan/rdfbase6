@@ -5,7 +5,10 @@ package Rit::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -31,7 +34,7 @@ use Para::Frame::Utils qw( debug datadump throw );
 use Para::Frame::Time qw( now );
 
 use Rit::Base;
-use Rit::Base::Utils qw( valclean );
+use Rit::Base::Utils qw( valclean parse_propargs query_desig );
 use Rit::Base::Constants;
 use Rit::Base::Literal::Class;
 
@@ -42,6 +45,10 @@ our %VALTYPE;
 our %NOLABEL;
 our %LITERAL;
 our @LITERALS;
+
+#
+# For resetting an existing datbase use "setup_db clear"
+#
 
 sub setup_db
 {
@@ -61,9 +68,7 @@ sub setup_db
     my $rb_root = $Para::Frame::CFG->{'rb_root'}
       or die "rb_root not given in CFG";
 
-
-
-    if( $dbix->table('arc') )
+    if( $dbix->table('arc') ) # setup_db clear
     {
 	$dbh->do("drop table arc") or die;
 	$dbh->do("drop table node") or die;
@@ -251,7 +256,7 @@ sub setup_db
     my $source = $NODE{'ritbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
     my $write_access = $NODE{'sysadmin_group'}{'node'};
-    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?)") or die;
+    my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin,valfloat) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?,?)") or die;
     foreach my $rec ( @ARC )
     {
 	my $pred_name = $rec->{'pred'};
@@ -300,7 +305,7 @@ sub setup_db
 	my $ver = $dbix->get_nextval('node_seq');
 	my $pred = $NODE{$pred_name}{'node'};
 	my $valtype = $VALTYPE{$pred_name} or die "Could not find valtype for $pred_name";
-	my( $obj, $valtext, $valclean, $valbin );
+	my( $obj, $valtext, $valclean, $valbin, $valfloat );
 
 	if( $coltype eq 'obj' )
 	{
@@ -315,12 +320,16 @@ sub setup_db
 	{
 	    $valbin = $value;
 	}
+	elsif( $coltype eq 'valfloat' )
+	{
+	    $valfloat = $value;
+	}
 	else
 	{
 	    die "$coltype not handled";
 	}
 
-	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean, $valbin) or die;
+	$sth_arc->execute($id, $ver, $subj, $pred, $source, $read_access, $write_access, $now, $root, $now, $now, $root, $valtype, $obj, $valtext, $valclean, $valbin, $valfloat) or die;
     }
 
     $dbh->commit;
@@ -760,6 +769,8 @@ sub dbconnect
         }
     }
 
+    $db{pass} = undef if $db{pass} eq '-';
+
     return [ sprintf( "dbi:Pg:dbname=%s;host=%s;port=%d",
                       $db{name},
                       $db{host},
@@ -767,6 +778,193 @@ sub dbconnect
                     ),
              $db{user}, $db{pass},
            ];
+}
+
+
+##############################################################################
+sub upgrade_db
+{
+    my $C = Rit::Base->Constants;
+    my $R = Rit::Base->Resource;
+    my( $args, $arclim, $res ) = parse_propargs({
+                                                 activate_new_arcs => 1,
+                                                 arclim => ['active'],
+                                                 unique_arcs_prio => ['active'],
+                                                });
+
+    # A new clean setup should bring version up to current on its own
+    return if $Rit::Base::IN_SETUP_DB;
+    $Rit::Base::IN_SETUP_DB = 1;
+
+    ### PRE 0 DB setup
+    $R->find_set({label => 'ritbase'});
+    my $int = $R->get_by_label('int',{nonfatal=>1}) || $R->get({scof=>$C->get('valfloat'),name=>'int'});
+    my $rb = $C->get('ritbase');
+    my $pred = $C->get('predicate');
+
+    unless( $R->find({label => 'has_version'}) )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        $R->find_set({
+                      label       => 'has_version',
+                      is          => $pred,
+                      range       => $int,
+                     }, $args);
+        $req->done;
+    }
+
+    my $ver = $rb->has_version->literal || 0;
+    debug "Ritbase DB version is ".$ver;
+
+    if( $ver < 1 )
+    {
+	my $req = Para::Frame::Request->new_bgrequest();
+	my $class = $C->get('class');
+	my $chbpm = 'class_handled_by_perl_module';
+
+        my $term = $R->find_set({label => 'term'});
+
+        $term->update({scof => $C->get('valtext')},$args);
+
+        $C->get('name')->update({range=>$term},$args);
+        Rit::Base::Resource->commit(); # Heavy update
+
+        $C->get('name_short')->update({range => $term},$args);
+        Rit::Base::Resource->commit();
+
+        $int->update({label => 'int'}, $args);
+
+
+	my $tr_module =
+	  $R->find_set({
+			code => 'Rit::Base::Translatable',
+			is   => 'class_perl_module',
+		       }, $args);
+
+	my $tr = $R->find_set({label => 'translatable'}, $args)
+	  ->update({
+		    is             => $class,
+		    $chbpm         => $tr_module,
+		   }, $args);
+
+
+        $R->find_set({label => 'has_translation'},$args)
+          ->update({
+                    label => 'has_translation',
+                    is => $pred,
+                    range => $C->get('text'),
+                   },$args);
+
+	$C->get('has_translation')->update({'domain' => $tr},$args);
+
+        $R->find_set({label => 'translation_label'}, $args );
+
+	$C->get('translation_label')->update({
+                                              'domain' => $tr,
+					      'range' => $term,
+                                              is => $pred,
+					     },$args);
+
+	my $trl = $R->find({translation_label_exist=>1});
+	while( my $trn = $trl->get_next_nos )
+	{
+	    $trn->update({is=>$tr},$args);
+	}
+
+	$rb->update({ has_version => 1 },$args);
+	Para::Frame->flag_restart(); # Added constants
+	$res->autocommit;
+	$req->done;
+    }
+
+    if( $ver < 2 )
+    {
+	my $req = Para::Frame::Request->new_bgrequest();
+	my $class = $C->get('class');
+	my $wt = $C->get('website_text')->
+	  update({
+		  is => $class,
+		  class_form_url => "rb/translation/html.tt",
+		 },$args);
+	$C->get('webpage')->
+	  update({ is => $class }, $args);
+
+	my $hhc = $R->find_set({
+				label       => 'has_html_content',
+				is          => 'predicate',
+				domain      => $wt,
+				range       => $C->get('text_html'),
+			       }, $args);
+
+	$hhc->update({description=>'HTML box of content on a web page'},$args);
+
+	$R->find_set({label       => 'has_member'},$args)
+          ->update({
+                    label       => 'has_member',
+                    is          => 'predicate',
+                    range       => $C->get('resource'),
+                   }, $args);
+
+	my $wtl = $wt->revlist('is');
+	while( my $wtn = $wtl->get_next_nos )
+	{
+	    my $code = $wtn->first_prop('code')->plain or next;
+	    next unless $code =~ /\@/;
+	    $code =~ s/\@/#/;
+	    $wtn->update({code=>$code},$args);
+	}
+
+	$rb->update({ has_version => 2 },$args);
+	$res->autocommit;
+	$req->done;
+    }
+
+    if( $ver < 3 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        my $pred = $C->get('predicate');
+        my $int = $C->get('int');
+        my $bool = $C->get('bool');
+
+        foreach my $label (qw( domain_card_min domain_card_max
+                               range_card_min range_card_max
+                            ))
+        {
+            $R->find_set({
+                          label       => $label,
+                          is          => $pred,
+                          domain      => $pred,
+                          range       => $int,
+                         }, $args);
+        }
+
+        $R->find_set({
+                      label       => 'literal_compare_clean',
+                      is          => $pred,
+                      domain      => $pred,
+                      range       => $bool,
+                     }, $args);
+
+
+         # AD range_card_max
+        foreach my $label (qw( domain range domain_scof range_scof pred_1 pred_2 pred_3 weight class_handled_by_perl_module url_part site_code has_version translation_label domain_card_min domain_card_max range_card_min range_card_max literal_compare_clean ))
+        {
+            $C->get($label)->update({range_card_max => 1},$args);
+        }
+
+
+        # AD literal_compare_clean
+        foreach my $label (qw( name ))
+        {
+            $C->get($label)->update({literal_compare_clean => 1},$args);
+        }
+
+
+
+	$rb->update({ has_version => 3 },$args);
+	$res->autocommit;
+	$req->done;
+    }
 }
 
 

@@ -5,7 +5,10 @@ package Rit::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -273,6 +276,78 @@ sub coltype_id
     }
 
     return $_[0]->{'coltype'};
+}
+
+#########################################################################
+
+=head2 range_card_max_1
+
+=cut
+
+sub range_card_max_1
+{
+    if( my $rcm = $_[0]->first_prop('range_card_max') )
+    {
+        if( $rcm == 1 )
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+#########################################################################
+
+=head2 domain_card_max_1
+
+=cut
+
+sub domain_card_max_1
+{
+    if( my $dcm = $_[0]->first_prop('domain_card_max') )
+    {
+        if( $dcm == 1 )
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+#########################################################################
+
+=head2 range_card_min_1
+
+=cut
+
+sub range_card_min_1
+{
+    if( my $rcm = $_[0]->first_prop('range_card_min') )
+    {
+        if( $rcm == 1 )
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+#########################################################################
+
+=head2 domain_card_min_1
+
+=cut
+
+sub domain_card_min_1
+{
+    if( my $dcm = $_[0]->first_prop('domain_card_min') )
+    {
+        if( $dcm == 1 )
+        {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 #########################################################################

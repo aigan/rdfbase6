@@ -1,0 +1,9 @@
+<html>
+<head>
+[% site.css.header(css) %]
+<style>
+a:link,a:visited { color:blue }
+h1 {font-size:2em}
+</style>
+</head>
+<body style="background:white;margin:1em">

@@ -5,7 +5,10 @@ package Rit::Base::Resource::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -730,6 +733,26 @@ sub wdirc
     my( $args, $arclim ) = parse_propargs($args_in);
     return $node->first_literal($args)->wdirc($subj,$pred,$args);
 }
+
+
+##############################################################################
+
+=head2 loc
+
+  $n->loc( \%args )
+
+Asking to translate this word.  But there is only one value.
+
+Used by L<Rit::Base::List/loc>.
+
+Returns: A plain string
+
+=cut
+
+#sub loc
+#{
+#    return shift->first_literal->plain;
+#}
 
 
 ##############################################################################

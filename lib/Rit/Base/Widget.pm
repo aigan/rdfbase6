@@ -5,7 +5,10 @@ package Rit::Base::Widget;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -20,10 +23,10 @@ use strict;
 use warnings;
 
 use Carp qw( confess cluck carp );
-#use CGI;
+use CGI;
 
 use base qw( Exporter );
-our @EXPORT_OK = qw( wub aloc sloc build_field_key );
+our @EXPORT_OK = qw( wub aloc locn locnl sloc locpp alocpp locppg alocppg build_field_key );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
@@ -34,9 +37,9 @@ filefield input_image label_from_params );
 
 use Rit::Base;
 use Rit::Base::Arc;
-use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais );
+use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use Rit::Base::L10N;
-#use Rit::Base::Constants qw( );
+use Rit::Base::Constants qw( $C_translatable $C_has_translation );
 
 =head1 DESCRIPTION
 
@@ -56,7 +59,7 @@ REPLACED prop_fields.tt
  * prop_tree_wh --------------
 
 
-REPLACED rg_rg_components.tt
+REPLACED rg_components.tt
 
  * aloc         => aloc
 
@@ -84,14 +87,25 @@ sub wub_select_tree
 
     ### Given args MUST have been initialized and localizes!
 
+    debug "wub_select_tree $pred_name";
+
     my $out = "";
     my $R = Rit::Base->Resource;
 
+#    $out .= "in wub_select_tree $pred_name for ".$subj->sysdesig." type ".$type->desig;
+
+    my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
+    my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
     my $rev = $args->{'is_rev'} || '';
-    my $arc_type = $args->{'arc_id'} || '';
-    my $arc_id = $args->{'arc_id'} ||
-      ( $arc_type eq 'singular' ? 'singular' : '' );
+    my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
+    my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
+
+
+    debug "singular ".($singular ? "YES" : "NO");
 
     unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
     {
@@ -106,7 +120,7 @@ sub wub_select_tree
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( $args->{'disabled'} and $args->{'disabled'} eq 'disabled' )
+    if( $disabled and $set_value )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -130,35 +144,41 @@ sub wub_select_tree
     {
 	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
-	my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-	  .'pred_'. $pred_name .'='. $subtype->id;
+        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+          .'pred_'. $pred_name .'='. $subtype->id;
 
-	unless( $subtype->rev_scof )
-	{
-	    $out .= " value=\"$value\"";
-	}
+        unless( $subtype->rev_scof )
+        {
+            $out .= " value=\"$value\"";
+        }
 
-	if( $val_query )
-	{
-	    if( $val_query eq $subtype->id )
-	    {
-		$out .= ' selected="selected"';
-	    }
-	}
-	elsif( $subj->has_value({ $pred_name => $subtype }) or
-	       $subj->has_value({ $pred_name => { scof => $subtype } })
-	     )
-	{
-	    $out .= ' selected="selected"';
-	    $arc = $subj->arc( $pred_name, $subtype );
-	}
+        if( $val_query )
+        {
+            if( $val_query eq $subtype->id )
+            {
+                $out .= ' selected="selected"';
+            }
+        }
+        elsif( $set_value )
+        {
+            if( $subj->has_value({ $pred_name => $subtype }) or
+                $subj->has_value({ $pred_name => { scof => $subtype } })
+              )
+            {
+                $out .= ' selected="selected"';
+                $arc = $subj->arc( $pred_name, $subtype );
+            }
+        }
 
 	$out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
     }
     $out .= '</select>';
 
-    $out .= $arc->edit_link_html
-      if( $arc );
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
+    }
 
     $out .= '<div rel="nop-'. $type->id .'-'. $subj->id .'" style="display: none"></div>'; # usableforms quirk...
 
@@ -196,7 +216,8 @@ sub wub_select
     my $R = Rit::Base->Resource;
     my $req = $Para::Frame::REQ;
 
-    unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
+    unless( UNIVERSAL::isa $type, 'Rit::Base::Object' and
+            $type->size )
     {
 	confess "type missing: ".datadump($type,2);
     }
@@ -206,9 +227,13 @@ sub wub_select
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
       $singular ? 'singular' : '';
+    my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
     my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
     my $extra = '';
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
 
     $extra .= ' class="'. $args->{'class'} .'"'
       if $args->{'class'};
@@ -224,7 +249,7 @@ sub wub_select
 			       label_class => $args->{'label_class'},
 			      });
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if( $disabled )
     {
 	my $arclist = $subj->arc_list($pred_name, undef, $args);
 
@@ -249,9 +274,18 @@ sub wub_select
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if( $header );
 
-    my $is_pred = ( $args->{'range_scof'} ? 'scof' : 'is' );
-    my $items = $type->revlist($is_pred, undef, $args)->
-      sorted(['name_short', 'desig', 'label']);
+    my( $range, $range_pred ) = range_pred($args);
+    $range_pred ||= 'is';
+
+#    debug "TYPE ".$type;
+#    debug "RANGE_PRED ".$range_pred;
+    my $rev_range_pred = 'rev_'.$range_pred;
+    $rev_range_pred =~ s/^rev_rev_//;
+
+    my $items = $type->$rev_range_pred(undef, $args)->sorted->as_listobj;
+#      sorted(['name_short', 'desig', 'label'])->as_listobj;
+
+#    debug "ITEMS ".$items->sysdesig;
 
     $req->may_yield;
     die "cancelled" if $req->cancelled;
@@ -271,90 +305,119 @@ sub wub_select
 
 	$out .= '<option value="'. $item->id .'"';
 
-	$out .= ' selected="selected"'
-	  if( $default_value eq $item->id or
-	      $subj->prop( $pred_name, $item, 'adirect' ) );
+        if( $set_value )
+        {
+            $out .= ' selected="selected"'
+              if( $default_value eq $item->id or
+                  $subj->prop( $pred_name, $item, 'adirect' ) );
+        }
 
-	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
+#	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
+	$out .= '>'.$item->desig.'</option>';
     }
     $out .= '</select>';
-    $out .= $arc->edit_link_html
-      if( $arc );
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
+    }
 
     return $out;
 }
 
 
 ##############################################################################
-#
-#=head2 wub_tree
-#
-#Create a ul of elements that are scof to n
-#
-#Creates a sub-ul for elements with their own scof's
-#
-#=cut
-#
-#sub wub_tree
-#{
-#    my( $pred, $args_in ) = @_;
-#    my( $args ) = parse_propargs($args_in);
-#
-#    my $out = "";
-#    my $R = Rit::Base->Resource;
-#    my $q = $Para::Frame::REQ->q;
-#
-#    my $subj = $args->{'subj'} or confess "subj missing";
-#
-#    return $out;
-#}
-#
-#
-##############################################################################
 
 =head2 aloc
 
 Administrate localization
-
-TODO: Move template to ritbase
 
 =cut
 
 sub aloc
 {
     my $phrase = shift;
-    #my $out = "";
-    #
-    #if( $Para::Frame::REQ->session->admin_mode )
-    #{
-    #    my $home = $Para::Frame::REQ->site->home_url_path;
-    #    $out .=
-    #      (
-    #       jump("Edit", "$home/admin/translation/update.tt",
-    #    	{
-    #    	 run => 'mark',
-    #    	 c => $phrase,
-    #    	 href_image => "$home/pf/images/edit.gif",
-    #    	 href_class => "paraframe_edit_link_overlay",
-    #    	})
-    #      );
-    #}
 
-    if( $Para::Frame::REQ->session->admin_mode ) {
+    if( $Para::Frame::REQ->session->admin_mode )
+    {
         my $id = Rit::Base::L10N::find_translation_node_id($phrase);
 
-        unless( $id ) {
+        unless( $id )
+	{
             my $R = Rit::Base->Resource;
-            my $node = $R->create({ translation_label => $phrase }, { activate_new_arcs => 1 });
-
+            my $node = $R->create({ translation_label => $phrase,
+				    is => $C_translatable,
+				  }, { activate_new_arcs => 1 });
             $id = $node->id;
         }
 
-        return '<span class="translatable" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+        my $out = "";
+
+        $out .= '<span class="translatable" title="'.
+          CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
+            '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+
+        return $out;
     }
-    else {
-        loc($phrase, @_);
+    else
+    {
+        return loc($phrase, @_);
     }
+}
+
+
+##############################################################################
+
+=head2 locn
+
+localization node
+
+=cut
+
+sub locn
+{
+    my $phrase = shift;
+#    debug "locn $phrase";
+    my $node = Rit::Base::L10N::find_translation_node($phrase);
+    unless( $node )
+    {
+#	debug "  creates and returns new translatable node";
+	return Rit::Base::Resource->create({
+					    translation_label => $phrase,
+					    is => $C_translatable,
+					   },
+					   { activate_new_arcs => 1 });
+    }
+
+    return $node;
+}
+
+
+##############################################################################
+
+=head2 locnl
+
+localization node localization text. (Lock'n'Load)
+
+Creates a node if missing and uses it.
+
+=cut
+
+sub locnl
+{
+    my $phrase = shift;
+    my $node = Rit::Base::L10N::find_translation_node($phrase);
+    unless( $node )
+    {
+#	debug "  creates and returns new translatable node";
+	$node = Rit::Base::Resource->create({
+					     translation_label => $phrase,
+					     is => $C_translatable,
+					    },
+					    { activate_new_arcs => 1 });
+    }
+
+    return $node->loc(@_);
 }
 
 
@@ -365,22 +428,190 @@ sub sloc
     my $text = shift;
     my $out = "";
 
-    if( $Para::Frame::REQ->session->admin_mode )
+    my $compiled = ($Para::Frame::REQ->site->is_compiled
+      and not $Para::Frame::File::COMPILING);
+
+    if( $compiled or $Para::Frame::REQ->session->admin_mode )
     {
 	my $home = $Para::Frame::REQ->site->home_url_path;
+        my $id = Rit::Base::L10N::find_translation_node_id( $text );
+
+        $out .= "[% IF admin_mode %]" if $compiled;
 	$out .=
 	  (
-	   jump("Edit", "$home/admin/translation/update.tt",
+	   jump("Edit", "$home/rb/translation/node.tt",
 		{
-		 run => 'mark',
-		 c => $text,
+                 id => $id,
+                 pred => $C_has_translation->id,
 		 tag_attr => {class => "paraframe_edit_link_overlay"},
 		 tag_image => "$home/pf/images/edit.gif",
 		})
 	  );
+
+        $out .= "[% END %]" if $compiled;
     }
 
     return $out;
+}
+
+
+##############################################################################
+
+=head2 locpp
+
+  locpp($name, @args)
+
+Localization for page-part.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database.
+
+=cut
+
+sub locpp
+{
+    my( $name ) = shift;
+
+    my $req = $Para::Frame::REQ;
+
+    my $code = $req->page->base;
+    if( $name )
+    {
+	$code = $code.'#'.$name;
+    }
+
+    return alocpp_raw($code,1,@_);
+}
+
+
+##############################################################################
+
+=head2 alocpp
+
+  alocpp($name, @args)
+
+Administrate localization for page-part.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database. If in admin mode, prepends a text edit link
+
+=cut
+
+sub alocpp
+{
+    my( $name ) = shift;
+
+    my $req = $Para::Frame::REQ;
+
+    my $code = $req->page->base;
+    if( $name )
+    {
+	$code = $code.'#'.$name;
+    }
+
+    return alocpp_raw($code,0,@_);
+}
+
+
+##############################################################################
+
+=head2 locppg
+
+  locpp($name, @args)
+
+Localization for page-part -- global.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database.
+
+=cut
+
+sub locppg
+{
+    return alocpp_raw('#'.shift, 1, @_);
+}
+
+
+##############################################################################
+
+=head2 alocppg
+
+  alocpp($name, @args)
+
+Administrate localization for page-part -- global.
+
+Same as L<Para::Frame::L10N::loc>, but looks up the translation from
+the database. If in admin mode, prepends a text edit link
+
+=cut
+
+sub alocppg
+{
+    return alocpp_raw('#'.shift, 0, @_);
+}
+
+
+##############################################################################
+
+sub alocpp_raw
+{
+    my( $code, $no_admin ) = (shift, shift);
+
+    my $req = $Para::Frame::REQ;
+    my $node = Rit::Base::Resource->find({code=>$code})->get_first_nos;
+    my $site = $req->site;
+    my $home = $site->home_url_path;
+
+    my $out = "";
+
+    if( $site->is_compiled and not $no_admin )
+    {
+        $out .= "[% IF admin_mode %]";
+        if( $node )
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  id => $node->id,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+	else
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  code => $code,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+        $out .= "[% END %]";
+    }
+    elsif( $req->session->{'admin_mode'} and not $no_admin )
+    {
+	if( $node )
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  id => $node->id,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+	else
+	{
+	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+			 {
+			  code => $code,
+			  tag_image => "$home/pf/images/edit.gif",
+			  tag_attr => {class=>"paraframe_edit_link_overlay"},
+			 });
+	}
+    }
+
+    ### TEST: change to list...
+    return $out . $node->first_prop('has_html_content')->loc(@_);
+#    return $out . $req->{'lang'}->maketext($name, @_);
 }
 
 
@@ -483,6 +714,13 @@ sub on_configure
 #     'wub_image'         => \&wub_image,
 
      'aloc'               => \&aloc,
+     'sloc'               => \&sloc,
+     'locn'               => \&locn,
+     'locnl'              => \&locnl,
+     'locpp'              => \&locpp,
+     'locppg'             => \&locppg,
+     'alocpp'             => \&alocpp,
+     'alocppg'            => \&alocppg,
      'reset_wu_row'       => \&reset_wu_row,
      'next_wu_row'        => \&next_wu_row,
      'wu_row'             => \&wu_row,

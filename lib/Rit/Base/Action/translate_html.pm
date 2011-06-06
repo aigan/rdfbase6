@@ -5,7 +5,10 @@ package Rit::Base::Action::translate_html;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 

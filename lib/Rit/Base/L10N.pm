@@ -5,7 +5,10 @@ package Rit::Base::L10N;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -32,39 +35,9 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
 
 use Rit::Base::Constants qw( $C_language );
+use Rit::Base::Utils qw( is_undef );
 
 our %TRANSLATION;
-
-
-##############################################################################
-
-=head2 alocpp
-
-  alocpp($name, @args)
-
-Same as L<Para::Frame::L10N::loc>, but looks up the translation from
-the database. If in admin mode, prepends a text edit link
-
-=cut
-
-sub alocpp
-{
-    my( $name ) = shift;
-
-    my $req = $Para::Frame::REQ;
-
-    my $out = "";
-
-    debug "Checking session admin mode";
-
-    if( $req->session->{'admin_mode'} )
-    {
-	my $home = $req->site->home_url_path;
-	$out .= Para::Frame::Widget->jump("E", "$home/pf/cms/admin_loc.tt");
-    }
-
-    return $out . $req->{'lang'}->maketext($name, @_);
-}
 
 
 ##############################################################################
@@ -90,6 +63,13 @@ sub get_handle
 
 =head2 maketext
 
+  $lh->maketext( $phrase, @args )
+
+Usually called from Para::Frame::L10N::loc( $phrase, @args )
+
+C<$phrase> may be a translatable node
+
+
 =cut
 
 sub maketext
@@ -105,11 +85,14 @@ sub maketext
 #    debug "  >>$phrase ($len2/$len1)";
 #    debug "-------->> Translating $phrase @_";
 
+    my $DEBUG = Para::Frame::Logging->at_level(2);
+
     if( $phrase =~ /Ã/ )
     {
 	confess "Encoded but not marked as encoded ($phrase)";
     }
 
+    my $node;
     if( ref $phrase )
     {
 	if( ref $phrase eq 'Rit::Base::List' )
@@ -120,17 +103,22 @@ sub maketext
 	{
 	    $phrase = $phrase->literal;
 	}
-	elsif( UNIVERSAL::isa $phrase, 'Rit::Base::Node' )
+	elsif( UNIVERSAL::isa $phrase, 'Rit::Base::Object' )
 	{
-	    if( my $val = $phrase->value )
+	    if( $phrase->is_value_node )
 	    {
-		return $val;
+		return $phrase->first_literal;
 	    }
 
-	    my $val = $phrase->id;
-
-	    debug "----------> During maketext: node $val is not a value resource";
-	    return $val;
+	    if( my $label = $phrase->first_prop('translation_label')->plain )
+	    {
+		$node = $phrase;
+		$phrase = $label;
+	    }
+	    else
+	    {
+		confess "Can't translate: ".$phrase->sysdesig;
+	    }
 	}
 	else
 	{
@@ -150,19 +138,26 @@ sub maketext
 
 	unless( exists $TRANSLATION{$phrase}{$langcode} )
 	{
-	    debug "Looking up phrase '$phrase' in DB";
-	    if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos )
+	    debug "Looking up phrase '$phrase' in DB" if $DEBUG;
+	    $node ||= Rit::Base::Resource->
+	      find({ translation_label => $phrase })->get_first_nos;
+	    if( $node )
 	    {
-                debug "Found a node: " . $node->sysdesig;
-		my $lang = Rit::Base::Resource->get({
-						     code => $langcode,
-						     is => $C_language,
-						     });
-                debug "Found a lang: " . $lang->sysdesig;
-		if( my $trans = $node->has_translation({is_of_language=>$lang})->plain )
+                debug "Found a node: " . $node->sysdesig if $DEBUG;
+		my $lang = $C_language->first_revprop('is',{code => $langcode});
+
+#		Rit::Base::Resource->get({
+#						     code => $langcode,
+#						     is => $C_language,
+#						     });
+                debug "Found a lang: " . $lang->sysdesig if $DEBUG;
+		if( my $trans = $node->first_prop('has_translation',
+						  {is_of_language=>$lang}
+						 )->plain )
 		{
-                    debug "Found a trans: $trans";
-		    $value = $TRANSLATION{$phrase}{$langcode} = $lh->_compile($trans);
+                    debug "Found a trans: $trans" if $DEBUG;
+		    $value = $TRANSLATION{$phrase}{$langcode} =
+		      $lh->_compile($trans);
 		    last;
 		}
 	    }
@@ -181,14 +176,46 @@ sub maketext
 sub find_translation_node_id
 {
     my( $phrase ) = @_;
+#    debug "find_translation_node_id $phrase";
 
-    unless( exists $TRANSLATION{$phrase}{'node_id'} ) {
-        if( my $node = Rit::Base::Resource->find({ translation_label => $phrase })->get_first_nos ) {
+    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    {
+#	debug "  looking for translation_label in DB";
+        if( my $node = Rit::Base::Resource->
+	    find({ translation_label => $phrase })->get_first_nos )
+	{
+#	    debug "    found ".$node->sysdesig;
             $TRANSLATION{$phrase}{'node_id'} = $node->id;
         }
+	else
+	{
+#	    debug "    non found";
+	    $TRANSLATION{$phrase}{'node_id'} = 0;
+	}
     }
 
     return $TRANSLATION{$phrase}{'node_id'};
+}
+
+
+##############################################################################
+
+sub find_translation_node
+{
+    my( $phrase ) = @_;
+#    debug "find_translation_node $phrase";
+
+    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    {
+	find_translation_node_id( $phrase );
+    }
+
+    if( my $id = $TRANSLATION{$phrase}{'node_id'} )
+    {
+	return Rit::Base::Resource->get($id);
+    }
+
+    return is_undef;
 }
 
 

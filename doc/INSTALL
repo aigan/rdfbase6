@@ -24,8 +24,7 @@ DATABASE
 These instructions are for a default Debian PostgreSQL installation
 with a Debian default pg_hba.conf
 
-$ su
-# su postgres
+$ sudo su postgres
 $ psql
 # create user "rb";
 # alter user "rb" with password 'YOUR_SECRET_PASSWORD';

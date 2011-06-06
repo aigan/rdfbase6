@@ -5,7 +5,10 @@ package Rit::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -396,6 +399,17 @@ Recognized parts are:
   rev
   prop
   parse
+  remove
+
+remove calls L</broaden>.
+Example:
+  [% FOREACH ckey IN crits.keys %]
+     [% NEXT UNLESS ckey == 'departure' %]
+     [% crit = crits.$ckey %]
+     [% FOREACH foo IN crit.prop %]
+        [% hidden("remove", "prop_${foo.key}") %]
+     [% END %]
+  [% END %]
 
 If parse is set to value, the value are parsed recognizing:
 
@@ -1327,7 +1341,7 @@ sub execute
 	$Para::Frame::REQ->note(loc("Searching")."...");
     }
 
-    if( $min_prio > 2 ) # was 4
+    if( $min_prio > 2 and not $Rit::Base::IN_SETUP_DB  ) # was 4
     {
 #	debug "Search is to heavy! Runs in background";
 #	debug $search->sysdesig;

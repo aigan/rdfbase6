@@ -5,7 +5,10 @@ package Rit::Base::Action::translate_page_part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -33,6 +36,8 @@ sub handler
     my ($req) = @_;
     my( $args, $arclim, $res ) = parse_propargs('auto');
 
+    debug "translate_page_part";
+
     my $q = $req->q;
 
     my $nid = $q->param('id') or die "nid param missing";
@@ -41,7 +46,7 @@ sub handler
 
     my $n = Rit::Base::Resource->get_by_id( $nid );
     my $l = Rit::Base::Resource->find_one({code=>$lc, is=>$C_language}, $args);
-    my $tb = Rit::Base::Resource->find_one({name=>'textbox', scof=>'text'}, $args);
+
     $n->session_history_add('updated');
 
     unless( $n->has_value({is=>$C_website_text}, $args) )
@@ -87,7 +92,7 @@ sub handler
     #
     my @pagen;
 
-    if( $code =~ /^([^\@]+)\@(.*)$/ )
+    if( $code =~ /^(\/[^#]+)#(.*)$/ )
     {
 	my $pagecode = $1;
 	my $partcode = $2;
@@ -127,7 +132,10 @@ sub handler
         foreach my $pn ( @pagen )
         {
 #            debug "  Publishing ".$pn->sysdesig;
-            $pn->publish;
+	    if( $pn->can('publish') )
+	    {
+		$pn->publish;
+	    }
         }
 
 	return loc("Translation changed");

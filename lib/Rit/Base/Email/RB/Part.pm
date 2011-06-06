@@ -5,7 +5,10 @@ package Rit::Base::Email::RB::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -98,6 +101,18 @@ sub generate_name
 sub path
 {
     return 'E';
+}
+
+
+##############################################################################
+
+=head2 top
+
+=cut
+
+sub top
+{
+    return $_[0];
 }
 
 

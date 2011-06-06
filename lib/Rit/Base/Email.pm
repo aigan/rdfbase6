@@ -5,7 +5,10 @@ package Rit::Base::Email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -555,6 +558,36 @@ Return: the string of the body presented as html
 sub body_as_html
 {
     return $_[0]->obj->body_as_html;
+}
+
+
+##############################################################################
+
+=head2 attachments_as_html
+
+  $email->attachments_as_html
+
+=cut
+
+sub attachments_as_html
+{
+    return $_[0]->obj->attachments_as_html;
+}
+
+
+##############################################################################
+
+=head2 body_extract
+
+  $email->body_extract
+
+Return: the string of an extract of the body
+
+=cut
+
+sub body_extract
+{
+    return $_[0]->obj->body_extract;
 }
 
 

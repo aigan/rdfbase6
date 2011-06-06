@@ -5,7 +5,10 @@ package Rit::Base::Constants;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -54,7 +57,7 @@ sub import
     my $callpkg = caller();
     no strict 'refs'; # Symbolic refs
 
-    my $temp = bless{NOT_INITIALIZED=>1};
+#    my $temp = bless{NOT_INITIALIZED=>1};
 
     my $updating_db = 0;
     if( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
@@ -77,6 +80,7 @@ sub import
 	    push @Initlist, ["$callpkg\::C_$1", $1];
 
 	    # Temporary placeholder
+            my $temp = bless{label=>$1,NOT_INITIALIZED=>1};
 	    *{"$callpkg\::C_$1"} = \ $temp;
 	}
     }
@@ -101,7 +105,7 @@ sub on_startup
 	foreach my $export (@Initlist)
 	{
 	    debug 2, " * $export->[1]";
-	    my $obj = $class->get($export->[1]);
+	    my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
 	    *{$export->[0]} = \ $obj;
 	}
     };
@@ -127,6 +131,18 @@ sub new ()
     return bless {};
 }
 
+
+######################################################################
+
+=head2 hurry_init
+
+=cut
+
+sub hurry_init
+{
+    debug "Emergancy instantiation of constant ".$_[0]->{label};
+    return $_[0]->get($_[0]->{label},{nonfatal=>1});
+}
 
 ######################################################################
 
@@ -230,8 +246,8 @@ croaks if constant doesn't exist
 
 sub get
 {
-    my( $this, $label ) = @_;
-    return Rit::Base::Resource->get_by_label( $label );
+    shift;
+    return Rit::Base::Resource->get_by_label( @_ );
 }
 
 

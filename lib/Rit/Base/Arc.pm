@@ -5,7 +5,10 @@ package Rit::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -176,7 +179,8 @@ The props:
             or L<Rit::Base::Pred/valtype>
 
   arc_weight : Defaults to C<undef>
-
+               -1 for placing the arc last, upon activation,
+               changing the other properties as needed
 
 Special args:
 
@@ -303,15 +307,6 @@ sub create
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
-
-
-    ##################### arc_weight
-    if( $props->{'arc_weight'} )
-    {
-	$rec->{'weight'}  = $props->{'arc_weight'};
-    }
-    push @fields, 'weight';
-    push @values, $rec->{'weight'};
 
 
     ##################### read_access
@@ -763,6 +758,13 @@ sub create
 		next unless ($arc->obj_id||0) == $rec->{'obj'};
 	    }
 
+	    # undef weight is not the same as weight 0, but treat them
+	    # as the same in this check
+	    #
+            my $rec_weight = $props->{'arc_weight'}||0;
+            $rec_weight = 0 if $rec_weight == -1;
+	    next if $rec_weight != ($arc->weight||0);
+
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
 
 	    if( $arc->active )
@@ -831,6 +833,11 @@ sub create
 		    $arc->mark_updated;
 		}
 
+                if( ($props->{'arc_weight'}||0) == -1 )
+                {
+                    $arc->set_weight(-1, $args);
+                }
+
 		return $arc;
 	    }
 	}
@@ -862,6 +869,20 @@ sub create
     push @values, $rec->{'valtype'};
 
 
+    ##################### arc_weight
+    if( $props->{'arc_weight'} )
+    {
+	$rec->{'weight'}  = $props->{'arc_weight'};
+
+        # Use -1 to place arc last
+        if( $rec->{'active'} and $props->{'arc_weight'} == -1 )
+        {
+            $rec->{'weight'} = 0; # Resort other arcs after creation
+        }
+    }
+    push @fields, 'weight';
+    push @values, $rec->{'weight'};
+
 
     #####################
 
@@ -871,7 +892,7 @@ sub create
     my $values_part = join ",", map "?", @fields;
     my $st = "insert into arc($fields_part) values ($values_part)";
     my $sth = $dbix->dbh->prepare($st);
-    debug "SQL $st (@values)" if $DEBUG;
+    debug sprintf "SQL %s (%s)", $st, join ',', map {defined($_)? $_ : 'null'} @values if $DEBUG;
 
     ### Binding SQL datatypes to values
     for(my$i=0;$i<=$#bindtype;$i++)
@@ -889,13 +910,20 @@ sub create
 				 value => $value_obj,
 				});
 
+    if( $arc->active and ($props->{'arc_weight'}||0) == -1 )
+    {
+        $arc->set_weight(-1, $args); # Trigger resort
+    }
+
     # If the arc was requested to be cerated active, but wasn't
     # becasue it was replacing another arc, we will activate it now
 
     if( $props->{'active'} and not $arc->active )
     {
-	# Arc should have been submitted instead.
-	$arc->activate( $args );
+	# Arc should have been submitted instead. But it might have
+	# been deactivated during a resort or other operation.
+        #
+	$arc->activate( $args ) if $arc->submitted;
     }
 
 
@@ -3364,7 +3392,7 @@ sub value_equals
 	if( $DEBUG )
 	{
 	    debug "Comparing values:";
-	    debug "1. ".$arc->obj->sysdesig;
+	    debug "1. ".$arc->obj->safedesig;
 	    debug "2. ".query_desig($val2);
 	}
 
@@ -4589,6 +4617,7 @@ sub activate
 
 	unless( $arc->submitted )
 	{
+            cluck "Missed to validate arc";
 	    throw('validation', "Arc $aid is not yet submitted");
 	}
     }
@@ -4603,15 +4632,22 @@ sub activate
     my $dbix = $Rit::dbix;
     my $date_db = $dbix->format_datetime($updated);
 
+    my $weight = $arc->weight;
+    my $weight_last = 0;
+    if( ($weight||0) == -1 )
+    {
+        $weight = 0;
+        $weight_last = 1;
+    }
 
     if( $arc->{'valtype'} ) # Not a REMOVAL arc
     {
 	# Replaces is already set if this version is based on another
 	# It may be another version than the currently active one
 
-	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', submitted='false' where ver=?";
+	my $st = "update arc set updated=?, activated=?, activated_by=?, weight=?, active='true', submitted='false' where ver=?";
 	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $aid );
+	$sth->execute( $date_db, $date_db, $activated_by_id, $weight, $aid );
 	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
 	$arc->{'arc_updated_obj'} = $updated;
@@ -4697,8 +4733,71 @@ sub activate
 	}
     }
 
+    if( $weight_last )
+    {
+        $arc->set_weight(-1, $args); # Trigger a resort
+    }
+
     return 1;
 }
+
+
+##############################################################################
+
+=head2 reactivate
+
+  $a->reactivate( \%args )
+
+Tries to undo changes to the arc.
+
+=cut
+
+sub reactivate
+{
+    my( $arc, $args ) = @_;
+
+    confess "args missing" unless $args;
+    my $rargs = {%$args, force=>1};
+    my $larcs = $arc->replaced_by->sorted( 'id', 'desc' );
+    foreach my $larc ( $larcs->nodes )
+    {
+	$larc->remove($rargs);
+    }
+
+    if( $arc->old )
+    {
+	my $dbix = $Rit::dbix;
+	my $updated = $args->{'updated'} || now();
+	my $updated_db = $dbix->format_datetime($updated);
+	my $aid = $arc->id;
+
+	my $st = "update arc set updated=?, active='true', deactivated=null where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $updated_db, $aid );
+	$Rit::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+
+	$arc->{'arc_updated_obj'} = $updated_db;
+	delete $arc->{'arc_deactivated_obj'};
+	delete $arc->{'arc_deactivated'};
+	$arc->{'active'} = 1;
+
+	# Reset caches
+	#
+	$arc->obj->reset_cache if $arc->obj;
+	$arc->subj->reset_cache;
+
+	# Runs create_check AFTER deactivation of other arc version, since
+	# the new arc version may INFERE the old arc
+	#
+	$arc->schedule_check_create( $args );
+	$arc->notify_change( $args );
+
+	debug "Reactivated ".$arc->sysdesig;
+    }
+
+    return $arc;
+}
+
 
 
 ##############################################################################
@@ -4927,6 +5026,11 @@ It may be set to C<undef> to unset any previous value
 
 Setting a new weight will create a new version if the arc is active.
 
+Setting the weight to -1 will give it a weight of 0 and resort other
+arcs of the subject with the same predicate, to put this arc
+last. This will only be done for active arcs. Non-active arcs will
+have a weight of -1 until they are activated.
+
 Supported args are:
 
   force_same_version
@@ -4952,6 +5056,12 @@ sub set_weight
 
     if( defined $val )
     {
+        if( $val == -1 and $arc->active )
+        {
+            $val = 0;
+            $arc->weight_last( $args );
+        }
+
 	# Return if no change
 	return $arc if $weight_old and ($val == $weight_old);
 
@@ -5016,6 +5126,38 @@ sub set_weight
     return $arc;
 }
 
+
+##############################################################################
+
+=head2 weight_last
+
+  $arc->weight_last( \%args )
+
+Increases the weight of all other arcs from the same subject with the
+same predicate, by 1.
+
+Use $arc->set_weight(-1) to trigger this resort, since this method
+does not touch this arc.
+
+The method only works on active arcs.
+
+=cut
+
+sub weight_last
+{
+    my( $arc, $args ) = @_;
+
+    debug "Resorting, ending with ".$arc->sysdesig;
+
+    foreach my $oa ( $arc->subj->arc_list($arc->pred,undef,'active')->nodes )
+    {
+        next if $oa->equals($arc);
+        my $weight = $oa->weight||0;
+        $oa->set_weight($weight+1, $args);
+    }
+
+    return $arc;
+}
 
 ##############################################################################
 
@@ -5839,36 +5981,44 @@ sub unlock
 	warn "  Arc lock on level $cnt, called from $package, line $line\n";
     }
 
+    return if $Rit::Base::Arc::lock_check_active; # Avoid recursion
+
     if( $cnt == 0 )
     {
-	while( my $params = shift @Rit::Base::Arc::queue_check_remove )
-	{
-	    my( $arc, $args ) = @$params;
-	    $arc->remove_check( $args );
-	}
+        $Rit::Base::Arc::lock_check_active = 1;
+        eval
+        {
+            while( my $params = shift @Rit::Base::Arc::queue_check_remove )
+            {
+                my( $arc, $args ) = @$params;
+                $arc->remove_check( $args );
+            }
 
 
-	# Prioritize is-relations, since they will bee needed in other
-	# arcs validation
-	@Rit::Base::Arc::queue_check_add = sort
-	{
-	    ($b->[0]->pred->plain eq 'is')
-	      <=>
-	    ($a->[0]->pred->plain eq 'is')
-	} @Rit::Base::Arc::queue_check_add;
+            # Prioritize is-relations, since they will bee needed in other
+            # arcs validation
+            @Rit::Base::Arc::queue_check_add = sort
+            {
+                ($b->[0]->pred->plain eq 'is')
+                  <=>
+                    ($a->[0]->pred->plain eq 'is')
+                } @Rit::Base::Arc::queue_check_add;
 
-#	debug join " + ", map{ $_->[0]->pred->plain } @Rit::Base::Arc::queue_check_add;
+            #debug join " + ", map{ $_->[0]->pred->plain } @Rit::Base::Arc::queue_check_add;
 
-	while( my $params = shift @Rit::Base::Arc::queue_check_add )
-	{
-	    my( $arc, $args ) = @$params;
-	    $arc->create_check( $args );
-	}
+            while( my $params = shift @Rit::Base::Arc::queue_check_add )
+            {
+                my( $arc, $args ) = @$params;
+                $arc->create_check( $args );
+            }
 
-	# TODO: Do all the validations AFTER the create_check, since
-	# the validation may need infered relations. Ie; move
-	# validate_valtype from create_check to here and to the
-	# corresponding place for then arc_lock isn not active.
+            # TODO: Do all the validations AFTER the create_check, since
+            # the validation may need infered relations. Ie; move
+            # validate_valtype from create_check to here and to the
+            # corresponding place for then arc_lock isn not active.
+        };
+        $Rit::Base::Arc::lock_check_active = 0;
+        die $@ if $@;
     }
 }
 

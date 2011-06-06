@@ -5,7 +5,10 @@ package Rit::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -31,10 +34,10 @@ our @EXPORT_OK
 	parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
 	send_cache_update parse_propargs aais alphanum_to_id
-	proplim_to_arclim );
+	proplim_to_arclim range_pred );
 
 
-use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode );
+use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode validate_utf8 );
 use Para::Frame::Reload;
 
 ### Those modules loaded by Rit::Base later...
@@ -179,6 +182,7 @@ Converts a name to a reasonable string to use in an url
 sub name2url
 {
     my( $name ) = deunicode( @_ );
+    utf8::upgrade($name); # As utf8 but only with Latin1 chars
 
     use locale;
     use POSIX qw(locale_h);
@@ -1109,6 +1113,8 @@ special to 'relative'.
 relative: Sets arclim to ['active', ['not_old', 'created_by_me']] and
 unique_arcs_prio to ['new', 'submitted', 'active'].
 
+solid: Sets arclim to ['active] and unique_arcs_prio to ['active'].
+
 all: Sets arclim to [['active'], ['inactive']] and
 unique_arcs_prio to ['active'].
 
@@ -1181,6 +1187,11 @@ sub parse_propargs
 	    # active or (not_old and created_by_me)
 	    $arclim = [1, 8192+16384];
 	    $unique = [1024, 256, 1]; # new, submitted, active
+	}
+	elsif( $arg eq 'solid' )
+	{
+	    $arclim = [1]; # active
+	    $unique = [1]; # active
 	}
 	elsif( $arg eq 'all' )
 	{
@@ -1352,6 +1363,34 @@ sub alphanum_to_id
 
 	return undef;
     }
+}
+
+##############################################################################
+
+=head2 range_pred
+
+  my( $range, $range_pred ) = range_pred(\%args)
+
+=cut
+
+sub range_pred
+{
+    if( my $range = $_[0]->{'range'} )
+    {
+        return( $range, 'is' );
+    }
+
+    while( my($key,$val) = each %{$_[0]} )
+    {
+#        debug "Looking for range in $key -> $val";
+        if( $key =~ /^range_(.*)/ )
+        {
+            keys %{$_[0]}; # reset 'each' iterator
+            return( $val, $1 );
+        }
+    }
+
+    return;
 }
 
 ##############################################################################

@@ -5,7 +5,10 @@ package Rit::Base::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -227,7 +230,7 @@ The actual comparsion for the C<eq> and C<ne> matchtypes are done by
 the L<Rit::Base::Resource/has_value> method.
 
 If an element in the list is a L<Rit::Base::List>, it will be searchd
-in teh same way.
+in the same way.
 
 The supported args are:
 
@@ -587,7 +590,7 @@ sub sorted
     foreach my $item ( $list->as_array )
     {
 	$item->{'sort_arg'} = [];
-	debug sprintf("  add item %s", $item->sysdesig) if $DEBUG;
+	debug sprintf("  add item %s", $item->safedesig) if $DEBUG;
 	for( my $i=0; $i<@$sortargs; $i++ )
 	{
 	    my $method = $sortargs->[$i]{'on'};
@@ -639,7 +642,7 @@ sub sorted
 	    debug sprintf("      => %s", $val) if $DEBUG;
 
 	    CORE::push @{$props[$i]}, $val;
-#	    debug $item->sysdesig .' : '.$val;
+#	    debug $item->safedesig .' : '.$val;
 	    CORE::push @{$item->{'sort_arg'}}, $val;
 #	    CORE::push @{$props[$i]}, $item->$method;
 	}
@@ -650,12 +653,12 @@ sub sorted
 	debug "And the props is: \n";
 	for( my $i=0; $i<=$#$list; $i++ )
 	{
-	    my $out = "  ".$list->[$i]->desig.": ";
+	    my $out = "  ".$list->[$i]->safedesig.": ";
 	    for( my $x=0; $x<=$#props; $x++ )
 	    {
 		if( ref $props[$x][$i] )
 		{
-		    $out .= $props[$x][$i]->desig .' - ';
+		    $out .= $props[$x][$i]->safedesig .' - ';
 		}
 		else
 		{
@@ -780,7 +783,9 @@ sub parse_sortargs
 	    };
 	    if( $@ )  # Just dump any errors to log...
 	    {
+		undef $@;
 		debug "Sortarg $pred_str not a predicate";
+		debug "Specify cmp argument for optimization";
 	    }
 
 	    $sortargs->[$i]->{'cmp'} = $cmp;
@@ -877,7 +882,7 @@ sub unique_arcs_prio
     {
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
-#	debug "Sort $sor: ".$arc->sysdesig;
+#	debug "Sort $sor: ".$arc->safedesig;
 #	$points{ $cid }[ $sor ] = $arc;
 	$points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
     }
@@ -1798,8 +1803,11 @@ sub materialize
 	# Handle long lists
 	unless( $i % 25 )
 	{
-	    $Para::Frame::REQ->may_yield;
-	    die "cancelled" if $Para::Frame::REQ->cancelled;
+	    if( $Para::Frame::REQ )
+	    {
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
 	}
 
 	# TODO: Maby not call initiate_rel for arcs

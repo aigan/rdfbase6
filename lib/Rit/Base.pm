@@ -5,7 +5,10 @@ package Rit::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -15,7 +18,7 @@ use warnings;
 
 use JSON;
 
-use Para::Frame;
+use Para::Frame 1.17;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
@@ -37,7 +40,7 @@ use Rit::Base::Setup;
 use Rit::Base::Plugins;
 
 
-our $VERSION = "6.57";
+our $VERSION = "6.63";
 
 
 =head1 NAME
@@ -126,6 +129,8 @@ sub init
       'Rit::Base::Literal::Email::Subject';
     $Para::Frame::CFG->{'email_class'} ||=
       'Rit::Base::Email';
+    $Para::Frame::CFG->{'daemons'} ||= [];
+
 
 
     my $global_params =
@@ -180,7 +185,6 @@ sub init_on_startup
 	Rit::Base::Setup->setup_db();
     }
 
-
     Rit::Base::Resource->on_startup();
 #    warn "init_on_startup 2\n";
     Rit::Base::Literal::Class->on_startup();
@@ -203,24 +207,15 @@ sub init_on_startup
 	    $cfg->{$key} = Rit::Base::Resource->get_by_label($val);
 	}
     }
+
+
+    Rit::Base::Setup->upgrade_db();
+
 #    warn "init_on_startup 5\n";
 
     $Rit::Base::IN_STARTUP = 0;
     $Rit::Base::IN_SETUP_DB = 0;
 
-    ###################################### Make upgrade handling
-    {
-        my $req = Para::Frame::Request->new_bgrequest();
-        my( $args, $arclim, $res ) = Rit::Base::Utils::parse_propargs('auto');
-        my $R = Rit::Base->Resource;
-        $R->find_set({
-                      label => 'translation_label',
-                      is => 'predicate',
-                      range => 'text',
-                     }, $args);
-        $res->autocommit({ activate => 1 });
-        $req->done;
-    }
     ########################################
 
 #    warn "calling on_ritbase_ready\n";

@@ -5,7 +5,10 @@ package Rit::Base::Renderer::GraphViz;
 #   Fredrik Liljegren   <fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 

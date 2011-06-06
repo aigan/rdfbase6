@@ -1,4 +1,4 @@
-﻿[% META title="Add page"
+[% META title="Add page"
    next_action = 'node_update'
    focus = 'query_row'
    level=20
@@ -22,7 +22,7 @@
 
 <table>
 <tr><td>Title</td><td>[% node.wu('name') %]</td></tr>
-<tr><td>Code</td><td>[% node.wu('code') %]</td><td>Example: <code>/dir/file@partname</code></td></tr>
+<tr><td>Code</td><td>[% node.wu('code') %]</td><td>Example: <code>/dir/file#partname</code></td></tr>
 </table>
 
 <p>[% step('Create') %]</p>

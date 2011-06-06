@@ -1,4 +1,4 @@
-﻿[% META title="Radera nod"
+[% META title="Radera nod"
    next_template = 'update.tt'
    next_action = 'arc_delete'
    level = 20

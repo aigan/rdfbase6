@@ -12,6 +12,8 @@ use FindBin;
 
 ##########
 
+umask 07; # Secret files
+
 my $pf;
 if( open PF_LOC, "<$FindBin::Bin/.paraframe_location" )
 {
@@ -93,11 +95,12 @@ $db_user_in =~ s/^\s+//;
 $db_user_in ||= $db_user;
 
 $db_pass ||= '';
-print "DB password for user $db_user_in?\n";
+print "DB password for user $db_user_in? (user - for no password)\n";
 my $db_pass_in = '';
 while(not $db_pass_in )
 {
-    print "[$db_pass] ";
+    my $db_pass_show = '*'x length($db_pass);
+    print "[$db_pass_show] ";
     $db_pass_in = <STDIN>;
     $db_pass_in =~ s/\/?\s*\n*$//;
     $db_pass_in =~ s/^\s+//;
@@ -128,7 +131,7 @@ WriteMakefile(
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {
-		  'Para::Frame'                => 1.08,
+		  'Para::Frame'                => 1.17,
 	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
@@ -140,6 +143,10 @@ WriteMakefile(
 		  'Text::WordDiff'             => 0.04,
 		  'File::MMagic::XS'           => 0.09,
 	          'Email::MIME'                => 1.902,
+                  'HTML::FormatText'           => 2.04,
+	          'IMAP::BodyStructure'        => 1.01,
+	          'Mail::IMAPClient'           => 3.25,
+	          'URI::imap'                  => 1.01,
 	      },
 	      'dist'          =>
 	      {

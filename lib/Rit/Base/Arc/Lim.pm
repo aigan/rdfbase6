@@ -5,7 +5,10 @@ package Rit::Base::Arc::Lim;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2010 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -358,7 +361,7 @@ sub sql
 	    $extralim++;
 	}
 
-	if(  $_ & $LIM{'created_by_me'} )
+	if(  $_ & $LIM{'created_by_me'} and $Para::Frame::REQ )
 	{
 	    my $uid = $Para::Frame::REQ->user->id;
 	    push @crit, "${pf}created_by=$uid";

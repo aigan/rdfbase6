@@ -1,4 +1,4 @@
-﻿[% META title="List preds"
+[% META title="List preds"
 	menu="/admin/create.tt"
         level = 20
 %]

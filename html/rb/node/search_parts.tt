@@ -1,4 +1,4 @@
-﻿[% META title="Sök nod"
+[% META title="Sök nod"
    next_template = 'list.tt'
    next_action = 'search_modify'
    level = 20

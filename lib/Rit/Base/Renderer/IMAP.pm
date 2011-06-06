@@ -5,7 +5,10 @@ package Rit::Base::Renderer::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2009 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -216,7 +219,7 @@ sub render_output
     }
     else
     {
-#	debug "Getting bodypart $uid $imap_path";
+#	debug "Getting bodypart ".$top->uid." $imap_path";
 	$data = $part->body;
 #	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
 	#    debug "bodypart_string: ".validate_utf8( \$data );
