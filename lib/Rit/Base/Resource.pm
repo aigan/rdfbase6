@@ -4123,6 +4123,10 @@ sub add
     {
 	$extra{ arc_weight } = int( $args->{'arc_weight'} );
     }
+#    if( $args->{'replaces'} ) # Not good. Must be one for each
+#    {
+#	$extra{ replaces } = $args->{'replaces'}->id;
+#    }
 
     foreach my $pred_name ( keys %$props )
     {
@@ -4534,7 +4538,7 @@ Supported args are:
   arclim
 
 If C<$move_literals> is true, all properties are copied.  If false or
-missing, only ovject properties are copied.
+missing, only object properties are copied.
 
 This will destroy any properties of the copied arcs, beyond the basic
 properties C<{subj, pred, value}>.
@@ -4576,7 +4580,19 @@ sub merge_node
 	if( my $obj = $arc->obj )
 	{
 	    debug sprintf "  Moving %s", $arc->sysdesig;
-	    $node2->add({ $pred_name => $obj }, $args );
+
+            Rit::Base::Arc->create({
+                                    subj => $node2,
+                                    pred => $pred_name,
+                                    value => $obj,
+                                    replaces => $arc->version_id,
+                                   }, $args);
+
+#	    $node2->add({ $pred_name => $obj }, {%$args, replaces => } );
+#            if( $obj->is_value_node )
+#            {
+#                die "THIS IS A VALUE NODE: ".$obj->sysdesig;
+#            }
 	}
 	elsif( $move_literals )
 	{
