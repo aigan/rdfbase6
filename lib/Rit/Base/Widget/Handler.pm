@@ -501,7 +501,7 @@ sub handle_query_arc_value
 {
     my( $class, $param, $value, $args, $key ) = @_;
 
-    Para::Frame::Logging->this_level(4);
+#    Para::Frame::Logging->this_level(4);
 
     die "missing value" unless defined $value;
 
