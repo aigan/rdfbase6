@@ -52,8 +52,12 @@ sub clear_out
     $::OUT = "";
     open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
-
 capture_out();
+
+###########################
+open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
+
+
 
 my $troot = '/tmp/rbtest';
 my $cfg_in =
@@ -68,62 +72,28 @@ my $cfg_in =
  'user_class'      => 'Rit::Base::User::Meta',
 };
 
-warnings_like {Para::Frame->configure($cfg_in)}
-[ qr/^Timezone set to /,
-  qr/^Stringify now set$/,
-  qr/^Registring ext tt to burner html$/,
-  qr/^Registring ext html_tt to burner html$/,
-  qr/^Registring ext xtt to burner html$/,
-  qr/^Registring ext css_tt to burner plain$/,
-  qr/^Registring ext js_tt to burner plain$/,
-  qr/^Registring ext css_dtt to burner plain$/,
-  qr/^Registring ext js_dtt to burner plain$/,
-  ],
-    "Configuring";
-
-warning_like {
-    Para::Frame::Site->add({
-			    'code'       => 'rbtest',
-			    'name'       => 'RB Test',
-			   })
-  } qr/^Registring site /, "Adding site";
-
+Para::Frame->configure($cfg_in);
+Para::Frame::Site->add({
+                        'code'       => 'rbtest',
+                        'name'       => 'RB Test',
+                       });
 
 my $cfg = $Para::Frame::CFG;
 
 my $dbconnect = Rit::Base::Setup->dbconnect;
 
-warnings_like
-{
-    $Rit::dbix = Para::Frame::DBIx ->
-      new({
-	   connect => $dbconnect,
-	   import_tt_params => 0,
-	  });
-}[
-  qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
-  qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
- ], "DBIx config";
-
+$Rit::dbix = Para::Frame::DBIx ->
+  new({
+       connect => $dbconnect,
+       import_tt_params => 0,
+      });
 
 Para::Frame->add_hook('on_startup', sub
 		      {
 			  $Rit::dbix->connect;
 		      });
 
-warnings_like
-{
-    Rit::Base->init();
-}[
-  qr/^Adding hooks for Rit::Base$/,
-  qr/^Registring ext js to burner plain$/,
-  qr/^Done adding hooks for Rit::Base$/,
- ], "RB Init";
-
-
-open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
-
-
+Rit::Base->init();
 Para::Frame->startup;
 ok( $::OUT =~ /STARTED/, "startup output" );
 clear_out();
@@ -131,19 +101,11 @@ clear_out();
 ###########
 
 
-
 # [% propositions = find({ is => C.proposition }).sorted('has_predicted_resolution_date') %]
 
 my $req = Para::Frame::Request->new_bgrequest();
 
 my( $args, $arclim, $res ) = parse_propargs('auto');
-$req->user->set_default_propargs({
-				  %$args,
-				  activate_new_arcs => 1,
-				 });
-
-
-
 
 my $R = Rit::Base->Resource;
 my $L = Rit::Base->Literal;
@@ -153,47 +115,45 @@ my $Class = $C->get('class');
 my $Pred = $C->get('predicate');
 my $Date = $C->get('date');
 
-my $d1 = Rit::Base::Literal::Time->parse('2010-03-01');
-my $d2 = Rit::Base::Literal::Time->parse('2010-02-01');
 
-my $MyThing =
-  $R->find_set({
-		label => 'MyThing',
-		is => $Class,
-	       });
+###### $R->get()
+#
+#
+my $a1 = $Pred->first_arc('is',undef,'adirect');
+my $a1ioid = $a1->{ioid};
+is( $R->get($a1)->{ioid}, $a1->{ioid}, "get by resource" );
 
-$R->find_set({
-	      label => 'has_some_date',
-	      is => $Pred,
-	      domain => $MyThing,
-	      range => $Date,
-	     });
+## get by new
+#
+my $Email = $C->get('email');
+my $n1 = $R->get('new');
+$n1->add({ is => $Email }, $args);
+my $a2 = $n1->first_arc('is',undef,$args); #auto includes new
+ok( $a2->inactive, "Arc is new" );
+is( ref($n1), 'Rit::Base::Resource', "New node just Resource" );
 
-my $a =
-  $R->find_set({
-		has_some_date => $d1,
-		is => $MyThing,
-		name => 'rbt-1a',
-	       });
+$res->autocommit();
+ok( $a2->active, "Arc is active" );
+is( ref($n1), 'Rit::Base::Metaclass::Rit::Base::Email', "New node now an Email" );
 
-my $b =
-  $R->find_set({
-		is => $MyThing,
-		name => 'rbt-1b',
-	       });
 
-my $c =
-  $R->find_set({
-		has_some_date => $d2,
-		is => $MyThing,
-		name => 'rbt-1c',
-	       });
+## get by new with class
+#
 
-my $l1 = $R->find({ is => $MyThing })->sorted('has_some_date');
 
-ok( "$l1" eq 'rbt-1c / rbt-1a / rbt-1b', "sort result" );
+
+
+
+
+#diag(datadump($n1,2));
+
+#diag( $R->get($a1)->{ioid} );
+
+#diag($a1->sysdesig);
+
+#diag(datadump($a1,1));
 
 $req->done;
 
-open STDERR, ">&", SAVEERR;
+open STDERR, ">&", SAVEERR      or die "Can't restore STDERR: $!";
 1;
