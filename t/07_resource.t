@@ -6,8 +6,9 @@ use strict;
 use warnings;
 use Cwd qw( abs_path );
 
-our $CFG;
 $|=1;
+our $CFG;
+our @got_warning;
 
 use Test::Warn;
 use Test::More tests => 27;
@@ -15,6 +16,8 @@ use Test::More tests => 27;
 
 BEGIN
 {
+    $SIG{__WARN__} = sub{ push @got_warning, shift() };
+
     open(SAVEOUT, ">&STDOUT");
 #    open(SAVEERR, ">&STDERR");
 
@@ -55,10 +58,6 @@ sub clear_out
 capture_out();
 
 ###########################
-#open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
-
-our @got_warning;
-local $SIG{__WARN__} = sub{ push @got_warning, shift() };
 
 
 my $troot = '/tmp/rbtest';

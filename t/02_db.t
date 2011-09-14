@@ -12,9 +12,12 @@ $|=1;
 use Test::Warn;
 use Test::More tests => 9;
 
+our @got_warning;
 
 BEGIN
 {
+    $SIG{__WARN__} = sub{ push @got_warning, shift() };
+
     open(SAVEOUT, ">&STDOUT");
 #    open(SAVEERR, ">&STDERR");
 
@@ -106,6 +109,7 @@ warnings_like
 	  });
 }[
   qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
+  qr/^REGISTER MODULE Para::Frame::DBIx::Pg$/,
   qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
  ], "DBIx config";
 

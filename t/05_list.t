@@ -8,13 +8,17 @@ use Cwd qw( abs_path );
 
 our $CFG;
 $|=1;
+our @got_warning;
+
 
 use Test::Warn;
-use Test::More tests => 11;
+use Test::More tests => 10;
 
 
 BEGIN
 {
+    $SIG{__WARN__} = sub{ push @got_warning, shift() };
+
     open(SAVEOUT, ">&STDOUT");
     open(SAVEERR, ">&STDERR");
 
@@ -93,18 +97,11 @@ my $cfg = $Para::Frame::CFG;
 
 my $dbconnect = Rit::Base::Setup->dbconnect;
 
-warnings_like
-{
-    $Rit::dbix = Para::Frame::DBIx ->
-      new({
-	   connect => $dbconnect,
-	   import_tt_params => 0,
-	  });
-}[
-  qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
-  qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
- ], "DBIx config";
-
+$Rit::dbix = Para::Frame::DBIx ->
+  new({
+       connect => $dbconnect,
+       import_tt_params => 0,
+      });
 
 Para::Frame->add_hook('on_startup', sub
 		      {
