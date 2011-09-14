@@ -27,7 +27,7 @@ use overload
   fallback => 1,
   ;
 
-use Carp qw( cluck confess carp shortmess longmess );
+use Carp qw( cluck confess carp croak shortmess longmess );
 use Scalar::Util qw( refaddr blessed );
 
 use Para::Frame::Reload;
@@ -1652,7 +1652,7 @@ sub sysdesig  # The designation of obj, including node id
 
 sub default_valtype
 {
-    die "No valtype given";
+    croak "No valtype given";
 #    return Rit::Base::Literal::Class->get_by_label('valtext');
 }
 
