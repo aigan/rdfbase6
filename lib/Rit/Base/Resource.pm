@@ -745,6 +745,7 @@ sub get_id
 	return $const->id;
     }
 
+    # TODO: Should return undef rather than is_undf
     my $node = $class->get_by_anything( $label, $args ) or return is_undef;
     return $node->id;
 }
@@ -759,8 +760,6 @@ sub get_id
   $node->find( $query )
 
   $list->find( $query )
-
-  $node->find( $pred => $value )
 
   $node->find( $name )
 
@@ -908,6 +907,8 @@ none
 
 sub find_simple
 {
+    die "deprecated";
+
     my( $this, $pred_in, $value_in ) = @_;
 
     # Only handles pred nodes
