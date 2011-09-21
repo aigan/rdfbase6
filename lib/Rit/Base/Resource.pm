@@ -6750,7 +6750,7 @@ sub get_by_label
 		debug "!!!! Constant $label doesn't exist";
 		return undef;
 	    }
-
+            cluck "Constant not found";
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 
