@@ -43,19 +43,9 @@ sub handler
     my $args = {};
     if( my $arclim_in = delete $props->{'arclim'} )
     {
-	unless( $arclim_in =~ /^[\[\'\]\_a-z,]+$/ )
-	{
-	    throw('validation', "arclim format invalid");
-	}
-
-	$args->{'arclim'} = eval $arclim_in;
+        $args->{'arclim'} = $arclim_in;
     }
 
-# Faster to not order result
-#    unless( $props->{'order_by'} )
-#    {
-#	$props->{'order_by'} = 'desig';
-#    }
 
 
     my $search = Rit::Base::Search->new($args);
