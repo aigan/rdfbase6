@@ -4255,6 +4255,10 @@ sub set_value
 
 		$arc->{'clean'} = $clean;
 	    }
+	    elsif( $coltype_new eq 'valbin' )
+	    {
+		$value_db = $value_new;
+	    }
 	    else
 	    {
 		debug 3, "We do not specificaly handle coltype $coltype_new\n";

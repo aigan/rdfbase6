@@ -410,7 +410,8 @@ sub syskey
 	if( utf8::is_utf8( $_[0]->{'value'} ) )
 	{
 	    my $encoded = $_[0]->{'value'};
-	    utf8::encode( $encoded );
+            # Make a real comparison... Not encode or decode
+#	    utf8::encode( $encoded );
 	    return sprintf("lit:%s", md5_base64($encoded));
 	}
 	return sprintf("lit:%s", md5_base64(shift->{'value'}));
