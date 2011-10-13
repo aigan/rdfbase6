@@ -190,7 +190,7 @@ sub get_by_arc_rec
 {
     my( $this, $rec, $valtype ) = @_;
     my $coltype = $valtype->coltype;
-    return $this->new_from_db($rec->{$coltype}, $valtype);
+    return $this->new_from_db($rec->{$coltype}, $valtype, $rec->{'ver'});
 }
 
 

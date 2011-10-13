@@ -187,21 +187,19 @@ sub new_from_db
     {
 	if( $val =~ /Ã./ )
 	{
-	    debug "UNDECODED UTF8 in DB: $val)";
-	    unless( utf8::decode( $val ) )
-	    {
-		debug 0, "Failed to convert to UTF8!";
-		my $res;
-		while( length $val )
-		{
-		    $res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
-		    $res .= substr($val, 0, 1, "") if length $val;
-		}
-		$val = $res;
-		debug "Conversion result: $val";
-
-#		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
-	    }
+	    cluck "UNDECODED UTF8 in DB: $val)";
+#	    unless( utf8::decode( $val ) )
+#	    {
+#		debug 0, "Failed to convert to UTF8!";
+#		my $res;
+#		while( length $val )
+#		{
+#		    $res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
+#		    $res .= substr($val, 0, 1, "") if length $val;
+#		}
+#		$val = $res;
+#		debug "Conversion result: $val";
+#	    }
 	}
 	else
 	{
@@ -412,8 +410,14 @@ sub syskey
 	    my $encoded = $_[0]->{'value'};
             # Convert to bytes
 	    utf8::encode( $encoded );
+#            my $val = sprintf("lit:utf8:%s", md5_base64($encoded));
+#            debug "syskey $val";
+#            return $val;
 	    return sprintf("lit:utf8:%s", md5_base64($encoded));
 	}
+#        my $val = sprintf("lit:%s", md5_base64($_[0]->{'value'}));
+#        debug "syskey $val";
+#        return $val;
 	return sprintf("lit:%s", md5_base64(shift->{'value'}));
     }
     else

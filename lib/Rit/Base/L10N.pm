@@ -89,7 +89,8 @@ sub maketext
 
     if( $phrase =~ /Ã/ )
     {
-	confess "Encoded but not marked as encoded ($phrase)";
+	#cluck "Encoded but not marked as encoded ($phrase)";
+	debug "Encoded but not marked as encoded ($phrase)";
     }
 
     my $node;
