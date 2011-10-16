@@ -813,7 +813,7 @@ sub create
 		    {
 			$arc->submit;
 		    }
-		    $arc->activate;
+		    $arc->activate({updated=>$updated});
 		}
 		elsif( $props->{'submitted'} )
 		{
@@ -923,7 +923,7 @@ sub create
 	# Arc should have been submitted instead. But it might have
 	# been deactivated during a resort or other operation.
         #
-	$arc->activate( $args ) if $arc->submitted;
+	$arc->activate({%$args, updated=>$updated}) if $arc->submitted;
     }
 
 
