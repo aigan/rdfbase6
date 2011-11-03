@@ -4886,11 +4886,11 @@ sub arcversions
  wu_select       = Widget for Updating property ad a Select
  wul             = Widget for Updating Literal
 
-wd       = Widget for Displaying property
-display  = Display property as plain string
+ wd       = Widget for Displaying property
+ display  = Display property as plain string
 
-wdirc = Widget for Displaying Instance of Range Class
-wuirc = Widget for Updating Instance of Range Class
+ wdirc = Widget for Displaying Instance of Range Class
+ wuirc = Widget for Updating Instance of Range Class
 
 Example:
 
