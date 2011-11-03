@@ -1,0 +1,44 @@
+[% META title="Blog post"
+	next_action='plugin_Blog_post'
+%]
+
+[%
+   blog_id = q.param('in_blog');
+   post_id = q.param('id');
+   post = get(post_id || 'new');
+
+   IF blog_id;
+     hidden('in_blog', blog_id);
+   END;
+
+   IF post.empty;
+     post.wuh('is', C.plugin_blog_post.id);
+     post.wuh('plugin_blog_post_is_in_blog', blog_id);
+     IF NOT blog_id;
+       THROW 'incomplete', "Missing blog ID for post";
+     END;
+   END;
+
+   hidden('id', post.id);
+%]
+
+[%# jump('Blog mainpage', './') %]<br/>
+
+[% IF admin_mode %]
+  [% post.wun_jump %]
+[% END %]
+
+<table>
+  [% UNLESS post.empty %]
+    <tr><td colspan="2">
+      [% jump('Publish!', '', run='plugin_Blog_publish_post', id=post.id) %]
+    </td></tr>
+  [% END %]
+  <tr><td>[% post.wu('name',        tdlabel="Title"        ) %]</td></tr>
+  <tr><td>[% post.wu('description', tdlabel="Short summary") %]</td></tr>
+</table>
+
+<label>Content</label>
+[% post.wu('has_body', class => 'mce') %]
+
+[% step %]

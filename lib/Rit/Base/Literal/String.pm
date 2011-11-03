@@ -771,15 +771,20 @@ sub wuirc
     }
 
     my $tb = $C_textbox;
+    my $tl = $C_text_large;
+
     if(	not defined $args->{'class'} and
 	( $range->equals($C_text_html) or
 	  $range->scof($C_text_html) ))
     {
 	$args->{'class'} = 'html_editable';
     }
+
     if( ($args->{'rows'}||0) > 1 or
 	$range->equals($tb) or
-	$range->scof($tb) )
+	$range->scof($tb)   or
+	$range->equals($tl) or
+	$range->scof($tl) )
     {
 	unless( ($args->{'class'}||'') =~ /\bwide\b/ )
 	{
@@ -973,7 +978,6 @@ sub wuirc
 		 size => $size,
 		 rows => $rows,
 		 maxlength => $args->{'maxlength'},
-		 id => $args->{'id'},
 		 image_url => $args->{'image_url'},
 		 onchange => $onchange,
 		 arc => $arc->id,
@@ -1024,6 +1028,11 @@ sub wuirc
 	{
 	    $vnode = $default->node_set;
 	    $props->{'vnode'} = $vnode;
+	    $args->{'id'} = build_field_key({
+		pred => $predname,
+		subj => $subj,
+		vnode => $vnode,
+	    });
 	}
 
 #	debug 1, "Default value is ".$default->sysdesig; ### DEBUG

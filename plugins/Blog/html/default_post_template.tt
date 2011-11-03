@@ -1,0 +1,59 @@
+﻿[% META title = '-
+                  id = q.param("id");
+		  post = get(id);
+		  GET post.name;
+		 '
+        next_action = 'plugin_Blog_add_comment'
+%]
+[%
+   id = q.param('id');
+   post = get(id);
+%]
+
+[% IF post.name %]
+  <h1>
+    [% post.name %]
+    [% IF post.has_member(u) OR u.level >= 20 %]
+      &nbsp;([% post.wu_jump(label='Edit') %])
+    [% END %]
+  </h1>
+[% END %]
+
+
+<div>[% post.has_body %]</div>
+
+<hr/>
+
+[% FOREACH comment IN post.rev_plugin_blog_post_comment_is_about.sorted('has_date', 'desc') %]
+  [% counter = counter + 1 %]
+  [%# debug( 1, counter ) %]
+  <div class="blog_comments">
+    [% IF u.has_root_access %]
+      ([% jump("Edit", comment.form_url) %])<br/>
+    [% END %]
+    <strong>Datum:</strong> [% comment.has_date #.strftime("%Y-%m-%d, %H.%M") %]<br/>
+    <strong>Namn:</strong> [% comment.is_from %]<br/>
+    <strong>E-post:</strong> [% comment.has_email %]<br/>
+    <p style="margin-top: 0.5em">
+      [% comment.has_body | html | html_para %]
+    </p>
+  </div>
+  [% LAST IF counter > 50 %]
+[% END %]
+
+<div class="guestform">
+  (Alla ifyllda fält visas.  Fyll i vad du vill.)<br/>
+  [% hidden('id', post.id) %]
+  [% input("name", "", label="Mitt namn") %]<br/>
+  [% input("has_email", "", label="Min e-post") %]<br/>
+  [% textarea("message", "", rows=5, label="Meddelande", separator="<br/>") %]<br/>
+
+  [% site.captcha.as_html %]
+
+  <div style="width: 100%; text-align: right">
+    <input value="Rensa" type="reset"/>
+    <input value="Spara" type="submit"/>
+  </div>
+
+  [% step %]
+</div>

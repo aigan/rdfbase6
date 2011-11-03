@@ -1,0 +1,85 @@
+﻿[% META
+   title="Redigera sida"
+   level = 20
+   next_action = 'node_update'
+%]
+
+[%
+   id = q.param('id');
+   cms_page = get(id || 'new');
+   hidden('id', cms_page.id);
+
+   def_title    = q.param('title');
+   def_has_url  = q.param('has_url');
+   def_template = q.param('template');
+   view_node_id = q.param('view_node');
+%]
+
+[% IF cms_page.empty %]
+  [% cms_page.wuh('is', C.cms_page) %]
+[% ELSE %]
+  [% cms_page.wun_jump %]
+[% END %]
+
+
+<table class="admin">
+  <tr><td>
+    [% cms_page.wu('has_url', default_value=def_has_url,  tdlabel="URL (with leading '/')") %]
+  </td></tr>
+  <tr><td>
+    [% cms_page.wu('name',
+                   {
+		    default_value => def_title,
+		    tdlabel       => "Title (sv)",
+                    proplim        => { is_of_language => C.swedish },
+                    default_create => { is_of_language => C.swedish },
+		   })
+    %]
+  </td></tr>
+  <tr><td>
+    [% cms_page.wu('name',
+                   {
+		    default_value => def_title,
+		    tdlabel       => "Title (en)",
+                    proplim        => { is_of_language => C.english },
+                    default_create => { is_of_language => C.english },
+		   })
+    %]
+  </td></tr>
+  <tr><td>[% cms_page.wu('uses_template', default_value=def_template, tdlabel="Template (e.g. cms.tt)") %]</td></tr>
+  [% IF view_node_id OR cms_page.is_view_for_node %]
+    [% view_node = cms_page.is_view_for_node || get(view_node_id) %]
+    [% cms_page.wuh('is_view_for_node', view_node.id) %]
+    <tr>
+      <td>Vy för node</td>
+      <td>[% view_node.wu_jump %]</td>
+    </tr>
+  [% END %]
+
+</table>
+
+<label>Content sv</label>
+[% cms_page.wu('has_body',
+               {
+                class => 'mce',
+                rows           => 20,
+                proplim        => { is_of_language => C.swedish },
+                default_create => { is_of_language => C.swedish },
+               })
+%]
+
+<label>Content en</label>
+[% cms_page.wu('has_body',
+               {
+                class => 'mce',
+                rows           => 20,
+                proplim        => { is_of_language => C.english },
+                default_create => { is_of_language => C.english },
+               })
+%]
+
+[% step %]
+
+<p>
+  <a href="[% home %][% cms_page.has_url %]">Se sidan</a>
+</p>

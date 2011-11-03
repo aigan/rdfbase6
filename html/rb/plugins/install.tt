@@ -1,0 +1,8 @@
+[% META title = "Install plugin" %]
+
+[%
+   plugin_name = q.param('plugin');
+%]
+
+[% plugins.install(plugin_name) %]
+
