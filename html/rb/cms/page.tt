@@ -23,8 +23,29 @@
 
 
 <table class="admin">
-  <tr><td>[% cms_page.wu('has_url',       default_value=def_has_url,  tdlabel="URL (with leading '/')") %]</td></tr>
-  <tr><td>[% cms_page.wu('name',          default_value=def_title,    tdlabel="Title"                 ) %]</td></tr>
+  <tr><td>
+    [% cms_page.wu('has_url', default_value=def_has_url,  tdlabel="URL (with leading '/')") %]
+  </td></tr>
+  <tr><td>
+    [% cms_page.wu('name',
+                   {
+		    default_value => def_title,
+		    tdlabel       => "Title (sv)",
+                    proplim        => { is_of_language => C.swedish },
+                    default_create => { is_of_language => C.swedish },
+		   })
+    %]
+  </td></tr>
+  <tr><td>
+    [% cms_page.wu('name',
+                   {
+		    default_value => def_title,
+		    tdlabel       => "Title (en)",
+                    proplim        => { is_of_language => C.english },
+                    default_create => { is_of_language => C.english },
+		   })
+    %]
+  </td></tr>
   <tr><td>[% cms_page.wu('uses_template', default_value=def_template, tdlabel="Template (e.g. cms.tt)") %]</td></tr>
   [% IF view_node_id OR cms_page.is_view_for_node %]
     [% view_node = cms_page.is_view_for_node || get(view_node_id) %]
@@ -37,8 +58,25 @@
 
 </table>
 
-<label>Content</label>
-[% cms_page.wu('has_body', class => 'mce') %]
+<label>Content sv</label>
+[% cms_page.wu('has_body',
+               {
+                class => 'mce',
+                rows           => 20,
+                proplim        => { is_of_language => C.swedish },
+                default_create => { is_of_language => C.swedish },
+               })
+%]
+
+<label>Content en</label>
+[% cms_page.wu('has_body',
+               {
+                class => 'mce',
+                rows           => 20,
+                proplim        => { is_of_language => C.english },
+                default_create => { is_of_language => C.english },
+               })
+%]
 
 [% step %]
 
