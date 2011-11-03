@@ -973,7 +973,6 @@ sub wuirc
 		 size => $size,
 		 rows => $rows,
 		 maxlength => $args->{'maxlength'},
-		 id => $args->{'id'},
 		 image_url => $args->{'image_url'},
 		 onchange => $onchange,
 		 arc => $arc->id,
@@ -1024,6 +1023,11 @@ sub wuirc
 	{
 	    $vnode = $default->node_set;
 	    $props->{'vnode'} = $vnode;
+	    $args->{'id'} = build_field_key({
+		pred => $predname,
+		subj => $subj,
+		vnode => $vnode,
+	    });
 	}
 
 #	debug 1, "Default value is ".$default->sysdesig; ### DEBUG
