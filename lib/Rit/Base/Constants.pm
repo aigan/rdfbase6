@@ -38,7 +38,7 @@ use Rit::Base::Utils qw( is_undef );
 
 our %Label; # The initiated constants
 our $AUTOLOAD;
-our @Initlist; # Constants to export then the DB is online
+our @Initlist; # Constants to export when the DB is online
 
 ##############################################################################
 

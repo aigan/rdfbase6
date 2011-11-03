@@ -301,12 +301,13 @@ used by parse_query_props
 
 sub parse_query_value
 {
-    my( $val ) = @_;
+    my( $val_in ) = @_;
 
+    my $val = $val_in;
     my $arclim;
-    if( $val =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
+    if( $val_in =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
     {
-#        debug "Creating subcriterion from $val";
+        debug "Creating subcriterion from $val_in";
         my $pairs = $1;
         my $alim_in = $2;
         my %sub;
@@ -328,6 +329,7 @@ sub parse_query_value
 
         if( $alim_in )
         {
+            debug "Parsing alim $alim_in";
             $arclim = Rit::Base::Arc::Lim->parse_string("[$alim_in]");
         }
 
@@ -342,6 +344,14 @@ sub parse_query_value
     if( wantarray )
     {
         return( $val, $arclim );
+    }
+    elsif( $arclim and keys %$val )
+    {
+        throw("Both subquery and arclim: $val_in");
+    }
+    elsif( $arclim )
+    {
+        return $arclim;
     }
     else
     {

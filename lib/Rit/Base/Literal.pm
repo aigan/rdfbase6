@@ -27,7 +27,7 @@ use overload
   fallback => 1,
   ;
 
-use Carp qw( cluck confess carp shortmess longmess );
+use Carp qw( cluck confess carp croak shortmess longmess );
 use Scalar::Util qw( refaddr blessed );
 
 use Para::Frame::Reload;
@@ -190,7 +190,7 @@ sub get_by_arc_rec
 {
     my( $this, $rec, $valtype ) = @_;
     my $coltype = $valtype->coltype;
-    return $this->new_from_db($rec->{$coltype}, $valtype);
+    return $this->new_from_db($rec->{$coltype}, $valtype, $rec->{'ver'});
 }
 
 
@@ -1586,18 +1586,6 @@ sub arcversions
 
 ##############################################################################
 
-=head3 tree_select_widget
-
-=cut
-
-sub tree_select_widget
-{
-    return "";
-}
-
-
-##############################################################################
-
 =head2 sysdesig
 
   $n->sysdesig()
@@ -1652,7 +1640,7 @@ sub sysdesig  # The designation of obj, including node id
 
 sub default_valtype
 {
-    die "No valtype given";
+    croak "No valtype given";
 #    return Rit::Base::Literal::Class->get_by_label('valtext');
 }
 

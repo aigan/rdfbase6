@@ -473,6 +473,48 @@ sub arc_active_on_date
     return Rit::Base::Arc::List->new(\@arcs);
 }
 
+
+##############################################################################
+
+=head2 as_rdf
+
+=cut
+
+sub as_rdf
+{
+    my( $l ) = shift;
+
+    my $out = "";
+
+    my $predl = $l->get_first_nos->pred->label;
+    $out .= "<rb:$predl>\n";
+    $out .= "<rdf:Bag>\n";
+
+    foreach my $arc ( $l->as_array )
+    {
+        debug "  + ".$arc->sysdesig;
+        my $val = $arc->value;
+        if( $val->is_literal )
+        {
+            my $type = $val->this_valtype;
+            my $val_out = CGI->escapeHTML($val);
+            my $type_label = $type->label || $type->id;
+            $out .= qq(<rdf:li rdf:datatype="$type_label">$val_out</rdf:li>\n);
+        }
+        else
+        {
+            my $res_out = $val->label || $val->id;
+            $out .= qq(<rdf:li rdf:resource="$res_out"/>);
+        }
+    }
+
+    $out .= "</rdf:Bag>\n";
+    $out .= "</rb:$predl>\n";
+
+    return $out;
+}
+
+
 ##############################################################################
 
 1;

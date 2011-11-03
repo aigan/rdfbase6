@@ -1,0 +1,3 @@
+SetHandler perl-script
+PerlSetVar renderer Rit::Base::Renderer::RDF
+PerlSetVar loadpage no

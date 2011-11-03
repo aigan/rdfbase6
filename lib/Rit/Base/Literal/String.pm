@@ -187,21 +187,19 @@ sub new_from_db
     {
 	if( $val =~ /Ã./ )
 	{
-	    debug "UNDECODED UTF8 in DB: $val)";
-	    unless( utf8::decode( $val ) )
-	    {
-		debug 0, "Failed to convert to UTF8!";
-		my $res;
-		while( length $val )
-		{
-		    $res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
-		    $res .= substr($val, 0, 1, "") if length $val;
-		}
-		$val = $res;
-		debug "Conversion result: $val";
-
-#		$Para::Frame::REQ->result->message("Failed to convert to UTF8!");
-	    }
+	    cluck "UNDECODED UTF8 in DB: $val)";
+#	    unless( utf8::decode( $val ) )
+#	    {
+#		debug 0, "Failed to convert to UTF8!";
+#		my $res;
+#		while( length $val )
+#		{
+#		    $res .= Encode::decode("UTF-8", $val, Encode::FB_QUIET);
+#		    $res .= substr($val, 0, 1, "") if length $val;
+#		}
+#		$val = $res;
+#		debug "Conversion result: $val";
+#	    }
 	}
 	else
 	{
@@ -410,9 +408,16 @@ sub syskey
 	if( utf8::is_utf8( $_[0]->{'value'} ) )
 	{
 	    my $encoded = $_[0]->{'value'};
+            # Convert to bytes
 	    utf8::encode( $encoded );
-	    return sprintf("lit:%s", md5_base64($encoded));
+#            my $val = sprintf("lit:utf8:%s", md5_base64($encoded));
+#            debug "syskey $val";
+#            return $val;
+	    return sprintf("lit:utf8:%s", md5_base64($encoded));
 	}
+#        my $val = sprintf("lit:%s", md5_base64($_[0]->{'value'}));
+#        debug "syskey $val";
+#        return $val;
 	return sprintf("lit:%s", md5_base64(shift->{'value'}));
     }
     else
@@ -1103,49 +1108,6 @@ sub wul
 {
     die "FIXME";
 }
-
-
-##############################################################################
-
-#sub wdirc
-#{
-#    my( $class, $subj, $pred, $args_in ) = @_;
-#    my( $args ) = parse_propargs($args_in);
-#
-#    my $out = "";
-#
-#    my $predname;
-#    if( ref $pred )
-#    {
-#	$predname = $pred->label;
-#
-#	debug 2, "String wuirc for $predname";
-#	debug 2, "$predname class is ". $pred->range->instance_class;
-#    }
-#    else
-#    {
-#	$predname = $pred;
-#	# Only handles pred nodes
-#	$pred = Rit::Base::Pred->get_by_label($predname);
-#    }
-#
-#    $out .= label_from_params({
-#			       label       => $args->{'label'},
-#			       tdlabel     => $args->{'tdlabel'},
-#			       separator   => $args->{'separator'},
-#			       id          => $args->{'id'},
-#			       label_class => $args->{'label_class'},
-#			      });
-#
-#    my $arclist = $subj->arc_list($predname, undef, $args);
-#
-#    while( my $arc = $arclist->get_next_nos )
-#    {
-#	$out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
-#    }
-#
-#    return $out;
-#}
 
 
 ##############################################################################

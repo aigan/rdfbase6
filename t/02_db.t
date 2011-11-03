@@ -12,9 +12,15 @@ $|=1;
 use Test::Warn;
 use Test::More tests => 9;
 
+our @got_warning;
+
 BEGIN
 {
-    open my $oldout, ">&STDOUT"     or die "Can't dup STDOUT: $!";
+    $SIG{__WARN__} = sub{ push @got_warning, shift() };
+
+    open(SAVEOUT, ">&STDOUT");
+#    open(SAVEERR, ">&STDERR");
+
     open STDOUT, ">/dev/null"       or die "Can't dup STDOUT: $!";
 
     use FindBin;
@@ -25,17 +31,16 @@ BEGIN
     $CFG->{'rb_root'} = abs_path("$FindBin::Bin/../");
     push @INC, $CFG->{'rb_root'}."/lib";
 
-    open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
-}
+    use_ok('Rit::Base');
+    use_ok('Para::Frame::DBIx');
+    use_ok('Para::Frame::Utils', 'datadump' );
 
-use_ok('Rit::Base');
-use_ok('Para::Frame::DBIx');
-use Para::Frame::Utils qw( datadump );
+    open STDOUT, ">&", SAVEOUT      or die "Can't restore STDOUT: $!";
+}
 
 sub capture_out
 {
     $::OUT = "";
-    open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
     close STDOUT;
     open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
@@ -104,6 +109,7 @@ warnings_like
 	  });
 }[
   qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
+  qr/^REGISTER MODULE Para::Frame::DBIx::Pg$/,
   qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
  ], "DBIx config";
 
@@ -117,7 +123,7 @@ warnings_like
  ], "startup";
 
 
-is( $::OUT, "STARTED\n", "startup output" );
+ok( $::OUT =~ /STARTED/, "startup output" );
 clear_out();
 
 
@@ -130,41 +136,6 @@ $Rit::dbix->connect;
     Rit::Base::Setup->setup_db();
 };
 
-#warnings_exist
-#{
-#    Rit::Base::Setup->setup_db();
-#}[
-#  qr/^NOTICE:  ALTER TABLE/,
-#  qr/^Reading Nodes$/,
-#  qr/^\d+ = \w+$/,
-#  qr/^Reading Arcs$/,
-#  qr/^Planning /,
-#  qr/^Bootstrapping literals$/,
-#  qr/^Literal \w+ is a scof/,
-#  qr/^Adding nodes$/,
-#  qr/^Extracting valtypes$/,
-#  qr/^Valtype \w+ = \d+$/,
-#  qr/^Adding arcs$/,
-#  qr/^Initiating valtypes$/,
-#  qr/^\s*Initiating constants$/,
-#  qr/^Initiating key nodes$/,
-#  qr/^Setting bg_user_code to \d+$/,
-#  qr/^\s+$/,
-#  qr/^\s+Infering arcs$/,
-#  qr/^\s+Updating arcs for the new range$/,
-#  qr/^\s+Pred \d+ coltype set to '\d+'$/,
-#  qr/^\s+Changing coltype id from 5 to 1!!!$/,
-#  qr/^\s+EXISTING ARCS MUST BE VACUUMED$/,
-#  qr/^\s+Created arc id /,
-#  qr/^\s+on_class_perl_module_change for \d+: /,
-#  qr/^\s+TODO: rebless literals for \d+: /,
-#  qr/^\s+Adding valtype \d+ -> \w+ in coltype cache$/,
-#  qr/^\s+Initiating constants again$/,
-#  qr/^\s+Initiating key nodes$/,
-#  qr/^\s+Done!$/,
-#  qr/.*/,
-# ], "DB Setup";
-
 
 # Start by a sample test of the resulting DB
 my $C = Rit::Base->Constants;
@@ -172,6 +143,5 @@ is($C->get('has_access_right')->is->label,'predicate', 'DB Setup ok');
 
 $Rit::dbix->commit;
 
-is( $::OUT, "", "end output" );
 clear_out();
 1;

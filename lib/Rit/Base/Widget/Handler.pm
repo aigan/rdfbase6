@@ -1044,6 +1044,13 @@ sub handle_query_arc_value
 		debug sprintf "  New value: %s", $value->sysdesig;
 	    }
 
+            if( $arc and not $arc->subj->equals( $subj ) )
+            {
+                debug "  Arc subj changed";
+                $res->add_to_deathrow( $arc );
+                undef $arc;
+            }
+
 	}
 	elsif( $arc_id )
 	{

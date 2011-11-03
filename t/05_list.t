@@ -8,14 +8,20 @@ use Cwd qw( abs_path );
 
 our $CFG;
 $|=1;
+our @got_warning;
+
 
 use Test::Warn;
-use Test::More tests => 6;
+use Test::More tests => 10;
 
 
 BEGIN
 {
-    open my $oldout, ">&STDOUT"     or die "Can't dup STDOUT: $!";
+    $SIG{__WARN__} = sub{ push @got_warning, shift() };
+
+    open(SAVEOUT, ">&STDOUT");
+    open(SAVEERR, ">&STDERR");
+
     open STDOUT, ">/dev/null"       or die "Can't dup STDOUT: $!";
 
     use FindBin;
@@ -25,13 +31,21 @@ BEGIN
     push @INC, $CFG->{'paraframe'}.'/lib';
     $CFG->{'rb_root'} = abs_path("$FindBin::Bin/../");
     push @INC, $CFG->{'rb_root'}."/lib";
-    open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
+
+
+    use_ok('Para::Frame::DBIx');
+    use_ok('Para::Frame::Utils', 'datadump' );
+
+    use_ok('Rit::Base');
+    use_ok('Rit::Base::Utils', qw( is_undef parse_propargs ) );
+    use_ok('Rit::Base::User::Meta');
+
+    open STDOUT, ">&", SAVEOUT      or die "Can't restore STDOUT: $!";
 }
 
 sub capture_out
 {
     $::OUT = "";
-    open my $oldout, ">&STDOUT"         or die "Can't save STDOUT: $!";
     close STDOUT;
     open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
@@ -42,14 +56,6 @@ sub clear_out
     $::OUT = "";
     open STDOUT, ">:scalar", \$::OUT   or die "Can't dup STDOUT to scalar: $!";
 }
-
-
-use Para::Frame::DBIx;
-use Para::Frame::Utils qw( debug );
-
-use Rit::Base;
-use Rit::Base::Utils qw( is_undef parse_propargs );
-use Rit::Base::User::Meta;
 
 capture_out();
 
@@ -91,18 +97,11 @@ my $cfg = $Para::Frame::CFG;
 
 my $dbconnect = Rit::Base::Setup->dbconnect;
 
-warnings_like
-{
-    $Rit::dbix = Para::Frame::DBIx ->
-      new({
-	   connect => $dbconnect,
-	   import_tt_params => 0,
-	  });
-}[
-  qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
-  qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
- ], "DBIx config";
-
+$Rit::dbix = Para::Frame::DBIx ->
+  new({
+       connect => $dbconnect,
+       import_tt_params => 0,
+      });
 
 Para::Frame->add_hook('on_startup', sub
 		      {
@@ -118,27 +117,13 @@ warnings_like
   qr/^Done adding hooks for Rit::Base$/,
  ], "RB Init";
 
-warnings_like
-{
-    Para::Frame->startup;
-}[
-  qr/^Connected to port 9999$/,
-  qr/^Initiating valtypes$/,
-  qr/^Initiating constants$/,
-  qr/^Initiating key nodes$/,
-  qr/^Ritbase DB version is 3$/,
-#  qr/^$/,
-#  qr/^1 Done in /,
-  qr/^Setup complete, accepting connections$/,
- ], "startup";
 
-#$Para::Frame::DEBUG = 1;
-#Para::Frame->startup;
+open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
 
-#is( $::OUT, "MAINLOOP 1\nSTARTED\n", "startup output" );
-is( $::OUT, "STARTED\n", "startup output" );
+
+Para::Frame->startup;
+ok( $::OUT =~ /STARTED/, "startup output" );
 clear_out();
-
 
 ###########
 
@@ -203,6 +188,9 @@ my $c =
 
 my $l1 = $R->find({ is => $MyThing })->sorted('has_some_date');
 
-diag($l1);
+ok( "$l1" eq 'rbt-1c / rbt-1a / rbt-1b', "sort result" );
 
+$req->done;
+
+open STDERR, ">&", SAVEERR;
 1;

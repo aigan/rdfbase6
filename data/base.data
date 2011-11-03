@@ -60,6 +60,11 @@ domain_card_max	2
 range_card_min	2
 range_card_max	2
 literal_compare_clean	2
+has_message_id	5
+has_imap_url	5
+email_body	5
+has_email_body_template_email	1
+
 
 ARCS
 is	is	predicate
@@ -320,6 +325,25 @@ email	is	class
 email	class_handled_by_perl_module	114
 114	is	class_perl_module
 114	code		Rit::Base::Email
+has_message_id	is	predicate
+has_message_id	domain	email
+has_message_id	range	term
+has_message_id	range_card_max		1
+has_imap_url	is	predicate
+has_imap_url	domain	email
+has_imap_url	range	term
+has_imap_url	range_card_max		1
+email_body	is	predicate
+email_body	domain	email
+email_body	range	textbox
+email_body	range_card_max		1
+email_body_template_email	scof	email
+has_email_body_template_email	is	predicate
+has_email_body_template_email	domain	email
+has_email_body_template_email	range	email_body_template_email
+has_email_body_template_email	range_card_max		1
+
+
 
 password	class_handled_by_perl_module	115
 115	is	class_perl_module

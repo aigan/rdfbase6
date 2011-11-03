@@ -32,11 +32,12 @@ use constant CLUE_ANYTHING  => 128; # for overriding any other default
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
-use Template::PopupTreeSelect '0.9';
+#use Template::PopupTreeSelect '0.9';
 use JSON; # to_json
 
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
+use Para::Frame::Widget qw( label_from_params );
 use Para::Frame::Utils qw( throw catch create_file trim debug datadump
 			   package_to_module timediff compile );
 
@@ -55,7 +56,7 @@ use Rit::Base::Pred::List;
 use Rit::Base::Metaclass;
 use Rit::Base::Resource::Change;
 use Rit::Base::Arc::Lim;
-use Rit::Base::Widget qw(build_field_key);
+use Rit::Base::Widget qw( build_field_key );
 use Rit::Base::Widget::Handler;
 use Rit::Base::AJAX;
 
@@ -745,6 +746,7 @@ sub get_id
 	return $const->id;
     }
 
+    # TODO: Should return undef rather than is_undf
     my $node = $class->get_by_anything( $label, $args ) or return is_undef;
     return $node->id;
 }
@@ -759,8 +761,6 @@ sub get_id
   $node->find( $query )
 
   $list->find( $query )
-
-  $node->find( $pred => $value )
 
   $node->find( $name )
 
@@ -908,6 +908,8 @@ none
 
 sub find_simple
 {
+    die "deprecated";
+
     my( $this, $pred_in, $value_in ) = @_;
 
     # Only handles pred nodes
@@ -4056,6 +4058,45 @@ sub revarc
 }
 
 
+#########################################################################
+
+=head2 this_valtype
+
+  $node->this_valtype( \%args )
+
+This would be the same as the C<is> property of this resource. But it
+must only have ONE value. It's important for literal values.
+
+This method will return the literal valtype for value resoruces.
+
+It will return the C<resource> resource if a single class can't be
+identified.
+
+See also: L<Rit::Base::Literal/this_valtype>,
+L<Rit::Base::Arc/this_valtype>, L</is_value_node>.
+
+=cut
+
+sub this_valtype
+{
+    unless( $_[0]->{'valtype'} )
+    {
+	debug 2, "Letting find_class find out type for $_[0]->{id}";
+	$_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
+
+	unless( $_[0]->{'valtype'} )
+	{
+	    debug "Tried to find valtype of ".$_[0]->id;
+	    $Para::Frame::REQ->session->set_debug(3);
+	    $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
+	    confess "CONFUSED";
+	}
+    }
+
+    return $_[0]->{'valtype'};
+}
+
+
 
 #########################################################################
 ################################  Public methods  #######################
@@ -4064,6 +4105,103 @@ sub revarc
 =head1 Public methods
 
 =cut
+
+##############################################################################
+
+=head2 update_seen_by
+
+=cut
+
+sub update_seen_by
+{
+    my( $node, $user, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
+    $user ||= $Para::Frame::U;
+    return $user if $user->id == $C_root->id;
+
+    $node->add({'seen_by'=>$user},
+		 {
+		  %$args,
+		  mark_updated => 1,
+		  activate_new_arcs => 1,
+		 });
+
+    $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
+
+#    debug sprintf "Updated %s --seen_by--> %s ", $node->sysdesig, $user->sysdesig;
+
+    return $user;
+}
+
+
+##############################################################################
+
+=head2 watchers
+
+=cut
+
+sub watchers
+{
+    return Rit::Base::List->new_empty;
+}
+
+
+#########################################################################
+
+=head2 mark_updated
+
+  $node->mark_updated( $time, $user )
+
+This will update info about the nodes update-time and who did the
+updating.
+
+Default user is the request user
+
+Default time is now
+
+For not creating a node rec, consider using:
+
+  $node->mark_updated if $node->node_rec_exist;
+
+The changes will be saved after the request, or by calling L</commit>.
+
+Returns: a time obj
+
+TODO: implement args
+
+=cut
+
+sub mark_updated
+{
+    my( $n, $time, $u ) = @_;
+
+    $n->initiate_node;
+    if( $n->{'created'} || $n->{'created_obj'} )
+    {
+	$time ||= now();
+	$u ||= $Para::Frame::REQ->user;
+
+	$n->{'updated_obj'} = $time;
+	$n->{'updated_by_obj'} = $u;
+	delete $n->{'updated'};
+	delete $n->{'updated_by'};
+    }
+    else
+    {
+	# Will call back here with created_obj set
+	$n->create_rec({time=>$time,
+			   user=> $u});
+    }
+
+    $n->mark_unsaved;
+
+    $n->session_history_add('updated');
+
+#    debug shortmess "Mark UPDATED for ".$n->desig;
+
+    return $time;
+}
+
 
 ##############################################################################
 
@@ -4123,6 +4261,10 @@ sub add
     {
 	$extra{ arc_weight } = int( $args->{'arc_weight'} );
     }
+#    if( $args->{'replaces'} ) # Not good. Must be one for each
+#    {
+#	$extra{ replaces } = $args->{'replaces'}->id;
+#    }
 
     foreach my $pred_name ( keys %$props )
     {
@@ -4534,7 +4676,7 @@ Supported args are:
   arclim
 
 If C<$move_literals> is true, all properties are copied.  If false or
-missing, only ovject properties are copied.
+missing, only object properties are copied.
 
 This will destroy any properties of the copied arcs, beyond the basic
 properties C<{subj, pred, value}>.
@@ -4576,7 +4718,19 @@ sub merge_node
 	if( my $obj = $arc->obj )
 	{
 	    debug sprintf "  Moving %s", $arc->sysdesig;
-	    $node2->add({ $pred_name => $obj }, $args );
+
+            Rit::Base::Arc->create({
+                                    subj => $node2,
+                                    pred => $pred_name,
+                                    value => $obj,
+                                    replaces => $arc->version_id,
+                                   }, $args);
+
+#	    $node2->add({ $pred_name => $obj }, {%$args, replaces => } );
+#            if( $obj->is_value_node )
+#            {
+#                die "THIS IS A VALUE NODE: ".$obj->sysdesig;
+#            }
 	}
 	elsif( $move_literals )
 	{
@@ -4669,7 +4823,86 @@ sub link_paths
 }
 
 
+##############################################################################
 
+=head2 arcversions
+
+  $n->arcversions( $pred, $proplim, \%args )
+
+Produces a list of all relevant common-arcs, with lists of their
+relevant versions, used for chosing version to activate/deactivate.
+
+  language (if applicable)
+    arc-list...
+
+=cut
+
+sub arcversions
+{
+    my( $node, $predname, $proplim ) = @_;
+
+#    debug "In arcversions for $predname for ".$node->sysdesig;
+
+    return #probably new...
+      unless( UNIVERSAL::isa($node, 'Rit::Base::Resource') );
+
+
+    #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
+
+    my $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+
+    my %arcversions;
+
+    while( my $arc = $arcs->get_next_nos )
+    {
+	my @versions;
+
+	push @versions,
+	  $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
+	#debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
+
+	$arcversions{$arc->id} = \@versions
+	  if( @versions );
+	#debug "Added arc ". $arc->sysdesig;
+    }
+
+    #debug datadump( \%arcversions, 2 );
+
+    return \%arcversions;
+}
+
+
+##############################################################################
+
+=head1 Widgets
+
+ wn = Widget for updating the Node
+ as_html, context_as_html, diff_as_html
+ desig, longdesig, safedesig, sysdesig, syskey, loc
+
+ wu              = Widget for Updating property
+ wuh             = Widget for Updating Hidden property
+ wu_select_tree  = Widget for Updating property as a Select Yree
+ wu_select       = Widget for Updating property ad a Select
+ wul             = Widget for Updating Literal
+
+wd       = Widget for Displaying property
+display  = Display property as plain string
+
+wdirc = Widget for Displaying Instance of Range Class
+wuirc = Widget for Updating Instance of Range Class
+
+Example:
+
+  $pred->range->instance_class->wdirc($subj, $pred, $args);
+  $pred->range->instance_class->wuirc($subj, $pred, $args);
+
+
+=cut
+
+
+
+##############################################################################
 ##############################################################################
 
 =head2 wd
@@ -4692,57 +4925,6 @@ sub wd
     $args_in ||= {};
 
     return $node->wu( $pred_name, { %$args_in, disabled => 'disabled', ajax => 0 });
-
-
-#    my( $args_parsed ) = parse_propargs($args_in);
-#    my $args = {%$args_parsed}; # Shallow clone
-#
-#    my $R = Rit::Base->Resource;
-#    my $rev = 0;
-#
-#    if( $pred_name =~ /^rev_(.*)$/ )
-#    {
-#	$pred_name = $1;
-#	$rev = 1;
-#    }
-#
-#    # Should we support dynamic preds?
-#    my $pred = Rit::Base::Pred->get($pred_name);
-#
-#    my( $range, $range_scof );
-#    if( $rev )
-#    {
-#	$args->{'rev'} = 1;
-#	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-#		   $pred->first_prop('domain',undef,['active'])
-#		   || $C_resource );
-#	$range_scof = ( $args->{'range_scof'} ?
-#			$R->get($args->{'range_scof'}) :
-#			$pred->first_prop('domain_scof',undef,['active']) );
-#	debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
-#	  $range->sysdesig;
-#    }
-#    else
-#    {
-#	$range = ( $args->{'range'} ? $R->get($args->{'range'}) :
-#		   $pred->valtype );
-#	$range_scof = ( $args->{'range_scof'} ?
-#			$R->get($args->{'range_scof'}) :
-#			$pred->first_prop('range_scof',undef,['active']) );
-#    }
-#
-#    if( $range_scof )
-#    {
-#	$args->{'range_scof'} = $range_scof;
-#	$range = $range_scof;
-#    }
-#    else
-#    {
-#	$args->{'range'} = $range;
-#    }
-#
-#    # widget for updating subclass of range class
-#    return $range->instance_class->wdirc($node, $pred, $args);
 }
 
 
@@ -4781,7 +4963,7 @@ sub wn
 	$out .= '<div id="'. $divid .'" style="position: relative;">';
     }
 
-    $out .= Para::Frame::Widget::label_from_params( $args );
+    $out .= label_from_params( $args );
 
     my $view = $args->{'view'} ||= '';
     if( $view )
@@ -4925,7 +5107,7 @@ sub wdirc
 	  if( $range and $range ne $C_resource );
     }
 
-    $out .= Para::Frame::Widget::label_from_params({
+    $out .= label_from_params({
 			       label       => delete $args->{'label'},
 			       tdlabel     => delete $args->{'tdlabel'},
 			       separator   => $args->{'separator'},
@@ -5095,7 +5277,7 @@ sub wu
     my $divid = $args->{'divid'} ||
       ( $ajax ? Rit::Base::AJAX->new_form_id() : undef );
 
-    $out .= Para::Frame::Widget::label_from_params({
+    $out .= label_from_params({
 			       label       => delete $args->{'label'},
 			       tdlabel     => delete $args->{'tdlabel'},
 			       separator   => $args->{'separator'},
@@ -5293,8 +5475,8 @@ args are forwarded to
   revarc_list
   arc_list
   desig
-  wub_select
-  wub_select_tree
+  wu_select
+  wu_select_tree
 
 
 Args details:
@@ -5499,17 +5681,17 @@ sub wuirc
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
-	    $out .= Rit::Base::Widget::wub_select( $subj, $pred->label, $range,
-						   {
-						    %$args,
-						    header => $header,
-						   });
+	    $out .= $subj->wu_select( $pred->label, $range,
+                                      {
+                                       %$args,
+                                       header => $header,
+                                      });
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
 	    debug "wuirc 6" if $DEBUG;
 
-	    $out .= Rit::Base::Widget::wub_select_tree( $subj, $pred->label, $range, $args );
+	    $out .= $subj->wu_select_tree( $pred->label, $range, $args );
 	}
 	else
 	{
@@ -5523,106 +5705,265 @@ sub wuirc
 
 ##############################################################################
 
-=head2 arcversions
+=head2 wu_select_tree
 
-  $n->arcversions( $pred, $proplim, \%args )
+Display a select for a resource; a new select for its rev_scof and so
+on until you've chosen one that has no scofs.
 
-Produces a list of all relevant common-arcs, with lists of their
-relevant versions, used for chosing version to activate/deactivate.
+A value can be preselected by setting the query param C<'arc___'. $rev .'pred_'. $pred_name>.
 
-  language (if applicable)
-    arc-list...
+TODO: Also select the value if it matches exactly a query param
+
+To be used for preds with range_scof.
 
 =cut
 
-sub arcversions
+sub wu_select_tree
 {
-    my( $node, $predname, $proplim ) = @_;
+    my( $subj, $pred_name, $type, $args ) = @_;
 
-#    debug "In arcversions for $predname for ".$node->sysdesig;
+    ### Given args MUST have been initialized and localizes!
 
-    return #probably new...
-      unless( UNIVERSAL::isa($node, 'Rit::Base::Resource') );
+    debug "wu_select_tree $pred_name";
+
+    my $out = "";
+    my $R = Rit::Base->Resource;
+
+#    $out .= "in wu_select_tree $pred_name for ".$subj->sysdesig." type ".$type->desig;
+
+    my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
+    my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
+    my $rev = $args->{'is_rev'} || '';
+    my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
+    my $disabled = $args->{'disabled'} ? 1 : 0;
+    my $arc;
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
 
 
-    #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
+    debug "singular ".($singular ? "YES" : "NO");
 
-    my $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
-
-    my %arcversions;
-
-    while( my $arc = $arcs->get_next_nos )
+    unless( UNIVERSAL::isa $type, 'Rit::Base::Node' )
     {
-	my @versions;
-
-	push @versions,
-	  $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
-	#debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
-
-	$arcversions{$arc->id} = \@versions
-	  if( @versions );
-	#debug "Added arc ". $arc->sysdesig;
+	confess "type missing: ".datadump($type,2);
     }
 
-    #debug datadump( \%arcversions, 2 );
+     $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
 
-    return \%arcversions;
+    if( $disabled and $set_value )
+    {
+	my $arclist = $subj->arc_list($pred_name, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+	return $out;
+    }
+
+    $out .= '<select name="parameter_in_value"><option rel="nop-'.
+      $type->id .'-'. $subj->id .'"/>';
+
+    my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
+      sorted(['name_short', 'desig']);
+    my $val_stripped = 'arc___'. $rev .'pred_'. $pred_name;
+    my $q = $Para::Frame::REQ->q;
+    my $val_query = $q->param($val_stripped);
+
+    while( my $subtype = $subtypes->get_next_nos )
+    {
+	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
+
+        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+          .'pred_'. $pred_name .'='. $subtype->id;
+
+        unless( $subtype->rev_scof )
+        {
+            $out .= " value=\"$value\"";
+        }
+
+        if( $val_query )
+        {
+            if( $val_query eq $subtype->id )
+            {
+                $out .= ' selected="selected"';
+            }
+        }
+        elsif( $set_value )
+        {
+            if( $subj->has_value({ $pred_name => $subtype }) or
+                $subj->has_value({ $pred_name => { scof => $subtype } })
+              )
+            {
+                $out .= ' selected="selected"';
+                $arc = $subj->arc( $pred_name, $subtype );
+            }
+        }
+
+	$out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
+    }
+    $out .= '</select>';
+
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
+    }
+
+    $out .= '<div rel="nop-'. $type->id .'-'. $subj->id .'" style="display: none"></div>'; # usableforms quirk...
+
+    $subtypes->reset;
+    while( my $subtype = $subtypes->get_next_nos )
+    {
+	$out .= '<div rel="'. $subtype->id .'-'. $subj->id .'" style="display: inline">';
+
+	$out .= wu_select_tree( $subj, $pred_name, $subtype, $args )
+	  if( $subtype->has_revpred( 'scof' ) );
+
+	$out .= '</div>';
+    }
+
+    # TODO: Recurse for all subtypes, make rel-divs etc...
+
+    return $out;
 }
 
 
 ##############################################################################
 
-=head2 tree_select_widget
+=head2 wu_select
 
-  $n->tree_select_widget( $pred, $sub, \%args )
-
-Returns: a HTML widget that draws the C<scof> tree.
+Display a select of everything that is -> $type
 
 =cut
 
-sub tree_select_widget
+sub wu_select
 {
-    my( $node, $args ) = @_;
+    my( $subj, $pred_name, $type, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
-    my $pred;
-    if( $args->{'pred'} )
+    my $out = "";
+    my $R = Rit::Base->Resource;
+    my $req = $Para::Frame::REQ;
+
+    unless( UNIVERSAL::isa $type, 'Rit::Base::Object' and
+            $type->size )
     {
-	$pred = Rit::Base::Pred->get($args->{'pred'})
-	  or die "no pred ".$args->{'pred'};
+	confess "type missing: ".datadump($type,2);
     }
 
-    my $pred2;
-    if( $args->{'pred2'} )
+    my $rev = $args->{'is_rev'} || '';
+    my $header = $args->{'header'};
+    my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
+    my $arc_id = $args->{'arc_id'} ||
+      $singular ? 'singular' : '';
+    my $disabled = $args->{'disabled'} ? 1 : 0;
+    my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
+    my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
+    my $extra = '';
+
+    # Widget may show selected value before this widget is calles
+    my $set_value = $singular ? 1 : 0;
+
+    $extra .= ' class="'. $args->{'class'} .'"'
+      if $args->{'class'};
+
+    $arc ||= $subj->arc( $pred_name, undef, 'direct' )->get_first_nos
+      if( $singular );
+
+    $out .= label_from_params({
+			       label       => $args->{'label'},
+			       tdlabel     => $args->{'tdlabel'},
+			       separator   => $args->{'separator'},
+			       id          => $args->{'id'},
+			       label_class => $args->{'label_class'},
+			      });
+
+    if( $disabled )
     {
-	$pred2 = Rit::Base::Pred->get($args->{'pred2'})
-	  or die "no pred2 ".$args->{'pred2'};
+	my $arclist = $subj->arc_list($pred_name, undef, $args);
+
+	while( my $arc = $arclist->get_next_nos )
+	{
+	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	}
+	return $out;
     }
 
-    my $sub;
-    if( $args->{'sub'} )
+    debug 2, "Building select widget for ".$subj->desig." $pred_name";
+
+    $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+      .'pred_'. $pred_name . $if .'"'. $extra .'>';
+
+    my $default_value;
+    if( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
     {
-	$sub = Rit::Base::Pred->get($args->{'sub'})
-	  or die "no sub ".$args->{'sub'};
+	$default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
     }
-    else
+    $default_value ||= $args->{'default_value'} || '';
+    $out .= '<option value="'. $default_value .'">'. $header .'</option>'
+      if( $header );
+
+    my( $range, $range_pred ) = range_pred($args);
+    $range_pred ||= 'is';
+
+#    debug "TYPE ".$type;
+#    debug "RANGE_PRED ".$range_pred;
+    my $rev_range_pred = 'rev_'.$range_pred;
+    $rev_range_pred =~ s/^rev_rev_//;
+
+    my $items = $type->$rev_range_pred(undef, $args)->sorted->as_listobj;
+#      sorted(['name_short', 'desig', 'label'])->as_listobj;
+
+#    debug "ITEMS ".$items->sysdesig;
+
+    $req->may_yield;
+    die "cancelled" if $req->cancelled;
+
+    confess( "Trying to make a select of ". $items->size .".  That's not wise." )
+      if( $items->size > 500 );
+
+    while( my $item = $items->get_next_nos )
     {
-	$sub = Rit::Base::Pred->get('scof');
+	unless( $items->count % 100 )
+	{
+	    debug sprintf "Wrote item %4d (%s)",
+	      $items->count, $item->desig;
+	    $req->may_yield;
+	    die "cancelled" if $req->cancelled;
+	}
+
+	$out .= '<option value="'. $item->id .'"';
+
+        if( $set_value )
+        {
+            $out .= ' selected="selected"'
+              if( $default_value eq $item->id or
+                  $subj->prop( $pred_name, $item, 'adirect' ) );
+        }
+
+#	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
+	$out .= '>'.$item->desig.'</option>';
+    }
+    $out .= '</select>';
+    if( $set_value )
+    {
+        $out .= $arc->edit_link_html
+          if( $arc );
     }
 
-    my $data = $node->tree_select_data($pred, $sub, $pred2, $args);
-
-    my $select = Template::PopupTreeSelect->new(
-						name => 'Ritbase_tsw',
-						data => $data,
-						title => 'Select a node',
-						button_label => 'Choose',
-						include_css => 0,
-						image_path => $Para::Frame::REQ->site->home_url_path . '/images/PopupTreeSelect/',
-					       );
-    return $select->output;
+    return $out;
 }
 
 
+##############################################################################
 ##############################################################################
 
 =head2 table_columns
@@ -5636,77 +5977,6 @@ sub table_columns
     return ['desig'];
 }
 
-
-##############################################################################
-
-=head2 tree_select_data
-
-  $n->tree_select_data( $pred, $sub, \%args )
-
-Used by L</tree_select_widget>
-
-=cut
-
-sub tree_select_data
-{
-    my( $node, $pred, $sub, $pred2, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
-
-    my $id = $node->id;
-    my $name = $node->prop('name', undef, $args)->loc;
-    debug 2, "Processing treepart $id: $name";
-    my $label;
-    my $flags = " ";
-    $flags .= 'p' if $node->private;
-    $flags .= 'i' if $node->inactive;
-
-    if( $pred )
-    {
-	my $pred_id = $pred->id;
-	my $rec = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred_id, $id);
-	my $cnt = $rec->{'cnt'};
-	debug 3, "                    $id: $cnt nodes";
-
-	if( $pred2 )
-	{
-	    my $pred2_id = $pred2->id;
-	    my $rec2 = $Rit::dbix->select_record("select count(id) as cnt from arc where pred=? and obj=? and active is true", $pred2_id, $id);
-	    my $cnt2 = $rec2->{'cnt'};
-	    debug 3, "                    $id: $cnt2 nodes";
-	    $cnt = $cnt.'/'.$cnt2;
-	}
-
-	$label = sprintf("%s (%s) %s", $name, $cnt, $flags);
-    }
-    else
-    {
-	$label = sprintf("%s %s", $name, $flags);
-    }
-
-    my $data =
-    {
-     label  => $label,
-     value  => $id,
-    };
-
-    my $childs = $node->revlist($sub, undef, aais($args,'adirect'));
-
-    if( $childs->size )
-    {
-	debug 2, "                   $id got ".($childs->size)." childs";
-	$data->{children} = [];
-
-	foreach my $subnode ( $childs->sorted->nodes )
-	{
-	    push @{ $data->{children} },
-	      $subnode->tree_select_data($pred, $sub, $pred2, $args);
-	}
-    }
-
-    $Para::Frame::REQ->may_yield;
-
-    return $data;
-}
 
 #########################################################################
 ################################  Private methods  ######################
@@ -6731,7 +7001,7 @@ sub get_by_label
 		debug "!!!! Constant $label doesn't exist";
 		return undef;
 	    }
-
+            cluck "Constant not found";
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 
@@ -7104,63 +7374,6 @@ sub mark_unsaved
 #    confess "Would mark as unsaved $_[0]->{'id'}";
     $UNSAVED{$_[0]->{'id'}} = $_[0];
 #    debug "Node $_[0]->{id} marked as unsaved now";
-}
-
-
-#########################################################################
-
-=head2 mark_updated
-
-  $node->mark_updated( $time, $user )
-
-This will update info about the nodes update-time and who did the
-updating.
-
-Default user is the request user
-
-Default time is now
-
-For not creating a node rec, consider using:
-
-  $node->mark_updated if $node->node_rec_exist;
-
-The changes will be saved after the request, or by calling L</commit>.
-
-Returns: a time obj
-
-TODO: implement args
-
-=cut
-
-sub mark_updated
-{
-    my( $n, $time, $u ) = @_;
-
-    $n->initiate_node;
-    if( $n->{'created'} || $n->{'created_obj'} )
-    {
-	$time ||= now();
-	$u ||= $Para::Frame::REQ->user;
-
-	$n->{'updated_obj'} = $time;
-	$n->{'updated_by_obj'} = $u;
-	delete $n->{'updated'};
-	delete $n->{'updated_by'};
-    }
-    else
-    {
-	# Will call back here with created_obj set
-	$n->create_rec({time=>$time,
-			   user=> $u});
-    }
-
-    $n->mark_unsaved;
-
-    $n->session_history_add('updated');
-
-#    debug shortmess "Mark UPDATED for ".$n->desig;
-
-    return $time;
 }
 
 
@@ -8125,45 +8338,6 @@ sub coltype_id
 
 #########################################################################
 
-=head2 this_valtype
-
-  $node->this_valtype( \%args )
-
-This would be the same as the C<is> property of this resource. But it
-must only have ONE value. It's important for literal values.
-
-This method will return the literal valtype for value resoruces.
-
-It will return the C<resource> resource if a single class can't be
-identified.
-
-See also: L<Rit::Base::Literal/this_valtype>,
-L<Rit::Base::Arc/this_valtype>, L</is_value_node>.
-
-=cut
-
-sub this_valtype
-{
-    unless( $_[0]->{'valtype'} )
-    {
-	debug 2, "Letting find_class find out type for $_[0]->{id}";
-	$_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
-
-	unless( $_[0]->{'valtype'} )
-	{
-	    debug "Tried to find valtype of ".$_[0]->id;
-	    $Para::Frame::REQ->session->set_debug(3);
-	    $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
-	    confess "CONFUSED";
-	}
-    }
-
-    return $_[0]->{'valtype'};
-}
-
-
-#########################################################################
-
 =head2 this_valtype_reset
 
   $node->this_valtype_reset( \%args )
@@ -8263,46 +8437,6 @@ sub instance_class
     }
 
     return $package;
-}
-
-
-##############################################################################
-
-=head2 update_seen_by
-
-=cut
-
-sub update_seen_by
-{
-    my( $node, $user, $args_in ) = @_;
-    my( $args ) = parse_propargs( $args_in );
-    $user ||= $Para::Frame::U;
-    return $user if $user->id == $C_root->id;
-
-    $node->add({'seen_by'=>$user},
-		 {
-		  %$args,
-		  mark_updated => 1,
-		  activate_new_arcs => 1,
-		 });
-
-    $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
-
-#    debug sprintf "Updated %s --seen_by--> %s ", $node->sysdesig, $user->sysdesig;
-
-    return $user;
-}
-
-
-##############################################################################
-
-=head2 watchers
-
-=cut
-
-sub watchers
-{
-    return Rit::Base::List->new_empty;
 }
 
 

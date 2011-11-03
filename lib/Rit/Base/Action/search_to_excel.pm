@@ -46,11 +46,12 @@ sub handler
     my $resp_path = $home->url_path . "/generated/result-$id.xls";
 
     my $args = {};
-    $args->{'req'}  = $req;
+#    $args->{'req'}  = $req;
     $args->{'url'}  = $resp_path;
-    $args->{'site'} = $req->site;
+#    $args->{'site'} = $req->site;
     $args->{'renderer'} = Rit::Base::Renderer::Search_to_Excel->new();
-    my $file_resp = Para::Frame::Request::Response->new($args);
+#    my $file_resp = Para::Frame::Request::Response->new($args);
+    my $file_resp = $req->response->clone($args);
     unless( $file_resp->render_output )
     {
 	if( my $err = catch($@) )
@@ -61,11 +62,11 @@ sub handler
 	throw('action', "Export failed");
     }
 
-    my $file_url = $file_resp->page_url_with_query_and_reqnum;
+    my $file_url = $file_resp->page->url_path_with_query_and_reqnum;
     $req->session->register_result_page($file_resp, $file_url);
     $q->param('file_download_url', $file_url);
 
-    return "List exported to excel";
+    return "List exported to excel file ".$file_resp->page->name;
 }
 
 

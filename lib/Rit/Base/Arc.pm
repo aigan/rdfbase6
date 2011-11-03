@@ -813,7 +813,7 @@ sub create
 		    {
 			$arc->submit;
 		    }
-		    $arc->activate;
+		    $arc->activate({updated=>$updated});
 		}
 		elsif( $props->{'submitted'} )
 		{
@@ -923,7 +923,7 @@ sub create
 	# Arc should have been submitted instead. But it might have
 	# been deactivated during a resort or other operation.
         #
-	$arc->activate( $args ) if $arc->submitted;
+	$arc->activate({%$args, updated=>$updated}) if $arc->submitted;
     }
 
 
@@ -4255,6 +4255,10 @@ sub set_value
 
 		$arc->{'clean'} = $clean;
 	    }
+	    elsif( $coltype_new eq 'valbin' )
+	    {
+		$value_db = $value_new;
+	    }
 	    else
 	    {
 		debug 3, "We do not specificaly handle coltype $coltype_new\n";
@@ -6705,6 +6709,36 @@ sub use_class
 sub list_class
 {
     return "Rit::Base::Arc::List";
+}
+
+
+###################################################################
+
+=head2 as_rdf
+
+=cut
+
+sub as_rdf
+{
+    my( $a ) = shift;
+
+    my $out = "";
+    my $predl = $a->pred->label;
+    my $val = $a->value;
+    if( $val->is_literal )
+    {
+        my $type = $val->this_valtype;
+        my $val_out = CGI->escapeHTML($val);
+        my $type_label = $type->label || $type->id;
+        $out .= qq(<rb:$predl rdf:datatype="$type_label">$val_out</rb:$predl>\n);
+    }
+    else
+    {
+        my $res_out = $val->label || $val->id;
+        $out .= qq(<rb:$predl rdf:resource="$res_out"/>\n);
+    }
+
+    return $out;
 }
 
 
