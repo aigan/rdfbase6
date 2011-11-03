@@ -26,6 +26,8 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( arc_lock arc_unlock );
 
+use Rit::Base::CMS::Page;
+
 =head1 Usage
 
 This should be set as renderer for url's ending in .rss or .atom, with
@@ -54,15 +56,24 @@ sub render_output
 
     my $id   = $q->param('id')
       or die('No ID'); # Should give error as Feed...
-    my $node = $R->get($id)
-      or die('Bad ID'); # Should give error as Feed...
 
     my $feed_and_entries_info;
 
-    eval {
-	$feed_and_entries_info
-	  = $node->get_feed_and_entries_info( $req );
-    };
+    if ($id eq 'pages') {
+      # hack, until I get to making cms_page NODE handled by perl module...
+      debug('getting pages?');
+      $feed_and_entries_info
+        = Rit::Base::CMS::Page->get_feed_and_entries_info( $req );
+    }
+    else {
+      my $node = $R->get($id)
+        or die('Bad ID'); # Should give error as Feed...
+
+      eval {
+        $feed_and_entries_info
+          = $node->get_feed_and_entries_info( $req );
+      };
+    }
 
     my $format
       = $q->param('format')             ? $q->param('format')
