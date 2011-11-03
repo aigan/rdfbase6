@@ -1103,49 +1103,6 @@ sub wul
 
 ##############################################################################
 
-#sub wdirc
-#{
-#    my( $class, $subj, $pred, $args_in ) = @_;
-#    my( $args ) = parse_propargs($args_in);
-#
-#    my $out = "";
-#
-#    my $predname;
-#    if( ref $pred )
-#    {
-#	$predname = $pred->label;
-#
-#	debug 2, "String wuirc for $predname";
-#	debug 2, "$predname class is ". $pred->range->instance_class;
-#    }
-#    else
-#    {
-#	$predname = $pred;
-#	# Only handles pred nodes
-#	$pred = Rit::Base::Pred->get_by_label($predname);
-#    }
-#
-#    $out .= label_from_params({
-#			       label       => $args->{'label'},
-#			       tdlabel     => $args->{'tdlabel'},
-#			       separator   => $args->{'separator'},
-#			       id          => $args->{'id'},
-#			       label_class => $args->{'label_class'},
-#			      });
-#
-#    my $arclist = $subj->arc_list($predname, undef, $args);
-#
-#    while( my $arc = $arclist->get_next_nos )
-#    {
-#	$out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
-#    }
-#
-#    return $out;
-#}
-
-
-##############################################################################
-
 =head3 as_html
 
 =cut

@@ -6714,6 +6714,36 @@ sub list_class
 
 ###################################################################
 
+=head2 as_rdf
+
+=cut
+
+sub as_rdf
+{
+    my( $a ) = shift;
+
+    my $out = "";
+    my $predl = $a->pred->label;
+    my $val = $a->value;
+    if( $val->is_literal )
+    {
+        my $type = $val->this_valtype;
+        my $val_out = CGI->escapeHTML($val);
+        my $type_label = $type->label || $type->id;
+        $out .= qq(<rb:$predl rdf:datatype="$type_label">$val_out</rb:$predl>\n);
+    }
+    else
+    {
+        my $res_out = $val->label || $val->id;
+        $out .= qq(<rb:$predl rdf:resource="$res_out"/>\n);
+    }
+
+    return $out;
+}
+
+
+###################################################################
+
 =head1 Functions
 
 =head2 timediff
