@@ -4876,18 +4876,18 @@ sub arcversions
 
 =head1 Widgets
 
-wn = Widget for updating the Node
-as_html, context_as_html, diff_as_html
-desig, longdesig, safedesig, sysdesig, syskey, loc
+ wn = Widget for updating the Node
+ as_html, context_as_html, diff_as_html
+ desig, longdesig, safedesig, sysdesig, syskey, loc
 
-wu = Widget for Updating property
-wuh = Widget for Updating Hidden property
-wu_select_tree = Widget for Updating property as a Select Yree
-wu_select = Widget for Updating property ad a Select
-wul = Widget for Updating Literal
+ wu              = Widget for Updating property
+ wuh             = Widget for Updating Hidden property
+ wu_select_tree  = Widget for Updating property as a Select Yree
+ wu_select       = Widget for Updating property ad a Select
+ wul             = Widget for Updating Literal
 
-wd = Widget for Displaying property
-display = Display property as plain string
+wd       = Widget for Displaying property
+display  = Display property as plain string
 
 wdirc = Widget for Displaying Instance of Range Class
 wuirc = Widget for Updating Instance of Range Class
@@ -4896,7 +4896,6 @@ Example:
 
   $pred->range->instance_class->wdirc($subj, $pred, $args);
   $pred->range->instance_class->wuirc($subj, $pred, $args);
-
 
 
 =cut
