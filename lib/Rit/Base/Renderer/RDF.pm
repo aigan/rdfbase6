@@ -48,14 +48,19 @@ sub render_output
     debug "FILE: $file";
 
     my $rdfns = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
+    my $rbns = $req->site->get_page("/rb/rdf/")->url;
+
     $out .= qq(<?xml version="1.0"?>\n);
     $out .= qq(<rdf:RDF xmlns:rdf="$rdfns"\n);
-    $out .= qq(xmlns:rb="http://jonas.rit.se/~joli/hg/rb/rdf/">\n);
+    $out .= qq(xmlns:rb="$rbns">\n);
 
-    my $n = $R->get($file);
-    foreach my $pred ( $n->list_preds->as_array )
+    if( $req->user->has_root_access )
     {
-        $out .= $n->arc($pred)->as_rdf;
+	my $n = $R->get($file);
+	foreach my $pred ( $n->list_preds->as_array )
+	{
+	    $out .= $n->arc($pred)->as_rdf;
+	}
     }
 
     $out .= qq(</rdf:RDF>\n);
