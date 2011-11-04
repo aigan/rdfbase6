@@ -1,4 +1,6 @@
-[% META title = "Plugins" %]
+[% META title = "Plugins"
+level=40
+%]
 
 [% IF NOT find(label => 'plugin') %]
   Plugin support is not initialized.  Initializing.
