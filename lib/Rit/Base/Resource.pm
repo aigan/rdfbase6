@@ -3367,27 +3367,89 @@ sub syskey
 
 
 ##############################################################################
-#
-#=head2 loc
-#
-#  $n->loc( \%args )
-#
-#Asking to translate this word.  But there is only one value.  This is
-#probably a lone literal resource.
-#
-#Used by L<Rit::Base::List/loc>.
-#
-#Returns: A plain string
-#
-#=cut
-#
-#sub loc
-#{
-#    return shift->value->loc(@_);
-##    return shift->desig; # ????
-#}
-#
-#
+
+=head2 as_excerpt
+
+  $n->as_excerpt
+
+Returns an excerpt, if existing
+
+=cut
+
+sub as_excerpt
+{
+    my( $n, $limit, $min ) = @_;
+
+    $limit ||= 150;
+    $min   ||= int($limit/3);
+
+    my $text = $n->excerpt_input( $limit );
+
+#    debug "Excerpt: $text";
+
+    if( length($text) < $limit )
+    {
+	return $text;
+    }
+
+    if( $text =~ /^(.*?)\n/ )
+    {
+	if( length($1) > $min )
+	{
+	    $text = $1;
+	    if( length($text) < $limit )
+	    {
+		return $1;
+	    }
+	}
+    }
+
+    my $textcent = $text;
+    while( $textcent =~ s/(.*)\.\s.*/$1/s )
+    {
+	if( length($textcent) > $min )
+	{
+	    $text = $textcent;
+	    if( length($text) < $limit )
+	    {
+		return $text;
+	    }
+	}
+	else
+	{
+	    last;
+	}
+    }
+
+#    debug "Text now: $text";
+#    debug "Length: ".length($text);
+    if( $text =~ /^(.{$min,$limit})[ \,]/s )
+#    if( $text =~ /^(.{55,})/ )
+    {
+#	debug "Found a cut";
+	return $1.'…';
+    }
+
+    return substr($text, 0, $limit).'…';
+}
+
+
+##############################################################################
+
+=head2 excerpt_input
+
+  $n->excerpt_input
+
+Returns the text to use for generating an excerpt, if existing
+
+=cut
+
+sub excerpt_input
+{
+    return $_[0]->prop('description')->loc;
+}
+
+
 ##############################################################################
 
 =head2 arc_list
