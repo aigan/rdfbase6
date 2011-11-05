@@ -3385,6 +3385,8 @@ sub as_excerpt
 
     my $text = $n->excerpt_input( $limit );
 
+    $text =~ s/^\s|\s$//sg;
+
 #    debug "Excerpt: $text";
 
     if( length($text) < $limit )
