@@ -70,7 +70,7 @@ sub render_output
     my $params;
     if( my $params_in = $q->param('params') )
     {
-	$params = from_json( $params_in );
+        $params = from_json( $params_in );
 	debug "Got params data: ". datadump($params);
     }
 
@@ -102,7 +102,7 @@ sub render_output
 	    my $rev = $q->param('rev');
 
 	    my $on_arc_add;
-	    if( my $on_arc_add_json = $q->param('on_arc_add') )
+	    if ((my $on_arc_add_json = $q->param('on_arc_add')) ne 'null')
 	    {
 		$on_arc_add = from_json($on_arc_add_json);
 	    }
@@ -192,7 +192,7 @@ sub render_output
     {
 	$req->require_root_access;
 	$rend->{'ctype'} = 'json';
-	my $lookup_preds = from_json( $q->param('search_type') );
+	my $lookup_preds = from_json($q->param('search_type'));
 	my $lookup_value = $q->param('search_value');
 	trim( \$lookup_value );
 

@@ -38,6 +38,7 @@ use Carp qw( cluck confess carp croak shortmess longmess );
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr blessed looks_like_number );
 use DBD::Pg qw(:pg_types);
+use JSON; # to_json
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
@@ -6285,7 +6286,7 @@ sub remove_check
 
   $a->notify_change( \%args )
 
-Will mark dependant nodes as updated unless for 
+Will mark dependant nodes as updated unless for
 
 =cut
 
@@ -6570,18 +6571,27 @@ sub edit_link_html
     return ''
       unless $Para::Frame::REQ->user->has_root_access;
 
-    my $home = $Para::Frame::REQ->site->home_url_path;
+    my $home   = $Para::Frame::REQ->site->home_url_path;
     my $arc_id = $arc->id;
+    my $a_id   = "edit_arc_link_$arc_id";
 
     return
       (
-       "<a href=\"$home/rb/node/arc/update.tt?".
-       "id=$arc_id\" class=\"edit_arc_link\" ".
-       "onmouseover=\"TagToTip('updated$arc_id')\">E</a>".
-       "<span id=\"updated$arc_id\" style=\"display: none\">".
-       $arc->info_updated_html($args) .
-       "</span>"
+       "<a id=\"$a_id\" href=\"$home/rb/node/arc/update.tt?"
+       . "id=$arc_id\" class=\"edit_arc_link\" />E</a>"
+       . "<script type=\"text/javascript\">\n"
+       . "  \$('#$a_id').tipsy("
+       . to_json({
+                  fallback => $arc->info_updated_html($args),
+                  html     => 'true',
+                  delayOut => 1000,
+                 })
+       . "  );"
+       . "</script>"
       );
+    # TODO: Fix a method to add late-loaded scriptfragments, added
+    # just before </body>, preferrably minified in ONE <script>, not a
+    # hundred :P
 }
 
 
