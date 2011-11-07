@@ -32,7 +32,6 @@ use constant CLUE_ANYTHING  => 128; # for overriding any other default
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
-#use Template::PopupTreeSelect '0.9';
 use JSON; # to_json
 
 use Para::Frame::Reload;
