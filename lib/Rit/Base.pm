@@ -18,7 +18,7 @@ use warnings;
 
 use JSON;
 
-use Para::Frame 1.17;
+use Para::Frame 1.21;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
@@ -40,7 +40,7 @@ use Rit::Base::Setup;
 use Rit::Base::Plugins;
 
 
-our $VERSION = "6.63";
+our $VERSION = "6.64";
 
 
 =head1 NAME
