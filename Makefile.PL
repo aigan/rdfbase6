@@ -123,11 +123,11 @@ print "\n";
 ##########
 
 WriteMakefile(
-	      'NAME'	       => 'Rit::Base',
+	      'NAME'	       => 'RDF::Base',
 	      'PMLIBDIRS'      => [],
 	      'SKIP'           => ['all','install'],
- 	      'VERSION_FROM'   => 'lib/Rit/Base.pm', # finds $VERSION
-	      'ABSTRACT_FROM'  => 'lib/Rit/Base.pm',
+ 	      'VERSION_FROM'   => 'lib/RDF/Base.pm', # finds $VERSION
+	      'ABSTRACT_FROM'  => 'lib/RDF/Base.pm',
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {

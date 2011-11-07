@@ -11,7 +11,7 @@ our $CFG;
 our @got_warning;
 
 use Test::Warn;
-use Test::More tests => 42;
+use Test::More tests => 5;
 
 
 BEGIN
@@ -33,9 +33,9 @@ BEGIN
     use_ok('Para::Frame::DBIx');
     use_ok('Para::Frame::Utils', 'datadump' );
 
-    use_ok('Rit::Base');
-    use_ok('Rit::Base::Utils', qw( is_undef parse_propargs query_desig ) );
-    use_ok('Rit::Base::User::Meta');
+    use_ok('RDF::Base');
+    use_ok('RDF::Base::Utils', qw( is_undef parse_propargs query_desig ) );
+    use_ok('RDF::Base::User::Meta');
 
 #    open STDOUT, ">&", SAVEOUT      or die "Can't restore STDOUT: $!";
 }
@@ -54,7 +54,7 @@ my $cfg_in =
  dir_var           => $troot.'/var',
  'port'            => 9999,
  'debug'           => 0,
- 'user_class'      => 'Rit::Base::User::Meta',
+ 'user_class'      => 'RDF::Base::User::Meta',
 };
 
 Para::Frame->configure($cfg_in);
@@ -65,9 +65,9 @@ Para::Frame::Site->add({
 
 my $cfg = $Para::Frame::CFG;
 
-my $dbconnect = Rit::Base::Setup->dbconnect;
+my $dbconnect = RDF::Base::Setup->dbconnect;
 
-$Rit::dbix = Para::Frame::DBIx ->
+$RDF::dbix = Para::Frame::DBIx ->
   new({
        connect => $dbconnect,
        import_tt_params => 0,
@@ -75,10 +75,10 @@ $Rit::dbix = Para::Frame::DBIx ->
 
 Para::Frame->add_hook('on_startup', sub
 		      {
-			  $Rit::dbix->connect;
+			  $RDF::dbix->connect;
 		      });
 
-Rit::Base->init();
+RDF::Base->init();
 Para::Frame->startup;
 
 ###########
@@ -90,9 +90,9 @@ my $req = Para::Frame::Request->new_bgrequest();
 
 my( $args, $arclim, $res ) = parse_propargs('auto');
 
-my $R = Rit::Base->Resource;
-my $Ls = 'Rit::Base::Literal::String';
-my $C = Rit::Base->Constants;
+my $R = RDF::Base->Resource;
+my $Ls = 'RDF::Base::Literal::String';
+my $C = RDF::Base->Constants;
 
 my $Class = $C->get('class');
 my $Pred = $C->get('predicate');
@@ -102,8 +102,8 @@ my $Date = $C->get('date');
 ###### $R->get()
 #
 #
-{
-}
+#{
+#}
 
 
 

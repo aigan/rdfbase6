@@ -1,4 +1,4 @@
-package Rit::Base::Demo;
+package RDF::Base::Demo;
 #=============================================================================
 #
 # AUTHOR
@@ -16,9 +16,9 @@ use warnings;
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
-use Rit::Base;
-use Rit::Base::Utils qw( string );
-use Rit::Base::Setup;
+use RDF::Base;
+use RDF::Base::Utils qw( string );
+use RDF::Base::Setup;
 
 our $CFG;
 
@@ -45,7 +45,7 @@ sub store_cfg
 
 sub on_done ()
 {
-    Rit::Base->on_done();
+    RDF::Base->on_done();
 }
 
 
@@ -54,7 +54,7 @@ sub on_done ()
 =head2 on_configure
 
 Adds class given by C<resource_class> as a parent to
-L<Rit::Guides::Resource>. That class must be loaded during startup.
+L<RDF::Guides::Resource>. That class must be loaded during startup.
 
 
 =cut
@@ -65,7 +65,7 @@ sub on_configure
     if( my $resource_class = $Para::Frame::CFG->{'resource_class'} )
     {
 	debug "Adding $resource_class";
-	push @Rit::Base::Resource::ISA, $resource_class;
+	push @RDF::Base::Resource::ISA, $resource_class;
     }
 }
 
@@ -79,7 +79,7 @@ sub initialize_db
 {
     if( $ARGV[0] and ($ARGV[0] eq 'setup_db') )
     {
-	Rit::Base::Setup->setup_db();
+	RDF::Base::Setup->setup_db();
     }
 
 
@@ -89,10 +89,10 @@ sub initialize_db
 
     my $req = Para::Frame::Request->new_bgrequest();
 
-    my $R = Rit::Base->Resource;
-    my $P = Rit::Base->Pred;
-    my $C = Rit::Base->Constants;
-#    my $dbix = $Rit::dbix;
+    my $R = RDF::Base->Resource;
+    my $P = RDF::Base->Pred;
+    my $C = RDF::Base->Constants;
+#    my $dbix = $RDF::dbix;
 
 #    my $rbc = $R->get({code => 'ritbase_core_resource'});
 
@@ -108,6 +108,6 @@ sub initialize_db
 =head1 SEE ALSO
 
 L<Para::Frame>
-L<Rit::Base>
+L<RDF::Base>
 
 =cut

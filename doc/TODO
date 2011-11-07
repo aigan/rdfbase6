@@ -17,7 +17,7 @@ node_update, där man gör en permission-check i standardiserad form, typ:
 			   has_body    => '*',
 			  };
 
-    my $node = Rit::Base::Resource->get($id);
+    my $node = RDF::Base::Resource->get($id);
     if( $node->check_query_permissions( $allowed_preds ) )
     {
 	$node->update_by_query($args);

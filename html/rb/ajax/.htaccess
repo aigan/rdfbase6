@@ -1,5 +1,5 @@
 SetHandler perl-script
-PerlSetVar renderer Rit::Base::Renderer::AJAX
+PerlSetVar renderer RDF::Base::Renderer::AJAX
 PerlSetVar loadpage no
-#PerlSetVar find  Rit::Base::Renderer::AJAX
+#PerlSetVar find  RDF::Base::Renderer::AJAX
 

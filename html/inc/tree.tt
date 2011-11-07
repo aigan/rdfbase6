@@ -60,7 +60,7 @@
 --></style>
 
 <script language="javascript">
-  [* tsw = 'Ritbase_tsw' +*]
+  [* tsw = 'RDFbase_tsw' +*]
   function ritbase_selected_item()
   {
         if ([* tsw *]_selected_id == -1) {
@@ -79,19 +79,19 @@
 
   function ritbase_toggle_expand_all()
   {
-	var node = document.getElementById("Ritbase_tsw-node-" + 1);
+	var node = document.getElementById("RDFbase_tsw-node-" + 1);
 	for(var i = 1; node != undefined; i++ )
 	{
-	    var obj = document.getElementById("Ritbase_tsw-desc-" + i);
+	    var obj = document.getElementById("RDFbase_tsw-desc-" + i);
 	    if( obj != undefined )
 	    {
 	        if( obj.style.display != 'block')
 		{
-		    Ritbase_tsw_toggle_expand( i );
+		    RDFbase_tsw_toggle_expand( i );
 		}
 	    }
 
-	    var elemname = "Ritbase_tsw-node-" + (i+1);
+	    var elemname = "RDFbase_tsw-node-" + (i+1);
 	    node = document.getElementById(elemname);
 	}
   }

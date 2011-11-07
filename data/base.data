@@ -196,13 +196,13 @@ syllogism	scof	rule
 syllogism	has_wikipedia_id		Syllogism
 syllogism	class_handled_by_perl_module	101
 101	is	class_perl_module
-101	code		Rit::Base::Rule
+101	code		RDF::Base::Rule
 predicate	class_handled_by_perl_module	102
 102	is	class_perl_module
-102	code		Rit::Base::Pred
+102	code		RDF::Base::Pred
 login_account	class_handled_by_perl_module	103
 103	is	class_perl_module
-103	code		Rit::Base::User
+103	code		RDF::Base::User
 predicate	is	class
 arc	is	class
 class_form_url	is	predicate
@@ -257,7 +257,7 @@ ritbase	has_version		3
 is_of_language	is	predicate
 is_of_language	domain	valtext
 is_of_language	range	language
-121	code		Rit::Base::Translatable
+121	code		RDF::Base::Translatable
 121	is	class_perl_module
 translatable	is	class
 translatable	class_handled_by_perl_module	121
@@ -303,28 +303,28 @@ guest	is	login_account
 
 bool	class_handled_by_perl_module	105
 105	is	class_perl_module
-105	code		Rit::Base::Literal::Bool
+105	code		RDF::Base::Literal::Bool
 
 email_address	class_handled_by_perl_module	106
 106	is	class_perl_module
-106	code		Rit::Base::Literal::Email::Address
+106	code		RDF::Base::Literal::Email::Address
 
 image	class_handled_by_perl_module	107
 107	is	class_perl_module
-107	code		Rit::Base::Literal::Image
+107	code		RDF::Base::Literal::Image
 
 url	class_handled_by_perl_module	108
 108	is	class_perl_module
-108	code		Rit::Base::Literal::URL
+108	code		RDF::Base::Literal::URL
 
 website_url	class_handled_by_perl_module	109
 109	is	class_perl_module
-109	code		Rit::Base::Literal::URL::Website
+109	code		RDF::Base::Literal::URL::Website
 
 email	is	class
 email	class_handled_by_perl_module	114
 114	is	class_perl_module
-114	code		Rit::Base::Email
+114	code		RDF::Base::Email
 has_message_id	is	predicate
 has_message_id	domain	email
 has_message_id	range	term
@@ -347,7 +347,7 @@ has_email_body_template_email	range_card_max		1
 
 password	class_handled_by_perl_module	115
 115	is	class_perl_module
-115	code		Rit::Base::Literal::Password
+115	code		RDF::Base::Literal::Password
 
 
 

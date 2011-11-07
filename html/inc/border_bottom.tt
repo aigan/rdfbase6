@@ -3,7 +3,7 @@
 <div class="paraframe_menu_bottom">
 [% PROCESS menu_bottom.tt %]
 <div class="paraframe_menu_admin">
-Ritbase:
+RDFbase:
 [%+ go('Sökning', "$home/rb/node/search.tt", mark ) %]
 [%+ go('Skapa', "$home/rb/node/arc/add.tt", mark) %]
 [%+ go('Preds', "$home/rb/node/pred/list.tt", mark) %]

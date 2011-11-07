@@ -1,4 +1,4 @@
-package Rit::Base::Plugins::Blog::Post;
+package RDF::Base::Plugins::Blog::Post;
 
 use strict;
 use warnings;
@@ -8,7 +8,7 @@ use utf8;
 use Para::Frame::Reload;
 use Para::Frame::Time qw( now );
 
-use Rit::Base::Constants qw( $C_plugin_blog_post_comment );
+use RDF::Base::Constants qw( $C_plugin_blog_post_comment );
 
 sub publish
 {
@@ -45,7 +45,7 @@ sub add_comment
 {
     my( $post, $name, $has_email, $message, $args ) = @_;
 
-    my $R = Rit::Base->Resource;
+    my $R = RDF::Base->Resource;
 
     $R->create({
 		is        => $C_plugin_blog_post_comment,

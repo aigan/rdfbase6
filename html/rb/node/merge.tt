@@ -101,6 +101,6 @@ noden för att se ifall det korrigerar felet.
 motsvarande arcs skapas hos den nya noden. Du kommer att stå som
 skapara för alla de arcs du flyttat.
 
-<p>Se också modul-manualen <code>Rit::Base::Resource/merge_node</code>
+<p>Se också modul-manualen <code>RDF::Base::Resource/merge_node</code>
 
 [% END %]
