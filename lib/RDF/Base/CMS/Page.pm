@@ -20,7 +20,6 @@ use Para::Frame::L10N qw( loc );
 
 use RDF::Base::Utils qw( valclean parse_propargs query_desig );
 use RDF::Base::Constants qw( $C_cms_page $C_language );
-use Rit::Base::Constants qw( $C_cms_page $C_language );
 
 
 =head1 NAME
