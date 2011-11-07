@@ -19,7 +19,8 @@ use Para::Frame::Utils qw( throw catch debug datadump deunicode );
 use Para::Frame::L10N qw( loc );
 
 use RDF::Base::Utils qw( valclean parse_propargs query_desig );
-use RDF::Base::Constants qw( $C_cms_page );
+use RDF::Base::Constants qw( $C_cms_page $C_language );
+use Rit::Base::Constants qw( $C_cms_page $C_language );
 
 
 =head1 NAME
@@ -49,16 +50,18 @@ sub get_feed_and_entries_info
 #    $feed_info->{description} = $class->description if $class->description;
     $feed_info->{modified   } = $C_cms_page->arc( 'is' )->created;
 #    $feed_info->{language   } = 'sv_SE'; #$class->is_in_language || 'sv_SE';
-    
 
-    my $pages = $C_cms_page->rev_is #({ has_url_exist => 1 })
+    my $pages = $C_cms_page->rev_is({ has_url_exist => 1 })
       ->sorted('has_date', 'desc');
 
     push @post_entries, $feed_info;
 
+    my $language = $R->find({ code => $req->language->preferred, is => $C_language });
+    debug $language->sysdesig;
+
     while( my $page = $pages->get_next_nos )
     {
-	next unless $page->has_url;
+        next unless $page->name({ is_of_language => $language });
 	my $entry = {};
 	$entry->{id      } = $req->site->home->get_virtual( $page->has_url )->url;
 	$entry->{link    } = $req->site->home->get_virtual( $page->has_url )->url;
