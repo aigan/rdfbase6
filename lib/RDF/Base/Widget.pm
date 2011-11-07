@@ -72,9 +72,10 @@ sub aloc
 
         my $out = "";
 
-        $out .= '<span class="translatable" title="'.
-          CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
-            '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+        $out
+          .= '<span class="translatable" title="'
+            . CGI->escapeHTML($phrase)
+              . '" id="translate_'. $id . '">' . loc($phrase, @_) . '</span>';
 
         return $out;
     }

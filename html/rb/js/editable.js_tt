@@ -1,4 +1,4 @@
-// jQuery(document).ready( rb_make_editable );
+jQuery(document).ready( rb_make_editable );
 
 /**
  * Function : dump()
@@ -42,20 +42,44 @@ function dump(arr,level) {
 
 function rb_make_editable()
 {
-    jQuery('.html_editable').wysiwyg();
+  var $pen
+    = $('<img/>')
+    .attr('src', "[%home%]/pf/images/edit.gif")
+    .css('border', 'none');
 
-    jQuery('.translatable').editable('[%home%]/ajax/app/translate_string', {
-//	data : function(){ alert(dump(this)); return this },
-	data : function(){ return this.title },
-//	tooltip : function(){ return this.title },
-    });
+  jQuery('.html_editable').wysiwyg();
+  
+  jQuery('.translatable').editable(
+    '[%home%]/rb/ajax/app/translate_string', {
+      onblur   : 'ignore'
+      //data : function() { return this.title; }
+    }
+  );
+
+  jQuery('.translatable').each(
+    function() {
+      var $this = $(this);
+      var $link = $this.closest('a');
+      var $this_pen = $pen.clone();
+
+      $this_pen.click(
+        function(event) {
+          //$this.click(function(event) { event.preventDefault(); });
+          if ($link) $link.click(function(event) { event.preventDefault(); });
+          $this.click();
+        }
+      );
+
+      $this.after($this_pen);
+    }
+  );
 
     jQuery('.editable').editable('[%home%]/ajax/app/arc_update', { 
         type      : 'wysiwyg',
         cancel    : 'Cancel',
         submit    : 'OK',
         indicator : '<img src="[%home%]/img/loading_small.gif" />',
-        tooltip   : '[% loc('Click to edit') %]',
+        tooltip   : "[% loc('Click to edit') %]",
         onblur    : 'ignore'
     });
 
@@ -64,7 +88,7 @@ function rb_make_editable()
         cancel    : 'Cancel',
         submit    : 'OK',
         indicator : '<img src="[%home%]/img/loading_small.gif" />',
-        tooltip   : '[% loc('Click to edit') %]',
+        tooltip   : "[% loc('Click to edit') %]",
         onblur    : 'ignore'
     });
 }
