@@ -5701,7 +5701,7 @@ sub wuirc
 	    $out .= sprintf(q{
 <script type="text/javascript">
 <!--
-  new RBInputPopup(%s)
+  new RBInputPopup(%s);
 //-->
 </script>
 },
