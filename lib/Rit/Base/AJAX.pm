@@ -152,7 +152,7 @@ sub register_page_part
     $params = to_json( $params || {} );
 
     return "<script><!--
-                new PagePart('$divid', '$update_url', '$params'.evalJSON());
+                new PagePart('$divid', '$update_url', $params);
             //--></script>";
 }
 
