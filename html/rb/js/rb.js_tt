@@ -345,14 +345,14 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        return(true);
      };
      
-     $this.insert_wu = function( after, args_json )
-     {
+     $this.insert_wu = function(after, args_json) {
+       var $after = $('#' + after);
        $.get(
          '[%home%]/rb/ajax/wu',
          { params: args_json },
          function(data) {
-           $(after).append(data);
-           var new_part = $(after).next();
+           $after.after(data);
+           var new_part = $after.next();
            prepareForm();
            new_part.show();
          }
