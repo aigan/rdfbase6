@@ -1,70 +1,102 @@
-// jQuery(document).ready( rb_make_editable );
+if (typeof RDF      === 'undefined') var RDF  = {};
+if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
-/**
- * Function : dump()
- * Arguments: The data - array,hash(associative array),object
- *    The level - OPTIONAL
- * Returns  : The textual representation of the array.
- * This function was inspired by the print_r function of PHP.
- * This will accept some data as the argument and return a
- * text that will be a more readable version of the
- * array/hash/object that is given.
- * Docs: http://www.openjs.com/scripts/others/dump_function_php_print_r.php
- */
-function dump(arr,level) {
-	var dumped_text = "";
-	if(!level) level = 0;
-	if( level > 2 ) return dumped_text;
-	
-	//The padding given at the beginning of the line.
-	var level_padding = "";
-	for(var j=0;j<level+1;j++) level_padding += "    ";
-	
-	if(typeof(arr) == 'object') { //Array/Hashes/Objects 
-		for(var item in arr) {
-			var value = arr[item];
-			
-			if(typeof(value) == 'object') { //If it is an array,
-				dumped_text += level_padding + "'" + item + "' (" + value + ")...\n";
-//				dumped_text += dump(value,level+1);
-			} else {
-				dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
-			}
-		}
-	} else { //Stings/Chars/Numbers etc.
-		dumped_text = "===>"+arr+"<===("+typeof(arr)+")";
-	}
-	return dumped_text;
-}
+(function($) {
+   /**
+    * Function : dump()
+    * Arguments: The data - array,hash(associative array),object
+    *    The level - OPTIONAL
+    * Returns  : The textual representation of the array.
+    * This function was inspired by the print_r function of PHP.
+    * This will accept some data as the argument and return a
+    * text that will be a more readable version of the
+    * array/hash/object that is given.
+    * Docs: http://www.openjs.com/scripts/others/dump_function_php_print_r.php
+    */
+   function dump(arr,level) {
+     var dumped_text = "";
+     if(!level) level = 0;
+     if( level > 2 ) return dumped_text;
+
+     //The padding given at the beginning of the line.
+     var level_padding = "";
+     for(var j=0;j<level+1;j++) level_padding += "    ";
+
+     if(typeof(arr) == 'object') { //Array/Hashes/Objects
+       for(var item in arr) {
+	 var value = arr[item];
+
+	 if(typeof(value) == 'object') { //If it is an array,
+	   dumped_text += level_padding + "'" + item + "' (" + value + ")...\n";
+           //				dumped_text += dump(value,level+1);
+	 } else {
+	   dumped_text += level_padding + "'" + item + "' => \"" + value + "\"\n";
+	 }
+       }
+     } else { //Stings/Chars/Numbers etc.
+       dumped_text = "===>"+arr+"<===("+typeof(arr)+")";
+     }
+     return dumped_text;
+   }
 
 
 
 
-function rb_make_editable()
-{
-    jQuery('.html_editable').wysiwyg();
+   RDF.Base.makeEditable = function() {
+     var $pen
+       = $('<img/>')
+       .attr('src', "[%home%]/pf/images/edit.gif")
+       .css('border', 'none');
 
-    jQuery('.translatable').editable('[%home%]/ajax/app/translate_string', {
-//	data : function(){ alert(dump(this)); return this },
-	data : function(){ return this.title },
-//	tooltip : function(){ return this.title },
-    });
+     $('.html_editable').wysiwyg();
 
-    jQuery('.editable').editable('[%home%]/ajax/app/arc_update', { 
-        type      : 'wysiwyg',
-        cancel    : 'Cancel',
-        submit    : 'OK',
-        indicator : '<img src="[%home%]/img/loading_small.gif" />',
-        tooltip   : '[% loc('Click to edit') %]',
-        onblur    : 'ignore'
-    });
+     $('.translatable').editable(
+       '[%home%]/rb/ajax/app/translate_string', {
+         onblur : 'ignore',
+         data   : function() { return this.title; }
+       }
+     );
 
-    jQuery('.new_arc').editable('[%home%]/ajax/app/arc_create', { 
-        type      : 'wysiwyg',
-        cancel    : 'Cancel',
-        submit    : 'OK',
-        indicator : '<img src="[%home%]/img/loading_small.gif" />',
-        tooltip   : '[% loc('Click to edit') %]',
-        onblur    : 'ignore'
-    });
-}
+     $('.translatable').each(
+       function() {
+         var $this = $(this);
+         var $link = $this.closest('a');
+         var $this_pen = $pen.clone();
+
+         $this_pen.click(
+           function(event) {
+             //$this.click(function(event) { event.preventDefault(); });
+             if ($link) $link.click(function(event) { event.preventDefault(); });
+             $this.click();
+           }
+         );
+
+         $this.after($this_pen);
+       }
+     );
+
+     $('.editable').editable(
+       '[%home%]/ajax/app/arc_update',
+       {
+         type      : 'wysiwyg',
+         cancel    : 'Cancel',
+         submit    : 'OK',
+         indicator : '<img src="[%home%]/img/loading_small.gif" />',
+         tooltip   : "[% loc('Click to edit') %]",
+         onblur    : 'ignore'
+       }
+     );
+
+     $('.new_arc').editable(
+       '[%home%]/ajax/app/arc_create', {
+         type      : 'wysiwyg',
+         cancel    : 'Cancel',
+         submit    : 'OK',
+         indicator : '<img src="[%home%]/img/loading_small.gif" />',
+         tooltip   : "[% loc('Click to edit') %]",
+         onblur    : 'ignore'
+       }
+     );
+   }
+ }
+)(jQuery);

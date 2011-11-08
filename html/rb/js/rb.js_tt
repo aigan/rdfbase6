@@ -1,10 +1,11 @@
 ﻿// Our namespace!
-var rdfbase = {};
+if (typeof RDF      === 'undefined') var RDF  = {};
+if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
 (function($) {
-   var $load_indicator
+   RDF.Base.$load_indicator
      = $('<img />')
-     .css('display', 'none')
+   //.css('display', 'none')
      .css('position', 'absolute')
      .css('top', '45%')
      .css('left', '45%')
@@ -256,10 +257,10 @@ var rdfbase = {};
 
 
    // Registered PagePart objects
-   rdfbase.pageparts = {};
+   RDF.Base.pageparts = {};
 
    // Local short alias
-   var pps      = rdfbase.pageparts;
+   var pps      = RDF.Base.pageparts;
 
    var pps_deps = {};
 
@@ -275,9 +276,7 @@ var rdfbase = {};
 
        for (var i in params.depends_on) {
          var depo = params.depends_on[i];
-         if( !pps_deps[depo] ) {
-           pps_deps[depo] = new Array();
-         }
+         if (typeof pps_deps[depo] === 'undefined') pps_deps[depo] = [];
          pps_deps[depo].push($this);
        }
      }

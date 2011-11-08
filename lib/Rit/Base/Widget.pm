@@ -39,7 +39,7 @@ use Rit::Base;
 use Rit::Base::Arc;
 use Rit::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use Rit::Base::L10N;
-use Rit::Base::Constants qw( $C_translatable $C_has_translation );
+use Rit::Base::Constants qw( $C_translatable $C_has_translation $C_language );
 
 =head1 DESCRIPTION
 
@@ -59,22 +59,40 @@ sub aloc
 
     if( $Para::Frame::REQ->session->admin_mode )
     {
+        my $R = Rit::Base->Resource;
         my $id = Rit::Base::L10N::find_translation_node_id($phrase);
+        my $node;
 
         unless( $id )
 	{
-            my $R = Rit::Base->Resource;
             my $node = $R->create({ translation_label => $phrase,
 				    is => $C_translatable,
 				  }, { activate_new_arcs => 1 });
             $id = $node->id;
         }
 
+        $node = $R->get($id) unless $node;
+
         my $out = "";
 
-        $out .= '<span class="translatable" title="'.
-          CGI->escapeHTML(loc($phrase,qw([_1] [_2] [_3] [_4] [_5]))).
-            '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
+        my $langcode = $Para::Frame::REQ->language->preferred;
+        return loc($phrase, @_) if (!$langcode);
+
+        my $lang = $C_language->first_revprop('is',{code => $langcode});
+        return loc($phrase, @_) if (!$lang);
+
+        my $translation;
+        if (not $translation = $node->first_prop('has_translation',
+                                                 {is_of_language=>$lang}
+                                                )->plain )
+        {
+          $translation = $phrase;
+        }
+
+        $out
+          .= '<span class="translatable" title="'
+            . CGI->escapeHTML($translation)
+              . '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
 
         return $out;
     }

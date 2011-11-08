@@ -6,6 +6,11 @@
   <script type="text/javascript" src="[% home %]/rb/js/jquery.json-2.2.js"></script>
   <script type="text/javascript" src="[% home %]/rb/js/tipsy/src/javascripts/jquery.tipsy.js"></script>
   <link rel="Stylesheet" href="[% home %]/rb/js/tipsy/src/stylesheets/tipsy.css" type="text/css" />
+  <script type="text/javascript" src="[% home %]/rb/js/editable.js_tt"></script>
+
+  <script type="text/javascript">
+    jQuery(RDF.Base.makeEditable);
+  </script>
 [% END %]
 
 [%# INCLUDE js_extra_2.tt   # for even more... %]
