@@ -28,32 +28,6 @@ use Para::Frame::L10N qw( loc );
 
 use Rit::Base::Utils qw( arc_lock arc_unlock );
 
-##############################################################################
-# I'm sorry...  I should never have added these to RB; they are RG
-# specific.
-# TODO: FIXME!  ...move it to RG::AJAX::... instead.. or something...
-# They are used for displaying specific types of nodes in rb-lookup
-our $C_zipcode     ;
-our $C_city        ;
-our $C_country     ;
-our $C_person      ;
-our $C_organization;
-our $C_lodging     ;
-our $C_location    ;
-
-BEGIN {
-    my $C = Rit::Base->Constants;
-    $C_zipcode      = $C->find({ label => 'zipcode'      }) || undef;
-    $C_city         = $C->find({ label => 'city'         }) || undef;
-    $C_country      = $C->find({ label => 'country'      }) || undef;
-    $C_person       = $C->find({ label => 'person'       }) || undef;
-    $C_organization = $C->find({ label => 'organization' }) || undef;
-    $C_lodging      = $C->find({ label => 'lodging'      }) || undef;
-    $C_location     = $C->find({ label => 'location'     }) || undef;
-}
-##############################################################################
-
-
 
 ##############################################################################
 
@@ -74,6 +48,10 @@ sub render_output
 	debug "Got params data: ". datadump($params);
     }
 
+    foreach my $key ( $q->param )
+    {
+        debug " param $key = ".$q->param($key);
+    }
 
     my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
     my $out = "";
@@ -101,8 +79,9 @@ sub render_output
 	    my $obj = $R->get($q->param('obj'));
 	    my $rev = $q->param('rev');
 
+            my $on_arc_add_json = $q->param('on_arc_add');
 	    my $on_arc_add;
-	    if ((my $on_arc_add_json = $q->param('on_arc_add')) ne 'null')
+	    if( $on_arc_add_json and $on_arc_add_json ne 'null')
 	    {
 		$on_arc_add = from_json($on_arc_add_json);
 	    }
@@ -242,14 +221,14 @@ sub render_output
 	    my @list;
 	    while( my $node = $result->get_next_nos )
 	    {
-		my $item = {
-			    id       => $node->id,
-			    name     => $node->desig,
-			    is      => $node->is_direct->desig,
-			    form_url => $node->form_url->as_string,
-			   };
-		push @list, $item;
-	    }
+                push @list,
+                {
+                 tooltip_html => $node->select_tooltip_html({lookup_preds=>$lookup_preds}),
+                 id => $node->id,
+                 name => $node->desig,
+                 form_url => $node->form_url->as_string,
+                };
+            }
 	    $out = to_json( \@list );
 	}
 	else

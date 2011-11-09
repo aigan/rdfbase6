@@ -149,25 +149,24 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
            var name = node['name'];
            var line = $('<li/>');
            var select_button = $('<input/>');
+
            select_button.val('Select');
            select_button.attr('type', 'button' );
-           select_button.click(function() {$this.select(name, node['id']);});
+           select_button.data('rb_id',node['id']);
+           select_button.click($this.select);
            select_button.appendTo(line);
            
-           var tip_text = $('<table/>');
-           for( var key in node ) {
-             if( key != 'form_url' ) {
-               var tip_line = $('<tr><td>'+ key +':</td><td>'+
-                                     node['value'] +'</td></tr>');
-               tip_text.appendTo(tip_line);
-             }
-           }
-           
+           var tip_text = node.tooltip_html;
            var more_info = $('<a href="'+ node['form_url'] +'"'
                                   + ' target="_new">'+ name +'</a>');
-           more_info.attr('mouseover', 'Tip(\'<table>'+ tip_text.innerHTML +'</table>\', DURATION, 0, FOLLOWMOUSE, true, STICKY, false, FONTSIZE, \'12px\')');
            more_info.appendTo(line);
            line.appendTo($this.popup_li);
+
+             more_info.tipsy({fallback : tip_text,
+                              html     : 'true',
+                              gravity  : 'w',
+                             });
+
          }
        }
 
@@ -189,14 +188,14 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        }
      };
 
-     $this.select = function(name, key)
+       $this.select = function(event)
      {
        $.get(
          '[%home%]/rb/ajax/action/add_direct',
          {
            subj       : $this.subj,
            pred_name  : $this.pred_name,
-           obj        : key,
+           obj        : $(event.target).data('rb_id'),
            rev        : $this.rev,
            seen_node  : $this.seen_node,
            on_arc_add : $.toJSON($this.on_arc_add)

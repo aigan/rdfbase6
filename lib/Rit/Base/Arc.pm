@@ -6578,13 +6578,14 @@ sub edit_link_html
     return
       (
        "<a id=\"$a_id\" href=\"$home/rb/node/arc/update.tt?"
-       . "id=$arc_id\" class=\"edit_arc_link\" />E</a>"
+       . "id=$arc_id\" class=\"edit_arc_link\">E</a>"
        . "<script type=\"text/javascript\">\n"
        . "  \$('#$a_id').tipsy("
        . to_json({
                   fallback => $arc->info_updated_html($args),
                   html     => 'true',
-                  delayOut => 1000,
+#                  live     => 'true',
+                  delayOut => 2000,
                  })
        . "  );"
        . "</script>"

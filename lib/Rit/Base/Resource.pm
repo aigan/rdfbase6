@@ -4937,6 +4937,32 @@ sub arcversions
 
 ##############################################################################
 
+=head2 select_tooltip_html
+
+  $n->select_tooltip_html( \%args )
+
+Returns html that could be used for a tooltip in a list of similar nodes to get more info about the node.
+
+=cut
+
+sub select_tooltip_html
+{
+    my( $n, $args ) = @_;
+
+    my $is_str = CGI->escapeHTML($n->is_direct->desig);
+    my $name_str = CGI->escapeHTML($n->desig);
+    my $id_str = $n->id;
+    my $out = "<table>";
+    $out .= "<tr><td>Name</td><td>$name_str</td></tr>";
+    $out .= "<tr><td>is</td><td>$is_str</td></tr>";
+    $out .= "<tr><td>id</td><td>$id_str</td></tr>";
+    $out .= "</table>";
+    return $out;
+}
+
+
+##############################################################################
+
 =head1 Widgets
 
  wn = Widget for updating the Node
