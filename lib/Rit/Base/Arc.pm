@@ -180,7 +180,8 @@ The props:
             or L<Rit::Base::Pred/valtype>
 
   arc_weight : Defaults to C<undef>
-               -1 for placing the arc last, upon activation,
+
+  arc_weight_last : upon activation,
                changing the other properties as needed
 
 Special args:
@@ -224,7 +225,7 @@ sub create
 
     foreach my $key (qw(active submitted common id replaces source
                         read_access write_access subj pred valtype
-                        implicit value obj arc_weight ))
+                        implicit value obj arc_weight arc_weight_last ))
     {
 	if( $props->{ $key } )
 	{
@@ -763,7 +764,6 @@ sub create
 	    # as the same in this check
 	    #
             my $rec_weight = $props->{'arc_weight'}||0;
-            $rec_weight = 0 if $rec_weight == -1;
 	    next if $rec_weight != ($arc->weight||0);
 
 	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
@@ -834,9 +834,9 @@ sub create
 		    $arc->mark_updated;
 		}
 
-                if( ($props->{'arc_weight'}||0) == -1 )
+                if( $props->{'arc_weight_last'} )
                 {
-                    $arc->set_weight(-1, $args);
+                    $arc->set_weight(0, {%$args,arc_weight_last=>1});
                 }
 
 		return $arc;
@@ -874,12 +874,6 @@ sub create
     if( $props->{'arc_weight'} )
     {
 	$rec->{'weight'}  = $props->{'arc_weight'};
-
-        # Use -1 to place arc last
-        if( $rec->{'active'} and $props->{'arc_weight'} == -1 )
-        {
-            $rec->{'weight'} = 0; # Resort other arcs after creation
-        }
     }
     push @fields, 'weight';
     push @values, $rec->{'weight'};
@@ -911,9 +905,9 @@ sub create
 				 value => $value_obj,
 				});
 
-    if( $arc->active and ($props->{'arc_weight'}||0) == -1 )
+    if( $arc->active and $props->{'arc_weight_last'} )
     {
-        $arc->set_weight(-1, $args); # Trigger resort
+        $arc->set_weight(0, {%$args,arc_weight_last=>1}); # Trigger resort
     }
 
     # If the arc was requested to be cerated active, but wasn't
@@ -3873,8 +3867,9 @@ sub remove
     debug "  clear arc data\n" if $DEBUG;
     foreach my $prop (qw(
 			    subj pred value value_node clean implicit
-			    indirect explain replaces source arc_weight
-			    active submitted activated_by valtype
+			    indirect explain replaces source
+			    arc_weight arc_weight_last active
+			    submitted activated_by valtype
 			    arc_created_by arc_read_access
 			    arc_write_access arc_activated
 			    arc_deactivated arc_created arc_updated
@@ -4638,12 +4633,7 @@ sub activate
     my $date_db = $dbix->format_datetime($updated);
 
     my $weight = $arc->weight;
-    my $weight_last = 0;
-    if( ($weight||0) == -1 )
-    {
-        $weight = 0;
-        $weight_last = 1;
-    }
+    my $weight_last = $arc->{'arc_weight_last'};
 
     if( $arc->{'valtype'} ) # Not a REMOVAL arc
     {
@@ -4740,7 +4730,7 @@ sub activate
 
     if( $weight_last )
     {
-        $arc->set_weight(-1, $args); # Trigger a resort
+        $arc->set_weight(0, {%$args,arc_weight_last=>1}); # Trigger a resort
     }
 
     return 1;
@@ -5031,14 +5021,16 @@ It may be set to C<undef> to unset any previous value
 
 Setting a new weight will create a new version if the arc is active.
 
-Setting the weight to -1 will give it a weight of 0 and resort other
-arcs of the subject with the same predicate, to put this arc
-last. This will only be done for active arcs. Non-active arcs will
-have a weight of -1 until they are activated.
+The arc C<arc_weight_last> will resort other arcs of the subject with
+the same predicate, to put this arc last. This will only be done for
+active arcs. Non-active arcs will have the property sent until the
+object is gone from memory. arc_weight_last must only be used with the
+weitht 0.
 
 Supported args are:
 
   force_same_version
+  arc_weight_last
 
 Returns: the arc with the new weight
 
@@ -5061,19 +5053,24 @@ sub set_weight
 
     if( defined $val )
     {
-        if( $val == -1 and $arc->active )
-        {
-            $val = 0;
+	unless( looks_like_number( $val ) )
+	{
+	    throw 'validation', "String $val is not a number";
+	}
+
+	if( $args->{arc_weight_last} and $arc->active )
+	{
+	    unless( $val == 0 )
+	    {
+		throw 'validation', "$val must be 0 for weight last";
+	    }
+
             $arc->weight_last( $args );
         }
 
 	# Return if no change
 	return $arc if $weight_old and ($val == $weight_old);
 
-	unless( looks_like_number( $val ) )
-	{
-	    throw 'validation', "String $val is not a number";
-	}
     }
     else
     {
@@ -5102,6 +5099,8 @@ sub set_weight
 					  value       => $arc->value,
 					  value_node  => $arc->value_node,
 					  arc_weight  => $val,
+					  arc_weight_last =>
+					  $args->{arc_weight_last},
 					 }, $args );
 	return $new;
 
@@ -5125,6 +5124,10 @@ sub set_weight
     $arc->{'arc_updated_obj'} = $now;
     $arc->{'arc_updated'} = $now_db;
     $arc->{'arc_weight'} = $val;
+    unless( $arc->{'active'} )
+    {
+	$arc->{'arc_weight_last'} = $args->{arc_weight_last};
+    }
 
     $Rit::Base::Cache::Changes::Updated{$arc_ver} ++;
 
