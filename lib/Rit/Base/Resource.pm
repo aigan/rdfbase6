@@ -1064,7 +1064,7 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'query'} = $query;
 	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	$req->set_error_response_path('/node_query_error.tt');
+	$req->set_error_response_path('/rb/node/query_error.tt');
 	throw('notfound', "No nodes matches query (1)");
     }
 
@@ -6945,7 +6945,7 @@ sub get_by_anything
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
 	    $result->{'info'}{'alternatives'}{'args'} = $args;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    $req->set_error_response_path("/node_query_error.tt");
+	    $req->set_error_response_path("/rb/node/query_error.tt");
 #	    debug datadump($result,5);
 	}
 	else

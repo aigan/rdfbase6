@@ -454,7 +454,7 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	my $home = $req->site->home_url_path;
-	$req->set_error_response($home.'/node_query_error.tt');
+	$req->set_error_response($home.'/rb/node/query_error.tt');
 	throw('notfound', "No nodes matches query");
     }
 
