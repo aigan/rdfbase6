@@ -40,7 +40,7 @@ use RDF::Base::Setup;
 use RDF::Base::Plugins;
 
 
-our $VERSION = "6.65";
+our $VERSION = "6.66";
 
 
 =head1 NAME
