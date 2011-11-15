@@ -660,7 +660,7 @@ sub create
 		    {
 			$rec->{'valclean'} = valclean( $value );
 
-			if( $rec->{'valclean'} =~ /^ritbase.*hash/ )
+			if( $rec->{'valclean'} =~ /^rdfbase.*hash/ )
 			{
 			    die "Object stringification ".datadump($rec, 2);
 			}
@@ -3115,7 +3115,7 @@ sub reset_clean
 	    my $dbh = $RDF::dbix->dbh;
 	    my $sth = $dbh->prepare
 	      ("update arc set valclean=? where ver=?");
-#	    die if $cleaned =~ /^ritbase/;
+#	    die if $cleaned =~ /^rdfbase/;
 	    $sth->execute($cleaned, $arc->version_id);
 	    $RDF::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
 	    $arc->{'clean'} = $cleaned;
@@ -6655,7 +6655,7 @@ sub default_source
     }
     else
     {
-	return RDF::Base::Resource->get_by_label('ritbase');
+	return RDF::Base::Resource->get_by_label('rdfbase');
     }
 }
 

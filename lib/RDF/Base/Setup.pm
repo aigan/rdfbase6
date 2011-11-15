@@ -253,7 +253,7 @@ sub setup_db
     }
 
     debug "Adding arcs";
-    my $source = $NODE{'ritbase'}{'node'};
+    my $source = $NODE{'rdfbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
     my $write_access = $NODE{'sysadmin_group'}{'node'};
     my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin,valfloat) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?,?)") or die;
@@ -797,9 +797,9 @@ sub upgrade_db
     $RDF::Base::IN_SETUP_DB = 1;
 
     ### PRE 0 DB setup
-    $R->find_set({label => 'ritbase'});
+    $R->find_set({label => 'rdfbase'});
     my $int = $R->get_by_label('int',{nonfatal=>1}) || $R->get({scof=>$C->get('valfloat'),name=>'int'});
-    my $rb = $C->get('ritbase');
+    my $rb = $C->get('rdfbase');
     my $pred = $C->get('predicate');
 
     unless( $R->find({label => 'has_version'}) )
@@ -969,6 +969,8 @@ sub upgrade_db
     if( $ver < 4 )
     {
         debug "**** UPGRADING Rit -> RDF";
+        my $dbix = $RDF::dbix;
+        my $dbh = $dbix->dbh;
 
         my $sth_rit2rdf = $dbh->prepare("update arc set valtext=regexp_replace(valtext, '^Rit::Base', 'RDF::Base') where valtext like 'Rit::Base%'") or die;
 
@@ -978,10 +980,10 @@ sub upgrade_db
 
         $R->find({code_begins => 'Rit::Base'}, $args )->vacuum($args);
 
-#	$rb->update({ has_version => 4 },$args);
+	$rb->update({ has_version => 4 },$args);
 	$res->autocommit;
 	$req->done;
-#        Para::Frame->flag_restart();
+        Para::Frame->flag_restart();
     }
 
 }

@@ -94,7 +94,7 @@ sub initialize_db
     my $C = RDF::Base->Constants;
 #    my $dbix = $RDF::dbix;
 
-#    my $rbc = $R->get({code => 'ritbase_core_resource'});
+#    my $rbc = $R->get({code => 'rdfbase_core_resource'});
 
     ###
 

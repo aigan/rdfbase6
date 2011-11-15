@@ -10,7 +10,7 @@ name_short	5
 is_of_language	1
 code	5
 note	5
-ritbase	
+rdfbase	
 sysadmin_group	
 public	
 arc
@@ -253,7 +253,7 @@ has_html_content	domain	website_text
 has_html_content	range	text_html
 has_member	is	predicate
 has_member	range	resource
-ritbase	has_version		3
+rdfbase	has_version		3
 is_of_language	is	predicate
 is_of_language	domain	valtext
 is_of_language	range	language

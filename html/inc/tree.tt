@@ -61,7 +61,7 @@
 
 <script language="javascript">
   [* tsw = 'RDFbase_tsw' +*]
-  function ritbase_selected_item()
+  function rdfbase_selected_item()
   {
         if ([* tsw *]_selected_id == -1) {
            alert("Välj en rad");
@@ -77,7 +77,7 @@
   }
 
 
-  function ritbase_toggle_expand_all()
+  function rdfbase_toggle_expand_all()
   {
 	var node = document.getElementById("RDFbase_tsw-node-" + 1);
 	for(var i = 1; node != undefined; i++ )
@@ -98,8 +98,8 @@
 
 </script>
 
-<input type=button value=" Visa " onclick="ritbase_selected_item()">
-<input type=button value=" Expandera " onclick="ritbase_toggle_expand_all()">
+<input type=button value=" Visa " onclick="rdfbase_selected_item()">
+<input type=button value=" Expandera " onclick="rdfbase_toggle_expand_all()">
 <br>
 [* node.tree_select_widget *]
 

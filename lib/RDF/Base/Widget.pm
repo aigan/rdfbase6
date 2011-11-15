@@ -60,13 +60,14 @@ sub aloc
     if( $Para::Frame::REQ->session->admin_mode )
     {
         my $id = RDF::Base::L10N::find_translation_node_id($phrase);
+        my $R = RDF::Base->Resource;
+        my $node;
 
         unless( $id )
 	{
-            my $R = RDF::Base->Resource;
-            my $node = $R->create({ translation_label => $phrase,
-				    is => $C_translatable,
-				  }, { activate_new_arcs => 1 });
+            $node = $R->create({ translation_label => $phrase,
+                                 is => $C_translatable,
+                               }, { activate_new_arcs => 1 });
             $id = $node->id;
         }
 

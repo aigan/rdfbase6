@@ -70,7 +70,7 @@ our  $VACUUM_ALL = 0; # Only for initialization and repair
 
 BEGIN
 {
-    $Para::Frame::HOOK{'on_ritbase_ready'} = [];
+    $Para::Frame::HOOK{'on_rdfbase_ready'} = [];
 }
 
 #########################################################################
@@ -185,6 +185,20 @@ sub init_on_startup
 	RDF::Base::Setup->setup_db();
     }
 
+    ### Special namespace change from ritbase to rdfspace
+    {
+        my $dbh = $RDF::dbix->dbh;
+
+        my( $ritbase_id ) = $dbh->selectrow_array("select node from node where label='ritbase'");
+        if( $ritbase_id )
+        {
+            $dbh->do("update node set label='rdfbase' where label='ritbase'");
+            $dbh->do("update arc set valtext=regexp_replace(valtext, '^Rit::Base', 'RDF::Base') where valtext like 'Rit::Base%'");
+            $dbh->commit;
+        }
+    }
+
+
     RDF::Base::Resource->on_startup();
 #    warn "init_on_startup 2\n";
     RDF::Base::Literal::Class->on_startup();
@@ -194,7 +208,7 @@ sub init_on_startup
 
     my $cfg = $Para::Frame::CFG;
 
-    $cfg->{'rb_default_source'} ||= 'ritbase';
+    $cfg->{'rb_default_source'} ||= 'rdfbase';
     $cfg->{'rb_default_read_access'} ||= 'public';
     $cfg->{'rb_default_write_access'} ||= 'sysadmin_group';
 
@@ -218,8 +232,8 @@ sub init_on_startup
 
     ########################################
 
-#    warn "calling on_ritbase_ready\n";
-    Para::Frame->run_hook( $Para::Frame::REQ, 'on_ritbase_ready');
+#    warn "calling on_rdfbase_ready\n";
+    Para::Frame->run_hook( $Para::Frame::REQ, 'on_rdfbase_ready');
 #    warn "done init_on_startup\n";
 }
 
