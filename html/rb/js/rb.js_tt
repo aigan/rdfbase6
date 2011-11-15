@@ -321,7 +321,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          form = $( extra_params.form );
        }
        else {
-         form = $( 'f' );
+         form = $( '#f' );
        }
 
        if( extra_params.confirm ) {
@@ -330,17 +330,28 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          }
        }
 
-       var formData = $H(form.serialize(true)).merge({ run: action });
-       formData = formData.merge(extra_params);
+//       log( form );
+//       log( form.serializeArray());
 
-       var $element = $('#' + $this.element);
+//       var formData = $H(form.serialize(true)).merge({ run: action });
+         var formData = $.extend({ run: action },
+                                 form.toObj(),
+                                 extra_params); 
+
+         var $element = $('#' + $this.element);
+
+//         log(formData);
+//         log($element);
+
        $element.load(
-         '[%home%]/clean/update_button_answer.tt',
-         formData.toQueryString(),
+         '[%home%]/rb/clean/update_button_answer.tt',
+         formData,
          function() {
            $this.updateOthers();
          }
        );
+
+//        alert("Check log");
        return(true);
      };
      
@@ -385,6 +396,26 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
      //alert("Winning by default - no string!");
      return true;
    };
+
+    $.fn.toObj=function()
+    {
+        var myobj = {};
+        jQuery.map($(this).serializeArray(), function(n, i){
+            if( typeof myobj[n['name']] === 'undefined' )
+            {
+ 	        myobj[n['name']] = n['value'];
+            }
+            else if( typeof myobj[n['name']] === 'object' )
+            {
+                myobj[n['name']].push(n['value']);
+            }
+            else
+            {
+ 	        myobj[n['name']] = [myobj[n['name']], n['value']];
+            }
+        });
+        return myobj;
+    };
 
  }
 )(jQuery);
