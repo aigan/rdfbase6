@@ -4285,7 +4285,8 @@ Supported args are:
   res
   read_access
   write_access
-  arc_weight  (-1 for placing the arc last)
+  arc_weight
+  arc_weight_last
 
 Returns:
 
@@ -4323,6 +4324,10 @@ sub add
     if( $args->{'arc_weight'} )
     {
 	$extra{ arc_weight } = int( $args->{'arc_weight'} );
+    }
+    if( $args->{'arc_weight_last'} )
+    {
+	$extra{ arc_weight_last } = int( $args->{'arc_weight_last'} );
     }
 #    if( $args->{'replaces'} ) # Not good. Must be one for each
 #    {
