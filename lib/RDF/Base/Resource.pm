@@ -1064,7 +1064,7 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'query'} = $query;
 	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	$req->set_error_response_path('/node_query_error.tt');
+	$req->set_error_response_path('/rb/node/query_error.tt');
 	throw('notfound', "No nodes matches query (1)");
     }
 
@@ -4285,7 +4285,8 @@ Supported args are:
   res
   read_access
   write_access
-  arc_weight  (-1 for placing the arc last)
+  arc_weight
+  arc_weight_last
 
 Returns:
 
@@ -4323,6 +4324,10 @@ sub add
     if( $args->{'arc_weight'} )
     {
 	$extra{ arc_weight } = int( $args->{'arc_weight'} );
+    }
+    if( $args->{'arc_weight_last'} )
+    {
+	$extra{ arc_weight_last } = int( $args->{'arc_weight_last'} );
     }
 #    if( $args->{'replaces'} ) # Not good. Must be one for each
 #    {
@@ -4932,6 +4937,32 @@ sub arcversions
     #debug datadump( \%arcversions, 2 );
 
     return \%arcversions;
+}
+
+
+##############################################################################
+
+=head2 select_tooltip_html
+
+  $n->select_tooltip_html( \%args )
+
+Returns html that could be used for a tooltip in a list of similar nodes to get more info about the node.
+
+=cut
+
+sub select_tooltip_html
+{
+    my( $n, $args ) = @_;
+
+    my $is_str = CGI->escapeHTML($n->is_direct->desig);
+    my $name_str = CGI->escapeHTML($n->desig);
+    my $id_str = $n->id;
+    my $out = "<table>";
+    $out .= "<tr><td>Name</td><td>$name_str</td></tr>";
+    $out .= "<tr><td>is</td><td>$is_str</td></tr>";
+    $out .= "<tr><td>id</td><td>$id_str</td></tr>";
+    $out .= "</table>";
+    return $out;
 }
 
 
@@ -5701,7 +5732,7 @@ sub wuirc
 	    $out .= sprintf(q{
 <script type="text/javascript">
 <!--
-  new RBInputPopup('%s')
+  new RBInputPopup(%s);
 //-->
 </script>
 },
@@ -6945,7 +6976,7 @@ sub get_by_anything
 	    $result->{'info'}{'alternatives'}{'query'} = $val;
 	    $result->{'info'}{'alternatives'}{'args'} = $args;
 	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    $req->set_error_response_path("/node_query_error.tt");
+	    $req->set_error_response_path("/rb/node/query_error.tt");
 #	    debug datadump($result,5);
 	}
 	else

@@ -152,9 +152,106 @@ sub register_page_part
     $params = to_json( $params || {} );
 
     return "<script><!--
-                new PagePart('$divid', '$update_url', '$params'.evalJSON());
+                new PagePart('$divid', '$update_url', $params);
             //--></script>";
 }
 
+
+##############################################################################
+
+sub form
+{
+    my( $ajax, $module, $part, $args ) = @_;
+
+    $module = "Rit::Guides::AJAX::Form::$module";
+    #$module = 'Rit::Guides::Action::booking_invoice';
+
+    $part ||= 'all';
+
+    debug "Attempting to get form html from $module->$part with args:";
+    debug datadump( $args );
+
+    eval
+    {
+	require(package_to_module($module));
+    };
+    if( $@ )
+    {
+	debug $@;
+    }
+    else
+    {
+	return $module->$part( $args );
+    }
+
+    return "$@";
+}
+
+
+##############################################################################
+############################### Widgets ###############################
+
+=head1 Widgets
+
+  AJAX-widgets to use from tt or perl.
+
+=cut
+
+##############################################################################
+
+=head2 switchingDivs
+
+  Rit::Guides::AJAX->switching_divs( $content_1, $content_2 );
+
+  [% ajax->switching_divs('This is a little, click me to see more.',
+                          'This is much more! Bla bla bla.... !') %]
+
+Makes two div's, the first shown and the second hidden.  When the
+first is clicked, it is changed to the second instead (with a nifty
+scriptaculous shrink/grow).
+
+=cut
+
+sub switching_divs
+{
+    my( $ajax, $div1, $div2 ) = @_;
+
+    my $req = $Para::Frame::REQ;
+    my $q = $req->q;
+    my $out = "";
+
+    my $fid = $ajax->new_form_id;
+
+    $out .= $q->a({ id      => $fid .'-shown',
+		    href    => "javascript:switchDivs('$fid')",
+		  }, $div1);
+    $out .= $q->div({ id => $fid .'-hid',
+		      style => 'display: none',
+		    }, $div2);
+
+    return $out;
+}
+
+
+##############################################################################
+
+=head2 action_button
+
+  [% ajax.action_button( label, divid, action, args ) %]
+
+=cut
+
+sub action_button
+{
+    my( $ajax, $label, $divid, $action, $args ) = @_;
+
+    $args = to_json( $args || {} );
+    $args =~ s/"/'/g;
+
+    return "<input type=\"button\" value=\"$label\" ".
+      "onclick=\"RDF.Base.pageparts['$divid'].performAction('$action', $args)\"/>";
+}
+
+##############################################################################
 
 1;

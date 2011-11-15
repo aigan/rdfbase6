@@ -208,7 +208,7 @@ END;
       <td colspan="3"><em>[% prop_cnt %] values</em></td>
       </tr>
    [% ELSE %]
-   [% FOREACH arc IN node.arc_list(pred,'',arclim).sorted('value.plain') %]
+   [% FOREACH arc IN node.arc_list(pred,'',arclim).sorted([{on='weight', dir='desc'}, 'value.plain']) %]
       <tr>
       <td>
       [% IF arc.direct %]
@@ -227,7 +227,7 @@ END;
          [% arc.value.sysdesig | html %]
       [% END %]
       </td>
-      <td style="white-space: nowrap">[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
       [% IF loop.index % 100; CALL req.may_yield; END %]
@@ -245,7 +245,7 @@ END;
       <td colspan="3"><em>[% prop_cnt %] values</em></td>
       </tr>
    [% ELSE %]
-   [% FOREACH arc IN node.arc_list(pred,'','inactive').sorted('value.plain') %]
+   [% FOREACH arc IN node.arc_list(pred,'','inactive').sorted([{on='weight', dir='desc'}, 'value.plain']) %]
       <tr>
       <td style="background: red">
       [% IF arc.direct %]
@@ -273,7 +273,7 @@ END;
          [% END %]
       [% END %]
       </td>
-      <td style="white-space: nowrap">[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
       [% IF loop.index % 100; CALL req.may_yield; END %]
@@ -312,7 +312,7 @@ END;
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
       <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
-      <td style="white-space: nowrap">[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
       [% IF loop.index % 100; CALL req.may_yield; END %]
@@ -347,7 +347,7 @@ END;
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
       <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
-      <td style="white-space: nowrap">[% arc.view_flags %]</td>
+      <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
       [% IF loop.index % 100; CALL req.may_yield; END %]

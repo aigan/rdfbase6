@@ -1,423 +1,421 @@
-﻿
+﻿// Our namespace!
+if (typeof RDF      === 'undefined') var RDF  = {};
+if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
-function RBInputPopup(args_in)
-{
-    // button:           id of calling element
-    // divid:            the element that should have it's contents replaced after selection
-    // search_crit:      passed to $R->find; already as json
-    // search_type:      what is inputted ('name_clean_like')
-    // pred_name:        pred for added arc
-    // subj:             subj for added arc
-    // rev:              if added arc is reverse
-    // seen_node         add a seen_node param to ajax action
-    // hide_create_button
-    // default_value     Default value in the search field
-    // on_arc_add        forwards ...
+(function($) {
+   RDF.Base.$load_indicator
+     = $('<img />')
+   //.css('display', 'none')
+     .css('position', 'absolute')
+     .css('top', '45%')
+     .css('left', '45%')
+     .attr('src', '[%home%]/rb/img/loading.gif')
+     .appendTo($('body'))
+     .ajaxStart(
+       function() {
+         alert(this);
+       }
+     );
 
-    var $this = this; // Hiding from jQuerys comfort...
-    var args = jQuery.evalJSON(args_in);
 
-    $this.button = jQuery('#'+ args['button']);
-    $this.divid = args['divid'];
-    $this.search_crit = args['search_crit'];
-    $this.search_type = args['search_type'];
-    $this.pred_name = args['pred_name'];
-    $this.subj = args['subj'];
-    $this.rev = args['rev'];
-    $this.seen_node = args['seen_node'];
-    $this.hide_create_button = args['hide_create_button'];
-    $this.default_value = args['default_value'] || "";
-    $this.on_arc_add = args['on_arc_add'];
+   window.RBInputPopup = function(args)
+   {
+     // button:           id of calling element
+     // divid:            the element that should have it's contents replaced after selection
+     // search_crit:      passed to $R->find; already as json
+     // search_type:      what is inputted ('name_clean_like')
+     // pred_name:        pred for added arc
+     // subj:             subj for added arc
+     // rev:              if added arc is reverse
+     // seen_node         add a seen_node param to ajax action
+     // hide_create_button
+     // default_value     Default value in the search field
+     // on_arc_add        forwards ...
 
-    $this.loading = jQuery('<img id="rb_input_loading' + $this.divid + '"'
-			  +' style="display: none; position: absolute; top: 45%; left: 45%; z-index: 10"'
-			  +' src="[%home%]/rb/img/loading.gif"');
-    jQuery('#'+ $this.divid).append($this.loading);
+     var $this = this; // Hiding from jQuerys comfort...
+     //var args = $.evalJSON(args_in);
 
-    $this.loading.ajaxStart(function(){ $this.loading.show(); });
-    $this.loading.ajaxStop (function(){ $this.loading.hide(); });
+     $this.button             = $('#'+ args['button']);
+     $this.divid              = args['divid'];
+     $this.search_crit        = args['search_crit'];
+     $this.search_type        = args['search_type'];
+     $this.pred_name          = args['pred_name'];
+     $this.subj               = args['subj'];
+     $this.rev                = args['rev'];
+     $this.seen_node          = args['seen_node'];
+     $this.hide_create_button = args['hide_create_button'];
+     $this.default_value      = args['default_value'] || "";
+     $this.on_arc_add         = args['on_arc_add'];
 
-    $this.openPopup = function()
+     $this.openPopup = function()
+     {
+       $this.popup
+         = $('<div/>')
+         .attr('id', 'rb_input_popup'+$this.divid)
+         .css('border',          '1px solid black')
+         .css('display',         'none'           )
+         .css('position',        'absolute'       )
+         .css('padding',         '.5em'           )
+         .css('backgroundColor', 'yellow'         )
+         .css('zIndex',          '5'              );
+
+       $this.form
+         = $('<form/>')
+         .attr('id', 'rb_input_form'+$this.divid)
+         .submit($this.lookup)
+         .appendTo($this.popup);
+
+       $this.input
+         = $('<input/>')
+         .attr('id', 'rb_input'+$this.divid)
+         .val($this.default_value)
+         .appendTo($this.form);
+
+       $this.submit
+         = $('<input/>')
+         .attr('id', 'rb_input_button'+$this.divid)
+         .val("[% loc('Lookup') %]")
+         .attr('type', 'submit')
+         .appendTo($this.form);
+
+       $this.cancel
+         = $('<input/>')
+         .attr('type', 'button')
+         .val("[% loc('Cancel') %]")
+         .click($this.close)
+         .appendTo($this.form);
+       
+       $this.button.after($this.popup);
+       $this.popup.show();
+       setTimeout(function(){$this.input.focus();}, 500);
+     };
+     $this.button.click($this.openPopup);
+
+
+     $this.close = function()
+     {
+       $this.popup.hide();
+       delete( $this );
+     };
+
+     $this.lookup = function()
+     {
+       //event.stop();
+       var value = $('#rb_input'+ $this.divid).val();
+
+       //var search = $this.search_crit.merge({});
+
+       $.getJSON(
+         '[%home%]/rb/ajax/lookup',
+         {
+           params       : $.toJSON($this.search_crit),
+           search_type  : $.toJSON($this.search_type),
+           search_value : value
+         },
+         function(data, textStatus)
+         {
+           $this.show_result(data);
+         }
+       );
+       return false;
+     };
+
+     // result should be  an array with hashes, each hash can include:
+     //  form_url
+     //  id
+     //  is
+     //  name
+     $this.show_result = function(result)
+     {
+       var old_list = $this.popup_li;
+
+       $this.popup_li =
+         $('<ul/>')
+         .css('display',       'none')
+         .css('listStyleType', 'none')
+         .css('margin',        '0')
+         .css('padding',       '0')
+         .css('whiteSpace',    'nowrap')
+         .appendTo($this.popup);
+       $this.result = result;
+
+       if( result[0]['id'] == 0 ) {
+         var line = $('<li/>').html(result[0]['name']);
+         $this.popup_li.append(line);
+       }
+       else {
+         for( var i in result ) {
+           var node = result[i];
+           var name = node['name'];
+           var line = $('<li/>');
+           var select_button = $('<input/>');
+
+           select_button.val('Select');
+           select_button.attr('type', 'button' );
+           select_button.data('rb_id',node['id']);
+           select_button.click($this.select);
+           select_button.appendTo(line);
+           
+           var tip_text = node.tooltip_html;
+           var more_info = $('<a href="'+ node['form_url'] +'"'
+                                  + ' target="_new">'+ name +'</a>');
+           more_info.appendTo(line);
+           line.appendTo($this.popup_li);
+
+             more_info.tipsy({fallback : tip_text,
+                              html     : 'true',
+                              gravity  : 'w',
+                             });
+
+         }
+       }
+
+       if( !$this.hide_create_button ) {
+         var line = $('<li/>');
+         var value = $('#rb_input'+$this.divid).val();
+         var create_new_button = $('<input value="Create a new '+ value +'" type="button" />');
+         create_new_button.click(function(){$this.createNew(value);});
+         create_new_button.appendTo(line);
+         line.appendTo($this.popup_li);
+       }
+
+       if( old_list ) {
+         old_list.hide();
+         $this.popup_li.show();
+       }
+       else {
+         $this.popup_li.show();
+       }
+     };
+
+       $this.select = function(event)
+     {
+       $.get(
+         '[%home%]/rb/ajax/action/add_direct',
+         {
+           subj       : $this.subj,
+           pred_name  : $this.pred_name,
+           obj        : $(event.target).data('rb_id'),
+           rev        : $this.rev,
+           seen_node  : $this.seen_node,
+           on_arc_add : $.toJSON($this.on_arc_add)
+         },
+         function() {
+           pps[$this.divid].update();
+         }
+       );
+     };
+
+     $this.addToList = function(result)
+     {
+       $this.popup.hide();
+       var line = document.createElement($this.result_type);
+       line.style.display = 'none';
+       line.innerHTML = result;
+       $this.result_container.append(line);
+       line.show();
+     },
+
+     $this.createNew = function(value)
+     {
+       $.get(
+         '[%home%]/rb/ajax/action/create_new', 
+         {
+           name      : value,
+           params    : $.toJSON($this.search_crit),
+           subj      : $this.subj,
+           pred_name : $this.pred_name,
+           seen_node : $this.seen_node,
+           rev       : $this.rev
+         },
+         function() {
+           pps[$this.divid].update();
+           $this.close();
+         }
+       );
+       
+     };
+   };
+
+
+   window.rb_remove_arc = function(divid, arc, seen_node)
+   {
+     if( confirm("[% loc('Really remove arc?') %]") ) {
+       $.get(
+         '[%home%]/rb/ajax/action/remove_arc',
+         {
+           arc: arc,
+           seen_node: seen_node
+         },
+         function() {
+           pps[divid].update();
+         }
+       );
+     }
+   };
+
+
+   // Registered PagePart objects
+   RDF.Base.pageparts = {};
+
+   // Local short alias
+   var pps      = RDF.Base.pageparts;
+
+   var pps_deps = {};
+
+   window.PagePart = function(element, update_url, params)
+   {
+     var $this = this;
+     $this.element = element;
+     $this.update_url = update_url;
+     $this.update_params = params['params'];
+
+     if( params['depends_on'] ) {
+       $this.depends_on = params['depends_on'];
+
+       for (var i in params.depends_on) {
+         var depo = params.depends_on[i];
+         if (typeof pps_deps[depo] === 'undefined') pps_deps[depo] = [];
+         pps_deps[depo].push($this);
+       }
+     }
+     if (params.update_button) {
+       $this.registerUpdateButton($(params['update_button']));
+     }
+
+     pps[element] = $this;
+
+     $this.registerUpdateButton = function(button)
+     {
+       $this.update_button = $(button);
+       Event.observe($this.update_button, 'click', $this.update.bind($this));
+     };
+
+     $this.update = function()
+     {
+       var $element = $('#' + $this.element);
+       $this.update_params['divid'] = $this.element;
+       $element.load(
+         $this.update_url,
+         { params: $.toJSON($this.update_params) },
+         function() {
+           $this.updateOthers();
+         }
+       );
+     };
+
+     $this.updateOthers = function()
+     {
+       if (pps_deps[$this.element]) {
+         for (var i in pps_deps[$this.element]) {
+           var pp = pps_deps[$this.element][i];
+           pp.update();
+         }
+       }
+     };
+
+     $this.performAction = function( action, extra_params )
+     {
+       var form;
+       if( extra_params.form ) {
+         form = $( extra_params.form );
+       }
+       else {
+         form = $( '#f' );
+       }
+
+       if( extra_params.confirm ) {
+         if( !confirm( extra_params.confirm ) ) {
+           return(false);
+         }
+       }
+
+//       log( form );
+//       log( form.serializeArray());
+
+//       var formData = $H(form.serialize(true)).merge({ run: action });
+         var formData = $.extend({ run: action },
+                                 form.toObj(),
+                                 extra_params); 
+
+         var $element = $('#' + $this.element);
+
+//         log(formData);
+//         log($element);
+
+       $element.load(
+         '[%home%]/rb/clean/update_button_answer.tt',
+         formData,
+         function() {
+           $this.updateOthers();
+         }
+       );
+
+//        alert("Check log");
+       return(true);
+     };
+     
+     $this.insert_wu = function(after, args_json) {
+       var $after = $('#' + after);
+       $.get(
+         '[%home%]/rb/ajax/wu',
+         { params: args_json },
+         function(data) {
+           $after.after(data);
+           var new_part = $after.next();
+           prepareForm();
+           new_part.show();
+         }
+       );
+     };
+   };
+
+
+   // check_pattern(pattern, text, errmsg)
+   //
+   // Used from onchange on text-inputs, with a pattern to be checked...
+   //   pattern - regexp pattern (make sure to escape it properly!
+   //   text    - preferrably this.value
+   //   errmsg  - The message to show if pattern is NOT matched.
+   //   debug   - Alert's more info.
+   //
+   window.check_pattern = function(pattern, text, errmsg, debug)
+   {
+     if(debug)
+       alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
+     if(typeof text == "string" && text.length > 0){
+       if (text.search(pattern) == -1){
+         alert(errmsg);
+         return false;
+       }
+       else {
+         //alert("We have a match!  Pattern gave: "+ text.search(pattern));
+         return true;
+       }
+     }
+     //alert("Winning by default - no string!");
+     return true;
+   };
+
+    $.fn.toObj=function()
     {
-	$this.popup = jQuery('<div/>');
-	$this.popup.id = 'rb_input_popup'+$this.divid;
-	$this.popup.css('border',          '1px solid black');
-	$this.popup.css('display',         'none'           );
-	$this.popup.css('position',        'absolute'       );
-	$this.popup.css('padding',         '.5em'           );
-	$this.popup.css('backgroundColor', 'yellow'         );
-	$this.popup.css('zIndex',          '5'              );
-	//new Draggable($this.popup);
-
-	$this.form = jQuery('<form/>');
-	$this.form.attr('id', 'rb_input_form'+$this.divid);
-	$this.form.submit($this.lookup);
-	$this.popup.append($this.form);
-
-	$this.input = jQuery('<input/>');
-	$this.input.attr('id', 'rb_input'+$this.divid);
-	$this.input.val($this.default_value);
-	$this.form.append($this.input);
-
-	$this.submit = jQuery('<input/>');
-	$this.submit.attr('id', 'rb_input_button'+$this.divid);
-	$this.submit.val("[% loc('Lookup') %]");
-	$this.submit.attr('type', 'submit');
-	$this.form.append($this.submit);
-
-	$this.cancel = jQuery('<input/>');
-	$this.cancel.attr('type', 'button');
-	$this.cancel.val("[% loc('Cancel') %]");
-	$this.cancel.click($this.close);
-	$this.form.append($this.cancel);
-	
-	$this.button.after($this.popup);
-	$this.popup.show();
-	setTimeout(function(){$this.input.attr('active', '1');}, 500);
+        var myobj = {};
+        jQuery.map($(this).serializeArray(), function(n, i){
+            if( typeof myobj[n['name']] === 'undefined' )
+            {
+ 	        myobj[n['name']] = n['value'];
+            }
+            else if( typeof myobj[n['name']] === 'object' )
+            {
+                myobj[n['name']].push(n['value']);
+            }
+            else
+            {
+ 	        myobj[n['name']] = [myobj[n['name']], n['value']];
+            }
+        });
+        return myobj;
     };
-    $this.button.click($this.openPopup);
 
-
-    $this.close = function()
-    {
-	$this.popup.hide();
-	delete( $this );
-    };
-
-    $this.lookup = function()
-    {
-	//event.stop();
-	var value = jQuery('#rb_input'+ $this.divid).val();
-
-	//var search = $this.search_crit.merge({});
-
-	$this.loading.show();
-	jQuery.getJSON('[%home%]/rb/ajax/lookup',
-		       {
-			   params: jQuery.toJSON($this.search_crit),
-			   search_type: jQuery.toJSON($this.search_type),
-			   search_value: value
-		       },
-		       function(data, textStatus)
-		       {
-			   $this.show_result(data);
-		       }
-		      );
-	return false;
-    };
-
-    // result should be  an array with hashes, each hash can include:
-    //  form_url
-    //  id
-    //  is
-    //  name
-    $this.show_result = function(result)
-    {
-	var old_list = $this.popup_li;
-
-	$this.popup_li = jQuery('<ul/>');
-	$this.popup_li.css('display',       'none');
-	$this.popup_li.css('listStyleType', 'none');
-	$this.popup_li.css('margin',        '0');
-	$this.popup_li.css('padding',       '0');
-	$this.popup_li.css('whiteSpace',    'nowrap');
-	$this.popup_li.appendTo($this.popup);
-	$this.result = result;
-
-	if( result[0]['id'] == 0 ) {
-	    var line = Builder.node('li', result[0]['name']);
-	    $this.popup_li.append(line);
-	}
-	else {
-	    for( var i in result ) {
-		var node = result[i];
-		var name = node['name'];
-		var line = jQuery('<li/>');
-		var select_button = jQuery('<input/>');
-		select_button.val('Select');
-		select_button.attr('type', 'button' );
-		select_button.click(function() {$this.select(name, node['id']);});
-		select_button.appendTo(line);
-		    
-		var tip_text = jQuery('<table/>');
-		for( var key in node ) {
-		    if( key != 'form_url' ) {
-			var tip_line = jQuery('<tr><td>'+ key +':</td><td>'+
-					      node['value'] +'</td></tr>');
-			tip_text.appendTo(tip_line);
-		    }
-		}
-		    
-		var more_info = jQuery('<a href="'+ node['form_url'] +'"'
-				       + ' target="_new">'+ name +'</a>');
-		more_info.attr('mouseover', 'Tip(\'<table>'+ tip_text.innerHTML +'</table>\', DURATION, 0, FOLLOWMOUSE, true, STICKY, false, FONTSIZE, \'12px\')');
-		more_info.appendTo(line);
-		line.appendTo($this.popup_li);
-	    }
-	}
-
-	if( !$this.hide_create_button ) {
-	    var line = jQuery('<li/>');
-	    var value = jQuery('#rb_input'+$this.divid).val();
-	    var create_new_button = jQuery('<input value="Create a new '+ value +'" type="button" />');
-	    create_new_button.click(function(){$this.createNew(value);});
-	    create_new_button.appendTo(line);
-	    line.appendTo($this.popup_li);
-	}
-
-	if( old_list ) {
-	    old_list.hide();
-	    $this.popup_li.show();
-	}
-	else {
-	    $this.popup_li.show();
-	}
-    };
-
-    $this.select = function(event, name, key)
-    {
-	pps[$this.divid].loadingStart();
-	new Ajax.Request('[%home%]/rb/ajax/action/add_direct', {
-		method: 'get',
-		parameters: {
-			    subj: $this.subj,
-			    pred_name: $this.pred_name,
-			    obj: key,
-			    rev: $this.rev,
-			    seen_node: $this.seen_node,
-			    on_arc_add: jQuery.toJSON($this.on_arc_add)
-		},
-		onComplete: function(transport)
-		{
-		    pps[$this.divid].update();
-		}.bind($this)
-	    });
-    };
-
-    $this.addToList = function(result)
-    {
-	$this.popup.hide();
-	var line = document.createElement($this.result_type);
-	line.style.display = 'none';
-	line.innerHTML = result;
-	$this.result_container.append(line);
-	line.show();
-    },
-
-    $this.createNew = function(event, value)
-    {
-	$this.loading.show();
-
-	new Ajax.Request('[%home%]/rb/ajax/action/create_new', {
-		method: 'get',
-		parameters: {
-			    name: value,
-			    params: jQuery.toJSON($this.search_crit),
-			    subj: $this.subj,
-			    pred_name: $this.pred_name,
-			    seen_node: $this.seen_node,
-			    rev: $this.rev
-		},
-		onComplete: function(transport)
-		{
-		    $this.loading.show();
-		    pps[$this.divid].update();
-		    $this.close();
-		}.bind($this)
-	    });
-	
-    };
-}
-
-
-function rb_remove_arc(divid, arc, seen_node)
-{
-    if( confirm("[% loc('Really remove arc?') %]") ) {
-	var loading = Builder.node('img', {
-				       id: 'rb_input_loading'+$this.divid,
-				       style: 'display: none; position: absolute; top: 45%; left: 45%;',
-				       src: '[%home%]/img/loading_large.gif'
-				   }, '');
-	$(divid).append(loading);
-	pps[divid].loadingStart();
-	
-	new Ajax.Request('[%home%]/rb/ajax/action/remove_arc', {
-			     method: 'get',
-			     parameters: {
-				 arc: arc,
-				 seen_node: seen_node
-			     },
-			     onComplete: function(transport)
-			     {
-				 pps[divid].update();
-			     }
-			 });
-    }
-}
-
-
-var pps      = {};
-var pps_deps = {};
-
-function PagePart(element, update_url, params)
-{
-    var $this = this;
-    $this.element = $(element);
-    $this.update_url = update_url;
-    $this.update_params = params['params'];
-    $this.is_loading = false;
-
-    if( params['depends_on'] ) {
-	$this.depends_on = params['depends_on'];
-
-	params['depends_on'].each(function(depo) {
-				      if( !pps_deps[depo] ) {
-					  pps_deps[depo] = new Array();
-				      }
-				      pps_deps[depo].push($this);
-				  });
-    }
-    if( params['update_button'] ) {
-	$this.registerUpdateButton($(params['update_button']));
-    }
-
-    pps[element] = $this;
-
-    $this.registerUpdateButton = function(button)
-    {
-	$this.update_button = $(button);
-	Event.observe($this.update_button, 'click', $this.update.bind($this));
-    };
-
-    $this.loadingSetup = function()
-    {
-	$this.loading = Builder.node('img', {
-		id: 'rb_input_loading'+$this.divid,
-		style: 'display: none; position: absolute; top: 45%; left: 45%;',
-		src: '[%home%]/img/loading_large.gif'
-	    }, '');
-	$this.element.append($this.loading);
-    };
-
-    $this.loadingStart = function()
-    {
-	if( !$this.loading ) {
-	    $this.loadingSetup();
-	}
-	if( $this.is_loading == false ) {
-	    //Effect.Fold($this.element, { duration: 0.5 });
-	    $this.loading.show();
-	    $this.is_loading = true;
-	}
-    };
-
-    $this.loadingEnd = function()
-    {
-	if( $this.is_loading ) {
-	    $this.loading.hide();
-	    //Effect.Unfold($this.element, { duration: 0.5 });
-	    $this.is_loading = false;
-	}
-    };
-
-    $this.update = function()
-    {
-	$this.loadingStart();
-	$this.update_params['divid'] = $this.element.id;
-	new Ajax.Updater($this.element, $this.update_url, {
-		method: 'get',
-		parameters: { params: jQuery.toJSON($this.update_params) },
-		evalScripts: true,
-		onComplete: function(transport)
-		{
-		    $this.updateOthers();
-		    $this.loadingEnd();
-		}.bind($this)
-	    });
-    };
-
-    $this.updateOthers = function()
-    {
-	if( pps_deps[$this.element.id] ) {
-	    pps_deps[$this.element.id].each(function(pp) {
-		    pp.update();
-		});
-	}
-    };
-
-    $this.performAction = function( action, extra_params )
-    {
-	var form;
-	if( extra_params.form ) {
-	    form = $( extra_params.form );
-	}
-	else {
-	    form = $( 'f' );
-	}
-
-	if( extra_params.confirm ) {
-	    if( !confirm( extra_params.confirm ) ) {
-		return(false);
-	    }
-	}
-
-	$this.loadingStart();
-	var formData = $H(form.serialize(true)).merge({ run: action });
-	formData = formData.merge(extra_params);
-
-	new Ajax.Updater( $this.element, '[%home%]/clean/update_button_answer.tt', {
-			      method: 'post',
-			      parameters: formData.toQueryString(),
-			      onComplete: function(transport)
-			      {
-				  $this.updateOthers();
-				  $this.loadingEnd();
-			      }.bind($this)
-			  });
-	return(true);
-    };
-    
-    $this.insert_wu = function( after, args_json )
-    {
-	$this.loadingStart();
-	new Ajax.Request('[%home%]/rb/ajax/wu', {
-		method: 'get',
-		    parameters: { params: args_json },
-		    onComplete: function(transport)
-		    {
-			$this.loadingEnd();
-			$(after).insert({ after: transport.responseText });
-			var new_part = $(after).next();
-			prepareForm();
-			new_part.show();
-		    }.bind($this)
-			  });
-    };
-}
-
-
-// check_pattern(pattern, text, errmsg)
-//
-// Used from onchange on text-inputs, with a pattern to be checked...
-//   pattern - regexp pattern (make sure to escape it properly!
-//   text    - preferrably this.value
-//   errmsg  - The message to show if pattern is NOT matched.
-//   debug   - Alert's more info.
-//
-function check_pattern(pattern, text, errmsg, debug)
-{
-    if(debug)
-	alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
-    if(typeof text == "string" && text.length > 0){
-	if (text.search(pattern) == -1){
-	    alert(errmsg);
-	    return false;
-	}
-	else {
-	    //alert("We have a match!  Pattern gave: "+ text.search(pattern));
-	    return true;
-	}
-    }
-    //alert("Winning by default - no string!");
-    return true;
-}
+ }
+)(jQuery);

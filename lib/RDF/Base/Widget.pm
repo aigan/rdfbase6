@@ -39,7 +39,7 @@ use RDF::Base;
 use RDF::Base::Arc;
 use RDF::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
 use RDF::Base::L10N;
-use RDF::Base::Constants qw( $C_translatable $C_has_translation );
+use RDF::Base::Constants qw( $C_translatable $C_has_translation $C_language );
 
 =head1 DESCRIPTION
 
@@ -70,12 +70,28 @@ sub aloc
             $id = $node->id;
         }
 
+        $node = $R->get($id) unless $node;
+
         my $out = "";
+
+        my $langcode = $Para::Frame::REQ->language->preferred;
+        return loc($phrase, @_) if (!$langcode);
+
+        my $lang = $C_language->first_revprop('is',{code => $langcode});
+        return loc($phrase, @_) if (!$lang);
+
+        my $translation;
+        if (not $translation = $node->first_prop('has_translation',
+                                                 {is_of_language=>$lang}
+                                                )->plain )
+        {
+          $translation = $phrase;
+        }
 
         $out
           .= '<span class="translatable" title="'
-            . CGI->escapeHTML($phrase)
-              . '" id="translate_'. $id . '">' . loc($phrase, @_) . '</span>';
+            . CGI->escapeHTML($translation)
+              . '" id="translate_'. $id .'">' . loc($phrase, @_) . '</span>';
 
         return $out;
     }
