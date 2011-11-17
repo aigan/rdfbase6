@@ -192,7 +192,7 @@ sub literal_list
 	@arcs = RDF::Base::Arc::List->new(\@arcs)->
 	  arc_active_on_date($aod)->as_array;
     }
-
+#    debug 0, "literal arc list: ". join '/', map $_->id, @arcs;
     return RDF::Base::List->new([map $_->value, @arcs]);
 }
 
@@ -203,7 +203,7 @@ sub literal_list
 
   $n->first_literal( \%args )
 
-Always returns the first created arc value that is active and direct. 
+Always returns the first created arc value that is active and direct.
 
 Sort by id in order to use the original arc as a base of reference for
 the value, in case that other arc points to the same node.
@@ -212,7 +212,10 @@ the value, in case that other arc points to the same node.
 
 sub first_literal
 {
-    return $_[0]->literal_list({arclim=>['adirect']})->sorted('id')->get_first_nos();
+    return $_[0]->lit_revarc->{'value'};
+
+
+#    return $_[0]->literal_list({arclim=>['adirect']})->sorted('lit_revarc.id')->get_first_nos();
 
 #    my $list = shift->literal_list(@_);
 #    debug "Returning first literal from list:";
@@ -220,6 +223,33 @@ sub first_literal
 #    return $list->get_first_nos();
 
 #    return shift->literal_list(@_)->get_first_nos();
+}
+
+
+##############################################################################
+
+=hed2 lit_revarc
+
+  $literal->lit_revarcReturn the arc this literal is a part of.
+
+See also: L</arc> and L</revarc>
+
+=cut
+
+sub lit_revarc
+{
+    return $_[0]->{'literal_arc'} if defined $_[0]->{'literal_arc'};
+
+#    debug "Finding first arc for ".$_[0]->id;
+
+    my $arcs = $_[0]->revarc_list(undef,undef,{arclim=>['adirect']});
+    my $lit_revarc = $arcs->get_first_nos();
+    while( my $arc = $arcs->get_next_nos )
+    {
+        $lit_revarc = $arc if $arc->id < $lit_revarc->id;
+    }
+#    debug "  found ".$lit_revarc->id;
+    return $_[0]->{'literal_arc'} = $lit_revarc;
 }
 
 
@@ -280,24 +310,6 @@ sub this_valtype
 }
 
 
-##############################################################################
-#
-#=head2 lit_revarc
-#
-#  $literal->lit_revarc
-#
-#Return the arc this literal is a part of.
-#
-#See also: L</arc> and L</revarc>
-#
-#=cut
-#
-#sub lit_revarc
-#{
-#    $_[0]->{'literal_arc'} || is_undef;
-#}
-#
-#
 ##############################################################################
 
 =head3 revlist
@@ -737,13 +749,60 @@ Returns: A plain string
 
 =cut
 
-#sub loc
-#{
-#    return shift->first_literal->plain;
-#}
+sub loc
+{
+    return $_[0]->plain;
+}
 
 
 ##############################################################################
+
+=head2 plain
+
+=cut
+
+sub plain
+{
+#    debug "Returning resource literal plain value ".$_[0]->lit_revarc->{'value'};
+#    cluck if $_[0]->lit_revarc->{'value'}->plain eq 'Avisita Arbete';
+    return $_[0]->lit_revarc->{'value'}->plain;
+}
+
+
+##############################################################################
+
+=head2 on_arc_del
+
+=cut
+
+sub on_arc_del
+{
+    my( $n, $arc, $pred_name, $args ) = @_;
+
+    if( $arc->equals( $n->lit_revarc ) )
+    {
+        foreach my $oarc ( @{$n->{'lit_revarc_active'}},
+                           @{$n->{'lit_revarc_inactive'}} )
+        {
+            delete $oarc->{'literal_arc'};
+        }
+
+        # Copy value to the new first arc
+        my $val = $arc->{'value'};
+        my $new_first_arc = $n->lit_revarc;
+        return unless $new_first_arc->is_arc;
+
+        $new_first_arc->set_value($val,
+                                  {%$args,
+                                   force_set_value=>1,
+                                   force_set_value_same_version=>1,
+                                  });
+    }
+}
+
+
+##############################################################################
+
 
 1;
 

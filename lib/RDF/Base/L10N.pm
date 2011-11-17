@@ -108,7 +108,9 @@ sub maketext
 	{
 	    if( $phrase->is_value_node )
 	    {
-		return $phrase->first_literal;
+#                debug "Returning value node ".ref($phrase->plain);
+
+		return $phrase->plain;
 	    }
 
 	    if( my $label = $phrase->first_prop('translation_label')->plain )

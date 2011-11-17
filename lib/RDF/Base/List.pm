@@ -1146,7 +1146,7 @@ sub loc
 	{
 	    # Not using ->value, since this may be a Literal
 	    debug 3, "  Returning only alternative";
-	    debug(0,$alts{$lang}[0]->{'id'});
+#	    debug(0,$alts{$lang}[0]->{'id'});
 	    return $alts{$lang}[0]->loc(@_);
 	}
 
@@ -1162,8 +1162,9 @@ sub loc
 	    $list{ $weight } = $_;
 	}
 
-	debug 3,"Returning (one) literal with highest weight";
+#	debug 1,"Returning (one) literal with highest weight";
 #	debug query_desig \%list;
+#        debug datadump(\%list,1);
 	# Not using ->value, since this may be a Literal
 	return $list{ List::Util::max( keys %list ) }->loc(@_);
     }

@@ -1029,7 +1029,7 @@ Rather use L</desig>, L</loc> or L</plain>.
 
 sub value
 {
-    return $_[0]->{'value'};
+    return $_[0]->{'value_node'} ? $_[0]->value_node->first_literal : $_[0]->{'value'};
 }
 
 
@@ -2827,7 +2827,7 @@ sub vacuum
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
-    # TODO: Moce value cleaning to Literal classes
+    # TODO: Move value cleaning to Literal classes
 
     my $DEBUG = 0;
 
