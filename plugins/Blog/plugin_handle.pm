@@ -1,14 +1,14 @@
-package Rit::Base::Plugins::Blog::plugin_handle;
+package RDF::Base::Plugins::Blog::plugin_handle;
 
 use 5.010;
 use strict;
 use warnings;
-use Rit::Base::Utils qw( parse_arc_add_box parse_propargs );
-use Rit::Base::Constants qw( $C_resource );
+use RDF::Base::Utils qw( parse_arc_add_box parse_propargs );
+use RDF::Base::Constants qw( $C_resource );
 
 sub new
 {
-    my $class = 'Rit::Base::Plugins::Blog::plugin_handle';
+    my $class = 'RDF::Base::Plugins::Blog::plugin_handle';
 
     my $plugin_blog = bless
     {
@@ -25,7 +25,7 @@ sub install
     my( $class ) = @_;
 
     my( $args, $arclim, $res ) = parse_propargs('auto');
-    my $R = Rit::Base->Resource;
+    my $R = RDF::Base->Resource;
 
     # Register plugin
     my $plugin_blog_reg = $R->find_set({
@@ -43,7 +43,7 @@ sub install
     # news, members-blogs.
     my $blog_module = $R->find_set({
 				    is   => 'class_perl_module',
-				    code => 'Rit::Base::Plugins::Blog',
+				    code => 'RDF::Base::Plugins::Blog',
 				   }, $args);
     my $blog =
       $R->find_set({
@@ -96,7 +96,7 @@ sub install
     # A 'blog_post' is a single post IN a blog.
     my $blog_post_module = $R->find_set({
 					 is => 'class_perl_module',
-					 code => 'Rit::Base::Plugins::Blog::Post',
+					 code => 'RDF::Base::Plugins::Blog::Post',
 					}, $args);
     my $blog_post =
       $R->find_set({
@@ -133,7 +133,7 @@ sub install
     my $plugin_blog_type_module
       = $R->find_set({
 		      is => 'class_perl_module',
-		      code => 'Rit::Base::Plugins::Blog::Type',
+		      code => 'RDF::Base::Plugins::Blog::Type',
 		     }, $args);
 
     my $plugin_blog_type

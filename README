@@ -1,9 +1,9 @@
 NAME
-    Rit::Base - The ultimate database
+    RDF::Base - The ultimate database
 
 
 DESCRIPTION
-    Rit::Base implements an RDF like nodal network database
+    RDF::Base implements an RDF like nodal network database
 
 
 PREREQUISITIES
@@ -15,7 +15,7 @@ PREREQUISITIES
 
 INSTALL
 
-    You are not meant to install Rit::Base among your Perl
+    You are not meant to install RDF::Base among your Perl
     libraries.  Copy the ditribution to /usr/local/rb
     See doc/INSTALL for details.
 

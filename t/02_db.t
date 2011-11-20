@@ -31,7 +31,7 @@ BEGIN
     $CFG->{'rb_root'} = abs_path("$FindBin::Bin/../");
     push @INC, $CFG->{'rb_root'}."/lib";
 
-    use_ok('Rit::Base');
+    use_ok('RDF::Base');
     use_ok('Para::Frame::DBIx');
     use_ok('Para::Frame::Utils', 'datadump' );
 
@@ -98,11 +98,11 @@ my $burner = Para::Frame::Burner->get_by_type('html');
 
 
 
-my $dbconnect = Rit::Base::Setup->dbconnect;
+my $dbconnect = RDF::Base::Setup->dbconnect;
 
 warnings_like
 {
-    $Rit::dbix = Para::Frame::DBIx ->
+    $RDF::dbix = Para::Frame::DBIx ->
       new({
 	   connect => $dbconnect,
 	   import_tt_params => 0,
@@ -127,21 +127,21 @@ ok( $::OUT =~ /STARTED/, "startup output" );
 clear_out();
 
 
-$Rit::dbix->connect;
+$RDF::dbix->connect;
 
 
 # Ignoring lots of warning
 {
     local $SIG{__WARN__} = sub {};
-    Rit::Base::Setup->setup_db();
+    RDF::Base::Setup->setup_db();
 };
 
 
 # Start by a sample test of the resulting DB
-my $C = Rit::Base->Constants;
+my $C = RDF::Base->Constants;
 is($C->get('has_access_right')->is->label,'predicate', 'DB Setup ok');
 
-$Rit::dbix->commit;
+$RDF::dbix->commit;
 
 clear_out();
 1;

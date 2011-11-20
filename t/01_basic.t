@@ -27,7 +27,7 @@ BEGIN
     my $rb_root = abs_path("$FindBin::Bin/../");
     push @INC, $rb_root."/lib";
 
-    use_ok('Rit::Base');
+    use_ok('RDF::Base');
 
     open STDOUT, ">&", $oldout      or die "Can't dup \$oldout: $!";
 }

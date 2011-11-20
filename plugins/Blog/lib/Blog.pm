@@ -1,4 +1,4 @@
-package Rit::Base::Plugins::Blog;
+package RDF::Base::Plugins::Blog;
 
 use strict;
 

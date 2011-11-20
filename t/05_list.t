@@ -36,9 +36,9 @@ BEGIN
     use_ok('Para::Frame::DBIx');
     use_ok('Para::Frame::Utils', 'datadump' );
 
-    use_ok('Rit::Base');
-    use_ok('Rit::Base::Utils', qw( is_undef parse_propargs ) );
-    use_ok('Rit::Base::User::Meta');
+    use_ok('RDF::Base');
+    use_ok('RDF::Base::Utils', qw( is_undef parse_propargs ) );
+    use_ok('RDF::Base::User::Meta');
 
     open STDOUT, ">&", SAVEOUT      or die "Can't restore STDOUT: $!";
 }
@@ -69,7 +69,7 @@ my $cfg_in =
  dir_var           => $troot.'/var',
  'port'            => 9999,
  'debug'           => 1,
- 'user_class'      => 'Rit::Base::User::Meta',
+ 'user_class'      => 'RDF::Base::User::Meta',
 };
 
 warnings_like {Para::Frame->configure($cfg_in)}
@@ -95,9 +95,9 @@ warning_like {
 
 my $cfg = $Para::Frame::CFG;
 
-my $dbconnect = Rit::Base::Setup->dbconnect;
+my $dbconnect = RDF::Base::Setup->dbconnect;
 
-$Rit::dbix = Para::Frame::DBIx ->
+$RDF::dbix = Para::Frame::DBIx ->
   new({
        connect => $dbconnect,
        import_tt_params => 0,
@@ -105,20 +105,20 @@ $Rit::dbix = Para::Frame::DBIx ->
 
 Para::Frame->add_hook('on_startup', sub
 		      {
-			  $Rit::dbix->connect;
+			  $RDF::dbix->connect;
 		      });
 
 warnings_like
 {
-    Rit::Base->init();
+    RDF::Base->init();
 }[
-  qr/^Adding hooks for Rit::Base$/,
+  qr/^Adding hooks for RDF::Base$/,
   qr/^Registring ext js to burner plain$/,
-  qr/^Done adding hooks for Rit::Base$/,
+  qr/^Done adding hooks for RDF::Base$/,
  ], "RB Init";
 
 
-open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
+#open STDERR, ">/dev/null"       or die "Can't dup STDERR: $!";
 
 
 Para::Frame->startup;
@@ -142,16 +142,16 @@ $req->user->set_default_propargs({
 
 
 
-my $R = Rit::Base->Resource;
-my $L = Rit::Base->Literal;
-my $C = Rit::Base->Constants;
+my $R = RDF::Base->Resource;
+my $L = RDF::Base->Literal;
+my $C = RDF::Base->Constants;
 
 my $Class = $C->get('class');
 my $Pred = $C->get('predicate');
 my $Date = $C->get('date');
 
-my $d1 = Rit::Base::Literal::Time->parse('2010-03-01');
-my $d2 = Rit::Base::Literal::Time->parse('2010-02-01');
+my $d1 = RDF::Base::Literal::Time->parse('2010-03-01');
+my $d2 = RDF::Base::Literal::Time->parse('2010-02-01');
 
 my $MyThing =
   $R->find_set({

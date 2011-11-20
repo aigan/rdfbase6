@@ -33,9 +33,9 @@ BEGIN
     use_ok('Para::Frame::DBIx');
     use_ok('Para::Frame::Utils', 'datadump' );
 
-    use_ok('Rit::Base');
-    use_ok('Rit::Base::Utils', qw( is_undef parse_propargs query_desig ) );
-    use_ok('Rit::Base::User::Meta');
+    use_ok('RDF::Base');
+    use_ok('RDF::Base::Utils', qw( is_undef parse_propargs query_desig ) );
+    use_ok('RDF::Base::User::Meta');
 
 #    open STDOUT, ">&", SAVEOUT      or die "Can't restore STDOUT: $!";
 }
@@ -54,7 +54,7 @@ my $cfg_in =
  dir_var           => $troot.'/var',
  'port'            => 9999,
  'debug'           => 0,
- 'user_class'      => 'Rit::Base::User::Meta',
+ 'user_class'      => 'RDF::Base::User::Meta',
 };
 
 Para::Frame->configure($cfg_in);
@@ -65,9 +65,9 @@ Para::Frame::Site->add({
 
 my $cfg = $Para::Frame::CFG;
 
-my $dbconnect = Rit::Base::Setup->dbconnect;
+my $dbconnect = RDF::Base::Setup->dbconnect;
 
-$Rit::dbix = Para::Frame::DBIx ->
+$RDF::dbix = Para::Frame::DBIx ->
   new({
        connect => $dbconnect,
        import_tt_params => 0,
@@ -75,10 +75,10 @@ $Rit::dbix = Para::Frame::DBIx ->
 
 Para::Frame->add_hook('on_startup', sub
 		      {
-			  $Rit::dbix->connect;
+			  $RDF::dbix->connect;
 		      });
 
-Rit::Base->init();
+RDF::Base->init();
 Para::Frame->startup;
 
 ###########
@@ -90,9 +90,9 @@ my $req = Para::Frame::Request->new_bgrequest();
 
 my( $args, $arclim, $res ) = parse_propargs('auto');
 
-my $R = Rit::Base->Resource;
-my $Ls = 'Rit::Base::Literal::String';
-my $C = Rit::Base->Constants;
+my $R = RDF::Base->Resource;
+my $Ls = 'RDF::Base::Literal::String';
+my $C = RDF::Base->Constants;
 
 my $Class = $C->get('class');
 my $Pred = $C->get('predicate');
@@ -113,16 +113,16 @@ my $Date = $C->get('date');
     $n1->add({ is => $Email }, $args);
     my $a2 = $n1->first_arc('is',undef,$args); #auto includes new
     ok( $a2->inactive, "Arc is new" );
-    is( ref($n1), 'Rit::Base::Resource', "new node just Resource" );
+    is( ref($n1), 'RDF::Base::Resource', "new node just Resource" );
 
     $res->autocommit();
     ok( $a2->active, "arc is active" );
-    is( ref($n1), 'Rit::Base::Metaclass::Rit::Base::Email', "new node now an Email" );
+    is( ref($n1), 'RDF::Base::Metaclass::RDF::Base::Email', "new node now an Email" );
 
     ## get by new with class
     #
     my $n2 = $R->get('new', {new_class=>$Email});
-    is( ref($n2), 'Rit::Base::Metaclass::Rit::Base::Email', "new node is an Email" );
+    is( ref($n2), 'RDF::Base::Metaclass::RDF::Base::Email', "new node is an Email" );
 
     ## get by constant
     #
@@ -169,17 +169,17 @@ my $Date = $C->get('date');
     $res->autocommit();
     my $a2 = $n1->first_arc('description');
     my $n6 = $a2->obj;
-    is(ref($n6),'Rit::Base::Resource::Literal', "new resource literal");
+    is(ref($n6),'RDF::Base::Resource::Literal', "new resource literal");
     my $valtext = $C->get('valtext');
     my $literal = $C->get('literal');
     is($n6->this_valtype->id, $literal->id, "resource valtype literal");
     is($lit1->this_valtype->id, $valtext->id, "literal valtype valtext");
     my $l2 = $R->find_by_anything($n6,{valtype=>$valtext});
     my $o1 = $l2->get_first_nos;
-    is(ref($o1),'Rit::Base::Literal::String', "find obj by object literal with valtype valtext");
+    is(ref($o1),'RDF::Base::Literal::String', "find obj by object literal with valtype valtext");
     my $l3 = $R->find_by_anything($n6);
     my $o2 = $l3->get_first_nos;
-    is(ref($o2),'Rit::Base::Resource::Literal', "find obj by literal resource without given valtype");
+    is(ref($o2),'RDF::Base::Resource::Literal', "find obj by literal resource without given valtype");
 
     ## find obj as literal
     #
@@ -197,18 +197,18 @@ my $Date = $C->get('date');
     #
     my $lit3 = $R->find_by_anything('Spagetti',{valtype=>$valtext})->
       get_first_nos;
-    is(ref($lit3), 'Rit::Base::Literal::String', "find non-obj");
+    is(ref($lit3), 'RDF::Base::Literal::String', "find non-obj");
     my $lit4 = $R->find_by_anything(\ 'Spagetti',{valtype=>$valtext})->
       get_first_nos;
-    is(ref($lit4), 'Rit::Base::Literal::String', "find non-obj by scalar ref");
+    is(ref($lit4), 'RDF::Base::Literal::String', "find non-obj by scalar ref");
 
     ## find obj as list
     #
     my $l6 = $R->find_by_anything($l5);
     is($l5->get_first_nos, $l6->get_first_nos, "find obj as list");
 
-    my $l7 = Rit::Base::List->new([undef,$l4]);
-    my $l8 = Rit::Base::List->new([$l5,undef,$l7,$n1]);
+    my $l7 = RDF::Base::List->new([undef,$l4]);
+    my $l8 = RDF::Base::List->new([$l5,undef,$l7,$n1]);
     my $l9 = $R->find_by_anything( $l8 );
     is($l9->desig, 'rbt-1c / hello world / <deleted>', "find obj by list - flattened");
 

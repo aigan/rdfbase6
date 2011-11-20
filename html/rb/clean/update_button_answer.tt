@@ -1,0 +1,10 @@
+﻿<div class="admin">
+[%
+IF req.result.info_parts.size >= 1 OR
+   req.result.error_parts.size >= 1;
+   PROCESS info_box.tt;
+ELSE;
+   'Done!';
+END;
+%]
+</div>

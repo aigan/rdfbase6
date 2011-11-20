@@ -1,4 +1,4 @@
-package Rit::Base::Action::plugin_Blog_add_comment;
+package RDF::Base::Action::plugin_Blog_add_comment;
 
 use 5.010;
 use strict;
@@ -7,8 +7,8 @@ use warnings;
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Utils qw( throw debug );
 
-use Rit::Base::Utils qw( parse_propargs parse_query_props parse_form_field_prop );
-use Rit::Base::Constants qw( $C_plugin_blog_post );
+use RDF::Base::Utils qw( parse_propargs parse_query_props parse_form_field_prop );
+use RDF::Base::Constants qw( $C_plugin_blog_post );
 
 sub handler
 {
@@ -33,7 +33,7 @@ sub handler
     $q->delete('has_email');
     $q->delete('message'  );
 
-    my $R = Rit::Base->Resource;
+    my $R = RDF::Base->Resource;
 
     my $id = $q->param('id');
     my $post = $R->get( $id );

@@ -17,7 +17,7 @@ node_update, där man gör en permission-check i standardiserad form, typ:
 			   has_body    => '*',
 			  };
 
-    my $node = Rit::Base::Resource->get($id);
+    my $node = RDF::Base::Resource->get($id);
     if( $node->check_query_permissions( $allowed_preds ) )
     {
 	$node->update_by_query($args);
@@ -58,7 +58,7 @@ plugin t ex kan implementera sin egen sökning.  Dvs
  scof page
  base_url /blog
 
-Så kan en request av "/blog/2009/11/En-blog-om-ritbase" kolla upp först
+Så kan en request av "/blog/2009/11/En-blog-om-rdfbase" kolla upp först
 om det finns en page med hela denna url, och annars kolla om det finns
 en page eller page-klass som har base_url "/blog/2009/11", "/blog/2009"
 eller "/blog" eller "" innan den hivar ut en 404.  I det här fallet
