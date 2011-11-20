@@ -1088,7 +1088,7 @@ sub handle_query_arc_value
 	    debug $arc->sysdesig;
 
 	    debug "New value of arc will be $value";
-	    debug query_desig($value);
+	    debug 1, query_desig($value);
 	    debug "-----";
 	}
 

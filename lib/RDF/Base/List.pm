@@ -553,7 +553,7 @@ Dies if given faulty parameters.
 
 sub sorted
 {
-    my( $list, $sortargs, $dir ) = @_;
+    my( $list, $sortargs, $dir_in, $args_in ) = @_;
 
     # sort_str, if given MUST match sortargs
 
@@ -561,13 +561,23 @@ sub sorted
 
     return $list if $list->size < 2;
 
-    my( $sort_str, $sort_key );
+    my( $sort_str, $sort_key, $dir );
 
-    if( ref $dir eq 'HASH' )
+    if( ref $dir_in eq 'HASH' )
     {
-	$sort_str = $dir->{'sort_str'};
-	$sort_key = $dir->{'sort_key'};
-	$dir      = $dir->{'dir'};
+	$sort_str = $dir_in->{'sort_str'};
+	$sort_key = $dir_in->{'sort_key'};
+	$dir      = $dir_in->{'dir'};
+
+	unless( $dir or $sort_str or $sort_key or $args_in )
+	{
+	    $args_in = $dir_in;
+	    $dir_in = undef;
+	}
+    }
+    elsif( $dir_in )
+    {
+	$dir = $dir_in;
     }
 
     unless( $sort_key )
@@ -583,6 +593,9 @@ sub sorted
 
 
     $list->materialize_all; # for sorting on props
+
+    my( $args ) = parse_propargs($args_in);
+
 
     debug "--- SORTING: $sort_str" if $DEBUG;
 
@@ -602,7 +615,7 @@ sub sorted
 		{
 		    last; # skipping undef values...
 		}
-		$val = $val->$part;
+		$val = $val->$part(undef,$args);
 		debug sprintf("      -> %s", $val) if $DEBUG;
 	    }
 
