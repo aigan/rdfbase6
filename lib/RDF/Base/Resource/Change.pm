@@ -414,12 +414,12 @@ sub autocommit
 	    {
 		if( $arc->is_new )
 		{
-		    $arc->submit;
+		    $arc->submit(\%args);
 		}
 
 		if( ( $activate or $arc->subj->is_owned_by( $u ) ) and $arc->submitted )
 		{
-		    $arc->activate;
+		    $arc->activate(\%args);
 #		    my $subj = $arc->subj;
 #		    $subjs_changed{ $subj->id } = $subj;
 		}

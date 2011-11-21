@@ -400,19 +400,22 @@ sub create
 
 
     ##################### updated_by
+    my $updated_by;
     if( $props->{'created_by'} )
     {
-	$rec->{'created_by'} = RDF::Base::Resource->
-	  get($props->{'created_by'})->id;
+	$updated_by = RDF::Base::Resource->
+	  get($props->{'created_by'});
+	$rec->{'created_by'} = $updated_by->id;
     }
     elsif( $req and $req->user )
     {
-	$rec->{'created_by'} = $req->user->id;
+	$updated_by = $req->user;
+	$rec->{'created_by'} = $updated_by->id;
     }
     else
     {
-	$rec->{'created_by'} =
-	  RDF::Base::Resource->get_by_label('root')->id;
+	$updated_by = RDF::Base::Resource->get_by_label('root');
+	$rec->{'created_by'} = $updated_by->id;
     }
     push @fields, 'created_by';
     push @values, $rec->{'created_by'};
@@ -798,7 +801,7 @@ sub create
 
 		if( $args->{'mark_updated'} )
 		{
-		    $arc->mark_updated;
+		    $arc->mark_updated($updated, $updated_by);
 		}
 
 		return $arc;
@@ -831,7 +834,7 @@ sub create
 
 		if( $args->{'mark_updated'} )
 		{
-		    $arc->mark_updated;
+		    $arc->mark_updated($updated,$updated_by);
 		}
 
                 if( $props->{'arc_weight_last'} )
@@ -6303,11 +6306,11 @@ sub notify_change
 
     if( my $obj = $arc->obj ) # obj or value node
     {
-	$obj->mark_updated if $obj->node_rec_exist;
+	$obj->mark_updated($args->{'updated'}) if $obj->node_rec_exist;
     }
 
     my $subj = $arc->subj;
-    $subj->mark_updated if $subj->node_rec_exist;
+    $subj->mark_updated($args->{'updated'}) if $subj->node_rec_exist;
 
     return;
 }
