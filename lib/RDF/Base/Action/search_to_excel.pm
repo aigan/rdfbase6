@@ -62,7 +62,7 @@ sub handler
 	throw('action', "Export failed");
     }
 
-    my $file_url = $file_resp->page->url_path_with_query_and_reqnum;
+    my $file_url = $file_resp->page->page_url_path_with_query_and_reqnum;
     $req->session->register_result_page($file_resp, $file_url);
     $q->param('file_download_url', $file_url);
 
