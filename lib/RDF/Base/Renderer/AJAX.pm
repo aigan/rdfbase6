@@ -41,6 +41,8 @@ sub render_output
     my $q = $req->q;
     my $R = RDF::Base->Resource;
 
+    $rend->{'ctype'} = 'html';
+
     my $params;
     if( my $params_in = $q->param('params') )
     {
@@ -62,8 +64,6 @@ sub render_output
     {
 	$req->require_root_access;
 
-	$rend->{'ctype'} = 'html';
-
 	$out .= RDF::Base::AJAX->wu( $params );
     }
     elsif( $file =~ /action\/(.*)/ )
@@ -73,7 +73,6 @@ sub render_output
 
 	if( $action eq 'add_direct' )
 	{
-	    $rend->{'ctype'} = 'html';
 	    my $subj = $R->get($q->param('subj'));
 	    my $pred_name = $q->param('pred_name');
 	    my $obj = $R->get($q->param('obj'));

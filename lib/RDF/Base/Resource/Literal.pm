@@ -703,7 +703,8 @@ sub sysdesig  # The designation of obj, including node id
 {
     my( $node ) = @_;
     my $lit = $node->first_literal;
-    if( $lit->is_literal )
+#    cluck $lit unless ref $lit;
+    if( $lit and $lit->is_literal )
     {
 	if( defined $lit->plain )
 	{
@@ -802,6 +803,24 @@ sub on_revarc_del
                                    force_set_value=>1,
                                    force_set_value_same_version=>1,
                                   });
+    }
+}
+
+
+##############################################################################
+
+=head2 on_revarc_add
+
+=cut
+
+sub on_revarc_add
+{
+    my( $n, $arc, $pred_name, $args ) = @_;
+
+    foreach my $oarc ( @{$n->{'lit_revarc_active'}},
+                       @{$n->{'lit_revarc_inactive'}} )
+    {
+        delete $oarc->value_node->{'literal_arc'};
     }
 }
 
