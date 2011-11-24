@@ -771,11 +771,11 @@ sub plain
 
 ##############################################################################
 
-=head2 on_arc_del
+=head2 on_revarc_del
 
 =cut
 
-sub on_arc_del
+sub on_revarc_del
 {
     my( $n, $arc, $pred_name, $args ) = @_;
 
@@ -784,13 +784,18 @@ sub on_arc_del
         foreach my $oarc ( @{$n->{'lit_revarc_active'}},
                            @{$n->{'lit_revarc_inactive'}} )
         {
-            delete $oarc->{'literal_arc'};
+            delete $oarc->value_node->{'literal_arc'};
         }
 
         # Copy value to the new first arc
         my $val = $arc->{'value'};
         my $new_first_arc = $n->lit_revarc;
         return unless $new_first_arc->is_arc;
+
+        # Keep new value if set
+        return if $new_first_arc->{'value'};
+
+        # Copy previous value to new arc if the new was undef
 
         $new_first_arc->set_value($val,
                                   {%$args,

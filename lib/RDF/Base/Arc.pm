@@ -931,7 +931,7 @@ sub create
 	confess "Creation of arc $arc->{id} resulted in confused subj: ".
 	  datadump($subj,2).datadump($arc->subj,2);
     }
-    if( $value_obj and not $value_obj->equals($arc->value) )
+    if( $value_obj and not $value_obj->equals($arc->{'value'}) )
     {
 	confess "Creation of arc $arc->{id} resulted in confused value: ".
 	  datadump($value_obj,2).datadump($arc->value,2);
@@ -6206,6 +6206,11 @@ sub create_check
 
 
     $subj->on_arc_add($arc, $pred_name, $args);
+
+    if( my $obj = $arc->obj )
+    {
+        $obj->on_revarc_add($arc, $pred_name, $args);
+    }
  }
 
 
@@ -6277,8 +6282,12 @@ sub remove_check
 	}
     }
 
-
     $subj->on_arc_del($arc, $pred_name, $args);
+
+    if( my $obj = $arc->obj )
+    {
+        $obj->on_revarc_del($arc, $pred_name, $args);
+    }
 
     $arc->{'in_remove_check'} --;
     $arc->{'disregard'} --;

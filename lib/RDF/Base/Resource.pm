@@ -1515,10 +1515,6 @@ sub form_url
 #	warn "  is an ARC\n";
 	$path = 'rb/node/arc/update.tt';
     }
-    elsif( $n->is_value_node )
-    {
-	$path = "rb/translation/node.tt";
-    }
     else
     {
 
@@ -6833,6 +6829,22 @@ sub on_arc_add
 
 #########################################################################
 
+=head2 on_revarc_add
+
+  $node->on_revarc_add( $arc, $pred_name, \%args )
+
+Same as L</on_arc_add> but is called on the obj if existing.
+
+=cut
+
+sub on_revarc_add
+{
+    return;
+}
+
+
+#########################################################################
+
 =head2 on_arc_del
 
   $node->on_arc_del( $arc, $pred_name, \%args )
@@ -6863,6 +6875,22 @@ Returns: ---
 =cut
 
 sub on_arc_del
+{
+    return;
+}
+
+
+#########################################################################
+
+=head2 on_revarc_del
+
+  $node->on_revarc_del( $arc, $pred_name, \%args )
+
+Same as L</on_arc_del> but is called on the obj if existing.
+
+=cut
+
+sub on_revarc_del
 {
     return;
 }

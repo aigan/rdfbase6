@@ -81,6 +81,38 @@ sub on_arc_add
 
 ########################################################################
 
+=head2 on_revarc_add
+
+  $node->on_revarc_add( $arc, $pred_name )
+
+Called by L<RDF::Base::Arc/create_check>
+
+Distributes the calls over the classes
+
+=cut
+
+sub on_revarc_add
+{
+    my $n = shift;
+    my $class = ref $n;
+    no strict "refs";
+
+    foreach my $sc (@{"${class}::ISA"})
+    {
+	next if $sc eq __PACKAGE__;
+	if( my $method = $sc->can("on_revarc_add") )
+	{
+	    &{$method}($n, @_);
+	}
+#	$n->("${sc}::on_arc_add")(@_);
+    }
+
+    return;
+}
+
+
+########################################################################
+
 =head2 on_arc_del
 
   $node->on_arc_del( $arc, $pred_name )
@@ -104,7 +136,39 @@ sub on_arc_del
 	{
 	    &{$method}($n, @_);
 	}
-#	$n->("${sc}::on_arc_del")(@_);
+#	$n->("${sc}::on_revarc_del")(@_);
+    }
+
+    return;
+}
+
+
+########################################################################
+
+=head2 on_revarc_del
+
+  $node->on_revarc_del( $arc, $pred_name )
+
+Called by L<RDF::Base::Arc/remove_check>
+
+Distributes the calls over the classes
+
+=cut
+
+sub on_revarc_del
+{
+    my $n = shift;
+    my $class = ref $n;
+    no strict "refs";
+
+    foreach my $sc (@{"${class}::ISA"})
+    {
+	next if $sc eq __PACKAGE__;
+	if( my $method = $sc->can("on_revarc_del") )
+	{
+	    &{$method}($n, @_);
+	}
+#	$n->("${sc}::on_revarc_del")(@_);
     }
 
     return;
