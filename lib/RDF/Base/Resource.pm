@@ -4979,6 +4979,10 @@ sub select_tooltip_html
  wd       = Widget for Displaying property
  display  = Display property as plain string
 
+ wu_jump         = link to the form for updating
+ wun_jump        = link to the form for updating the node
+ wp_jump         = link to the page for presenting
+
  wdirc = Widget for Displaying Instance of Range Class
  wuirc = Widget for Updating Instance of Range Class
 
@@ -5357,8 +5361,12 @@ sub wu
     $range_key =~ s/^range_is$/range/;
 
     $args->{$range_key} = $range;
+    $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
+    # Will update $args with context properties
+    #
+    my $out_wuirc = $range_class->wuirc($node, $pred, $args);
 
     # Wrap in for ajax
     my $out = "";
@@ -5384,7 +5392,7 @@ sub wu
 
     # widget for updating subclass of range class
 #    debug "Calling ". $range->instance_class ."->wuirc(". $node->desig .", ". $pred->label ."...)";
-    $out .= $range_class->wuirc($node, $pred, $args);
+    $out .= $out_wuirc;
     $out .= $extra_html if $extra_html;
 
     if( $divid and not $from_ajax )
@@ -5644,8 +5652,17 @@ sub wuirc
 		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
 		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
+    unless( defined $args->{'arc_type'} )
+    {
+	if( $pred->first_prop('range_card_max')->equals(1) )
+	{
+	    $args->{'arc_type'} = 'singular';
+	}
+    }
+
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
+
 
 #    debug "Selecting inputtype for ".$pred->desig;
     my $inputtype = $args->{'inputtype'} ||
@@ -5658,9 +5675,9 @@ sub wuirc
 	debug "FOUND list ".$list->sysdesig;
 	debug "range_pred $range_pred";
 	debug "range ".$range->sysdesig;
-	debug "is_rev ".$is_rev;
-        debug "arc_type ".$arc_type;
-        debug "singular ".$singular;
+	debug "is_rev ".($is_rev//'undef');
+        debug "arc_type ".($arc_type//'undef');
+        debug "singular ".($singular//'undef');
         debug "inputtype ".$inputtype;
     }
 
@@ -5757,8 +5774,11 @@ sub wuirc
 	    };
 	    $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
+	    my $input_id = build_field_key($fkeys);
+	    $args->{id} = $input_id;
+
 	    $out .=
-	      Para::Frame::Widget::input(build_field_key($fkeys),
+	      Para::Frame::Widget::input($input_id,
 					 $args->{'default_value'},
 					 {
 					  label => Para::Frame::L10N::loc('Add'),
@@ -5771,11 +5791,8 @@ sub wuirc
 	    my $header = $args->{'header'} ||
 	      ( $args->{'default_value'} ? '' :
 		Para::Frame::L10N::loc('Select') );
-	    $out .= $subj->wu_select( $pred->label, $range,
-                                      {
-                                       %$args,
-                                       header => $header,
-                                      });
+	    $args->{header} = $header;
+	    $out .= $subj->wu_select( $pred->label, $range, $args);
 	}
 	elsif( $inputtype eq 'select_tree' )
 	{
@@ -5968,13 +5985,13 @@ sub wu_select
     $arc ||= $subj->arc( $pred_name, undef, 'direct' )->get_first_nos
       if( $singular );
 
-    $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => $args->{'label_class'},
-			      });
+#    $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => $args->{'label_class'},
+#			      });
 
     if( $disabled )
     {
@@ -5989,8 +6006,11 @@ sub wu_select
 
     debug 2, "Building select widget for ".$subj->desig." $pred_name";
 
-    $out .= '<select name="arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
-      .'pred_'. $pred_name . $if .'"'. $extra .'>';
+    my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+      .'pred_'. $pred_name . $if;
+    $args->{id} = $key;
+
+    $out .= "<select id=\"$key\" name=\"$key\"$extra>";
 
     my $default_value;
     if( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )

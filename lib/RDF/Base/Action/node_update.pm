@@ -47,7 +47,7 @@ sub handler
 
     my $node = RDF::Base::Resource->get($id);
 
-    unless( $req->session->user->level >= 20
+    unless( $req->session->user->has_root_access
 	    or $node->is_owned_by( $req->session->user )
 	  )
     {

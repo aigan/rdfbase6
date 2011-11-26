@@ -1677,6 +1677,24 @@ sub wun_jump
 }
 
 
+##############################################################################
+
+=head2 wp_jump
+
+  $n->wp_jump( \%attrs, \%args )
+
+Attrs are the L<Para::Frame::Widget/jump> attributes
+
+Returns: a HTML link to page presenting the node
+
+=cut
+
+sub wp_jump
+{
+    return shift->wu_jump(@_);
+}
+
+
 #########################################################################
 
 =head2 code_class

@@ -1673,13 +1673,13 @@ sub wdirc
 	$pred = RDF::Base::Pred->get_by_label($predname);
     }
 
-    $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => $args->{'label_class'},
-			      });
+#    $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => $args->{'label_class'},
+#			      });
 
     my $arclist = $subj->arc_list($predname, undef, $args);
 

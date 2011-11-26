@@ -71,13 +71,13 @@ sub wuirc
     my $key = "arc_singular__pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
     $args->{'id'} ||= $key;
 
-    $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => $args->{'label_class'},
-			      });
+#    $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => $args->{'label_class'},
+#			      });
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
@@ -96,14 +96,15 @@ sub wuirc
 	while( my $arc = $arclist->get_next_nos )
 	{
 	    $out .= hidden('check_arc_'. $arc->id, $arc->value->plain);
-	    $out .= checkbox($key, 1, $arc->value->plain) .
+	    $out .= checkbox($key, 1, $arc->value->plain, $args) .
 	      $arc->edit_link_html;
 
 	}
     }
     else
     {
-	$out .= checkbox($key, 1, $args->{'default_value'} || 0);
+	my $val = $args->{'default_value'} || 0;
+	$out .= checkbox($key, 1, $val, $args);
     }
 
     return $out;
