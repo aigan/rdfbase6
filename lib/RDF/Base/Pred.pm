@@ -631,6 +631,7 @@ sub on_new_range
     if( $old_coltype_id != $range_new->coltype_id )
     {
 	$pred->set_coltype( $range_new->coltype_id, $args_in );
+        $args_in->{old_coltype_id} = $old_coltype_id;
     }
 
 
@@ -688,6 +689,12 @@ sub vacuum_pred_arcs
     debug "Vacuuming $size arcs";
 
     my $remove_faulty = $args->{'remove_faulty'} || 0;
+    my $old_coltype_id = $args->{old_coltype_id};
+    my $old_coltype = RDF::Base::Literal::Class->coltype_by_coltype_id($old_coltype_id);
+
+
+    my $dbh = $RDF::dbix->dbh;
+    my $sth = $dbh->prepare("select $old_coltype from arc where ver=?");
 
     RDF::Base::Arc->lock;
     my( $arc, $error ) = $arcs->get_first;
@@ -696,6 +703,17 @@ sub vacuum_pred_arcs
 	eval
 	{
 	    $arc->vacuum( $args );
+            my $coltype = $arc->coltype;
+            my $val = $arc->value;
+            if( $old_coltype and $old_coltype ne $coltype )
+            {
+                $sth->execute($arc->id);
+                my( $val ) = $sth->fetchrow_array();
+                if( $val )
+                {
+                    $arc->set_value($val, $args);
+                }
+            }
 	};
 	if( my $err = catch(['validation']) )
 	{

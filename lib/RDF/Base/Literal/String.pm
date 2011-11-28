@@ -795,7 +795,11 @@ sub wuirc
 	$args->{'inputtype'} = 'textarea';
 	$args->{'rows'} ||= 3;
     }
-    $args->{'maxlength'} ||= 2800;
+
+    unless( $range->coltype eq 'valbin' )
+    {
+        $args->{'maxlength'} ||= 2800;
+    }
 
 
     my $size = $args->{'size'} || 30;

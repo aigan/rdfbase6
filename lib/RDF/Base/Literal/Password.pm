@@ -136,13 +136,13 @@ sub wuirc
 				       subj => $subj,
 				      });
 
-    $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => $args->{'label_class'},
-			      });
+#    $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => $args->{'label_class'},
+#			      });
 
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];

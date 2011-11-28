@@ -5288,7 +5288,10 @@ sub wu
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
-#    debug "WU ".$node->sysdesig." --".$pred_name."-->\n".query_desig($args_in);
+# if( $pred_name eq 'has_cost' ) ### DEBUG
+# {
+#     debug "WU ".$node->sysdesig." --".$pred_name."-->\n".query_desig($args_in);
+# }
 
     my $R = RDF::Base->Resource;
     my $rev = $args->{'rev'} || 0;
@@ -5364,16 +5367,17 @@ sub wu
     $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
-    # Will update $args with context properties
-    #
-    my $out_wuirc = $range_class->wuirc($node, $pred, $args);
-
     # Wrap in for ajax
     my $out = "";
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $from_ajax = $args->{'from_ajax'} || 0;
-    my $divid = $args->{'divid'} ||
+    my $divid = $args->{'divid'} ||=
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
+
+    # Will update $args with context properties
+    #
+    my $out_wuirc = $range_class->wuirc($node, $pred, $args);
+
 
     $out .= label_from_params({
 			       label       => delete $args->{'label'},
@@ -5383,9 +5387,13 @@ sub wu
 			       label_class => delete $args->{'label_class'},
 			      });
 
+#    if( $pred_name eq 'has_cost' ) ### DEBUG
+#    {
+#        debug "OUT is '$out'";
+#    }
+
     if( $divid and not $from_ajax )
     {
-	$args->{'divid'} = $divid;
 #	$out .= "(>$divid)";
 	$out .= '<div id="'. $divid .'" style="position: relative;">';
     }
@@ -5856,13 +5864,13 @@ sub wu_select_tree
 	confess "type missing: ".datadump($type,2);
     }
 
-     $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => $args->{'label_class'},
-			      });
+#     $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => $args->{'label_class'},
+#			      });
 
     if( $disabled and $set_value )
     {

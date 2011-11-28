@@ -308,13 +308,13 @@ sub wuirc
     }
     debug 2, "Predname in date wuirc: $predname";
 
-    $out .= label_from_params({
-			       label       => $args->{'label'},
-			       tdlabel     => $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $id,
-			       label_class => $args->{'label_class'},
-			      });
+#    $out .= label_from_params({
+#			       label       => $args->{'label'},
+#			       tdlabel     => $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $id,
+#			       label_class => $args->{'label_class'},
+#			      });
 
 
     if( ($args->{'disabled'}||'') eq 'disabled' )

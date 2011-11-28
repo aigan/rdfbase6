@@ -334,9 +334,11 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
 //       log( form.serializeArray());
 
 //       var formData = $H(form.serialize(true)).merge({ run: action });
-         var formData = $.extend({ run: action },
+         var formData = $.extend({},
                                  form.toObj(),
-                                 extra_params); 
+                                 extra_params,
+                                 { run: action }
+                                ); 
 
          var $element = $('#' + $this.element);
 
