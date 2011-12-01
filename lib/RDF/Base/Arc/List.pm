@@ -484,32 +484,76 @@ sub as_rdf
 {
     my( $l ) = shift;
 
+    my $use_bags = 0;
+
+
     my $out = "";
-
     my $predl = $l->get_first_nos->pred->label;
-    $out .= "<rb:$predl>\n";
-    $out .= "<rdf:Bag>\n";
 
-    foreach my $arc ( $l->as_array )
+    if( $use_bags )
     {
-        debug "  + ".$arc->sysdesig;
-        my $val = $arc->value;
-        if( $val->is_literal )
+        $out .= "<rb:$predl>\n";
+        $out .= "<rdf:Bag>\n";
+
+        foreach my $arc ( $l->as_array )
         {
-            my $type = $val->this_valtype;
-            my $val_out = CGI->escapeHTML($val);
-            my $type_label = $type->label || $type->id;
-            $out .= qq(<rdf:li rdf:datatype="$type_label">$val_out</rdf:li>\n);
+            #debug "  + ".$arc->sysdesig;
+            my $val = $arc->value;
+            if( $val->is_literal )
+            {
+                my $type = $val->this_valtype;
+                my $val_out = CGI->escapeHTML($val);
+                my $type_label = $type->label || $type->id;
+
+                if( my $vnode = $arc->value_node )
+                {
+                    my $res_out = $vnode->label || $vnode->id;
+                    $out .= qq(<rdf:li rdf:resource="$res_out" rdf:datatype="$type_label">$val_out</rdf:li>\n);
+                }
+                else
+                {
+                    $out .= qq(<rdf:li rdf:datatype="$type_label">$val_out</rdf:li>\n);
+                }
+            }
+            else
+            {
+                my $res_out = $val->label || $val->id;
+                $out .= qq(<rdf:li rdf:resource="$res_out"/>);
+            }
         }
-        else
+
+        $out .= "</rdf:Bag>\n";
+        $out .= "</rb:$predl>\n";
+    }
+    else
+    {
+        foreach my $arc ( $l->as_array )
         {
-            my $res_out = $val->label || $val->id;
-            $out .= qq(<rdf:li rdf:resource="$res_out"/>);
+            #debug "  + ".$arc->sysdesig;
+            my $val = $arc->value;
+            if( $val->is_literal )
+            {
+                my $type = $val->this_valtype;
+                my $val_out = CGI->escapeHTML($val);
+                my $type_label = $type->label || $type->id;
+
+                if( my $vnode = $arc->value_node )
+                {
+                    my $res_out = $vnode->label || $vnode->id;
+                    $out .= qq(<rb:$predl rdf:resource="$res_out" rdf:datatype="$type_label">$val_out</rb:$predl>\n);
+                }
+                else
+                {
+                    $out .= qq(<rb:$predl rdf:datatype="$type_label">$val_out</rb:$predl>\n);
+                }
+            }
+            else
+            {
+                my $res_out = $val->label || $val->id;
+                $out .= qq(<rb:$predl rdf:resource="$res_out"/>);
+            }
         }
     }
-
-    $out .= "</rdf:Bag>\n";
-    $out .= "</rb:$predl>\n";
 
     return $out;
 }
