@@ -417,6 +417,10 @@ sub equals
     {
 	return 1;
     }
+    elsif( not defined $_[1] )
+    {
+	return 1;
+    }
 
     return 0;
 }
