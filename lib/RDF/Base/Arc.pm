@@ -3802,12 +3802,18 @@ sub remove
 	}
     }
 
+#    cluck "Forcing delete";
+
+    # Force just first level. The infered may be dependant on other arcs
+    my $args2 = {%$args, force=>0, force_recursive=>0};
+
+
 #    my $mrk = Time::HiRes::time();
 #    $::PRT1 += $mrk - $::MRK;
 #    $::MRK = $mrk;
 
     debug "  remove_check" if $DEBUG;
-    $arc->remove_check( $args );
+    $arc->remove_check( $args2 );
 
     # May have been removed during remove_check
     return 1 if $arc->is_removed;
@@ -3817,12 +3823,12 @@ sub remove
 #    $::MRK = $mrk;
 
     debug "  SUPER::remove" if $DEBUG;
-    $arc->SUPER::remove( $args );  # Removes the arc node: the arcs properties
+    $arc->SUPER::remove( $args2 );  # Removes the arc node: the arcs properties
 
     debug "  remove replaced by" if $DEBUG;
     foreach my $repl ( $arc->replaced_by->nodes )
     {
-	$repl->remove( $args );
+	$repl->remove( $args2 );
     }
 
 
