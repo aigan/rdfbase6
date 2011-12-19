@@ -1018,6 +1018,8 @@ sub pred
 
   $a->value
 
+  $a->value( \%args )
+
 Returns: The L<RDF::Base::Node> value as a L<RDF::Base::Resource>,
 L<RDF::Base::Literal> or L<RDF::Base::Undef> object.  NB! Used
 internally.
@@ -1032,7 +1034,7 @@ Rather use L</desig>, L</loc> or L</plain>.
 
 sub value
 {
-    return $_[0]->{'value_node'} ? $_[0]->value_node->first_literal : $_[0]->{'value'};
+    return $_[0]->{'value_node'} ? $_[0]->value_node->first_literal($_[1]) : $_[0]->{'value'};
 }
 
 

@@ -1932,7 +1932,8 @@ sub list
 	confess "Not a resource: ".datadump($node);
     }
 
-    my $DEBUG = 0; #$DEBUG=1 if $pred_in eq 'email_to_obj';
+    my $DEBUG = 0;
+#    $DEBUG=1 if $pred_in eq 'has_av_telephony_priority';
 
     if( $pred_in )
     {
@@ -1975,7 +1976,7 @@ sub list
 	    return RDF::Base::Arc::List->new_empty();
 	}
 
-#	if( $node->{id} == 5 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
+#	if( $node->{id} == 19646889 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
 	debug timediff "list initiate_prop" if $DEBUG;
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
@@ -2019,7 +2020,7 @@ sub list
 
 	my $res = $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
-		map $_->value, @arcs ]);
+		map $_->value($args), @arcs ]);
 #	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
 
 	debug timediff "list res" if $DEBUG;

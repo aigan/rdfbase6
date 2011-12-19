@@ -212,7 +212,7 @@ the value, in case that other arc points to the same node.
 
 sub first_literal
 {
-    return $_[0]->lit_revarc->{'value'};
+    return $_[0]->lit_revarc($_[1])->{'value'} || is_undef;
 
 
 #    return $_[0]->literal_list({arclim=>['adirect']})->sorted('lit_revarc.id')->get_first_nos();
@@ -230,7 +230,9 @@ sub first_literal
 
 =hed2 lit_revarc
 
-  $literal->lit_revarcReturn the arc this literal is a part of.
+  $l->lit_revarc( \%args )
+
+Return the arc this literal is a part of.
 
 See also: L</arc> and L</revarc>
 
@@ -238,18 +240,41 @@ See also: L</arc> and L</revarc>
 
 sub lit_revarc
 {
-    return $_[0]->{'literal_arc'} if defined $_[0]->{'literal_arc'};
+#    debug "lit_revarc with arclim: $_[1]";
+
+    if( defined $_[0]->{'literal_arc'} and
+        not( $_[1] and @{$_[1]->{arclim}} ) )
+    {
+        return $_[0]->{'literal_arc'};
+    }
+
+#    debug "arclim ".datadump($#{$_[1]->{arclim}},1);
 
 #    debug "Finding first arc for ".$_[0]->id;
 
-    my $arcs = $_[0]->revarc_list(undef,undef,{arclim=>['adirect']});
+    my $args = $_[1] || {arclim=>['adirect']};
+    my $arclim = $args->{arclim} || ['adirect'];
+
+    my $arcs = $_[0]->revarc_list(undef,undef,{arclim=>$arclim});
     my $lit_revarc = $arcs->get_first_nos();
-    while( my $arc = $arcs->get_next_nos )
+    if( $lit_revarc )
     {
-        $lit_revarc = $arc if $arc->id < $lit_revarc->id;
+        while( my $arc = $arcs->get_next_nos )
+        {
+            $lit_revarc = $arc if $arc->id < $lit_revarc->id;
+        }
+    }
+    else
+    {
+        $lit_revarc = is_undef;
     }
 #    debug "  found ".$lit_revarc->id;
-    return $_[0]->{'literal_arc'} = $lit_revarc;
+    unless( $_[1] and @{$_[1]->{arclim}} )
+    {
+        $_[0]->{'literal_arc'} = $lit_revarc;
+    }
+
+    return $lit_revarc;
 }
 
 
