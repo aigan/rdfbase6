@@ -3827,10 +3827,14 @@ sub remove
     debug "  SUPER::remove" if $DEBUG;
     $arc->SUPER::remove( $args2 );  # Removes the arc node: the arcs properties
 
+    my $dbh = $RDF::dbix->dbh;
+
     debug "  remove replaced by" if $DEBUG;
+    my $sth_repl = $dbh->prepare("update arc set replaces=null where ver=?");
     foreach my $repl ( $arc->replaced_by->nodes )
     {
-	$repl->remove( $args2 );
+        $sth_repl->execute($repl->id);
+        $repl->{replaces} = undef;
     }
 
 
@@ -3843,7 +3847,6 @@ sub remove
     ### method for removing the arc from memory!
 
 #    debug "Removed arc id ".$arc->sysdesig;
-    my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("delete from arc where ver=?");
     $res->changes_add;
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
