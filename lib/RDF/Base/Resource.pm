@@ -37,7 +37,7 @@ use JSON; # to_json
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Widget qw( label_from_params );
-use Para::Frame::Utils qw( throw catch create_file trim excerptr debug datadump
+use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
 			   package_to_module timediff compile );
 
 use RDF::Base::Node;
