@@ -37,7 +37,7 @@ use JSON; # to_json
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Widget qw( label_from_params );
-use Para::Frame::Utils qw( throw catch create_file trim debug datadump
+use Para::Frame::Utils qw( throw catch create_file trim excerptr debug datadump
 			   package_to_module timediff compile );
 
 use RDF::Base::Node;
@@ -3375,59 +3375,9 @@ sub as_excerpt
 {
     my( $n, $limit, $min ) = @_;
 
-    $limit ||= 150;
-    $min   ||= int($limit/3);
-
     my $text = $n->excerpt_input( $limit );
 
-    $text =~ s/^\s|\s$//sg;
-
-#    debug "Excerpt: $text";
-
-    if( length($text) < $limit )
-    {
-	return $text;
-    }
-
-    if( $text =~ /^(.*?)\n/ )
-    {
-	if( length($1) > $min )
-	{
-	    $text = $1;
-	    if( length($text) < $limit )
-	    {
-		return $1;
-	    }
-	}
-    }
-
-    my $textcent = $text;
-    while( $textcent =~ s/(.*)\.\s.*/$1/s )
-    {
-	if( length($textcent) > $min )
-	{
-	    $text = $textcent;
-	    if( length($text) < $limit )
-	    {
-		return $text;
-	    }
-	}
-	else
-	{
-	    last;
-	}
-    }
-
-#    debug "Text now: $text";
-#    debug "Length: ".length($text);
-    if( $text =~ /^(.{$min,$limit})[ \,]/s )
-#    if( $text =~ /^(.{55,})/ )
-    {
-#	debug "Found a cut";
-	return $1.'…';
-    }
-
-    return substr($text, 0, $limit).'…';
+    return excerpt( \$text, $limit, $min );
 }
 
 
