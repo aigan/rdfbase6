@@ -3847,9 +3847,12 @@ sub remove
     ### method for removing the arc from memory!
 
 #    debug "Removed arc id ".$arc->sysdesig;
+    my $sth_repl = $dbh->prepare("update arc set replaces=null where replaces=?");
+
     my $sth = $dbh->prepare("delete from arc where ver=?");
     $res->changes_add;
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
+    $sth_repl->execute($arc_id);
     $sth->execute($arc_id);
     $RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
