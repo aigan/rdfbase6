@@ -1523,7 +1523,11 @@ sub form_url
 	# sorting of arcs in order of deapth. On top of that, we would
 	# have to sort by weight for class_form_url on the same level.
 
-	my $alts = $n->arc_list('is',undef,['active'])->sorted(['direct','obj.weight'], 'desc')->vals->first_prop('class_form_url');
+	my $alts = $n->arc_list('is',undef,['active'])->
+	  sorted([{on=>'direct',dir=>'desc'},
+		  {on=>'obj.weight', dir=>'desc'},
+		  {on=>'distance'}])->
+		    vals->first_prop('class_form_url');
 #	debug $alts;
 	if( my $path_node = $alts->get_first_nos )
 	{
