@@ -986,6 +986,20 @@ sub upgrade_db
         Para::Frame->flag_restart();
     }
 
+    if( 0 ) ### Depencency problems
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        $C->get('unseen_by')->
+          update({range=>$C->get('intelligent_agent')},$args);
+        $C->get('seen_by')->
+          update({range=>$C->get('intelligent_agent')},$args);
+
+	$rb->update({ has_version => 5 },$args);
+	$res->autocommit;
+	$req->done;
+    }
+
 }
 
 

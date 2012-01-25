@@ -2883,6 +2883,9 @@ sub vacuum
 
 	if( $arc->active )
 	{
+            my $pred_valtype = $arc->pred->valtype;
+
+
 	    my $val = $arc->value;
 	    if( $val->is_literal )
 	    {
@@ -2911,6 +2914,7 @@ sub check_valtype
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
 
 #    Para::Frame::Logging->this_level(3);
+#    cluck "CHECK_VALTYPE";
 
     my $old_val = $arc->value;
 
@@ -2923,7 +2927,9 @@ sub check_valtype
     # Falls back on arc_valtype in case of Undef
     my $old_valtype = $old_val->this_valtype || $arc_valtype;
     my $new_valtype;
-    if( $pred->objtype )
+    my $c_resource = RDF::Base::Constants->get('resource');
+
+    if( $pred->objtype and not $old_valtype->equals($c_resource) )
     {
 	$new_valtype = $old_valtype;
     }
@@ -2982,7 +2988,6 @@ sub check_valtype
 
     if( $arc->objtype )
     {
-	my $c_resource = RDF::Base::Constants->get('resource');
 	if( $new_valtype->equals( $c_resource ) )
 	{
 	    # Valtype in valid range
@@ -3005,7 +3010,7 @@ sub check_valtype
 		debug 3, "old value in range";
 		$arc->set_value( $old_val, $newargs );
 
-		$old_val->vacuum;
+#		$old_val->vacuum; # Infinite recursion
 	    }
 	    elsif( $arc_valtype->equals($c_resource) )
 	    {
@@ -3013,10 +3018,10 @@ sub check_valtype
 		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
 		debug "   to ".$new_valtype->sysdesig;
-#		debug "Trusting new given valtype";
+		debug "Trusting new given valtype";
 #		confess "or not...";
 		$arc->set_value( $old_val, $newargs );
-		die "CHECKME";
+#		die "CHECKME";
 	    }
 	    else
 	    {
@@ -3830,12 +3835,12 @@ sub remove
     my $dbh = $RDF::dbix->dbh;
 
     debug "  remove replaced by" if $DEBUG;
-    my $sth_repl = $dbh->prepare("update arc set replaces=null where ver=?");
+    my $sth_repl = $dbh->prepare("update arc set replaces=null where replaces=?");
     foreach my $repl ( $arc->replaced_by->nodes )
     {
-        $sth_repl->execute($repl->id);
         $repl->{replaces} = undef;
     }
+    $sth_repl->execute($arc_id);
 
 
 #    $mrk = Time::HiRes::time();
@@ -3847,12 +3852,10 @@ sub remove
     ### method for removing the arc from memory!
 
 #    debug "Removed arc id ".$arc->sysdesig;
-    my $sth_repl = $dbh->prepare("update arc set replaces=null where replaces=?");
 
     my $sth = $dbh->prepare("delete from arc where ver=?");
     $res->changes_add;
 #    debug "***** Would have removed ".$arc->sysdesig; return 1; ### DEBUG
-    $sth_repl->execute($arc_id);
     $sth->execute($arc_id);
     $RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 

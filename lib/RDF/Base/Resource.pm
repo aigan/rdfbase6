@@ -1923,9 +1923,10 @@ choose among the versions that meets the proplim (and arclim).
 
 sub list
 {
-    my( $node, $pred_in, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
 #    my $ts = Time::HiRes::time();
     my( $args, $arclim ) = parse_propargs($args_in);
+    croak "Too many args" if $extra;
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
@@ -1973,7 +1974,7 @@ sub list
 	{
 #	    debug "No values for $node->{id} prop $name found!";
 #	    $Para::Frame::REQ->{RBSTAT}{'list pred empty'} += Time::HiRes::time() - $ts;
-	    return RDF::Base::Arc::List->new_empty();
+	    return RDF::Base::List->new_empty();
 	}
 
 #	if( $node->{id} == 19646889 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
@@ -2016,6 +2017,8 @@ sub list
 #	{
 #	    confess(datadump($arc)) if $arc->{'disregard'};
 #	}
+
+#        debug " Arclim for $name: ".join('/',map $_->sysdesig,@arcs) if $name eq 'is';
 
 
 	my $res = $pred->valtype->instance_class->list_class->
@@ -2143,8 +2146,9 @@ instead.
 
 sub revlist
 {
-    my( $node, $pred_in, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
+    croak "Too many args" if $extra;
 
     if( $pred_in )
     {
@@ -2180,7 +2184,7 @@ sub revlist
 	else
 	{
 #	    debug 3, "  No values for revprop $name found!";
-	    return RDF::Base::Arc::List->new_empty();
+	    return RDF::Base::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
@@ -7713,6 +7717,7 @@ sub initiate_rel
 	{
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 	my $cnt = 0;
@@ -7735,6 +7740,7 @@ sub initiate_rel
 	if( $rowcount > 1000 )
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for".$node->safedesig);
+#            cluck "loading";
 	}
 
 	unless( $extralim )
@@ -7865,6 +7871,7 @@ sub initiate_rev
 	debug 2, "initiate_rev $node->{id}";
 	$Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
 				$node->safedesig);
+#            cluck "loading";
 #	debug "ARGS: ".query_desig($args);
     }
 
@@ -7889,6 +7896,7 @@ sub initiate_rev
     {
 	$Para::Frame::REQ->note("Loading reverse arcs done for ".
 				$node->safedesig);
+#            cluck "loading";
     }
 
     unless( $extralim )
@@ -8038,6 +8046,7 @@ sub initiate_prop
 #	    debug "ARGS: ".query_desig($args);
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
@@ -8063,6 +8072,7 @@ sub initiate_prop
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -8207,6 +8217,7 @@ sub initiate_revprop
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
 #	    debug "ARGS: ".query_desig($args);
+#            cluck "loading";
 	}
 
 	foreach my $rec ( @$recs )
@@ -8229,6 +8240,7 @@ sub initiate_revprop
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";

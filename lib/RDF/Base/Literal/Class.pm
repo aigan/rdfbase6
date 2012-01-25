@@ -428,6 +428,7 @@ RDF::Base::Literal::Class->coltype_by_coltype_id( $name )
 
 sub coltype_by_coltype_id
 {
+    confess "wrong input: @_" unless $_[1];
     return $COLTYPE_num2name{ $_[1] };
 }
 
