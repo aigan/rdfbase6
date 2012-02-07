@@ -1796,8 +1796,8 @@ sub mime_types_init
 		 );
     $MIME_TYPES->addType(@types);
 
-    # Not in db! :-P
-    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
+    # Added in MIME::Types v1.24
+#    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
 }
 
 
