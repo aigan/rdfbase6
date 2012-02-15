@@ -5323,7 +5323,7 @@ sub wu
     $range_key =~ s/^range_is$/range/;
 
     $args->{$range_key} = $range;
-    $args->{id} = 0; ### Replace with generated id
+#    $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
     # Wrap in for ajax
