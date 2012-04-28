@@ -270,7 +270,7 @@ Returns: An integer as a scalar string
 
 sub coltype_id
 {
-    unless( $_[0]->{'coltype'} )
+    unless( $_[0]->{'coltype'} > 0 )
     {
 	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
     }
@@ -609,7 +609,7 @@ sub on_new_range
     my $C_resource = RDF::Base::Constants->get('resource');
 
     my( $range_new, $range_old );
-    if( my $range_arc = $pred->first_arc('range') )
+    if( my $range_arc = $pred->first_arc('range',undef,$args_in) )
     {
 	$range_new = $range_arc->value;
 	if( my $prev_arc = $range_arc->previous_active_version )
@@ -625,14 +625,19 @@ sub on_new_range
 
     $range_new ||= $pred->valtype;
     $range_old ||= $C_resource;
-    my $old_coltype_id = $pred->{'coltype'} || 0;
+    my $old_coltype_id = $pred->coltype_id;
+#    my $old_coltype_id = $pred->{'coltype'} || 0;
+
+    debug "  OLD: ".$range_old->sysdesig;
+    debug "  NEW: ".$range_new->sysdesig;
+
 
     # Updating coltype
     if( $old_coltype_id != $range_new->coltype_id )
     {
 	$pred->set_coltype( $range_new->coltype_id, $args_in );
-        $args_in->{old_coltype_id} = $old_coltype_id;
     }
+    $args_in->{'old_coltype_id'} = $old_coltype_id;
 
 
     # Range unchanged?
@@ -645,8 +650,8 @@ sub on_new_range
     # was the old range more specific?
     if( $range_old->scof($range_new) )
     {
-	# This is compatible with all existing arcs
-	return;
+	# This is (not) compatible with all existing arcs
+#	return;
     }
 
 

@@ -221,10 +221,10 @@ site_code	is	predicate
 site_code	range	text
 site_code	range_card_max	1
 unseen_by	is	predicate
-unseen_by	range	login_account
+unseen_by	range	intelligent_agent
 unseen_by	admin_comment		Persons that hasn't seen the CURRENT version of this node
 seen_by	is	predicate
-seen_by	range	login_account
+seen_by	range	intelligent_agent
 seen_by	admin_comment		Says who saw what then
 no_auto_show	is	predicate
 no_auto_show	domain	predicate

@@ -131,6 +131,11 @@ sub new_from_db
     my $time = $RDF::dbix->parse_datetime($_[1], $_[0]);
 #    debug "  got ".$time->sysdesig;
 
+    unless( defined $time )
+    {
+        return RDF::Base::Literal::Time->new(undef, $_[0]);
+    }
+
     my $tz = undef;
     if( $time->year > 2100 or $time->year < 1900 )
     {
@@ -280,7 +285,7 @@ sub wuirc
     $args->{'size'} ||= 18;
 
     my %cal_args;
-    foreach my $key qw(( size class onUpdate showsTime style ))
+    foreach my $key (qw( size class onUpdate showsTime style ))
     {
 	next unless defined $args->{$key};
 	next unless length $args->{$key};

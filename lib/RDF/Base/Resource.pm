@@ -37,7 +37,7 @@ use JSON; # to_json
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Widget qw( label_from_params );
-use Para::Frame::Utils qw( throw catch create_file trim debug datadump
+use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
 			   package_to_module timediff compile );
 
 use RDF::Base::Node;
@@ -1523,7 +1523,11 @@ sub form_url
 	# sorting of arcs in order of deapth. On top of that, we would
 	# have to sort by weight for class_form_url on the same level.
 
-	my $alts = $n->arc_list('is',undef,['active'])->sorted(['direct','obj.weight'], 'desc')->vals->first_prop('class_form_url');
+	my $alts = $n->arc_list('is',undef,['active'])->
+	  sorted([{on=>'direct',dir=>'desc'},
+		  {on=>'obj.weight', dir=>'desc'},
+		  {on=>'distance'}])->
+		    vals->first_prop('class_form_url');
 #	debug $alts;
 	if( my $path_node = $alts->get_first_nos )
 	{
@@ -1923,16 +1927,18 @@ choose among the versions that meets the proplim (and arclim).
 
 sub list
 {
-    my( $node, $pred_in, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
 #    my $ts = Time::HiRes::time();
     my( $args, $arclim ) = parse_propargs($args_in);
+    croak "Too many args" if $extra;
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
 	confess "Not a resource: ".datadump($node);
     }
 
-    my $DEBUG = 0; #$DEBUG=1 if $pred_in eq 'email_to_obj';
+    my $DEBUG = 0;
+#    $DEBUG=1 if $pred_in eq 'has_av_telephony_priority';
 
     if( $pred_in )
     {
@@ -1972,10 +1978,10 @@ sub list
 	{
 #	    debug "No values for $node->{id} prop $name found!";
 #	    $Para::Frame::REQ->{RBSTAT}{'list pred empty'} += Time::HiRes::time() - $ts;
-	    return RDF::Base::Arc::List->new_empty();
+	    return RDF::Base::List->new_empty();
 	}
 
-#	if( $node->{id} == 5 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
+#	if( $node->{id} == 19646889 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
 	debug timediff "list initiate_prop" if $DEBUG;
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
@@ -2016,10 +2022,12 @@ sub list
 #	    confess(datadump($arc)) if $arc->{'disregard'};
 #	}
 
+#        debug " Arclim for $name: ".join('/',map $_->sysdesig,@arcs) if $name eq 'is';
+
 
 	my $res = $pred->valtype->instance_class->list_class->
 	  new([ grep $_->meets_proplim($proplim,$args),
-		map $_->value, @arcs ]);
+		map $_->value($args), @arcs ]);
 #	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
 
 	debug timediff "list res" if $DEBUG;
@@ -2142,8 +2150,9 @@ instead.
 
 sub revlist
 {
-    my( $node, $pred_in, $proplim, $args_in ) = @_;
+    my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
+    croak "Too many args" if $extra;
 
     if( $pred_in )
     {
@@ -2179,7 +2188,7 @@ sub revlist
 	else
 	{
 #	    debug 3, "  No values for revprop $name found!";
-	    return RDF::Base::Arc::List->new_empty();
+	    return RDF::Base::List->new_empty();
 	}
 
 	@arcs = grep $_->meets_arclim($arclim), @arcs;
@@ -3375,59 +3384,9 @@ sub as_excerpt
 {
     my( $n, $limit, $min ) = @_;
 
-    $limit ||= 150;
-    $min   ||= int($limit/3);
-
     my $text = $n->excerpt_input( $limit );
 
-    $text =~ s/^\s|\s$//sg;
-
-#    debug "Excerpt: $text";
-
-    if( length($text) < $limit )
-    {
-	return $text;
-    }
-
-    if( $text =~ /^(.*?)\n/ )
-    {
-	if( length($1) > $min )
-	{
-	    $text = $1;
-	    if( length($text) < $limit )
-	    {
-		return $1;
-	    }
-	}
-    }
-
-    my $textcent = $text;
-    while( $textcent =~ s/(.*)\.\s.*/$1/s )
-    {
-	if( length($textcent) > $min )
-	{
-	    $text = $textcent;
-	    if( length($text) < $limit )
-	    {
-		return $text;
-	    }
-	}
-	else
-	{
-	    last;
-	}
-    }
-
-#    debug "Text now: $text";
-#    debug "Length: ".length($text);
-    if( $text =~ /^(.{$min,$limit})[ \,]/s )
-#    if( $text =~ /^(.{55,})/ )
-    {
-#	debug "Found a cut";
-	return $1.'…';
-    }
-
-    return substr($text, 0, $limit).'…';
+    return excerpt( \$text, $limit, $min );
 }
 
 
@@ -5364,7 +5323,7 @@ sub wu
     $range_key =~ s/^range_is$/range/;
 
     $args->{$range_key} = $range;
-    $args->{id} = 0; ### Replace with generated id
+#    $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
     # Wrap in for ajax
@@ -7762,6 +7721,7 @@ sub initiate_rel
 	{
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 	my $cnt = 0;
@@ -7784,6 +7744,7 @@ sub initiate_rel
 	if( $rowcount > 1000 )
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for".$node->safedesig);
+#            cluck "loading";
 	}
 
 	unless( $extralim )
@@ -7914,6 +7875,7 @@ sub initiate_rev
 	debug 2, "initiate_rev $node->{id}";
 	$Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
 				$node->safedesig);
+#            cluck "loading";
 #	debug "ARGS: ".query_desig($args);
     }
 
@@ -7938,6 +7900,7 @@ sub initiate_rev
     {
 	$Para::Frame::REQ->note("Loading reverse arcs done for ".
 				$node->safedesig);
+#            cluck "loading";
     }
 
     unless( $extralim )
@@ -8087,6 +8050,7 @@ sub initiate_prop
 #	    debug "ARGS: ".query_desig($args);
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
@@ -8112,6 +8076,7 @@ sub initiate_prop
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 #	debug "* prop $name for $nid is now initiated";
@@ -8256,6 +8221,7 @@ sub initiate_revprop
 	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
 				    $node->safedesig);
 #	    debug "ARGS: ".query_desig($args);
+#            cluck "loading";
 	}
 
 	foreach my $rec ( @$recs )
@@ -8278,6 +8244,7 @@ sub initiate_revprop
 	{
 	    $Para::Frame::REQ->note("Loading arcs done for ".
 				    $node->safedesig);
+#            cluck "loading";
 	}
 
 	debug 3, "* revprop $name for $node->{id} is now initiated";

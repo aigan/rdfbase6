@@ -165,7 +165,7 @@ sub sloc
     my $text = shift;
     my $out = "";
 
-    my $compiled = ($Para::Frame::REQ->site->is_compiled
+    my $compiled = ($Para::Frame::REQ->in_precompile
       and not $Para::Frame::File::COMPILING);
 
     if( $compiled or $Para::Frame::REQ->session->admin_mode )
@@ -301,7 +301,7 @@ sub alocpp_raw
 
     my $out = "";
 
-    if( $site->is_compiled and not $no_admin )
+    if( $req->in_precompile and not $no_admin )
     {
         $out .= "[% IF admin_mode %]";
         if( $node )
