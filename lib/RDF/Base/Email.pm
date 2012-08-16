@@ -91,19 +91,37 @@ sub get
     my $folder_url_string = $folder->url->as_string;
     my $url_string = "$folder_url_string/;UID=$uid";
 
-    debug "SEARCHING for $url_string";
+    my $email;
+    my $by_mid = 0;
 
+
+    debug "SEARCHING for $url_string";
     my $emails = $R->find({
 			   has_imap_url => $url_string,
 			   is => $C_email,
 			  },['not_removal']);
 
-
-    my $email;
+    unless( $emails->size )
+    {
+        debug "SEARCHING for $message_id";
+        $emails = $R->find({
+                            has_message_id => $message_id,
+                            is => $C_email,
+                           },['not_removal']);
+        $by_mid = 1;
+    }
 
     if( $emails->size )
     {
 	$email = $emails->get_first_nos;
+    }
+
+    if( $email )
+    {
+        if( $by_mid )
+        {
+            $email->update({has_imap_url=>$url_string},{activate_new_arcs => 1});
+        }
 
 	unless( $email->is($C_email) )  # May gotten removed (inactive)
 	{
@@ -124,14 +142,9 @@ sub get
 #	    # Mark as read...
 #	    $folder->imap_cmd('see', $uid);
 	}
-
-	$email->{'email_obj'} =
-	  RDF::Base::Email::IMAP->new_by_email($email, $head);
     }
     else
     {
-#	die "Creating email DISABLED"; ### DEBUG
-
 	$email =
 	  $R->create({
 		      is => $C_email,
@@ -141,10 +154,10 @@ sub get
 		     {
 		      activate_new_arcs => 1,
 		     });
-
-	$email->{'email_obj'} =
-	  RDF::Base::Email::IMAP->new_by_email($email, $head);
     }
+
+    $email->{'email_obj'} =
+      RDF::Base::Email::IMAP->new_by_email($email, $head);
 
     return $email;
 }

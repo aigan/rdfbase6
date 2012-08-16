@@ -25,10 +25,11 @@ use base qw( RDF::Base::Literal::String );
 
 use Carp qw( cluck confess longmess );
 #use CGI;
-use MIME::Words qw( decode_mimewords );
+#use MIME::Words qw( decode_mimewords );
+use MIME::WordDecoder qw( mime_to_perl_string );
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug trim );
+use Para::Frame::Utils qw( debug trim validate_utf8 );
 
 use RDF::Base::Utils qw( is_undef );
 use RDF::Base::Constants qw( $C_text );
@@ -137,7 +138,7 @@ sub new_by_raw
 {
     my( $class, $raw ) = @_;
 
-    my $subject = decode_mimewords( $raw||'' );
+    my $subject = mime_to_perl_string( $raw||'' );
     return $class->new_from_db($subject, $C_text);
 }
 

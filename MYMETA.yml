@@ -30,6 +30,7 @@ requires:
   IMAP::BodyStructure: 1.01
   JSON: 2.04
   List::Util: 1.18
+  MIME::Types: 1.24
   Mail::IMAPClient: 3.25
   Para::Frame: 1.21
   Template::PopupTreeSelect: 0.9
