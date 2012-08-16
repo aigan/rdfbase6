@@ -205,7 +205,7 @@ sub connect
 					Password=> $password,
 					Clear => 5,
 					Uid => 1,
-					Timeout => 1,
+					Timeout => 3,
 				       )
 	    or throw 'IMAP', "Cannot connect to $server as $user: $@";
     }
