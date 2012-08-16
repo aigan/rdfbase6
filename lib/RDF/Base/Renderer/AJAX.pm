@@ -26,6 +26,8 @@ use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
 			   trim package_to_module compile );
 use Para::Frame::L10N qw( loc );
 
+use RDF::Base::AJAX;
+use RDF::Base::Widget::Handler;
 use RDF::Base::Utils qw( arc_lock arc_unlock );
 
 
@@ -161,6 +163,37 @@ sub render_output
 
 	    $out = $obj->wu_jump .'&nbsp;'. $arc->edit_link_html;
 	}
+        elsif( $action eq 'update' )
+        {
+            my $subj = $R->get($params->{'subj'})
+              or throw('missing','Node missing');
+            unless( $req->session->user->has_root_access
+                    or $subj->is_owned_by( $req->session->user )
+                  )
+            {
+                throw('denied', "Access denied");
+            }
+
+            my $pred_name = $params->{'pred_name'};
+            my $val = $q->param('val');
+#            debug(datadump($q));
+#            debug(datadump($params));
+
+            my $jsup = from_json( $params->{'params'} );
+
+            $q->param($jsup->{'id'}, $val);
+            $q->param('id', $params->{'subj'});
+
+	    my $args =
+	    {
+		activate_new_arcs => 1,
+             node => $subj,
+	    };
+
+            RDF::Base::Widget::Handler->update_by_query($args);
+
+            $out .= RDF::Base::AJAX->wu( $params );
+        }
 	else
 	{
 	    die("Unknown action $action");
@@ -304,6 +337,16 @@ sub set_ctype
     {
 	$ctype->set("text/html; charset=UTF-8");
     }
+}
+
+
+##############################################################################
+
+sub render_error
+{
+    my( $part ) = @_;
+    debug $part-as_string();
+    return 1;
 }
 
 

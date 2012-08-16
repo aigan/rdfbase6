@@ -356,7 +356,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
 //        alert("Check log");
        return(true);
      };
-     
+       
      $this.insert_wu = function(after, args_json) {
        var $after = $('#' + after);
        $.get(
@@ -370,6 +370,48 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          }
        );
      };
+
+
+       $this.node_update = function() {
+
+           var $element = $('#' + $this.element);
+           var $input = $element.children().first();
+
+//           var $formData = $.extend({},
+//                                    $this.update_params,
+//                                    {val: $input.val()});
+
+           var $formData = {
+             params: $.toJSON($this.update_params),
+               val: $input.val()
+           };
+
+//           log($formData);
+
+           $this.update_params['divid'] = $this.element;
+           $element.load(
+               '[%home%]/rb/ajax/action/update',
+               $formData,
+               function() {
+                   $this.updateOthers();
+               }
+           );
+
+
+       /****************************************
+           $.get(
+               '/~joli/hg/rb/ajax/action/update',
+               { params: args_json },
+               function(data) {
+                   $after.after(data);
+                   var new_part = $after.next();
+                   prepareForm();
+                   new_part.show();
+               }
+           );
+        *****************************/
+       };
+
    };
 
 
