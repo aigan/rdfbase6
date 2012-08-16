@@ -450,6 +450,7 @@ sub arc_active_on_date
 {
     my( $list, $date ) = @_;
 
+    confess("Not a date: $date") unless UNIVERSAL::isa $date, 'DateTime';
     my @arcs;
 
     my( $arc, $error ) = $list->get_first;
