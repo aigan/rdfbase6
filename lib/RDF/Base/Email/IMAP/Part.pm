@@ -253,7 +253,7 @@ sub disp
 {
     my $struct = $_[0]->struct;
 
-    if( $_[1] )
+    if( $_[1] and ref $struct->{'disp'} )
     {
 	return $struct->{'disp'}->[1]->{$_[1]};
     }

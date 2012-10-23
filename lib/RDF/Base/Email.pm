@@ -101,7 +101,7 @@ sub get
 			   is => $C_email,
 			  },['not_removal']);
 
-    unless( $emails->size )
+    if( not $emails->size and $message_id )
     {
         debug "SEARCHING for $message_id";
         $emails = $R->find({

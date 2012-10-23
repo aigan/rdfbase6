@@ -56,6 +56,7 @@ sub new_by_uid
 {
     my( $class, $folder, $uid ) = @_;
 
+    confess "missing uid" unless $uid;
     my $raw = $folder->imap_cmd('fetch',
 				"$uid BODY.PEEK[HEADER]");
 
