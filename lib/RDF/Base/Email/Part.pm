@@ -29,7 +29,8 @@ use constant EA => 'RDF::Base::Literal::Email::Address';
 
 use Carp qw( croak confess cluck shortmess );
 use Scalar::Util qw(weaken);
-use MIME::Words qw( decode_mimewords );
+#use MIME::Words qw( decode_mimewords );
+use MIME::WordDecoder qw( mime_to_perl_string );
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
 use MIME::Types;
@@ -939,7 +940,7 @@ sub filename
 
     if( $name ) # decode fields
     {
-	$name = decode_mimewords( $name );
+	$name = mime_to_perl_string( $name );
 	utf8::upgrade( $name );
     }
     elsif( $part->type eq "message/rfc822" )
@@ -1543,7 +1544,7 @@ sub body
     }
     else
     {
-	debug "decoding from $charset";
+#	debug "decoding from $charset";
 	$$dataref = decode($charset,$$dataref);
 	$part->{'charset'} = 'utf-8';
 #	debug "Setting charset of ".$part->path." to utf-8";

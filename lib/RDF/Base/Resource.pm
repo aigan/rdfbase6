@@ -3339,7 +3339,7 @@ sub sysdesig
 {
     my( $node, $args ) = @_;
 
-    my $desig = $node->desig;
+    my $desig = $node->desig( $args );
 
 #    debug "Sysdesig for $node->{id}: $desig";
 
@@ -5323,7 +5323,7 @@ sub wu
     $range_key =~ s/^range_is$/range/;
 
     $args->{$range_key} = $range;
-    $args->{id} = 0; ### Replace with generated id
+#    $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
     # Wrap in for ajax

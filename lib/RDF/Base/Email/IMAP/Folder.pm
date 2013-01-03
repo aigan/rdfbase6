@@ -205,7 +205,7 @@ sub connect
 					Password=> $password,
 					Clear => 5,
 					Uid => 1,
-					Timeout => 1,
+					Timeout => 3,
 				       )
 	    or throw 'IMAP', "Cannot connect to $server as $user: $@";
     }
@@ -431,6 +431,55 @@ sub unseen
 
 
     my $list = Para::Frame::List->new( $unseen,
+				     {
+				      materializer => $mat,
+				     });
+
+    return $list;
+}
+
+
+##############################################################################
+
+=head2 message_count
+
+=cut
+
+sub message_count
+{
+    return $_[0]->imap_cmd('message_count');
+}
+
+
+##############################################################################
+
+=head2 messages
+
+  $folder->messages
+
+Returns: A L<RDF::Base::List> of messages, in order
+
+=cut
+
+sub messages
+{
+    my( $folder ) = @_;
+
+    my $messages = $folder->imap_cmd('messages');
+    my $mat =
+      sub
+      {
+	  my $elem = $_[0]->{'_DATA'}[$_[1]];
+	  debug "Getting uid elem $elem";
+	  return $Para::Frame::CFG->{'email_class'}->
+	    get({
+		 uid => $elem,
+		 folder => $folder,
+		});
+      };
+
+
+    my $list = Para::Frame::List->new( $messages,
 				     {
 				      materializer => $mat,
 				     });

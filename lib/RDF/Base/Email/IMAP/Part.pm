@@ -28,7 +28,8 @@ use base qw( RDF::Base::Email::Part );
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use MIME::Words qw( decode_mimewords );
+#use MIME::Words qw( decode_mimewords );
+use MIME::WordDecoder qw( mime_to_perl_string );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -176,6 +177,21 @@ sub path
 
 ##############################################################################
 
+=head2 sysdesig
+
+=cut
+
+sub sysdesig
+{
+    my( $part ) = @_;
+
+    return sprintf "(%d) %s (%s)", $part->uid,
+      ($part->body_head->parsed_subject->plain || '<no subject>'),
+        $part->path;
+}
+
+##############################################################################
+
 =head2 charset
 
 See L<RDF::Base::Email::Part/charset>
@@ -237,7 +253,7 @@ sub disp
 {
     my $struct = $_[0]->struct;
 
-    if( $_[1] )
+    if( $_[1] and ref $struct->{'disp'} )
     {
 	return $struct->{'disp'}->[1]->{$_[1]};
     }
@@ -271,7 +287,7 @@ See L<RDF::Base::Email::Part/description>
 
 sub description
 {
-    return scalar decode_mimewords($_[0]->struct->description||'');
+    return scalar mime_to_perl_string($_[0]->struct->description||'');
 }
 
 
