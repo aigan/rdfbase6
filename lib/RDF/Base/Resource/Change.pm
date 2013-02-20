@@ -453,6 +453,8 @@ sub autocommit
 Commits resources and explicitly commits the dbh.
 This will usually be done by hooks.
 
+Called by C</autocommit>
+
 =cut
 
 sub commit

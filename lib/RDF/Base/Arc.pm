@@ -3392,7 +3392,7 @@ sub value_equals
     }
 
 
-    if( $arc->obj )
+    if( $arc->objtype ) # Might be REMOVAL arc
     {
 	if( $DEBUG )
 	{
