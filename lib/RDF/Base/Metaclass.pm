@@ -207,36 +207,6 @@ sub on_revarc_del
 #
 ########################################################################
 
-=head2 vacuum
-
-  $n->vacuum()
-
-Distributes calls over classes
-
-=cut
-
-sub vacuum
-{
-    my $n = shift;
-    my $class = ref $n;
-    no strict "refs";
-
-    foreach my $sc (@{"${class}::ISA"})
-    {
-	next if $sc eq __PACKAGE__;
-	debug "  Vacuum via $sc";
-	if( my $method = $sc->can("vacuum") )
-	{
-	    &{$method}($n, @_);
-	}
-    }
-
-    return $n;
-}
-
-
-########################################################################
-
 1;
 
 =head1 SEE ALSO

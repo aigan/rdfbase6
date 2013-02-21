@@ -645,13 +645,13 @@ sub revarc
 
 ##############################################################################
 
-=head3 vacuum
+=head3 vacuum_facet
 
 This vacuums both arcs and revarcs. Normal vacuum doesn't vacuum revarcs
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $node, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -661,14 +661,14 @@ sub vacuum
     {
 	next if $arc->disregard;
 	$Para::Frame::REQ->may_yield;
-	$arc->vacuum( $args );
+	$arc->vacuum_node( $args );
     }
 
     foreach my $arc ( $node->revarc_list( undef, undef, $no_lim )->as_array )
     {
 	next if $arc->disregard;
 	$Para::Frame::REQ->may_yield;
-	$arc->vacuum( $args );
+	$arc->vacuum_node( $args );
     }
 
     return $node;

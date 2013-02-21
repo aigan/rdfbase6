@@ -4658,10 +4658,58 @@ sub equals
 
   $n->vacuum( \%args )
 
-Vacuums each arc of the resource
+Deprecated. Use L</vacuum_node> and L</vacuum_facet> instead!
 
-This method is called for each class, via
-L<RDF::Base::Metaclass/vacuum>
+=cut
+
+sub vacuum
+{
+    croak "Deprecated. Change to vacuum_node and vacuum_facet";
+}
+
+
+########################################################################
+
+=head2 vacuum_node
+
+  $n->vacuum_node()
+
+Calls L</vacuum_facet> for all classes
+
+=cut
+
+sub vacuum_node
+{
+    my $n = shift;
+    my $class = ref $n;
+    no strict "refs";
+
+#    debug "Called vacuum_node for $class";
+
+    my %methods;
+
+    foreach my $sc ($class, @{"${class}::ISA"})
+    {
+	debug "  Vacuum ${$n}{id} via $sc";
+	if( my $method = $sc->can("vacuum_facet") )
+	{
+            next if $methods{$method}++;
+#            debug "  found $method";
+	    &{$method}($n, @_);
+	}
+    }
+
+    return $n;
+}
+
+
+##############################################################################
+
+=head2 vacuum_facet
+
+  $n->vacuum_facet( \%args )
+
+Vacuums each arc of the resource
 
 Supported args are:
 
@@ -4671,7 +4719,7 @@ Returns: The node
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $node, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -4681,7 +4729,7 @@ sub vacuum
     {
 	next if $arc->disregard;
 	$Para::Frame::REQ->may_yield;
-	$arc->vacuum( $args );
+	$arc->vacuum_node( $args );
     }
 
     $node->vacuum_range_card_max( $args );
@@ -4701,7 +4749,7 @@ sub vacuum_range_card_max
     my( $node, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    debug "Enforcing cardinality";
+#    debug "Enforcing cardinality";
     foreach my $pred ( $node->list_preds->as_array )
     {
         if( my $rcm = $pred->first_prop('range_card_max')->plain )
@@ -6842,7 +6890,7 @@ Only called when arc is activated!
 
 The arc may exist from before, on_arc_add() will also be called for
 validating that everything that should have been done on adding also
-has been done, as with a vacuum().
+has been done, as with a vacuum_node().
 
 Reimplement this.
 

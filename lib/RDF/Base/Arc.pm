@@ -2827,9 +2827,7 @@ sub deactivate
 
 ##############################################################################
 
-=head2 vacuum
-
-  $a->vacuum( \%args )
+=head2 vacuum_facet
 
 Create or remove implicit arcs. Update implicit
 status.
@@ -2841,7 +2839,7 @@ Returns: ---
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $arc, $args_in ) = @_;
     my( $args, $arclim, $res ) = parse_propargs( $args_in );
@@ -2896,7 +2894,7 @@ sub vacuum
 	    my $val = $arc->value;
 	    if( $val->is_literal )
 	    {
-		$val->vacuum( $args );
+		$val->vacuum_node( $args );
 	    }
 
 	    $arc->validate_range;
@@ -5828,7 +5826,7 @@ arcs.
 
 Returns: True if arc is to be disregarded
 
-TODO: Rewrite L</vacuum>
+TODO: Rewrite L</vacuum_facet>
 
 =cut
 

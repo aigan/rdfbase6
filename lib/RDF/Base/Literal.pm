@@ -1510,7 +1510,7 @@ sub add
 
 ##############################################################################
 
-=head3 vacuum
+=head3 vacuum_node
 
 This will vaccum the value but NOT the value node.
 
@@ -1518,13 +1518,34 @@ Implemented in respective subclass.
 
 Returns: The vacuumed literal
 
-This will be automatically called by L<RDF::Base::Arc/vacuum>
+This will be automatically called by L<RDF::Base::Arc/vacuum_facet>
+
+Calls L</vacuum_facet> for all classes
 
 =cut
 
-sub vacuum
+sub vacuum_node
 {
-    return $_[0];
+    my $n = shift;
+    my $class = ref $n;
+    no strict "refs";
+
+#    debug "Called vacuum_node for literal $class";
+
+    my %methods;
+
+    foreach my $sc ($class, @{"${class}::ISA"})
+    {
+	debug "  Vacuum literal via $sc";
+	if( my $method = $sc->can("vacuum_facet") )
+	{
+            next if $methods{$method}++;
+#            debug "  found $method";
+	    &{$method}($n, @_);
+	}
+    }
+
+    return $n;
 }
 
 

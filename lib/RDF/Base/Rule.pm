@@ -277,7 +277,7 @@ sub create
 
     if( $vacuum )
     {
-	$rule->vacuum;
+	$rule->vacuum_node;
     }
 
     return $rule;
@@ -820,11 +820,11 @@ sub remove_infered_rel
 
 ##############################################################################
 
-=head2 vacuum
+=head2 vacuum_facet
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $rule, $args_in ) = @_;
 

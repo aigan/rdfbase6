@@ -375,11 +375,11 @@ sub default_valtype
 
 ##############################################################################
 
-=head3 vacuum
+=head3 vacuum_facet
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $a, $args ) = @_;
 

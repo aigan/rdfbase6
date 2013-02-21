@@ -646,13 +646,13 @@ sub match
 
 ##############################################################################
 
-=head2 vacuum
+=head2 vacuum_facet
 
-Reprocesses email after arc vacuum
+Reprocesses email after
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $email ) = @_;
 

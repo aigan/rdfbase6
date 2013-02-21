@@ -978,7 +978,7 @@ sub upgrade_db
 
         my $req = Para::Frame::Request->new_bgrequest();
 
-        $R->find({code_begins => 'Rit::Base'}, $args )->vacuum($args);
+        $R->find({code_begins => 'Rit::Base'}, $args )->vacuum_node($args);
 
 	$rb->update({ has_version => 4 },$args);
 	$res->autocommit;

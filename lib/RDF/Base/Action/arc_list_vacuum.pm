@@ -43,7 +43,7 @@ sub handler
 	debug "Vacuum arc $aid";
 	my $arc = RDF::Base::Resource->get( $aid );
 
-	$arc->vacuum( { res => $res } );
+	$arc->vacuum_node( { res => $res } );
     }
 
     my $changes = $res->changes;

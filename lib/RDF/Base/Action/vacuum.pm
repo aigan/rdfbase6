@@ -37,7 +37,7 @@ sub handler
 
     my $node = RDF::Base::Resource->get( $id );
     $node->reset_cache(undef, $args );
-    $node->vacuum($args);
+    $node->vacuum_node($args);
     $node->session_history_add('updated');
 
     $res->autocommit;

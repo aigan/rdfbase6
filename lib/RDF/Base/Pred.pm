@@ -761,7 +761,7 @@ sub vacuum_pred_arcs
     {
 	eval
 	{
-	    $arc->vacuum( $args );
+	    $arc->vacuum_node( $args );
             my $coltype = $arc->coltype;
             my $val = $arc->value;
             if( $old_coltype and $old_coltype ne $coltype )
@@ -858,13 +858,11 @@ sub set_coltype
 
 ##############################################################################
 
-=head2 vacuum
-
-  $pred->vacuum( \%args )
+=head2 vacuum_facet
 
 =cut
 
-sub vacuum
+sub vacuum_facet
 {
     my( $pred, $args_in ) = @_;
 
