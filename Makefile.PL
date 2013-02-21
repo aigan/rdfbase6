@@ -132,7 +132,7 @@ WriteMakefile(
  	      'PREREQ_PM'      =>
 	      {
 		  'Para::Frame'                => 1.21,
-	          'Template::PopupTreeSelect'  => 0.90,
+#	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,
 	          'List::Util'                 => 1.18,
