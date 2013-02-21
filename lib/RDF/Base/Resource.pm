@@ -3107,6 +3107,11 @@ sub count
 
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
 
+
+    # TODO: Use $node->{'initiated_relprop'}{$name} and
+    # $node->{'relarc'}{ $name } and (@arcs = grep
+    # $_->meets_arclim($arclim), @arcs) if that might be faster
+
     my $arclim_sql = $arclim->sql;
 
     my $dbh = $RDF::dbix->dbh;

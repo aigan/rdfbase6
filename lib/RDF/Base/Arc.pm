@@ -502,6 +502,17 @@ sub create
     }
 
 
+    ##################### range_card_max_check
+    if( my $rcm = $pred->first_prop('range_card_max')->plain )
+    {
+	my $cnt = $subj->count($pred,'solid');
+	if( $cnt >= $rcm )
+	{
+	    throw('validation', sprintf 'Cardinality check of arc failed. %s already has %d arcs with pred %s', $subj->sysdesig, $cnt, $pred->desig)
+	}
+    }
+
+
     ##################### submitted
     push @fields, 'submitted';
     if( $props->{'submitted'} )
@@ -2875,16 +2886,9 @@ sub vacuum
 #	debug "  Reset clean";
 	$arc->reset_clean($args);
 
-	if( $has_obj )
-	{
-	    debug "  Create check" if $DEBUG;
-	    $arc->create_check( $args );
-	}
-
 	if( $arc->active )
 	{
-            my $pred_valtype = $arc->pred->valtype;
-
+	    $arc->create_check( $args );
 
 	    my $val = $arc->value;
 	    if( $val->is_literal )
@@ -6418,8 +6422,10 @@ sub validate_range
 	    my $val_valtd = $val_valtype->sysdesig;
 	    my $pred_valtd = $pred_valtype->sysdesig;
 	    my $vald = $value_obj->sysdesig;
-	    #confess "Range check failed for $subjd -${predd}-> $vald ".
-	    #  "(should have been $pred_valtd)";
+
+	    ### Unfinished?
+	    debug "Range check possibly failed for $subjd -${predd}-> $vald ".
+	      "(should have been $pred_valtd)";
 	}
     }
 

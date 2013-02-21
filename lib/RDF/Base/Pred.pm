@@ -286,7 +286,7 @@ sub coltype_id
 
 sub range_card_max_1
 {
-    if( my $rcm = $_[0]->first_prop('range_card_max') )
+    if( my $rcm = $_[0]->first_prop('range_card_max')->plain )
     {
         if( $rcm == 1 )
         {
@@ -304,7 +304,7 @@ sub range_card_max_1
 
 sub domain_card_max_1
 {
-    if( my $dcm = $_[0]->first_prop('domain_card_max') )
+    if( my $dcm = $_[0]->first_prop('domain_card_max')->plain )
     {
         if( $dcm == 1 )
         {
@@ -322,7 +322,7 @@ sub domain_card_max_1
 
 sub range_card_min_1
 {
-    if( my $rcm = $_[0]->first_prop('range_card_min') )
+    if( my $rcm = $_[0]->first_prop('range_card_min')->plain )
     {
         if( $rcm == 1 )
         {
@@ -340,7 +340,7 @@ sub range_card_min_1
 
 sub domain_card_min_1
 {
-    if( my $dcm = $_[0]->first_prop('domain_card_min') )
+    if( my $dcm = $_[0]->first_prop('domain_card_min')->plain )
     {
         if( $dcm == 1 )
         {
@@ -537,6 +537,7 @@ sub on_bless
     }
 
     $pred->on_new_range($args_in);
+    $pred->on_new_range_card($args_in);
 }
 
 ##############################################################################
@@ -574,6 +575,17 @@ sub on_arc_add
     {
 	$pred->on_new_range($args_in);
     }
+
+    if( $pred_name eq 'range_card_max' )
+    {
+	$pred->on_new_range_card($args_in);
+    }
+
+    if( $pred_name eq 'range_card_min' )
+    {
+	$pred->on_new_range_card($args_in);
+    }
+
 }
 
 ##############################################################################
@@ -591,6 +603,48 @@ sub on_arc_del
 	$pred->on_new_range($args_in);
     }
 }
+
+##############################################################################
+
+=head2 on_new_range_card
+
+  $pred->on_new_range_card( \%args )
+
+=cut
+
+sub on_new_range_card
+{
+    my( $pred, $args_in ) = @_;
+
+    my $rch = $pred->first_prop('range_card_max')->plain;
+    my $rcl = $pred->first_prop('range_card_mix')->plain;
+
+    if( $rch or $rci )
+    {
+	my $arcs = $pred->active_arcs();
+	my( $arc, $error ) = $arcs->get_first;
+	while(! $error )
+	{
+	    my $subj = $arc->subj;
+	    my $cnt = $subj->count($pred,'solid');
+
+	    if( $cnt > $rch )
+	    {
+		throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
+	    }
+
+	    if( $cnt < $rcl )
+	    {
+		throw('validation', sprintf 'Cardinality check of arc failed. %s subseeds cardinality for pred %s, %d < %d', $subj->sysdesig, $pred->desig, $cnt, $rcl )
+	    }
+	}
+	continue
+	{
+	    ( $arc, $error ) = $arcs->get_next;
+	};
+    }
+}
+
 
 ##############################################################################
 
