@@ -63,6 +63,7 @@ our $special_id =
  direct => -20,
  distance => -21,
  arc_weight => -22,
+ size => -23,
 };
 
 our $special_label = { reverse %$special_id };
@@ -417,7 +418,7 @@ sub find_by_anything
 
 
     # Special properties
-    if( $label =~ /^(id|score|random|direct|distance|arc_weight)$/ )
+    if( $label =~ /^(id|score|random|direct|distance|arc_weight|size)$/ )
     {
 	push @new, $class->get_by_node_rec({
 					    label   => $1,
