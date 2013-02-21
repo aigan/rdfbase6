@@ -33,10 +33,11 @@ use constant EA => 'RDF::Base::Literal::Email::Address';
 
 use Carp qw( croak confess cluck );
 use URI;
-use MIME::Words qw( decode_mimewords );
+#use MIME::Words qw( decode_mimewords );
+use MIME::WordDecoder qw( mime_to_perl_string );
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug idn_encode idn_decode datadump catch fqdn );
+use Para::Frame::Utils qw( throw debug idn_encode idn_decode datadump catch fqdn validate_utf8 );
 use Para::Frame::L10N qw( loc );
 
 use RDF::Base;
@@ -262,7 +263,7 @@ sub parsed_address
     my @addr;
     foreach my $raw ( @$value )
     {
-	my $dec = decode_mimewords( $raw );
+	my $dec = mime_to_perl_string( $raw );
 	push @addr, EA->parse_tolerant($dec);
     }
 
@@ -324,7 +325,7 @@ sub parsed_text
 	croak "field value must be a plain string";
     }
 
-    my $dec = decode_mimewords( $value );
+    my $dec = mime_to_perl_string( $value );
 
     return RDF::Base::Literal::String->new_from_db($dec, $C_text);
 }

@@ -378,7 +378,7 @@ sub cmp_string
 sub cmp_numeric
 {
     my $val = 0;
-    if( ref $_[1] )
+    if( ref $_[1] and $_[1]->can('defined') )
     {
 	if( $_[1]->defined )
 	{

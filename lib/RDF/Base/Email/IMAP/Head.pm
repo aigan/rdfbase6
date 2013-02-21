@@ -28,7 +28,7 @@ use base qw( RDF::Base::Email::Head );
 
 use Carp qw( croak confess cluck );
 use URI;
-use MIME::Words qw( decode_mimewords );
+#use MIME::WordDecoder qw( mime_to_perl_string );
 use IMAP::BodyStructure;
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
@@ -56,6 +56,7 @@ sub new_by_uid
 {
     my( $class, $folder, $uid ) = @_;
 
+    confess "missing uid" unless $uid;
     my $raw = $folder->imap_cmd('fetch',
 				"$uid BODY.PEEK[HEADER]");
 

@@ -464,7 +464,7 @@ sub sysdesig
     my( $part ) = @_;
 
     return sprintf "(%d) %s", $part->uid,
-      ($part->body_head->parsed_subject->plain || '<no subject>');
+      ($part->head->parsed_subject->plain || '<no subject>');
 }
 
 ##############################################################################

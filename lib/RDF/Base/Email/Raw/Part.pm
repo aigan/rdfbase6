@@ -29,7 +29,8 @@ use base qw( RDF::Base::Email::Part Para::Frame::Email );
 use Carp qw( croak confess cluck );
 use Scalar::Util qw( weaken reftype );
 use Email::MIME;
-use MIME::Words qw( decode_mimewords );
+#use MIME::Words qw( decode_mimewords );
+use MIME::WordDecoder qw( mime_to_perl_string );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -286,8 +287,8 @@ See L<RDF::Base::Email::Part/description>
 
 sub description
 {
-    return scalar decode_mimewords( scalar $_[0]->head->
-				    header('content-description')||'' );
+    return scalar mime_to_perl_string( scalar $_[0]->head->
+                                       header('content-description')||'' );
 }
 
 

@@ -3344,7 +3344,7 @@ sub sysdesig
 {
     my( $node, $args ) = @_;
 
-    my $desig = $node->desig;
+    my $desig = $node->desig( $args );
 
 #    debug "Sysdesig for $node->{id}: $desig";
 
@@ -4729,10 +4729,21 @@ sub merge_node
 	throw('validation', "You can't merge a node into itself");
     }
 
+    # Avoide recursive loops
+    if( $node1->{'merging'} )
+    {
+        cluck sprintf("Merging of %s in progress", $node1->id);
+        return $node2;
+    }
+    $node1->{'merging'} = $node2; # Avoide recursive loops
+
+
     debug sprintf("Merging %s with %s",
 		  $node1->sysdesig($args),
 		  $node2->sysdesig($args),
 		 );
+
+    RDF::Base::Arc->lock; ### Complete merge before triggers
 
     my $move_literals = $args->{'move_literals'} || 0;
 
@@ -4777,6 +4788,10 @@ sub merge_node
 	}
 	$arc->remove( $args );
     }
+
+
+    RDF::Base::Arc->unlock; ### Complete merge before triggers
+
 
     return $node2;
 }
@@ -5328,7 +5343,7 @@ sub wu
     $range_key =~ s/^range_is$/range/;
 
     $args->{$range_key} = $range;
-    $args->{id} = 0; ### Replace with generated id
+#    $args->{id} = 0; ### Replace with generated id
 #    debug "Setting $range_key to ".$range->sysdesig;
 
     # Wrap in for ajax

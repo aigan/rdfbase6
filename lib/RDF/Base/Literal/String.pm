@@ -747,6 +747,7 @@ sub wuirc
 			 });
     }
 
+    my $divid = $args->{divid};
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
     my $onchange = '';
@@ -768,6 +769,11 @@ sub wuirc
 
 	$onchange = 'check_pattern(\''. $pattern .'\', this.value, \''.
 	  $pattern_errmsg .'\')';
+    }
+
+    if( $args->{'live_update'} )
+    {
+        $onchange = "RDF.Base.pageparts['$divid'].node_update()";
     }
 
     my $tb = $C_textbox;
