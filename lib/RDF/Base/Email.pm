@@ -656,7 +656,6 @@ sub vacuum
 {
     my( $email ) = @_;
 
-    $email = $email->RDF::Base::Resource::vacuum;
     $email->process;
     return $email;
 }

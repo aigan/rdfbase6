@@ -837,7 +837,7 @@ sub vacuum
 	$pred->vacuum_pred_arcs;
     }
 
-    return $rule->SUPER::vacuum( $args_in );
+    return $rule;
 }
 
 

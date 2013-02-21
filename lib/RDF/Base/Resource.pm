@@ -4684,6 +4684,32 @@ sub vacuum
 	$arc->vacuum( $args );
     }
 
+    $node->vacuum_range_card_max( $args );
+
+    return $node;
+}
+
+
+##############################################################################
+
+=head2 vacuum_range_card_max
+
+=cut
+
+sub vacuum_range_card_max
+{
+    my( $node, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    debug "Enforcing cardinality";
+    foreach my $pred ( $node->list_preds->as_array )
+    {
+        if( my $rcm = $pred->first_prop('range_card_max')->plain )
+        {
+            $node->arc_list( $pred, undef, $args )->sorted('id','desc')->slice($rcm)->remove($args);
+        }
+    }
+
     return $node;
 }
 

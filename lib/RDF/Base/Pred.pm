@@ -617,9 +617,9 @@ sub on_new_range_card
     my( $pred, $args_in ) = @_;
 
     my $rch = $pred->first_prop('range_card_max')->plain;
-    my $rcl = $pred->first_prop('range_card_mix')->plain;
+    my $rcl = $pred->first_prop('range_card_min')->plain;
 
-    if( $rch or $rci )
+    if( $rch or $rcl )
     {
 	my $arcs = $pred->active_arcs();
 	my( $arc, $error ) = $arcs->get_first;
@@ -869,7 +869,8 @@ sub vacuum
     my( $pred, $args_in ) = @_;
 
     $pred->on_new_range( $args_in );
-    return $pred->SUPER::vacuum( $args_in );
+    $pred->on_new_range_card($args_in);
+    return $pred;
 }
 
 
