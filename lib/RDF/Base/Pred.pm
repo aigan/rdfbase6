@@ -611,6 +611,10 @@ sub on_arc_del
 
   $pred->on_new_range_card( \%args )
 
+special args:
+
+  force_range_card_max: removes extra properties. Keeps newest
+
 =cut
 
 sub on_new_range_card
@@ -631,7 +635,14 @@ sub on_new_range_card
 
 	    if( $rch and ($cnt > $rch) )
 	    {
-		throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
+		if( $args_in->{'force_range_card_max'} )
+		{
+		    $subj->arc_list( $pred, undef, $args_in )->sorted('id','desc')->slice($rch)->remove($args_in);
+		}
+		else
+		{
+		    throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
+		}
 	    }
 
 	    if( $cnt < $rcl )
