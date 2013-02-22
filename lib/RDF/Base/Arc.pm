@@ -194,6 +194,9 @@ Special args:
 
   updated
 
+  ignore_card_check: Create arc even if it violates cardinality
+
+
 If value is a plain string, it's converted to an object based on L<RDF::Base::Pred/coltype>.
 
 C<subj>, C<pred> and C<value> must be given.
@@ -503,7 +506,7 @@ sub create
 
 
     ##################### range_card_max_check
-    unless( $props->{'replaces'} )
+    unless( $props->{'replaces'} or $args->{'ignore_card_check'} )
     {
         if( my $rcm = $pred->first_prop('range_card_max')->plain )
         {

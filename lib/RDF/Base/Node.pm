@@ -1140,7 +1140,10 @@ sub replace
 			  pred        => $arc->pred->id,
 			  value       => $value,
 			  active      => 0, # Activate later
-			 }, $args );
+			 }, {
+			     %$args,
+			     ignore_card_check => 1,
+			    } );
 
 
 		debug 3, "  should we replace $arc->{id}?";

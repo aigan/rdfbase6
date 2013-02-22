@@ -618,7 +618,7 @@ sub on_new_range_card
     my( $pred, $args_in ) = @_;
 
     my $rch = $pred->first_prop('range_card_max')->plain;
-    my $rcl = $pred->first_prop('range_card_min')->plain;
+    my $rcl = $pred->first_prop('range_card_min')->plain || 0;
 
     if( $rch or $rcl )
     {
@@ -629,7 +629,7 @@ sub on_new_range_card
 	    my $subj = $arc->subj;
 	    my $cnt = $subj->count($pred,'solid');
 
-	    if( $cnt > $rch )
+	    if( $rch and ($cnt > $rch) )
 	    {
 		throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
 	    }
