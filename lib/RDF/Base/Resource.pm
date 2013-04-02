@@ -4991,6 +4991,46 @@ sub arcversions
 
 ##############################################################################
 
+=head2 restore_points
+
+  $n->restorepoints( \%args )
+
+Returns a list of restore points for the node
+
+
+=cut
+
+sub restore_points
+{
+    my( $node ) = @_;
+
+    return #probably new...
+      unless( UNIVERSAL::isa($node, 'RDF::Base::Resource') );
+
+
+    my( $proplim, $args );
+
+    my $arcs = $node->arc_list( undef, $proplim, [['old','not_removal']] );
+
+    my %points;
+    while( my $arc = $arcs->get_next_nos )
+    {
+        my $ts = $arc->deactivated->syskey;
+        $points{$ts} ||=
+        {
+         count => 0,
+         by => $arc->deactivated_by,
+         time => $arc->deactivated,
+        };
+        $points{$ts}{count} ++;
+    }
+
+    return RDF::Base::List->new([ map { $points{$_} } sort keys %points  ]);
+}
+
+
+##############################################################################
+
 =head2 select_tooltip_html
 
   $n->select_tooltip_html( \%args )

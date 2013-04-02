@@ -1,0 +1,52 @@
+[% META title="Restore point"
+   next_template = 'update.tt'
+   level = 20
+%]
+
+[% id = q.param('id') %]
+[% UNLESS id; THROW 'validate' 'Id missing'; END %]
+[% hidden('id', id) %]
+
+[% time = date(q.param('time')) %]
+[% hidden('time',q.param('time')) %]
+
+
+[% args = {arc_active_on_date=time} %]
+
+
+[% node = get(id) %]
+<h2>Restore [% node.sysdesig(undef,args) | html %] at [% time.sysdesig %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<p>Restores from the selected point in time</p>
+
+
+<table class='admin'>
+<tr><th>Rel <th>pred <th>value
+[% FOREACH arc IN node.arc_list(undef,undef,args) %]
+<tr>
+<td> [% arc.wu_jump(label=arc.id) %] 
+<td> [% arc.pred.wu_jump(label=arc.pred.label) %]
+<td> [% IF arc.objtype %]
+        [% jump(arc.obj.sysdesig(args), 'update.tt', id=arc.obj.id) %]
+     [% ELSIF arc.value_node %]
+        [% jump(arc.value.sysdesig(args), 'update.tt', id=arc.value_node.id) %]
+     [% ELSE %]
+        [% arc.value.sysdesig(args) | html %]
+     [% END %]
+[% END %]
+</table>
+
+<table class='admin'>
+<tr><th>Rev <th>Node <th>Pred
+[% FOREACH arc IN node.revarc_list(undef,undef,args) %]
+<tr>
+<td> [% arc.wu_jump(label=arc.id) %] 
+<td> [% jump(arc.subj.sysdesig(args), 'update.tt', id=arc.subj.id) %]
+<td valign="top">[% arc.pred.wu_jump(label=arc.pred.label) %]
+[% END %]
+</table>
+
+
+<p>[% go("Restore", 'update.tt', "node_restore") %]

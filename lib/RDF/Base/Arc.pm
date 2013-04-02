@@ -1294,11 +1294,11 @@ A designation of the value, suitable for admin interface
 
 sub value_desig
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
 
     if( $arc->objtype )
     {
-	return $arc->obj->desig;
+	return $arc->obj->desig($args);
     }
     else
     {
@@ -2339,7 +2339,7 @@ sub common_id
 
 =head2 desig
 
-  $a->desig
+  $a->desig( \%args )
 
 Returns: a plain string representation of the arc
 
@@ -2347,9 +2347,9 @@ Returns: a plain string representation of the arc
 
 sub desig
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
 
-    return sprintf("%s --%s--> %s", $arc->subj->desig, $arc->pred->plain, $arc->value_desig);
+    return sprintf("%s --%s--> %s", $arc->subj->desig($args), $arc->pred->plain, $arc->value_desig($args));
 }
 
 

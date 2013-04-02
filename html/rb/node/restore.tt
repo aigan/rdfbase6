@@ -1,0 +1,23 @@
+[% META title="Restore node"
+   level = 20
+%]
+
+[% id = q.param('id') %]
+[% UNLESS id; THROW 'validate' 'Id missing'; END %]
+[% hidden('id', id) %]
+
+[% node = get(id) %]
+<h2>Restore [% node.sysdesig | html %]</h2>
+
+<p>[% PROCESS node_menu.tt %]</p>
+
+<p>Restores from the selected point in time</p>
+
+
+<table class='admin'>
+<tr><th>Time <th>Agent <th>Arcs <th>
+[% FOREACH point IN node.restore_points.reverse %]
+<tr><td>[% point.time.strftime('%Y-%m-%d %H.%M.%S') %]<td> [% point.by.wu_jump %] <td>[% point.count %]
+<td>[% jump('Restore','restore_point.tt',id=id,time=point.time.subtract(seconds=1).iso8601) %]
+[% END %]
+</table>
