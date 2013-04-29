@@ -356,7 +356,7 @@ sub find
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.
 
-    if( $l->size > 100 and $Para::Frame::REQ->is_from_client )
+    if( $l->size > 100 )
     {
         $Para::Frame::REQ->note(sprintf "Filtering %d nodes", $l->size);
     }
@@ -388,7 +388,7 @@ sub find
 
 	( $node, $error ) = $l->get_next;
 
-        if( not $l->count % 500 and $Para::Frame::REQ->is_from_client )
+        if( not $l->count % 500 )
         {
             $Para::Frame::REQ->note(sprintf "%5d", $l->count);
             $Para::Frame::REQ->may_yield;
@@ -599,8 +599,18 @@ sub sorted
 
     debug "--- SORTING: $sort_str" if $DEBUG;
 
+
+    my $size = $list->size;
+    if( $size > 100 )
+    {
+        $Para::Frame::REQ->note(sprintf "Sorting %d nodes", $size);
+    }
+
+
     my @props;
-    foreach my $item ( $list->as_array )
+
+    my( $item, $error ) = $list->get_first;
+    while(! $error )
     {
 	$item->{'sort_arg'} = [];
 	debug sprintf("  add item %s", $item->safedesig) if $DEBUG;
@@ -660,6 +670,17 @@ sub sorted
 #	    CORE::push @{$props[$i]}, $item->$method;
 	}
     }
+    continue
+    {
+        ( $item, $error ) = $list->get_next;
+
+        if( not $list->count % 1000 )
+        {
+            $Para::Frame::REQ->note(sprintf "%5d", $list->count);
+            $Para::Frame::REQ->may_yield;
+        }
+    }
+
 
     if( $DEBUG )
     {

@@ -187,7 +187,8 @@ sub new_from_db
     {
 	if( $val =~ /Ã./ )
 	{
-	    cluck "UNDECODED UTF8 in DB: $val)";
+#	    cluck "UNDECODED UTF8 in DB: $val)";
+	    debug "UNDECODED UTF8 in DB: $val)";
 #	    unless( utf8::decode( $val ) )
 #	    {
 #		debug 0, "Failed to convert to UTF8!";
