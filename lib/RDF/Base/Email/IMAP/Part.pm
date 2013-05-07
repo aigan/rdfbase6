@@ -106,6 +106,11 @@ sub new_by_path
 		$rest =~ s/^$spath\.//;
 		debug "Looking up $rest";
 		my $sub = $ssr->new_by_path( $rest );
+                unless( $sub )
+                {
+                    debug "Part $path not found";
+                    return $sub;
+                }
 		debug "Got ".$sub->desig;
 #		debug "-----------------------------------";
 #		debug datadump $sub;

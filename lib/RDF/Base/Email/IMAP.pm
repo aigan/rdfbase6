@@ -208,6 +208,8 @@ sub url_path
 
     # Format subject as a filename
     $subject ||= $part->body_head->parsed_subject->plain;
+    $subject ||= $part->head->parsed_subject->plain;
+
     $subject =~ s/\// /g;
     $subject =~ s/\.\s*/ /g;
     $type_name ||= "message/rfc822";
