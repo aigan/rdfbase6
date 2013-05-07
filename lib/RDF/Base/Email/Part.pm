@@ -1982,7 +1982,7 @@ sub footer_remove
 {
     my( $part, $str ) = @_;
 
-    $str =~ s/^(--|____).*//ms;
+    $str =~ s/^(--|____)[^a-zA-Z]*\n.*//ms;
 
     ### Find common ending phrases
 
@@ -1996,7 +1996,7 @@ sub footer_remove
               ).*//soxi;
 
     ### Remove comments
-    $str =~ s/\v+>+.*//soxi;
+#    $str =~ s/\v+>+.*//soxi;
 
     # Find common ending politeness phrases
     #
