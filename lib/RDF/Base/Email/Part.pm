@@ -1779,23 +1779,23 @@ sub mime_types_init
     $MIME_TYPES = MIME::Types->new;
     my @types;
 
-    push @types, (
-		  MIME::Type->new(
-				  encoding => 'quoted-printable',
-				  extensions => ['xlsx'],
-				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				 ),
-		  MIME::Type->new(
-				  encoding => 'base64',
-				  extensions => ['xcf'],
-				  type => 'image/x-xcf',
-				 ),
-#		  MIME::Type->new(
-#				  extensions => ['jpg'],
-#				  type => 'image/jpg',
-#				 ),
-		 );
-    $MIME_TYPES->addType(@types);
+#    push @types, (
+##		  MIME::Type->new(
+##				  encoding => 'quoted-printable',
+##				  extensions => ['xlsx'],
+##				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+##				 ),
+##		  MIME::Type->new(
+##				  encoding => 'base64',
+##				  extensions => ['xcf'],
+##				  type => 'image/x-xcf',
+##				 ),
+##		  MIME::Type->new(
+##				  extensions => ['jpg'],
+##				  type => 'image/jpg',
+##				 ),
+#		 );
+#    $MIME_TYPES->addType(@types);
 
     # Added in MIME::Types v1.24
 #    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
