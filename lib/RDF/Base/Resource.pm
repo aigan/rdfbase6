@@ -6130,28 +6130,50 @@ sub wu_select
     my $rev_range_pred = 'rev_'.$range_pred;
     $rev_range_pred =~ s/^rev_rev_//;
 
-    my $items = $type->$rev_range_pred(undef, $args)->sorted->as_listobj;
+    my $dir = ( $rev_range_pred =~ /^rev_/ ) ? 'subj' : 'obj';
+
+    my $ais; # arc items
+    if( $dir eq 'subj' )
+    {
+        $ais = $type->revarc_list($range_pred, undef, $args)->sorted(['distance','obj.desig'])->as_listobj;
+    }
+    else
+    {
+        $ais = $type->arc_list($rev_range_pred, undef, $args)->sorted(['distance','subj.desig'])->as_listobj;
+    }
+
+#    my $items = $type->$rev_range_pred(undef, $args)->sorted(['distance','desig'])->as_listobj;
+
+
+
+
 #      sorted(['name_short', 'desig', 'label'])->as_listobj;
 
-#    debug "ITEMS ".$items->sysdesig;
+#    debug "ITEMS ".$ais->sysdesig;
 
     $req->may_yield;
     die "cancelled" if $req->cancelled;
 
-    confess( "Trying to make a select of ". $items->size .".  That's not wise." )
-      if( $items->size > 500 );
+    confess( "Trying to make a select of ". $ais->size .".  That's not wise." )
+      if( $ais->size > 500 );
 
-    while( my $item = $items->get_next_nos )
+#    debug "select $key";
+    while( my $ai = $ais->get_next_nos )
     {
-	unless( $items->count % 100 )
+	unless( $ais->count % 100 )
 	{
 	    debug sprintf "Wrote item %4d (%s)",
-	      $items->count, $item->desig;
+	      $ais->count, $ais->desig;
 	    $req->may_yield;
 	    die "cancelled" if $req->cancelled;
 	}
 
-	$out .= '<option value="'. $item->id .'"';
+        my $lvl = $ai->distance;
+        my $item = $ai->$dir;
+
+#        debug "  option ".$item->sysdesig;
+
+	$out .= '<option class="rb_arc_distance_'.$lvl.'" value="'. $item->id .'"';
 
         if( $set_value )
         {
