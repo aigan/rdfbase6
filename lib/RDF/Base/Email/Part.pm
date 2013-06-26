@@ -56,7 +56,7 @@ use RDF::Base::Email::Raw::Part;
 use RDF::Base::Email::Interpart;
 
 
-our $MIME_TYPES;
+#our $MIME_TYPES;
 
 
 ##############################################################################
@@ -360,7 +360,8 @@ sub effective_type
 	return $_[0]->{'effective_type'};
     }
 
-    &mime_types_init unless $MIME_TYPES;
+    my $MIME_TYPES = MIME::Types->new();
+#    &mime_types_init unless $MIME_TYPES;
 
     my $type_name = $_[1] || $_[0]->type;
 
@@ -865,7 +866,8 @@ sub filename_safe
 #    debug "Safe base name: $safe";
 #    debug "type name: $type_name";
 
-    &mime_types_init unless $MIME_TYPES;
+#    &mime_types_init unless $MIME_TYPES;
+    my $MIME_TYPES = MIME::Types->new();
 
     # Try to figure out octet-streams
     if( $ext and ($type_name eq 'application/octet-stream') )
@@ -1774,33 +1776,35 @@ sub tick
 
 ##############################################################################
 
-sub mime_types_init
-{
-    $MIME_TYPES = MIME::Types->new;
-    my @types;
+# MUST BE INITIATED BEFORE FORK!
 
-#    push @types, (
-##		  MIME::Type->new(
-##				  encoding => 'quoted-printable',
-##				  extensions => ['xlsx'],
-##				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-##				 ),
-##		  MIME::Type->new(
-##				  encoding => 'base64',
-##				  extensions => ['xcf'],
-##				  type => 'image/x-xcf',
-##				 ),
-##		  MIME::Type->new(
-##				  extensions => ['jpg'],
-##				  type => 'image/jpg',
-##				 ),
-#		 );
-#    $MIME_TYPES->addType(@types);
-
-    # Added in MIME::Types v1.24
-#    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
-}
-
+#sub mime_types_init
+#{
+#    $MIME_TYPES = MIME::Types->new;
+#    my @types;
+#
+##    push @types, (
+###		  MIME::Type->new(
+###				  encoding => 'quoted-printable',
+###				  extensions => ['xlsx'],
+###				  type => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+###				 ),
+###		  MIME::Type->new(
+###				  encoding => 'base64',
+###				  extensions => ['xcf'],
+###				  type => 'image/x-xcf',
+###				 ),
+###		  MIME::Type->new(
+###				  extensions => ['jpg'],
+###				  type => 'image/jpg',
+###				 ),
+##		 );
+##    $MIME_TYPES->addType(@types);
+#
+#    # Added in MIME::Types v1.24
+##    $MIME_TYPES->type('message/rfc822')->{'MT_extensions'} = ['eml'];
+#}
+#
 
 ##############################################################################
 
