@@ -179,7 +179,7 @@ See L<RDF::Base::Email::Part/charset>
 
 sub charset
 {
-    return lc $_[0]->type('charset');
+    return lc($_[0]->type('charset')||'');
 }
 
 

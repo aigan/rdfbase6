@@ -278,7 +278,19 @@ See L<RDF::Base::Email::Part/encoding>
 sub encoding
 {
     confess "No struct" unless $_[0]->struct;
-    return lc $_[0]->struct->encoding;
+
+    my $enc = lc $_[0]->struct->encoding;
+
+    # Found a case where the encoding returned was actually the
+    # boundary. Use complete head if encoding found not common
+
+    unless( $enc =~ /^(quoted-printable|8bit|binary|7bit|base64)$/ )
+    {
+        my $h = $_[0]->head_complete;
+        $enc = lc($h->header('content-transfer-encoding')||'');
+    }
+
+    return $enc;
 }
 
 

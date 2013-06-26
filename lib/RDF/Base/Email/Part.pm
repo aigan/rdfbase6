@@ -1519,7 +1519,7 @@ sub body
     }
     else
     {
-	die "encoding $encoding not supported";
+        die "encoding $encoding not supported";
     }
 
     $args ||= {};
