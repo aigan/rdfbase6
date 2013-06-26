@@ -26,7 +26,7 @@ use base qw( RDF::Base::Literal::String );
 use Carp qw( cluck confess longmess );
 #use CGI;
 #use MIME::Words qw( decode_mimewords );
-use MIME::WordDecoder qw( mime_to_perl_string );
+use MIME::WordDecoder;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim validate_utf8 );
@@ -138,7 +138,9 @@ sub new_by_raw
 {
     my( $class, $raw ) = @_;
 
-    my $subject = mime_to_perl_string( $raw||'' );
+    my $wd = new MIME::WordDecoder::ISO_8859 1;
+
+    my $subject = $wd->decode( $raw||'' );
     return $class->new_from_db($subject, $C_text);
 }
 
