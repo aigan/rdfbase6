@@ -691,8 +691,10 @@ sub on_new_range
 
     $range_new ||= $pred->valtype;
     $range_old ||= $C_resource;
-    my $old_coltype_id = $pred->coltype_id;
-#    my $old_coltype_id = $pred->{'coltype'} || 0;
+
+    # Accept a missing coltype, since we are setting it now
+#    my $old_coltype_id = $pred->coltype_id;
+    my $old_coltype_id = $pred->{'coltype'} || 0;
 
     debug "  OLD: ".$range_old->sysdesig;
     debug "  NEW: ".$range_new->sysdesig;
@@ -756,7 +758,7 @@ sub vacuum_pred_arcs
 
     my $arcs = $pred->active_arcs;
 
-    my $size = $arcs->size;
+    my $size = $arcs->size or return;
     debug "Vacuuming $size arcs";
 
     my $remove_faulty = $args->{'remove_faulty'} || 0;
