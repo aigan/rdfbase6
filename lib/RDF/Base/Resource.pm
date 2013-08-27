@@ -6077,7 +6077,7 @@ sub wu_select
     my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
     my $extra = '';
 
-    # Widget may show selected value before this widget is calles
+    # Widget may show selected value before this widget is called
     my $set_value = $singular ? 1 : 0;
 
     $extra .= ' class="'. $args->{'class'} .'"'

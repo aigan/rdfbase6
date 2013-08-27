@@ -1646,7 +1646,8 @@ sub body_as_text
     else
     {
         debug "Content-type $ctype not handled in body_as_text";
-        return( $part->body(@_), undef );
+        #return( $part->body(@_), undef );
+        return( "", undef );
     }
 }
 
@@ -1666,6 +1667,7 @@ sub body_extract
 
     my $cpart = $_[0]->guess_content_part;
     my( $bodyr, $ct_source ) = $cpart->body_as_text(8000);
+    return "" unless $ct_source;
     my $str = $$bodyr;
     my $length = length($str);
     my $trunc = 0;
