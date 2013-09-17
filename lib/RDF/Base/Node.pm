@@ -1282,6 +1282,13 @@ sub remove
 	{
 	    $RDF::dbix->delete("from node where node=?", $node->id);
 	    debug "  node record deleted";
+
+            # Remove from cache
+            #
+            if( my $id = $node->id )
+            {
+                delete $RDF::Base::Cache::Resource{ $id };
+            }
 	}
 	else
 	{
@@ -1290,12 +1297,6 @@ sub remove
     }
 
 
-    # Remove from cache
-    #
-    if( my $id = $node->id )
-    {
-	delete $RDF::Base::Cache::Resource{ $id };
-    }
 
     return $res->changes - $changes_prev;
 }

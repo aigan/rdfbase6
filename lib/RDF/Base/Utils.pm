@@ -1200,7 +1200,7 @@ sub parse_propargs
 	}
 	elsif( $arg eq 'solid' )
 	{
-	    $arclim = [1]; # active
+	    $arclim = [1]; # active (Should also be not_disregarded?)
 	    $unique = [1]; # active
 	}
 	elsif( $arg eq 'all' )
