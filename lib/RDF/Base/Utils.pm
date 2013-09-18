@@ -307,7 +307,7 @@ sub parse_query_value
     my $arclim;
     if( $val_in =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
     {
-        debug "Creating subcriterion from $val_in";
+#        debug "Creating subcriterion from $val_in";
         my $pairs = $1;
         my $alim_in = $2;
         my %sub;
@@ -329,7 +329,7 @@ sub parse_query_value
 
         if( $alim_in )
         {
-            debug "Parsing alim $alim_in";
+#            debug "Parsing alim $alim_in";
             $arclim = RDF::Base::Arc::Lim->parse_string("[$alim_in]");
         }
 
@@ -1200,7 +1200,7 @@ sub parse_propargs
 	}
 	elsif( $arg eq 'solid' )
 	{
-	    $arclim = [1]; # active (Should also be not_disregarded?)
+	    $arclim = [1+128]; # active, not_disregarded
 	    $unique = [1]; # active
 	}
 	elsif( $arg eq 'all' )
