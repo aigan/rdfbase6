@@ -2485,8 +2485,10 @@ sub table_row
 	    {
 		if( $disabled )
 		{
-		    $out .= ( $is_rev ? $check_subj->desig($args) :
-			      $item->desig($args) );
+		    $out .= ( $is_rev ? $check_subj->wu_jump :
+			      $item->wu_jump );
+#		    $out .= ( $is_rev ? $check_subj->desig($args) :
+#			      $item->desig($args) );
 		}
 		else
 		{

@@ -49,8 +49,15 @@ sub init
 {
     my( $res, $args ) = @_;
 
-    $res->{'search'} = $args->{'search'}
-      or confess "Obj init misses search arg ".datadump($res,1);
+    if( $args->{'search'} )
+    {
+        $res->{'search'} = $args->{'search'};
+    }
+    unless( $res->{'search'} )
+    {
+        debug "Obj init misses search arg ".datadump($res,1);
+        return $res->new_empty();
+    }
 #    weaken( $res->{'search'} );
 
     $args->{'materializer'} = \&RDF::Base::List::materialize;

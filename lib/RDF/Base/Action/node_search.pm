@@ -52,8 +52,10 @@ sub handler
     debug "Searching with:\n".query_desig($props);
     $search->modify($props, $args);
     $search->execute($args);
-    $search_col->add($search);
+#    debug "Search result contains";
+#    debug datadump($search->{'result'},2);
 
+    $search_col->add($search);
 #    debug "Search_col now contains";
 #    debug datadump($search_col,2);
 

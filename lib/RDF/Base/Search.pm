@@ -1324,7 +1324,7 @@ sub execute
 {
     my( $search, $args ) = @_;
 
-
+#    Para::Frame::Logging->this_level(4);
 
     my( $sql, $values, $min_prio ) = $search->build_sql;
     unless( $sql )

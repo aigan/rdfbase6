@@ -5381,7 +5381,7 @@ sub wu
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
-# if( $pred_name eq 'has_cost' ) ### DEBUG
+# if( $pred_name eq 'pecified_place' ) ### DEBUG
 # {
 #     debug "WU ".$node->sysdesig." --".$pred_name."-->\n".query_desig($args_in);
 # }
@@ -5804,12 +5804,13 @@ sub wuirc
 #	$out .= "<ul id=\"$divid-list\">"
 #	  if( $list->size > 1);
 
-#	debug "Getting table columns for ".$range->sysdesig;
+#	debug "Getting table columns for range ".$range->sysdesig;
+#	debug "Getting table columns for class ".$range->find_class;
 	my $columns = $args->{'columns'} ||
 	  $range->instance_class->table_columns( $pred, $args );
 	unshift @$columns, '-arc_remove';
 	$args->{'columns'} = $columns;
-#	debug datadump $columns;
+#	debug "Columns: ".datadump($columns);
 
 	foreach my $arc (@$list)
 	{
