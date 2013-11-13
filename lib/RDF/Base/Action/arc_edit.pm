@@ -63,15 +63,26 @@ sub handler
 	$pred_name = undef;
     }
 
+    my $weight_old = $arc->weight || 0;
+#    debug "Weight old: $weight_old";
+#    debug "Weight new: $weight";
+
     # Indirect arc
     #
     if( $check_explicit )
     {
 	if( $arc->explicit <=> $explicit )
 	{
-	    confess "Not implemented";
-#	    $arc->set_explicit( $explicit );
+#	    confess "Not implemented";
+	    $arc->set_explicit( $explicit, $args );
 	}
+
+
+        if( $weight != $weight_old )
+        {
+            $arc->set_weight($weight, {%$args,force_same_version=>1});
+        }
+
     }
     #
     # Direct arc (keep)
@@ -98,7 +109,7 @@ sub handler
 	    $arc->submit;
 	}
 
-        my $weight_old = $arc->weight || 0;
+
         if( $weight != $weight_old )
         {
             if( $new->equals($arc ) )

@@ -4890,9 +4890,9 @@ See also L</set_implicit> and L</explicit>
 
 sub set_explicit
 {
-    my( $arc, $val ) = @_;
+    my( $arc, $val, $args ) = @_;
     defined $val or $val = 1;
-    return not $arc->set_implicit( $val ? 0 : 1 );
+    return not $arc->set_implicit( ($val ? 0 : 1), $args );
 }
 
 
@@ -4914,7 +4914,7 @@ See also L</set_explicit> and L</implicit>
 
 sub set_implicit
 {
-    my( $arc, $val ) = @_;
+    my( $arc, $val, $args_in ) = @_;
 
     my $DEBUG = 0;
 
@@ -4946,6 +4946,8 @@ sub set_implicit
     $arc->{'implicit'} = $val;
 
     $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    $res->changes_add;
 
     return $val;
 }
@@ -5132,8 +5134,8 @@ sub set_weight
 					  arc_weight_last =>
 					  $args->{arc_weight_last},
 					 }, $args );
+        $res->changes_add;
 	return $new;
-
     }
 
 
@@ -5160,6 +5162,7 @@ sub set_weight
     }
 
     $RDF::Base::Cache::Changes::Updated{$arc_ver} ++;
+    $res->changes_add;
 
     return $arc;
 }
