@@ -1,21 +1,22 @@
 ﻿
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
-<script type="text/javascript" src="[% home %]/rb/js/rb.js_tt"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script src="http://code.jquery.com/jquery-migrate-1.2.1.js"></script>
+<script src="[% home %]/rb/js/rb.js_tt"></script>
 
 [% IF u.level > 19 %]
-  <script type="text/javascript" src="[% home %]/rb/js/jquery.json-2.2.js"></script>
-  <script type="text/javascript" src="[% home %]/rb/js/tipsy/src/javascripts/jquery.tipsy.js"></script>
+  <script src="[% home %]/rb/js/jquery.json-2.2.js"></script>
+  <script src="[% home %]/rb/js/tipsy/src/javascripts/jquery.tipsy.js"></script>
   <link rel="Stylesheet" href="[% home %]/rb/js/tipsy/src/stylesheets/tipsy.css" type="text/css" />
 
-  <script type="text/javascript" src="[% home %]/rb/js/jquery.jeditable.js"></script>
-  <script type="text/javascript" src="[% home %]/rb/js/jquery.wysiwyg.js"></script>
-  <script type="text/javascript" src="[% home %]/rb/js/jquery.jeditable.wysiwyg.js">
+  <script src="[% home %]/rb/js/jquery.jeditable.js"></script>
+  <script src="[% home %]/rb/js/jquery.wysiwyg.js"></script>
+  <script src="[% home %]/rb/js/jquery.jeditable.wysiwyg.js">
   </script>
   <link rel="Stylesheet" href="[% home %]/rb/js/jquery.wysiwyg.css" type="text/css" />
 
-  <script type="text/javascript" src="[% home %]/rb/js/editable.js_tt"></script>
+  <script src="[% home %]/rb/js/editable.js_tt"></script>
 
-  <script type="text/javascript">
+  <script>
     jQuery(RDF.Base.makeEditable);
   </script>
 [% END %]
