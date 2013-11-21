@@ -532,6 +532,28 @@ sub arcversions
 
 ##############################################################################
 
+=head2 get_first
+
+=cut
+
+sub get_first
+{
+    return( RDF::Base::Undef->new(), Template::Constants::STATUS_DONE );
+}
+
+##############################################################################
+
+=head2 get_next
+
+=cut
+
+sub get_next
+{
+    return( RDF::Base::Undef->new(), Template::Constants::STATUS_DONE );
+}
+
+##############################################################################
+
 =head2 count
 
 =cut
