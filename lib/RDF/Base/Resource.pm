@@ -4842,6 +4842,8 @@ sub merge_node
 
     RDF::Base::Arc->lock; ### Complete merge before triggers
 
+    $args->{'ignore_card_check'} = 1;
+
     my $move_literals = $args->{'move_literals'} || 0;
 
     foreach my $arc ( $node1->arc_list(undef, undef, ['active','explicit'])->nodes )
@@ -4889,6 +4891,7 @@ sub merge_node
 
     RDF::Base::Arc->unlock; ### Complete merge before triggers
 
+    $node2->vacuum_node;
 
     return $node2;
 }
