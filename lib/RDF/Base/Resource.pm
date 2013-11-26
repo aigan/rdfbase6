@@ -3286,6 +3286,29 @@ sub desig  # The designation of obj, meant for human admins
 
 ##############################################################################
 
+=head2 shortdesig
+
+  $n->shortdesig( \%args )
+
+The short designation of an object. Defaults to desig
+
+=cut
+
+sub shortdesig
+{
+    my( $node, $args ) = @_;
+
+    if( $node->has_pred('name_short',undef,$args) )
+    {
+	return $node->list('name_short',undef,$args)->loc();
+    }
+
+    return $node->desig($args);
+}
+
+
+##############################################################################
+
 =head2 safedesig
 
   $n->safedesig( \%args )
