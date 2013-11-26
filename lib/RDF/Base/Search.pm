@@ -735,6 +735,10 @@ Calls L</order_add> with the given values.
 
 This functionality may be moved to L</modify_from_query>.
 
+=head3 maxlimit
+
+Limits search result to the first C<maxlimit> results
+
 =head3 Main search key format
 
   <rev> _ <pred> _ <arclim> _ <clean> _ <comp> _ <prio>
@@ -918,6 +922,10 @@ sub modify
 	elsif( $key eq 'order_by' )
 	{
 	    $search->order_add( \@values );
+	}
+	elsif( $key eq 'maxlimit' )
+	{
+            $search->{'maxlimit'} = $values[0];
 	}
 	elsif( $key =~ m/^(subj|pred|coltype)$/ )
 	{
@@ -3488,7 +3496,9 @@ sub arclim_sql
 
 =head2 order_add
 
-  $search->order_add( ... )
+  $search->order_add($field)
+  $search->order_add("$field $dir")
+  $search->order_add(["$field $dir", ...])
 
 See L<Para::Frame::List/sorted>
 
