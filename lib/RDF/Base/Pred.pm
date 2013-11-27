@@ -5,7 +5,7 @@ package RDF::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -653,6 +653,12 @@ sub on_new_range_card
 	continue
 	{
 	    ( $arc, $error ) = $arcs->get_next;
+
+            unless( $arcs->count % 500 )
+            {
+                debug sprintf "Validated %5d of %4d",
+                  $arcs->count, $arcs->size;
+            }
 	};
     }
 }

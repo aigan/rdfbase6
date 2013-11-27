@@ -5,7 +5,7 @@ package RDF::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -688,6 +688,10 @@ sub create
 			push @fields, 'valclean';
 			push @values, $rec->{'valclean'};
 		    }
+                    elsif( $coltype eq 'valfloat' )
+                    {
+                        confess "No number  $value" unless looks_like_number($value);
+                    }
 		}
 
 		if( $value_obj->id ) # Literal resource (value node)
@@ -4281,6 +4285,7 @@ sub set_value
 	    elsif( $coltype_new eq 'valfloat' )
 	    {
 		$value_db = $value_new;
+                confess "No number $value_db" unless looks_like_number($value_db);
 	    }
 	    elsif( $coltype_new eq 'valtext' )
 	    {

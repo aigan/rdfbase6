@@ -5,7 +5,7 @@ package RDF::Base::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -413,6 +413,8 @@ sub node_set
 	else
 	{
 #	    debug "  Creating a new value_node for literal";
+#            debug "    Valtype is ".$lit->this_valtype->sysdesig;
+            ### Must be crated as a Resource Literal
 	    $lit->{'node'} = RDF::Base::Resource::Literal->get('new');
 	}
     }
@@ -507,9 +509,11 @@ sub update
     # Just convert to value node and forward the call.
     # But check if we realy have props to add
 
+#    my $refaddr = refaddr($lit);
     debug "Update in literal ".$lit->sysdesig ." ".refaddr($lit);
     debug query_desig($props);
 #    debug "With args ".query_desig($args);
+#    debug "Arc ".$lit->lit_revarc;
 #    cluck "GOT HERE";
 #    debug "---";
 

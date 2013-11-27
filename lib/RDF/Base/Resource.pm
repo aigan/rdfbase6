@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -206,10 +206,13 @@ sub get
 	    $node->{'new'} = 1;
 	    $RDF::Base::Cache::Resource{ $id } = $node;
 
-	    if( $args_in->{'new_class'} ) # Must be a Class node
+	    if( my $nc = $args_in->{'new_class'} ) # Must be a Class node
 	    {
-		bless $node, $args_in->{'new_class'}->instance_class;
-		$node->initiate_rel;
+#                $nc->instance_class
+#                debug"NC: ".$nc->instance_class;
+		bless $node, $nc->instance_class;
+                # for optimization
+                $node->initiate_rel; #if $node->can('initiate_rel');
 	    }
 
 	    return $node->init;
@@ -4723,6 +4726,7 @@ sub vacuum_node
 	if( my $method = $sc->can("vacuum_facet") )
 	{
             next if $methods{$method}++;
+            next unless $n->isa($sc); # Might have changed
 #            debug "  found $method";
 	    &{$method}($n, $args);
 	}
@@ -6387,6 +6391,7 @@ sub find_class
     my @pmodules;
     while(! $islist_error )
     {
+        next if $class_arc->disregard;
 	my $class = $class_arc->obj;
 
 	debug "Looking at $id is $class->{id}" if $DEBUG;

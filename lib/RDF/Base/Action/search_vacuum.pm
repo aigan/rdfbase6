@@ -51,6 +51,7 @@ sub handler
                 $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
             }
             die "cancelled" if $req->cancelled;
+            $res->autocommit;
             $req->may_yield;
         }
 
