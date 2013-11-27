@@ -1222,8 +1222,7 @@ sub has_value
 
     my( $pred_name, $value ) = each( %$preds );
 
-#    debug sprintf "Checking if %s  --%s--> %s", $lit->sysdesig, $pred_name, $value->sysdesig;
-
+    #debug sprintf "Checking if %s  --%s--> %s", $lit, $pred_name, $value;
 
     if( $pred_name eq 'is' ) # checking valtype for implicit is arcs
     {
@@ -1247,6 +1246,7 @@ sub has_value
 
     unless( $pred_name eq 'value' )
     {
+#        debug "BACK TO has_value for lit node";
 	return $lit->node->has_value($preds, $args_in);
     }
 

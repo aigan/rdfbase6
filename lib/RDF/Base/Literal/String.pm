@@ -731,6 +731,7 @@ sub wuirc
     my( $args ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(5);
+    my $DEBUG = Para::Frame::Logging->at_level(3);
 
     no strict 'refs'; # For &{$inputtype} below
     my $out = "";
@@ -823,8 +824,11 @@ sub wuirc
     {
 	$predname = $pred->label;
 
-	debug 2, "String wuirc for $predname";
-	debug 2, "$predname class is ". $pred->range->instance_class;
+        if( $DEBUG )
+        {
+            debug "String wuirc for $predname";
+            debug "$predname class is ". $pred->range->instance_class;
+        }
     }
     else
     {
@@ -834,7 +838,7 @@ sub wuirc
     }
 
 
-    debug 2, "wub $inputtype $predname for ".$subj->sysdesig;
+    debug "wub $inputtype $predname for ".$subj->sysdesig if $DEBUG;
 
     my $newsubj = $args->{'newsubj'};
     my $rows = $args->{'rows'};
@@ -857,7 +861,8 @@ sub wuirc
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];
 
-#    debug "Using proplim ".query_desig($proplim); # DEBUG
+#    debug 2, "Using proplim ".query_desig($proplim); # DEBUG
+#    debug 2, "Using arclim ".query_desig($arclim); # DEBUG
 
     my $multi = $args->{'multi'} || 0;
     my $no_arc = 0; # for adding a second input field
@@ -878,13 +883,13 @@ sub wuirc
 	my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
 	my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
 
-#	debug "Arcs list: @arcs";
+	debug "Arcs list: @arcs" if $DEBUG;
 	my $list_weight = 0;
 
 	foreach my $arc ( RDF::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'weight', dir=>'desc'},{on=>'obj.weight', dir=>'desc'}])->as_array )
 	{
 	    my $arc_id = $arc->id;
-#	    debug $arc_id;
+	    #debug $arc_id;
 
 	    if( my $lang = $arc->value_node->list('is_of_language', undef,'auto') )
 	    {
@@ -1017,6 +1022,7 @@ sub wuirc
     else
     {
 	$no_arc = 1;
+        debug 2, "No arc?";
     }
 
     if( $no_arc or $multi )
@@ -1096,8 +1102,7 @@ sub wuirc
 	}
     }
 
-#    debug "returning: $out";
-
+#    debug 2, "returning: $out" ;
     return $out;
 }
 

@@ -3468,7 +3468,15 @@ sub value_equals
 	}
 
 
-        if( $coltype eq 'valtext' )
+        if( $coltype eq 'valfloat')
+        {
+            $val1 = $val1->plain;
+            if( ref $val2 )
+            {
+                $val2 = $val2->plain;
+            }
+        }
+        elsif( $coltype eq 'valtext' )
         {
             $val1 = $val1->plain;
             if( ref $val2 )
@@ -3499,10 +3507,18 @@ sub value_equals
 
 	if( $match eq 'eq' )
 	{
+ 	    if( $coltype eq 'valfloat' )
+	    {
+                return( $val1 == $val2 );
+            }
 	    return $val1 eq $val2;
 	}
 	elsif( $match eq 'ne' )
 	{
+ 	    if( $coltype eq 'valfloat' )
+	    {
+                return( $val1 != $val2 );
+            }
 	    return $val1 ne $val2;
 	}
 	elsif( $match eq 'begins' )

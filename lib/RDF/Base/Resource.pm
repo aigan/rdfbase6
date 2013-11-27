@@ -4703,7 +4703,11 @@ Calls L</vacuum_facet> for all classes
 
 sub vacuum_node
 {
-    my $n = shift;
+    my( $n, $args_in ) = @_;
+    my( $args, $arclim, $res ) = parse_propargs( $args_in );
+
+    return $n if $res->{'vacuumed'}{$n->{'id'}} ++;
+
     my $class = ref $n;
     no strict "refs";
 
@@ -4711,14 +4715,16 @@ sub vacuum_node
 
     my %methods;
 
-    foreach my $sc ($class, @{"${class}::ISA"})
+    #### Start with the base classes, like RDF::Base::Resource
+    #### end with the more specific classes
+    foreach my $sc (reverse $class, @{"${class}::ISA"})
     {
-	debug "  Vacuum ${$n}{id} via $sc";
+#	debug "  Vacuum ${$n}{id} via $sc";
 	if( my $method = $sc->can("vacuum_facet") )
 	{
             next if $methods{$method}++;
 #            debug "  found $method";
-	    &{$method}($n, @_);
+	    &{$method}($n, $args);
 	}
     }
 
@@ -4744,8 +4750,7 @@ Returns: The node
 
 sub vacuum_facet
 {
-    my( $node, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $node, $args ) = @_;
 
     my $no_lim = RDF::Base::Arc::Lim->parse(['active','inactive']);
     foreach my $arc ( $node->arc_list( undef, undef, $no_lim )->as_array )
