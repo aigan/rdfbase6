@@ -5890,7 +5890,7 @@ sub not_disregarded
 
   $a->schedule_check_create( \%args )
 
-Schedueled checks of newly added/modified arcs
+Scheduled checks of newly added/modified arcs
 
 Returns: ---
 
@@ -5900,11 +5900,12 @@ sub schedule_check_create
 {
     my( $arc, $args_in ) = @_;
 
-    # Res and arclim should not be part of the args
-    #
+    # Use solid args for activating changes here
+    # active, not_disregarded
     my %args = %$args_in;
-#    delete $args{'res'}; # But it IS a resulting arc
-    delete $args{'arclim'};
+    $args{'activate_new_arcs'} = 1;
+    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
+    $args{unique_arcs_prio} = [1]; # active
 
     if( $RDF::Base::Arc::lock_check ||= 0 )
     {
@@ -5934,11 +5935,12 @@ sub schedule_check_remove
 {
     my( $arc, $args_in ) = @_;
 
-    # Res and arclim should not be part of the args
-    #
+    # Use solid args for activating changes here
+    # active, not_disregarded
     my %args = %$args_in;
-    delete $args{'res'};
-    delete $args{'arclim'};
+    $args{'activate_new_arcs'} = 1;
+    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
+    $args{unique_arcs_prio} = [1]; # active
 
     if( $RDF::Base::Arc::lock_check ||= 0 )
     {
