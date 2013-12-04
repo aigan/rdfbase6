@@ -625,7 +625,9 @@ sub sorted
 		{
 		    last; # skipping undef values...
 		}
-		$val = $val->$part(undef,$args);
+                #         The position of $args varies!!! 
+		#$val = $val->$part(undef,$args);
+		$val = $val->$part(); ### FIXME
 		debug sprintf("      -> %s", $val) if $DEBUG;
 	    }
 
