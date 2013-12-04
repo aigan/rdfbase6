@@ -5,7 +5,7 @@ order_by name.loc
 </pre>
 
 <p>More info:
-<pre style="white-space: -moz-pre-wrap !important">
+<pre style="white-space: pre-wrap !important">
 rev
 [ pred ]
 [ [% rb.Arc_Lim.names.join(' | ') %] ]
