@@ -127,6 +127,11 @@ sub exist
     unless( defined $part->{'exist'} )
     {
 	my $folder = $part->folder;
+        unless( $folder )
+        {
+            return $part->{'exist'} = 0;
+        }
+
 	my $uid = $part->{'uid'};
 	if( $folder->imap_cmd('message_uid',$uid) )
 	{
@@ -336,7 +341,7 @@ sub struct
 	return $part->{'struct'};
     }
 
-    my $folder = $part->folder;
+    my $folder = $part->folder or confess "no folder";
     my $uid = $part->uid;
 
     my $res = $folder->imap_cmd('fetch', $uid,"bodystructure");
@@ -465,6 +470,7 @@ sub sysdesig
 {
     my( $part ) = @_;
 
+    return $part->SUPER::sysdesig() unless $part->folder;
     return sprintf "(%d) %s", $part->uid,
       ($part->head->parsed_subject->plain || '<no subject>');
 }

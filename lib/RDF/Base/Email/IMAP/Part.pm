@@ -190,6 +190,7 @@ sub sysdesig
 {
     my( $part ) = @_;
 
+    return $part->SUPER::sysdesig() unless $part->folder;
     return sprintf "(%d) %s (%s)", $part->uid,
       ($part->body_head->parsed_subject->plain || '<no subject>'),
         $part->path;

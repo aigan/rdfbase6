@@ -107,8 +107,14 @@ sub get_by_url
 	die "Could not extract foldername from $url_in";
     }
 
-    my $password = $Para::Frame::CFG->{imap_access}{$server}{$user}
-      or throw 'IMAP', "Password for $user\@$server not found";
+    my $password = $Para::Frame::CFG->{imap_access}{$server}{$user};
+    unless( $password )
+    {
+        $Para::Frame::REQ->result_message("Password for $user\@$server not found");
+        return undef;
+    }
+#    cluck("No password") unless $password;
+#    $password or throw 'IMAP', "Password for $user\@$server not found";
 
     my $folder = bless
     {
