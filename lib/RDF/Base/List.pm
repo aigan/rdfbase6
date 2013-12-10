@@ -5,7 +5,7 @@ package RDF::Base::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1407,31 +1407,6 @@ sub as_html
 
     my $join = $args->{'join'} || "<br/>\n";
     return join $join, @part;
-}
-
-
-##############################################################################
-
-=head2 sysdesig
-
-  $l->sysdesig
-
-Return a SCALAR string with the elements sysdesignation concatenated with
-C<' / '>.
-
-See L<RDF::Base::Object/sysdesig>
-
-=cut
-
-sub sysdesig
-{
-#    warn "Stringifies object ".ref($_[0])."\n"; ### DEBUG
-    return join ' / ', map
-    {
-	UNIVERSAL::can($_, 'sysdesig') ?
-	    $_->sysdesig($_[1]) :
-	      $_;
-    } $_[0]->nodes;
 }
 
 

@@ -4761,6 +4761,7 @@ sub vacuum_facet
     {
 	next if $arc->disregard;
 	$Para::Frame::REQ->may_yield;
+	$arc->vacuum_facet( $args );
 	$arc->vacuum_node( $args );
     }
 

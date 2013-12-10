@@ -5,7 +5,7 @@ package RDF::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1034,7 +1034,7 @@ sub replace
     my( $pred, $valtype );
     foreach my $pred_name ( keys %$props )
     {
-	debug 3, "  pred: $pred_name";
+	debug 3, "  pred: $pred_name ".$props->{$pred_name}->sysdesig;
 
         if( $pred_name eq 'label' )
         {

@@ -5,7 +5,7 @@ package RDF::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -984,6 +984,28 @@ sub upgrade_db
 	$res->autocommit;
 	$req->done;
         Para::Frame->flag_restart();
+    }
+
+    if( $ver < 5 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        my $c_is = $C->get('is');
+        my $c_class = $C->get('class');
+
+        my $ia = $R->find_set({label => 'instances_are'},$args)
+          ->update({
+                    domain => $c_class,
+                    range => $c_class,
+                    is => $C->get('predicate'),
+                    range_card_max => 1,
+                   },$args);
+
+        RDF::Base::Rule->create($c_is, $ia, $c_is );
+
+	$rb->update({ has_version => 5 },$args);
+	$res->autocommit;
+	$req->done;
     }
 
     if( 0 ) ### Depencency problems

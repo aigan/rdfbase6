@@ -191,8 +191,7 @@ sub valtype
     }
     else
     {
-	my $coltype = RDF::Base::Literal::Class->
-	  coltype_by_coltype_id( $pred->{'coltype'} );
+	my $coltype = $pred->coltype;
 	if( $coltype eq 'obj' )
 	{
 	    return RDF::Base::Constants->get('resource');
@@ -654,10 +653,11 @@ sub on_new_range_card
 	{
 	    ( $arc, $error ) = $arcs->get_next;
 
-            unless( $arcs->count % 500 )
+            unless( $arcs->count % 1000 )
             {
-                debug sprintf "Validated %5d of %4d",
-                  $arcs->count, $arcs->size;
+                $Para::Frame::REQ->note( sprintf "Validated %6d of %6d",
+                                         $arcs->count, $arcs->size );
+                $Para::Frame::REQ->may_yield;
             }
 	};
     }
@@ -676,7 +676,7 @@ sub on_new_range
 {
     my( $pred, $args_in ) = @_;
 
-    debug 1, "Updating arcs for the new range";
+    debug 1, "Updating arcs for the new range of ".$pred->desig;
 
     my $C_resource = RDF::Base::Constants->get('resource');
 
@@ -769,13 +769,16 @@ sub vacuum_pred_arcs
 
     my $remove_faulty = $args->{'remove_faulty'} || 0;
     my $old_coltype_id = $args->{old_coltype_id};
-    my $old_coltype = RDF::Base::Literal::Class->coltype_by_coltype_id($old_coltype_id);
-
+    my $old_coltype;
+    if( $old_coltype_id )
+    {
+        $old_coltype = RDF::Base::Literal::Class->coltype_by_coltype_id($old_coltype_id);
+    }
 
     my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("select $old_coltype from arc where ver=?");
 
-    RDF::Base::Arc->lock;
+#    RDF::Base::Arc->lock;
     my( $arc, $error ) = $arcs->get_first;
     while(! $error )
     {
@@ -805,9 +808,16 @@ sub vacuum_pred_arcs
     }
     continue
     {
+        unless( $arcs->count % 1000 )
+	{
+	    $Para::Frame::REQ->note( sprintf "Vacuumed pred %s arc %6d of %6d",
+                                     $pred->desig, $arcs->count, $arcs->size );
+	    $Para::Frame::REQ->may_yield;
+	}
+
 	( $arc, $error ) = $arcs->get_next;
     };
-    RDF::Base::Arc->unlock;
+#    RDF::Base::Arc->unlock;
 
     return;
 }

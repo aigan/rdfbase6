@@ -5,7 +5,7 @@ package RDF::Base::Rule;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -31,7 +31,7 @@ use Para::Frame;
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
-use RDF::Base::Utils qw( is_undef );
+use RDF::Base::Utils qw( is_undef parse_propargs );
 use RDF::Base::Constants qw( $C_syllogism $C_is );
 
 
@@ -237,6 +237,9 @@ sub create
 {
     my( $this, $a, $b, $c, $vacuum ) = @_;
 
+    my( $args, $arclim, $res ) = parse_propargs('solid');
+    $args->{'activate_new_arcs'} = 1;
+
     $INITIALIZED or $this->on_configure;
 
     $vacuum = 1 unless defined $vacuum;
@@ -268,7 +271,8 @@ sub create
 	return $rule;
     }
 
-    my $rule = RDF::Base::Resource->create($props);
+    my $rule = RDF::Base::Resource->create($props, $args);
+    $rule->rebless;
     $Rules{$rule->id} = $rule;
 
     $this->build_lists;
