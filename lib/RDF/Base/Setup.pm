@@ -1008,6 +1008,73 @@ sub upgrade_db
 	$req->done;
     }
 
+    if( $ver < 6 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+	my $pred = $C->get('predicate');
+
+	$R->find_set({label => 'has_cyc_id'},$args)
+          ->update({
+                    range => $C->get('term'),
+                    is => $pred,
+                    range_card_max => 1,
+                   },$args);
+
+	$R->find_set({label => 'has_wikipedia_id'},$args)
+          ->update({
+                    range => $C->get('term'),
+                    is => $pred,
+                    range_card_max => 1,
+                   },$args);
+
+
+	$C->get('login_account')
+	  ->update({
+                    has_cyc_id => 'Cyclist',
+                   },$args);
+
+	$C->get('admin_comment')
+	  ->update({
+                    has_cyc_id => 'comment',
+                   },$args);
+
+	$C->get('swedish')
+	  ->update({
+                    has_cyc_id => 'SwedishLanguage',
+		    has_wikipedia_id => 'Swedish_language',
+                   },$args);
+
+	$C->get('english')
+	  ->update({
+                    has_cyc_id => 'EnglishLanguage',
+		    has_wikipedia_id => 'English_language',
+                   },$args);
+
+	$C->get('language')
+	  ->update({
+                    has_cyc_id => 'NaturalLanguage',
+		    has_wikipedia_id => 'Language',
+                   },$args);
+
+	$C->get('intelligent_agent')
+	  ->update({
+                    has_cyc_id => 'IntelligentAgent',
+                   },$args);
+
+	$C->get('phone_number')
+	  ->update({
+                    has_cyc_id => 'PhoneNumber',
+		    has_wikipedia_id => 'Telephone_number',
+                   },$args);
+
+
+
+#	$rb->update({ has_version => 6 },$args);
+	$res->autocommit;
+	$req->done;
+    }
+
     if( 0 ) ### Depencency problems
     {
         my $req = Para::Frame::Request->new_bgrequest();
