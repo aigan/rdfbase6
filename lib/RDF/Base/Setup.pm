@@ -1001,7 +1001,7 @@ sub upgrade_db
                     range_card_max => 1,
                    },$args);
 
-        RDF::Base::Rule->create($c_is, $ia, $c_is );
+        RDF::Base::Rule->create($c_is, $ia, $c_is, 0 );
 
 	$rb->update({ has_version => 5 },$args);
 	$res->autocommit;
@@ -1069,8 +1069,31 @@ sub upgrade_db
                    },$args);
 
 
+        my $c_is = $C->get('is');
+        my $c_scof = $C->get('scof');
+        my $c_class = $C->get('class');
 
-#	$rb->update({ has_version => 6 },$args);
+        my $iscof = $R->find_set({label => 'instances_scof'},$args)
+          ->update({
+                    domain => $c_class,
+                    range => $c_class,
+                    is => $C->get('predicate'),
+                    range_card_max => 1,
+                   },$args);
+
+        RDF::Base::Rule->create($c_is, $iscof, $c_scof, 0 );
+
+        my $sscof = $R->find_set({label => 'subclasses_scof'},$args)
+          ->update({
+                    domain => $c_class,
+                    range => $c_class,
+                    is => $C->get('predicate'),
+                    range_card_max => 1,
+                   },$args);
+
+        RDF::Base::Rule->create($c_scof, $sscof, $c_scof, 0 );
+
+	$rb->update({ has_version => 6 },$args);
 	$res->autocommit;
 	$req->done;
     }
