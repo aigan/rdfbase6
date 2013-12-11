@@ -1,0 +1,264 @@
+
+
+has_cyc_id
+has_wikipedia_id
+
+
+
+
+OTHER opencyc stuff
+===================
+
+
+intelligent_agent
+website_url
+email_address
+login_account
+
+information_store
+mia
+individual
+organization
+
+cw
+media
+agent_generic
+ais
+product
+gtin
+temporal_thing
+legal_agent
+person
+spatial_thing
+location
+temporal_stuff_type
+
+broader
+
+{
+ label => 'individual',
+ admin_comment => "Individual is the collection of all individuals: things that are not sets or collections. Individuals might be concrete or abstract, and include (among other things) physical objects, events, numbers, relations, and groups.",
+ is => $class,
+ has_cyc_id => 'Individual',
+}
+
+{
+ label => 'spatial_thing',
+ admin_comment => "The collection of all things that have a spatial extent or location relative to some other SpatialThing or in some embedding space. Note that to say that an entity is a member of this collection is to remain agnostic about two issues. First, a SpatialThing may be PartiallyTangible (e.g. Texas-State) or wholly Intangible (e.g. ArcticCircle or a line mentioned in a geometric theorem). Second, although we do insist on location relative to another spatial thing or in some embedding space, a SpatialThing might or might not be located in the actual physical universe.",
+ has_cyc_id => 'SpatialThing',
+ scof => $individual,
+}
+
+{
+ label => 'temporal_thing',
+ admin_comment => "This is the collection of all things that have temporal extent or location -- things about which one might sensibly ask 'When?'. TemporalThing thus contains many kinds of things, including events, physical objects, agreements, and pure intervals of time.",
+ has_cyc_id => 'TemporalThing',
+ scof => $individual,
+}
+
+{
+ label => 'temporal_stuff_type',
+ admin_comment => "Temporal Thing class",
+ has_cyc_id => 'TemporalStuffType',
+ is => $class,
+}
+
+{
+ label => 'information_store',
+ admin_comment => "Each instance of InformationStore is a tangible or intangible, concrete or abstract repository of information. The information stored in an information store is stored there as a consequence of the actions of one or more agents.",
+ has_cyc_id => 'InformationStore',
+ is => $temporal_stuff_type,
+ scof => $individual,
+}
+
+{
+ label => 'ais',
+ admin_comment => "AspatialInformationStore is the collection of all information stores that have no spatial location. Specializations of AspatialInformationStore include ConceptualWork, Microtheory, AbstractInformationStructure, and FieldOfStudy.",
+ has_cyc_id => 'AspatialInformationStore',
+ scof => $information_store,
+}
+
+{
+ label => 'abis',
+ admin_comment => "Each instance of AbstractInformationStructure is an abstract individual comprising abstract symbols and relations between them. ABIS includes CharacterString, Sentence, abstract diagrams, graphs, and bit strings.",
+ has_cyc_id => 'AbstractInformationStructure',
+ scof => $ais,
+}
+
+{
+ label => 'graphical_ais',
+ admin_comment => "the collection of all abstract graphical structures that consist of abstract symbols and the relations between them. Each instance of AbstractVisualStructure (AVS) is a structure that can be discerned visually. Any concrete instantiation of a given AVS consists of a particular spatial (or spatio-temporal) arrangement of shapes and/or colors. A given AVS might have multiple instantiations. By the same token, a given concrete visual arrangment (appearing, say, on a sheet of paper or a computer monitor screen) might simultaneously instantiate multiple AVSs, corresponding to different degrees of abstractness.",
+ has_cyc_id => 'GraphicalAIS',
+ scof => $abis,
+}
+
+{
+ label => 'field_of_study',
+ admin_comment => "Each instance of FieldOfStudy is a particular area of study, with its own distinctive set of theories, hypotheses, and problems.",
+ has_cyc_id => 'FieldOfStudy',
+ scof => $ais,
+}
+
+{
+ label => 'belief_system',
+ admin_comment => "A specialization of AspatialInformationStore. Each instance of BeliefSystem is an ideology (systems of belief) in terms of which an agent characterizes (i.e., makes sense of) the world. Instances of BeliefSystem include: Vegetarianism, GermanNaziIdeology, RepublicanPartyIdeology, Communism, Pacifism, Atheism, etc.",
+ has_cyc_id => 'BeliefSystem',
+ scof => $ais,
+}
+
+{
+ label => 'situation',
+ admin_comment => "A temporally extended intangible individual. Examples: Gesture, Miracle, Event",
+ has_cyc_id => 'Situation',
+ scof => $temporal_thing,
+}
+
+{
+ label => 'pit',
+ admin_comment => "Each instance of PropositionalInformationThing (or \"PIT\") is an abstract object -- a chunk of information consisting of one or more propositions. The propositional content of a PIT is not essentially encoded in any particular language, and it may be representable in many languages. PITs are used to represent the informational contents of InformationBearingThings.",
+ has_cyc_id => 'PropositionalInformationThing',
+ scof => $ais,
+}
+
+{
+ label => 'ibt',
+ admin_comment => "InformationBearingThing: A collection of spatially-localized individuals, including various actions and events as well as physical objects. Each instance of InformationBearingThing (or \"IBT\") is an item that contains information (for an agent who knows how to interpret it). Examples: a copy of the novel Moby Dick; a photograph. It is important to distinguish the various specializations of InformationBearingThing from those of AspatialInformationStore (whose instances are the chunks of information instantiated in particular IBTs.",
+ has_cyc_id => 'InformationBearingThing',
+ scof => $information_store,
+ is => $temporal_stuff_type,
+}
+
+{
+ label => 'cw',
+ admin_comment => "ConceptualWork: A specialization of AspatialInformationStore. Each instance of ConceptualWork is a partially abstract work (in the sense that each instance has a beginning in time, but lacks a location in space) which either has an associated AbstractInformationStructure (q.v.) or has a version with an associated AbstractInformationStructure. Conceptual works or versions of conceptual works can be instantiated in instances of InformationBearingThing (q.v.); every such instantiation of a conceptual work will also be an instantiation of an instance of AbstractInformationStructure. Notable specializations of ConceptualWork include ComputerProgram-CW, VisualWork, and Book-CW.",
+ scof => $ais,
+ has_cyc_id => 'ConceptualWork',
+}
+
+{
+ label => 'media',
+ admin_comment => "Each instance of MediaProduct is an information store created for the purposes of media distribution (see MediaTransferEvent). Specializations of MediaProduct include RecordedVideoProduct, MediaSeriesProduct, WorldWideWebSite and NewsArticle.",
+ scof => [ $information_store, $temporal_thing, $temporal_stuff_type, $cw ],
+ has_cyc_id => 'MediaProduct',
+}
+
+{
+ label => 'all_abstract',
+ is => $spatial_thing,
+ is => $temporal_thing,
+ admin_comment => 'The thing that contains the physical universe and all other abstract planes of existence',
+}
+
+{
+ label => 'physical_organism',
+ admin_comment => "Physical life form",
+ scof => $spatial_thing,
+ has_cyc_id => 'Organism-Whole',
+}
+
+{
+ label => 'agent_generic',
+ admin_comment => "Each instance of Agent-Generic is a being that has desires or intentions, and the ability to act on those desires or intentions. Instances of Agent-Generic may be individuals (see the specialization IndividualAgent) or they may consist of several Agent-Generics operating together (see the specialization MultiIndividualAgent).",
+ has_cyc_id => 'Agent-Generic',
+ scof => $temporal_thing,
+}
+
+{
+ label => 'intelligent_agent',
+ scof => [$information_store, $agent_generic],
+}
+
+{
+ label => 'legal_agent',
+ admin_comment => "Each instance of LegalAgent is an agent who has some status in a particular legal system. At the very least, such an agent is recognized by some legal authority as having some kinds of rights and/or responsibilities as an agent (e.g., citizens of Germany), or as being subject to certain restrictions and penalties (e.g., a company that has been blacklisted by Iraq).",
+ scof => $ia,
+ has_cyc_id => 'LegalAgent',
+}
+
+... and more
+
+
+============== FILES
+
+{
+ label => 'computer_file_ais',
+ admin_comment => "Each instance of ComputerFile-AIS is an abstract series of bits encoding some information and conforming to some file system protocol.",
+ scof => $C->get('abis'),
+ has_cyc_id => 'ComputerFile-AIS',
+}
+
+{
+ label => 'computer_file_type_by_format',
+ admin_comment => "A collection of collections of computer files [ComputerFile-AIS]. Each instance of ComputerFileTypeByFormat (e.g. JPEGFile) is a collection of all ComputerFile-AISs that conform to a single preestablished layout for electronic data. Programs accept data as input in a certain format, process it, and provide it as output in the same or another format. This constant refers to the format of the data. For every instance of ComputerFileCopy, one can assert a fileFormat for it.",
+ is => $class, # SecondOrderCollection
+ has_cyc_id => 'ComputerFileTypeByFormat',
+}
+
+{
+ label => 'file_pdf',
+ admin_comment => "Computer files encoded in the PDF file format.",
+ is => $computer_file_type_by_format,
+ scof => $computer_file_ais,
+ has_cyc_id => 'PortableDocumentFormatFile',
+ code => 'application/pdf',
+}
+
+{
+ label => 'file_email',
+ is => $computer_file_type_by_format,
+ scof => $computer_file_ais,
+ has_cyc_id => 'EMailFile',
+ code => 'email',
+}
+
+{
+ label => 'file_image',
+ admin_comment => "A specialization of ComputerFile-AIS. Each ComputerImageFile contains a digital representation of some VisualImage, and is linked to an instance of ComputerImageFileTypeByFormat via the predicate fileFormat.",
+ is => $computer_file_type_by_format,
+ scof => $computer_file_ais,
+ has_cyc_id => 'ComputerImageFile',
+}
+
+{
+ label => 'file_gif',
+ admin_comment => "A collection of ComputerImageFiles. Each GIFFile is encoded in the \"Graphics Interchange Format\". GIFFiles are extremely common for inline images on web pages, and generally have filenames that end in \".gif\".",
+ is => $computer_file_type_by_format,
+ scof => $file_image,
+ has_cyc_id => 'GIFFile',
+ code => 'image/gif',
+}
+
+{
+ label => 'file_jpeg',
+ admin_comment => "A collection of ComputerImageFiles. Each JPEGFile is a ComputerImageFile whose fileFormat conforms to the standard image compression algorithm designed by the Joint Photographic Experts Group for compressing either full-colour or grey-scale digital images of 'natural', real-world scenes. Instances of JPEGFile often have filenames that end in '.jpg' or '.jpeg'.",
+ is => $computer_file_type_by_format,
+ scof => $file_image,
+ has_cyc_id => 'JPEGFile',
+ code => 'image/jpeg',
+}
+
+{
+ label => 'file_png',
+ admin_comment => "The collection of computer image files encoded in the '.png' file format. Designed to replace GIF files, PNG files have three main advantages: alpha channels (variable transparency), gamma correction (cross-platform control of image brightness) and two-dimensional interlacing.",
+ is => $computer_file_type_by_format,
+ scof => $file_image,
+ has_cyc_id => 'PortableNetworkGraphicsFile',
+ code => 'image/png',
+}
+
+{
+ label => 'file_html',
+ admin_comment => "The subcollection of ComputerFile-AIS written in the language HypertextMarkupLanguage.",
+ is => $computer_file_type_by_format,
+ scof => $computer_file_ais,
+ has_cyc_id => 'HTMLFile',
+ code => 'text/html',
+}
+
+{
+ label => 'file_text_plain',
+ admin_comment => "A plain text file with any charset.",
+ is => $computer_file_type_by_format,
+ scof => $computer_file_ais,
+ code => 'text/plain',
+}

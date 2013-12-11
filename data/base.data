@@ -91,9 +91,9 @@ literal_compare_clean	domain	predicate
 literal_compare_clean	range	bool
 literal_compare_clean	range_card_max	1
 has_cyc_id	is	predicate
-has_cyc_id	range	text
+has_cyc_id	range	term
 has_wikipedia_id	is	predicate
-has_wikipedia_id	range	text
+has_wikipedia_id	range	term
 has_pred_format	is	predicate
 has_pred_format	domain	predicate
 has_pred_format	range	text
