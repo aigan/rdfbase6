@@ -136,7 +136,11 @@ sub on_unbless
 {
     my( $rule, $class, $args_in ) = @_;
 
+    debug "Removing rule ".$rule->sysdesig;
+
     my $id = $rule->id;
+    my $pred;
+
 
     foreach my $key (keys %List_A)
     {
@@ -177,6 +181,7 @@ sub on_unbless
 	{
 	    if( $rule->id eq $id )
 	    {
+                $pred = RDF::Base::Resource->get($key);
 		debug "Skipping rule $id in C";
 		next;
 	    }
@@ -187,6 +192,35 @@ sub on_unbless
     }
 
     delete $Rules{$id};
+    my $req = $Para::Frame::REQ;
+
+    if( $pred )
+    {
+        my $arcs = $pred->active_arcs;
+        $req->note(sprintf "Vacuuming %d arcs", $arcs->size);
+        my( $arc, $error ) = $arcs->get_first;
+        while(! $error )
+        {
+            next unless $arc->objtype;
+            next unless $arc->active;
+
+            unless( $arc->validate_check )
+            {
+                next if $arc->explicit;
+                $arc->remove($args_in);
+            }
+        }
+        continue
+        {
+            unless( $arcs->count % 1000 )
+            {
+                $req->note( sprintf "Vacuumed arc %6d of %6d",
+                            $arcs->count, $arcs->size );
+                $req->may_yield;
+            }
+            ( $arc, $error ) = $arcs->get_next;
+        }
+    }
 }
 
 
