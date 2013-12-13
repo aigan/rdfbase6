@@ -2968,6 +2968,12 @@ sub has_value
 	}
     }
 
+
+    if( $pred_name eq 'is' )
+    {
+        return 1 if $C_resource->equals($value);
+    }
+
 #    debug "  with args:\n".query_desig($args);
 
     # @arcs_in may have been defined above
@@ -5678,7 +5684,9 @@ sub register_ajax_pagepart
 
   $class->wuirc( $subj, $pred, \%args )
 
-  Widget for Updating Instance of Range Class
+Widget for Updating Instance of Range Class
+
+THIS IS DEFAULT FOR RESOURCES. See also widgets for Literals. For examle L<RDF::Base::Literal::String/wuirc>.
 
 Example:
 
@@ -5802,10 +5810,22 @@ sub wuirc
 
 
 #    debug "Selecting inputtype for ".$pred->desig;
-    my $inputtype = $args->{'inputtype'} ||
-      ( ( $range->revcount($range_pred) < 25 ) ?
-	( $is_scof ? 'select_tree' : 'select' ) : 'text' );
+    my $inputtype = $args->{'inputtype'};
+    my $range_count;
+    my $rev_range_pred = 'rev_'.$range_pred;
+    $rev_range_pred =~ s/^rev_rev_//;
+    if( $range_pred =~ /^rev_/ )
+    {
+        $range_count = $range->count($rev_range_pred);
+    }
+    else
+    {
+        $range_count = $range->revcount($range_pred);
+    }
 
+    $inputtype ||= ( ( $range_count < 25 ) ?
+                     ( $is_scof ? 'select_tree' : 'select' )
+                     : 'text' );
 
    if( $DEBUG )
     {
@@ -5821,16 +5841,30 @@ sub wuirc
     # Sort out arcs on range...
     if( $is_rev )
     {
-	$list = $list->find({ subj => { $range_pred => $range }})->direct;
+	$list = $list->find({ subj => { $range_pred => $range }});
     }
     else
     {
-	$list = $list->find({ obj => { $range_pred => $range }})->direct;
+	$list = $list->find({ obj => { $range_pred => $range }});
     }
+#    debug "FILTERED on range list ".$list->sysdesig;
+
+    # Prefere, but don't require direct arcs
+    my $list_direct = $list->direct;
+    if( $list_direct->size )
+    {
+        $list = $list_direct;
+    }
+#    debug "FILTERED after direct list ".$list->sysdesig;
 
 
-    if( $list and
-	( $inputtype eq 'text' or not $singular ) )
+    ### The current value will be displayed in the input widget if the
+    ### type allows it and if only one value is allowed
+    #
+    my $cur_value_is_in_input_widget =
+      ( $singular and ($inputtype ne 'text') );
+
+    if( $list and not $cur_value_is_in_input_widget )
     {
 	debug "wuirc 1" if $DEBUG;
 
@@ -5858,16 +5892,18 @@ sub wuirc
 #    $out .= "</ul>"
 #      if( $list->size > 1);
 
-    ### AJAX
+    # If we have a value for a singular, we should not be able to add
+    # another value.
     #
-    if( not $disabled and
-	( not $singular or
-	  not $list or
-	  ( $singular and ($inputtype ne 'text') )))
+    my $card_reached = ($singular and $list );
+
+    if( $cur_value_is_in_input_widget or
+        ( not $disabled and not $card_reached )
+      )
     {
 	debug "wuirc 2" if $DEBUG;
 
-	if( $ajax and $inputtype eq 'text' )
+	if( $inputtype eq 'text' and $ajax and not $disabled )
 	{
 	    debug "wuirc 3" if $DEBUG;
 
@@ -5901,7 +5937,7 @@ sub wuirc
 				     on_arc_add => $on_arc_add,
 				    }));
 	}
-	elsif( $inputtype eq 'text' )
+	elsif( $inputtype eq 'text' and not $disabled )
 	{
 	    debug "wuirc 4" if $DEBUG;
 

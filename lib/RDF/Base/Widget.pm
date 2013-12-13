@@ -37,7 +37,7 @@ filefield input_image );
 
 use RDF::Base;
 use RDF::Base::Arc;
-use RDF::Base::Utils qw( is_undef parse_propargs query_desig aais range_pred );
+use RDF::Base::Utils qw( is_undef parse_propargs query_desig aais );
 use RDF::Base::L10N;
 use RDF::Base::Constants qw( $C_translatable $C_has_translation $C_language );
 

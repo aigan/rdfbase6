@@ -1387,6 +1387,7 @@ sub range_pred
 {
     if( my $range = $_[0]->{'range'} )
     {
+#        debug "Found range in args: ".$range->sysdesig;
         return( $range, 'is' );
     }
 
