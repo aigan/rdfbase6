@@ -796,12 +796,12 @@ sub wuirc
     {
 	unless( ($args->{'class'}||'') =~ /\bwide\b/ )
 	{
-	    $args->{'cols'} ||= 57;
 	    $args->{'size'} = $args->{'cols'};
 	    # also remove size?
 	}
 	$args->{'inputtype'} = 'textarea';
 	$args->{'rows'} ||= 3;
+        $args->{'class'} ||= 'wide';
     }
 
     unless( $range->coltype eq 'valbin' )
@@ -810,12 +810,7 @@ sub wuirc
     }
 
 
-    my $size = $args->{'size'} || 30;
-    my $smallestsize = $size - 10;
-    if( $smallestsize < 3 )
-    {
-	$smallestsize = 3;
-    }
+    my $size = $args->{'size'} ||"";
 
     my $inputtype = $args->{'inputtype'} || 'input';
 
@@ -954,7 +949,7 @@ sub wuirc
 					      {
 					       disabled => "disabled",
 					       class => "suggestion_field",
-					       size => $smallestsize,
+					       size => $size,
 					       rows => $rows,
 					       maxlength => $args->{'maxlength'},
 					       version => $version,
