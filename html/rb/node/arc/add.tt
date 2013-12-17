@@ -16,9 +16,9 @@
 <p>[% PROCESS node_menu.tt %]</p>
 
 [% IF node %]
-   [% input('query_row','', size=60) %]<br>
+   [% input('query_row','',class='wide') %]<br>
 [% END %]
-[% textarea('query') %]
+[% textarea('query', undef,class='wide') %]
 
 [% hidden("id", node.id) %]
 

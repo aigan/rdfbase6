@@ -282,7 +282,7 @@ sub wuirc
 
     my $id = $args->{'id'};
 
-    $args->{'size'} ||= 18;
+#    $args->{'size'} ||= 18;
 
     my %cal_args;
     foreach my $key (qw( size class onUpdate showsTime style ))
@@ -326,9 +326,13 @@ sub wuirc
     {
 	my $arclist = $subj->arc_list($pred, undef, $args);
 
+        if( $arclist->size == 0 )
+        {
+            return RDF::Base::Literal::Time->new(undef, $_[0])->as_html;
+        }
 	while( my $arc = $arclist->get_next_nos )
 	{
-	    $out .= ( $arc->value->desig($args) || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= ( $arc->value_as_html($args) || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
     }
     elsif( $subj->empty )
@@ -429,53 +433,6 @@ sub default_valtype
     return RDF::Base::Literal::Class->get_by_label('valdate');
 }
 
-##############################################################################
-#
-#=head3 defined
-#
-#=cut
-#
-#sub defined
-#{
-#    if( UNIVERSAL::isa $_[0], 'DateTime::Incomplete' )
-#    {
-#	if( $_[0]->is_undef )
-#	{
-#	    return 0;
-#	}
-#    }
-#
-#    return 1;
-#}
-#
-##############################################################################
-#
-#=head2 format_datetime
-#
-#  $t->format_datetime()
-#
-#Returns a string using the format given by L<Para::Frame/configure>.
-#
-#=cut
-#
-#sub format_datetime
-#{
-#    if( UNIVERSAL::isa $_[0], 'DateTime::Incomplete' )
-#    {
-#	if( $_[0]->is_undef )
-#	{
-#	    return "";
-#	}
-#	else
-#	{
-#	    return $_[0]->iso8601;
-#	}
-#    }
-#
-#    return $Para::Frame::Time::FORMAT->format_datetime($_[0]);
-#}
-#
-#
 ##############################################################################
 
 1;

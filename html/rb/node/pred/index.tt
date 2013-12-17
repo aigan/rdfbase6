@@ -64,9 +64,9 @@
 [% IF u.has_root_access %]
   <table class="admin">
     <caption>[% aloc("Change") %]</caption>
-    <tr><td>[% input('prop_label', node.label || default_label, tdlabel="[* loc('Label') *]") %]</td></tr>
+    <tr><td>[% input('prop_label', node.label || default_label, tdlabel=loc('Label')) %]</td></tr>
     <tr>
-      <td>[* aloc('Domain') *]</td>
+      <td>[% aloc('Domain') %]</td>
       <td>
         [% IF domain_id;
              node.wuh('domain', domain_id);
@@ -75,11 +75,11 @@
         %]<br/>
       [% node.wu('domain') %]
     </td></tr>
-    <tr><td>[% node.wu('name', tdlabel="[* loc('Name') *]") %]</td></tr>
-    <tr><td>[% node.wu('range', tdlabel="[* loc('Range') *]") %]</td></tr>
-    <tr><td>[% node.wu('weight', tdlabel="[* loc('Weight') *]") %]</td></tr>
-    <tr><td>[% node.wu('no_auto_show', tdlabel="[* loc('NO auto-show') *]") %]</td></tr>
-    <tr><td>[% node.wu('is_mandatory', tdlabel="[* loc('Is mandatory') *]") %]</td></tr>
+    <tr><td>[% node.wu('name', tdlabel=loc('Name')) %]</td></tr>
+    <tr><td>[% node.wu('range', tdlabel=loc('Range')) %]</td></tr>
+    <tr><td>[% node.wu('weight', tdlabel=loc('Weight')) %]</td></tr>
+    <tr><td>[% node.wu('no_auto_show', tdlabel=loc('NO auto-show')) %]</td></tr>
+    <tr><td>[% node.wu('is_mandatory', tdlabel=loc('Is mandatory')) %]</td></tr>
   </table>
   [% step %]
 

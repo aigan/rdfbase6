@@ -1212,18 +1212,20 @@ we display the html in the context of the arc status.
 
 sub value_as_html
 {
-    my( $arc ) = @_;
+    my( $arc, $args ) = @_;
+
+    if( $args ){ debug "  with args ".query_desig($args);}
 
     my $out;
     if( $arc->is_removal )
     {
 	$out = '<span style="text-decoration:line-through;color:red">';
-	$out .= $arc->replaces->value_as_html;
+	$out .= $arc->replaces->value_as_html($args);
 	$out .= '</span>';
     }
     else
     {
-	$out = $arc->value->as_html;
+	$out = $arc->value->as_html($args);
     }
 
     return $out;

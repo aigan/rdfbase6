@@ -1674,6 +1674,10 @@ sub default_valtype
 
 =head3 wdirc
 
+  $class->wdirc( $subj, $pred, \%args )
+
+  Widget for Displaying Instance of Range Class
+
 =cut
 
 sub wdirc

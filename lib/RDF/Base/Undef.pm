@@ -36,6 +36,8 @@ use overload
 use Carp qw( cluck );
 use Scalar::Util qw( looks_like_number );
 
+use RDF::Base::Widget qw( locnl );
+
 use Para::Frame::Reload;
 
 
@@ -96,6 +98,17 @@ sub literal
 sub as_string
 {
     return "<undef>";
+}
+
+##############################################################################
+
+=head2 as_html
+
+=cut
+
+sub as_html
+{
+    return "<span class='na'>".locnl('undef')."</span>";
 }
 
 ##############################################################################
