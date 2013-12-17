@@ -5513,6 +5513,11 @@ sub wu
     #
     my $out_wuirc = $range_class->wuirc($node, $pred, $args);
 
+    if( ($args->{'label'}||'') eq '1' )
+    {
+        debug "Args label is ".$args->{'label'};
+        $args->{'label'} = $pred;
+    }
 
     $out .= label_from_params({
 			       label       => delete $args->{'label'},
