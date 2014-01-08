@@ -395,7 +395,7 @@ sub unique_arcs_prio
     {
 	unless( $arc->is_arc ) # Might have been recently removed
 	{
-	    cluck "Not arc in unique_arcs_prio; $error - ".$arc->sysdesig;
+	    debug "Not arc in unique_arcs_prio - ".$arc->sysdesig;
 	    next;
 	}
 

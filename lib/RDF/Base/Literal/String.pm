@@ -160,7 +160,8 @@ sub new_from_db
     my( $class, $val, $valtype ) = @_;
 
     $valtype or cluck "No valtype";
-    if( $valtype->has_value({ scof => $C_text_large }) )
+    if( $valtype->equals($C_text_large) or
+        $valtype->has_value({ scof => $C_text_large }) )
     {
 #        debug "Got a valbin value that IS a TEXT_LARGE";
 	unless( utf8::decode( $val ) )
@@ -181,7 +182,7 @@ sub new_from_db
     elsif( $valtype->coltype eq 'valbin' )
     {
 	# treat as non-text
-        debug "Got a valbin value that is not text_large";
+        debug sprintf "Got a valbin value that is not text_large (%s)", $valtype->sysdesig;
     }
     elsif( defined $val )
     {

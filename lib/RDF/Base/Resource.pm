@@ -5515,7 +5515,7 @@ sub wu
 
     if( ($args->{'label'}||'') eq '1' )
     {
-        debug "Args label is ".$args->{'label'};
+#        debug "Args label is ".$args->{'label'};
         $args->{'label'} = $pred;
     }
 
@@ -8262,7 +8262,7 @@ sub initiate_prop
 	    if( UNIVERSAL::isa $proplim, "RDF::Base::Resource" )
 	    {
 		my $obj_id = $proplim->id;
-		debug 1, "  rowcount > 100. Using obj_id from proplim $obj_id";
+		debug 2, "  rowcount > 100. Using obj_id from proplim $obj_id";
 		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
 		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
 		if( $arclim_sql )

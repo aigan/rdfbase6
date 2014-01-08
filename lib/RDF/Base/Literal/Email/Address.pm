@@ -384,10 +384,10 @@ sub vacuum_facet
     my( $a, $args ) = @_;
 
     my $class = ref $a;
-    my $orig = $a->original;
-    my $addr  = lc($a->address);
+    my $orig = $a->original || '';
+    my $addr  = lc($a->address||'');
 
-    debug "vaccuum $orig";
+    debug 2, "vaccuum $orig";
 
     if( $orig ne $addr )
     {

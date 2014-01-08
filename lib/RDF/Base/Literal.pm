@@ -1540,7 +1540,7 @@ sub vacuum_node
 
     foreach my $sc ($class, @{"${class}::ISA"})
     {
-	debug "  Vacuum literal via $sc";
+	debug 2, "  Vacuum literal via $sc";
 	if( my $method = $sc->can("vacuum_facet") )
 	{
             next if $methods{$method}++;

@@ -1098,6 +1098,21 @@ sub upgrade_db
 	$req->done;
     }
 
+    if( $ver < 7 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+        $C->get('class_handled_by_perl_module')->arc('range_card_max')->remove($args);
+
+#	$rb->update({ has_version => 7 },$args);
+	$res->autocommit;
+	$req->done;
+    }
+
+
+
+
+
+
     if( 0 ) ### Depencency problems
     {
         my $req = Para::Frame::Request->new_bgrequest();
