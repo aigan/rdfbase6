@@ -5,7 +5,7 @@ package RDF::Base::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -810,6 +810,7 @@ sub parse_sortargs
 		if( my $pred = RDF::Base::Pred->get_by_anything( $pred_str,
 								 {
 								  %$args,
+                                                                  nonfatal => 1,
 								 }))
 		{
 		    my $coltype = $pred->coltype;

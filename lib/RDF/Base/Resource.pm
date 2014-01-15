@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -5423,7 +5423,7 @@ sub wu
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
-# if( $pred_name eq 'pecified_place' ) ### DEBUG
+# if( $pred_name eq 'agreeing_service_provider' ) ### DEBUG
 # {
 #     debug "WU ".$node->sysdesig." --".$pred_name."-->\n".query_desig($args_in);
 # }
@@ -5798,9 +5798,19 @@ sub wuirc
 
     $args->{'source'} = $subj;
 
+    my $show_args;
+    if( $args->{show_implicit} )
+    {
+        $show_args = $args;
+    }
+    else
+    {
+        $show_args = aais($args,'explicit');
+    }
+
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
-		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
+		 $subj->revarc_list( $pred->label, undef, $show_args )
+		 : $subj->arc_list( $pred->label, undef, $show_args ) );
 
     unless( defined $args->{'arc_type'} )
     {
@@ -6128,6 +6138,10 @@ sub wu_select_tree
 
 Display a select of everything that is -> $type
 
+args:
+  select_optgroup
+  desig
+
 =cut
 
 sub wu_select
@@ -6154,6 +6168,7 @@ sub wu_select
     my $arc = $args->{'arc_id'} ? get($args->{'arc_id'}) : undef;
     my $if = ( $args->{'if'} ? '__if_'. $args->{'if'} : '' );
     my $extra = '';
+    my $desig_pred = $args->{desig} || 'desig';
 
     # Widget may show selected value before this widget is called
     my $set_value = $singular ? 1 : 0;
@@ -6178,12 +6193,12 @@ sub wu_select
 
 	while( my $arc = $arclist->get_next_nos )
 	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+	    $out .= $arc->value->$desig_pred .'&nbsp;'. $arc->edit_link_html .'<br/>';
 	}
 	return $out;
     }
 
-    debug 2, "Building select widget for ".$subj->desig." $pred_name";
+#    debug 1, "Building select widget for ".$subj->desig." $pred_name";
 
     my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
       .'pred_'. $pred_name . $if;
@@ -6203,21 +6218,32 @@ sub wu_select
     my( $range, $range_pred ) = range_pred($args);
     $range_pred ||= 'is';
 
-#    debug "TYPE ".$type;
+#    debug "TYPE ".$type->sysdesig;
 #    debug "RANGE_PRED ".$range_pred;
     my $rev_range_pred = 'rev_'.$range_pred;
     $rev_range_pred =~ s/^rev_rev_//;
 
     my $dir = ( $rev_range_pred =~ /^rev_/ ) ? 'subj' : 'obj';
 
+    my $optgroup_pred = $args->{select_optgroup};
+
+    my @sortargs = 'distance';
+    if( $optgroup_pred )
+    {
+        push @sortargs, $dir.'.'.$optgroup_pred.'.desig';
+    }
+    push @sortargs, $dir.'.'.$desig_pred;
+
+#    debug "SORTARGS: @sortargs";
+
     my $ais; # arc items
     if( $dir eq 'subj' )
     {
-        $ais = $type->revarc_list($range_pred, undef, $args)->sorted(['distance','obj.desig'])->as_listobj;
+        $ais = $type->revarc_list($range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
     }
     else
     {
-        $ais = $type->arc_list($rev_range_pred, undef, $args)->sorted(['distance','subj.desig'])->as_listobj;
+        $ais = $type->arc_list($rev_range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
     }
 
 #    my $items = $type->$rev_range_pred(undef, $args)->sorted(['distance','desig'])->as_listobj;
@@ -6227,7 +6253,7 @@ sub wu_select
 
 #      sorted(['name_short', 'desig', 'label'])->as_listobj;
 
-#    debug "ITEMS ".$ais->sysdesig;
+#    debug "ITEMS ".$ais->sorted(['distance','subj.desig'])->as_listobj->subj->sysdesig;
 
     $req->may_yield;
     die "cancelled" if $req->cancelled;
@@ -6235,7 +6261,12 @@ sub wu_select
     confess( "Trying to make a select of ". $ais->size .".  That's not wise." )
       if( $ais->size > 500 );
 
+    my $optgroup;
+    my $args_direct = aais($args,'direct');
+    my $cur_optgroup = '';
+
 #    debug "select $key";
+    $ais->reset;
     while( my $ai = $ais->get_next_nos )
     {
 	unless( $ais->count % 100 )
@@ -6249,6 +6280,21 @@ sub wu_select
         my $lvl = $ai->distance;
         my $item = $ai->$dir;
 
+        if( $optgroup_pred )
+        {
+            $optgroup = $item->arc_list($optgroup_pred, undef, $args_direct)->obj->desig;
+            unless( $optgroup eq $cur_optgroup )
+            {
+                if( $cur_optgroup )
+                {
+                    $out .= '</optgroup>';
+                }
+                $cur_optgroup = $optgroup;
+                $out .= sprintf '<optgroup label="%s">', CGI->escapeHTML($cur_optgroup);
+            }
+        }
+
+
 #        debug "  option ".$item->sysdesig;
 
 	$out .= '<option class="rb_arc_distance_'.$lvl.'" value="'. $item->id .'"';
@@ -6261,8 +6307,13 @@ sub wu_select
         }
 
 #	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
-	$out .= '>'.$item->desig.'</option>';
+	$out .= '>'.$item->$desig_pred.'</option>';
     }
+    if( $cur_optgroup )
+    {
+        $out .= "</optgroup>";
+    }
+
     $out .= '</select>';
     if( $set_value )
     {

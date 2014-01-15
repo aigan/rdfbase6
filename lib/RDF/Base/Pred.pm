@@ -5,7 +5,7 @@ package RDF::Base::Pred;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -469,7 +469,7 @@ sub find_by_anything
     else
     {
 	# Check that this is a pred is done in init()
-	push @new, $this->get_by_label($label);
+	push @new, $this->get_by_label($label, $args);
     }
 
     return RDF::Base::List->new(\@new);
