@@ -5,7 +5,7 @@ package RDF::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1103,7 +1103,16 @@ sub upgrade_db
         my $req = Para::Frame::Request->new_bgrequest();
         $C->get('class_handled_by_perl_module')->arc('range_card_max')->remove($args);
 
-#	$rb->update({ has_version => 7 },$args);
+        $R->find_set({label => 'has_url'}, $args)
+          ->update({
+                    is => $pred,
+                    admin_comment => 'A salient URL of the thing',
+                    has_cyc_id => 'salientURL',
+                    range => $C->get('url'),
+                   }, $args);
+
+
+	$rb->update({ has_version => 7 },$args);
 	$res->autocommit;
 	$req->done;
     }
