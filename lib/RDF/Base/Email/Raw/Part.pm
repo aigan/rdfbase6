@@ -5,7 +5,7 @@ package RDF::Base::Email::Raw::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -20,9 +20,8 @@ RDF::Base::Email::Raw::Part
 
 =cut
 
-use 5.010;
-use strict;
-use warnings;
+use 5.014;
+no warnings "experimental";
 use utf8;
 use base qw( RDF::Base::Email::Part Para::Frame::Email );
 

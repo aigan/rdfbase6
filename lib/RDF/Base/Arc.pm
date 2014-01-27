@@ -5,7 +5,7 @@ package RDF::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -18,9 +18,8 @@ RDF::Base::Arc
 
 =cut
 
-use 5.010;
-use strict;
-use warnings;
+use 5.014;
+no warnings "experimental";
 use utf8;
 use base qw( RDF::Base::Resource );
 

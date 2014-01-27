@@ -18,10 +18,10 @@ RDF::Base::Resource
 
 =cut
 
-use 5.010;
-use strict;
-use warnings;
+use 5.014;
+no warnings "experimental";
 use utf8;
+
 use base qw( RDF::Base::Node );
 use constant CLUE_NOARC => 1;       # no arc
 use constant CLUE_NOUSEREVARC => 2; # no use rev-arc
