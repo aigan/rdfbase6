@@ -21,7 +21,7 @@ RDF::Base::Email::Raw::Part
 =cut
 
 use 5.014;
-no warnings "experimental";
+no if $] >= 5.018, warnings => "experimental";
 use utf8;
 use base qw( RDF::Base::Email::Part Para::Frame::Email );
 

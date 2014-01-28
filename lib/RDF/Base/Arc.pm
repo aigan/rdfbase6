@@ -19,7 +19,8 @@ RDF::Base::Arc
 =cut
 
 use 5.014;
-no warnings "experimental";
+#no warnings "experimental";
+no if $] >= 5.018, warnings => "experimental";
 use utf8;
 use base qw( RDF::Base::Resource );
 
