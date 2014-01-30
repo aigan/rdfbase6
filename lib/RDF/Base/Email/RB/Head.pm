@@ -31,7 +31,7 @@ use Scalar::Util qw(weaken);
 use List::Uniq qw( uniq ); # keeps first of each value
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug timediff );
+use Para::Frame::Utils qw( throw debug timediff datadump );
 
 use RDF::Base;
 use RDF::Base::List;
@@ -52,11 +52,13 @@ sub new_by_email
 
 #    $email->initiate_rel;
 
-    $head->header_set('subject', $email->list('email_subject')->as_array);
-    $head->header_set('date', $email->list('email_sent')->as_array);
-    $head->header_set('from', $email->list('email_from')->as_array);
-    $head->header_set('bcc', $email->list('email_bcc')->as_array);
-    $head->header_set('reply-to', $email->list('email_reply_to')->as_array);
+#    debug "INITIATE email subj to ".datadump([map{$_->plain}$email->list('email_subject')->as_array],2);
+
+    $head->header_set('subject', map{$_->plain} $email->list('email_subject')->as_array);
+    $head->header_set('date',  map{$_->internet_date} $email->list('email_sent')->as_array);
+    $head->header_set('from', map{$_->plain} $email->list('email_from')->as_array);
+    $head->header_set('bcc', map{ $_->plain } $email->list('email_bcc')->as_array);
+    $head->header_set('reply-to', map{$_->plain} $email->list('email_reply_to')->as_array);
 
     $head->{'rb_email'} = $email;
 
@@ -85,7 +87,7 @@ sub init_to
 #    debug timediff('init_to');
 #    $Para::Frame::REQ->may_yield;
 
-    my @to_list = $email->list('email_to')->as_array;
+    my @to_list = map{$_->plain} $email->list('email_to')->as_array;
 
 #    debug timediff('init_to email_to');
 #    $Para::Frame::REQ->may_yield;
