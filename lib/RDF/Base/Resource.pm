@@ -1068,7 +1068,13 @@ sub find_one
 	$result->{'info'}{'alternatives'}{'args'} = $args;
 	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	$req->set_error_response_path('/rb/node/query_error.tt');
-	throw('notfound', "No nodes matches query (1)");
+        if( debug )
+        {
+            debug(1,datadump($query,2));
+            debug(1,datadump($args,2));
+            debug(Carp::longmess);
+        }
+        throw('notfound', "No nodes matches query (1)");
     }
 
     return $nodes->[0];
@@ -6003,10 +6009,16 @@ sub wuirc
 
 =head2 wu_select_tree
 
+  $node->wu_select_tree( $pred_name, $type, \%args )
+
+Example:
+  $node->wu_select_tree( 'scof', $C_organization )
+
 Display a select for a resource; a new select for its rev_scof and so
 on until you've chosen one that has no scofs.
 
 A value can be preselected by setting the query param C<'arc___'. $rev .'pred_'. $pred_name>.
+
 
 TODO: Also select the value if it matches exactly a query param
 

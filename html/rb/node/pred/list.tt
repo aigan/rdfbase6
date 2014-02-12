@@ -19,6 +19,7 @@
 <table>
 <tr><th>[% sort('ID','id') %]
     <th>[% sort('Label', 'label') %]
+    <th>[% sort('Name', 'desig') %]
     <th>Domain is
     <th>Range is
     <th>Domain scof
@@ -27,7 +28,8 @@
 [% FOREACH pred IN preds.from_page %]
    [% tr2 %]
       <td>[% pred.id %]</td>
-      <td>[% pred.wu_jump %]
+      <td>[% pred.wu_jump(label=pred.label) %]
+      <td>[% pred.desig %]
       <td>[% IF pred.domain; pred.domain.wu_jump; END; %]</td>
       <td>[% UNLESS pred.id == 4; IF pred.valtype.id == 5; 'Object'; ELSE; pred.valtype.wu_jump; END; END %]</td>
       <td>[% IF pred.domain_scof; pred.domain_scof.wu_jump; END; %]</td>

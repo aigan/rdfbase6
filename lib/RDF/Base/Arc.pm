@@ -1055,7 +1055,10 @@ Rather use L</desig>, L</loc> or L</plain>.
 
 sub value
 {
-    return $_[0]->{'value_node'} ? $_[0]->value_node->first_literal($_[1]) : $_[0]->{'value'};
+    # Two steps for handling (ignoring) broken nodes
+    # Check might occure in the middle of removal/change
+    my $vn = $_[0]->value_node;
+    return $vn->is_value_node ? $vn->first_literal($_[1]) : $_[0]->{'value'};
 }
 
 
