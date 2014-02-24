@@ -5,7 +5,7 @@ package RDF::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1501,9 +1501,13 @@ sub construct_proplist
 
     my $props_out = {};
 
+#    Para::Frame::Logging->this_level(4);
 
-#    debug "Normalized props ".query_desig($props_in);
-#    debug "With args ".query_desig($args);
+    if( debug > 2 )
+    {
+        debug "Normalized props ".query_desig($props_in);
+        debug "With args ".query_desig($args);
+    }
 
     foreach my $pred_name ( keys %$props_in )
     {

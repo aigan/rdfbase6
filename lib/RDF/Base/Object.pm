@@ -5,7 +5,7 @@ package RDF::Base::Object;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -292,7 +292,10 @@ May give a longer name of the object. Defaults to L</desig>
 
 sub longdesig
 {
-    return shift->desig(@_);
+    my( $node, $args ) = @_;
+    $args ||= {};
+    $args->{desig_length_max} ||= 250;
+    return $node->desig($args);
 }
 
 

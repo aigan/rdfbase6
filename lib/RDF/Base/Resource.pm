@@ -3266,6 +3266,8 @@ sub desig  # The designation of obj, meant for human admins
 {
     my( $node, $args ) = @_;
 
+    $args ||= {};
+
 #    debug "About to give a designation for $node->{id}";
 
     my $desig;
@@ -3295,7 +3297,7 @@ sub desig  # The designation of obj, meant for human admins
     utf8::upgrade($desig);
 #    debug "Returning desig $desig";
 
-    return truncstring( \$desig );
+    return truncstring( \$desig, $args->{desig_length_max} );
 }
 
 

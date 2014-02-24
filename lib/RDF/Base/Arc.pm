@@ -5120,10 +5120,11 @@ sub set_weight
 	{
 	    unless( $val == 0 )
 	    {
+                cluck "error in set_weight";
 		throw 'validation', "$val must be 0 for weight last";
 	    }
 
-            $arc->weight_last( $args );
+            $arc->weight_last( {%$args,arc_weight_last=>undef} );
         }
 
 	# Return if no change
