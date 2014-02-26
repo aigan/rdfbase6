@@ -6340,6 +6340,74 @@ sub wu_select
 
 
 ##############################################################################
+
+=head2 wu_hiearchy
+
+=cut
+
+sub wu_hiearchy
+{
+    my( $node, $args ) = @_;
+
+    my $top = $node->relative_top($args);
+
+    my $out = $top->wu_hiearchy_children;
+
+    if( $out )
+    {
+        return $top->wu_jump . $out;
+    }
+
+    return "";
+}
+
+
+##############################################################################
+
+=head2 wu_hiearchy_children
+
+=cut
+
+sub wu_hiearchy_children
+{
+    my( $node, $args ) = @_;
+
+    my $out = "";
+
+    foreach my $child ( $node->revlist('parent_org',undef,$args)->as_array )
+    {
+        $out .= '<li>' . $child->wu_jump( $args );
+        $out .= $child->wu_hiearchy_children( $args );
+        $out .= '</li>';
+    }
+
+
+    return '<ul>'.$out.'</ul>' if $out;
+    return "";
+}
+
+
+##############################################################################
+
+=head2 relative_top
+
+=cut
+
+sub relative_top
+{
+    my( $node, $args ) = @_;
+
+    my $parent = $node->first_prop('parent_org',undef,$args);
+    if( $parent )
+    {
+        return $parent->relative_top( $args );
+    }
+
+    return $node;
+}
+
+
+##############################################################################
 ##############################################################################
 
 =head2 table_columns
