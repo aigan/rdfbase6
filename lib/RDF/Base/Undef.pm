@@ -108,7 +108,7 @@ sub as_string
 
 sub as_html
 {
-    return "<span class='na'>".locnl('undef')."</span>";
+    return "<span class='na'>&#8212;</span>";
 }
 
 ##############################################################################
