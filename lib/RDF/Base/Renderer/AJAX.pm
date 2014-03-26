@@ -5,7 +5,7 @@ package RDF::Base::Renderer::AJAX;
 #   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -37,10 +37,10 @@ sub render_output
 {
     my( $rend ) = @_;
 
-    debug "Rendering AJAX response.";
+    debug "Rendering AJAX response";
 
     my $req = $rend->req;
-    my $q = $req->q;
+    my $q = $req->{'q'};
     my $R = RDF::Base->Resource;
 
     $rend->{'ctype'} = 'html';
@@ -48,6 +48,7 @@ sub render_output
     my $params;
     if( my $params_in = $q->param('params') )
     {
+        debug "Parsing params $params_in";
         $params = from_json( $params_in );
 	debug "Got params data: ". datadump($params);
     }
@@ -59,6 +60,11 @@ sub render_output
 
     my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
     my $out = "";
+
+    unless( $file )
+    {
+        die "AJAX renerer only handles the /ajax/ path";
+    }
 
     debug "AJAX 'file': $file";
 
@@ -216,7 +222,6 @@ sub render_output
 	    return \$out;
 	}
 
-
 	my $result;
 	foreach my $lookup_pred (@$lookup_preds)
 	{
@@ -235,7 +240,6 @@ sub render_output
 		}
 	    }
 
-
 	    debug "  looking up $lookup_pred";
 	    my $params_lookup =
 	    {
@@ -247,29 +251,89 @@ sub render_output
 	    last if $result->size;
 	}
 
+        my @list;
 	if( $result )
 	{
 	    $result->reset;
-	    my @list;
+
+            my @result_properties = $q->param('result_properties')
+              || qw( form_url tooltip_html );
+
 	    while( my $node = $result->get_next_nos )
 	    {
-                push @list,
+                my $item =
                 {
-                 tooltip_html => $node->select_tooltip_html({lookup_preds=>$lookup_preds}),
                  id => $node->id,
-                 name => $node->desig,
-                 form_url => $node->form_url->as_string,
+                 name => $node->longdesig,
                 };
+
+                foreach( @result_properties )
+                {
+                    when("tooltip_html")
+                    {
+                        $item->{'tooltip_html'} =
+                          $node->select_tooltip_html({lookup_preds=>$lookup_preds});
+                    }
+                    when($node->can($_))
+                    {
+                        my $res = $node->$_;
+                        if( $res->can('as_string') )
+                        {
+                            $res = $res->as_string;
+                        }
+                        $item->{$_} = $res;
+                    }
+                    default
+                    {
+                        my @l;
+                        foreach my $v ( $node->list($_)->as_array )
+                        {
+                            if( $v->is_literal )
+                            {
+                                $v = $v->plain;
+                            }
+                            elsif( $v->is_resource )
+                            {
+                                $v = $v->id;
+                            }
+                            elsif( not $v->defined )
+                            {
+                                $v = undef;
+                            }
+                            else
+                            {
+                                die "Obj $v not handled";
+                            }
+                            push @l, $v;
+                        }
+
+                        $item->{$_} = \@l;
+                    }
+                }
+
+                push @list, $item;
+
+#                {
+#                 tooltip_html => $node->select_tooltip_html({lookup_preds=>$lookup_preds}),
+#                 id => $node->id,
+#                 name => $node->longdesig,
+#                 form_url => $node->form_url->as_string,
+#                };
             }
-	    $out = to_json( \@list );
 	}
 	else
 	{
-	    $out = to_json([{
-			       id   => 0,
-			       name => loc("No hits"),
-			      }]);
+            unless( $q->param('hide_no_hits') )
+            {
+                push @list,
+                {
+                 id   => 0,
+                 name => loc("No hits"),
+                };
+            }
 	}
+
+        $out = to_json( \@list );
     }
     elsif( $file =~ /app\/(.*)/ )
     {
@@ -284,6 +348,7 @@ sub render_output
 	if( $@ )
 	{
 	    debug "AJAX couldn't find: ". package_to_module($app);
+            debug "Error: ". datadump( $@ );
 
             $appbase = 'RDF::Base';
             $app = $appbase .'::AJAX::'. $1;
