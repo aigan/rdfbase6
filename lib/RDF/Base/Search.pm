@@ -5,7 +5,7 @@ package RDF::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -971,7 +971,7 @@ sub modify
 
 	    # Parse obj and value after coltype established
 	}
-	elsif ($key =~ m/^(rev_)?(.*?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x)
+	elsif ($key =~ m/^(rev_)?(.*?)(?:_(adirect|direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x)
 	{
 	    my $rev    = $1;
 	    my $pred   = $2;
