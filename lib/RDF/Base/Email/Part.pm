@@ -5,7 +5,7 @@ package RDF::Base::Email::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1037,27 +1037,38 @@ sub _render_textplain
 
 sub _render_texthtml
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
+    $args ||= {};
+    my $minimal = $args->{'minimal'} || 0;
 
     my $url_path = $part->url_path(undef,'text/html');
-
-    my $msg = qq(| <a href="$url_path">View HTML message</a>\n );
-
-    if( my $other = $part->top->{'other'} )
+    if( $args->{'tt'} )
     {
-	foreach my $alt (@$other)
-	{
-	    my $type = $alt->type;
-	    my $url = $alt->url_path;
-	    $msg .= " | <a href=\"$url\">View alt in $type</a>\n";
-	}
+        $url_path .= '.tt';
     }
 
+
+    my $msg = "";
+
+    unless( $minimal )
+    {
+        $msg .= qq(| <a href="$url_path">View HTML message</a>\n );
+
+        if( my $other = $part->top->{'other'} )
+        {
+            foreach my $alt (@$other)
+            {
+                my $type = $alt->type;
+                my $url = $alt->url_path;
+                $msg .= " | <a href=\"$url\">View alt in $type</a>\n";
+            }
+        }
 #    debug "  rendering texthtml - ".$part->path." ($url_path)";
+        $msg .= "<br>";
+    }
 
 $msg .= <<EOT;
-<br>
 <iframe class="iframe_autoresize" src="$url_path" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:visible; display:block; position:static"></iframe>
 
 EOT
@@ -1123,7 +1134,7 @@ sub _render_headers
 
 sub _render_alt
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
 #    debug "  rendering alt - ".$part->path;
 
@@ -1183,7 +1194,7 @@ sub _render_alt
 
 #    debug "  rendering alt - done";
 
-    return $choice->$renderer;
+    return $choice->$renderer($args);
 }
 
 
@@ -1191,7 +1202,7 @@ sub _render_alt
 
 sub _render_mixed
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
 #    debug "  rendering mixed - ".$part->path;
 
@@ -1211,7 +1222,7 @@ sub _render_mixed
 	{
 #	    debug "Interpart a RFC822";
 	    my $rfc822 = $part->parent->interpart($part);
-	    my $msg = $rfc822->_render_rfc822;
+	    my $msg = $rfc822->_render_rfc822($args);
 #	    debug "Interpart a RFC822 - done";
 	    return $msg;
 	}
@@ -1251,7 +1262,7 @@ sub _render_mixed
 
 	    if( $renderer )
 	    {
-		$msg .= $alt->$renderer;
+		$msg .= $alt->$renderer($args);
 	    }
 	    else
 	    {
@@ -1271,7 +1282,7 @@ sub _render_mixed
 #		$type eq 'multipart/alternative'
 #	      )
 #	    {
-		$msg .= $alt->$renderer;
+		$msg .= $alt->$renderer($args);
 #	    }
 #	    else
 #	    {
@@ -1294,7 +1305,7 @@ sub _render_mixed
 
 sub _render_related
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
 #    debug "  rendering related - ".$part->path;
 
@@ -1361,7 +1372,7 @@ sub _render_related
 	return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
-    my $data = $choice->$renderer;
+    my $data = $choice->$renderer($args);
 
 #"cid:part1.00090900.07060702@avisita.com"
 
@@ -1405,7 +1416,7 @@ sub _render_image
 
 sub _render_rfc822
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
 #    debug "  rendering rfc822 - ".$part->path;
 
@@ -1469,7 +1480,7 @@ sub _render_rfc822
 	return "<code>No renderer defined for part $sub_path <strong>$sub_type</strong></code>";
     }
 
-    $msg .= $sub->$renderer;
+    $msg .= $sub->$renderer($args);
 
     $msg .= "</td></tr></table>\n";
 

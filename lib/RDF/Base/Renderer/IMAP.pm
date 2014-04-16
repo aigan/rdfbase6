@@ -5,7 +5,7 @@ package RDF::Base::Renderer::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -60,18 +60,24 @@ sub render_output
 
     my $req = $rend->req;
 
-    my( $nid, $search, $head );
-    if( $path =~ /\/(\d+)(?:\/([^\/]*?)(\.head)?)$/ )
+    my( $nid, $search, $head, $tt );
+    if( $path =~ /\/(\d+)(?:\/([^\/]*?)(?:\.(head|tt))?)$/ )
     {
 #	debug "$1 - $2 - $3 - $4";
 
 	$nid = $1;
 	$search = $2;
+        my $arg = $3 || '';
 
-	if( $3 )
+	if( $arg eq 'head' )
 	{
 	    $head = 1; # Show the headers
 	}
+        elsif( $arg eq 'tt' )
+        {
+            $tt = 1; # Compile TT template
+            debug "Render TT";
+        }
     }
     else
     {
@@ -274,6 +280,31 @@ sub render_output
 
 	my $email_path = $top->email->url_path;
 	$$data =~ s/(=|")\s*cid:([^> "]+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
+
+        if( $tt )
+        {
+            my $tt_params =
+            {
+             in_web_version => 1,
+             web_version => 'WEB VERSION',
+             optout => 'OPTOUT',
+            };
+
+            my $burner = Para::Frame::Burner->get_by_type('plain');
+            my $parser = $burner->parser;
+            my $tmpl_out = "";
+            my $outref = \$tmpl_out;
+            my $parsedoc = $parser->parse( $$data, {} ) or
+              throw('template', "parse error: ".$parser->error);
+            my $doc = Template::Document->new($parsedoc) or
+              throw('template', $Template::Document::ERROR);
+            $burner->burn($rend, $doc, $tt_params, $outref) or
+              throw('template', $Template::Document::ERROR);
+
+            $data = $outref;
+        }
+
+
 	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
 	    my $subject = encode( $top->charset_guess, $email->subject );

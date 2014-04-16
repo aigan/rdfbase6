@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -238,7 +238,7 @@ sub url_path
 
 sub body_as_html
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
     return "<strong>not found</strong>" unless $part->exist;
 
@@ -261,20 +261,27 @@ sub body_as_html
     my $nid = $part->email->id;
     $s->{'email_imap'}{$nid} ||= {};
 
+    $args ||= {};
 
 #    debug datadump( $part->struct, 20);
 #    debug $part->desig;
 
+    my $minimal = $args->{'minimal'} || 0;
+
 
     my $top_path = $part->url_path;
-    my $msg = "<a href=\"$top_path\">Download email</a>\n";
+    my $msg = "";
 
-    my $head_path = $part->email->url_path. ".head";
-    $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
+    unless( $minimal )
+    {
+        $msg .= "<a href=\"$top_path\">Download email</a>\n";
+        my $head_path = $part->email->url_path. ".head";
+        $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
+    }
 
-    $msg .= $bp->$renderer();
+    $msg .= $bp->$renderer($args);
 
-    $msg .= $bp->attachments_as_html();
+    $msg .= $bp->attachments_as_html() unless $minimal;
 
     return $msg;
 }

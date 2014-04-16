@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -207,7 +207,7 @@ See L<RDF::Base::Email::Part/charset>
 
 sub charset
 {
-    return lc $_[0]->struct->charset;
+    return lc( $_[0]->struct->charset||'');
 }
 
 
@@ -280,7 +280,7 @@ sub encoding
 {
     confess "No struct" unless $_[0]->struct;
 
-    my $enc = lc $_[0]->struct->encoding;
+    my $enc = lc( $_[0]->struct->encoding||'');
 
     # Found a case where the encoding returned was actually the
     # boundary. Use complete head if encoding found not common

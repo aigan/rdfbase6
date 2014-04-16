@@ -5,7 +5,7 @@ package RDF::Base::Email::RB;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -114,7 +114,7 @@ sub body
 
 sub body_as_html
 {
-    my( $part ) = @_;
+    my( $part, $args ) = @_;
 
     if( my $raw = $part->email->first_prop('email_body') )
     {
@@ -127,7 +127,7 @@ sub body_as_html
     {
 	my $tmpleo = $part->{'template_email_obj'} ||=
 	  RDF::Base::Email::IMAP->new_by_email( $tmple );
-	return $tmpleo->body_as_html;
+	return $tmpleo->body_as_html($args);
     }
 
     return "";
