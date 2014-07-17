@@ -721,6 +721,39 @@ sub find_by_anything
 
 ##############################################################################
 
+=head2 find_by_string
+
+used by L</update_by_query_arc>
+
+=cut
+
+sub find_by_string
+{
+    my( $node, $value, $props_in, $args) = @_;
+
+#    $value = $node->find_by_string($value, $props_in, $args);
+
+    my $list = RDF::Base::Resource->find_by_anything( $value, $args );
+
+    my $props = {};
+    if( $props_in->{'is'} )
+    {
+        $props->{'is'} = $props_in->{'is'};
+    }
+
+    if( $props_in->{'scof'} )
+    {
+        $props->{'scof'} = $props_in->{'scof'};
+    }
+
+    $value = $list->get($props);
+
+    return $value;
+}
+
+
+##############################################################################
+
 =head2 get_id
 
   $n->get_id( $anything )
@@ -1289,30 +1322,43 @@ sub set_one
 			   });
     }
 
+    my $query_new = convert_query_prop_for_creation($query);
+
+    my $default_create = $args->{'default_create'} || {};
+    foreach my $pred ( keys %$default_create )
+    {
+        unless( defined $query_new->{$pred} )
+        {
+            $query_new->{$pred} = $default_create->{$pred};
+        }
+    }
+
+    my $default = $args->{'default'} || {};
+    foreach my $pred ( keys %$default )
+    {
+        unless( defined $query_new->{$pred} )
+        {
+            $query_new->{$pred} = $default->{$pred};
+        }
+    }
+
     unless( $node )
     {
-	my $query_new = convert_query_prop_for_creation($query);
-
-	my $default_create = $args->{'default_create'} || {};
-	foreach my $pred ( keys %$default_create )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default_create->{$pred};
-	    }
-	}
-
-	my $default = $args->{'default'} || {};
-	foreach my $pred ( keys %$default )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default->{$pred};
-	    }
-	}
-
 	return $this->create($query_new, $args);
     }
+
+    if( $args->{'activate_new_arcs'} )
+    {
+        foreach my $pred ( keys %$query_new )
+        {
+            foreach my $arc ( $node->arc_list($pred,undef,['new','submitted'])->as_array )
+            {
+                $arc->submit($args) if $arc->is_new;
+                $arc->activate($args) if $arc->submitted;
+            }
+        }
+    }
+
 
     return $node;
 }
@@ -4853,7 +4899,7 @@ sub merge_node
     # Avoide recursive loops
     if( $node1->{'merging'} )
     {
-        cluck sprintf("Merging of %s in progress", $node1->id);
+        cluck sprintf("Merging of %d with %d in progress", $node1->id, $node2->id);
         return $node2;
     }
     $node1->{'merging'} = $node2; # Avoide recursive loops
@@ -7473,12 +7519,12 @@ sub get_by_label
 
 	unless( $id )
 	{
+            cluck "Constant not found";
 	    if( $args->{'nonfatal'} )
 	    {
 		debug "!!!! Constant $label doesn't exist";
 		return undef;
 	    }
-            cluck "Constant not found";
 	    throw('notfound', "Constant $label doesn't exist");
 	}
 
@@ -9030,20 +9076,12 @@ sub update_by_query_arc
 	}
 	else
 	{
-	    my $list = RDF::Base::Resource->find_by_anything( $value, $args );
+#            debug "Trying to find $value with args ".
+#              datadump($args,1)." and props ".datadump($props_in,1).
+#                " for $node";
 
-	    my $props = {};
-	    if( $props_in->{'is'} )
-	    {
-		$props->{'is'} = $props_in->{'is'};
-	    }
-
-	    if( $props_in->{'scof'} )
-	    {
-		$props->{'scof'} = $props_in->{'scof'};
-	    }
-
-	    $value = $list->get($props);
+            $value = $node->find_by_string($value, $props_in, $args);
+#            debug "  found ".$value->sysdesig;
 	}
 
 	$arc = $arc->set_value( $value, $args );

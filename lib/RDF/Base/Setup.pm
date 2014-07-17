@@ -1118,6 +1118,50 @@ sub upgrade_db
     }
 
 
+    if( $ver < 8 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+	my $C_class = $C->get('class');
+        my $C_predicate = $C->get('predicate');
+
+        my $m_ea = $R->find_set({code => 'RDF::Base::Email::Address',
+                                 is=>$C->get('class_perl_module')},$args);
+
+        my $c_ea = $R->find_set({label => 'email_address_obj'},$args)
+          ->update({
+                    is => $C_class,
+                    has_cyc_id => 'EMailAddress',
+                    class_handled_by_perl_module => $m_ea,
+                   },$args);
+
+        $R->find_set({label => 'has_email_address_obj'},$args)
+          ->update({
+                    domain => $C->get('intelligent_agent'),
+                    range => $c_ea,
+                    is => $C_predicate,
+                   },$args);
+
+        $R->find_set({label => 'ea_original'},$args)
+          ->update({
+                    domain => $c_ea,
+                    range => $C->get('email_address'),
+                    is => $C_predicate,
+                    range_card_max => 1,
+                   },$args);
+
+
+
+
+#        $rg->update({ has_version => 8 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+
+
+
+
 
 
 

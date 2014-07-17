@@ -547,6 +547,7 @@ sub handle_query_arc_value
 	debug "handle_query_arc $arc_id";
 	debug "  param $param = $value";
 	debug "  subj : ".($subj||'');
+        debug "  pred : ".($pred_name||'');
 	debug "  type : ".($type||'');
 	debug "  scof : ".($scof||'');
 	debug "  desig: ".($desig||'');
@@ -1122,6 +1123,8 @@ sub handle_query_arc_value
 	    {
 		debug 3, "  Pred is of objtype";
 
+                my $range_class = $pred->valtype->instance_class;
+
 		# Support adding more than one obj value with ','
 		#
 		my @values;
@@ -1136,7 +1139,13 @@ sub handle_query_arc_value
 
 		foreach my $val ( @values )
 		{
-		    my $objs = $R->find_by_anything($val, $args);
+                    debug "NODE ".$args->{node}->sysdesig;
+
+                    debug "VALTYPE ".$pred->valtype->instance_class;
+                    #die "fixme";
+                    ### DEBUG: FIXME
+
+		    my $objs = $range_class->find_by_string($val, {}, $args);
 
 		    unless( $rev )
 		    {
@@ -1262,7 +1271,7 @@ sub handle_query_arc_value
 		      create({
 			      subj    => $subj->id,
 			      pred    => $pred_id,
-			      value   => $val,
+			      value   => $objs->get_first_nos,
 			     }, $args );
 
 		    # Store row info

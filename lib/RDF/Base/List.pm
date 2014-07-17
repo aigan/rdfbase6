@@ -2260,7 +2260,7 @@ AUTOLOAD
     }
     $self->set_index( $index );
 
-    # Don't assume it it the same as the calle class
+    # Don't assume it is the same as the call class
     $list_class ||= "RDF::Base::List";
 
     if( $DEBUG > 2 )

@@ -5,7 +5,7 @@ package RDF::Base::Email::RB::Head;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -48,17 +48,23 @@ sub new_by_email
 {
     my( $class, $email ) = @_;
 
-    my $head = $class->new("");
+    my $head = $class->new("X-rb: $RDF::Base::VERSION\r\n");
 
 #    $email->initiate_rel;
 
 #    debug "INITIATE email subj to ".datadump([map{$_->plain}$email->list('email_subject')->as_array],2);
 
-    $head->header_set('subject', map{$_->plain} $email->list('email_subject')->as_array);
-    $head->header_set('date',  map{$_->internet_date} $email->list('email_sent')->as_array);
-    $head->header_set('from', map{$_->plain} $email->list('email_from')->as_array);
-    $head->header_set('bcc', map{ $_->plain } $email->list('email_bcc')->as_array);
-    $head->header_set('reply-to', map{$_->plain} $email->list('email_reply_to')->as_array);
+    my @subject_raw = map{$_->plain} $email->list('email_subject')->as_array;
+    my @date_raw = map{$_->internet_date} $email->list('email_sent')->as_array;
+    my @from_raw = map{$_->plain} $email->list('email_from')->as_array;
+    my @bcc_raw = map{ $_->plain } $email->list('email_bcc')->as_array;
+    my @replyto_raw = map{$_->plain} $email->list('email_reply_to')->as_array;
+
+    $head->header_set('subject', @subject_raw) if @subject_raw;
+    $head->header_set('date',  @date_raw) if @date_raw;
+    $head->header_set('from', @from_raw) if @from_raw;
+    $head->header_set('bcc', @bcc_raw) if @bcc_raw;
+    $head->header_set('reply-to', @replyto_raw) if @replyto_raw;
 
     $head->{'rb_email'} = $email;
 
