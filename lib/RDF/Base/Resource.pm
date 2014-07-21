@@ -5947,7 +5947,7 @@ sub wuirc
 #	debug "Getting table columns for class ".$range->find_class;
 	my $columns = $args->{'columns'} ||
 	  $range->instance_class->table_columns( $pred, $args );
-	unshift @$columns, '-arc_remove';
+	push @$columns, '-arc_remove';
 	$args->{'columns'} = $columns;
 #	debug "Columns: ".datadump($columns);
 

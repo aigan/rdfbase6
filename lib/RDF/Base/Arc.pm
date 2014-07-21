@@ -2449,11 +2449,8 @@ sub table_row
 		    if( $ajax )
 		    {
 			my $arc_id = $arc->id;
-			$out .= $q->input({ type => 'button',
-					    value => '-',
-					    onclick => "rb_remove_arc('$divid',$arc_id,$subj_id)",
-					    class => 'nopad',
-					  });
+			my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
+			$out .= "<button onclick=\"$onclick\" class=\"no_button nopad\"><i class=\"fa fa-trash-o\"></i></button>";
 		    }
 		    else
 		    {
