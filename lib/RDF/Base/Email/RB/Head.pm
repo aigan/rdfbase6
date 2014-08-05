@@ -112,7 +112,7 @@ sub init_to
     my( $to_obj, $to_err ) = $to_obj_list->get_first;
     while( !$to_err )
     {
-	push @to_list, $to_obj->email_main->plain, $to_obj->contact_email->plain;
+	push @to_list, $to_obj->has_email_address_obj->loc, $to_obj->has_contact_email_address_obj->loc;
 
 	unless( $to_obj_list->count % 1000 )
 	{

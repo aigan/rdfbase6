@@ -171,8 +171,14 @@ sub wuirc
 	 subj => $subj,
 	};
 
+        my $default = '';
+        if( my $def = $args->{default_value} )
+        {
+            $default = $def->address;
+        }
+
         $out .= input( build_field_key($props),
-                       '',
+                       $default,
                        {
                         class => $args->{'class'},
                         size => $size,
@@ -188,13 +194,6 @@ sub wuirc
 
 ##############################################################################
 
-sub desig
-{
-    return shift->prop('ea_original')->address(@_);
-}
-
-##############################################################################
-
 sub find_by_string
 {
     my( $node, $value, $props_in, $args) = @_;
@@ -204,6 +203,155 @@ sub find_by_string
 
 
     return RDF::Base::Email::Address->new( $value, $args );
+}
+
+##############################################################################
+
+sub parse
+{
+    my( $node, $value, $args) = @_;
+
+    return RDF::Base::Email::Address->new( $value, $args );
+}
+
+##############################################################################
+
+sub broken
+{
+    return $_[0]->first_prop('ea_original')->broken();
+}
+
+##############################################################################
+
+sub error_message
+{
+    return $_[0]->first_prop('ea_original')->error_message();
+}
+
+##############################################################################
+
+sub as_string
+{
+    debug "code for $_[0]";
+    return $_[0]->first_prop('code')->plain;
+}
+
+##############################################################################
+
+sub original
+{
+    return $_[0]->first_prop('ea_original')->original;
+}
+
+##############################################################################
+
+sub user
+{
+    return $_[0]->first_prop('name')->plain;
+}
+
+##############################################################################
+
+sub address
+{
+    return $_[0]->first_prop('code')->plain;
+}
+
+##############################################################################
+
+sub host
+{
+    return $_[0]->first_prop('ea_original')->host;
+}
+
+##############################################################################
+
+sub format
+{
+    my( $ea ) = shift @_;
+    return $ea->first_prop('ea_original')->format(@_);
+}
+
+##############################################################################
+
+sub format_mime
+{
+    my( $ea ) = shift @_;
+    return $ea->first_prop('ea_original')->format_mime(@_);
+}
+
+##############################################################################
+
+sub format_human
+{
+    my( $ea ) = @_;
+
+    my $name = $ea->first_prop('name');
+
+    if( $name )
+    {
+	return sprintf "%s <%s>", $name, $ea->first_prop('code');
+    }
+    else
+    {
+	return $ea->first_prop('code');
+    }
+}
+
+##############################################################################
+
+sub phrase
+{
+    shift->first_prop('ea_original')->phrase(@_);
+}
+
+##############################################################################
+
+sub comment
+{
+    return shift->first_prop('ea_original')->comment(@_);
+}
+
+##############################################################################
+
+sub desig
+{
+    return shift->prop('ea_original')->format();
+}
+
+##############################################################################
+
+sub sysdesig
+{
+    return shift->prop('ea_original')->sysdesig();
+}
+
+##############################################################################
+
+sub literal
+{
+    return shift->prop('ea_original')->literal();
+}
+
+##############################################################################
+
+sub loc
+{
+    return shift->prop('ea_original')->loc();
+}
+
+##############################################################################
+
+sub plain
+{
+    return shift->first_prop('code')->plain;
+}
+
+##############################################################################
+
+sub as_html
+{
+    return shift->prop('ea_original')->as_html(@_);
 }
 
 ##############################################################################

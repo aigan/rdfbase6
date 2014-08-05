@@ -1351,10 +1351,21 @@ sub set_one
     {
         foreach my $pred ( keys %$query_new )
         {
-            foreach my $arc ( $node->arc_list($pred,undef,['new','submitted'])->as_array )
+            if( $pred =~ /^rev_(.*)/ )
             {
-                $arc->submit($args) if $arc->is_new;
-                $arc->activate($args) if $arc->submitted;
+                foreach my $arc ( $node->revarc_list($1,undef,['new','submitted'])->as_array )
+                {
+                    $arc->submit($args) if $arc->is_new;
+                    $arc->activate($args) if $arc->submitted;
+                }
+            }
+            else
+            {
+                foreach my $arc ( $node->arc_list($pred,undef,['new','submitted'])->as_array )
+                {
+                    $arc->submit($args) if $arc->is_new;
+                    $arc->activate($args) if $arc->submitted;
+                }
             }
         }
     }
@@ -4771,23 +4782,33 @@ sub vacuum_node
 
     return $n if $res->{'vacuumed'}{$n->{'id'}} ++;
 
+    my $DEBUG = 0;
+
     my $class = ref $n;
     no strict "refs";
 
-#    debug "Called vacuum_node for $class";
+    debug "Called vacuum_node for $class" if $DEBUG;
 
     my %methods;
 
     #### Start with the base classes, like RDF::Base::Resource
-    #### end with the more specific classes
-    foreach my $sc (reverse $class, @{"${class}::ISA"})
+    #### end with the more specific classes.
+    #### Also call custom resource class, if existing
+
+    my @classlist = reverse $class, @{"${class}::ISA"};
+    if( my $rc = $Para::Frame::CFG->{'resource_class'} )
     {
-#	debug "  Vacuum ${$n}{id} via $sc";
+        unshift @classlist, $rc;
+    }
+
+    foreach my $sc (@classlist)
+    {
+	debug "  Vacuum ${$n}{id} via $sc" if $DEBUG;
 	if( my $method = $sc->can("vacuum_facet") )
 	{
             next if $methods{$method}++;
             next unless $n->isa($sc); # Might have changed
-#            debug "  found $method";
+            debug "  found $method" if $DEBUG;
 	    &{$method}($n, $args);
 	}
     }

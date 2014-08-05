@@ -1128,6 +1128,9 @@ sub upgrade_db
         my $m_ea = $R->find_set({code => 'RDF::Base::Email::Address',
                                  is=>$C->get('class_perl_module')},$args);
 
+        $C->get('request_ticket_queue')->add({scof=>$C->get('intelligent_agent')}, $args);
+
+
         my $c_ea = $R->find_set({label => 'email_address_obj'},$args)
           ->update({
                     is => $C_class,
@@ -1136,6 +1139,13 @@ sub upgrade_db
                    },$args);
 
         $R->find_set({label => 'has_email_address_obj'},$args)
+          ->update({
+                    domain => $C->get('intelligent_agent'),
+                    range => $c_ea,
+                    is => $C_predicate,
+                   },$args);
+
+        $R->find_set({label => 'has_contact_email_address_obj'},$args)
           ->update({
                     domain => $C->get('intelligent_agent'),
                     range => $c_ea,

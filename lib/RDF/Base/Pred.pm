@@ -702,8 +702,8 @@ sub on_new_range
 #    my $old_coltype_id = $pred->coltype_id;
     my $old_coltype_id = $pred->{'coltype'} || 0;
 
-    debug "  OLD: ".$range_old->sysdesig;
-    debug "  NEW: ".$range_new->sysdesig;
+#    debug "  OLD: ".$range_old->sysdesig;
+#    debug "  NEW: ".$range_new->sysdesig;
 
 
     # Updating coltype

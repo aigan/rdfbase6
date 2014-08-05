@@ -754,7 +754,7 @@ sub send
     my $to_obj_list = $email->list( 'email_to_obj', undef, $args );
 
     my $first_to = $to_list->get_first_nos;
-    $first_to ||= $to_obj_list->get_first_nos->email_main;
+    $first_to ||= $to_obj_list->get_first_nos->first_prop('has_email_address_obj')->address;
 
     if( $email->prop('has_imap_url', undef, $args ) )
     {
@@ -833,7 +833,7 @@ sub send
     my( $to_obj, $to_obj_err ) = $to_obj_list->get_first;
     while( !$to_obj_err )
     {
-	my $to = $to_obj->email_main;
+	my $to = $to_obj->first_prop('has_email_address_obj')->address;
 	debug "To $to";
 
 	unless( $to_obj_list->count % 100 )
@@ -909,7 +909,7 @@ sub validate_as_template
     my $to_obj_list = $email->list( 'email_to_obj', undef, $args );
 
     my $to_obj = $to_obj_list->get_first_nos || $args->{'to_obj'};
-    my $to = $to_obj->first_prop('email_main');
+    my $to = $to_obj->first_prop('has_email_address_obj')->address;
 
     $esp->{'reply_to'}  = $email->email_reply_to;
     $esp->{'subject'}   = $email->email_subject || "Test subject";

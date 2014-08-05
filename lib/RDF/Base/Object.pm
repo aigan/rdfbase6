@@ -814,7 +814,7 @@ sub meets_proplim
 	my $target_value =  $proplim->{$pred_part};
 
 	#                      Regexp compiles once
-	unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[join '|', keys %RDF::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
+	unless( $pred_part =~ m/^(rev_)?(\w+?)(?:_(@{[CORE::join '|', keys %RDF::Base::Arc::LIM]}))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/xo )
 	{
 	    $Para::Frame::REQ->result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
 	    unless( $pred_part )

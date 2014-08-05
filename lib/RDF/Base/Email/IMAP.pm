@@ -82,6 +82,40 @@ sub new_by_email
 
 ##############################################################################
 
+=head2 new_by_imap_url
+
+=cut
+
+sub new_by_imap_url
+{
+    die "calls to ->email still exists";
+
+    my( $class, $imap_url, $head ) = @_;
+
+    unless( $imap_url )
+    {
+	confess "imap_url missing";
+    }
+
+
+    $imap_url =~ /;UID=(\d+)/ or
+      die "Couldn't extract uid from url $imap_url";
+    my $uid = $1;
+
+    my $part = bless
+    {
+     head => $head,       # may be undef
+     imap_url => $imap_url,
+     uid => $uid,
+    }, $class;
+    weaken( $part->{'email'} );
+
+    return $part;
+}
+
+
+##############################################################################
+
 =head2 head_complete
 
 =cut

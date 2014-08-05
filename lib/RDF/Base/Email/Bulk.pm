@@ -170,8 +170,8 @@ sub process
 	}
 	chomp($to_id);
 	my $to_obj = $R->get($to_id);
-	my $to = $to_obj->email_main->as_arrayref;
-	debug "To ".$to_obj->email_main;
+	my $to = $to_obj->list('has_email_address_obj')->first_prop('code')->as_arrayref;
+#	debug "To ".$to_obj->list('has_email_address_obj');
 	$bulk->{'state'}{'cnt_proc'} ++;
 	eval
 	{

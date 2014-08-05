@@ -5,7 +5,7 @@ package RDF::Base::Literal::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -227,7 +227,7 @@ debugging.
 
 sub sysdesig
 {
-    my $value  = $_[0]->plain;
+    my $value  = $_[0]->plain || 'undef';
     return "email_address:$value";
 }
 

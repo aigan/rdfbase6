@@ -2886,7 +2886,7 @@ sub vacuum_facet
 	}
 
 
-	unless( $arc->old )
+	unless( $arc->old or $arc->is_removal )
 	{
 	    debug "  check valtype" if $DEBUG;
 	    unless( $arc->check_valtype( $args ) )
@@ -4007,7 +4007,7 @@ sub create_removal
     # The create() method will take care of the activation of the
     # removal if args activate_new_arcs is true.
 
-    return RDF::Base::Arc->create({
+    my $arc =  RDF::Base::Arc->create({
 				   common      => $arc->common_id,
 				   replaces    => $arc->id,
 				   subj        => $arc->{'subj'},
@@ -4015,6 +4015,8 @@ sub create_removal
 				   value       => is_undef,
 				   valtype     => 0,
 				  }, $args);
+#    debug "Created removal arc ".$arc->sysdesig;
+    return $arc;
 }
 
 
@@ -4657,6 +4659,8 @@ sub activate
     my( $arc, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
 
+#    debug "Activating ".$arc->sysdesig;
+
     return 0 if $arc->is_removed;
 
     my $aid = $arc->id;
@@ -4690,6 +4694,8 @@ sub activate
 
     if( $arc->{'valtype'} ) # Not a REMOVAL arc
     {
+
+#        debug "  not a removal";
 	# Replaces is already set if this version is based on another
 	# It may be another version than the currently active one
 
@@ -4709,6 +4715,7 @@ sub activate
     }
     else # This is a REMOVAL arc
     {
+#        debug "  is a removal";
 	if( my $rarc = $arc->replaces )
 	{
 	    if( $rarc->old )
