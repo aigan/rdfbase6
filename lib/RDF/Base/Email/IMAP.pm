@@ -29,7 +29,7 @@ use constant EA => 'RDF::Base::Literal::Email::Address';
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use IMAP::BodyStructure;
+use IMAP::BodyStructure; # Patched _get_nstring in this file
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -387,6 +387,8 @@ sub struct
 
     my $res = $folder->imap_cmd('fetch', $uid,"bodystructure");
 
+#    debug "FETCHED:\n@$res\n---\n";
+
     do
     {
 	shift @$res;
@@ -402,6 +404,8 @@ sub struct
     {
 	die "No struct returned for\n$raw";
     }
+
+#    debug datadump($struct); ### DEBUG
 
     return $part->{'struct'} = $struct;
 }
@@ -538,6 +542,36 @@ sub is_top
 {
     return 1;
 }
+
+
+##############################################################################
+##############################################################################
+#
+# Patch IMAP::BodyStructure 1.01
+#
+package IMAP::BodyStructure;
+sub _get_nstring(\$) {
+#    warn "in patched _get_nstring";
+
+    my $str = $_[0];
+    $$str =~ /\G\s+/gc;
+    if ($$str =~ /\GNIL/gc) {
+        return undef;
+    } elsif ($$str =~ m/\G(\"(?>[^\\\"]*(?:\\.[^\\\"]*)*)\")/gc) {
+        return _unescape($1);
+    } elsif ($$str =~ /\G\{(\d+)\}\r\n/gc) {
+        my $pos = pos($$str);
+        my $data = substr $$str, $pos, $1;
+        pos($$str) = $pos + $1;
+        return $data;
+        ### Changed to accept spaces
+    } elsif ($$str =~ /\G([^"\(\)\{\%\*\"\\\x00-\x1F]+)/gc) {
+        return $1;
+    }
+    return 0;
+}
+package IMAP::BodyStructure::Envelope;
+*_get_nstring = \&IMAP::BodyStructure::_get_nstring;
 
 
 ##############################################################################

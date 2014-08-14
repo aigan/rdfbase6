@@ -99,9 +99,9 @@ sub parsed_field
 {
     my( $header, $field_in, $value ) = @_;
 
-    my $field = lc($field_in);
+    my $field = lc($field_in||'');
 
-    debug "  parsing field '$field'";
+#    debug "  parsing field '$field'";
 
     if( $field eq 'subject' )
     {

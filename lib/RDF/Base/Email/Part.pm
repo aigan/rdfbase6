@@ -54,7 +54,7 @@ use RDF::Base::Literal::Email::Subject;
 use RDF::Base::Email::Head;
 use RDF::Base::Email::Raw::Part;
 use RDF::Base::Email::Interpart;
-
+use RDF::Base::Email::Classifier;
 
 #our $MIME_TYPES;
 
@@ -179,10 +179,35 @@ sub envelope
 sub first_part_with_type
 {
     my( $part, $type ) = @_;
+#    debug "first_part_with_type($type)";
+    my $class = ref($part);
+
+    if( $part->type =~ /^$type/ )
+    {
+        return $part;
+    }
+    else
+    {
+        return $part->first_subpart_with_type( $type );
+    }
+}
+
+
+##############################################################################
+
+=head2 first_subpart_with_type
+
+=cut
+
+sub first_subpart_with_type
+{
+    my( $part, $type ) = @_;
+#    debug "first_subpart_with_type($type)";
     my $class = ref($part);
 
     foreach my $sub ( $part->parts )
     {
+#        debug "  check ".$sub->type;
 	if( $sub->type =~ /^$type/ )
 	{
 	    return $sub;
@@ -620,7 +645,7 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
-    debug "Getting header $_[1]";
+#    debug "Getting header $_[1]";
 
     if( $_[1] eq 'to' )
     {
@@ -1147,7 +1172,11 @@ sub _render_alt
        'text/plain' => 0,
       );
 
+#    debug "ALTS: @alts";
+
     my $choice = shift @alts;
+    return "" unless $choice;
+
 #   debug sprintf "Considering %s at %s",
 #     $choice->type, $choice->path;
     my $score = $prio{ $choice->type } || 1; # prefere first part
@@ -1156,6 +1185,7 @@ sub _render_alt
 
     foreach my $alt (@alts)
     {
+        next unless $alt;
 	my $type = $alt->type;
 #	debug "Considering $type at ".$alt->path;
 
@@ -1547,10 +1577,15 @@ sub body
 #    debug datadump $args;
 
     my $charset = $part->charset_guess({%$args,sample=>$dataref});
+#    debug "Body charset is $charset";
     if( $charset eq 'iso-8859-1' )
     {
 	# No changes
     }
+#    elsif( $charset eq 'windows-1252' )  ### See if this helps..
+#    {
+#	# No changes
+#    }
     elsif( $charset eq 'utf-8' )
     {
 	utf8::decode( $$dataref );
@@ -2033,6 +2068,20 @@ sub footer_remove
 
 
     return $str;
+}
+
+
+##############################################################################
+
+=head2 classified
+
+=cut
+
+sub classified
+{
+    my( $part ) = @_;
+    return $part->{'classified'} ||=
+      RDF::Base::Email::Classifier->new( $part->top );
 }
 
 

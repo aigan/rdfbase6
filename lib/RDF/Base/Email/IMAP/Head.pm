@@ -29,7 +29,7 @@ use base qw( RDF::Base::Email::Head );
 use Carp qw( croak confess cluck );
 use URI;
 #use MIME::WordDecoder qw( mime_to_perl_string );
-use IMAP::BodyStructure;
+#use IMAP::BodyStructure;
 use MIME::QuotedPrint qw(decode_qp);
 use MIME::Base64 qw( decode_base64 );
 

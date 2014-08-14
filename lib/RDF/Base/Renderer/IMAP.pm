@@ -236,6 +236,9 @@ sub render_output
     $rend->{'content_type'} = $type;
     $rend->{'charset'} = $part->charset_guess;
 
+#    debug "Charset set to ".$rend->{'charset'};
+
+
     if( $type eq "message/rfc822" )
     {
 #	debug "Returning the whole message (no imap_path)";
@@ -335,6 +338,8 @@ sub render_output
 sub set_ctype
 {
     my( $rend, $ctype ) = @_;
+
+#    debug "Set ctype to ".$rend->{'content_type'}." with ".$rend->{'charset'};
 
     $ctype->set_type( $rend->{'content_type'} );
     $ctype->set_charset( $rend->{'charset'} );

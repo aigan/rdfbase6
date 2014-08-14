@@ -169,6 +169,22 @@ sub path
 
 ##############################################################################
 
+=head2 generate_name
+
+See L<RDF::Base::Email::Part/generate_name>
+
+=cut
+
+sub generate_name
+{
+    my( $part ) = @_;
+
+    return "raw-part".$part->path;
+}
+
+
+##############################################################################
+
 =head2 charset
 
 See L<RDF::Base::Email::Part/charset>
