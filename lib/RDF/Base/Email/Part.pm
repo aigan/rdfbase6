@@ -37,7 +37,7 @@ use MIME::Types;
 #use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
-use Encode;
+use Encode; # encode decode
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -760,14 +760,18 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-    if( my $charset = $part->{'charset'} )
+    my $charset = $part->{'charset'};
+
+    if( $charset )
     {
-	return $charset;
+        $charset =~ s/'//g; # Cleanup
+        return $charset if find_encoding($charset);
     }
 
 #    debug "Determining charset for ".$part->path;
 
-    my $charset = $part->charset;
+    $charset = $part->charset;
+
     # windows-1252 is backward compatible with Latin-1 for all
     # printable chars and many texts that are windows-1252 is labeld
     # as Latin-1
@@ -1593,8 +1597,16 @@ sub body
     else
     {
 #	debug "decoding from $charset";
-	$$dataref = decode($charset,$$dataref);
-	$part->{'charset'} = 'utf-8';
+        eval
+        {
+#            my $decoder = find_encoding($charset);
+            $$dataref = decode($charset,$$dataref);
+            $part->{'charset'} = 'utf-8';
+        } or do
+        {
+            debug "Removing faulty charset ".$part->{'charset'};
+            $part->{'charset'} = undef; # fallback
+        }
 #	debug "Setting charset of ".$part->path." to utf-8";
 #	debug datadump($part,1);
 #	debug "Charset: ".$part->charset;
