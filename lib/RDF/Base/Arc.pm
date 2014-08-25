@@ -4007,7 +4007,7 @@ sub create_removal
     # The create() method will take care of the activation of the
     # removal if args activate_new_arcs is true.
 
-    my $arc =  RDF::Base::Arc->create({
+    my $arc_out =  RDF::Base::Arc->create({
 				   common      => $arc->common_id,
 				   replaces    => $arc->id,
 				   subj        => $arc->{'subj'},
@@ -4016,7 +4016,7 @@ sub create_removal
 				   valtype     => 0,
 				  }, $args);
 #    debug "Created removal arc ".$arc->sysdesig;
-    return $arc;
+    return $arc_out;
 }
 
 
