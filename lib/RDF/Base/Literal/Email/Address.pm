@@ -124,9 +124,13 @@ sub parse
     {
 	$val_mod = $val->plain;
     }
-    elsif( ref $val_in eq 'SCALAR' )
+    elsif( ref $val eq 'SCALAR' )
     {
         $val_mod = $$val;
+    }
+    else
+    {
+        die "string extracted: ".datadump($val,1);
     }
 
 #    debug "Parse email address $val_mod";
@@ -219,7 +223,18 @@ sub as_html
 	$attr{ id } = $args->{'id'};
     }
 
-    return Para::Frame::Widget::jump($label, "mailto:$adr", \%attr);
+#    debug "Lookup email address $adr";
+    my $an = RDF::Base::Email::Address->exist($adr);
+    if( $an )
+    {
+        return $an->wu_jump({label=>$label,%attr});
+    }
+    else
+    {
+        return $label;
+    }
+
+#    return Para::Frame::Widget::jump($label, "mailto:$adr", \%attr);
 #    return "<a href=\"mailto:$adr\">$full</a>";
 }
 

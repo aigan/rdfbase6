@@ -1124,6 +1124,7 @@ sub upgrade_db
 
 	my $C_class = $C->get('class');
         my $C_predicate = $C->get('predicate');
+        my $C_email = $C->get('email');
 
         my $m_ea = $R->find_set({code => 'RDF::Base::Email::Address',
                                  is=>$C->get('class_perl_module')},$args);
@@ -1161,7 +1162,44 @@ sub upgrade_db
                    },$args);
 
 
+        my $m_d = $R->find_set({code => 'RDF::Base::Domain',
+                                is=>$C->get('class_perl_module')},$args);
 
+        my $c_d = $R->find_set({label => 'internet_domain'},$args)
+          ->update({
+                    is => $C_class,
+                    has_cyc_id => 'DomainName',
+                    has_wikipedia_id => 'Domain_name',
+                    class_handled_by_perl_module => $m_d,
+                   },$args);
+
+        $R->find_set({label => 'has_mail_status_code'},$args)
+          ->update({
+                    range => $C->get('term'),
+                    is => $C_predicate,
+                    range_card_max => 1,
+                   },$args);
+
+        $R->find_set({label => 'in_internet_domain'},$args)
+          ->update({
+                    range => $c_d,
+                    is => $C_predicate,
+                    range_card_max => 1,
+                   },$args);
+
+        my $c_dsn = $R->find_set({label => 'dsn_email'},$args)
+          ->update({
+                    is => $C_class,
+                    has_wikipedia_id => 'Bounce_message',
+                    scof => $C_email,
+                   },$args);
+
+        $R->find_set({label => 'dsn_for_address'},$args)
+          ->update({
+                    domain => $c_dsn,
+                    range => $c_ea,
+                    is => $C_predicate,
+                   },$args);
 
 #        $rg->update({ has_version => 8 },$args);
         $res->autocommit;

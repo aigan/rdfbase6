@@ -2092,7 +2092,8 @@ sub footer_remove
 sub classified
 {
     my( $part ) = @_;
-    return $part->{'classified'} ||=
+#    return $part->{'classified'} ||=
+    return $part->{'classified'} =
       RDF::Base::Email::Classifier->new( $part->top );
 }
 

@@ -232,7 +232,7 @@ sub get
 	{
 	    unless( $node = $class->get_by_anything( $val_in ) )
 	    {
-		debug "Couldn't find $class wath is ".query_desig($val_in);
+		debug "Couldn't find $class what is ".query_desig($val_in);
 		return is_undef;
 	    }
 

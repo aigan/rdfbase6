@@ -39,13 +39,14 @@ our $EMAIL_ADDR_REGEX = qr{
 \@                    # at sign (duh)
 (?:[-\w]+\.)+[-\w]+)  # word characters or hypens organized into
                       # at least two dot-separated words
-(?:$|\s|>)            # then the end
+(?:$|\s|\.\W|>)       # then the end
 }sx;
 
 my @REPORT_FIELDS = qw(
  email
  host
  smtp_code
+ status_code
  reporting-mta
  arrival-date
  reason
@@ -59,7 +60,21 @@ my %REPORT_FIELDS; for(@REPORT_FIELDS){$REPORT_FIELDS{$_}=1};
 
 Based on L<Mail::DeliveryStatus::BounceParser>
 
+std_reason mapping:
+
+user_unknown => 5.1.0, 5.1.1
+domain_error => 5.1.2
+over_quota   => 5.2.2
+syntax_error => 5.5.2
+denied       => 5.7.1
+address_changed => 5.1.6
+unknown      => X.0.0
+
+other classifications
+
+
 =cut
+
 
 #######################################################################
 
@@ -68,6 +83,10 @@ Based on L<Mail::DeliveryStatus::BounceParser>
   Email::Classifier->new( $email )
 
 C<$email> should be an object compatible with L<Email::MIME> 1.861
+
+contact fields:
+  {contact}{email_address}{node}
+  {contact}{email_address}{changed_to}
 
 =cut
 
@@ -84,7 +103,8 @@ sub new
      reports => [],
      is => {},
      analyzed => {},
-     tags => {},
+     ticket => undef, # original email/ticket node
+     contact => {}, # Contact information gathered
     }, $class;
 
     return $c;
@@ -134,6 +154,7 @@ sub analyze_dsn
 
     return if $c->is_bounce;
     return if $c->is_vacation;
+    return if $c->is_address_changed;
 
     if( ${$e->first_non_multi_part->body} =~ /automatiskt meddelande/ )
     {
@@ -288,6 +309,8 @@ sub analyze_bounce
         return if $c->reports;
     }
 
+    $c->analyze_verp;
+
 
     # Only try to guess bounce report if we belive this realy could be
     # a bounce message
@@ -306,6 +329,48 @@ sub analyze_bounce
     }
 
     return 1;
+}
+
+
+#######################################################################
+
+=head2 analyze_verp
+
+VERP = Variable envelope return path
+
+=cut
+
+sub  analyze_verp
+{
+    my( $c ) = @_;
+
+    return if $c->{analyzed}{verp};
+    $c->{analyzed}{verp} ++;
+
+    my $e = $c->email;
+    debug "Analyzing for VERP" if $DEBUG;
+
+    my $to =  $e->head->parsed_address('to') ;
+    my $be = $Para::Frame::CFG->{'bounce_emails'} or return;
+    if( $to->address =~ /.+$be$/i  )
+    {
+        if( $to->address =~ /t(\d+)-/i )
+        {
+            $c->{ticket} = RDF::Base::Resource->get($1);
+            debug "Got ticket ".$c->{ticket}->desig;
+        }
+
+        if( $to->address =~ /r(\d+)-/i )
+        {
+            my $node = RDF::Base::Resource->get($1);
+            $c->{contact}{email_address}{node} = $node;
+            debug "Got recipient ".$node->desig;
+        }
+
+        $c->{is}{dsn} = 1;
+    }
+
+    return;
 }
 
 
@@ -505,6 +570,10 @@ sub  analyze_multipart_report
 	    {
 		$report{std_reason} = "denied";
 	    }
+	    elsif( $status =~ /^\d.1.6$/ )
+	    {
+		$report{std_reason} = "address_changed";
+	    }
 	    else
 	    {
 		warn "Unknown status code: $status\n" if $DEBUG;
@@ -678,6 +747,83 @@ sub analyze_bounce_guess
     }
 
     return 1;
+}
+
+
+#######################################################################
+
+=head2 is_address_changed
+
+=cut
+
+sub is_address_changed
+{
+    my( $c ) = @_;
+    $c->analyze_address_changed;
+    return $c->{'is'}{'address_changed'} ? 1 : 0;
+
+}
+
+
+#######################################################################
+
+=head2 analyze_address_changed
+
+=cut
+
+sub analyze_address_changed
+{
+    my( $c ) = @_;
+
+    return if $c->{analyzed}{address_changed};
+    $c->{analyzed}{address_changed} ++;
+
+    debug "Analyzing for Address changed" if $DEBUG;
+    my $e = $c->email;
+
+    if( $e->head->parsed_subject =~ /^Jag har bytt e-postadress/i )
+    {
+        $c->{is}{address_changed} ++;
+    }
+
+    my $textref = $e->first_non_multi_part->body;
+
+    if( $$textref =~ /bytt e-postadress till/ )
+    {
+        $c->{is}{address_changed} ++;
+    }
+
+    unless( $c->{is}{address_changed} )
+    {
+        $c->analyze_dsn;
+
+        foreach my $report ( @{$c->{reports}} )
+        {
+            my $std_reason = $report->header('std_reason') or next;
+            if( $std_reason eq 'address_changed' )
+            {
+                $c->{is}{address_changed} = 1;
+                last;
+            }
+        }
+    }
+
+    if( $c->{is}{address_changed} )
+    {
+        $c->{is}{dsn} = 1;
+
+        debug "Looking for new email address";
+#        debug $$textref;
+        if( $$textref =~ /bytt e-postadress till${EMAIL_ADDR_REGEX}/i )
+        {
+            debug "  found $1";
+            $c->{contact}{email_address}{changed_to} = $1;
+        }
+    }
+
+
+
+    return;
 }
 
 
@@ -894,6 +1040,13 @@ sub _std_reason
 	return "syntax_error";
     }
 
+    if(
+       /\b#?5\.1\.6\b/
+      )
+    {
+	return "address_changed";
+    }
+
 #    warn "  UNKNOWN reason\n<<<$_>>>\n";
 
     return "unknown";
@@ -985,6 +1138,38 @@ sub reports
     return @{$_[0]->{reports}};
 }
 
+
+#######################################################################
+
+=head2 dsn_for_address
+
+=cut
+
+sub dsn_for_address
+{
+    my( $c ) = @_;
+
+    return undef unless $c->is_dsn;
+
+    my $adr;
+
+    foreach my $report ( @{$c->{reports}} )
+    {
+	my $std_reason = $report->header('std_reason');
+        next unless $std_reason;
+        next if $std_reason eq 'unknown';
+
+        $adr = $report->header('email') or next;
+        last;
+    }
+
+    $adr ||= $c->email->header('From');
+
+    return undef if $adr =~ /mailer-daemon|postmaster/i;
+
+
+    return $adr;
+}
 
 
 #######################################################################
