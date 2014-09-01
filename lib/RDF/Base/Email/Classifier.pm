@@ -60,7 +60,7 @@ my %REPORT_FIELDS; for(@REPORT_FIELDS){$REPORT_FIELDS{$_}=1};
 
 Based on L<Mail::DeliveryStatus::BounceParser>
 
-std_reason mapping:
+dsn std_reason mapping:
 
 user_unknown => 5.1.0, 5.1.1
 domain_error => 5.1.2
@@ -70,7 +70,45 @@ denied       => 5.7.1
 address_changed => 5.1.6
 unknown      => X.0.0
 
+
 other classifications
+
+dsn
+ticket
+vacation
+bounce
+address_changed
+challenge_response ~
+newsletter ~
+spam ~
+spam_response ~
+transient ~
+
+
+email status
+------------
+LÄST ljusgrön?
++ dsn seen
+
+OK grön
++ dsn deliviered
++ ticket system
++ vacation
+
+OKÄND grå
+
+TEMPFEL gul
++ dsn transient
+
+ÅTGÄRDAS blå
+= manual revision
++ dsn unclassified
++ challenge_response
+
+FEL / DEFFEL
+= email_address_error
++ dsn bounce
++ address_changed
 
 
 =cut
