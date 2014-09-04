@@ -5594,6 +5594,12 @@ sub wu
         $args->{'label'} = $pred;
     }
 
+    if( ($args->{'tdlabel'}||'') eq '1' )
+    {
+#        debug "Args label is ".$args->{'label'};
+        $args->{'tdlabel'} = $pred;
+    }
+
     $out .= label_from_params({
 			       label       => delete $args->{'label'},
 			       tdlabel     => delete $args->{'tdlabel'},
@@ -5960,7 +5966,7 @@ sub wuirc
 
 	delete $args->{'default_value'}; # No default when values exist...
 
-	$out .= "<table>\n";
+	$out .= "<table class=\"wuirc\">\n";
 #	$out .= "<ul id=\"$divid-list\">"
 #	  if( $list->size > 1);
 
@@ -6005,7 +6011,7 @@ sub wuirc
 	    my $on_arc_add = $args->{'on_arc_add'};
 
 	    $out .= "
-              <input type=\"button\" id=\"$divid-button\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
+              <input type=\"button\" id=\"$divid-button\" class=\"btn btn-primary wuirc-add\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
 	    $out .= sprintf(q{
 <script type="text/javascript">
 <!--
@@ -6422,7 +6428,7 @@ sub wu_hiearchy
 
     if( $out )
     {
-        return $top->wu_jump . $out;
+        return  '<span class="main_url">' . $top->wu_jump . '</span>'. $out; 
     }
 
     return "";

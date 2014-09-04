@@ -14,8 +14,6 @@
 
 <h1>Arc [% arc.sysdesig | html %]</h1>
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 [% IF arc.is_arc %]
 
 [% subj = arc.subj %]

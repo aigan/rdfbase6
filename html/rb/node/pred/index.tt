@@ -22,9 +22,6 @@
    END;
 %]
 
-<p>[% PROCESS node_menu.tt %]</p>
-
-
 <table class="admin" style="margin-top:2em">
 
    [% domains = node.arc_list('domain') %]

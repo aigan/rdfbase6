@@ -24,8 +24,6 @@
    hidden('id', id);
 %]
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 [% BLOCK superclass %]
 [% FOREACH sc IN class.parents %]
 [% sc_nodes = find(code=sc.name, is='class_perl_module') %]

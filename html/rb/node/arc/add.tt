@@ -13,8 +13,6 @@
    <p>About a new node</p>
 [% END %]
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 [% IF node %]
    [% input('query_row','',class='wide') %]<br>
 [% END %]

@@ -22,8 +22,6 @@
 
 <h2>[% node.sysdesig | html %]</h2>
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 <p>Also show
 [ 
 [%

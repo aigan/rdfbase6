@@ -1,0 +1,7 @@
+[% base = "$home/rb/node" %]
+<li>[% jump('Graph', "$base/graph/", id=id) +%]</li>
+<li>[% jump('Add arcs', "$base/arc/add.tt", id=id ) +%]</li>
+<li>[% jump('Merge', "$base/merge.tt", id=id) +%]</li>
+<li>[% jump('Remove', "$base/remove.tt", id=id) +%]</li>
+<li>[% jump('Restore', "$base/restore.tt", id=id) +%]</li>
+<li>[% jump('Export', "$home/rb/rdf/$id") +%]</li>

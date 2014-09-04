@@ -9,8 +9,6 @@
 [% node = get(id) %]
 <h2>Restore [% node.sysdesig | html %]</h2>
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 <p>Restores from the selected point in time</p>
 
 

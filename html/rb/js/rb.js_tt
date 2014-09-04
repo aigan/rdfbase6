@@ -76,6 +76,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          .attr('id', 'rb_input_button'+$this.divid)
          .val("[% loc('Lookup') %]")
          .attr('type', 'submit')
+		 .attr('class', 'btn btn-default')
          .appendTo($this.form);
 
        $this.cancel
@@ -83,7 +84,9 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          .attr('type', 'button')
          .val("[% loc('Cancel') %]")
          .click($this.close)
+		 .attr('class', 'btn btn-default')
          .appendTo($this.form);
+
        
        $this.button.after($this.popup);
        $this.popup.show();
@@ -151,7 +154,8 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
            var select_button = $('<input/>');
 
            select_button.val('Select');
-           select_button.attr('type', 'button' );
+           select_button.attr('type', 'button' )
+		   	.attr('class', 'btn btn-default')
            select_button.data('rb_id',node['id']);
            select_button.click($this.select);
            select_button.appendTo(line);

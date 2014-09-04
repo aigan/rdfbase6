@@ -12,8 +12,6 @@
         node=node1; # for the menu
 %]
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 [% BLOCK merge_alternatives %]
 
    <p>Slå samman <code>[% node1.sysdesig | html %]</code> med:</p>

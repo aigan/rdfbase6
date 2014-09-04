@@ -2448,9 +2448,12 @@ sub table_row
 		{
 		    if( $ajax )
 		    {
+			return '' unless $req->session->{'advanced_mode'};
+			
 			my $arc_id = $arc->id;
 			my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
-			$out .= "<button onclick=\"$onclick\" class=\"no_button nopad\"><i class=\"fa fa-trash-o\"></i></button>";
+		
+			$out .= "<button onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
 		    }
 		    else
 		    {
@@ -6648,17 +6651,21 @@ sub edit_link_html
 {
     my( $arc, $args ) = @_;
 
-    return ''
-      unless $Para::Frame::REQ->user->has_root_access;
+	my $req = $Para::Frame::REQ;
+	
+    return '' unless $req->user->has_root_access;
+	  
+	return '' unless $req->session->{'advanced_mode'};
+	  
 
-    my $home   = $Para::Frame::REQ->site->home_url_path;
+    my $home   = $req->site->home_url_path;
     my $arc_id = $arc->id;
     my $a_id   = "edit_arc_link_$arc_id";
 
     return
       (
        "<a id=\"$a_id\" href=\"$home/rb/node/arc/update.tt?"
-       . "id=$arc_id\" class=\"edit_arc_link\">E</a>"
+       . "id=$arc_id\" class=\"edit_arc_link\"><i class=\"fa fa-pencil-square-o\"></i></a>"
        . "<script type=\"text/javascript\">\n"
        . "  \$('#$a_id').tipsy("
        . to_json({

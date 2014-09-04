@@ -11,8 +11,6 @@
 [% node = get(id) %]
 <h2>Delete [% node.sysdesig | html %]</h2>
 
-<p>[% PROCESS node_menu.tt %]</p>
-
 <p>Removes the selected arcs that has this node as it's subject</p>
 
 <table class='admin'>
