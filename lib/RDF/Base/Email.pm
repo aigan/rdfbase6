@@ -32,7 +32,7 @@ use Template::Context;
 use URI;
 #use CGI;
 
-use Email::Classifier;
+#use Email::Classifier;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug create_dir chmod_file idn_encode idn_decode datadump catch fqdn );
@@ -55,10 +55,10 @@ use RDF::Base::Email::IMAP::Folder;
 use RDF::Base::Email::IMAP::Head;
 use RDF::Base::Renderer::Email::From_email;
 
-BEGIN
-{
-    $Email::Classifier::CLASS_HEADER = "RDF::Base::Email::Head";
-}
+#BEGIN
+#{
+#    $Email::Classifier::CLASS_HEADER = "RDF::Base::Email::Head";
+#}
 
 
 ##############################################################################

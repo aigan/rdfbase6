@@ -28,7 +28,7 @@ use Mail::Address;
 #use CGI;
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug datadump );
 use Para::Frame::Widget;
 
 use RDF::Base::Utils qw( parse_propargs );
@@ -82,46 +82,56 @@ sub new
 Wrapper for L<Para::Frame::Email::Address/parse> that reimplements
 L<RDF::Base::Literal::String/parse>. (Avoid recursion)
 
-Will throw exception if not a correct email address
+Will NOT throw exception if not a correct email address
 
 =cut
 
 sub parse
 {
     my( $class, $val_in, $args_in ) = @_;
-    my( $val, $coltype, $valtype, $args ) =
-      $class->extract_string($val_in, $args_in);
 
-    if( ref $val eq 'SCALAR' )
+    my $parse_val;
+
+    if( UNIVERSAL::isa $val_in, "RDF::Base::Literal::Email::Address" )
     {
-	$val = $$val;
+	return $val_in;
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::Email::Address" )
+    elsif( UNIVERSAL::isa $val_in, "Para::Frame::Email::Address" )
     {
-	return $val;
+        $parse_val = $val_in->original;
     }
-    elsif( UNIVERSAL::isa $val, "Para::Frame::Email::Address" )
+    elsif( UNIVERSAL::isa $val_in, "Mail::Address" )
     {
-	# Good
+        $parse_val = $val_in->format;
     }
-    elsif( UNIVERSAL::isa $val, "Mail::Address" )
+    elsif( UNIVERSAL::isa $val_in, "RDF::Base::Undef" )
     {
-	# Good
-    }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Undef" )
-    {
-	$val = undef;
-    }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal" )
-    {
-	$val = $val->plain;
+	$parse_val = undef;
     }
     else
     {
-	confess "Can't parse $val";
+        $parse_val = $val_in;
     }
 
-    my $a = $class->Para::Frame::Email::Address::parse($val);
+#    debug "Parse val ".datadump($parse_val,1);
+
+    my( $val, $coltype, $valtype, $args ) =
+      $class->extract_string($parse_val, $args_in);
+
+    my $val_mod;
+
+    if( UNIVERSAL::isa $val, "RDF::Base::Literal" )
+    {
+	$val_mod = $val->plain;
+    }
+    elsif( ref $val_in eq 'SCALAR' )
+    {
+        $val_mod = $$val;
+    }
+
+#    debug "Parse email address $val_mod";
+
+    my $a = $class->Para::Frame::Email::Address::parse_tolerant($val_mod);
     $a->{'valtype'} = $valtype;
     return $a;
 }

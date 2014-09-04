@@ -67,7 +67,7 @@ sub new
 {
     my( $class, $in_value, $args ) = @_;
 
-    my $a = Para::Frame::Email::Address->parse_tolerant($in_value);
+    my $a = RDF::Base::Literal::Email::Address->parse($in_value);
 
     my $code_in = $a->address;
 
@@ -78,7 +78,9 @@ sub new
                                            is=>$C_email_address_obj,
                                           }, $an_args);
 
-    $an->update({name => $a->name, ea_original => $a->original}, $an_args);
+#    debug "New email address ".datadump($a,1);
+
+    $an->update({name => $a->name, ea_original => $a}, $an_args);
 
     return $an;
 }
@@ -218,29 +220,31 @@ sub parse
 
 sub broken
 {
-    return $_[0]->first_prop('ea_original')->broken();
+    my $o = $_[0]->first_prop('ea_original');
+     return $o ? $o->broken() : 1;
 }
 
 ##############################################################################
 
 sub error_message
 {
-    return $_[0]->first_prop('ea_original')->error_message();
+    my $o = $_[0]->first_prop('ea_original');
+    return $o ? $o->error_message() : 'not an email address';
 }
 
 ##############################################################################
 
 sub as_string
 {
-    debug "code for $_[0]";
-    return $_[0]->first_prop('code')->plain;
+     return $_[0]->first_prop('code')->plain;
 }
 
 ##############################################################################
 
 sub original
 {
-    return $_[0]->first_prop('ea_original')->original;
+    my $o = $_[0]->first_prop('ea_original');
+    return $o ? $o->original : undef;
 }
 
 ##############################################################################
@@ -316,28 +320,37 @@ sub comment
 
 sub desig
 {
-    return shift->prop('ea_original')->format();
+    my( $ea ) = shift @_;
+
+#    my $o = 
+
+#    debug "desig for ".$ea->id;
+#    debug "  original: ".$ea->first_prop('ea_original');
+#    debug datadump($ea->first_prop('ea_original'),1);
+#    return "--fixme--";
+
+    return $ea->first_prop('ea_original')->format();
 }
 
 ##############################################################################
 
-sub sysdesig
-{
-    return shift->prop('ea_original')->sysdesig();
-}
+#sub sysdesig
+#{
+#    return shift->first_prop('ea_original')->sysdesig();
+#}
 
 ##############################################################################
 
 sub literal
 {
-    return shift->prop('ea_original')->literal();
+    return shift->first_prop('ea_original')->literal();
 }
 
 ##############################################################################
 
 sub loc
 {
-    return shift->prop('ea_original')->loc();
+    return shift->first_prop('ea_original')->loc();
 }
 
 ##############################################################################
@@ -351,7 +364,7 @@ sub plain
 
 sub as_html
 {
-    return shift->prop('ea_original')->as_html(@_);
+    return shift->first_prop('ea_original')->as_html(@_);
 }
 
 ##############################################################################

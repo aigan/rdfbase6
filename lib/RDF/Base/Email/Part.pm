@@ -37,7 +37,7 @@ use MIME::Types;
 #use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
-use Encode;
+use Encode; # encode decode
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -54,7 +54,7 @@ use RDF::Base::Literal::Email::Subject;
 use RDF::Base::Email::Head;
 use RDF::Base::Email::Raw::Part;
 use RDF::Base::Email::Interpart;
-
+use RDF::Base::Email::Classifier;
 
 #our $MIME_TYPES;
 
@@ -179,10 +179,35 @@ sub envelope
 sub first_part_with_type
 {
     my( $part, $type ) = @_;
+#    debug "first_part_with_type($type)";
+    my $class = ref($part);
+
+    if( $part->type =~ /^$type/ )
+    {
+        return $part;
+    }
+    else
+    {
+        return $part->first_subpart_with_type( $type );
+    }
+}
+
+
+##############################################################################
+
+=head2 first_subpart_with_type
+
+=cut
+
+sub first_subpart_with_type
+{
+    my( $part, $type ) = @_;
+#    debug "first_subpart_with_type($type)";
     my $class = ref($part);
 
     foreach my $sub ( $part->parts )
     {
+#        debug "  check ".$sub->type;
 	if( $sub->type =~ /^$type/ )
 	{
 	    return $sub;
@@ -620,7 +645,7 @@ Retuns in list context: A list of all $name headers
 
 sub header
 {
-    debug "Getting header $_[1]";
+#    debug "Getting header $_[1]";
 
     if( $_[1] eq 'to' )
     {
@@ -735,14 +760,18 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
-    if( my $charset = $part->{'charset'} )
+    my $charset = $part->{'charset'};
+
+    if( $charset )
     {
-	return $charset;
+        $charset =~ s/'//g; # Cleanup
+        return $charset if find_encoding($charset);
     }
 
 #    debug "Determining charset for ".$part->path;
 
-    my $charset = $part->charset;
+    $charset = $part->charset;
+
     # windows-1252 is backward compatible with Latin-1 for all
     # printable chars and many texts that are windows-1252 is labeld
     # as Latin-1
@@ -1147,7 +1176,11 @@ sub _render_alt
        'text/plain' => 0,
       );
 
+#    debug "ALTS: @alts";
+
     my $choice = shift @alts;
+    return "" unless $choice;
+
 #   debug sprintf "Considering %s at %s",
 #     $choice->type, $choice->path;
     my $score = $prio{ $choice->type } || 1; # prefere first part
@@ -1156,6 +1189,7 @@ sub _render_alt
 
     foreach my $alt (@alts)
     {
+        next unless $alt;
 	my $type = $alt->type;
 #	debug "Considering $type at ".$alt->path;
 
@@ -1547,10 +1581,15 @@ sub body
 #    debug datadump $args;
 
     my $charset = $part->charset_guess({%$args,sample=>$dataref});
+#    debug "Body charset is $charset";
     if( $charset eq 'iso-8859-1' )
     {
 	# No changes
     }
+#    elsif( $charset eq 'windows-1252' )  ### See if this helps..
+#    {
+#	# No changes
+#    }
     elsif( $charset eq 'utf-8' )
     {
 	utf8::decode( $$dataref );
@@ -1558,8 +1597,16 @@ sub body
     else
     {
 #	debug "decoding from $charset";
-	$$dataref = decode($charset,$$dataref);
-	$part->{'charset'} = 'utf-8';
+        eval
+        {
+#            my $decoder = find_encoding($charset);
+            $$dataref = decode($charset,$$dataref);
+            $part->{'charset'} = 'utf-8';
+        } or do
+        {
+            debug "Removing faulty charset ".$part->{'charset'};
+            $part->{'charset'} = undef; # fallback
+        }
 #	debug "Setting charset of ".$part->path." to utf-8";
 #	debug datadump($part,1);
 #	debug "Charset: ".$part->charset;
@@ -2033,6 +2080,20 @@ sub footer_remove
 
 
     return $str;
+}
+
+
+##############################################################################
+
+=head2 classified
+
+=cut
+
+sub classified
+{
+    my( $part ) = @_;
+    return $part->{'classified'} ||=
+      RDF::Base::Email::Classifier->new( $part->top );
 }
 
 

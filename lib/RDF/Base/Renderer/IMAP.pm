@@ -25,7 +25,7 @@ use strict;
 use warnings;
 use base qw( Para::Frame::Renderer::Custom );
 
-use Encode;
+use Encode; # encode decode
 use Carp qw( croak confess cluck );
 use MIME::Base64 qw( decode_base64 );
 use MIME::QuotedPrint qw(decode_qp);
@@ -236,6 +236,9 @@ sub render_output
     $rend->{'content_type'} = $type;
     $rend->{'charset'} = $part->charset_guess;
 
+#    debug "Charset set to ".$rend->{'charset'};
+
+
     if( $type eq "message/rfc822" )
     {
 #	debug "Returning the whole message (no imap_path)";
@@ -307,7 +310,16 @@ sub render_output
 
 	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
 	{
-	    my $subject = encode( $top->charset_guess, $email->subject );
+	    my $subject;
+            eval
+            {
+                $subject = encode( $top->charset_guess, $email->subject );
+            } or do
+            {
+                $subject = $email->subject;
+            };
+
+
 #	    debug "Subject '$subject': ".validate_utf8(\$subject);
 	    my $subject_out = CGI->escapeHTML($subject);
 
@@ -335,6 +347,8 @@ sub render_output
 sub set_ctype
 {
     my( $rend, $ctype ) = @_;
+
+#    debug "Set ctype to ".$rend->{'content_type'}." with ".$rend->{'charset'};
 
     $ctype->set_type( $rend->{'content_type'} );
     $ctype->set_charset( $rend->{'charset'} );

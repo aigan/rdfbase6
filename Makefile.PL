@@ -139,7 +139,7 @@ WriteMakefile(
 	          'JSON'                       => 2.04,
 	          'GraphViz'                   => 2.02,
 	          'DateTime::Incomplete'       => 0.02,
-	          'Email::Classifier'          => 0.01,
+#	          'Email::Classifier'          => 0.01,
 		  'Text::WordDiff'             => 0.04,
 		  'File::MMagic::XS'           => 0.09,
 	          'Email::MIME'                => 1.902,

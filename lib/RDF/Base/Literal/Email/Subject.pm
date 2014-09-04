@@ -138,9 +138,11 @@ sub new_by_raw
 {
     my( $class, $raw ) = @_;
 
-    my $wd = new MIME::WordDecoder::ISO_8859 1;
+#    my $wd = default MIME::WordDecoder;
+#    my $wd = new MIME::WordDecoder::ISO_8859 1;
+#    my $subject = $wd->decode( $raw||'' );
+    my $subject = mime_to_perl_string( $raw||'' );
 
-    my $subject = $wd->decode( $raw||'' );
     return $class->new_from_db($subject, $C_text);
 }
 
