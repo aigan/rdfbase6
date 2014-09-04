@@ -31,7 +31,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
 use RDF::Base::Utils qw( parse_propargs );
-use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_obj );
+use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_holder );
 
 use RDF::Base::Widget qw( aloc build_field_key );
 
@@ -75,7 +75,7 @@ sub new
     $an_args->{'activate_new_arcs'} = 1;
     my $an = RDF::Base::Resource->set_one({
                                            code=>$code_in,
-                                           is=>$C_email_address_obj,
+                                           is=>$C_email_address_holder,
                                           }, $an_args);
 
 #    debug "New email address ".datadump($a,1);
@@ -111,7 +111,7 @@ sub exist
 
     return RDF::Base::Resource->find({
                                      code=>$code_in,
-                                     is=>$C_email_address_obj,
+                                     is=>$C_email_address_holder,
                                     }, $an_args)->get_first_nos;
 }
 
@@ -269,7 +269,7 @@ sub move_agent_to
 
     debug sprintf "Move agent from %s to %s", $ea_old->desig, $ea_new->desig;
 
-    foreach my $arc ( $ea_old->revarc_list('has_email_address_obj',
+    foreach my $arc ( $ea_old->revarc_list('has_email_address_holder',
                                            undef, $args)->as_array )
     {
         debug "Should move ".$arc->sysdesig;

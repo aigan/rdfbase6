@@ -1129,21 +1129,21 @@ sub upgrade_db
         my $m_ea = $R->find_set({code => 'RDF::Base::Email::Address',
                                  is=>$C->get('class_perl_module')},$args);
 
-        my $c_ea = $R->find_set({label => 'email_address_obj'},$args)
+        my $c_ea = $R->find_set({label => 'email_address_holder'},$args)
           ->update({
                     is => $C_class,
                     has_cyc_id => 'EMailAddress',
                     class_handled_by_perl_module => $m_ea,
                    },$args);
 
-        $R->find_set({label => 'has_email_address_obj'},$args)
+        $R->find_set({label => 'has_email_address_holder'},$args)
           ->update({
                     domain => $C->get('intelligent_agent'),
                     range => $c_ea,
                     is => $C_predicate,
                    },$args);
 
-        $R->find_set({label => 'has_contact_email_address_obj'},$args)
+        $R->find_set({label => 'has_contact_email_address_holder'},$args)
           ->update({
                     domain => $C->get('intelligent_agent'),
                     range => $c_ea,
@@ -1158,6 +1158,12 @@ sub upgrade_db
                     range_card_max => 1,
                    },$args);
 
+        my $c_url = $R->find_set({label => 'url_holder'},$args)
+          ->update({
+                    is => $C_class,
+                    has_cyc_id => 'UniformResourceLocator',
+                    has_wikipedia_id => 'Uniform_resource_locator',
+                   },$args);
 
         my $m_d = $R->find_set({code => 'RDF::Base::Domain',
                                 is=>$C->get('class_perl_module')},$args);
