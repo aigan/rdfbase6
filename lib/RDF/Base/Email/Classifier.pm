@@ -867,6 +867,66 @@ sub analyze_address_changed
 
 #######################################################################
 
+=head2 is_spam
+
+=cut
+
+sub is_spam
+{
+    my( $c ) = @_;
+    $c->analyze_spam;
+    return $c->{'is'}{'spam'} ? 1 : 0;
+
+}
+
+
+#######################################################################
+
+=head2 analyze_spam
+
+=cut
+
+sub analyze_spam
+{
+    my( $c ) = @_;
+
+    return if $c->{analyzed}{spam};
+    $c->{analyzed}{spam} ++;
+
+    debug "Analyzing for Spam" if $DEBUG;
+    my $o = $c->email_obj;
+
+    if( my $flag = $o->header('X-Spam-Flag') )
+    {
+	if( $flag =~ /yes/i )
+	{
+	    $c->{is}{spam} = 1;
+	    return;
+	}
+    }
+    elsif( my $status = $o->header('X-Spam-Status') )
+    {
+	if( $status =~ /^yes/i )
+	{
+	    $c->{is}{spam} = 1;
+	    return;
+	}
+    }
+    elsif( my $score = $o->header('X-Spam-Score') )
+    {
+	if( $score > 2 )
+	{
+	    $c->{is}{spam} = 1;
+	    return;
+	}
+    }
+
+    return;
+}
+
+
+#######################################################################
+
 sub _extract_reports
 {
     my( $text ) = @_;
