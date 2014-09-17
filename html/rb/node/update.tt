@@ -71,7 +71,7 @@ END;
 [% END %]
 
 <table class="admin" style="margin-top:2em">
-<tr><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
+<tr class="subheader"><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
 <tr>
    <td>-</td>
@@ -283,7 +283,7 @@ END;
 </table>
 
 <table class="admin" style="margin-top:2em">
-<tr><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
+<tr class="subheader"><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
 [% FOREACH pred IN node.revlist_preds('',arclim).sorted %]
    [% prop_cnt = node.revcount(pred,arclim) %]
    [% IF prop_cnt > 10 AND show_pred != pred.plain %]
