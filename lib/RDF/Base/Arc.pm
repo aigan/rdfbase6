@@ -2453,7 +2453,7 @@ sub table_row
 			my $arc_id = $arc->id;
 			my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
 		
-			$out .= "<button onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
+			$out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
 		    }
 		    else
 		    {

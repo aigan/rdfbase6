@@ -1709,7 +1709,7 @@ sub has_value
 	if( $node->has_value($value, $args) )
 	{
 	    $l->set_index( $index );
-	    return 1;
+	    return $node;
 	}
     }
 
@@ -1928,6 +1928,21 @@ sub cmp_by_overload
     }
 }
 
+
+##############################################################################
+
+=head2 as_listobj
+
+  $o->as_listobj()
+
+Returns a L<RDF::Base::List>
+
+=cut
+
+sub as_listobj
+{
+    return $_[0];
+}
 
 ##############################################################################
 

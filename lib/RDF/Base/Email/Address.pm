@@ -31,7 +31,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 
 use RDF::Base::Utils qw( parse_propargs );
-use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_obj );
+use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_holder );
 
 use RDF::Base::Widget qw( aloc build_field_key );
 
@@ -75,7 +75,7 @@ sub new
     $an_args->{'activate_new_arcs'} = 1;
     my $an = RDF::Base::Resource->set_one({
                                            code=>$code_in,
-                                           is=>$C_email_address_obj,
+                                           is=>$C_email_address_holder,
                                           }, $an_args);
 
 #    debug "New email address ".datadump($a,1);
@@ -87,6 +87,40 @@ sub new
 
 
 ##############################################################################
+
+=head3 exist
+
+  $this->exist( $value, $args )
+
+Returns the node if existing, else undef
+
+=cut
+
+sub exist
+{
+    my( $class, $in_value, $args ) = @_;
+
+#    debug "parsing ".datadump($in_value,1);
+    my $a = RDF::Base::Literal::Email::Address->parse($in_value);
+
+#    debug "parsed to ".datadump($a,1);
+
+    my $code_in = $a->address;
+
+    my $an_args = parse_propargs('all');
+
+    return RDF::Base::Resource->find({
+                                     code=>$code_in,
+                                     is=>$C_email_address_holder,
+                                    }, $an_args)->get_first_nos;
+}
+
+
+##############################################################################
+
+=head2 wuirc
+
+=cut
 
 sub wuirc
 {
@@ -217,12 +251,40 @@ sub parse
 }
 
 ##############################################################################
+##############################################################################
+
+=head2 move_agent_to
+
+  $old->move_agent_to( $new_email_address, \%args )
+
+TODO: Handle different classes of email addresses
+
+=cut
+
+sub move_agent_to
+{
+    my( $ea_old, $new_in, $args ) = @_;
+
+    my $ea_new = $ea_old->parse( $new_in, $args );
+
+    debug sprintf "Move agent from %s to %s", $ea_old->desig, $ea_new->desig;
+
+    foreach my $arc ( $ea_old->revarc_list('has_email_address_holder',
+                                           undef, $args)->as_array )
+    {
+        debug "Should move ".$arc->sysdesig;
+    }
+
+    die "Move agent to called";
+}
+##############################################################################
 
 sub broken
 {
     my $o = $_[0]->first_prop('ea_original');
      return $o ? $o->broken() : 1;
 }
+
 
 ##############################################################################
 

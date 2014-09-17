@@ -36,7 +36,7 @@ use JSON; # to_json
 
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
-use Para::Frame::Widget qw( label_from_params );
+use Para::Frame::Widget qw( label_from_params hidden radio );
 use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
 			   package_to_module timediff compile );
 
@@ -55,7 +55,7 @@ use RDF::Base::Pred::List;
 use RDF::Base::Metaclass;
 use RDF::Base::Resource::Change;
 use RDF::Base::Arc::Lim;
-use RDF::Base::Widget qw( build_field_key );
+use RDF::Base::Widget qw( build_field_key aloc locnl );
 use RDF::Base::Widget::Handler;
 use RDF::Base::AJAX;
 
@@ -232,7 +232,7 @@ sub get
 	{
 	    unless( $node = $class->get_by_anything( $val_in ) )
 	    {
-		debug "Couldn't find $class wath is ".query_desig($val_in);
+		debug "Couldn't find $class what is ".query_desig($val_in);
 		return is_undef;
 	    }
 
@@ -6457,6 +6457,83 @@ sub wu_hiearchy_children
 
     return '<ul>'.$out.'</ul>' if $out;
     return "";
+}
+
+
+##############################################################################
+
+=head2 wu_select_tree_multiple
+
+=cut
+
+sub wu_select_tree_multiple
+{
+    my( $node, $pred_name, $type, $args ) = @_;
+
+    my $out = "";
+
+    if( $args->{header} )
+    {
+        $out .= $type->wu_jump() . "<br>";
+        $out .= "<p class='left'>";
+        $out .= aloc('Has') ." ". $type->as_html;
+        $out .= "</p>";
+    }
+
+    my $suggestions = $node->arc_list($pred_name, undef, ['submitted'])->unique_arcs_prio;
+    if( $suggestions->active_version->find({obj => { scof => $type }})
+        or $suggestions->find({obj => {scof => $type}}) )
+    {
+        $out .= "<table class='suggestion nopad'>";
+        $out .= "<tr><th>".aloc('Suggestions').":</th></tr>";
+        foreach my $arc ( $suggestions->as_array )
+        {
+            next unless $arc->active_version->find({ obj => { scof => $type }})
+              or $arc->find({ obj => { scof => $type }});
+            $out .= "<tr><td>";
+            my $val = $arc->value || $arc->active_version->value;
+            $out .= $val->as_html;
+            if( $arc->is_removal )
+            {
+                $out .= '<span style="color: red">'.locnl('OFF').'</span>';
+            }
+            else
+            {
+                $out .= '<span style="color: green">'.locnl('ON').'</span>';
+            }
+            $out .= hidden('version_'.$arc->id);
+            $out .= $arc->edit_link_html;
+            $out .= '</td><td>';
+            $out .= radio("arc_".$arc->id."__select_version", $arc->id, 0,
+                          {
+                           id => $arc->id,
+                           label => locnl('Accept'),
+                          });
+            $out .= radio("arc_".$arc->id."__select_version", 'deactivate', 0,
+                          {
+                           id => 'deactivate_'.$arc->id,
+                           label => locnl('Accept'),
+                          });
+            $out .= "</td></tr>";
+        }
+        $out .= "</table>";
+    }
+    else
+    {
+        my $home = $Para::Frame::REQ->site->home_url_path;
+        my $nid = $node->id;
+        my $tid = $type->id;
+        $out .= "<div id=\"${tid}-tree\"><p class=\"click\">";
+        $out .= locnl('Chose').': '.$type->as_html;
+        $out .= '</p></div>';
+        $out .= "<script>\n";
+        $out .= "(function(\$) {
+\$('#${tid}-tree .click').click(function(){\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
+})(jQuery);";
+        $out .= "</script>\n";
+    }
+
+    return $out;
 }
 
 
