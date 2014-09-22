@@ -59,6 +59,7 @@ use RDF::Base::Rule;
 
 use RDF::Base::Utils qw( valclean is_undef truncstring
                          query_desig parse_propargs aais
+                         solid_propargs
                          );
 
 # TODO:
@@ -5910,21 +5911,23 @@ sub schedule_check_create
 {
     my( $arc, $args_in ) = @_;
 
-    # Use solid args for activating changes here
-    # active, not_disregarded
-    my %args = %$args_in;
-    $args{'activate_new_arcs'} = 1;
-    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
-    $args{unique_arcs_prio} = [1]; # active
+    my( $args ) = solid_propargs( $args_in );
+
+#    # Use solid args for activating changes here
+#    # active, not_disregarded
+#    my %args = %$args_in;
+#    $args{'activate_new_arcs'} = 1;
+#    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
+#    $args{unique_arcs_prio} = [1]; # active
 
     if( $RDF::Base::Arc::lock_check ||= 0 )
     {
-	push @RDF::Base::Arc::queue_check_add, [$arc, \%args];
+	push @RDF::Base::Arc::queue_check_add, [$arc, $args];
 	debug 3, "Added ".$arc->sysdesig." to queue check add";
     }
     else
     {
-	$arc->create_check( \%args );
+	$arc->create_check( $args );
     }
 }
 
@@ -6055,7 +6058,12 @@ sub unlock
 	warn "  Arc lock on level $cnt, called from $package, line $line\n";
     }
 
-    return if $RDF::Base::Arc::lock_check_active; # Avoid recursion
+    if( $RDF::Base::Arc::lock_check_active )
+    {
+        debug "AVOID RECURSION";
+        return;
+    }
+
 
     if( $cnt == 0 )
     {
@@ -6267,13 +6275,21 @@ sub create_check
 	$subj->on_class_perl_module_change($arc, $pred_name, $args);
     }
 
-
     $subj->on_arc_add($arc, $pred_name, $args);
 
     if( my $obj = $arc->obj )
     {
         $obj->on_revarc_add($arc, $pred_name, $args);
     }
+
+    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
+    {
+        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
+        {
+            $parent->mark_child_changed($args);
+        }
+    }
+
  }
 
 
@@ -6350,6 +6366,14 @@ sub remove_check
     if( my $obj = $arc->obj )
     {
         $obj->on_revarc_del($arc, $pred_name, $args);
+    }
+
+    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
+    {
+        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
+        {
+            $parent->mark_child_changed($args);
+        }
     }
 
     $arc->{'in_remove_check'} --;

@@ -32,6 +32,7 @@ use Para::Frame::L10N qw( loc );
 #use Para::Frame::Reload;
 
 use RDF::Base::Utils qw( parse_propargs query_desig );
+use RDF::Base::Widget qw( build_field_key );
 
 
 =head1 DESCRIPTION
@@ -260,7 +261,7 @@ var node must be defined
 
 prop pred is required
 
-the query param "arc___pred_$pred__subj_$subjvarname" can be used for
+the query param "arc___pred_${predname}__subj_${subj_id}" can be used for
 default new value
 
 =cut
@@ -279,8 +280,11 @@ sub wuirc
     my $label = $args->{'label'};
     my $arc = $args->{'arc'};
     my $arc_type = $args->{'arc_type'} || 'singular';
+    my $if = $args->{'if'};
 
     my $id = $args->{'id'};
+
+
 
 #    $args->{'size'} ||= 18;
 
@@ -294,7 +298,7 @@ sub wuirc
     }
 
 
-#    debug "TIME WUIRC";
+    debug "TIME WUIRC";
 #    debug query_desig($args);
 
 
@@ -321,6 +325,9 @@ sub wuirc
 #			       label_class => $args->{'label_class'},
 #			      });
 
+
+
+    my $fieldname_default = "arc___pred_${predname}__subj_${subj_id}";
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {
@@ -349,7 +356,13 @@ sub wuirc
 #		  );
 #	$cal_args{'date'} = $date;
 
-	my $fieldname = "arc___pred_${predname}__subj_${subj_id}";
+	my $fieldname = build_field_key({
+                                         arc => '',
+                                         pred => $predname,
+                                         subj => $subj_id,
+                                         if => $if,
+                                        });
+
 	$id ||= $fieldname;
 	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
 			  {
@@ -374,10 +387,15 @@ sub wuirc
 	    {
 		$out .= "<li>";
 
-		my $arc_id = $arc->id;
-		my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${$subj_id}";
+                my $fieldname = build_field_key({
+                                                 arc => $arc->id,
+                                                 pred => $predname,
+                                                 subj => $subj_id,
+                                                 if => $if,
+                                                });
+
 		$id ||= $fieldname;
-		my $value_new = $q->param("arc___pred_${predname}__subj_${$subj_id}") ||
+		my $value_new = $q->param($fieldname_default) ||
 		  $arc->value->desig($args) || $args->{'default_value'};
 		$out .= &calendar($fieldname, $value_new,
 				  {
@@ -403,9 +421,16 @@ sub wuirc
 	{
 	    my $arc_id = ( $arc_type eq 'singular' ?
 			   'singular' : $arc ? $arc->id : '' );
-	    my $fieldname = "arc_${arc_id}__pred_${predname}__subj_${subj_id}";
+
+            my $fieldname = build_field_key({
+                                             arc => $arc_id,
+                                             pred => $predname,
+                                             subj => $subj_id,
+                                             if => $if,
+                                            });
+
 	    $id ||= $fieldname;
-	    my $value_new = $q->param("arc___pred_${predname}__subj_${subj_id}")
+	    my $value_new = $q->param($fieldname_default)
 	      || $subj->prop($pred)->desig($args) || $args->{'default_value'};
 
 	    $out .= &calendar($fieldname, $value_new,

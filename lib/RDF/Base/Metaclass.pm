@@ -51,11 +51,14 @@ first.
 
 =head2 on_arc_add
 
-  $node->on_arc_add( $arc, $pred_name )
+  $node->on_arc_add( $arc, $pred_name, \%args )
 
 Called by L<RDF::Base::Arc/create_check>
 
 Distributes the calls over the classes
+
+Will only be calld if the node is blessed to more than a singel class
+in addition to RDF::Base::Resource
 
 =cut
 
@@ -83,11 +86,14 @@ sub on_arc_add
 
 =head2 on_revarc_add
 
-  $node->on_revarc_add( $arc, $pred_name )
+  $node->on_revarc_add( $arc, $pred_name, \%args )
 
 Called by L<RDF::Base::Arc/create_check>
 
 Distributes the calls over the classes
+
+Will only be calld if the node is blessed to more than a singel class
+in addition to RDF::Base::Resource
 
 =cut
 
@@ -115,11 +121,14 @@ sub on_revarc_add
 
 =head2 on_arc_del
 
-  $node->on_arc_del( $arc, $pred_name )
+  $node->on_arc_del( $arc, $pred_name, \%args )
 
 Called by L<RDF::Base::Arc/remove_check>
 
 Distributes the calls over the classes
+
+Will only be calld if the node is blessed to more than a singel class
+in addition to RDF::Base::Resource
 
 =cut
 
@@ -147,11 +156,14 @@ sub on_arc_del
 
 =head2 on_revarc_del
 
-  $node->on_revarc_del( $arc, $pred_name )
+  $node->on_revarc_del( $arc, $pred_name, \%args )
 
 Called by L<RDF::Base::Arc/remove_check>
 
 Distributes the calls over the classes
+
+Will only be calld if the node is blessed to more than a singel class
+in addition to RDF::Base::Resource
 
 =cut
 
@@ -169,6 +181,38 @@ sub on_revarc_del
 	    &{$method}($n, @_);
 	}
 #	$n->("${sc}::on_revarc_del")(@_);
+    }
+
+    return;
+}
+
+
+########################################################################
+
+=head2 on_child_changed
+
+  $node->on_child_changed( $args )
+
+Distributes the calls over the classes
+
+Will only be calld if the node is blessed to more than a singel class
+in addition to RDF::Base::Resource
+
+=cut
+
+sub on_child_changed
+{
+    my $n = shift;
+    my $class = ref $n;
+    no strict "refs";
+
+    foreach my $sc (@{"${class}::ISA"})
+    {
+	next if $sc eq __PACKAGE__;
+	if( my $method = $sc->can("on_child_changed") )
+	{
+	    &{$method}($n, @_);
+	}
     }
 
     return;

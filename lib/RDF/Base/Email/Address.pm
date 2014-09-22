@@ -151,15 +151,6 @@ sub wuirc
 				      });
 
     my $disabled = $args->{'disabled'}||'';
-    if( $disabled )
-    {
-        my $arclist = $subj->arc_list($predname, undef, $args);
-        while( my $arc = $arclist->get_next_nos )
-        {
-            $out .= $arc->value->as_html .'&nbsp;'. $arc->edit_link_html .'<br/>';
-        }
-    }
-
     my $arcversions =  $subj->arcversions($predname);
     my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
     my $list_weight = 0;
@@ -194,12 +185,19 @@ sub wuirc
          arc => $arc->id,
         };
 
-        $out .= input($field, $arc->value->code->plain, $fargs);
-        $out .= $arc->edit_link_html;
+        if( $disabled )
+        {
+            $out .= $arc->value->as_html({method=>'address'});
+        }
+        else
+        {
+            $out .= input($field, $arc->value->code->plain, $fargs);
+        }
+        $out .= "&nbsp;" . $arc->edit_link_html;
         $out .= "<br>";
     }
 
-    if( $multi or not @arcs )
+    if( ($multi or not @arcs) and not $disabled )
     {
         my $props =
 	{
