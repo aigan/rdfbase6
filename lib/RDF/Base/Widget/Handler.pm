@@ -1139,9 +1139,8 @@ sub handle_query_arc_value
 
 		foreach my $val ( @values )
 		{
-                    debug "NODE ".$args->{node}->sysdesig;
-
-                    debug "VALTYPE ".$pred->valtype->instance_class;
+#                    debug "NODE ".$args->{node}->sysdesig;
+#                    debug "VALTYPE ".$pred->valtype->instance_class;
                     #die "fixme";
                     ### DEBUG: FIXME
 

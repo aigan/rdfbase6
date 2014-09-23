@@ -6060,7 +6060,7 @@ sub unlock
 
     if( $RDF::Base::Arc::lock_check_active )
     {
-        debug "AVOID RECURSION";
+#        debug "AVOID RECURSION"; ### TODO: Investigate...
         return;
     }
 

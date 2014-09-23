@@ -298,7 +298,7 @@ sub wuirc
     }
 
 
-    debug "TIME WUIRC";
+#    debug "TIME WUIRC";
 #    debug query_desig($args);
 
 

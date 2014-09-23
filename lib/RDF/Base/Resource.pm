@@ -5747,14 +5747,14 @@ sub register_ajax_pagepart
     {
 	if( ref $depends_on )
 	{
-	    debug "Ref depends_on: ". ref $depends_on;
+#	    debug "Ref depends_on: ". ref $depends_on;
 	    $depends_on = join(', ', map("'$_'", @$depends_on));
 	}
 	else
 	{
 	    $depends_on = "'$depends_on'";
 	}
-	debug "Depends on now: ". $depends_on;
+#	debug "Depends on now: ". $depends_on;
 	$out .= ", depends_on: [ $depends_on ]";
     }
     $out .= "}); //--> </script>";
@@ -6119,7 +6119,7 @@ sub wu_select_tree
 
     ### Given args MUST have been initialized and localizes!
 
-    debug "wu_select_tree $pred_name";
+#    debug "wu_select_tree $pred_name";
 
     my $out = "";
     my $R = RDF::Base->Resource;
@@ -6137,7 +6137,7 @@ sub wu_select_tree
     my $set_value = $singular ? 1 : 0;
 
 
-    debug "singular ".($singular ? "YES" : "NO");
+#    debug "singular ".($singular ? "YES" : "NO");
 
     unless( UNIVERSAL::isa $type, 'RDF::Base::Node' )
     {
@@ -6172,6 +6172,14 @@ sub wu_select_tree
     my $q = $Para::Frame::REQ->q;
     my $val_query = $q->param($val_stripped);
 
+    my $selected = $subj->first_prop($pred_name);
+    if( not $selected and $args->{'default_value'} )
+    {
+        $selected = $R->get($args->{'default_value'});
+    }
+    $selected ||= is_undef;
+
+
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
@@ -6193,8 +6201,8 @@ sub wu_select_tree
         }
         elsif( $set_value )
         {
-            if( $subj->has_value({ $pred_name => $subtype }) or
-                $subj->has_value({ $pred_name => { scof => $subtype } })
+            if( $selected->equals($subtype) or
+                $selected->scof( $subtype )
               )
             {
                 $out .= ' selected="selected"';
