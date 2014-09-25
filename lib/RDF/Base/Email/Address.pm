@@ -21,16 +21,19 @@ RDF::Base::Email::Address
 use 5.010;
 use strict;
 use warnings;
+use constant C => 'RDF::Base::Constants';
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;
+use DateTime::Duration;
 
 use Para::Frame::Widget qw( input );
 use Para::Frame::Email::Address;
 use Para::Frame::Reload;
+use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( debug datadump );
 
-use RDF::Base::Utils qw( parse_propargs );
+use RDF::Base::Utils qw( parse_propargs solid_propargs );
 use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_holder );
 
 use RDF::Base::Widget qw( aloc build_field_key );
@@ -71,8 +74,7 @@ sub new
 
     my $code_in = $a->address;
 
-    my $an_args = parse_propargs('all');
-    $an_args->{'activate_new_arcs'} = 1;
+    my $an_args = solid_propargs();
     my $an = RDF::Base::Resource->set_one({
                                            code=>$code_in,
                                            is=>$C_email_address_holder,
@@ -425,6 +427,120 @@ sub plain
 sub as_html
 {
     return shift->first_prop('ea_original')->as_html(@_);
+}
+
+##############################################################################
+
+sub update_deliverability
+{
+    my( $ea, $c ) = @_;
+
+    my $args = solid_propargs();
+    my $o = $c->email_obj;
+    my $email = $o->email;
+    my $eda = $ea->arc('has_email_deliverability');
+
+    my $std_reason = $c->dsn_std_reason || '';
+
+    # Set limit for transient status to 7 days
+    my $patience = DateTime::Duration->new(days => 7);
+
+
+    if( $c->is_dsn )
+    {
+        debug "DELIVERY STATUS NOTIFICATION";
+
+        foreach my $report ( $c->reports )
+        {
+            debug $report->as_string;
+        }
+
+        $email->add({dsn_for_address => $ea}, $args);
+        $email->add({is => C->get('dsn_email')}, $args);
+    }
+
+    debug "REASON: $std_reason";
+
+
+    if( $c->is_address_changed )
+    {
+        my $new = $c->{contact}{email_address}{changed_to};
+        unless( $new )
+        {
+            die "New email not found in ".$email->id;
+        }
+
+        $ea->move_agent_to($new, $args);
+    }
+    elsif( $c->is_bounce )
+    {
+        given( $std_reason )
+        {
+            when('user_unknown')
+            {
+                $ea->update({'has_email_deliverability'=>
+                             C->get('ed_mailbox_unavailible')}, $args);
+            }
+            default
+            {
+                die "fixme: $std_reason";
+            }
+        }
+    }
+    elsif( $c->is_transient )
+    {
+        if( $eda->obj->equals(C->get('ed_delayed')) )
+        {
+            die "must store dsn_date";
+            my $start; ### = $eda->created;
+            debug "Been transient since ".$start->desig;
+            my $latest = $c->dsn_date || now();
+
+            debug " *** START : ".$start->desig;
+            debug " *** LATEST: ".$latest->desig;
+
+            if( $start + $patience > $latest )
+            {
+                debug "  LIMIT: ".($start + $patience)->desig;
+
+                debug "  Not transient anymore";
+#                $ea->update({'has_email_deliverability' =>
+#                             C->get('ed_non_deliverable')}, $args);
+            }
+
+            # else, the same status for now
+        }
+        else
+        {
+            $ea->update({'has_email_deliverability' =>
+                         C->get('ed_delayed')}, $args);
+        }
+    }
+    elsif( $c->is_spam )
+    {
+        debug "Is SPAM";
+#	    debug "Removes SPAM from unsorted";
+#	    $recognized++;
+        die "fixme";
+    }
+    elsif( $c->is_ticket )
+    {
+        die "fixme";
+    }
+    elsif( $c->is_vacation )
+    {
+        # Must get more info before we can say anything about this
+        # See RDF::Base::Email::Classifier/analyze_vacation
+    }
+
+    unless( $ea->prop('has_email_deliverability') )
+    {
+#        $ea->add({has_email_deliverability=>C->ed_unclassified}, $args);
+        debug "ABOUT TO ADD has_email_deliverability ed_unclassified";
+    }
+    
+
+
 }
 
 ##############################################################################

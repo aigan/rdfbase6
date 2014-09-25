@@ -24,7 +24,8 @@ use 5.010;
 use strict;
 use warnings;
 use utf8;
-use constant EA => 'RDF::Base::Literal::Email::Address';
+use constant EA => 'RDF::Base::Email::Address';
+use constant R => 'RDF::Base::Resource';
 
 use Carp qw( croak confess cluck );
 use Template;
@@ -42,7 +43,7 @@ use Para::Frame::Email::Sending;
 
 use RDF::Base;
 use RDF::Base::Utils qw( parse_propargs alphanum_to_id is_undef );
-use RDF::Base::Constants qw( $C_email );
+use RDF::Base::Constants qw( $C_email $C_email_address_holder );
 use RDF::Base::Literal::String;
 use RDF::Base::Literal::Time qw( now ); #);
 use RDF::Base::Literal::Email::Address;
@@ -74,9 +75,6 @@ sub get
     my $uid = $args->{'uid'} or croak "uid not given";
     my $folder = $args->{'folder'} or croak "folder not given";
 
-
-    my $R = RDF::Base->Resource;
-
     my $head = RDF::Base::Email::IMAP::Head->new_by_uid( $folder, $uid );
 
     # Messge id without surrounding brackets
@@ -96,18 +94,18 @@ sub get
 
 
     debug "SEARCHING for $url_string";
-    my $emails = $R->find({
-			   has_imap_url => $url_string,
-			   is => $C_email,
-			  },['not_removal']);
+    my $emails = R->find({
+                          has_imap_url => $url_string,
+                          is => $C_email,
+                         },['not_removal']);
 
     if( not $emails->size and $message_id )
     {
         debug "SEARCHING for $message_id";
-        $emails = $R->find({
-                            has_message_id => $message_id,
-                            is => $C_email,
-                           },['not_removal']);
+        $emails = R->find({
+                           has_message_id => $message_id,
+                           is => $C_email,
+                          },['not_removal']);
         $by_mid = 1;
     }
 
@@ -146,14 +144,14 @@ sub get
     else
     {
 	$email =
-	  $R->create({
-		      is => $C_email,
-		      has_message_id => $message_id,
-		      has_imap_url => $url_string,
-		     },
-		     {
-		      activate_new_arcs => 1,
-		     });
+	  R->create({
+                     is => $C_email,
+                     has_message_id => $message_id,
+                     has_imap_url => $url_string,
+                    },
+                    {
+                     activate_new_arcs => 1,
+                    });
     }
 
     $email->{'email_obj'} =
@@ -279,13 +277,16 @@ sub references
 	$mid_string =~ s/^<|>$//g;
 	foreach my $mid ( split />\s*</, $mid_string )
 	{
-	    debug "References $mid";
+#	    debug "References '$mid'";
 
 	    my $refered = RDF::Base::Resource->
 	      find({
 		    has_message_id => $mid,
 		    is => $C_email,
+#		   });
 		   })->get_first_nos;
+
+#            debug "  found ".$refered->sysdesig;
 
 	    push @emails, $refered || is_undef;
 	}
@@ -1006,6 +1007,36 @@ sub reset_email_cache
 	    delete $_[0]->{$key};
 	}
     }
+}
+
+##############################################################################
+
+=head2 process_for_deliverability
+
+=cut
+
+sub process_for_deliverability
+{
+    my( $email, $args ) = @_;
+
+    my $o = $email->obj;
+    my $c = $o->classified;
+
+    # Look up original recipient
+    #
+    my $ea = $c->dsn_email_address_node;
+    unless( $ea )
+    {
+        my $ea_string = $c->sender_email_address
+          or die "No sender found";
+
+        $ea = EA->new( $ea_string, $args );
+    }
+
+    debug "ORIGINAL RECIPIENT ".$ea->sysdesig;
+    $ea->update_deliverability( $c );
+
+    return;
 }
 
 ##############################################################################

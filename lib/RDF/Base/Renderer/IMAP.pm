@@ -138,24 +138,12 @@ sub render_output
 	$part = $top->new_by_path($imap_path);
 
 	$type = $part->type || '';
-#	debug "part type is $type";
-#	if( $type =~ m/^text\// )
-#	{
-#	    $charset = $part->charset_guess;
-#	    unless( $charset )
-#	    {
-#		debug "Charset undefined. Falling back on ISO-8859-1";
-#		$charset = "iso-8859-1";
-#	    }
-#	}
 
 	$encoding = $part->encoding;
-#	debug "Metadata registred: $type - $charset";
     }
     else
     {
 	$encoding = $top->encoding;
-#	$charset = $top->charset_guess;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -209,73 +197,35 @@ sub render_output
 #    my $uid = $top->uid;
 
 
-    my $data;
+    my( $data, $charset );
     if( not $imap_path )
     {
 	if( $type eq "text/html" )
 	{
-	    $data = $top->body;
-#	    $data = $folder->imap_cmd('body_string', $uid);
+	    ($data,$charset) = $top->body_with_sensible_charset;
 	}
 	else
 	{
+#            debug "Returning the whole message (no imap_path)";
+
 	    $type = "message/rfc822";
-	    $data = $top->raw;
+	    return $top->raw;
 	}
     }
     else
     {
 #	debug "Getting bodypart ".$top->uid." $imap_path";
-	$data = $part->body;
+	($data,$charset) = $part->body_with_sensible_charset;
 #	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
 	#    debug "bodypart_string: ".validate_utf8( \$data );
     }
 
-
     $part ||= $top;
     $rend->{'content_type'} = $type;
-    $rend->{'charset'} = $part->charset_guess;
-
+#    $rend->{'charset'} = $part->charset_guess;
+    $rend->{'charset'} = $charset;
 #    debug "Charset set to ".$rend->{'charset'};
 
-
-    if( $type eq "message/rfc822" )
-    {
-#	debug "Returning the whole message (no imap_path)";
-	return $data;
-    }
-
-#    # Set encoding if missing
-#    $encoding ||= '8bit'; ### Reasonable default?
-#    debug "Using encoding '$encoding'";
-#
-#    if( $encoding eq 'base64' )
-#    {
-#	$data = decode_base64($data);
-#    }
-#    elsif( $encoding eq '8bit' )
-#    {
-#	# Ok
-#    }
-#    elsif( $encoding eq 'binary' )
-#    {
-#	# Ok (same as 8bit)
-#    }
-#    elsif( $encoding eq '7bit' )
-#    {
-#	# Ok
-#    }
-#    elsif( $encoding eq 'quoted-printable' )
-#    {
-#	$data = decode_qp($data);
-#    }
-#    else
-#    {
-#	die "Encoding $encoding unsupported";
-#    }
-
-#    debug "decoded data: ".validate_utf8(\$data);
-#    debug "type is $type";
 
     if( $type eq 'text/html' )
     {
@@ -326,6 +276,9 @@ sub render_output
 	    my $header = "<html><title>$subject_out</title>";
 	    $header .= "<body onLoad=\"parent.onLoadPage()\">\n";
 	    my $footer = "</body></html>\n";
+
+#            debug "BODY ".validate_utf8($data);
+
 	    $$data = $header . $$data . $footer;
 	}
     }

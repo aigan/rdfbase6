@@ -96,6 +96,10 @@ sub parse
     {
 	return $val_in;
     }
+    elsif( UNIVERSAL::isa $val_in, "RDF::Base::Email::Address" )
+    {
+	$parse_val = $val_in->original;
+    }
     elsif( UNIVERSAL::isa $val_in, "Para::Frame::Email::Address" )
     {
         $parse_val = $val_in->original;
