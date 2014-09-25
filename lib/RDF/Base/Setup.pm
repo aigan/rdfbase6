@@ -1284,7 +1284,7 @@ sub upgrade_db
                    },$args);
 
 
-        $rg->update({ has_version => 8 },$args);
+        $rb->update({ has_version => 8 },$args);
         $res->autocommit;
         $req->done;
     }
