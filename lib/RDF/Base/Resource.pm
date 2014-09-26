@@ -8117,6 +8117,11 @@ sub mark_unsaved
 
 =head2 commit
 
+Called by L<RDF::Base/on_done>
+
+THIS WILL NOT CALL $RDF::dbix->commit() for you
+
+
 =cut
 
 sub commit
@@ -8124,10 +8129,18 @@ sub commit
 #    debug "Comitting Resource node changes";
     return if $Para::Frame::FORK;
 
+    # Set up job now in case of recursive call to this method
+    #
+    my @unsaved = values %UNSAVED;
+    %UNSAVED = ();
+
+    my @child_changed = values %CHILD_CHANGED;
+    %CHILD_CHANGED = ();
+
     eval
     {
 	my $cnt = 0;
-	foreach my $node ( values %UNSAVED )
+	while( my $node = shift @unsaved )
 	{
 	    debug "Saving node ".$node->sysdesig;
 	    $node->update_unseen_by;
@@ -8142,7 +8155,7 @@ sub commit
 	    }
 	}
 
-	foreach my $node ( values %CHILD_CHANGED )
+	while( my $node = shift @child_changed )
 	{
             $node->on_child_changed();
 
@@ -8159,10 +8172,13 @@ sub commit
     {
 	debug $@;
 	RDF::Base::Resource->rollback;
-    }
 
-    %UNSAVED = ();
-    %CHILD_CHANGED = ();
+	# Re-add unhandled nodes.
+	# May miss the node triggering the error
+	#
+	%UNSAVED = map { $_->id => $_ } @unsaved;
+	%CHILD_CHANGED = map { $_->id => $_ } @child_changed;
+    }
 
 
     # DB synced with arc changes in cache

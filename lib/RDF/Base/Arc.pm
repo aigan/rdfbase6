@@ -1218,7 +1218,7 @@ sub value_as_html
 {
     my( $arc, $args ) = @_;
 
-    if( $args ){ debug "  with args ".query_desig($args);}
+#    if( $args ){ debug "  with args ".query_desig($args);}
 
     my $out;
     if( $arc->is_removal )

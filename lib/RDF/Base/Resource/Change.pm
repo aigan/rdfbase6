@@ -441,7 +441,8 @@ sub autocommit
         $c->{'newarcs'} = [];
     }
 
-    $c->commit;
+    RDF::Base::Resource->commit();
+    $RDF::dbix->commit();
 
     return $cnt;
 }
@@ -458,11 +459,11 @@ Called by C</autocommit>
 
 =cut
 
-sub commit
-{
-    RDF::Base::Resource->commit();
-    $RDF::dbix->commit();
-}
+#sub commit
+#{
+#    RDF::Base::Resource->commit();
+#    $RDF::dbix->commit();
+#}
 
 
 #########################################################################

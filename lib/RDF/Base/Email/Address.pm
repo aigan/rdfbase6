@@ -142,7 +142,7 @@ sub wuirc
 	$pred = RDF::Base::Pred->get_by_label($predname);
     }
 
-    debug "  $predname for ".$subj->sysdesig;
+#    debug "  $predname for ".$subj->sysdesig;
 
     my $divid = $args->{divid};
     my $size = $args->{'size'} ||"";
