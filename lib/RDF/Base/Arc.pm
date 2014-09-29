@@ -2444,16 +2444,14 @@ sub table_row
 	{
 	    when('-arc_remove')
 	    {
-		unless( $disabled )
+                if( not $disabled and $req->session->{'advanced_mode'} )
 		{
 		    if( $ajax )
 		    {
-			return '' unless $req->session->{'advanced_mode'};
-			
-			my $arc_id = $arc->id;
-			my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
-		
-			$out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
+                        my $arc_id = $arc->id;
+                        my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
+
+                        $out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
 		    }
 		    else
 		    {
@@ -6650,13 +6648,10 @@ Displays link for updating arc
 sub edit_link_html
 {
     my( $arc, $args ) = @_;
+    my $req = $Para::Frame::REQ;
 
-	my $req = $Para::Frame::REQ;
-	
     return '' unless $req->user->has_root_access;
-	  
-	return '' unless $req->session->{'advanced_mode'};
-	  
+    return '' unless $req->session->{'advanced_mode'};
 
     my $home   = $req->site->home_url_path;
     my $arc_id = $arc->id;
