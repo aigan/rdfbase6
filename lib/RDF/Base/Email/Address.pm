@@ -391,7 +391,7 @@ sub desig
 #    debug datadump($ea->first_prop('ea_original'),1);
 #    return "--fixme--";
 
-    return $ea->first_prop('ea_original')->format();
+    return $ea->first_prop('ea_original')->format(@_);
 }
 
 ##############################################################################

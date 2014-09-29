@@ -6461,7 +6461,6 @@ sub wu_hiearchy_children
 
 
 ##############################################################################
-
 =head2 wu_select_tree_multiple
 
 =cut
@@ -6474,9 +6473,9 @@ sub wu_select_tree_multiple
 
     if( $args->{header} )
     {
-        $out .= $type->wu_jump() . "<br>";
         $out .= "<p class='left'>";
-        $out .= aloc('Has') ." ". $type->as_html;
+        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump ." ";
+        $out .= $node->list($pred_name, {scof=>$type},'active')->as_html;
         $out .= "</p>";
     }
 
@@ -6523,8 +6522,8 @@ sub wu_select_tree_multiple
         my $home = $Para::Frame::REQ->site->home_url_path;
         my $nid = $node->id;
         my $tid = $type->id;
-        $out .= "<div id=\"${tid}-tree\"><p class=\"click\">";
-        $out .= locnl('Chose').': '.$type->as_html;
+        $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary\">";
+        $out .= locnl('Chose').' '.$type->as_html;
         $out .= '</p></div>';
         $out .= "<script>\n";
         $out .= "(function(\$) {
