@@ -27,7 +27,7 @@ use base qw( RDF::Base::Literal::String );
 use Carp;
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug );
+use Para::Frame::Utils qw( debug datadump );
 use Para::Frame::Widget qw( checkbox label_from_params hidden );
 
 use RDF::Base::Utils qw( parse_propargs );
@@ -78,6 +78,18 @@ sub wuirc
 #			       id          => $args->{'id'},
 #			       label_class => $args->{'label_class'},
 #			      });
+
+    if( ($args->{'label'}||'') eq '1' )
+    {
+#        debug "Args label is ".$args->{'label'};
+        $args->{'label'} = $pred;
+    }
+
+    if( ($args->{'tdlabel'}||'') eq '1' )
+    {
+#        debug "Args label is ".$args->{'label'};
+        $args->{'tdlabel'} = $pred;
+    }
 
     if( ($args->{'disabled'}||'') eq 'disabled' )
     {

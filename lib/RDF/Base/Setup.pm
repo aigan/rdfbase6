@@ -1129,9 +1129,16 @@ sub upgrade_db
         my $m_ea = $R->find_set({code => 'RDF::Base::Email::Address',
                                  is=>$C->get('class_perl_module')},$args);
 
-        my $c_ea = $R->find_set({label => 'email_address_holder'},$args)
+        my $c_url = $R->find_set({label => 'url_holder'},$args)
           ->update({
                     is => $C_class,
+                    has_cyc_id => 'UniformResourceLocator',
+                    has_wikipedia_id => 'Uniform_resource_locator',
+                   },$args);
+
+        my $c_ea = $R->find_set({label => 'email_address_holder'},$args)
+          ->update({
+                    scof => $c_url,
                     has_cyc_id => 'EMailAddress',
                     class_handled_by_perl_module => $m_ea,
                    },$args);
@@ -1158,29 +1165,31 @@ sub upgrade_db
                     range_card_max => 1,
                    },$args);
 
-        my $c_url = $R->find_set({label => 'url_holder'},$args)
-          ->update({
-                    is => $C_class,
-                    has_cyc_id => 'UniformResourceLocator',
-                    has_wikipedia_id => 'Uniform_resource_locator',
-                   },$args);
-
         my $m_d = $R->find_set({code => 'RDF::Base::Domain',
                                 is=>$C->get('class_perl_module')},$args);
 
         my $c_d = $R->find_set({label => 'internet_domain'},$args)
           ->update({
-                    is => $C_class,
+                    scof => $c_url,
                     has_cyc_id => 'DomainName',
                     has_wikipedia_id => 'Domain_name',
                     class_handled_by_perl_module => $m_d,
                    },$args);
 
-        $R->find_set({label => 'has_mail_status_code'},$args)
+        my $m_ed = $R->find_set({code => 'RDF::Base::Email::Deliverability',
+                                 is=>$C->get('class_perl_module')},$args);
+
+        my $c_ed = $R->find_set({label => 'email_deliverability'},$args)
           ->update({
-                    range => $C->get('term'),
+                    is => $C_class,
+                    class_handled_by_perl_module => $m_ed,
+                   },$args);
+
+        $R->find_set({label => 'has_email_deliverability'},$args)
+          ->update({
+                    domain => $c_url,
+                    range => $c_ed,
                     is => $C_predicate,
-                    range_card_max => 1,
                    },$args);
 
         $R->find_set({label => 'in_internet_domain'},$args)
@@ -1204,7 +1213,78 @@ sub upgrade_db
                     is => $C_predicate,
                    },$args);
 
-#        $rg->update({ has_version => 8 },$args);
+        my $c_ed_non = $R->find_set({label => 'ed_non_deliverable'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        my $c_ed_dlv = $R->find_set({label => 'ed_deliverable'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_opening'},$args)
+          ->update({
+                    scof => $c_ed_dlv,
+                   },$args);
+
+        $R->find_set({label => 'ed_interacting'},$args)
+          ->update({
+                    scof => $c_ed_dlv,
+                   },$args);
+
+        $R->find_set({label => 'ed_queuing'},$args)
+          ->update({
+                    scof => $c_ed_dlv,
+                   },$args);
+
+        $R->find_set({label => 'ed_agent_away'},$args)
+          ->update({
+                    scof => $c_ed_dlv,
+                   },$args);
+
+        $R->find_set({label => 'ed_address_changed'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_pending_action'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_paranoia'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_delayed'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_unclassified'},$args)
+          ->update({
+                    is => $c_ed,
+                   },$args);
+
+        $R->find_set({label => 'ed_mailbox_unavailible'},$args)
+          ->update({
+                    scof => $c_ed_non,
+                   },$args);
+
+        $R->find_set({label => 'ed_address_error'},$args)
+          ->update({
+                    scof => $c_ed_non,
+                   },$args);
+
+        $R->find_set({label => 'ed_domain_error'},$args)
+          ->update({
+                    scof => $c_ed_non,
+                   },$args);
+
+
+        $rb->update({ has_version => 8 },$args);
         $res->autocommit;
         $req->done;
     }

@@ -40,7 +40,7 @@ use File::MMagic::XS qw(:compat);
 use Encode; # encode decode
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Utils qw( throw debug datadump validate_utf8 );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::List;
 
@@ -149,6 +149,8 @@ sub exist
 ##############################################################################
 
 =head2 email
+
+Returns the RB email node
 
 =cut
 
@@ -455,7 +457,7 @@ sub guess_type
     my( $part ) = @_;
 
     # For large headers...
-    my $body_part = $part->body(5000, {unwind=>1}); # calls charset_guess
+    my $body_part = $part->body_with_original_charset(5000);
 
     my $m = File::MMagic::XS->new();
     my $res = $m->checktype_contents($$body_part);
@@ -760,15 +762,21 @@ sub charset_guess
 {
     my( $part, $args ) = @_;
 
+    my $DEBUG = 0;
+
     my $charset = $part->{'charset'};
 
     if( $charset )
     {
         $charset =~ s/'//g; # Cleanup
-        return $charset if find_encoding($charset);
+        if( find_encoding($charset) )
+        {
+            debug "Charset previously set to $charset" if $DEBUG;
+            return $charset;
+        }
     }
 
-#    debug "Determining charset for ".$part->path;
+    debug "Determining charset for ".$part->path if $DEBUG;
 
     $charset = $part->charset;
 
@@ -784,8 +792,8 @@ sub charset_guess
 
     unless( $charset )
     {
-	my $type = $args->{'unwind'} ? $part->type :
-	  $part->effective_type;
+#	my $type = $args->{'unwind'} ? $part->type : $part->effective_type;
+	my $type = $part->effective_type;
 	if( $type =~ /^text\// )
 	{
 	    my $sample;
@@ -798,7 +806,7 @@ sub charset_guess
 	    else
 	    {
 #		debug "Finding charset from body";
-		$sample = $part->body(2000, {unwind=>1});
+		$sample = $part->body_with_original_charset(2000);
 #		debug "BODY SAMPLE: $$sample"
 	    }
 
@@ -823,7 +831,7 @@ sub charset_guess
 	}
     }
 
-#    debug "Found charset $charset";
+    debug "Found charset $charset" if $DEBUG;
     return $part->{'charset'} = $charset;
 }
 
@@ -1526,11 +1534,73 @@ sub _render_rfc822
 
 ##############################################################################
 
-=head2 body
+=head2 body_with_sensible_charset
+
+  returns( $bodyref, $charset )
 
 =cut
 
-sub body
+sub body_with_sensible_charset
+{
+    my( $part, $length, $args ) = @_;
+
+    my $dataref = $part->body_with_original_charset( $length, $args );
+
+    unless( $part->type =~ m/^text\// )
+    {
+	return( $dataref, undef );
+    }
+
+    $args ||= {};
+
+    my $charset = $part->charset_guess({%$args,sample=>$dataref});
+#    debug "Body charset is $charset";
+#    debug "Data ".validate_utf8($dataref);
+    if( $charset eq 'iso-8859-1' )
+    {
+	# No changes
+    }
+    elsif( $charset eq 'windows-1252' )
+    {
+	# No changes
+    }
+    elsif( $charset eq 'utf-8' )
+    {
+#        debug "Decode utf8 to internal format";
+	utf8::decode( $$dataref );
+    }
+    else
+    {
+#	debug "decoding from $charset";
+        eval
+        {
+#            my $decoder = find_encoding($charset);
+
+#            debug "BEFORE ".validate_utf8($dataref);
+
+            $$dataref = decode($charset,$$dataref);
+
+#            debug "AFTER ".validate_utf8($dataref);
+        } or do
+        {
+            debug "Failed decoding body: ".$@;
+#            debug "Removing faulty charset ".$part->{'charset'};
+#            $part->{'charset'} = undef; # fallback
+        };
+    }
+
+
+    return( $dataref, $charset);
+}
+
+
+##############################################################################
+
+=head2 body_with_original_charset
+
+=cut
+
+sub body_with_original_charset
 {
     my( $part, $length, $args ) = @_;
 
@@ -1569,49 +1639,46 @@ sub body
         die "encoding $encoding not supported";
     }
 
-    $args ||= {};
-#    debug "unwinding";
-    return $dataref if $args->{'unwind'};
+    return $dataref;
+}
+
+
+##############################################################################
+
+=head2 body
+
+Always returns string in perl character encoding
+
+=cut
+
+sub body
+{
+    my( $part, $length, $args ) = @_;
+
+    my $dataref = $part->body_with_original_charset( $length, $args );
 
     unless( $part->type =~ m/^text\// )
     {
 	return $dataref;
     }
 
-#    debug datadump $args;
+
+    $args ||= {};
 
     my $charset = $part->charset_guess({%$args,sample=>$dataref});
 #    debug "Body charset is $charset";
-    if( $charset eq 'iso-8859-1' )
+#    debug "Data ".validate_utf8($dataref);
+    eval
     {
-	# No changes
-    }
-#    elsif( $charset eq 'windows-1252' )  ### See if this helps..
-#    {
-#	# No changes
-#    }
-    elsif( $charset eq 'utf-8' )
-    {
-	utf8::decode( $$dataref );
-    }
-    else
-    {
-#	debug "decoding from $charset";
-        eval
-        {
-#            my $decoder = find_encoding($charset);
-            $$dataref = decode($charset,$$dataref);
-            $part->{'charset'} = 'utf-8';
-        } or do
-        {
-            debug "Removing faulty charset ".$part->{'charset'};
-            $part->{'charset'} = undef; # fallback
-        }
-#	debug "Setting charset of ".$part->path." to utf-8";
-#	debug datadump($part,1);
-#	debug "Charset: ".$part->charset;
-    }
+#        debug "BEFORE ".validate_utf8($dataref);
 
+        $$dataref = decode($charset,$$dataref);
+
+#        debug "AFTER ".validate_utf8($dataref);
+    } or do
+    {
+        debug "Failed decoding body: ".$@;
+    };
 
     return $dataref;
 }
@@ -2092,8 +2159,7 @@ sub footer_remove
 sub classified
 {
     my( $part ) = @_;
-#    return $part->{'classified'} ||=
-    return $part->{'classified'} =
+    return $part->{'classified'} ||=
       RDF::Base::Email::Classifier->new( $part->top );
 }
 

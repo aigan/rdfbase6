@@ -33,7 +33,7 @@ our @EXPORT_OK
 	arc_unlock truncstring string html parse_query_pred
 	parse_query_value parse_query_prop
 	convert_query_prop_for_creation name2url query_desig
-	send_cache_update parse_propargs aais alphanum_to_id
+	send_cache_update parse_propargs solid_propargs aais alphanum_to_id
 	proplim_to_arclim range_pred );
 
 
@@ -1263,6 +1263,32 @@ sub parse_propargs
 	return $arg;
     }
 }
+
+#########################################################################
+
+=head2 solid_propargs
+
+  solid_propargs( \%args )
+
+=cut
+
+sub solid_propargs
+{
+    my( $args_in ) = @_;
+
+    unless( ref $args_in and ref $args_in eq 'HASH' )
+    {
+        $args_in = {};
+    }
+
+    my %args = %$args_in;
+    $args{'activate_new_arcs'} = 1;
+    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
+    $args{unique_arcs_prio} = [1]; # active
+
+    return \%args;
+}
+
 
 #########################################################################
 

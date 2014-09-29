@@ -33,7 +33,7 @@ sub handler
 
     my $q = $req->q;
     my $id = $q->param('id');
-    my( $args, $arclim, $res ) = parse_propargs('auto');
+    my( $args, $arclim, $res ) = parse_propargs('solid');
 
     my $node = RDF::Base::Resource->get( $id );
     $node->reset_cache(undef, $args );

@@ -336,6 +336,7 @@ sub on_done ()
 {
     RDF::Base::Arc->unlock_all();
     RDF::Base::Resource->commit();
+    $RDF::dbix->commit();
 }
 
 

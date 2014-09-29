@@ -409,8 +409,15 @@ sub build_field_key
     my $arc_id = '';
     if( my $arc_in = delete($props->{'arc'}) )
     {
-	my $arc = RDF::Base::Arc->get($arc_in);
-	$arc_id = $arc->id;
+        if( $arc_in eq 'singular' )
+        {
+            $arc_id = $arc_in;
+        }
+        else
+        {
+            my $arc = RDF::Base::Arc->get($arc_in);
+            $arc_id = $arc->id;
+        }
     }
 
     my $out = "arc_".$arc_id;

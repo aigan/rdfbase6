@@ -74,8 +74,9 @@ use RDF::Base::Utils qw( valclean parse_query_props
 # DB rollbacks with a DB-connection that uses ONE db transaction, it
 # will roll back ALL things since the start of the transaction.
 
-our %UNSAVED;     # The node table
-our %TRANSACTION; # The arc table
+our %UNSAVED;       # The node table
+our %CHILD_CHANGED; # For triggering on_child_changed
+our %TRANSACTION;   # The arc table
 our $ID;
 
 
@@ -5746,14 +5747,14 @@ sub register_ajax_pagepart
     {
 	if( ref $depends_on )
 	{
-	    debug "Ref depends_on: ". ref $depends_on;
+#	    debug "Ref depends_on: ". ref $depends_on;
 	    $depends_on = join(', ', map("'$_'", @$depends_on));
 	}
 	else
 	{
 	    $depends_on = "'$depends_on'";
 	}
-	debug "Depends on now: ". $depends_on;
+#	debug "Depends on now: ". $depends_on;
 	$out .= ", depends_on: [ $depends_on ]";
     }
     $out .= "}); //--> </script>";
@@ -5789,6 +5790,7 @@ supported args are
   rev
   range
   range_scof
+  alternatives
   ajax
   divid
   disabled
@@ -5818,6 +5820,10 @@ Args details:
 
   range_scof => $range_scof_node
     the range scof class. May not be the same as $class
+
+  alternatives => $list
+    get alternatives for selection from this list rather
+    than form range or range_scof
 
   arc_type => singular
     if there should be only one arc with that pred from that subj.
@@ -5903,6 +5909,7 @@ sub wuirc
 
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
+    my $alternatives = $args->{'alternatives'};
 
 
 #    debug "Selecting inputtype for ".$pred->desig;
@@ -5910,7 +5917,12 @@ sub wuirc
     my $range_count;
     my $rev_range_pred = 'rev_'.$range_pred;
     $rev_range_pred =~ s/^rev_rev_//;
-    if( $range_pred =~ /^rev_/ )
+
+    if( $alternatives )
+    {
+        $range_count = $alternatives->size;
+    }
+    elsif( $range_pred =~ /^rev_/ )
     {
         $range_count = $range->count($rev_range_pred);
     }
@@ -6107,7 +6119,7 @@ sub wu_select_tree
 
     ### Given args MUST have been initialized and localizes!
 
-    debug "wu_select_tree $pred_name";
+#    debug "wu_select_tree $pred_name";
 
     my $out = "";
     my $R = RDF::Base->Resource;
@@ -6125,7 +6137,7 @@ sub wu_select_tree
     my $set_value = $singular ? 1 : 0;
 
 
-    debug "singular ".($singular ? "YES" : "NO");
+#    debug "singular ".($singular ? "YES" : "NO");
 
     unless( UNIVERSAL::isa $type, 'RDF::Base::Node' )
     {
@@ -6160,6 +6172,14 @@ sub wu_select_tree
     my $q = $Para::Frame::REQ->q;
     my $val_query = $q->param($val_stripped);
 
+    my $selected = $subj->first_prop($pred_name);
+    if( not $selected and $args->{'default_value'} )
+    {
+        $selected = $R->get($args->{'default_value'});
+    }
+    $selected ||= is_undef;
+
+
     while( my $subtype = $subtypes->get_next_nos )
     {
 	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
@@ -6181,8 +6201,8 @@ sub wu_select_tree
         }
         elsif( $set_value )
         {
-            if( $subj->has_value({ $pred_name => $subtype }) or
-                $subj->has_value({ $pred_name => { scof => $subtype } })
+            if( $selected->equals($subtype) or
+                $selected->scof( $subtype )
               )
             {
                 $out .= ' selected="selected"';
@@ -6223,11 +6243,14 @@ sub wu_select_tree
 
 =head2 wu_select
 
+  $node->wu_select( $pred, $type, \%args )
+
 Display a select of everything that is -> $type
 
 args:
   select_optgroup
   desig
+  alternatives
 
 =cut
 
@@ -6323,85 +6346,110 @@ sub wu_select
 
 #    debug "SORTARGS: @sortargs";
 
-    my $ais; # arc items
-    if( $dir eq 'subj' )
+
+    if( my $alts = $args->{'alternatives'} )
     {
-        $ais = $type->revarc_list($range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
+        $req->may_yield;
+        die "cancelled" if $req->cancelled;
+
+        confess( "Trying to make a select of ". $alts->size .".  That's not wise." )
+          if( $alts->size > 500 );
+
+        $alts->reset;
+        while( my $item = $alts->get_next_nos )
+        {
+            unless( $alts->count % 100 )
+            {
+                debug sprintf "Wrote item %4d (%s)",
+                  $alts->count, $item->desig;
+                $req->may_yield;
+                die "cancelled" if $req->cancelled;
+            }
+
+            $out .= '<option value="'. $item->id .'"';
+
+            if( $set_value )
+            {
+                $out .= ' selected="selected"'
+                  if( $default_value eq $item->id or
+                      $subj->prop( $pred_name, $item, 'adirect' ) );
+            }
+
+            $out .= '>'.$item->$desig_pred.'</option>';
+        }
+
+        $out .= '</select>';
     }
     else
     {
-        $ais = $type->arc_list($rev_range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
-    }
-
-#    my $items = $type->$rev_range_pred(undef, $args)->sorted(['distance','desig'])->as_listobj;
-
-
-
-
-#      sorted(['name_short', 'desig', 'label'])->as_listobj;
-
-#    debug "ITEMS ".$ais->sorted(['distance','subj.desig'])->as_listobj->subj->sysdesig;
-
-    $req->may_yield;
-    die "cancelled" if $req->cancelled;
-
-    confess( "Trying to make a select of ". $ais->size .".  That's not wise." )
-      if( $ais->size > 500 );
-
-    my $optgroup;
-    my $args_direct = aais($args,'direct');
-    my $cur_optgroup = '';
-
-#    debug "select $key";
-    $ais->reset;
-    while( my $ai = $ais->get_next_nos )
-    {
-	unless( $ais->count % 100 )
-	{
-	    debug sprintf "Wrote item %4d (%s)",
-	      $ais->count, $ais->desig;
-	    $req->may_yield;
-	    die "cancelled" if $req->cancelled;
-	}
-
-        my $lvl = $ai->distance;
-        my $item = $ai->$dir;
-
-        if( $optgroup_pred )
+        my $ais; # arc items
+        if( $dir eq 'subj' )
         {
-            $optgroup = $item->arc_list($optgroup_pred, undef, $args_direct)->obj->desig;
-            unless( $optgroup eq $cur_optgroup )
+            $ais = $type->revarc_list($range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
+        }
+        else
+        {
+            $ais = $type->arc_list($rev_range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
+        }
+
+        $req->may_yield;
+        die "cancelled" if $req->cancelled;
+
+        confess( "Trying to make a select of ". $ais->size .".  That's not wise." )
+          if( $ais->size > 500 );
+
+        my $optgroup;
+        my $args_direct = aais($args,'direct');
+        my $cur_optgroup = '';
+
+        $ais->reset;
+        while( my $ai = $ais->get_next_nos )
+        {
+            unless( $ais->count % 100 )
             {
-                if( $cur_optgroup )
-                {
-                    $out .= '</optgroup>';
-                }
-                $cur_optgroup = $optgroup;
-                $out .= sprintf '<optgroup label="%s">', CGI->escapeHTML($cur_optgroup);
+                debug sprintf "Wrote item %4d (%s)",
+                  $ais->count, $ais->desig;
+                $req->may_yield;
+                die "cancelled" if $req->cancelled;
             }
+
+            my $lvl = $ai->distance;
+            my $item = $ai->$dir;
+
+            if( $optgroup_pred )
+            {
+                $optgroup = $item->arc_list($optgroup_pred, undef, $args_direct)->obj->desig;
+                unless( $optgroup eq $cur_optgroup )
+                {
+                    if( $cur_optgroup )
+                    {
+                        $out .= '</optgroup>';
+                    }
+                    $cur_optgroup = $optgroup;
+                    $out .= sprintf '<optgroup label="%s">', CGI->escapeHTML($cur_optgroup);
+                }
+            }
+
+
+            $out .= '<option class="rb_arc_distance_'.$lvl.'" value="'. $item->id .'"';
+
+            if( $set_value )
+            {
+                $out .= ' selected="selected"'
+                  if( $default_value eq $item->id or
+                      $subj->prop( $pred_name, $item, 'adirect' ) );
+            }
+
+            $out .= '>'.$item->$desig_pred.'</option>';
         }
-
-
-#        debug "  option ".$item->sysdesig;
-
-	$out .= '<option class="rb_arc_distance_'.$lvl.'" value="'. $item->id .'"';
-
-        if( $set_value )
+        if( $cur_optgroup )
         {
-            $out .= ' selected="selected"'
-              if( $default_value eq $item->id or
-                  $subj->prop( $pred_name, $item, 'adirect' ) );
+            $out .= "</optgroup>";
         }
 
-#	$out .= '>'. ( ucfirst($item->name_short->loc || $item->desig )) .'</option>';
-	$out .= '>'.$item->$desig_pred.'</option>';
-    }
-    if( $cur_optgroup )
-    {
-        $out .= "</optgroup>";
+        $out .= '</select>';
     }
 
-    $out .= '</select>';
     if( $set_value )
     {
         $out .= $arc->edit_link_html
@@ -7273,6 +7321,8 @@ Returns: ---
 
 sub on_unbless
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7295,6 +7345,8 @@ Returns: ---
 
 sub on_bless
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7327,6 +7379,8 @@ Returns: ---
 
 sub on_arc_add
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7343,6 +7397,8 @@ Same as L</on_arc_add> but is called on the obj if existing.
 
 sub on_revarc_add
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7380,6 +7436,8 @@ Returns: ---
 
 sub on_arc_del
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7396,6 +7454,8 @@ Same as L</on_arc_del> but is called on the obj if existing.
 
 sub on_revarc_del
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -7417,6 +7477,55 @@ Returns: ---
 
 sub on_updated
 {
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
+    return;
+}
+
+
+#########################################################################
+
+=head2 mark_child_changed
+
+  $node->mark_child_changed()
+
+Returns: ---
+
+=cut
+
+sub mark_child_changed
+{
+    my( $n, $args ) = @_;
+
+    return if $CHILD_CHANGED{$n->id};
+    $CHILD_CHANGED{$n->id} = $n;
+
+    foreach my $pred ( $n->revlist_preds(undef,$args)->as_array )
+    {
+        foreach my $subj ( $n->revlist($pred,undef,$args)->as_array )
+        {
+            $subj->mark_child_changed($args);
+        }
+    }
+
+    return;
+}
+
+
+#########################################################################
+
+=head2 on_child_changed
+
+  $node->on_child_changed()
+
+Returns: ---
+
+=cut
+
+sub on_child_changed
+{
+    ## NOTE: MUST be empty! Will never be calld if node blessed to a
+    ## singel class in addition to this, that reimplements this method
     return;
 }
 
@@ -8007,6 +8116,11 @@ sub mark_unsaved
 
 =head2 commit
 
+Called by L<RDF::Base/on_done>
+
+THIS WILL NOT CALL $RDF::dbix->commit() for you
+
+
 =cut
 
 sub commit
@@ -8014,10 +8128,18 @@ sub commit
 #    debug "Comitting Resource node changes";
     return if $Para::Frame::FORK;
 
+    # Set up job now in case of recursive call to this method
+    #
+    my @unsaved = values %UNSAVED;
+    %UNSAVED = ();
+
+    my @child_changed = values %CHILD_CHANGED;
+    %CHILD_CHANGED = ();
+
     eval
     {
 	my $cnt = 0;
-	foreach my $node ( values %UNSAVED )
+	while( my $node = shift @unsaved )
 	{
 	    debug "Saving node ".$node->sysdesig;
 	    $node->update_unseen_by;
@@ -8032,13 +8154,31 @@ sub commit
 	    }
 	}
 
-	%UNSAVED = ();
+	while( my $node = shift @child_changed )
+	{
+            $node->on_child_changed();
+
+	    unless( ++$cnt % 100 )
+	    {
+		debug "Saved $cnt";
+		$Para::Frame::REQ->may_yield;
+		die "cancelled" if $Para::Frame::REQ->cancelled;
+	    }
+	}
+
     };
     if( $@ )
     {
 	debug $@;
 	RDF::Base::Resource->rollback;
+
+	# Re-add unhandled nodes.
+	# May miss the node triggering the error
+	#
+	%UNSAVED = map { $_->id => $_ } @unsaved;
+	%CHILD_CHANGED = map { $_->id => $_ } @child_changed;
     }
+
 
     # DB synced with arc changes in cache
     %TRANSACTION = ();
