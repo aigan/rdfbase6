@@ -861,6 +861,8 @@ sub find
 	$query = { 'name' => $query };
     }
 
+#    debug "Finding ".query_desig($query);
+
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow clone
 
@@ -892,6 +894,14 @@ sub find
 	}
     }
     my $class = ref($this) || $this;
+
+    foreach my $key ( keys %$query )
+    {
+	unless( defined $query->{$key} )
+	{
+	    delete $query->{$key};
+	}
+    }
 
     my $search = RDF::Base::Search->new($args);
     $search->modify($query, $args);
@@ -1313,6 +1323,8 @@ sub set_one
 
     my $nodes = $this->find( $query, $args );
     my $node = $nodes->get_first_nos;
+
+#    debug "set_one found ".query_desig($nodes);
 
     while( my $enode = $nodes->get_next_nos )
     {
@@ -8401,7 +8413,7 @@ sub initiate_rel
 
 	if( $rowcount > 1000 )
 	{
-	    $Para::Frame::REQ->note("Loading arcs done for".$node->safedesig);
+	    $Para::Frame::REQ->note("Loading arcs done for ".$node->safedesig);
 #            cluck "loading";
 	}
 

@@ -323,7 +323,7 @@ sub body_raw
     my $path = $part->path;
     my $folder = $part->top->folder;
 
-    debug "Getting bodypart $uid $path ".($length||'all');
+#    debug "Getting bodypart $uid $path ".($length||'all');
     return \ $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 }
 
@@ -338,7 +338,15 @@ See L<RDF::Base::Email::Part/size>
 
 sub size
 {
-    return $_[0]->struct->size;
+    my( $size ) = $_[0]->struct->size;
+    # Keep first number
+    if( $size =~ m/^(\d+)/ )
+    {
+        return $1;
+    }
+
+    debug "Size of part not found";
+    return undef;
 }
 
 

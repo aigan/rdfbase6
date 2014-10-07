@@ -1035,6 +1035,7 @@ sub select_renderer
 	     [ qr{text/rfc822-headers}   => '_render_headers'    ],
 	     [ qr{text/}                 => '_render_textplain'  ],
 	     [ qr{message/delivery-status}=>'_render_delivery_status' ],
+	     [ qr{message/disposition-notification}=>'_render_delivery_status' ],
 	    )
     {
         $type =~ $_->[0]
@@ -1106,7 +1107,7 @@ sub _render_texthtml
     }
 
 $msg .= <<EOT;
-<iframe class="iframe_autoresize" src="$url_path" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:visible; display:block; position:static"></iframe>
+<iframe class="iframe_autoresize_height" src="$url_path" scrolling="auto" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:scroll; display:block; position:static"></iframe>
 
 EOT
 ;
@@ -1579,6 +1580,8 @@ sub body_with_sensible_charset
 #            debug "BEFORE ".validate_utf8($dataref);
 
             $$dataref = decode($charset,$$dataref);
+            $charset = 'utf-8'; # Now utf-8
+
 
 #            debug "AFTER ".validate_utf8($dataref);
         } or do
@@ -1648,6 +1651,8 @@ sub body_with_original_charset
 =head2 body
 
 Always returns string in perl character encoding
+
+Returns scalar ref
 
 =cut
 
@@ -1747,16 +1752,23 @@ sub guess_content_part
 
 =head2 body_as_text
 
+returns in list context: ($bodyr, $ct_source)
+
+returns in scalar context: $bodyr
+
 =cut
 
 sub body_as_text
 {
     my( $part ) = shift @_;
 
+    my( $bodyr, $ct_source );
+
     my $ctype = $part->effective_type;
     if( $ctype eq 'text/plain' )
     {
-        return( $part->body(@_), 'plain');
+        $ct_source =  'plain';
+        $bodyr = $part->body(@_);
     }
     elsif( $ctype eq 'text/html' )
     {
@@ -1766,20 +1778,28 @@ sub body_as_text
         require HTML::FormatText;
         my $formatter = HTML::FormatText->new(leftmargin => 0,
                                               rightmargin => 1000);
-        return( \ $formatter->format($tree), 'html');
+        $ct_source =  'html';
+        $bodyr = \ $formatter->format($tree);
     }
     else
     {
         debug "Content-type $ctype not handled in body_as_text";
         #return( $part->body(@_), undef );
-        return( "", undef );
+
+        $ct_source =  undef;
+        $bodyr = \ "";
     }
+
+    return wantarray ? ($bodyr, $ct_source) : $bodyr;
+
 }
 
 
 ##############################################################################
 
 =head2 body_extract
+
+Returns a string
 
 =cut
 
@@ -2105,7 +2125,9 @@ sub attachments_as_html
 
 =head2 footer_remove
 
-  $body = footer_remove(\$str)
+  $body = footer_remove($str)
+
+Also used from E::Classifier
 
 =cut
 
@@ -2119,10 +2141,11 @@ sub footer_remove
 
     $str =~ s/\v+\s*\*?( Med.vänlig.hälsning
               | Bästa.hälsningar
-              | Best.Regards
+              | (Best|Kind).Regards
               | Mvh\s*
               | Med.vänliga.hälsningar
               | Vänligen\h*\v
+	      | Trevlig.fortsättning
               | \/\/\s*\w\w+
               ).*//soxi;
 

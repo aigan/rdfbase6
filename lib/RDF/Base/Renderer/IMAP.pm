@@ -216,6 +216,7 @@ sub render_output
     {
 #	debug "Getting bodypart ".$top->uid." $imap_path";
 	($data,$charset) = $part->body_with_sensible_charset;
+#        debug "Sensible Charset set to $charset";
 #	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
 	#    debug "bodypart_string: ".validate_utf8( \$data );
     }
