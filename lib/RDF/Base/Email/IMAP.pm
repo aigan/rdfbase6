@@ -29,7 +29,7 @@ use constant EA => 'RDF::Base::Literal::Email::Address';
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use IMAP::BodyStructure; # Patched _get_nstring in this file
+use IMAP::BodyStructure 1.02; # did not Patched _get_nstring in this file
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -547,7 +547,13 @@ sub is_top
 ##############################################################################
 ##############################################################################
 #
-# Patch IMAP::BodyStructure 1.01
+# Patch IMAP::BodyStructure 1.02
+#
+# Some IMAP servers returns an env-subject neither as quoted or
+# literal, but as an raw string, including spaces, The parser should
+# work here if the following thing is either a list or quoted
+# string. May fail if that string is followed by a NIL. See rfc3501.
+#
 #
 package IMAP::BodyStructure;
 sub _get_nstring(\$) {
@@ -566,6 +572,7 @@ sub _get_nstring(\$) {
         return $data;
         ### Changed to accept spaces
     } elsif ($$str =~ /\G([^"\(\)\{\%\*\"\\\x00-\x1F]+)/gc) {
+#    } elsif ($$str =~ /\G([^"\(\)\{ \%\*\"\\\x00-\x1F]+)/gc) {
         return $1;
     }
     return 0;

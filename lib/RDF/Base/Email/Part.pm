@@ -214,13 +214,18 @@ sub first_subpart_with_type
 	{
 	    return $sub;
 	}
-	elsif( $sub->type =~ /^multipart\// )
-	{
-	    if( my $match = $sub->first_part_with_type($type) )
-	    {
-		return $match;
-	    }
-	}
+        elsif( my $match = $sub->first_subpart_with_type($type) )
+        {
+            return $match;
+        }
+    }
+
+    if( $part->guess_type eq 'message/rfc822' )
+    {
+        if( my $body_part = $part->body_part )
+        {
+            return $body_part->first_part_with_type($type);
+        }
     }
 
     return undef;
@@ -253,6 +258,7 @@ sub first_non_multi_part
 
 =head2 parts
 
+  my @parts = $part->parts();
 
 Returns: A list of parts, not counting itself
 
@@ -448,6 +454,8 @@ sub effective_type
 Called from L</effective_type> when the content-type is not
 recognized. Guesses the content-type from the part body.
 
+Will make special parsing for detecting message/rfc822
+
 Returns: A plain scalar string of the mime-type
 
 =cut
@@ -462,6 +470,45 @@ sub guess_type
     my $m = File::MMagic::XS->new();
     my $res = $m->checktype_contents($$body_part);
     $res ||= 'application/octet-stream';
+
+    # File::MMagic::XS may/will not recognize message/rfc822
+    #
+    if( $res eq 'text/plain' )
+    {
+#        debug "  looking at text/plain for possibly headers";
+        my $ok = 1;
+        my $rows = 0;
+        foreach( split /^/, $$body_part )
+        {
+            if( /^[A-Za-z\-]+:/ )
+            {
+                $rows++;
+#                debug "  Yes: $_";
+            }
+            elsif( /^\r?\n$/ )
+            {
+                # End of header
+                last;
+            }
+            elsif( /^\s+/ )
+            {
+#                debug "  Yes: $_";
+                # ok
+            }
+            else
+            {
+                # Nonheader stuff
+#                debug "  No: $_";
+                $ok = 0;
+                last;
+            }
+        }
+
+        if( $ok and $rows )
+        {
+            $res = 'message/rfc822';
+        }
+    }
 
 
 #   debug "Guessed content type '$res'";
@@ -481,6 +528,10 @@ sub guess_type
 ##############################################################################
 
 =head2 disp
+
+Returns the content-disposition of the part. One of 'inline' or 'attachment', usually.
+
+See L<IMAP::BodyStructure/disp>
 
 =cut
 
@@ -1035,6 +1086,7 @@ sub select_renderer
 	     [ qr{text/rfc822-headers}   => '_render_headers'    ],
 	     [ qr{text/}                 => '_render_textplain'  ],
 	     [ qr{message/delivery-status}=>'_render_delivery_status' ],
+	     [ qr{message/disposition-notification}=>'_render_delivery_status' ],
 	    )
     {
         $type =~ $_->[0]
@@ -1106,7 +1158,7 @@ sub _render_texthtml
     }
 
 $msg .= <<EOT;
-<iframe class="iframe_autoresize" src="$url_path" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:visible; display:block; position:static"></iframe>
+<iframe class="iframe_autoresize_height" src="$url_path" scrolling="auto" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:scroll; display:block; position:static"></iframe>
 
 EOT
 ;
@@ -1579,6 +1631,8 @@ sub body_with_sensible_charset
 #            debug "BEFORE ".validate_utf8($dataref);
 
             $$dataref = decode($charset,$$dataref);
+            $charset = 'utf-8'; # Now utf-8
+
 
 #            debug "AFTER ".validate_utf8($dataref);
         } or do
@@ -1610,7 +1664,7 @@ sub body_with_original_charset
     unless( $encoding )
     {
 	my $path = $part->path;
-	debug "No encoding found for body $path. Using 8bit";
+#	debug "No encoding found for body $path. Using 8bit";
 	$encoding = '8bit';
     }
 
@@ -1648,6 +1702,8 @@ sub body_with_original_charset
 =head2 body
 
 Always returns string in perl character encoding
+
+Returns scalar ref
 
 =cut
 
@@ -1747,39 +1803,56 @@ sub guess_content_part
 
 =head2 body_as_text
 
+returns in list context: ($bodyr, $ct_source)
+
+returns in scalar context: $bodyr
+
 =cut
 
 sub body_as_text
 {
     my( $part ) = shift @_;
 
+    my( $bodyr, $ct_source );
+
     my $ctype = $part->effective_type;
     if( $ctype eq 'text/plain' )
     {
-        return( $part->body(@_), 'plain');
+        $ct_source =  'plain';
+        $bodyr = $part->body(@_);
     }
     elsif( $ctype eq 'text/html' )
     {
-        debug "Returning body as text from html";
+#        debug "Returning body as text from html";
         require HTML::TreeBuilder;
         my $tree = HTML::TreeBuilder->new_from_content($part->body(@_));
         require HTML::FormatText;
         my $formatter = HTML::FormatText->new(leftmargin => 0,
                                               rightmargin => 1000);
-        return( \ $formatter->format($tree), 'html');
+        $ct_source =  'html';
+        $bodyr = \ $formatter->format($tree);
     }
     else
     {
         debug "Content-type $ctype not handled in body_as_text";
         #return( $part->body(@_), undef );
-        return( "", undef );
+
+        $ct_source =  '';
+        $bodyr = \ "";
     }
+
+#    debug "body_as_text returning ".(wantarray?'list':'scalar');
+#    debug "  ($bodyr, $ct_source)";
+    return wantarray ? ($bodyr, $ct_source) : $bodyr;
+
 }
 
 
 ##############################################################################
 
 =head2 body_extract
+
+Returns a string
 
 =cut
 
@@ -1856,13 +1929,21 @@ sub viewtree
 
     $ident ||= 0;
 
+#debug "t1";
     my $type = $part->type      || '-';
+#debug "t2";
     my $enc  = $part->encoding  || '-';
+#debug "t3";
     my $size = $part->size      || '-';
+#debug "t4";
     my $disp = $part->disp      || '-';
+#debug "t5";
     my $char = $part->charset   || '-';
+#debug "t6";
     my $file = $part->disp('filename') || '-';
+#debug "t7";
     my $path = $part->path;
+#debug "t8";
 
 #    my $lang = $struct->{lang}   || '-';
 #    my $loc = $struct->{loc}     || '-';
@@ -1878,9 +1959,21 @@ sub viewtree
 	$msg .= $subpart->viewtree($ident);
     }
 
-    if( my $body_part = $part->body_part )
+    if( $part->guess_type eq 'message/rfc822' )
     {
-	$msg .= $body_part->viewtree($ident);
+        if( my $body_part = $part->body_part )
+        {
+#            debug "  body_part";
+            $msg .= $body_part->viewtree($ident);
+        }
+        else
+        {
+#            debug "  body_part missing";
+        }
+    }
+    else
+    {
+#        debug "  no body_part";
     }
 
     return $msg;
@@ -2105,7 +2198,9 @@ sub attachments_as_html
 
 =head2 footer_remove
 
-  $body = footer_remove(\$str)
+  $body = footer_remove($str)
+
+Also used from E::Classifier
 
 =cut
 
@@ -2119,10 +2214,11 @@ sub footer_remove
 
     $str =~ s/\v+\s*\*?( Med.vänlig.hälsning
               | Bästa.hälsningar
-              | Best.Regards
+              | (Best|Kind).Regards
               | Mvh\s*
               | Med.vänliga.hälsningar
               | Vänligen\h*\v
+	      | Trevlig.fortsättning
               | \/\/\s*\w\w+
               ).*//soxi;
 

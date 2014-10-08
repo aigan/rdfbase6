@@ -2995,14 +2995,22 @@ sub elements_props
 	elsif( ($preds->size < 2) and
 	       ($preds->get_first_nos->plain eq 'id') )
 	{
+            # Filter out undef values
+            my @ivs = grep{$_} @$invalues;
+            unless( @ivs )
+            {
+                cluck(query_desig($props));
+                throw('dbi',"Undef id given to search");
+            }
+
 	    if( BINDVALS )
 	    {
-		$where = join(" or ", map "subj = ?", @$invalues);
-		@outvalues = @$invalues; # value should be numeric
+		$where = join(" or ", map "subj = ?", @ivs);
+		@outvalues = @ivs; # value should be numeric
 	    }
 	    else
 	    {
-		$where = join(" or ", map "subj = $_", @$invalues);
+		$where = join(" or ", map "subj = $_", @ivs);
 	    }
 	    $where .= " " . $arclim_sql;
 	    $prio = 1;

@@ -29,6 +29,7 @@ use base qw( RDF::Base::Email::Head );
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
 use List::Uniq qw( uniq ); # keeps first of each value
+use MIME::Words qw( encode_mimeword );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug timediff datadump );
@@ -54,11 +55,16 @@ sub new_by_email
 
 #    debug "INITIATE email subj to ".datadump([map{$_->plain}$email->list('email_subject')->as_array],2);
 
-    my @subject_raw = map{$_->plain} $email->list('email_subject')->as_array;
-    my @date_raw = map{$_->internet_date} $email->list('email_sent')->as_array;
-    my @from_raw = map{$_->plain} $email->list('email_from')->as_array;
-    my @bcc_raw = map{ $_->plain } $email->list('email_bcc')->as_array;
-    my @replyto_raw = map{$_->plain} $email->list('email_reply_to')->as_array;
+    my @subject_raw = map{ encode_mimeword $_->plain }
+      $email->list('email_subject')->as_array;
+    my @date_raw = map{ $_->internet_date }
+      $email->list('email_sent')->as_array;
+    my @from_raw = map{ encode_mimeword $_->plain }
+      $email->list('email_from')->as_array;
+    my @bcc_raw = map{ encode_mimeword $_->plain }
+      $email->list('email_bcc')->as_array;
+    my @replyto_raw = map{encode_mimeword $_->plain }
+      $email->list('email_reply_to')->as_array;
 
     $head->header_set('subject', @subject_raw) if @subject_raw;
     $head->header_set('date',  @date_raw) if @date_raw;

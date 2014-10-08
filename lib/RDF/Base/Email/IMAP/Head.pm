@@ -149,10 +149,12 @@ sub new_body_head_by_part_env
 #    debug "Initializing body head from part env";
 #    debug datadump($env);
 
-    my $head = $class->new("");
-    return $head unless $env;
+    return undef unless $env;
 
+#    my $head = $class->new("raw: -\r\n\r\n");
+#    return $head unless $env;
 
+    my %h;
     foreach my $field (qw( date subject message-id in-reply-to ))
     {
 	my $key = $field; $key =~ s/-/_/g;
@@ -160,7 +162,8 @@ sub new_body_head_by_part_env
 	if( my $val = $env->{$key} )
 	{
 #	    debug "  $field: $val";
-	    $head->header_set($field, $val );
+            $h{ $field } = [$val];
+#	    $head->header_set($field, $val );
 	}
     }
 
@@ -173,11 +176,14 @@ sub new_body_head_by_part_env
 	{
 	    my @vals = map $_->{full}, @{$env->{$key}};
 #	    debug "  $field: @vals";
-	    $head->header_set($field, @vals );
+            $h{ $field } = \@vals;
+#	    $head->header_set($field, @vals );
 	}
     }
 
-    return $head;
+    return undef unless keys %h;
+
+    return $class->create(\%h);
 }
 
 
@@ -258,11 +264,14 @@ sub new_by_part
     my $folder = $email->folder;
     my $uid = $part->top->uid or die "No uid";
     my $imap_path = $part->path;
+    $imap_path =~ s/\.TEXT$//;
 
     # Read the header, but not the body
-
+    #
     my $raw = $folder->imap_cmd('fetch',
 				"$uid BODY.PEEK[$imap_path.HEADER]");
+
+#debug "==> ".join("\n==> ",@$raw);
 
 
     # $raw is a arrayref looking like:

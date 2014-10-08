@@ -79,11 +79,13 @@ sub head_complete
 
 ##############################################################################
 
-=head2 body
+=head2 body_raw
+
+Returns a scalar ref
 
 =cut
 
-sub body
+sub body_raw
 {
     my( $part ) = @_;
 
@@ -169,6 +171,42 @@ sub is_top
 sub type
 {
     return 'text/plain';
+}
+
+
+##############################################################################
+
+=head2 parts
+
+=cut
+
+sub parts
+{
+    return ();
+}
+
+
+##############################################################################
+
+=head2 encoding
+
+=cut
+
+sub encoding
+{
+    return 'binary';
+}
+
+
+##############################################################################
+
+=head2 charset
+
+=cut
+
+sub charset
+{
+    return 'iso-8859-1'; # Internal format
 }
 
 

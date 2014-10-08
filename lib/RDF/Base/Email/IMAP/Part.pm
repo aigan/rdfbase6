@@ -207,7 +207,15 @@ See L<RDF::Base::Email::Part/charset>
 
 sub charset
 {
-    return lc( $_[0]->struct->charset||'');
+    # BodyStructure.pm buggy. Reimplement here
+
+    my $s = $_[0]->struct;
+
+    my $c = ($s->{params} && $s->{params}{charset})
+      || ($s->{parts} && @{$s->{parts}} && $s->{parts}[0] && $s->{parts}[0]->charset)
+        || undef;   # please oh please, no '' or '0' charsets
+
+    return lc( $c||'');
 }
 
 
@@ -243,6 +251,15 @@ sub type
 	return $struct->{'params'}{$_[1]};
     }
 
+    my $type = lc $struct->type;
+
+    if( $type =~ / / )
+    {
+        debug "Got a strange type: $type";
+        debug datadump($struct);
+    }
+
+
     return lc $struct->type;
 }
 
@@ -261,7 +278,8 @@ sub disp
 
     if( $_[1] and ref $struct->{'disp'} )
     {
-	return $struct->{'disp'}->[1]->{$_[1]};
+         return undef unless $struct->{'disp'}[1];
+	return $struct->{'disp'}[1]{$_[1]};
     }
 
     return lc $struct->disp;
@@ -288,7 +306,9 @@ sub encoding
     unless( $enc =~ /^(quoted-printable|8bit|binary|7bit|base64)$/ )
     {
         my $h = $_[0]->head_complete;
+#        debug "getting encoding from header";
         $enc = lc($h->header('content-transfer-encoding')||'');
+#        debug "  got $enc";
     }
 
     return $enc;
@@ -313,6 +333,8 @@ sub description
 
 =head2 body_raw
 
+Returns a scalar ref
+
 =cut
 
 sub body_raw
@@ -323,7 +345,7 @@ sub body_raw
     my $path = $part->path;
     my $folder = $part->top->folder;
 
-    debug "Getting bodypart $uid $path ".($length||'all');
+#    debug "Getting bodypart $uid $path ".($length||'all');
     return \ $folder->imap_cmd('bodypart_string', $uid, $path, $length);
 }
 
@@ -338,7 +360,15 @@ See L<RDF::Base::Email::Part/size>
 
 sub size
 {
-    return $_[0]->struct->size;
+    my( $size ) = $_[0]->struct->size;
+    # Keep first number
+    if( $size and $size =~ m/^(\d+)/ )
+    {
+        return $1;
+    }
+
+#    debug "Size of part not found";
+    return undef;
 }
 
 
@@ -392,8 +422,10 @@ sub body_head
 	      RDF::Base::Email::IMAP::Head->
 		  new_body_head_by_part_env( $env );
 	}
-	else
-	{
+    }
+
+    unless( $_[0]->{'body_head_partial'} )
+    {
 #	    debug "***********";
 
 #	    debug "/---------------------------";
@@ -401,9 +433,8 @@ sub body_head
 #	    debug datadump $_[0]->struct;
 #	    debug substr ${$_[0]->body}, 0, 2000; ### DEBUG
 
-	    my $part = RDF::Base::Email::Raw::Part::new($_[0], $_[0]->body(5000));
-	    $_[0]->{'body_head_partial'} = $_[0]->{'body_head'} = $part->head;
-	}
+        my $part = RDF::Base::Email::Raw::Part::new($_[0], $_[0]->body(5000));
+        $_[0]->{'body_head_partial'} = $_[0]->{'body_head'} = $part->head;
     }
 
     return $_[0]->{'body_head_partial'};
@@ -436,8 +467,10 @@ sub parts
     my $class = ref($part);
 
     my @parts;
+#    debug "Getting parts via struct";
     foreach my $struct ( $part->struct->parts )
     {
+#        debug "  adding $struct";
 	push @parts, $part->new($struct);
     }
 
@@ -449,7 +482,9 @@ sub parts
 
 =head2 body_part
 
-See L<RDF::Base::Email::IMAP/body_part>
+This treats the body as a part in the structure hiearchy with it's own
+subparts. This is the case if tha part is a message/rfc822.
+
 
 =cut
 
@@ -457,10 +492,13 @@ sub body_part
 {
     if( my $bstruct = $_[0]->struct->{'bodystructure'} )
     {
+#        debug "Getting body_part from IMAP bodystructure";
+#        debug "  bstruct: ".datadump($bstruct);
+
 	return $_[0]->new( $bstruct );
     }
 
-    return RDF::Base::Email::Raw::Part::new($_[0], $_[0]->body);
+    return RDF::Base::Email::Raw::Part::new($_[0], $_[0]->body_raw);
 }
 
 

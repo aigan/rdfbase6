@@ -5,7 +5,7 @@ package RDF::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -38,6 +38,7 @@ use RDF::Base::Search::Result;
 use RDF::Base::Literal::String; # Needed by RB::Utils
 use RDF::Base::Setup;
 use RDF::Base::Plugins;
+use IMAP::BodyStructure 1.02;
 
 
 our $VERSION = "6.70";

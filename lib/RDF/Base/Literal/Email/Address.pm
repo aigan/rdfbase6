@@ -25,7 +25,7 @@ use base qw( RDF::Base::Literal::String Para::Frame::Email::Address );
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;
-#use CGI;
+use CGI qw( escapeHTML );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
@@ -189,12 +189,6 @@ sub as_html
 {
     my( $a, $args_in ) = @_;
 
-    if( $a->broken )
-    {
-	my $str = $a->original;
-	return "<span class=\"broken\">$str</span>";
-    }
-
     my( $args ) = parse_propargs($args_in);
     my $method = $args->{'method'} || 'format';
 
@@ -228,15 +222,26 @@ sub as_html
     }
 
 #    debug "Lookup email address $adr";
+    my $out;
     my $an = RDF::Base::Email::Address->exist($adr);
     if( $an )
     {
-        return $an->wu_jump({label=>$label,%attr});
+        $out .= $an->wu_jump({label=>$label,%attr});
     }
     else
     {
-        return $label;
+        $out = escapeHTML($label);
     }
+
+    if( $a->broken )
+    {
+	return "<span class=\"broken\">$out</span>";
+    }
+    else
+    {
+        return $out;
+    }
+
 
 #    return Para::Frame::Widget::jump($label, "mailto:$adr", \%attr);
 #    return "<a href=\"mailto:$adr\">$full</a>";

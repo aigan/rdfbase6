@@ -1,4 +1,3 @@
-#  $Id$  -*-cperl-*-
 package RDF::Base::Email::Head;
 #=============================================================================
 #
@@ -6,7 +5,7 @@ package RDF::Base::Email::Head;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -29,7 +28,7 @@ use strict;
 use warnings;
 use utf8;
 use base qw( Email::Simple::Header );
-use constant EA => 'RDF::Base::Literal::Email::Address';
+use constant EA => 'RDF::Base::Email::Address';
 
 use Carp qw( croak confess cluck );
 use URI;
@@ -264,7 +263,7 @@ sub parsed_address
     foreach my $raw ( @$value )
     {
 	my $dec = mime_to_perl_string( $raw );
-	push @addr, EA->parse_tolerant($dec);
+	push @addr, EA->parse($dec);
     }
 
     return RDF::Base::List->new(\@addr);
@@ -355,6 +354,37 @@ sub count_to
     return scalar @{[$_[0]->header('to')]};
 }
 
+
+##############################################################################
+
+=head2 create
+
+  $class->create({ key => [ val1, val2, ...], ... })
+
+Using L<Email::Simple::Creator>
+
+=cut
+
+sub create
+{
+    my( $class, $hashref ) = @_;
+
+    my $HC = 'Email::Simple::Creator';
+
+    my $header = "";
+
+    foreach my $h ( keys %$hashref )
+    {
+        foreach my $v ( @{$hashref->{$h}} )
+        {
+            $HC->_add_to_header( \$header, $h, $v);
+        }
+    }
+
+    $HC->_finalize_header( \$header );
+
+    return $class->new( \$header );
+}
 
 ##############################################################################
 

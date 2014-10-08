@@ -71,6 +71,10 @@ sub new
 	weaken( $sub->{'top'} );
     }
 
+#    debug "New raw part based on dataref:\n".$$dataref;
+
+
+    # Email::MIME/new takes both string and stringref
     $sub->{'em'} = Email::MIME->new($dataref);
 
     return $sub;
@@ -311,6 +315,8 @@ sub description
 
 =head2 body_raw
 
+Returns a scalar ref
+
 =cut
 
 sub body_raw
@@ -318,7 +324,10 @@ sub body_raw
     my( $part, $length ) = @_;
     $part->redraw;
 
-    return \ $part->{'em'}->body_raw;
+    # Not clear if Email::MIME/body_raw returns a string or scalar ref
+
+    my $raw = $part->{'em'}->body_raw;
+    return ref $raw ? $raw : \ $raw;
 }
 
 

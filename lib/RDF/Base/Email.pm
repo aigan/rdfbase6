@@ -1024,17 +1024,19 @@ sub process_for_deliverability
 
     # Look up original recipient
     #
-    my $ea = $c->dsn_email_address_node;
-    unless( $ea )
-    {
-        my $ea_string = $c->sender_email_address
-          or die "No sender found";
+    my $ea = $c->dsn_for_address_node('guess');
 
-        $ea = EA->new( $ea_string, $args );
+    # Use the sender if the email's not a DSN
+    if( not $ea and not $c->is_dsn )
+    {
+        $ea = EA->new( $c->sender_email_address );
     }
 
-    debug "ORIGINAL RECIPIENT ".$ea->sysdesig;
-    $ea->update_deliverability( $c );
+    if( $ea )
+    {
+        debug "Original recipient ".$ea->sysdesig;
+        $ea->update_deliverability( $c );
+    }
 
     return;
 }

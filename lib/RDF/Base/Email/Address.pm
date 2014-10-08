@@ -22,6 +22,8 @@ use 5.010;
 use strict;
 use warnings;
 use constant C => 'RDF::Base::Constants';
+use constant LEA => 'RDF::Base::Literal::Email::Address';
+use feature "switch";
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;
@@ -31,12 +33,15 @@ use Para::Frame::Widget qw( input );
 use Para::Frame::Email::Address;
 use Para::Frame::Reload;
 use Para::Frame::Time qw( now );
-use Para::Frame::Utils qw( debug datadump );
+use Para::Frame::Utils qw( debug datadump catch );
 
 use RDF::Base::Utils qw( parse_propargs solid_propargs );
-use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_holder );
-
+use RDF::Base::Email::Classifier;
 use RDF::Base::Widget qw( aloc build_field_key );
+
+use RDF::Base::Constants qw( $C_intelligent_agent
+                             $C_email_address_holder
+                             $C_ed_non_deliverable );
 
 =head1 DESCRIPTION
 
@@ -70,19 +75,26 @@ sub new
 {
     my( $class, $in_value, $args ) = @_;
 
-    my $a = RDF::Base::Literal::Email::Address->parse($in_value);
+    my $a = LEA->parse($in_value);
 
-    my $code_in = $a->address;
+    my $code_in = lc $a->address;
 
-    my $an_args = solid_propargs();
+    my $an_args = solid_propargs({
+				  default_create =>
+				  {
+				   ea_original => $a,
+				   name => $a->name,
+				  }
+				 });
+
     my $an = RDF::Base::Resource->set_one({
                                            code=>$code_in,
                                            is=>$C_email_address_holder,
                                           }, $an_args);
 
-#    debug "New email address ".datadump($a,1);
-
-    $an->update({name => $a->name, ea_original => $a}, $an_args);
+#    $an->update({ea_original => $a}, $an_args);
+#    $an->update({name => $a->name}, $an_args) if $a->name;
+#    cluck "Name changed to ".$a->name if $a->name;
 
     return $an;
 }
@@ -103,13 +115,13 @@ sub exist
     my( $class, $in_value, $args ) = @_;
 
 #    debug "parsing ".datadump($in_value,1);
-    my $a = RDF::Base::Literal::Email::Address->parse($in_value);
+    my $a = LEA->parse($in_value);
 
 #    debug "parsed to ".datadump($a,1);
 
-    my $code_in = $a->address;
+    my $code_in = lc $a->address;
 
-    my $an_args = parse_propargs('all');
+    my $an_args = solid_propargs();
 
     return RDF::Base::Resource->find({
                                      code=>$code_in,
@@ -267,7 +279,7 @@ sub move_agent_to
 
     my $ea_new = $ea_old->parse( $new_in, $args );
 
-    debug sprintf "Move agent from %s to %s", $ea_old->desig, $ea_new->desig;
+    debug sprintf "MOVE AGENT from %s to %s", $ea_old->desig, $ea_new->desig;
 
     foreach my $arc ( $ea_old->revarc_list('has_email_address_holder',
                                            undef, $args)->as_array )
@@ -275,14 +287,26 @@ sub move_agent_to
         debug "Should move ".$arc->sysdesig;
     }
 
-    die "Move agent to called";
+    $ea_old->update({'has_email_deliverability'=>
+                     C->get('ed_address_changed')}, $args);
+
+    return;
 }
 ##############################################################################
 
 sub broken
 {
-    my $o = $_[0]->first_prop('ea_original');
-     return $o ? $o->broken() : 1;
+    my( $ea ) = @_;
+
+    my $lea = $ea->first_prop('ea_original');;
+
+    return 1 if $lea->broken;
+
+    return 1 if $ea->first_prop('has_email_deliverability',
+                                $C_ed_non_deliverable );
+
+    return 0;
+
 }
 
 
@@ -290,6 +314,8 @@ sub broken
 
 sub error_message
 {
+    # TODO: Combine parsing error with deliverability status
+
     my $o = $_[0]->first_prop('ea_original');
     return $o ? $o->error_message() : 'not an email address';
 }
@@ -396,6 +422,19 @@ sub desig
 
 ##############################################################################
 
+=head2
+
+Returns the plain address
+
+=cut
+
+sub shortdesig
+{
+    return shift->address(@_);
+}
+
+##############################################################################
+
 #sub sysdesig
 #{
 #    return shift->first_prop('ea_original')->sysdesig();
@@ -426,7 +465,44 @@ sub plain
 
 sub as_html
 {
-    return shift->first_prop('ea_original')->as_html(@_);
+    my( $ea, $args ) = @_;
+
+    my $out = $ea->first_prop('ea_original')->as_html($args);
+
+    my $color;
+
+    if( $ea->broken )
+    {
+        $color = 'red';
+    }
+    elsif( $ea->has_email_deliverability('ed_agent_away') )
+    {
+        $color = '#8B0';
+    }
+    elsif( $ea->has_email_deliverability('ed_deliverable') )
+    {
+        $color = '#5F5';
+    }
+    elsif( $ea->has_email_deliverability('ed_delayed') )
+    {
+        $color = '#FA0';
+    }
+    elsif( $ea->has_email_deliverability('ed_address_changed') )
+    {
+        $color = '#F0F';
+    }
+    elsif( $ea->has_email_deliverability('ed_unclassified') )
+    {
+        $color = 'blue';
+    }
+    else
+    {
+        $color = 'grey';
+    }
+
+    $out .= " <i style=\"color:$color\" class=\"fa fa-circle\"></i>";
+
+    return $out;
 }
 
 ##############################################################################
@@ -438,22 +514,20 @@ sub update_deliverability
     my $args = solid_propargs();
     my $o = $c->email_obj;
     my $email = $o->email;
-    my $eda = $ea->arc('has_email_deliverability');
 
     my $std_reason = $c->dsn_std_reason || '';
 
-    # Set limit for transient status to 7 days
-    my $patience = DateTime::Duration->new(days => 7);
-
+    my $patience = DateTime::Duration->new(days => 14);
+    my $big_patience = DateTime::Duration->new(months => 2);
 
     if( $c->is_dsn )
     {
         debug "DELIVERY STATUS NOTIFICATION";
 
-        foreach my $report ( $c->reports )
-        {
-            debug $report->as_string;
-        }
+#        foreach my $report ( $c->reports )
+#        {
+#            debug $report->as_string;
+#        }
 
         $email->add({dsn_for_address => $ea}, $args);
         $email->add({is => C->get('dsn_email')}, $args);
@@ -465,12 +539,19 @@ sub update_deliverability
     if( $c->is_address_changed )
     {
         my $new = $c->{contact}{email_address}{changed_to};
-        unless( $new )
+        if( $new )
         {
-            die "New email not found in ".$email->id;
+            $ea->move_agent_to($new, $args);
         }
-
-        $ea->move_agent_to($new, $args);
+        else
+        {
+            debug "New email not found in ".$email->id;
+        }
+    }
+    elsif( $c->is_quit_work )
+    {
+	$ea->update({'has_email_deliverability'=>
+		     C->get('ed_mailbox_unavailible')}, $args);
     }
     elsif( $c->is_bounce )
     {
@@ -481,67 +562,333 @@ sub update_deliverability
                 $ea->update({'has_email_deliverability'=>
                              C->get('ed_mailbox_unavailible')}, $args);
             }
+            when('syntax_error')
+            {
+                $ea->update({'has_email_deliverability'=>
+                             C->get('ed_address_error'),
+                            }, $args);
+            }
+            when('domain_error')
+            {
+                $ea->update({'has_email_deliverability'=>
+                             C->get('ed_domain_error'),
+                            }, $args);
+            }
+            when('denied')
+            {
+                $ea->update({'has_email_deliverability'=>
+                             C->get('ed_non_deliverable'),
+                            }, $args);
+            }
+            when('unknown')
+            {
+                $ea->validate( $args );
+            }
             default
             {
                 die "fixme: $std_reason";
             }
         }
     }
-    elsif( $c->is_transient )
+    elsif( $c->is_vacation and $c->dsn_date )
     {
-        if( $eda->obj->equals(C->get('ed_delayed')) )
+	# 1. Short term
+	# 2. Long term
+	# 3. Reporting time in the past
+	# 4. Unknown time
+
+	my $agent_away = C->get('ed_agent_away');
+
+	my $eda = $ea->arc('has_email_deliverability',$agent_away);
+	my $ed_date = $eda->dsn_date;
+	my $ed = $eda->obj;
+
+	my $avail = $c->dsn_date_availible;
+#	my $today = now();
+	if( $avail )
+	{
+	    if( $c->dsn_date > $avail + $big_patience )
+	    {
+		# Should have come back a long time ago
+		#
+#		debug "AV1";
+		$ea->update({'has_email_deliverability' =>
+                             C->get('ed_non_deliverable')}, $args);
+	    }
+	    elsif( $c->dsn_date + $patience > $avail )
+	    {
+		# Back within a week
+		#
+#		debug "AV2";
+		$ea->update({'has_email_deliverability' =>
+			     C->get('ed_deliverable')}, $args);
+	    }
+	    #
+	    # Coming back at a specified future time
+	    #
+	    elsif( $eda and $ed->label('ed_agent_away') )
+	    {
+		# Maby update the time
+		if( $eda->dsn_date_availible < $avail )
+		{
+#                    debug "AV3";
+                    $eda->update({dsn_date_availible => $avail}, $args);
+		}
+	    }
+	    else # Store the time
+	    {
+#		debug "AV4";
+		$eda->remove($args) if $eda;
+		$eda = $ea->add_arc({has_email_deliverability =>
+				     $agent_away}, $args);
+		$eda->add({dsn_date_availible => $avail}, $args);
+	    }
+
+	    # Update the latest time we got a specified return time
+	    #
+#	    debug "AV5";
+	    $eda ||= $ea->arc('has_email_deliverability',$agent_away);
+	    if( $eda->dsn_date )
+	    {
+		if( $eda->dsn_date < $c->dsn_date )
+		{
+		    $eda->arc('dsn_date')->remove;
+		    $eda->add({dsn_date => $c->dsn_date}, $args);
+		}
+	    }
+	    else
+	    {
+		$eda->add({dsn_date => $c->dsn_date}, $args);
+	    }
+	}
+	#
+	# Unspecified return time
+	#
+	elsif( $ed and $ed_date and $ed->label('ed_agent_away') )
         {
-            die "must store dsn_date";
-            my $start; ### = $eda->created;
-            debug "Been transient since ".$start->desig;
-            my $latest = $c->dsn_date || now();
-
-            debug " *** START : ".$start->desig;
-            debug " *** LATEST: ".$latest->desig;
-
-            if( $start + $patience > $latest )
+	    my $long_time = DateTime::Duration->new(months => 12);
+	    if( $c->dsn_date > $ed_date + $long_time )
             {
-                debug "  LIMIT: ".($start + $patience)->desig;
+		# Probably never coming back...
+#		debug "AV6";
+		$ea->update({'has_email_deliverability' =>
+                             C->get('ed_non_deliverable')}, $args);
+	    }
+	}
+	else # Remeber when we started seeing the vacation
+	{
+#		debug "AV7";
+            $eda->remove($args) if $eda;
+            $eda = $ea->add_arc({has_email_deliverability =>
+                                 $agent_away}, $args);
+            $eda->add({dsn_date => $c->dsn_date}, $args);
+	}
+    }
+    elsif( $c->is_transient and $c->dsn_date ) # Need the date
+    {
+	my $delayed = C->get('ed_delayed');
+	my $eda = $ea->arc('has_email_deliverability');
+	my $ed_date = $eda->dsn_date;
+	my $ed = $eda->obj;
+
+        if( $ed and $ed_date and $ed->label('ed_delayed') )
+        {
+            debug " *** START : ".$ed_date->desig;
+            debug " *** LATEST: ".$c->dsn_date->desig;
+            debug " ***  LIMIT: ".($ed_date + $patience)->desig;
+
+            if( $c->dsn_date > $ed_date + $patience )
+            {
 
                 debug "  Not transient anymore";
-#                $ea->update({'has_email_deliverability' =>
-#                             C->get('ed_non_deliverable')}, $args);
+                $ea->update({'has_email_deliverability' =>
+                             C->get('ed_non_deliverable')}, $args);
             }
-
-            # else, the same status for now
+            else
+            {
+                debug "Limit not reached. Keep status";
+            }
         }
         else
         {
-            $ea->update({'has_email_deliverability' =>
-                         C->get('ed_delayed')}, $args);
+            $eda->remove($args) if $eda;
+            $eda = $ea->add_arc({has_email_deliverability =>
+                                 $delayed}, $args);
+            $eda->add({dsn_date => $c->dsn_date}, $args);
         }
     }
     elsif( $c->is_spam )
     {
         debug "Is SPAM";
-#	    debug "Removes SPAM from unsorted";
-#	    $recognized++;
-        die "fixme";
     }
     elsif( $c->is_ticket )
     {
-        die "fixme";
+        $ea->add({'has_email_deliverability' =>
+                  C->get('ed_queuing')}, $args);
     }
     elsif( $c->is_vacation )
     {
         # Must get more info before we can say anything about this
         # See RDF::Base::Email::Classifier/analyze_vacation
+        debug "VACATION. But need more info";
     }
+    elsif( $c->is_delivered )
+    {
+        $ea->update({'has_email_deliverability' =>
+                     C->get('ed_deliverable')}, $args);
+    }
+    elsif( $c->is_auto_reply )
+    {
+        $ea->validate( $args );
+    }
+    else
+    {
+        debug "WHAT IS THIS EMAIL?";
+        debug datadump($c->{is});
+    }
+
+
 
     unless( $ea->prop('has_email_deliverability') )
     {
-#        $ea->add({has_email_deliverability=>C->ed_unclassified}, $args);
-        debug "ABOUT TO ADD has_email_deliverability ed_unclassified";
+        debug "UNCLASSIFIED has_email_deliverability ed_unclassified";
+        $ea->add({has_email_deliverability=>C->ed_unclassified}, $args);
     }
-    
 
 
 }
+
+##############################################################################
+
+sub validate
+{
+    my( $ea, $args ) = @_;
+
+#    my $lea = $ea->first_prop('ea_original');
+#    $lea->validate;
+
+    if( $ea->is_nonhuman )
+    {
+        $ea->add({has_email_deliverability => C->get('ed_nonhuman')}, $args);
+    }
+
+
+    return;
+
+
+    my $test;
+    eval
+    {
+        $test = Para::Frame::Email::Address->parse_tolerant('my@bad.address');
+        $test->validate;
+    };
+    if( my $err = catch(['email']) )
+    {
+        debug "ERROR: ".$err->info;
+    }
+
+    if( $test )
+    {
+        debug "Test: ".$test->error_message;
+    }
+
+    die "FIXME";
+
+
+}
+
+##############################################################################
+
+=head2 is_role
+
+Non-personal email addresses
+
+=cut
+
+sub is_role
+{
+    my( $this, $ea ) = @_;
+    $ea = $this->address if ref $this;
+
+    return $ea =~ qr{
+                        -admin\@ |
+                        -confirm\@|
+                        ^news\@|
+                        ^request|
+                        ^sales\@|
+                        ^info\@|
+                        ^webmaster\@|
+                        ^support\@
+                        ^www\@|
+                        ^owner- |
+                        -owner\@
+                }xmi;
+}
+
+
+##############################################################################
+
+=head2 is_nonhuman
+
+Non-human email addresses.
+
+Might still be sent from a human, but not usable for sending back to
+the human.
+
+=cut
+
+sub is_nonhuman
+{
+    my( $this, $ea ) = @_;
+    $ea = $this->address if ref $this;
+    cluck "Got nothing" unless $ea;
+
+    # Strip <>
+    $ea =~ s/^\s*<\s*//; $ea =~ s/\s*>\s*$//;
+
+    return $ea =~ qr{
+                     ^bounce-|
+                     \@bounce\.|
+                     -outgoing\@|
+                     -relay\@|
+                     -bounces\@|
+                     -bounce\@|
+                     -errors\@|
+                     ^mailer\@|
+                     ^postmaster|
+                     ^mailer-daemon\@|
+                     ^mailer_daemon\@|
+                     ^majordomo\@|
+                     ^majordom\@|
+                     ^mailman\@|
+                     ^reminder\@|
+                     ^autoreply|
+                     -autoresponder\@|
+                     ^autoresponder\@|
+                     ^server\@|
+                     ^bounce\@|
+                     ^httpd\@|
+                     ^lighttpd\@|
+                     ^nagios\@|
+                     ^fetchmail|
+                     ^listmaster\@|
+                     ^mailmaster\@|
+                     ^squid\@|
+                     ^exim\@|
+                     scomp\@aol.net |
+                     mdaemon\@ |
+                     -request\@ |
+                     ^listserv\@|
+                     ^daemon\@|
+                     ^nobody\@|
+                     ^noreply|
+                     ^no-reply|
+                     ^DoNotReply\@|
+                     ^www-data\@|
+                     ^root\@
+                 }xmi;
+}
+
 
 ##############################################################################
 

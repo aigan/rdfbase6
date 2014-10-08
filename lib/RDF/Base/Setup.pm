@@ -1289,8 +1289,45 @@ sub upgrade_db
         $req->done;
     }
 
+    if( $ver < 9 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+	my $C_class = $C->get('class');
+        my $C_predicate = $C->get('predicate');
+
+        $R->find_set({label => 'dsn_date'},$args)
+          ->update({
+                    domain => $C->get('arc'),
+                    range => $C->get('date'),
+                    is => $C_predicate,
+		    admin_comment => "The date of the Delivery Status Notification",
+                   },$args);
+
+        $R->find_set({label => 'dsn_date_availible'},$args)
+          ->update({
+                    domain => $C->get('arc'),
+                    range => $C->get('date'),
+                    is => $C_predicate,
+		    admin_comment => "The date for the person coming back to work according to the Delivery Status Notification",
+                   },$args);
+
+        $R->find_set({label => 'ed_nonhuman'},$args)
+          ->update({
+                    scof => $C->get('ed_non_deliverable'),
+                   },$args);
+
+        RDF::Base::Rule->create( 'has_email_deliverability',
+                                 'scof',
+                                 'has_email_deliverability',
+                               );
 
 
+
+        $rb->update({ has_version => 9 },$args);
+        $res->autocommit;
+        $req->done;
+    }
 
 
 
