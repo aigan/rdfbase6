@@ -705,12 +705,6 @@ sub update_deliverability
         # See RDF::Base::Email::Classifier/analyze_vacation
         debug "VACATION. But need more info";
     }
-    elsif( $c->is_unsubscribe )
-    {
-        $ea->update({'has_email_deliverability' =>
-                     C->get('ed_deliverable')}, $args);
-        C->get('no_newsletters')->add({has_member=>$ea}, $args);
-    }
     elsif( $c->is_delivered )
     {
         $ea->update({'has_email_deliverability' =>
