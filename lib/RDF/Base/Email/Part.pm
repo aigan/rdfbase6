@@ -1822,7 +1822,7 @@ sub body_as_text
     }
     elsif( $ctype eq 'text/html' )
     {
-        debug "Returning body as text from html";
+#        debug "Returning body as text from html";
         require HTML::TreeBuilder;
         my $tree = HTML::TreeBuilder->new_from_content($part->body(@_));
         require HTML::FormatText;

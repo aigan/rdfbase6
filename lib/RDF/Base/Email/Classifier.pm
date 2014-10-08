@@ -679,7 +679,7 @@ sub analyze_auto_reply
 #        debug "  Looking at $h ".($o->header($h)||'');
         if( ($o->header($h)||'') =~ $r )
         {
-            debug "Found header $h indicating DSN";
+#            debug "Found header $h indicating DSN";
             $c->{is}{auto_reply} ++;
             return;
         }
@@ -922,7 +922,7 @@ sub analyze_vacation
     #
     return unless $vacation; ## Get the details
 
-    debug "v5";
+#    debug "v5";
 
     if( $c->is_address_changed or $c->is_quit_work )
     {
@@ -1207,7 +1207,7 @@ sub analyze_verp
     return unless $ct_source;
     my $string = $$bodyr;
 
-    debug "  Looking in body ".length($string);
+    debug "  Looking in body ".length($string) if $DEBUG;
     if( $string =~ /\/optout\.tt\?e=([^&]+(?:%40|@)[^&]+)&/ )
     {
 	my $adr = $1;
@@ -1639,7 +1639,7 @@ sub _bounce_guess_subpart
 
     return unless $part->type =~ /^$type/;
 
-    debug "Trying to extract reports from part ".$part->path;
+    debug "Trying to extract reports from part ".$part->path if $DEBUG;
 
     my $body = trim $part->body_as_text;
 
