@@ -144,7 +144,7 @@ WriteMakefile(
 		  'File::MMagic::XS'           => 0.09,
 	          'Email::MIME'                => 1.902,
                   'HTML::FormatText'           => 2.04,
-	          'IMAP::BodyStructure'        => 1.01,
+	          'IMAP::BodyStructure'        => 1.02,
 	          'Mail::IMAPClient'           => 3.25,
 	          'URI::imap'                  => 1.01,
                   'MIME::Types'                => 1.30,

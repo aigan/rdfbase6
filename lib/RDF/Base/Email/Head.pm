@@ -357,4 +357,35 @@ sub count_to
 
 ##############################################################################
 
+=head2 create
+
+  $class->create({ key => [ val1, val2, ...], ... })
+
+Using L<Email::Simple::Creator>
+
+=cut
+
+sub create
+{
+    my( $class, $hashref ) = @_;
+
+    my $HC = 'Email::Simple::Creator';
+
+    my $header = "";
+
+    foreach my $h ( keys %$hashref )
+    {
+        foreach my $v ( @{$hashref->{$h}} )
+        {
+            $HC->_add_to_header( \$header, $h, $v);
+        }
+    }
+
+    $HC->_finalize_header( \$header );
+
+    return $class->new( \$header );
+}
+
+##############################################################################
+
 1;

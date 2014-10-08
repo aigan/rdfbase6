@@ -30,7 +30,7 @@ use constant LT => 'RDF::Base::Literal::Time';
 use Carp qw( croak confess cluck );
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug datadump );
+use Para::Frame::Utils qw( throw debug datadump trim );
 
 use RDF::Base::Constants qw( $C_email $C_email_address_holder );
 use RDF::Base::Literal::Time;
@@ -55,6 +55,7 @@ our $EMAIL_ADDR_REGEX = qr{
 # Full rfc(2)822 compliance isn't exactly what we want, and this seems to work
 # for most real world cases
 (?:<|^|\s)            # Space, or the start of a string
+(?:mailto:)?
 ([^\s\/<]+            # some non-space, non-/ characters; none are <
 \@                    # at sign (duh)
 (?:[-\w]+\.)+[-\w]+)  # word characters or hypens organized into
@@ -292,7 +293,8 @@ sub analyze_delivered
     #
     ### Subject
     #
-    if( $o->head->parsed_subject =~ /^Thank you for your email\b|the message has been delivered|Tack för ditt mejl|Vi har mottagit ditt meddelande|Din förfrågan är mottagen/i )
+    my $subject = trim $o->head->parsed_subject->plain;
+    if( $subject =~ /^Thank you for your email\b|the message has been delivered|Tack för ditt mejl|Vi har mottagit ditt meddelande|Din förfrågan är mottagen/i )
     {
         $c->{is}{delivered} = 1;
         return;
@@ -304,7 +306,9 @@ sub analyze_delivered
     my $cpart = $o->guess_content_part;
     my( $bodyr, $ct_source ) = $cpart->body_as_text;
     return unless $ct_source;
-    my $body = $$bodyr;
+    my $body = trim $bodyr;
+
+
 #    debug "PARSED BODY---------------\n$body\n-----------------";
 
     ### Indicates auto-reply
@@ -320,6 +324,7 @@ sub analyze_delivered
 		   |   har.kommit.fram
 		   |   Jag.svarar.så.fort.jag.kan
 		   |   återkommer.imorgon
+                   |   återkommer.till.dig.inom.kort
 		   |   Jag.har.gått.för.dagen
 		   |   We.have.received.your.enquiry
                    |   nås.under.kontorstid
@@ -369,14 +374,16 @@ sub analyze_ticket
 
     return unless $c->is_computer_generated;
 
-#    debug "  Parse subject: ".$o->head->parsed_subject;
+#    debug "  Parse subject: ".$o->head->parsed_subject->plain;
+
+    my $subject = trim $o->head->parsed_subject->plain;
+
+    $c->{is}{ticket} = 1 
+      if $subject =~ /^(?:Re:\s*)?\[[^\]]*#[^\]]+\]/;
+
 
     $c->{is}{ticket} = 1
-      if $o->head->parsed_subject =~ /^(?:Re:\s*)?\[[^\]]*#[^\]]+\]/;
-
-
-    $c->{is}{ticket} = 1
-      if $o->head->parsed_subject =~ /^Request received:/i;
+      if $subject =~ /^Request received:/i;
 
     return 1;
 }
@@ -587,7 +594,7 @@ sub analyze_computer_generated
 #        debug "  Looking at $h ".($o->header($h)||'');
         if( ($o->header($h)||'') =~ $r )
         {
-            debug "Found header $h indicating computer_generated";
+#            debug "Found header $h indicating computer_generated";
             $c->{is}{computer_generated} = 1;
             return;
         }
@@ -678,15 +685,16 @@ sub analyze_auto_reply
         }
     }
 
+    my $subject = trim $o->head->parsed_subject->plain;
 #    debug "A3";
-    if( $o->head->parsed_subject =~ $AUTO_REGEX )
+    if( $subject =~ $AUTO_REGEX )
     {
         $c->{is}{auto_reply} ++;
         return;
     }
 
 #    debug "A4";
-    if( $o->head->parsed_subject =~ /Thank you for your e-?mail/i )
+    if( $subject =~ /Thank you for your e-?mail/i )
     {
         $c->{is}{auto_reply} ++;
         return;
@@ -859,10 +867,10 @@ sub analyze_vacation
                    |   tagit.ledigt
                    /xi;
 
-    my $subject = $o->head->parsed_subject;
+    my $subject = trim $o->head->parsed_subject->plain;
     # Strip common prefixes from subject
     $subject =~ s/^(Re:)?\s*$AUTO_REGEX\s*[:\-]?\s*//i;
-    debug "Subject: $subject";
+#    debug "Subject: $subject";
 
     my $vacation = 0;
 
@@ -875,17 +883,17 @@ sub analyze_vacation
 
 
 
-    debug "v3";
+#    debug "v3";
 
     # Stop parsing if email content is stupid
     #
     my $cpart = $o->guess_content_part;
     my( $bodyr, $ct_source ) = $cpart->body_as_text;
     return unless $ct_source;
-    my $string = $$bodyr;
+    my $string = trim $bodyr;
     return if length($string) > 10000;
 
-    debug "v4";
+#    debug "v4";
 
     # Outlook and exchange are BAD BAD BAD.
     # Keep processing if the email comes from a retarded system
@@ -921,7 +929,7 @@ sub analyze_vacation
 	return;
     }
 
-    debug "v6";
+#    debug "v6";
 
     # Expecting personal info folowed by details on alternative
     # contact methods.
@@ -960,6 +968,7 @@ sub analyze_vacation
 		    qr/från.{3,20} (har|och)/i, # (Från och med)
 		    qr/Between .{3,20}? and/i,
 		    qr/starting .{3,20}? and/i,
+                    qr/\båter/i,
 		   )
     {
         if( $body =~ s/$rx// )
@@ -1080,13 +1089,10 @@ sub analyze_bounce
     my $o = $c->email_obj;
     debug "Analyzing for Bounce" if $DEBUG;
 
-    # try to extract email addresses to identify members.
-    # we will also try to extract reasons as much as we can.
-    #
-    if( $o->effective_type eq "multipart/report" )
-    {
-	$c->analyze_multipart_report;
-    }
+#    debug $o->viewtree;
+
+
+    $c->analyze_multipart_report;
 
     # Try more if no reason found
     if( ($c->dsn_std_reason||'unknown') eq "unknown" )
@@ -1236,6 +1242,10 @@ sub analyze_multipart_report
 
     my $o = $c->email_obj;
     debug "Analyzing multipart/report" if $DEBUG;
+
+    # The report might be attached and not top-level
+    #
+    return unless $o->first_part_with_type('multipart/report');
 
     my($delivery_status) =
       $o->first_part_with_type("message/delivery-status");
@@ -1411,6 +1421,10 @@ sub analyze_multipart_report
 	    {
 		$report{std_reason} = "user_unknown";
 	    }
+	    elsif( $status =~ /^5\.2\.1$/ ) # Disabled
+	    {
+		$report{std_reason} = "user_unknown";
+	    }
 	    elsif( $status eq "5.1.2" )
 	    {
 		$report{std_reason} = "domain_error";
@@ -1471,7 +1485,7 @@ sub analyze_multipart_report
 
 #        debug "Host: ".$report{host};
 #        debug "Reporting MTA: ".$global{'reporting-mta'}
-          if $global{'reporting-mta'};
+#          if $global{'reporting-mta'};
 
 	warn "Reason found in report: $report{std_reason}\n" if $DEBUG;
 
@@ -1520,6 +1534,14 @@ sub analyze_bounce_guess
     my $o = $c->email_obj;
     debug "Analyzing for Bounce - guessing" if $DEBUG;
 
+    # A second try with a report or just general message
+    #
+    if( my $report = $o->first_part_with_type('multipart/report') )
+    {
+        $o = $report;
+    }
+
+
     # Only try to guess bounce report if we belive this realy could be
     # a bounce message
     my $common_subjects = qr/ failure[ ]?notice
@@ -1528,9 +1550,10 @@ sub analyze_bounce_guess
                           | NDN:
                           | This[ ]account[ ]isn't[ ]in[ ]use
                             /ix;
+    my $subject = trim $o->head->parsed_subject->plain;
     return unless( $c->is_computer_generated or
 		   $o->header('From') =~ /mailer-daemon|postmaster/i or
-		   $o->header('Subject') =~ $common_subjects );
+		   $subject =~ $common_subjects );
 
 
 
@@ -1538,7 +1561,7 @@ sub analyze_bounce_guess
     #
     # user_unknown
     #
-    if( $o->head->parsed_subject =~
+    if( $subject =~
         /   Message.delivery.has.failed
         |   Leverans.misslyckades
         |   This.
@@ -1564,7 +1587,7 @@ sub analyze_bounce_guess
     #
     # denied
     #
-    if( $o->head->parsed_subject =~ /Postning ej tillåten/i )
+    if( $subject =~ /Postning ej tillåten/i )
     {
 	if( my $adr = $c->dsn_for_address('guess') )
 	{
@@ -1580,105 +1603,65 @@ sub analyze_bounce_guess
     }
 
 
+#    debug "PARTS: ".datadump($o->parts,1);
 
-    if( $o->effective_type =~ /multipart/i )
-    {
-	# but not a multipart/report.  look through each non-message/*
-	# section.  See t/corpus/exchange.unknown.msg
-
-	my @delivery_status_parts =
-	  grep{ $_->content_type =~ m{text/plain}i } $o->parts;
-
-	warn "Trying to extract reports from multipart message\n"
-	  if $DEBUG;
-
-	foreach my $status_part ( @delivery_status_parts )
-	{
-	    my $text = ${$status_part->body};
-
-            if( $text =~ $RETURNED_MESSAGE_BELOW )
-            {
-                warn "Matching RETURNED_MESSAGE_BELOW\n" if $DEBUG;
-                my ($stuff_before, $stuff_splitted, $stuff_after) =
-                  split $RETURNED_MESSAGE_BELOW, $text, 3;
-                push @{$c->{reports}}, _extract_reports($stuff_before);
-                # TODO: Set up $c->{'orig_message'}
-            }
-            else
-            {
-                push @{$c->{reports}}, _extract_reports($text);
-            }
-	}
-    }
-    elsif( $o->effective_type =~ m{text/plain}i )
-    {
-	# handle plain-text responses
-
-	# This used to just take *any* part, even if the only part
-	# wasn't a text/plain part
-	#
-	# We may have to specifically allow some other types, but in
-	# my testing, all the messages that get here and are actual
-	# bounces are text/plain wby - 20060907
-
-	# they usually say "returned message" somewhere, and we can
-	# split on that, above and below.
-
-	warn "Trying to find report in single text/plain body\n"
-	  if $DEBUG;
-
-	my $body_string = ${$o->body};
-
-#        warn $body_string;
-#        die "DEBUG";
-
-	if( $body_string =~ $RETURNED_MESSAGE_BELOW )
-	{
-	    warn "Matching RETURNED_MESSAGE_BELOW\n" if $DEBUG;
-	    my ($stuff_before, $stuff_splitted, $stuff_after) =
-	      split $RETURNED_MESSAGE_BELOW, $body_string, 3;
-
-	    push @{$c->{reports}}, _extract_reports($stuff_before);
-
-	    # TODO: Set up $c->{'orig_message'}
-	}
-	elsif( $body_string =~ /(.+)\n\n(.+?Message-ID:.+)/is )
-	{
-	    warn "Matching Message-ID string\n" if $DEBUG;
-	    push @{$c->{reports}}, _extract_reports($1);
-	}
-	else
-	{
-	    warn "  looking at the whole part\n" if $DEBUG;
-	    push @{$c->{reports}}, _extract_reports($body_string);
-	}
-    }
+    $c->_bounce_guess_subpart( $o, 'text/plain' );
 
     # Try again for more types of DSNs,
     # if there is another sign of an DSN
     #
     if( not @{$c->{reports}} and $c->is_computer_generated )
     {
-        my $body_string = ${$o->body};
-        my $adr = $c->dsn_for_address('guess');
-        my $reason = _std_reason($body_string);
-
-        debug "TRYING AGAIN";
-        debug "EA: ".$adr if $adr;
-        debug "Reason: ".$reason;
-
-        if( $adr and $reason ne 'unknown' )
-        {
-            $c->new_report({
-                            email => $adr,
-                            raw => $body_string,
-                            std_reason => $reason,
-                           });
-        }
+        debug "Trying again";
+        $c->_bounce_guess_subpart( $o, 'text/html' );
     }
 
     $c->{is}{bounce_guess} = 1;
     $c->_extract_from_reports;
+
+    return;
+}
+
+
+#######################################################################
+
+sub _bounce_guess_subpart
+{
+    my( $c, $part, $type ) = @_;
+
+    # Do not look inside attached messages
+    return if $part->type eq 'message/rfc822';
+
+    foreach my $sub ( $part->parts )
+    {
+        $c->_bounce_guess_subpart( $sub, $type );
+    }
+
+    return unless $part->type =~ /^$type/;
+
+    debug "Trying to extract reports from part ".$part->path;
+
+    my $body = trim $part->body_as_text;
+
+    if( $body =~ $RETURNED_MESSAGE_BELOW )
+    {
+        debug "Matching RETURNED_MESSAGE_BELOW" if $DEBUG;
+        my ($stuff_before, $stuff_splitted, $stuff_after) =
+          split $RETURNED_MESSAGE_BELOW, $body, 3;
+
+        push @{$c->{reports}}, _extract_reports($stuff_before);
+        # TODO: Set up $c->{'orig_message'}
+    }
+    elsif( $body =~ /(.+)\n\n(.+?Message-ID:.+)/is )
+    {
+        debug "Matching Message-ID string" if $DEBUG;
+        push @{$c->{reports}}, _extract_reports($1);
+    }
+    else
+    {
+        debug "looking at the whole part" if $DEBUG;
+        push @{$c->{reports}}, _extract_reports($body);
+    }
 
     return;
 }
@@ -1718,17 +1701,17 @@ sub analyze_quit_work
     my $quit = 0;
 
 
-    my $subject = $o->head->parsed_subject;
+    my $subject = trim $o->head->parsed_subject->plain;
     # Strip common prefixes from subject
     $subject =~ s/^(Re:)?\s*$AUTO_REGEX\s*[:\-]?\s*//i;
-    debug "Subject: $subject";
+#    debug "Subject: $subject";
 
     if( $subject =~ /^I'm not longer employed at|Jag har gått i pension|Jag har slutat/i )
     {
         $quit ++;
     }
 
-    my $textref = $o->guess_content_part->body_as_text;
+    my $body = trim $o->guess_content_part->body_as_text;
 
     # Outlook and exchange are BAD BAD BAD.
     # Keep processing if the email comes from a retarded system
@@ -1778,15 +1761,15 @@ sub analyze_quit_work
                  }ix;
 
 
-#debug "----------------------------\n$$textref\n-------------------------";
+#debug "----------------------------\n$$body\n-------------------------";
     $quit ++ if $subject =~ $leave_rx;
-    $quit ++ if $$textref =~ $leave_rx;
+    $quit ++ if $body =~ $leave_rx;
 
     ### Continue if sign of quitting
     #
     return unless $quit; ## Get the details
 
-    $quit ++ if $$textref =~ $CONTACTINFO_REGEX;
+    $quit ++ if $body =~ $CONTACTINFO_REGEX;
 
     if( $c->is_computer_generated or
         $quit >= 2 )
@@ -1831,7 +1814,8 @@ sub analyze_address_changed
 #                debug datadump($c,2);
     my $o = $c->email_obj;
 
-    if( $o->head->parsed_subject =~
+    my $subject = trim $o->head->parsed_subject->plain;
+    if( $subject =~
         m/   Jag.har.bytt.$EMAIL_LABEL_REGEX
            | I.have.a.new.$EMAIL_LABEL_REGEX
            | Ny.$EMAIL_LABEL_REGEX
@@ -1842,12 +1826,12 @@ sub analyze_address_changed
         $c->{is}{address_changed} ++;
     }
 
-    my $textref = $o->guess_content_part->body_as_text;
-#    debug "TEXT IS:\n${$textref}\n---------------";
+    my $body = trim $o->guess_content_part->body_as_text;
+#    debug "TEXT IS:\n$body\n---------------";
 
     if( $c->is_computer_generated )
     {
-	if( $$textref =~
+	if( $body =~
 	    / bytt.$EMAIL_LABEL_REGEX
 	  |   $EMAIL_LABEL_REGEX.
 	      (kommer.att.upphöra|är.ändrad.till)
@@ -1896,13 +1880,13 @@ sub analyze_address_changed
         debug "Address changed from OLD address ".$old_ea;
 
         # Remove old ea before searching for new
-        $$textref =~ s/$old_ea//g;
+        $body =~ s/$old_ea//g;
 
         my $new_ea;
 
 #        debug "Looking for new email address";
-#        debug $$textref;
-        if( $$textref =~ /bytt $EMAIL_LABEL_REGEX till${EMAIL_ADDR_REGEX}/i )
+#        debug $body;
+        if( $body =~ /bytt $EMAIL_LABEL_REGEX till${EMAIL_ADDR_REGEX}/i )
         {
             $new_ea = $1;
         }
@@ -1910,7 +1894,7 @@ sub analyze_address_changed
         unless( $new_ea )
         {
 #            debug "Look for first email address";
-            if( $$textref =~ /${EMAIL_ADDR_REGEX}/ )
+            if( $body =~ /${EMAIL_ADDR_REGEX}/ )
             {
                 $new_ea = $1;
             }
@@ -1919,7 +1903,7 @@ sub analyze_address_changed
         unless( $new_ea )
         {
             # Also looks for emails inside tags
-            while( $$textref =~ />(.*?\@.*?)</g )
+            while( $body =~ />(.*?\@.*?)</g )
             {
                 if( $1 =~ /${EMAIL_ADDR_REGEX}/ )
                 {
@@ -2047,11 +2031,11 @@ sub analyze_personal
 
     if( $c->is_quit_work )
     {
-        my $bodyr = $o->guess_content_part->body_as_text;
+        my $body = trim $o->guess_content_part->body_as_text;
 
         ### Not personal
         #
-        if( $$bodyr =~ / The.person
+        if( $body =~ / The.person
                      |   Den.du..söker
                        /ix )
         {
@@ -2059,7 +2043,7 @@ sub analyze_personal
             return
         }
 
-        if( $$bodyr =~ /   Jag
+        if( $body =~ /   Jag
                        |   min
                        |   mig
                        |   I\s(am|have)
@@ -2115,7 +2099,7 @@ sub _extract_reports
     #### Remove contact information
     $text =~ s/${CONTACTINFO_REGEX}.*//s;
 
-#    debug "AFTER CLEANUP\n$text\n---------\n";
+    debug "AFTER CLEANUP\n$text\n---------\n" if $DEBUG > 1;
 
 
     my @split = split($EMAIL_ADDR_REGEX, $text);
@@ -2191,7 +2175,8 @@ sub _extract_reports
     my @toreturn;
     foreach my $email (keys %by_email)
     {
-	my $report = RDF::Base::Email::Head->new("");
+        # Use RDF::Base::Email::Head/create instead of new
+	my $report = RDF::Base::Email::Head->new("raw: -\r\n\r\n");
 #	debug "***** Creating a new report";
 	foreach my $key ( keys %{$by_email{$email}} )
 	{
@@ -2236,6 +2221,7 @@ sub _std_reason
 
     if(
        /\s \(? \#? 5\.1\.[01] \)? \s/x or                  # rfc 1893
+       /\s \(? \#? 5\.2\.1 \)? \s/x or                    # rfc 1893 disabled
        /$user_re\s+ (?:\S+\s+)? (?:is\s+)?                 # Generic
          (?: (?: un|not\s+) (?: known | recognized )
            | [dw]oes\s?n[o']?t
@@ -2395,7 +2381,8 @@ sub new_report
     my( $c, $data ) = @_;
     $data ||= {};
 
-    my $report = RDF::Base::Email::Head->new("");
+    # Use RDF::Base::Email::Head/create instead of new
+    my $report = RDF::Base::Email::Head->new("raw: -\r\n\r\n");
 
     foreach my $key (keys %$data)
     {
@@ -2439,6 +2426,21 @@ sub dsn_for_address
 
     return undef unless $c->is_dsn;
 
+    my $o = $c->email_obj;
+
+#    debug "dsn_for_address";
+    debug $o->viewtree if $DEBUG > 1;
+#    debug "Path: ".$o->path;
+
+#    debug datadump( $o->{struct}, 8);
+
+    # If there is a report, use it as the base
+    if( my $report = $o->first_part_with_type('multipart/report') )
+    {
+        debug "Using the report as the base for finding address" if $DEBUG;
+        $o = $report;
+    }
+
     my( $adr, $backup_adr );
 
     $c->analyze_verp;
@@ -2447,17 +2449,18 @@ sub dsn_for_address
 	return $ea->address;
     }
 
-    my $o = $c->email_obj;
-    if( my $eml = $o->first_part_with_type("message/rfc822") )
+    if( my $eml = $o->first_subpart_with_type("message/rfc822") )
     {
+        debug "  found part:\n".$eml->desig if $DEBUG;
 	my $to = $eml->head->parsed_address('to')->get_first_nos->address;
-        debug"FOUND TO $to";
+        debug"FOUND TO $to" if $DEBUG;
 	return $to if $to;
     }
 
     ### Parsing subject and content
     #
-    if( $o->head->parsed_subject =~ /message to ${EMAIL_ADDR_REGEX}/ )
+    my $subject = trim $o->head->parsed_subject->plain;
+    if( $subject =~ /message to ${EMAIL_ADDR_REGEX}/ )
     {
 	$adr = $1;
 	undef $adr if EA->is_nonhuman($adr);
@@ -2468,9 +2471,11 @@ sub dsn_for_address
     {
 #        debug "BODY:\n".${ $part->body } ."\n-----------------------";
 
-	if( ${ $part->body } =~ m/   Original.Message.+?^\s*To: (.+?)\n
-                                 |    meddelande som genererades för (.+?)\n
-                                 /xsmi )
+        my $body = trim $part->body_as_text;
+	if( $body
+            =~ m/   Original.Message.+?^\s*To:\s(.+?)\n
+                |    meddelande.som.genererades.för\s(.+?)\n
+                /xsmi )
 	{
 	    if( my $node = EA->exist( $1 ) )
 	    {
@@ -2504,24 +2509,32 @@ sub dsn_for_address
             debug "  $adr or $new_adr";
         }
 
+        debug "Got dsn address from reports" if $DEBUG;
+
         $adr = $new_adr;
     }
 
     if( $guess ) # Accept address from guess
     {
+        debug "  Guessing DSN email address" if $DEBUG;
         unless( $c->is_personal )
         {
+            debug "  from uncertain reports" if $DEBUG;
             $adr = $backup_adr;
         }
 
 	unless( $adr )
 	{
+            debug "  from sender" if $DEBUG;
             $adr = $c->sender_email_address;
 	}
     }
 
     return undef unless $adr;
     return undef if EA->is_nonhuman($adr);
+
+    debug "Found dsn for address $adr" if $DEBUG;
+
     return $adr;
 }
 

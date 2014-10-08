@@ -71,6 +71,9 @@ sub new
 	weaken( $sub->{'top'} );
     }
 
+#    debug "New raw part based on dataref:\n".$$dataref;
+
+
     $sub->{'em'} = Email::MIME->new($dataref);
 
     return $sub;
