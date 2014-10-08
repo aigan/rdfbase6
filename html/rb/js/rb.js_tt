@@ -52,11 +52,11 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        $this.popup
          = $('<div/>')
          .attr('id', 'rb_input_popup'+$this.divid)
-         .css('border',          '1px solid black')
+         .css('border',          '1px solid #95b079')
          .css('display',         'none'           )
          .css('position',        'absolute'       )
          .css('padding',         '.5em'           )
-         .css('backgroundColor', 'yellow'         )
+         .css('backgroundColor', '#e0e0e0'         )
          .css('zIndex',          '5'              );
 
        $this.form

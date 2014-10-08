@@ -6522,7 +6522,7 @@ sub wu_select_tree_multiple
     if( $args->{header} )
     {
         $out .= "<p class='left'>";
-        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump ." ";
+        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
         $out .= $node->list($pred_name, {scof=>$type},'active')->as_html;
         $out .= "</p>";
     }
