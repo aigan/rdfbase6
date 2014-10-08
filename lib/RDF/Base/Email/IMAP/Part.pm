@@ -333,6 +333,8 @@ sub description
 
 =head2 body_raw
 
+Returns a scalar ref
+
 =cut
 
 sub body_raw

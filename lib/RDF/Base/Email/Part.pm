@@ -258,6 +258,7 @@ sub first_non_multi_part
 
 =head2 parts
 
+  my @parts = $part->parts();
 
 Returns: A list of parts, not counting itself
 
@@ -1836,11 +1837,12 @@ sub body_as_text
         debug "Content-type $ctype not handled in body_as_text";
         #return( $part->body(@_), undef );
 
-        $ct_source =  undef;
+        $ct_source =  '';
         $bodyr = \ "";
     }
 
 #    debug "body_as_text returning ".(wantarray?'list':'scalar');
+#    debug "  ($bodyr, $ct_source)";
     return wantarray ? ($bodyr, $ct_source) : $bodyr;
 
 }

@@ -3467,7 +3467,7 @@ sub value_equals
 
 	if( ref $val2 )
 	{
-	    debug "Calling plain for value $val2";
+#	    debug "Calling plain for value $val2";
 	    if( ref $val2 eq 'HASH' )
 	    {
 		confess query_desig( $val2 );

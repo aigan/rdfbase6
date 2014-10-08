@@ -36,9 +36,12 @@ use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( debug datadump catch );
 
 use RDF::Base::Utils qw( parse_propargs solid_propargs );
-use RDF::Base::Constants qw( $C_intelligent_agent $C_email_address_holder );
 use RDF::Base::Email::Classifier;
 use RDF::Base::Widget qw( aloc build_field_key );
+
+use RDF::Base::Constants qw( $C_intelligent_agent
+                             $C_email_address_holder
+                             $C_ed_non_deliverable );
 
 =head1 DESCRIPTION
 
@@ -293,8 +296,17 @@ sub move_agent_to
 
 sub broken
 {
-    my $o = $_[0]->first_prop('ea_original');
-     return $o ? $o->broken() : 1;
+    my( $ea ) = @_;
+
+    my $lea = $ea->first_prop('ea_original');;
+
+    return 1 if $lea->broken;
+
+    return 1 if $ea->first_prop('has_email_deliverability',
+                                $C_ed_non_deliverable );
+
+    return 0;
+
 }
 
 
@@ -302,6 +314,8 @@ sub broken
 
 sub error_message
 {
+    # TODO: Combine parsing error with deliverability status
+
     my $o = $_[0]->first_prop('ea_original');
     return $o ? $o->error_message() : 'not an email address';
 }
@@ -408,6 +422,19 @@ sub desig
 
 ##############################################################################
 
+=head2
+
+Returns the plain address
+
+=cut
+
+sub shortdesig
+{
+    return shift->address(@_);
+}
+
+##############################################################################
+
 #sub sysdesig
 #{
 #    return shift->first_prop('ea_original')->sysdesig();
@@ -444,17 +471,17 @@ sub as_html
 
     my $color;
 
-    if( $ea->has_email_deliverability('ed_agent_away') )
+    if( $ea->broken )
+    {
+        $color = 'red';
+    }
+    elsif( $ea->has_email_deliverability('ed_agent_away') )
     {
         $color = '#8B0';
     }
     elsif( $ea->has_email_deliverability('ed_deliverable') )
     {
         $color = '#5F5';
-    }
-    elsif( $ea->has_email_deliverability('ed_non_deliverable') )
-    {
-        $color = 'red';
     }
     elsif( $ea->has_email_deliverability('ed_delayed') )
     {

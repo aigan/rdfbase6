@@ -5,7 +5,7 @@ package RDF::Base::Literal::Email::Subject;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -26,7 +26,7 @@ use base qw( RDF::Base::Literal::String );
 use Carp qw( cluck confess longmess );
 #use CGI;
 #use MIME::Words qw( decode_mimewords );
-use MIME::WordDecoder;
+use MIME::WordDecoder; # mime_to_perl_string
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim validate_utf8 );
