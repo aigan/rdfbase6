@@ -360,7 +360,7 @@ L<RDF::Base::Object/as_string>.
 
 sub as_string
 {
-    return $_[0]->format;
+    return $_[0]->address;
 }
 
 
