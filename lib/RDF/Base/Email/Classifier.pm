@@ -1164,7 +1164,7 @@ sub analyze_verp
                 $c->{contact}{email_address}{node} = $node;
                 debug "Got recipient ".$node->desig;
                 $c->{is}{verp} = 1;
-                die "FIXME";
+#                die "FIXME";
                 return;
             }
         }
@@ -1192,7 +1192,7 @@ sub analyze_verp
                     $c->{contact}{email_address}{node} = $node;
                     debug "Got recipient ".$node->desig;
                     $c->{is}{verp} = 1;
-                die "FIXME";
+#                die "FIXME";
                     return;
                 }
             }

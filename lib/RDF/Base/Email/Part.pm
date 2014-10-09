@@ -1668,6 +1668,8 @@ sub body_with_original_charset
 	$encoding = '8bit';
     }
 
+#    debug "Original body with encoding $encoding: ".$dataref;
+
     if( $encoding eq 'quoted-printable' )
     {
 	$dataref = \ decode_qp($$dataref);
@@ -1718,6 +1720,13 @@ sub body
 	return $dataref;
     }
 
+    # RB::Email::RB takes body from DB and is already valid utf8. Only
+    # decode body if it is not marked and valid.
+    #
+    if( utf8::is_utf8($$dataref) and utf8::valid($$dataref) )
+    {
+        return $dataref;
+    }
 
     $args ||= {};
 
