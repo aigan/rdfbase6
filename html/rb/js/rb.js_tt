@@ -49,6 +49,11 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
      $this.openPopup = function()
      {
+
+//       log('openPopup');
+       $popup_id = 'rb_input_popup'+$this.divid;        
+       if( $('#'+$popup_id).length ) return;
+
        $this.popup
          = $('<div/>')
          .attr('id', 'rb_input_popup'+$this.divid)
@@ -98,7 +103,8 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
      $this.close = function()
      {
        $this.popup.hide();
-       delete( $this );
+       $this.popup.remove();
+//       delete( $this );
      };
 
      $this.lookup = function()

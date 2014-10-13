@@ -205,7 +205,9 @@ sub wuirc
         }
         else
         {
-            $out .= input($field, $arc->value->code->plain, $fargs);
+            my $val = $arc->value;
+            $out .= input($field, $val->code->plain, $fargs);
+            $out .= ' '.$val->deliverability_as_html($args);
         }
         $out .= "&nbsp;" . $arc->edit_link_html;
         $out .= "<br>";
@@ -463,11 +465,29 @@ sub plain
 
 ##############################################################################
 
+=head2 as_html
+
+=cut
+
 sub as_html
 {
     my( $ea, $args ) = @_;
 
     my $out = $ea->first_prop('ea_original')->as_html($args);
+    $out .= " ".$ea->deliverability_as_html($args);
+
+    return $out;
+}
+
+##############################################################################
+
+=head2 deliverability_as_html
+
+=cut
+
+sub deliverability_as_html
+{
+    my( $ea, $args ) = @_;
 
     my $color;
 
@@ -500,12 +520,14 @@ sub as_html
         $color = 'grey';
     }
 
-    $out .= " <i style=\"color:$color\" class=\"fa fa-circle\"></i>";
-
-    return $out;
+    return "<i style=\"color:$color\" class=\"fa fa-circle\"></i>";
 }
 
 ##############################################################################
+
+=head2 update_deliverability
+
+=cut
 
 sub update_deliverability
 {

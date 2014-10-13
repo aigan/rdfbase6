@@ -5,7 +5,7 @@ package RDF::Base::Literal;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -241,6 +241,20 @@ sub as_list
     # Used by List AUTOLOAD
 
     return RDF::Base::List->new([shift]);
+}
+
+##############################################################################
+
+=head2 as_string
+
+Returns value as a plain string.
+The same as the auto-stringification.
+
+=cut
+
+sub as_string
+{
+    return $_[0]->literal;
 }
 
 ##############################################################################

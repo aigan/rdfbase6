@@ -31,7 +31,7 @@ use Scalar::Util qw(weaken);
 #use CGI;
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( throw debug );
+use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::List;
 
 use RDF::Base;
@@ -89,7 +89,7 @@ sub body_raw
 {
     my( $part ) = @_;
 
-    if( my $raw = $part->email->first_prop('email_body') )
+    if( my $raw = $part->email->first_prop('email_body')->plain )
     {
 	return \ $raw;
     }
