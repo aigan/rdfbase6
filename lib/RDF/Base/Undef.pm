@@ -302,7 +302,9 @@ sub is_true
 
 =head2 as_list
 
-Returns empty L<RDF::Base::List>
+Compatible with L<Template::Iterator>.
+
+Returns: An arrayref
 
 =cut
 
@@ -310,7 +312,7 @@ sub as_list
 {
     # Used by List AUTOLOAD
 
-    return RDF::Base::List->new([]);
+    return [];
 }
 
 ##############################################################################

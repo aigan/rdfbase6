@@ -1091,6 +1091,8 @@ sub loc
     # TODO: Check if the next argument is a hashref. Take that as
     # args.
 
+    my $DEBUG = 0;
+
 
 #    Para::Frame::Logging->this_level(4);
 
@@ -1111,7 +1113,7 @@ sub loc
 	    if( UNIVERSAL::isa($item, 'RDF::Base::Node') )
 	    {
 		debug 3, sprintf "Res '%s' (%s)",
-		  ($item||'<undef>'), blessed($item);
+		  ($item||'<undef>'), blessed($item) if $DEBUG;
 
 		my $langs = $item->list('is_of_language');
 		if( @$langs )
@@ -1125,7 +1127,7 @@ sub loc
 			{
 			    throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
 			}
-			debug 4,"Lang $code: ".$item->id;
+			debug 4,"Lang $code: ".$item->id if $DEBUG;
 		    }
 		}
 		else
@@ -1144,19 +1146,19 @@ sub loc
 	    {
 		$default = $item;
 		debug 3, sprintf "No translation '%s' (%s)",
-		  $item, blessed($item);
+		  $item, blessed($item) if $DEBUG;
 	    }
 	}
 	else
 	{
 	    $default = $item;
-	    debug 3,"No translation";
+	    debug 3,"No translation" if $DEBUG;
 	}
     }
 
     if( $is_nested_list++ )
     {
-	debug 3, "This is a nested list. Returning a list.";
+	debug 3, "This is a nested list. Returning a list." if $DEBUG;
 	my @new;
 	foreach my $item ( @$list )
 	{
@@ -1179,13 +1181,13 @@ sub loc
 
     foreach my $lang ( @alternatives )
     {
-	debug 3, "Checking lang $lang";
+	debug 3, "Checking lang $lang" if $DEBUG;
 	# Try to handle the cases in order of commonality
 	next unless $alts{$lang} and @{$alts{$lang}};
 	unless( $alts{$lang}[1] )
 	{
 	    # Not using ->value, since this may be a Literal
-	    debug 3, "  Returning only alternative";
+	    debug 3, "  Returning only alternative" if $DEBUG;
 #	    debug(0,$alts{$lang}[0]->{'id'});
 	    return $alts{$lang}[0]->loc(@_);
 	}
@@ -1198,7 +1200,7 @@ sub loc
 	      ($_->is_literal ? $_->arc_weight : undef)
 		|| $_->weight->literal || 0;
 
-	    debug 4, "  $_ has weight $weight" if $weight;
+	    if( $DEBUG ){debug 4, "  $_ has weight $weight" if $weight };
 	    $list{ $weight } = $_;
 	}
 
@@ -1231,7 +1233,7 @@ sub loc
 
     if( defined $default )
     {
-	debug 3, "  Returning default";
+	debug 3, "  Returning default" if $DEBUG;
 	if( ref $default and UNIVERSAL::isa $default, "RDF::Base::Object" )
 	{
 	    return $default->loc(@_);
@@ -1271,6 +1273,7 @@ sub loc_by_lang
     my( $list, $lc_list, $args ) = @_;
 
     my %lang;
+    my $DEBUG = 0;
 
     my $langprio = 100;
     foreach my $lc ( @$lc_list )
@@ -1282,7 +1285,7 @@ sub loc_by_lang
     my $got_lprio = -1;
     my $got_prop = is_undef;
 
-    debug "Getting loc_by_list from: ". $list->sysdesig;
+    debug "Getting loc_by_list from: ". $list->sysdesig if $DEBUG;
 
     while( my $prop = $list->get_next_nos )
     {
@@ -1636,30 +1639,30 @@ sub contains_any_of
 	{
 	    foreach my $val (@{$tmpl->as_list})
 	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig;
+		debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
 		return 1 if $list->contains_any_of($val, $args);
 	    }
-	    debug 2, "    failed";
+	    debug 2, "    failed" if $DEBUG;
 	    return 0;
 	}
 	elsif( ref $tmpl eq 'ARRAY' )
 	{
 	    foreach my $val (@$tmpl )
 	    {
-		debug 2, sprintf "  check array item %s", $val->sysdesig;
+		debug 2, sprintf "  check array item %s", $val->sysdesig if $DEBUG;
 		return 1 if $list->contains_any_of($val, $args);
 	    }
-	    debug 2, "    failed";
+	    debug 2, "    failed" if $DEBUG;
 	    return 0;
 	}
 	elsif( ref $tmpl eq 'Para::Frame::List' )
 	{
 	    foreach my $val ($tmpl->as_list)
 	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig;
+		debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
 		return 1 if $list->contains_any_of($val, $args);
 	    }
-	    debug 2, "    failed";
+	    debug 2, "    failed" if $DEBUG;
 	    return 0;
 	}
 	elsif( ref $tmpl eq 'HASH' )
@@ -1672,11 +1675,11 @@ sub contains_any_of
 
     foreach my $node ( @{$list->as_list} )
     {
-	debug 2, sprintf "  check node %s", $node->sysdesig;
-	debug 2, sprintf "  against %s", $tmpl->sysdesig;
+	debug 2, sprintf "  check node %s", $node->sysdesig if $DEBUG;
+	debug 2, sprintf "  against %s", $tmpl->sysdesig if $DEBUG;
 	return $node if $node->equals($tmpl, $args);
     }
-    debug 2,"    failed";
+    debug 2,"    failed" if $DEBUG;
     return undef;
 }
 
