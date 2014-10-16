@@ -1621,62 +1621,62 @@ sub contains_any_of
 
     my $DEBUG = 0;
 
-    if( debug > 1 )
+    if( $DEBUG )
     {
-	debug "Checking list with content:";
-	foreach my $node ( $list->nodes )
-	{
-	    debug sprintf "  * %s", $node->sysdesig;
-	}
+        debug "Checking list with content:";
+        foreach my $node ( $list->nodes )
+        {
+            debug sprintf "  * %s", $node->sysdesig;
+        }
     }
 
     if( ref $tmpl )
     {
-	if( UNIVERSAL::isa $tmpl, 'RDF::Base::List' )
-	{
-	    foreach my $val (@{$tmpl->as_list})
-	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed";
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'ARRAY' )
-	{
-	    foreach my $val (@$tmpl )
-	    {
-		debug 2, sprintf "  check array item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed";
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'Para::Frame::List' )
-	{
-	    foreach my $val ($tmpl->as_list)
-	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed";
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'HASH' )
-	{
-	    die "Not implemented: $tmpl";
-	}
+        if( UNIVERSAL::isa $tmpl, 'RDF::Base::List' )
+        {
+            foreach my $val (@{$tmpl->as_list})
+            {
+                debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif( ref $tmpl eq 'ARRAY' )
+        {
+            foreach my $val (@$tmpl )
+            {
+                debug 2, sprintf "  check array item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif( ref $tmpl eq 'Para::Frame::List' )
+        {
+            foreach my $val ($tmpl->as_list)
+            {
+                debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif( ref $tmpl eq 'HASH' )
+        {
+            die "Not implemented: $tmpl";
+        }
     }
 
     # Default for simple values and objects:
 
     foreach my $node ( @{$list->as_list} )
     {
-	debug 2, sprintf "  check node %s", $node->sysdesig;
-	debug 2, sprintf "  against %s", $tmpl->sysdesig;
-	return $node if $node->equals($tmpl, $args);
+        debug 2, sprintf "  check node %s", $node->sysdesig if $DEBUG;
+        debug 2, sprintf "  against %s", $tmpl->sysdesig if $DEBUG;
+        return $node if $node->equals($tmpl, $args);
     }
-    debug 2,"    failed";
+    debug 2,"    failed" if $DEBUG;
     return undef;
 }
 

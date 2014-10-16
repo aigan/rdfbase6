@@ -149,14 +149,15 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        $this.result = result;
 
        if( result[0]['id'] == 0 ) {
-         var line = $('<li/>').html(result[0]['name']);
+         var line = $('<li/>').addClass('clear')
+             .html(result[0]['name']);
          $this.popup_li.append(line);
        }
        else {
          for( var i in result ) {
            var node = result[i];
            var name = node['name'];
-           var line = $('<li/>');
+           var line = $('<li/>').addClass('clear');
            var select_button = $('<input/>');
 
            select_button.val('Select');
@@ -183,7 +184,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        if( !$this.hide_create_button ) {
          var line = $('<li/>');
          var value = $('#rb_input'+$this.divid).val();
-         var create_new_button = $('<input value="Create a new '+ value +'" type="button" />');
+         var create_new_button = $('<input class="btn btn-primary" value="Create a new '+ value +'" type="button" />');
          create_new_button.click(function(){$this.createNew(value);});
          create_new_button.appendTo(line);
          line.appendTo($this.popup_li);

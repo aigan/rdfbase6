@@ -84,11 +84,17 @@ sub set_result
 
     if( UNIVERSAL::isa $result_in, 'RDF::Base::List' )
     {
-	$search->{'custom_result'} = $result_in;
+        $search->{'custom_result'} = $result_in;
+    }
+    elsif( ref $result_in eq 'ARRAY' )
+    {
+       $search->{'custom_result'} = RDF::Base::List->new($result_in);
     }
     else
     {
-	confess "Result $result_in not handled";
+        debug "Result in is ".datadump($result_in,1);
+
+        confess sprintf( "Result %s not handled", ref($result_in));
     }
 
     undef $search->{'result'};

@@ -1,8 +1,12 @@
 [% IF node.unseen_by(u) and node.seen_by(u) %]
 [% last = node.first_arc('seen_by',u).updated || node.created %]
 <table class="admin">
-<tr><th colspan="3">Last seen [% last %]</th></tr>
-<tr><th>Pred</th><th>value</th><th>by</th></tr>
+<tr><th colspan="3" class="left subheader">Last seen [% last.ymd %]</th></tr>
+<tr class="left">
+	<th>Pred</th>
+	<th>Value</th>
+	<th>By</th>
+</tr>
 [% FOREACH arc IN node.arc_list(undef,
                  {
                      pred_ne=['seen_by','unseen_by'],
