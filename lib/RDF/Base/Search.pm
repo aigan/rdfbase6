@@ -743,6 +743,8 @@ Limits search result to the first C<maxlimit> results
 
   <rev> _ <pred> _ <arclim> _ <clean> _ <comp> _ <prio>
 
+Low prio first
+
 All parts except C<pred> is optional.
 
 Example: rev_in_region_explicit_clean_begins_2
