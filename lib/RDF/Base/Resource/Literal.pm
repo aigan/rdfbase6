@@ -28,7 +28,6 @@ use Scalar::Util qw( refaddr );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
-use Para::Frame::Widget qw( label_from_params );
 
 use RDF::Base::Literal::String;
 use RDF::Base::Literal::Time;

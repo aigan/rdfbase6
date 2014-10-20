@@ -5,7 +5,7 @@ package RDF::Base::AJAX;
 #   Fredrik Liljegren   <fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -248,8 +248,8 @@ sub action_button
     $args = to_json( $args || {} );
     $args =~ s/"/'/g;
 
-    return "<input type=\"button\" value=\"$label\" ".
-      "onclick=\"RDF.Base.pageparts['$divid'].performAction('$action', $args)\"/>";
+    return qq{<input type="button" class="btn btn-primary" value="$label" ".
+      "onclick="RDF.Base.pageparts['$divid'].performAction('$action', $args)">};
 }
 
 ##############################################################################

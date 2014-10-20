@@ -28,7 +28,7 @@ use Carp;
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
-use Para::Frame::Widget qw( checkbox label_from_params hidden );
+use Para::Frame::Widget qw( checkbox hidden );
 
 use RDF::Base::Utils qw( parse_propargs );
 

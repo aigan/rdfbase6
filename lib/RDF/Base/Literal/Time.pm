@@ -27,7 +27,7 @@ use Carp qw( cluck carp confess );
 use DateTime::Incomplete;
 
 use Para::Frame::Utils qw( throw debug datadump );
-use Para::Frame::Widget qw( label_from_params calendar );
+use Para::Frame::Widget qw( calendar );
 use Para::Frame::L10N qw( loc );
 #use Para::Frame::Reload;
 

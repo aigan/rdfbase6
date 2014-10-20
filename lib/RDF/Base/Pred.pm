@@ -29,6 +29,7 @@ use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr );
 
 use Para::Frame::Utils qw( throw catch debug datadump );
+use Para::Frame::Widget;
 use Para::Frame::Reload;
 
 use RDF::Base::List;

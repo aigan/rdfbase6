@@ -2445,23 +2445,23 @@ sub table_row
 	{
 	    when('-arc_remove')
 	    {
-                if( not $disabled and $req->session->{'advanced_mode'} )
-		{
-		    if( $ajax )
-		    {
-                        my $arc_id = $arc->id;
-                        my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
+            if( not $disabled )
+            {
+                if( $ajax )
+                {
+                    my $arc_id = $arc->id;
+                    my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
 
-                        $out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
-		    }
-		    else
-		    {
-			my $field = RDF::Base::Widget::build_field_key({arc => $arc});
-			$out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
-			$out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
-		    }
-		    $out .= " ";
-		}
+                    $out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
+                }
+                else
+                {
+                    my $field = RDF::Base::Widget::build_field_key({arc => $arc});
+                    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+                    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+                }
+                $out .= " ";
+            }
 	    }
 
 	    when('-arc_updated')

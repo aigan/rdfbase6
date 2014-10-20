@@ -51,6 +51,11 @@ use RDF::Base::Constants qw( $C_translatable $C_has_translation $C_language );
 
 Administrate localization
 
+If in admin_mode
+  output phrase in edit mode
+ELSE
+  output phrase
+
 =cut
 
 sub aloc
@@ -64,7 +69,7 @@ sub aloc
         my $node;
 
         unless( $id )
-	{
+        {
             $node = $R->create({ translation_label => $phrase,
                                  is => $C_translatable,
                                }, { activate_new_arcs => 1 });
@@ -138,6 +143,8 @@ localization node localization text. (Lock'n'Load)
 
 Creates a node if missing and uses it.
 
+Returns output phrase
+
 =cut
 
 sub locnl
@@ -159,6 +166,18 @@ sub locnl
 
 
 ##############################################################################
+
+=head2 sloc
+
+For use in direct contact with the actual translatable phrase.
+
+If in admin_mode
+  output edit icon
+ELSE
+  output nothing
+
+
+=cut
 
 sub sloc
 {

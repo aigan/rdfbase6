@@ -36,7 +36,7 @@ use JSON; # to_json
 
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
-use Para::Frame::Widget qw( label_from_params hidden radio );
+use Para::Frame::Widget qw( hidden radio );
 use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
 			   package_to_module timediff compile );
 
@@ -5280,7 +5280,7 @@ sub wn
 	$out .= '<div id="'. $divid .'" style="position: relative;">';
     }
 
-    $out .= label_from_params( $args );
+    $out .= $node->label_from_params( $args );
 
     my $view = $args->{'view'} ||= '';
     if( $view )
@@ -5424,7 +5424,7 @@ sub wdirc
 	  if( $range and $range ne $C_resource );
     }
 
-    $out .= label_from_params({
+    $out .= $pred->label_from_params({
 			       label       => delete $args->{'label'},
 			       tdlabel     => delete $args->{'tdlabel'},
 			       separator   => $args->{'separator'},
@@ -5601,25 +5601,27 @@ sub wu
     #
     my $out_wuirc = $range_class->wuirc($node, $pred, $args);
 
-    if( ($args->{'label'}||'') eq '1' )
-    {
-#        debug "Args label is ".$args->{'label'};
-        $args->{'label'} = $pred;
-    }
+    $out .= $pred->label_from_params($args);
 
-    if( ($args->{'tdlabel'}||'') eq '1' )
-    {
-#        debug "Args label is ".$args->{'label'};
-        $args->{'tdlabel'} = $pred;
-    }
-
-    $out .= label_from_params({
-			       label       => delete $args->{'label'},
-			       tdlabel     => delete $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => delete $args->{'label_class'},
-			      });
+#    if( ($args->{'label'}||'') eq '1' )
+#    {
+##        debug "Args label is ".$args->{'label'};
+#        $args->{'label'} = $pred;
+#    }
+#
+#    if( ($args->{'tdlabel'}||'') eq '1' )
+#    {
+##        debug "Args label is ".$args->{'label'};
+#        $args->{'tdlabel'} = $pred;
+#    }
+#
+#    $out .= label_from_params({
+#			       label       => delete $args->{'label'},
+#			       tdlabel     => delete $args->{'tdlabel'},
+#			       separator   => $args->{'separator'},
+#			       id          => $args->{'id'},
+#			       label_class => delete $args->{'label_class'},
+#			      });
 
 #    if( $pred_name eq 'has_cost' ) ### DEBUG
 #    {
@@ -9410,6 +9412,30 @@ sub handle_query_newsubjs
 
     return $res->changes - $changes_prev;
 }
+
+##############################################################################
+
+=head2 label_from_params
+
+=cut
+
+sub label_from_params
+{
+    my( $n, $args ) = @_;
+
+    if( ($args->{'label'}||'') eq '1' )
+    {
+        $args->{'label'} = $n;
+    }
+
+    if( ($args->{'tdlabel'}||'') eq '1' )
+    {
+        $args->{'tdlabel'} = $n;
+    }
+
+    return Para::Frame::Widget::label_from_params( $args );
+}
+
 
 ##############################################################################
 

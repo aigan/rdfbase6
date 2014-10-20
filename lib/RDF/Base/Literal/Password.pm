@@ -27,7 +27,7 @@ use Carp qw( cluck confess longmess );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug trim );
-use Para::Frame::Widget qw( password label_from_params );
+use Para::Frame::Widget qw( password  );
 
 use RDF::Base::Utils qw( is_undef parse_propargs proplim_to_arclim );
 use RDF::Base::Widget qw( build_field_key );

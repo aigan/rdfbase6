@@ -38,7 +38,7 @@ use Encode; # decode FB_QUIET
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump trim throw deunicode escape_js validate_utf8 );
-use Para::Frame::Widget qw( input textarea htmlarea hidden radio label_from_params input_image );
+use Para::Frame::Widget qw( input textarea htmlarea hidden radio input_image );
 
 use RDF::Base::Utils qw( is_undef valclean truncstring query_desig parse_propargs proplim_to_arclim );
 use RDF::Base::Widget qw( aloc build_field_key );
