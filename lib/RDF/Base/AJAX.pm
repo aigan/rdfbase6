@@ -248,8 +248,7 @@ sub action_button
     $args = to_json( $args || {} );
     $args =~ s/"/'/g;
 
-    return qq{<input type="button" class="btn btn-primary" value="$label" ".
-      "onclick="RDF.Base.pageparts['$divid'].performAction('$action', $args)">};
+    return qq{<input type="button" class="btn btn-primary" value="$label" onclick="RDF.Base.pageparts['$divid'].performAction('$action', $args)">};
 }
 
 ##############################################################################
