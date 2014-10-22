@@ -149,7 +149,7 @@ END;
    <tr>
       <td>[% jump('E', node.form_url ) %]</td>
       <td>pred</td>
-      <td>[% node.pred.wu_jump %]</td>
+      <td>[% node.pred.wu_jump(label=node.pred.label) %]</td>
       <td>core</td>
       <td>-</td>
    </tr>
@@ -202,7 +202,7 @@ END;
    [% IF prop_cnt > 10 AND show_pred != pred.plain %]
       <tr>
       <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td colspan="3"><em>[% prop_cnt %] values</em></td>
       </tr>
    [% ELSE %]
@@ -215,7 +215,7 @@ END;
          [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td>
       [% IF arc.objtype %]
          [% jump(arc.obj.sysdesig, me, id=arc.obj.id) %]
@@ -238,8 +238,8 @@ END;
    [% prop_cnt = node.count(pred,'inactive') %]
    [% IF prop_cnt > 10 AND show_pred != pred.plain %]
       <tr>
-      <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td>[% jump('+', me, keep_params=keep, show_pred=pred.label) %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td colspan="3"><em>[% prop_cnt %] values</em></td>
       </tr>
    [% ELSE %]
@@ -252,7 +252,7 @@ END;
          [% jump(arc.distance, 'arc/update.tt', id=arc.id ) %]
       [% END %]
       </td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td>
       [% IF arc.is_removal %]
          <span style="text-decoration:line-through; color:red">
@@ -286,11 +286,11 @@ END;
 <tr class="subheader"><th>Do</th> <th>Subject</th> <th>Property</th> <th>Flags</th> <th>Updated</th> 
 [% FOREACH pred IN node.revlist_preds('',arclim).sorted %]
    [% prop_cnt = node.revcount(pred,arclim) %]
-   [% IF prop_cnt > 10 AND show_pred != pred.plain %]
+   [% IF prop_cnt > 10 AND show_pred != pred.label %]
       <tr>
-      <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
+      <td>[% jump('+', me, keep_params=keep, show_pred=pred.label) %]</td>
       <td valign="top"><em>[% prop_cnt %] values</em></td>
-      <td colspan="3">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td colspan="3">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       </tr>
    [% ELSE %]
    [% FOREACH arc IN node.revarc_list(pred,'',arclim).sorted %]
@@ -309,7 +309,7 @@ END;
       <td>
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
@@ -321,11 +321,11 @@ END;
 [% IF include_inactive %]
 [% FOREACH pred IN node.revlist_preds('','inactive').sorted %]
    [% prop_cnt = node.revcount(pred,'inactive') %]
-   [% IF prop_cnt > 10 AND show_pred != pred.plain %]
+   [% IF prop_cnt > 10 AND show_pred != pred.label %]
       <tr>
-      <td>[% jump('+', me, keep_params=keep, show_pred=pred.plain) %]</td>
+      <td>[% jump('+', me, keep_params=keep, show_pred=pred.label) %]</td>
       <td valign="top"><em>[% prop_cnt %] values</em></td>
-      <td colspan="3">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td colspan="3">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       </tr>
    [% ELSE %]
    [% FOREACH arc IN node.revarc_list(pred,'','inactive').sorted %]
@@ -344,7 +344,7 @@ END;
       <td>
          [% jump(arc.subj.sysdesig, 'update.tt', id=arc.subj.id) %]
       </td>
-      <td valign="top">[% IF pred.objtype; pred.as_html; ELSE; jump(pred.plain, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
+      <td valign="top">[% IF pred.objtype; pred.label; ELSE; jump(pred.label, '../translation/node.tt', id=id, pred=pred.id); END %]</td>
       <td style="white-space: nowrap">[% arc.view_flags %] [%+ arc.weight %]</td>
       <td>[% PROCESS updated %]</td>
       </tr>
