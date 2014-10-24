@@ -6584,7 +6584,7 @@ sub wu_select_tree_multiple
         my $home = $Para::Frame::REQ->site->home_url_path;
         my $nid = $node->id;
         my $tid = $type->id;
-        $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary\">";
+        $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary click\">";
         $out .= locnl('Chose').' '.$type->as_html;
         $out .= '</p></div>';
         $out .= "<script>\n";

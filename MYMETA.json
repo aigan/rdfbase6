@@ -4,7 +4,7 @@
       "Jonas Liljegren <jonas@paranormal.se>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "ExtUtils::MakeMaker version 6.82, CPAN::Meta::Converter version 2.120351",
+   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "unknown"
    ],
@@ -35,12 +35,11 @@
             "Clone" : "0.18",
             "DBD::Pg" : "1.49",
             "DateTime::Incomplete" : "0.02",
-            "Email::Classifier" : "0.01",
             "Email::MIME" : "1.902",
             "File::MMagic::XS" : "0.09",
             "GraphViz" : "2.02",
             "HTML::FormatText" : "2.04",
-            "IMAP::BodyStructure" : "1.01",
+            "IMAP::BodyStructure" : "1.02",
             "JSON" : "2.04",
             "List::Util" : "1.18",
             "MIME::Types" : "1.3",
