@@ -71,14 +71,6 @@ sub wuirc
     my $key = "arc_singular__pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
     $args->{'id'} ||= $key;
 
-#    $out .= label_from_params({
-#			       label       => $args->{'label'},
-#			       tdlabel     => $args->{'tdlabel'},
-#			       separator   => $args->{'separator'},
-#			       id          => $args->{'id'},
-#			       label_class => $args->{'label_class'},
-#			      });
-
     if( ($args->{'label'}||'') eq '1' )
     {
 #        debug "Args label is ".$args->{'label'};
