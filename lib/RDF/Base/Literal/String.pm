@@ -106,7 +106,7 @@ sub new
     {
 	if( utf8::valid($val) )
 	{
-	    if( $val =~ /Ã./ )
+	    if( $val =~ $Para::Frame::Utils::latin1_as_utf8 )
 	    {
 		debug longmess "Value '$val' DOUBLE ENCODED!!!";
 #		$Para::Frame::REQ->result->message("Some text double encoded!");
@@ -119,7 +119,7 @@ sub new
     }
     else
     {
-	if( $val =~ /Ã./ )
+	if( $val =~ $Para::Frame::Utils::latin1_as_utf8 )
 	{
 	    debug "HANDLE THIS (apparent undecoded UTF8: $val)";
 	    $val = deunicode($val);
@@ -186,7 +186,7 @@ sub new_from_db
     }
     elsif( defined $val )
     {
-	if( $val =~ /Ã./ )
+	if( $val =~ $Para::Frame::Utils::latin1_as_utf8 )
 	{
 #	    cluck "UNDECODED UTF8 in DB: $val)";
 	    debug "UNDECODED UTF8 in DB: $val)";
@@ -284,6 +284,8 @@ sub parse
 	# Cleaning up UTF8...
 	if( $val_mod =~ /Ã./ )
 	{
+        debug "UNDECODED UTF-8 STRING: $val_mod";
+
 	    my $res;
 	    while( length $val_mod )
 	    {
