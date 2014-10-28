@@ -356,9 +356,13 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
 //         log(formData);
 //         log($element);
 
+// NOTE! This will add the [] suffix to repeated query params unless
+// we pass true to $.param()
+
        $element.load(
          '[%home%]/rb/clean/update_button_answer.tt',
-         formData,
+           $.param(formData,true),
+//         formData,
          function() {
            $this.updateOthers();
          }
