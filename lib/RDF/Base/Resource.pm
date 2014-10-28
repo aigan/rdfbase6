@@ -55,7 +55,7 @@ use RDF::Base::Pred::List;
 use RDF::Base::Metaclass;
 use RDF::Base::Resource::Change;
 use RDF::Base::Arc::Lim;
-use RDF::Base::Widget qw( build_field_key aloc locnl );
+use RDF::Base::Widget qw( aloc locnl );
 use RDF::Base::Widget::Handler;
 use RDF::Base::AJAX;
 
@@ -5601,32 +5601,10 @@ sub wu
     #
     my $out_wuirc = $range_class->wuirc($node, $pred, $args);
 
-    $out .= $pred->label_from_params($args);
+    my $label_out = $pred->label_from_params($args);
+    $out .= $label_out;
 
-#    if( ($args->{'label'}||'') eq '1' )
-#    {
-##        debug "Args label is ".$args->{'label'};
-#        $args->{'label'} = $pred;
-#    }
-#
-#    if( ($args->{'tdlabel'}||'') eq '1' )
-#    {
-##        debug "Args label is ".$args->{'label'};
-#        $args->{'tdlabel'} = $pred;
-#    }
-#
-#    $out .= label_from_params({
-#			       label       => delete $args->{'label'},
-#			       tdlabel     => delete $args->{'tdlabel'},
-#			       separator   => $args->{'separator'},
-#			       id          => $args->{'id'},
-#			       label_class => delete $args->{'label_class'},
-#			      });
 
-#    if( $pred_name eq 'has_cost' ) ### DEBUG
-#    {
-#        debug "OUT is '$out'";
-#    }
 
     if( $divid and not $from_ajax )
     {
@@ -5670,11 +5648,10 @@ sub wuh
 {
     my( $node, $pred_name, $value, $args ) = @_;
 
-    my $fkey = build_field_key({
-				subj => $node,
-				pred => $pred_name,
-				if => $args->{'if'},
-			       });
+    my $fkey = $node->build_field_key({
+                                       pred => $pred_name,
+                                       if => $args->{'if'},
+                                      });
 
     if( ref $value and UNIVERSAL::isa $value, "RDF::Base::Resource" )
     {
@@ -6065,12 +6042,11 @@ sub wuirc
 
 	    my $fkeys =
 	    {
-	     subj => $subj,
 	     $is_rev.'pred' => $pred,
 	    };
 	    $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
-	    my $input_id = build_field_key($fkeys);
+	    my $input_id = $subj->build_field_key($fkeys);
 	    $args->{id} = $input_id;
 
 	    $out .=
@@ -9434,6 +9410,33 @@ sub label_from_params
     }
 
     return Para::Frame::Widget::label_from_params( $args );
+}
+
+
+##############################################################################
+
+=head2 build_field_key
+
+=cut
+
+sub build_field_key
+{
+    my( $this, $args ) = @_;
+
+    if( $this->isa('RDF::Base::Arc') )
+    {
+        $args->{arc} //= $this->id; # Must be scalar
+    }
+    elsif( $this->isa('RDF::Base::Pred') )
+    {
+        $args->{pred} //= $this;
+    }
+    else
+    {
+        $args->{subj} //= $this;
+    }
+
+    return RDF::Base::Widget::build_field_key( $args );
 }
 
 
