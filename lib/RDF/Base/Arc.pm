@@ -31,14 +31,14 @@ use constant CLUE_NOVALUENODE => 8;
 
 use overload 'cmp'  => sub{0};
 use overload 'ne'   => sub{1};
-use overload 'eq'   => sub{0}; # Use method ->equals()
+use overload 'eq'   => sub{0};  # Use method ->equals()
 use overload 'fallback' => 1;
 
 use Carp qw( cluck confess carp croak shortmess longmess );
 use Time::HiRes qw( time );
 use Scalar::Util qw( refaddr blessed looks_like_number );
 use DBD::Pg qw(:pg_types);
-use JSON; # to_json
+use JSON;                       # to_json
 
 use Para::Frame::Utils qw( throw debug datadump package_to_module );
 use Para::Frame::Reload;
@@ -60,7 +60,7 @@ use RDF::Base::Rule;
 use RDF::Base::Utils qw( valclean is_undef truncstring
                          query_desig parse_propargs aais
                          solid_propargs
-                         );
+                      );
 
 # TODO:
 # Move from implicit to explicit then updating implicit properties
@@ -98,14 +98,14 @@ our %DYNAMIC_PRED =
    deactivated => 'date',
    deactivated_by => 'resource', # should be agent
    unsubmitted => 'date',
-   updated_by => 'resource',     # should be agent
-   activated_by => 'resource',   # should be agent
-   created_by => 'resource',     # should be agent
+   updated_by => 'resource',    # should be agent
+   activated_by => 'resource',  # should be agent
+   created_by => 'resource',    # should be agent
    version_id => 'int',
    replaces => 'arc',
-   source => 'resource',         # should be source
-   read_access => 'resource',    # should be agent
-   write_access => 'resource',   # should be agent
+   source => 'resource',        # should be source
+   read_access => 'resource',   # should be agent
+   write_access => 'resource',  # should be agent
    label => 'text',
   );
 
@@ -231,31 +231,31 @@ sub create
                         read_access write_access subj pred valtype
                         implicit value obj arc_weight arc_weight_last ))
     {
-	if( $props->{ $key } )
-	{
-	    if( UNIVERSAL::isa( $props->{ $key }, 'ARRAY') )
-	    {
-		$props->{ $key } = $props->{ $key }->[0];
-	    }
-	}
+        if ( $props->{ $key } )
+        {
+            if ( UNIVERSAL::isa( $props->{ $key }, 'ARRAY') )
+            {
+                $props->{ $key } = $props->{ $key }->[0];
+            }
+        }
     }
 
 
 
-    if( $args->{'activate_new_arcs'} )
+    if ( $args->{'activate_new_arcs'} )
     {
-	unless( defined $props->{'active'} )
-	{
-	    $props->{'active'} = $args->{'activate_new_arcs'};
-	}
+        unless ( defined $props->{'active'} )
+        {
+            $props->{'active'} = $args->{'activate_new_arcs'};
+        }
     }
 
-    if( $args->{'submit_new_arcs'} )
+    if ( $args->{'submit_new_arcs'} )
     {
-	unless( defined $props->{'submitted'} )
-	{
-	    $props->{'submitted'} = $args->{'submit_new_arcs'};
-	}
+        unless ( defined $props->{'submitted'} )
+        {
+            $props->{'submitted'} = $args->{'submit_new_arcs'};
+        }
     }
 
 
@@ -267,77 +267,77 @@ sub create
     my $rec = {};
 
     ##################### common == id
-    if( $props->{'common'} ) # used in block EXISTING
+    if ( $props->{'common'} )   # used in block EXISTING
     {
-	$rec->{'id'}  = $props->{'common'};
+        $rec->{'id'}  = $props->{'common'};
     }
     else
     {
-	$rec->{'id'}  = $dbix->get_nextval('node_seq');
+        $rec->{'id'}  = $dbix->get_nextval('node_seq');
     }
     push @fields, 'id';
     push @values, $rec->{'id'};
 
 
     ##################### id == ver
-    if( $props->{'id'} )
+    if ( $props->{'id'} )
     {
-	$rec->{'ver'}  = $props->{'id'};
+        $rec->{'ver'}  = $props->{'id'};
     }
     else
     {
-	$rec->{'ver'}  = $dbix->get_nextval('node_seq');
+        $rec->{'ver'}  = $dbix->get_nextval('node_seq');
     }
     push @fields, 'ver';
     push @values, $rec->{'ver'};
 
 
     ##################### replaces_id
-    if( $props->{'replaces'} )
+    if ( $props->{'replaces'} )
     {
-	$rec->{'replaces'}  = $props->{'replaces'};
-	push @fields, 'replaces';
-	push @values, $rec->{'replaces'};
+        $rec->{'replaces'}  = $props->{'replaces'};
+        push @fields, 'replaces';
+        push @values, $rec->{'replaces'};
     }
 
 
     ##################### source
-    if( $props->{'source'} )
+    if ( $props->{'source'} )
     {
-	$rec->{'source'}  = $props->{'source'};
+        $rec->{'source'}  = $props->{'source'};
     }
     else
     {
-	# Method may be called before constants are set up
-	$rec->{'source'}  = $this->default_source->id;
+        # Method may be called before constants are set up
+        $rec->{'source'}  = $this->default_source->id;
     }
     push @fields, 'source';
     push @values, $rec->{'source'};
 
 
     ##################### read_access
-    if( $props->{'read_access'} )
+    if ( $props->{'read_access'} )
     {
-	$rec->{'read_access'}  = $props->{'read_access'};
+        $rec->{'read_access'}  = $props->{'read_access'};
     }
     else
     {
-	# Method may be called before constants are set up
-	$rec->{'read_access'}  = $this->default_read_access->id;
+        # Method may be called before constants are set up
+        $rec->{'read_access'}  = $this->default_read_access->id;
     }
     push @fields, 'read_access';
     push @values, $rec->{'read_access'};
 
 
     ##################### write_access
-    if( $props->{'write_access'} )
+    if ( $props->{'write_access'} )
     {
-	$rec->{'write_access'}  = $props->{'write_access'};
+        $rec->{'write_access'}  = $props->{'write_access'};
     }
     else
     {
-	# Method may be called before constants are set up
-	$rec->{'write_access'}  = $this->default_write_access->id;
+        # Method may be called before constants are set up
+        $rec->{'write_access'}  = $this->default_write_access->id;
     }
     push @fields, 'write_access';
     push @values, $rec->{'write_access'};
@@ -359,24 +359,24 @@ sub create
 
     ##################### subj
     my $subj;
-    if( my $subj_label = $props->{'subj'} )
+    if ( my $subj_label = $props->{'subj'} )
     {
-	$subj = RDF::Base::Resource->get( $subj_label );
+        $subj = RDF::Base::Resource->get( $subj_label );
 
-	unless( defined $subj )
-	{
-	    confess "No node '$subj_label' found";
-	}
+        unless( defined $subj )
+        {
+            confess "No node '$subj_label' found";
+        }
 
-	if( UNIVERSAL::isa $subj, "RDF::Base::Literal" )
-	{
-	    # Transform to a value resource
-	    $subj = $subj->node_set;
-	}
+        if ( UNIVERSAL::isa $subj, "RDF::Base::Literal" )
+        {
+            # Transform to a value resource
+            $subj = $subj->node_set;
+        }
     }
     else
     {
-	confess "Subj missing\n";
+        confess "Subj missing\n";
     }
     $rec->{'subj'} = $subj->id or confess "id missing".datadump($props, 2);
     push @fields, 'subj';
@@ -385,41 +385,41 @@ sub create
 
     ##################### valtype
     my $valtype;
-    if( $props->{'valtype'} )
+    if ( $props->{'valtype'} )
     {
-	$valtype = RDF::Base::Resource->get( $props->{'valtype'} );
+        $valtype = RDF::Base::Resource->get( $props->{'valtype'} );
     }
-    elsif( not defined $props->{'valtype'} )
+    elsif ( not defined $props->{'valtype'} )
     {
-	if( UNIVERSAL::isa( $props->{'value'}, "RDF::Base::Literal" ) )
-	{
-	    $valtype = $props->{'value'}->this_valtype;
-	}
-	else
-	{
-	    $valtype = $pred->valtype;
-	}
+        if ( UNIVERSAL::isa( $props->{'value'}, "RDF::Base::Literal" ) )
+        {
+            $valtype = $props->{'value'}->this_valtype;
+        }
+        else
+        {
+            $valtype = $pred->valtype;
+        }
     }
     # Setting up the final valtype below
 
 
     ##################### updated_by
     my $updated_by;
-    if( $props->{'created_by'} )
+    if ( $props->{'created_by'} )
     {
-	$updated_by = RDF::Base::Resource->
-	  get($props->{'created_by'});
-	$rec->{'created_by'} = $updated_by->id;
+        $updated_by = RDF::Base::Resource->
+          get($props->{'created_by'});
+        $rec->{'created_by'} = $updated_by->id;
     }
-    elsif( $req and $req->user )
+    elsif ( $req and $req->user )
     {
-	$updated_by = $req->user;
-	$rec->{'created_by'} = $updated_by->id;
+        $updated_by = $req->user;
+        $rec->{'created_by'} = $updated_by->id;
     }
     else
     {
-	$updated_by = RDF::Base::Resource->get_by_label('root');
-	$rec->{'created_by'} = $updated_by->id;
+        $updated_by = RDF::Base::Resource->get_by_label('root');
+        $rec->{'created_by'} = $updated_by->id;
     }
     push @fields, 'created_by';
     push @values, $rec->{'created_by'};
@@ -427,19 +427,19 @@ sub create
 
     ##################### updated
     my $updated;
-    if( $props->{'created'} )
+    if ( $props->{'created'} )
     {
-	$updated = RDF::Base::Literal::Time->
-	  get($props->{'created'});
+        $updated = RDF::Base::Literal::Time->
+          get($props->{'created'});
     }
-    elsif( $args->{'updated'} )
+    elsif ( $args->{'updated'} )
     {
-	$updated = RDF::Base::Literal::Time->
-	  get($args->{'updated'});
+        $updated = RDF::Base::Literal::Time->
+          get($args->{'updated'});
     }
     else
     {
-	$updated = now();
+        $updated = now();
     }
 
     $rec->{'updated'} = $dbix->format_datetime( $updated );
@@ -453,66 +453,66 @@ sub create
 
     ##################### implicit
     push @fields, 'indirect', 'implicit';
-    if( $props->{'implicit'} )
+    if ( $props->{'implicit'} )
     {
-	$rec->{'implicit'} = 1;
-	$rec->{'indirect'} = 1;
+        $rec->{'implicit'} = 1;
+        $rec->{'indirect'} = 1;
 
-	push @values, 't', 't';
+        push @values, 't', 't';
     }
     else
     {
-	$rec->{'implicit'} = 0;
-	$rec->{'indirect'} = 0;
+        $rec->{'implicit'} = 0;
+        $rec->{'indirect'} = 0;
 
-	push @values, 'f', 'f';
+        push @values, 'f', 'f';
     }
 
 
     ##################### active
     push @fields, 'active';
-    unless( defined $props->{'active'} )
+    unless ( defined $props->{'active'} )
     {
-	$props->{'active'} = 0;
+        $props->{'active'} = 0;
     }
 
     # Always handle activation of replacing arcs after the creation
     # This includes removal arcs
     #
-    if( $props->{'active'} and not $props->{'replaces'} )
+    if ( $props->{'active'} and not $props->{'replaces'} )
     {
-	$rec->{'active'} = 1;
-	push @values, 't';
+        $rec->{'active'} = 1;
+        push @values, 't';
 
-	$rec->{'activated'} = $rec->{'updated'};
-	push @fields, 'activated';
-	push @values, $dbix->format_datetime($rec->{'activated'});
+        $rec->{'activated'} = $rec->{'updated'};
+        push @fields, 'activated';
+        push @values, $dbix->format_datetime($rec->{'activated'});
 
-	$rec->{'activated_by'} = $rec->{'created_by'};
-	push @fields, 'activated_by';
-	push @values, $rec->{'activated_by'};
+        $rec->{'activated_by'} = $rec->{'created_by'};
+        push @fields, 'activated_by';
+        push @values, $rec->{'activated_by'};
     }
     else
     {
-	if( $props->{'active'} )
-	{
-	    # Submit now. Activate later. Since we are replacing arc
+        if ( $props->{'active'} )
+        {
+            # Submit now. Activate later. Since we are replacing arc
 
-	    $props->{'submitted'} = 1;
-	}
+            $props->{'submitted'} = 1;
+        }
 
-	$rec->{'active'} = 0;
-	push @values, 'f';
+        $rec->{'active'} = 0;
+        push @values, 'f';
     }
 
 
     ##################### range_card_max_check
-    unless( $props->{'replaces'} or $args->{'ignore_card_check'} )
+    unless ( $props->{'replaces'} or $args->{'ignore_card_check'} )
     {
-        if( my $rcm = $pred->first_prop('range_card_max')->plain )
+        if ( my $rcm = $pred->first_prop('range_card_max')->plain )
         {
             my $cnt = $subj->count($pred,'solid');
-            if( $cnt >= $rcm )
+            if ( $cnt >= $rcm )
             {
                 throw('validation', sprintf 'Cardinality check of arc failed. %s already has %d arcs with pred %s', $subj->sysdesig, $cnt, $pred->desig)
             }
@@ -522,24 +522,24 @@ sub create
 
     ##################### submitted
     push @fields, 'submitted';
-    if( $props->{'submitted'} )
+    if ( $props->{'submitted'} )
     {
-	# Checking for props instead of $rec->{active} since we may be
-	# planning to activate after creation in case of
-	# $props->{'replaces'}
-	#
-	if( $props->{'active'} and not $props->{'replaces'} )
-	{
-	    confess "Arc can't be both active and submitted: ".query_desig($props);
-	}
+        # Checking for props instead of $rec->{active} since we may be
+        # planning to activate after creation in case of
+        # $props->{'replaces'}
+        #
+        if ( $props->{'active'} and not $props->{'replaces'} )
+        {
+            confess "Arc can't be both active and submitted: ".query_desig($props);
+        }
 
-	$rec->{'submitted'} = 1;
-	push @values, 't';
+        $rec->{'submitted'} = 1;
+        push @values, 't';
     }
     else
     {
-	$rec->{'submitted'} = 0;
-	push @values, 'f';
+        $rec->{'submitted'} = 0;
+        push @values, 'f';
     }
 
 
@@ -549,190 +549,190 @@ sub create
     # (This gives coltype 'obj' for valtype 0 (used for REMOVAL))
     my $coltype = $valtype ? $valtype->coltype : 'obj';
 
-    if( $DEBUG and $valtype )
+    if ( $DEBUG and $valtype )
     {
-	debug "Valtype now: ". $valtype->id;
+        debug "Valtype now: ". $valtype->id;
     }
     debug "Coltype now: ".($coltype||'') if $DEBUG;
     unless( $coltype )
     {
-	debug "No coltype found: ".datadump(\%RDF::Base::Literal::Class::COLTYPE_valtype2name);
+        debug "No coltype found: ".datadump(\%RDF::Base::Literal::Class::COLTYPE_valtype2name);
     }
 
 
-    if( my $obj_id = $props->{'obj'} )
+    if ( my $obj_id = $props->{'obj'} )
     {
-	unless( $obj_id =~ /^\d+$/ )
-	{
-	    confess "arc obj id must be an integer";
-	}
+        unless( $obj_id =~ /^\d+$/ )
+        {
+            confess "arc obj id must be an integer";
+        }
 
-	$coltype = 'obj';
-	$rec->{$coltype} = $obj_id;
-	push @fields, $coltype;
-	push @values, $rec->{$coltype};
+        $coltype = 'obj';
+        $rec->{$coltype} = $obj_id;
+        push @fields, $coltype;
+        push @values, $rec->{$coltype};
 
-	$value_obj = RDF::Base::Resource->get_by_id( $obj_id );
+        $value_obj = RDF::Base::Resource->get_by_id( $obj_id );
     }
-    elsif( not $valtype ) # Special valtype for removals
+    elsif ( not $valtype )      # Special valtype for removals
     {
-	$value_obj = is_undef;
+        $value_obj = is_undef;
     }
     else
     {
-	# It's possible we are creating an arc with an undef value.
-	# That is allowed!
+        # It's possible we are creating an arc with an undef value.
+        # That is allowed!
 
-	debug sprintf("parsing value %s", $props->{'value'}) if $DEBUG;
+        debug sprintf("parsing value %s", $props->{'value'}) if $DEBUG;
 
-	# Returns is_undef if value undef and coltype is obj
-	$value_obj = RDF::Base::Resource->
-	  get_by_anything( $props->{'value'},
-			   {
-			    %$args,
-			    valtype => $valtype,
-			    subj_new => $subj,
-			    pred_new => $pred,
-			   });
+        # Returns is_undef if value undef and coltype is obj
+        $value_obj = RDF::Base::Resource->
+          get_by_anything( $props->{'value'},
+                           {
+                            %$args,
+                            valtype => $valtype,
+                            subj_new => $subj,
+                            pred_new => $pred,
+                           });
 
-	debug sprintf("value_obj is now %s",$value_obj->sysdesig) if $DEBUG;
+        debug sprintf("value_obj is now %s",$value_obj->sysdesig) if $DEBUG;
 
-	if( UNIVERSAL::isa( $value_obj, 'RDF::Base::Literal' ) )
-	{
-	    if( my $vnode = $value_obj->node )
-	    {
-		# Let given value_node override that of the value
-		$props->{'value_node'} ||= $vnode;
+        if ( UNIVERSAL::isa( $value_obj, 'RDF::Base::Literal' ) )
+        {
+            if ( my $vnode = $value_obj->node )
+            {
+                # Let given value_node override that of the value
+                $props->{'value_node'} ||= $vnode;
 
-		if( $props->{'replaces'} )
-		{
-		    my $repl = RDF::Base::Arc->get( $props->{'replaces'} );
-		    unless( $repl->obj->equals( $vnode ) )
-		    {
-			cluck sprintf "Replacing %s with %s for %s", $repl, $vnode, $value_obj;
-		    }
-		}
-		else
-		{
-		    # The literal value must only exist in ONE (active) place
+                if ( $props->{'replaces'} )
+                {
+                    my $repl = RDF::Base::Arc->get( $props->{'replaces'} );
+                    unless( $repl->obj->equals( $vnode ) )
+                    {
+                        cluck sprintf "Replacing %s with %s for %s", $repl, $vnode, $value_obj;
+                    }
+                }
+                else
+                {
+                    # The literal value must only exist in ONE (active) place
 
-		    debug "Existing: ".$vnode->sysdesig;
-		    debug "New  obj: ".$value_obj->sysdesig;
-		    debug "IGNORING VALUE";
+                    debug "Existing: ".$vnode->sysdesig;
+                    debug "New  obj: ".$value_obj->sysdesig;
+                    debug "IGNORING VALUE";
 
-		    # We use the value_node and sets the value to undef here
-		    $value_obj = is_undef;
-		}
-	    }
-	}
-
-
-	if( $value_obj->defined )
-	{
-	    # Coltype says how the value should be stored.  The predicate
-	    # specifies the coltype.
-
-	    # Sanity check
-	    #
-	    if( $coltype eq 'obj' )
-	    {
-		unless( UNIVERSAL::isa($value_obj, 'RDF::Base::Resource' ) )
-		{
-		    confess "Value incompatible with coltype $coltype: ".
-		      datadump($props, 2);
-		}
-	    }
-	    elsif( UNIVERSAL::isa($value_obj, 'RDF::Base::Resource' ) )
-	    {
-		confess "Value incompatible with coltype $coltype: ".
-		  datadump($props, 2);
-	    }
+                    # We use the value_node and sets the value to undef here
+                    $value_obj = is_undef;
+                }
+            }
+        }
 
 
-	    # Handle the coltypes in the table
-	    my $value;
+        if ( $value_obj->defined )
+        {
+            # Coltype says how the value should be stored.  The predicate
+            # specifies the coltype.
 
-	    # TODO: Handle in each obj class
+            # Sanity check
+            #
+            if ( $coltype eq 'obj' )
+            {
+                unless( UNIVERSAL::isa($value_obj, 'RDF::Base::Resource' ) )
+                {
+                    confess "Value incompatible with coltype $coltype: ".
+                      datadump($props, 2);
+                }
+            }
+            elsif ( UNIVERSAL::isa($value_obj, 'RDF::Base::Resource' ) )
+            {
+                confess "Value incompatible with coltype $coltype: ".
+                  datadump($props, 2);
+            }
 
-	    if( $coltype eq 'obj' )
-	    {
-		debug "Getting the id for the object by the name ".($value||'') if $DEBUG;
-		$value = $this->get( $value_obj )->id;
-	    }
-	    else # Literal
-	    {
-		if( $coltype eq 'valdate' )
-		{
-		    $value = $dbix->format_datetime($value_obj);
-		}
-		else
-		{
+
+            # Handle the coltypes in the table
+            my $value;
+
+            # TODO: Handle in each obj class
+
+            if ( $coltype eq 'obj' )
+            {
+                debug "Getting the id for the object by the name ".($value||'') if $DEBUG;
+                $value = $this->get( $value_obj )->id;
+            }
+            else                # Literal
+            {
+                if ( $coltype eq 'valdate' )
+                {
+                    $value = $dbix->format_datetime($value_obj);
+                }
+                else
+                {
 #		    $value = $value_obj->literal;
 
-		    # Changed from literal() to plain() since
-		    # literal() fro email address objects, do not
-		    # stringify to the original strin
-		    #
-		    $value = $value_obj->plain;
+                    # Changed from literal() to plain() since
+                    # literal() fro email address objects, do not
+                    # stringify to the original strin
+                    #
+                    $value = $value_obj->plain;
 
-		    debug 2, sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
+                    debug 2, sprintf "Plain value is %s", (defined $value?"'$value'":'<undef>');
 
-		    if( $coltype eq 'valtext' )
-		    {
-			$rec->{'valclean'} = valclean( $value );
+                    if ( $coltype eq 'valtext' )
+                    {
+                        $rec->{'valclean'} = valclean( $value );
 
-			if( $rec->{'valclean'} =~ /^rdfbase.*hash/ )
-			{
-			    die "Object stringification ".datadump($rec, 2);
-			}
+                        if ( $rec->{'valclean'} =~ /^rdfbase.*hash/ )
+                        {
+                            die "Object stringification ".datadump($rec, 2);
+                        }
 
-			push @fields, 'valclean';
-			push @values, $rec->{'valclean'};
-		    }
-                    elsif( $coltype eq 'valfloat' )
+                        push @fields, 'valclean';
+                        push @values, $rec->{'valclean'};
+                    }
+                    elsif ( $coltype eq 'valfloat' )
                     {
                         confess "No number  $value" unless looks_like_number($value);
                     }
-		}
+                }
 
-		if( $value_obj->id ) # Literal resource (value node)
-		{
-		    # Don't override any explicitly given value node
-		    $props->{'value_node'} ||= $value_obj->id;
-		}
+                if ( $value_obj->id ) # Literal resource (value node)
+                {
+                    # Don't override any explicitly given value node
+                    $props->{'value_node'} ||= $value_obj->id;
+                }
 
-	    }
+            }
 
-	    $rec->{$coltype} = $value;
-	    push @fields, $coltype;
-	    push @values, $rec->{$coltype};
-	    if( $coltype eq 'valbin' )
-	    {
-		$bindtype[$#values] = PG_BYTEA;
-	    }
+            $rec->{$coltype} = $value;
+            push @fields, $coltype;
+            push @values, $rec->{$coltype};
+            if ( $coltype eq 'valbin' )
+            {
+                $bindtype[$#values] = PG_BYTEA;
+            }
 
-	    debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
-	}
-	else
-	{
-	    debug "Create arc $pred_name($rec->{'subj'}, undef)" if $DEBUG;
-	}
+            debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
+        }
+        else
+        {
+            debug "Create arc $pred_name($rec->{'subj'}, undef)" if $DEBUG;
+        }
     }
 
     ##################### value_node
-    if( my $vnode_in = $props->{'value_node'} )
+    if ( my $vnode_in = $props->{'value_node'} )
     {
-	if( $coltype eq 'obj' )
-	{
-	    debug "Create props:\n".query_desig($props);
-	    debug "Create args:\n".query_desig($args);
-	    confess "Valuenode can not be set for non-literals ($value_obj / $vnode_in)";
-	}
+        if ( $coltype eq 'obj' )
+        {
+            debug "Create props:\n".query_desig($props);
+            debug "Create args:\n".query_desig($args);
+            confess "Valuenode can not be set for non-literals ($value_obj / $vnode_in)";
+        }
 
-	my $vnode = RDF::Base::Resource->get_by_anything($vnode_in);
-	push @fields, 'obj';
-	push @values, $vnode->id;
-	$rec->{'obj'} = $vnode->id;
+        my $vnode = RDF::Base::Resource->get_by_anything($vnode_in);
+        push @fields, 'obj';
+        push @values, $vnode->id;
+        $rec->{'obj'} = $vnode->id;
     }
 
 
@@ -742,153 +742,153 @@ sub create
     # read_access value.)
 
     my $do_check = 1;
-    if( $args->{'arc_create_check'} )
+    if ( $args->{'arc_create_check'} )
     {
-	unless( $args->{'arc_create_check'}{ $value_obj->id } )
-	{
-	    $do_check = 0;
-	}
+        unless ( $args->{'arc_create_check'}{ $value_obj->id } )
+        {
+            $do_check = 0;
+        }
     }
 
-    if( $do_check )
+    if ( $do_check )
     {
-	my $subj = RDF::Base::Resource->get_by_id( $rec->{'subj'} );
-	my $pred = RDF::Base::Pred->get( $rec->{'pred'} );
+        my $subj = RDF::Base::Resource->get_by_id( $rec->{'subj'} );
+        my $pred = RDF::Base::Pred->get( $rec->{'pred'} );
 
 
-	# Also returns new and submitted arcs, from the same user
+        # Also returns new and submitted arcs, from the same user
 
-	debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->plain, query_desig($value_obj) ) if $DEBUG;
+        debug( sprintf "Check if subj %s has pred %s with value %s", $rec->{'subj'}, $pred->plain, query_desig($value_obj) ) if $DEBUG;
 
 #	debug "Getting arclist for ".$subj->sysdesig;
-	# $value_obj may be is_undef (but not literal undef)
-	my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
+        # $value_obj may be is_undef (but not literal undef)
+        my $existing_arcs = $subj->arc_list($pred, $value_obj, ['active', 'submitted', 'new']);
 
-	debug "Existing arcs: ".query_desig($existing_arcs) if $DEBUG;
+        debug "Existing arcs: ".query_desig($existing_arcs) if $DEBUG;
 #	debug "value_obj: '$value_obj'";
 
       EXISTING:
-	foreach my $arc ($existing_arcs->as_array)
-	{
-	    if( $rec->{'replaces'} )
-	    {
-		next unless ($arc->replaces_id||0) == $rec->{'replaces'};
-	    }
+        foreach my $arc ($existing_arcs->as_array)
+        {
+            if ( $rec->{'replaces'} )
+            {
+                next unless ($arc->replaces_id||0) == $rec->{'replaces'};
+            }
 
-	    if( $props->{'common'} ) # Explicitly defined
-	    {
-		next unless ($arc->common_id||0) == $rec->{'id'};
-	    }
+            if ( $props->{'common'} ) # Explicitly defined
+            {
+                next unless ($arc->common_id||0) == $rec->{'id'};
+            }
 
-	    if( $props->{'value_node'} )
-	    {
-		next unless ($arc->obj_id||0) == $rec->{'obj'};
-	    }
+            if ( $props->{'value_node'} )
+            {
+                next unless ($arc->obj_id||0) == $rec->{'obj'};
+            }
 
-	    # undef weight is not the same as weight 0, but treat them
-	    # as the same in this check
-	    #
+            # undef weight is not the same as weight 0, but treat them
+            # as the same in this check
+            #
             my $rec_weight = $props->{'arc_weight'}||0;
-	    next if $rec_weight != ($arc->weight||0);
+            next if $rec_weight != ($arc->weight||0);
 
-	    debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
+            debug "Checking at existing arc ".$arc->sysdesig if $DEBUG;
 
-	    if( $arc->active )
-	    {
-		debug $arc->desig. " already exist" if $DEBUG;
+            if ( $arc->active )
+            {
+                debug $arc->desig. " already exist" if $DEBUG;
 
-		# See if there already is another suggested version of
-		# this arc not equal to this version
-		foreach my $rarc ($arc->versions(undef,[['new','created_by_me'],['submitted','created_by_me']])->as_array)
-		{
-		    next if $rarc->equals($arc);
+                # See if there already is another suggested version of
+                # this arc not equal to this version
+                foreach my $rarc ($arc->versions(undef,[['new','created_by_me'],['submitted','created_by_me']])->as_array)
+                {
+                    next if $rarc->equals($arc);
 
-		    if( $rarc->is_removal )
-		    {
-			debug "Revokes unactivated removal requests";
-			$rarc->remove({force=>1});
-		    }
-		    else
-		    {
-			# There is another suggested change of this
-			# arc that would collide with this
-			# version. Therefore, we cannot use this
-			# common arc.
+                    if ( $rarc->is_removal )
+                    {
+                        debug "Revokes unactivated removal requests";
+                        $rarc->remove({force=>1});
+                    }
+                    else
+                    {
+                        # There is another suggested change of this
+                        # arc that would collide with this
+                        # version. Therefore, we cannot use this
+                        # common arc.
 
-			debug "The new arc would collide with ".
-			  $rarc->sysdesig;
-			next EXISTING;
-		    }
-		}
+                        debug "The new arc would collide with ".
+                          $rarc->sysdesig;
+                        next EXISTING;
+                    }
+                }
 
-		if( $args->{'mark_updated'} )
-		{
-		    $arc->mark_updated($updated, $updated_by);
-		}
+                if ( $args->{'mark_updated'} )
+                {
+                    $arc->mark_updated($updated, $updated_by);
+                }
 
-		return $arc;
-	    }
+                return $arc;
+            }
 
-	    if( $arc->created_by->equals( $Para::Frame::REQ->user ) )
-	    {
-		debug $arc->desig. " already exist, but not active" if $DEBUG;
+            if ( $arc->created_by->equals( $Para::Frame::REQ->user ) )
+            {
+                debug $arc->desig. " already exist, but not active" if $DEBUG;
 
-		if( $props->{'active'} )
-		{
-		    unless( $arc->submitted )
-		    {
-			$arc->submit;
-		    }
-		    $arc->activate({updated=>$updated});
-		}
-		elsif( $props->{'submitted'} )
-		{
-		    unless( $arc->submitted )
-		    {
-			$arc->submit;
-		    }
-		    $res->add_newarc( $arc );
-		}
-		else
-		{
-		    $res->add_newarc( $arc );
-		}
+                if ( $props->{'active'} )
+                {
+                    unless( $arc->submitted )
+                    {
+                        $arc->submit;
+                    }
+                    $arc->activate({updated=>$updated});
+                }
+                elsif ( $props->{'submitted'} )
+                {
+                    unless( $arc->submitted )
+                    {
+                        $arc->submit;
+                    }
+                    $res->add_newarc( $arc );
+                }
+                else
+                {
+                    $res->add_newarc( $arc );
+                }
 
-		if( $args->{'mark_updated'} )
-		{
-		    $arc->mark_updated($updated,$updated_by);
-		}
+                if ( $args->{'mark_updated'} )
+                {
+                    $arc->mark_updated($updated,$updated_by);
+                }
 
-                if( $props->{'arc_weight_last'} )
+                if ( $props->{'arc_weight_last'} )
                 {
                     $arc->set_weight(0, {%$args,arc_weight_last=>1});
                 }
 
-		return $arc;
-	    }
-	}
+                return $arc;
+            }
+        }
     }
 
     # Don't allow arcs where subj and obj is the same node:
     #
-    if( $rec->{obj} and ( $rec->{'subj'} == $rec->{obj} )
-	and not $args->{'force'}
-      )
+    if ( $rec->{obj} and ( $rec->{'subj'} == $rec->{obj} )
+         and not $args->{'force'}
+       )
     {
-	confess "Cyclic references not allowed\n".datadump($rec,2);
-	throw('validation', "Cyclic references not allowed\n");
+        confess "Cyclic references not allowed\n".datadump($rec,2);
+        throw('validation', "Cyclic references not allowed\n");
     }
 
 
     ##################### valtype
 
-    if( $valtype )
+    if ( $valtype )
     {
-	$rec->{'valtype'} = $valtype->id;
+        $rec->{'valtype'} = $valtype->id;
     }
-    else # Special valtype for REMOVAL arc
+    else                        # Special valtype for REMOVAL arc
     {
-	$rec->{'valtype'} = 0;
+        $rec->{'valtype'} = 0;
     }
 
     push @fields, 'valtype';
@@ -896,9 +896,9 @@ sub create
 
 
     ##################### arc_weight
-    if( $props->{'arc_weight'} )
+    if ( $props->{'arc_weight'} )
     {
-	$rec->{'weight'}  = $props->{'arc_weight'};
+        $rec->{'weight'}  = $props->{'arc_weight'};
     }
     push @fields, 'weight';
     push @values, $rec->{'weight'};
@@ -915,22 +915,22 @@ sub create
     debug sprintf "SQL %s (%s)", $st, join ',', map {defined($_)? $_ : 'null'} @values if $DEBUG;
 
     ### Binding SQL datatypes to values
-    for(my$i=0;$i<=$#bindtype;$i++)
+    for (my$i=0;$i<=$#bindtype;$i++)
     {
-	next unless $bindtype[$i];
-	$sth->bind_param($i+1, undef, { pg_type => $bindtype[$i] } );
+        next unless $bindtype[$i];
+        $sth->bind_param($i+1, undef, { pg_type => $bindtype[$i] } );
     }
 
     $sth->execute( @values );
     $RDF::Base::Resource::TRANSACTION{ $rec->{'ver'} } = $Para::Frame::REQ;
 
     my $arc = $this->get_by_rec($rec,
-				{
-				 subj => $subj,
-				 value => $value_obj,
-				});
+                                {
+                                 subj => $subj,
+                                 value => $value_obj,
+                                });
 
-    if( $arc->active and $props->{'arc_weight_last'} )
+    if ( $arc->active and $props->{'arc_weight_last'} )
     {
         $arc->set_weight(0, {%$args,arc_weight_last=>1}); # Trigger resort
     }
@@ -938,25 +938,25 @@ sub create
     # If the arc was requested to be cerated active, but wasn't
     # becasue it was replacing another arc, we will activate it now
 
-    if( $props->{'active'} and not $arc->active )
+    if ( $props->{'active'} and not $arc->active )
     {
-	# Arc should have been submitted instead. But it might have
-	# been deactivated during a resort or other operation.
+        # Arc should have been submitted instead. But it might have
+        # been deactivated during a resort or other operation.
         #
-	$arc->activate({%$args, updated=>$updated}) if $arc->submitted;
+        $arc->activate({%$args, updated=>$updated}) if $arc->submitted;
     }
 
 
     # Sanity check
-    if( $subj and $subj->id != $arc->subj->id )
+    if ( $subj and $subj->id != $arc->subj->id )
     {
-	confess "Creation of arc $arc->{id} resulted in confused subj: ".
-	  datadump($subj,2).datadump($arc->subj,2);
+        confess "Creation of arc $arc->{id} resulted in confused subj: ".
+          datadump($subj,2).datadump($arc->subj,2);
     }
-    if( $value_obj and not $value_obj->equals($arc->{'value'}) )
+    if ( $value_obj and not $value_obj->equals($arc->{'value'}) )
     {
-	confess "Creation of arc $arc->{id} resulted in confused value: ".
-	  datadump($value_obj,2).datadump($arc->value,2);
+        confess "Creation of arc $arc->{id} resulted in confused value: ".
+          datadump($value_obj,2).datadump($arc->value,2);
     }
 
 
@@ -979,13 +979,13 @@ sub create
     $RDF::Base::Cache::Changes::Added{$arc->id} ++;
 
     $res->changes_add;
-    if( $arc->active )
+    if ( $arc->active )
     {
-	$arc->notify_change( $args );
+        $arc->notify_change( $args );
     }
     else
     {
-	$res->add_newarc( $arc );
+        $res->add_newarc( $arc );
     }
 
     return $arc;
@@ -1078,8 +1078,8 @@ sub value_node
 {
 #    debug "Getting value node $_[0]->{id}: ".($_[0]->{'value_node'}||'<undef>');
     return( $_[0]->{'value_node_obj'} ||= $_[0]->{'value_node'}
-	    ? RDF::Base::Resource::Literal->get($_[0]->{'value_node'})
-	    : is_undef );
+            ? RDF::Base::Resource::Literal->get($_[0]->{'value_node'})
+            : is_undef );
 }
 
 
@@ -1112,18 +1112,18 @@ sub set_value_node
     my $class = "RDF::Base::Resource::Literal";
     unless( UNIVERSAL::isa($node, $class) )
     {
-	my $class_old = ref $node;
-	no strict "refs";
-	foreach my $class_old_real (@{"${class_old}::ISA"})
-	{
-	    if( my $method = $class_old_real->can("on_unbless") )
-	    {
-		&{$method}($node, $class, $args_in);
-	    }
-	}
+        my $class_old = ref $node;
+        no strict "refs";
+        foreach my $class_old_real (@{"${class_old}::ISA"})
+        {
+            if ( my $method = $class_old_real->can("on_unbless") )
+            {
+                &{$method}($node, $class, $args_in);
+            }
+        }
 
-	debug 1, "Blessing node $node->{id} to $class";
-	bless $node, $class;
+        debug 1, "Blessing node $node->{id} to $class";
+        bless $node, $class;
     }
 
     return $node->init;
@@ -1150,17 +1150,17 @@ sub obj
 {
     my( $arc ) = @_;
 
-    if( $arc->coltype eq 'obj' )
+    if ( $arc->coltype eq 'obj' )
     {
-	return $arc->{'value'};
+        return $arc->{'value'};
     }
-    elsif( $arc->{'value_node'} )
+    elsif ( $arc->{'value_node'} )
     {
-	return $arc->value_node;
+        return $arc->value_node;
     }
     else
     {
-	return is_undef;
+        return is_undef;
     }
 }
 
@@ -1180,17 +1180,17 @@ sub obj_id
 {
     my( $arc ) = @_;
 
-    if( $arc->coltype eq 'obj' )
+    if ( $arc->coltype eq 'obj' )
     {
-	return $arc->{'value'}->id;
+        return $arc->{'value'}->id;
     }
-    elsif( $arc->{'value_node'} )
+    elsif ( $arc->{'value_node'} )
     {
-	return $arc->{'value_node'};
+        return $arc->{'value_node'};
     }
     else
     {
-	return undef;
+        return undef;
     }
 }
 
@@ -1221,15 +1221,15 @@ sub value_as_html
 #    if( $args ){ debug "  with args ".query_desig($args);}
 
     my $out;
-    if( $arc->is_removal )
+    if ( $arc->is_removal )
     {
-	$out = '<span style="text-decoration:line-through;color:red">';
-	$out .= $arc->replaces->value_as_html($args);
-	$out .= '</span>';
+        $out = '<span style="text-decoration:line-through;color:red">';
+        $out .= $arc->replaces->value_as_html($args);
+        $out .= '</span>';
     }
     else
     {
-	$out = $arc->value->as_html($args);
+        $out = $arc->value->as_html($args);
     }
 
     return $out;
@@ -1264,26 +1264,26 @@ sub value_diff_as_html
 #    debug "Diff from ".ref($from);
 
     my $out;
-    if( $arc->is_removal )
+    if ( $arc->is_removal )
     {
-	$out = '<span style="text-decoration:line-through;color:red">';
-	$out .= $arc->replaces->value_as_html( $args );
-	$out .= '</span>';
+        $out = '<span style="text-decoration:line-through;color:red">';
+        $out .= $arc->replaces->value_as_html( $args );
+        $out .= '</span>';
     }
-    elsif( my $repl = $arc->replaces )
+    elsif ( my $repl = $arc->replaces )
     {
-	if( $from )
-	{
-	    $repl = $arc->version_by_date( $from );
-	}
+        if ( $from )
+        {
+            $repl = $arc->version_by_date( $from );
+        }
 
-	if( $repl )
-	{
-	    my $old = $repl->value( $args );
-	    my $new = $arc->value( $args );
+        if ( $repl )
+        {
+            my $old = $repl->value( $args );
+            my $new = $arc->value( $args );
 
-	    $out = $new->diff_as_html({%$args, old=>$old});
-	}
+            $out = $new->diff_as_html({%$args, old=>$old});
+        }
     }
 
     $out ||= $arc->value->as_html( $args );
@@ -1306,14 +1306,14 @@ sub value_desig
 {
     my( $arc, $args ) = @_;
 
-    if( $arc->objtype )
+    if ( $arc->objtype )
     {
-	return $arc->obj->desig($args);
+        return $arc->obj->desig($args);
     }
     else
     {
-	my $value = $arc->value || is_undef->as_string;
-	return sprintf("'%s'", truncstring($value));
+        my $value = $arc->value || is_undef->as_string;
+        return sprintf("'%s'", truncstring($value));
     }
 }
 
@@ -1333,17 +1333,17 @@ sub value_sysdesig
 {
     my( $arc ) = @_;
     my $val = $arc->value;
-    if( ref $val )
+    if ( ref $val )
     {
-	return $arc->value->sysdesig;
+        return $arc->value->sysdesig;
     }
-    elsif( $val )
+    elsif ( $val )
     {
-	return "Strange value '$val'";
+        return "Strange value '$val'";
     }
     else
     {
-	return "<undef>";
+        return "<undef>";
     }
 }
 
@@ -1362,9 +1362,9 @@ L<RDF::Base::Undef>.
 sub created
 {
     my( $arc ) = @_;
-    if( defined $arc->{'arc_created_obj'} )
+    if ( defined $arc->{'arc_created_obj'} )
     {
-	return $arc->{'arc_created_obj'};
+        return $arc->{'arc_created_obj'};
     }
 
     return $arc->{'arc_created_obj'} =
@@ -1408,9 +1408,9 @@ L<RDF::Base::Undef>.
 sub updated
 {
     my( $arc ) = @_;
-    if( defined $arc->{'arc_updated_obj'} )
+    if ( defined $arc->{'arc_updated_obj'} )
     {
-	return $arc->{'arc_updated_obj'};
+        return $arc->{'arc_updated_obj'};
     }
 
     return $arc->{'arc_updated_obj'} =
@@ -1487,9 +1487,9 @@ L<RDF::Base::Undef>.
 sub activated
 {
     my( $arc ) = @_;
-    if( defined $arc->{'arc_activated_obj'} )
+    if ( defined $arc->{'arc_activated_obj'} )
     {
-	return $arc->{'arc_activated_obj'};
+        return $arc->{'arc_activated_obj'};
     }
 
     return $arc->{'arc_activated_obj'} =
@@ -1511,9 +1511,9 @@ L<RDF::Base::Undef>.
 sub deactivated
 {
     my( $arc ) = @_;
-    if( defined $arc->{'arc_deactivated_obj'} )
+    if ( defined $arc->{'arc_deactivated_obj'} )
     {
-	return $arc->{'arc_deactivated_obj'};
+        return $arc->{'arc_deactivated_obj'};
     }
 
     return $arc->{'arc_deactivated_obj'} =
@@ -1537,18 +1537,18 @@ sub deactivated_by
     my( $arc ) = @_;
     my $class = ref($arc);
 
-    if( $arc->{'arc_deactivated_by_obj'} )
+    if ( $arc->{'arc_deactivated_by_obj'} )
     {
-	debug "Returning cached deactivated_by obj";
-	return $arc->{'arc_deactivated_by_obj'};
+        debug "Returning cached deactivated_by obj";
+        return $arc->{'arc_deactivated_by_obj'};
     }
 
     my $deactivated_by =
-    my $deactivated = $arc->deactivated;
+      my $deactivated = $arc->deactivated;
     unless( $deactivated )
     {
-	debug "Returning undef deactivated_by obj";
-	return is_undef;
+        debug "Returning undef deactivated_by obj";
+        return is_undef;
     }
 
     my $dbh = $RDF::dbix->dbh;
@@ -1559,16 +1559,16 @@ sub deactivated_by
     $sth->execute($arc->common_id, $arc->id);
 
     my $aarc;
-    if( my $arc_rec = $sth->fetchrow_hashref )
+    if ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	$aarc = $class->get_by_rec( $arc_rec );
+        $aarc = $class->get_by_rec( $arc_rec );
     }
     $sth->finish;
 
     unless( $aarc )
     {
-	debug "deactivated_by obj not found";
-	return is_undef;
+        debug "deactivated_by obj not found";
+        return is_undef;
     }
 
     debug "Returning deactivated_by obj from ".$aarc->sysdesig;
@@ -1596,9 +1596,9 @@ L<RDF::Base::Undef>.
 sub unsubmitted
 {
     my( $arc ) = @_;
-    if( defined $arc->{'arc_unsubmitted_obj'} )
+    if ( defined $arc->{'arc_unsubmitted_obj'} )
     {
-	return $arc->{'arc_unsubmitted_obj'};
+        return $arc->{'arc_unsubmitted_obj'};
     }
 
     return $arc->{'arc_unsubmitted_obj'} =
@@ -1638,7 +1638,7 @@ sub activated_by
     my( $arc ) = @_;
     return $arc->{'activated_by_obj'} ||=
       $Para::Frame::CFG->{'user_class'}->get( $arc->{'activated_by'} ) ||
-	  is_undef;
+        is_undef;
 }
 
 
@@ -1658,7 +1658,7 @@ sub created_by
     my( $arc ) = @_;
     return $arc->{'arc_created_by_obj'} ||=
       $Para::Frame::CFG->{'user_class'}->get( $arc->{'arc_created_by'} ) ||
-	  is_undef;
+        is_undef;
 }
 
 
@@ -1774,15 +1774,15 @@ sub is_owned_by
 {
     my( $arc, $agent ) = @_;
 
-    if( UNIVERSAL::isa($agent, 'RDF::Base::User') )
+    if ( UNIVERSAL::isa($agent, 'RDF::Base::User') )
     {
-	return 1 if $agent->has_root_access;
+        return 1 if $agent->has_root_access;
     }
 
-    if( not( $arc->activated ) and
-	$arc->created_by->equals( $Para::Frame::REQ->user ) )
+    if ( not( $arc->activated ) and
+         $arc->created_by->equals( $Para::Frame::REQ->user ) )
     {
-	return 1;
+        return 1;
     }
 
 
@@ -1811,26 +1811,26 @@ Example: In Im
 
 =cut
 
-sub view_flags # To be used in admin view
+sub view_flags                  # To be used in admin view
 {
     my( $node ) = @_;
 
     my $state;
-    if( $node->active )
+    if ( $node->active )
     {
-	$state = 'A';
+        $state = 'A';
     }
-    elsif( $node->old )
+    elsif ( $node->old )
     {
-	$state = 'O';
+        $state = 'O';
     }
-    elsif( $node->submitted )
+    elsif ( $node->submitted )
     {
-	$state = 'S';
+        $state = 'S';
     }
     else
     {
-	$state = 'N',
+        $state = 'N',
     }
 
     my $direct = $node->direct ? "Di" : "In";
@@ -1977,36 +1977,36 @@ Returns: The number of arcs that inferes this arc
 sub distance
 {
     my( $arc ) = @_;
-    if( not $arc->{'indirect'} )
+    if ( not $arc->{'indirect'} )
     {
-	return 0;
+        return 0;
     }
 
-    if( $RDF::Base::IN_STARTUP )
+    if ( $RDF::Base::IN_STARTUP )
     {
-	return 1; # Avoids bootsrap recursion
+        return 1;               # Avoids bootsrap recursion
     }
 
 #    debug "Checking distance of ".$arc->sysdesig;
 
-    unless( @{$arc->{'explain'}} )
+    unless ( @{$arc->{'explain'}} )
     {
-	$arc->validate_check;
+        $arc->validate_check;
 
-	# indirect status may have been corrected by validate_check
-	if( not $arc->{'indirect'} )
-	{
-	    return 0;
-	}
+        # indirect status may have been corrected by validate_check
+        if ( not $arc->{'indirect'} )
+        {
+            return 0;
+        }
     }
 
     my $expl = $arc->{'explain'}[0];
 #    die datadump($expl,1) unless ref $expl->{'a'} eq 'RDF::Base::Arc';
 #    die datadump($expl,1) unless ref $expl->{'b'} eq 'RDF::Base::Arc';
 
-    unless( ref($expl->{'a'}) and ref($expl->{'b'}) )
+    unless ( ref($expl->{'a'}) and ref($expl->{'b'}) )
     {
-	confess datadump([$expl,\@_], 3);
+        confess datadump([$expl,\@_], 3);
     }
 
     return( 1 + $expl->{'a'}->distance + $expl->{'b'}->distance );
@@ -2084,8 +2084,8 @@ Returns: true if this arc is new
 sub is_new
 {
     return( !$_[0]->{'active'} &&
-	    !$_[0]->{'submitted'} &&
-	    !$_[0]->{'arc_deactivated'} );
+            !$_[0]->{'submitted'} &&
+            !$_[0]->{'arc_deactivated'} );
 }
 
 
@@ -2124,29 +2124,29 @@ sub active_version
     my( $arc ) = @_;
     my $class = ref($arc);
 
-    if( $arc->active )
+    if ( $arc->active )
     {
-	return $arc;
+        return $arc;
     }
 
     my $aarc;
 
     # Updates here on demand
-    if( $aarc = $arc->{'active_version'} )
+    if ( $aarc = $arc->{'active_version'} )
     {
-	if( $aarc->active )
-	{
-	    return $aarc;
-	}
-	undef $aarc;
+        if ( $aarc->active )
+        {
+            return $aarc;
+        }
+        undef $aarc;
     }
 
     my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? and active is true");
     $sth->execute($arc->common_id);
-    if( my $arc_rec = $sth->fetchrow_hashref )
+    if ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	$aarc = $class->get_by_rec( $arc_rec );
+        $aarc = $class->get_by_rec( $arc_rec );
     }
     $sth->finish;
 
@@ -2178,9 +2178,9 @@ sub previous_active_version
     my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? and active is false and activated is not null and deactivated is not null order by deactivated desc limit 1");
     $sth->execute($arc->common_id);
-    if( my $arc_rec = $sth->fetchrow_hashref )
+    if ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	$paarc = $class->get_by_rec( $arc_rec );
+        $paarc = $class->get_by_rec( $arc_rec );
     }
     $sth->finish;
 
@@ -2215,9 +2215,9 @@ sub version_by_date
 
     my $time_str = $RDF::dbix->format_datetime( $time );
     $sth->execute($arc->common_id, $time_str, $time_str );
-    if( my $arc_rec = $sth->fetchrow_hashref )
+    if ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	$paarc = $class->get_by_rec( $arc_rec );
+        $paarc = $class->get_by_rec( $arc_rec );
     }
     $sth->finish;
 
@@ -2252,23 +2252,23 @@ sub versions
     my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? order by ver");
     $sth->execute($arc->common_id);
-    while( my $arc_rec = $sth->fetchrow_hashref )
+    while ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	my $arc = $class->get_by_rec( $arc_rec );
-	if( $arc->meets_arclim($args->{'arclim'}) )
-	{
-	    if( $proplim )
-	    {
-		if( $arc->meets_proplim( $proplim, $args ) )
-		{
-		    push @arcs, $arc;
-		}
-	    }
-	    else
-	    {
-		push @arcs, $arc;
-	    }
-	}
+        my $arc = $class->get_by_rec( $arc_rec );
+        if ( $arc->meets_arclim($args->{'arclim'}) )
+        {
+            if ( $proplim )
+            {
+                if ( $arc->meets_proplim( $proplim, $args ) )
+                {
+                    push @arcs, $arc;
+                }
+            }
+            else
+            {
+                push @arcs, $arc;
+            }
+        }
     }
     $sth->finish;
 
@@ -2298,9 +2298,9 @@ sub replaced_by
     my $dbh = $RDF::dbix->dbh;
     my $sth = $dbh->prepare("select * from arc where id=? and replaces=?");
     $sth->execute($arc->common_id, $arc->id);
-    while( my $arc_rec = $sth->fetchrow_hashref )
+    while ( my $arc_rec = $sth->fetchrow_hashref )
     {
-	push @list, $class->get_by_rec( $arc_rec );
+        push @list, $class->get_by_rec( $arc_rec );
     }
     $sth->finish;
 
@@ -2440,89 +2440,89 @@ sub table_row
 
     foreach my $col ( @{$args->{'columns'}} )
     {
-	$out .= "<td>";
-	given( $col )
-	{
-	    when('-arc_remove')
-	    {
-            if( not $disabled )
+        $out .= "<td>";
+        given( $col )
+        {
+            when('-arc_remove')
             {
-                if( $ajax )
+                if ( not $disabled )
                 {
-                    my $arc_id = $arc->id;
-                    my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
+                    if ( $ajax )
+                    {
+                        my $arc_id = $arc->id;
+                        my $onclick = "rb_remove_arc('$divid',$arc_id,$subj_id)";
 
-                    $out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
+                        $out .= "<button type=\"button\" onclick=\"$onclick\" class=\"no_button nopad trash\" title=\"Delete\"><i class=\"fa fa-trash-o\"></i></button>";
+                    }
+                    else
+                    {
+                        my $field = RDF::Base::Widget::build_field_key({arc => $arc});
+                        $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
+                        $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+                    }
+                    $out .= " ";
+                }
+            }
+
+            when('-arc_updated')
+            {
+                $out .= $arc->updated;
+            }
+
+            when('-arc_seen_status')
+            {
+                die "not implemented" if $is_rev;
+                if ( $check_subj->first_arc('unseen_by',$item) )
+                {
+                    if ( my $seen = $check_subj->first_arc('seen_by',$item) )
+                    {
+                        $out .= "last seen ".$seen->updated;
+                    }
+                    else
+                    {
+                        $out .= "never seen";
+                    }
+                }
+                elsif ( $check_subj->first_arc('seen_by',$item) )
+                {
+                    $out .= "up to date";
+                }
+            }
+
+            when('desig')
+            {
+                if ( $disabled )
+                {
+                    $out .= ( $is_rev ? $check_subj->wu_jump :
+                              $item->wu_jump );
+#		    $out .= ( $is_rev ? $check_subj->desig($args) :
+#			      $item->desig($args) );
                 }
                 else
                 {
-                    my $field = RDF::Base::Widget::build_field_key({arc => $arc});
-                    $out .= Para::Frame::Widget::hidden('check_arc_'. $arc->id, 1);
-                    $out .= Para::Frame::Widget::checkbox($field, $item->id, 1);
+                    if ( my $item_prefix = $args->{'item_prefix'} )
+                    {
+                        $out .= $item->$item_prefix." ";
+                    }
+                    $out .= ( $is_rev ? $check_subj->wu_jump :
+                              $item->wu_jump );
                 }
-                $out .= " ";
+                $out .= '&nbsp;' . $arc->edit_link_html;
             }
-	    }
 
-	    when('-arc_updated')
-	    {
-		$out .= $arc->updated;
-	    }
-
-	    when('-arc_seen_status')
-	    {
-		die "not implemented" if $is_rev;
-		if( $check_subj->first_arc('unseen_by',$item) )
-		{
-		    if( my $seen = $check_subj->first_arc('seen_by',$item) )
-		    {
-			$out .= "last seen ".$seen->updated;
-		    }
-		    else
-		    {
-			$out .= "never seen";
-		    }
-		}
-		elsif( $check_subj->first_arc('seen_by',$item) )
-		{
-		    $out .= "up to date";
-		}
-	    }
-
-	    when('desig')
-	    {
-		if( $disabled )
-		{
-		    $out .= ( $is_rev ? $check_subj->wu_jump :
-			      $item->wu_jump );
-#		    $out .= ( $is_rev ? $check_subj->desig($args) :
-#			      $item->desig($args) );
-		}
-		else
-		{
-		    if( my $item_prefix = $args->{'item_prefix'} )
-		    {
-			$out .= $item->$item_prefix." ";
-		    }
-		    $out .= ( $is_rev ? $check_subj->wu_jump :
-			      $item->wu_jump );
-		}
-		$out .= '&nbsp;' . $arc->edit_link_html;
-	    }
-
-	    default
-	    {
+            default
+            {
 #		debug "Calling method $col ($is_rev) on node ".$item->sysdesig;
 
 #		debug query_desig($args);
-		my $val = ( $is_rev ? $check_subj->$col() : $item->$col() );
+                my $val = ( $is_rev ? $check_subj->$col() : $item->$col() );
 #		my $val = $item->weight($args);
 #		debug "  got ".query_desig($val);
 
-		$out .= $val;
-	    }
-	}
-	$out .= "</td>";
+                $out .= $val;
+            }
+        }
+        $out .= "</td>";
     }
 
     $out .= "</tr>\n";
@@ -2659,13 +2659,13 @@ Returns: the C<valtype> node for this arc.
 
 sub valtype
 {
-    if( $_[0]->{'valtype'} )
+    if ( $_[0]->{'valtype'} )
     {
-	return RDF::Base::Resource->get( $_[0]->{'valtype'} );
+        return RDF::Base::Resource->get( $_[0]->{'valtype'} );
     }
     else
     {
-	return is_undef;
+        return is_undef;
     }
 }
 
@@ -2717,21 +2717,21 @@ sub explain
 {
     my( $arc, $args ) = @_;
 
-    if( $arc->indirect )
+    if ( $arc->indirect )
     {
-	if( $arc->validate_check( $args ) )
-	{
+        if ( $arc->validate_check( $args ) )
+        {
 #	    warn "Inference recorded\n";
-	    # All good
-	}
-	else
-	{
+            # All good
+        }
+        else
+        {
 #	    warn "Couldn't be infered\n";
-	    if( $arc->implicit )
-	    {
-		$arc->remove( $args );
-	    }
-	}
+            if ( $arc->implicit )
+            {
+                $arc->remove( $args );
+            }
+        }
     }
     else
     {
@@ -2779,29 +2779,29 @@ sub deactivate
 
     unless( $arc->active or $arc->submitted )
     {
-	throw('validation', "Arc $arc->{id} is not active or submitted");
+        throw('validation', "Arc $arc->{id} is not active or submitted");
     }
 
-    if( $narc->is_removal )
+    if ( $narc->is_removal )
     {
-	unless( $narc->activated )
-	{
-	    throw('validation', "Arc $narc->{id} was never activated");
-	}
+        unless( $narc->activated )
+        {
+            throw('validation', "Arc $narc->{id} was never activated");
+        }
 
-	# Can this arc be infered?
-	if( $arc->validate_check( $args ) )
-	{
-	    # Arc was explicit but is now indirect implicit
-	    debug "Arc infered; set implicit";
-	    $arc->set_implicit(1);
-	    $arc->set_indirect(1);
-	    return 0;
-	}
+        # Can this arc be infered?
+        if ( $arc->validate_check( $args ) )
+        {
+            # Arc was explicit but is now indirect implicit
+            debug "Arc infered; set implicit";
+            $arc->set_implicit(1);
+            $arc->set_indirect(1);
+            return 0;
+        }
     }
-    elsif( not $narc->active )
+    elsif ( not $narc->active )
     {
-	throw('validation', "Arc $narc->{id} is not active");
+        throw('validation', "Arc $narc->{id} is not active");
     }
 
 
@@ -2869,49 +2869,49 @@ sub vacuum_facet
     my $has_obj = $arc->obj;
 
 
-    if( $has_obj )
+    if ( $has_obj )
     {
-	## Only removes if not valid
-	debug "  Remove implicit" if $DEBUG;
-	$arc->remove({%$args, implicit => 1});
+        ## Only removes if not valid
+        debug "  Remove implicit" if $DEBUG;
+        $arc->remove({%$args, implicit => 1});
     }
 
     unless( disregard $arc )
     {
-	debug "  check activation" if $DEBUG;
-	if( $arc->inactive and $arc->indirect )
-	{
-	    unless( $arc->active_version )
-	    {
-		$arc->activate({%$args, force => 1});
-	    }
-	}
+        debug "  check activation" if $DEBUG;
+        if ( $arc->inactive and $arc->indirect )
+        {
+            unless( $arc->active_version )
+            {
+                $arc->activate({%$args, force => 1});
+            }
+        }
 
 
-	unless( $arc->old or $arc->is_removal )
-	{
-	    debug "  check valtype" if $DEBUG;
-	    unless( $arc->check_valtype( $args ) )
-	    {
-		$arc->check_value( $args );
-	    }
-	}
+        unless( $arc->old or $arc->is_removal )
+        {
+            debug "  check valtype" if $DEBUG;
+            unless( $arc->check_valtype( $args ) )
+            {
+                $arc->check_value( $args );
+            }
+        }
 
 #	debug "  Reset clean";
-	$arc->reset_clean($args);
+        $arc->reset_clean($args);
 
-	if( $arc->active )
-	{
-	    $arc->create_check( $args );
+        if ( $arc->active )
+        {
+            $arc->create_check( $args );
 
-	    my $val = $arc->value;
-	    if( $val->is_literal )
-	    {
-		$val->vacuum_node( $args );
-	    }
+            my $val = $arc->value;
+            if ( $val->is_literal )
+            {
+                $val->vacuum_node( $args );
+            }
 
-	    $arc->validate_range;
-	}
+            $arc->validate_range;
+        }
     }
 }
 
@@ -2947,52 +2947,52 @@ sub check_valtype
     my $new_valtype;
     my $c_resource = RDF::Base::Constants->get('resource');
 
-    if( $pred->objtype and not $old_valtype->equals($c_resource) )
+    if ( $pred->objtype and not $old_valtype->equals($c_resource) )
     {
-	$new_valtype = $old_valtype;
+        $new_valtype = $old_valtype;
     }
     else
     {
-	$new_valtype = $pred_valtype;
+        $new_valtype = $pred_valtype;
     }
 
 
-    if( debug > 2 )
+    if ( debug > 2 )
     {
-	debug "Arc   valtype is ".$arc_valtype->sysdesig;
-	debug "Pred  valtype is ".$pred_valtype->sysdesig;
-	debug "Value         is ".$old_val->sysdesig;
-	debug "Value valtype is ".$old_valtype->sysdesig;
-	debug "New   valtype is ".$new_valtype->sysdesig;
+        debug "Arc   valtype is ".$arc_valtype->sysdesig;
+        debug "Pred  valtype is ".$pred_valtype->sysdesig;
+        debug "Value         is ".$old_val->sysdesig;
+        debug "Value valtype is ".$old_valtype->sysdesig;
+        debug "New   valtype is ".$new_valtype->sysdesig;
     }
 
 
-    if( $arc_valtype->equals( $new_valtype ) )
+    if ( $arc_valtype->equals( $new_valtype ) )
     {
 #	debug "  same valtype";
-	return 0;
+        return 0;
     }
-    elsif( $arc_valtype->scof( $new_valtype ) )
+    elsif ( $arc_valtype->scof( $new_valtype ) )
     {
-	if( $arc->objtype )
-	{
-	    debug 2, "  arc valtype more specific";
-	}
-	else
-	{
-	    # Valtype in valid range
-	    return 0;
-	}
+        if ( $arc->objtype )
+        {
+            debug 2, "  arc valtype more specific";
+        }
+        else
+        {
+            # Valtype in valid range
+            return 0;
+        }
     }
 
     my $pred_coltype = $pred->coltype;
 
-    if( debug > 1)
+    if ( debug > 1)
     {
-	debug "TRANSLATION OF VALTYPE";
-	debug "  for ".$arc->sysdesig;
-	debug " from ".$arc_valtype->sysdesig;
-	debug "   to ".$new_valtype->sysdesig;
+        debug "TRANSLATION OF VALTYPE";
+        debug "  for ".$arc->sysdesig;
+        debug " from ".$arc_valtype->sysdesig;
+        debug "   to ".$new_valtype->sysdesig;
     }
 
     my $newargs =
@@ -3004,92 +3004,92 @@ sub check_valtype
     };
 
 
-    if( $arc->objtype )
+    if ( $arc->objtype )
     {
-	if( $new_valtype->equals( $c_resource ) )
-	{
-	    # Valtype in valid range
-	    debug 3, "  pred takes any obj";
-	    return 0;
-	}
+        if ( $new_valtype->equals( $c_resource ) )
+        {
+            # Valtype in valid range
+            debug 3, "  pred takes any obj";
+            return 0;
+        }
 
-	$res->changes_add;
+        $res->changes_add;
 
-	# TODO: this whole part could be replaced with just the nonobj
-	# part, since it will also handle objs. At least if literal
-	# parse can take value nodes.
+        # TODO: this whole part could be replaced with just the nonobj
+        # part, since it will also handle objs. At least if literal
+        # parse can take value nodes.
 
 
-	if( $pred_coltype eq 'obj' )
-	{
-	    if( $old_val->is($new_valtype) )
-	    {
-		# Old value in range
-		debug 3, "old value in range";
-		$arc->set_value( $old_val, $newargs );
+        if ( $pred_coltype eq 'obj' )
+        {
+            if ( $old_val->is($new_valtype) )
+            {
+                # Old value in range
+                debug 3, "old value in range";
+                $arc->set_value( $old_val, $newargs );
 
 #		$old_val->vacuum; # Infinite recursion
-	    }
-	    elsif( $arc_valtype->equals($c_resource) )
-	    {
-		debug "TRANSLATION OF VALTYPE";
-		debug "  for ".$arc->sysdesig;
-		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$new_valtype->sysdesig;
-		debug "Trusting new given valtype";
+            }
+            elsif ( $arc_valtype->equals($c_resource) )
+            {
+                debug "TRANSLATION OF VALTYPE";
+                debug "  for ".$arc->sysdesig;
+                debug " from ".$arc_valtype->sysdesig;
+                debug "   to ".$new_valtype->sysdesig;
+                debug "Trusting new given valtype";
 #		confess "or not...";
-		$arc->set_value( $old_val, $newargs );
+                $arc->set_value( $old_val, $newargs );
 #		die "CHECKME";
-	    }
-	    else
-	    {
-		debug "TRANSLATION OF VALTYPE";
-		debug "  for ".$arc->sysdesig;
-		debug " from ".$arc_valtype->sysdesig;
-		debug "   to ".$new_valtype->sysdesig;
+            }
+            else
+            {
+                debug "TRANSLATION OF VALTYPE";
+                debug "  for ".$arc->sysdesig;
+                debug " from ".$arc_valtype->sysdesig;
+                debug "   to ".$new_valtype->sysdesig;
 
-		$Para::Frame::REQ->session->set_debug(3);
-		# Reset valtype cache
-		$old_val->{'valtype'} = undef;
-		debug "val valtype: ".$old_val->this_valtype->sysdesig;
+                $Para::Frame::REQ->session->set_debug(3);
+                # Reset valtype cache
+                $old_val->{'valtype'} = undef;
+                debug "val valtype: ".$old_val->this_valtype->sysdesig;
 
 
-		confess "FIXME";
-	    }
-	}
-	else # literal
-	{
-	    # Convert resource to a literal resource
+                confess "FIXME";
+            }
+        }
+        else                    # literal
+        {
+            # Convert resource to a literal resource
 
-	    debug "Changing from obj to $pred_coltype";
-	    debug 2, "Pred valtype is ".$pred_valtype->sysdesig;
-	    debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
-	    debug 2, "Old valtype instance class is ".$old_valtype->instance_class;
+            debug "Changing from obj to $pred_coltype";
+            debug 2, "Pred valtype is ".$pred_valtype->sysdesig;
+            debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
+            debug 2, "Old valtype instance class is ".$old_valtype->instance_class;
 
-	    my $val = $pred_valtype->instance_class->
-	      new(undef, $pred_valtype);
-	    $arc->set_value( $val, $newargs );
-	}
+            my $val = $pred_valtype->instance_class->
+              new(undef, $pred_valtype);
+            $arc->set_value( $val, $newargs );
+        }
     }
     else
     {
-	$res->changes_add;
+        $res->changes_add;
 
-	if( $pred_coltype eq 'obj' )
-	{
-	    confess "FIXME for arc ".$arc->id;
-	}
-	else # literal
-	{
-	    debug 3, "Setting literal";
-	    debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
-	    my $val = $pred_valtype->instance_class->
-	      parse($old_val, {
-			       arc => $arc,
-			       valtype => $pred_valtype,
-			      });
-	    $arc->set_value( $val, $newargs );
-	}
+        if ( $pred_coltype eq 'obj' )
+        {
+            confess "FIXME for arc ".$arc->id;
+        }
+        else                    # literal
+        {
+            debug 3, "Setting literal";
+            debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
+            my $val = $pred_valtype->instance_class->
+              parse($old_val, {
+                               arc => $arc,
+                               valtype => $pred_valtype,
+                              });
+            $arc->set_value( $val, $newargs );
+        }
     }
 
     return 1;
@@ -3134,24 +3134,24 @@ sub reset_clean
 
     # TODO: Move to literal class
 
-    if( ($arc->coltype||'') eq 'valtext' )
+    if ( ($arc->coltype||'') eq 'valtext' )
     {
-	my $cleaned = valclean( $arc->{'value'} );
-	if( ($arc->{'clean'}||'') ne ($cleaned||'') )
-	{
+        my $cleaned = valclean( $arc->{'value'} );
+        if ( ($arc->{'clean'}||'') ne ($cleaned||'') )
+        {
 #	    debug "Updating valclean";
-	    my $dbh = $RDF::dbix->dbh;
-	    my $sth = $dbh->prepare
-	      ("update arc set valclean=? where ver=?");
+            my $dbh = $RDF::dbix->dbh;
+            my $sth = $dbh->prepare
+              ("update arc set valclean=? where ver=?");
 #	    die if $cleaned =~ /^rdfbase/;
-	    $sth->execute($cleaned, $arc->version_id);
-	    $RDF::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
-	    $arc->{'clean'} = $cleaned;
+            $sth->execute($cleaned, $arc->version_id);
+            $RDF::Base::Resource::TRANSACTION{ $arc->id } = $Para::Frame::REQ;
+            $arc->{'clean'} = $cleaned;
 
-	    $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
+            $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
 
-	    $res->changes_add;
-	}
+            $res->changes_add;
+        }
     }
 }
 
@@ -3177,8 +3177,8 @@ sub remove_duplicates
 
     unless( $arc->obj )
     {
-	# Not implemented
-	return;
+        # Not implemented
+        return;
     }
 
     return unless $arc->active;
@@ -3193,39 +3193,39 @@ sub remove_duplicates
     my $subj = $arc->subj;
     my $changed = 0;
     foreach my $arc2 ( $subj->arc_list($arc->pred, undef,
-				       {
-					%$args,
-					arclim => ['active'],
-				       })->nodes )
+                                       {
+                                        %$args,
+                                        arclim => ['active'],
+                                       })->nodes )
     {
-	next unless $arc->value->equals( $arc2->value, $args );
-	next if $arc->id == $arc2->id;
+        next unless $arc->value->equals( $arc2->value, $args );
+        next if $arc->id == $arc2->id;
 
-	if( $arc2->explicit )
-	{
-	    $arc->set_explicit;
-	}
+        if ( $arc2->explicit )
+        {
+            $arc->set_explicit;
+        }
 
-	debug "=====================> Removing duplicate ".$arc2->sysdesig;
+        debug "=====================> Removing duplicate ".$arc2->sysdesig;
 
-	foreach my $rarc ( $arc2->replaced_by )
-	{
-	    if( $rarc->is_removal )
-	    {
-		$changed += $rarc->remove({%$args, force=>1});
-	    }
-	}
+        foreach my $rarc ( $arc2->replaced_by )
+        {
+            if ( $rarc->is_removal )
+            {
+                $changed += $rarc->remove({%$args, force=>1});
+            }
+        }
 
-	$changed += $arc2->remove({%$args, force=>1});
+        $changed += $arc2->remove({%$args, force=>1});
     }
 
     # Reconstitute node status
     #
-    if( $changed )
+    if ( $changed )
     {
-	debug "Reconstituting arc ".$arc->sysdesig;
-	$arc->register_with_nodes;
-	$arc->schedule_check_create( $args );
+        debug "Reconstituting arc ".$arc->sysdesig;
+        $arc->register_with_nodes;
+        $arc->schedule_check_create( $args );
     }
 }
 
@@ -3258,7 +3258,7 @@ sub has_value
 
     unless( ref $val_in and ref $val_in eq 'HASH' )
     {
-	return $arc->value_equals($val_in, $args_in);
+        return $arc->value_equals($val_in, $args_in);
     }
 
     my( $args ) = parse_propargs($args_in);
@@ -3268,9 +3268,9 @@ sub has_value
 
     my $valtype;
 
-    if( $pred_name eq 'value' )
+    if ( $pred_name eq 'value' )
     {
-	return $arc->value_equals($value, $args_in);
+        return $arc->value_equals($value, $args_in);
     }
 
     #
@@ -3279,16 +3279,16 @@ sub has_value
     #
     #
 
-    elsif( my $valtype_name = $DYNAMIC_PRED{ $pred_name } )
+    elsif ( my $valtype_name = $DYNAMIC_PRED{ $pred_name } )
     {
-	$target = $arc->$pred_name();
-	$valtype = RDF::Base::Resource->get_by_label($valtype_name);
+        $target = $arc->$pred_name();
+        $valtype = RDF::Base::Resource->get_by_label($valtype_name);
 
 #	debug "has_value TARGET is ".$target->sysdesig;
     }
     else
     {
-	return $arc->SUPER::has_value($val_in, $args);
+        return $arc->SUPER::has_value($val_in, $args);
     }
 
     my $args_valtype =
@@ -3298,54 +3298,56 @@ sub has_value
     };
     my $R = RDF::Base->Resource;
 
-    if( ref $value eq 'HASH' ) # Sub query
+    if ( ref $value eq 'HASH' ) # Sub query
     {
-	if( $target->find($value, $args)->size )
-	{
-	    return $arc;
-	}
-	return 0;
+        if ( $target->find($value, $args)->size )
+        {
+            return $arc;
+        }
+        return 0;
     }
 
-    if( ref $value eq 'ARRAY' ) # $value holds alternative values
+    if ( ref $value eq 'ARRAY' ) # $value holds alternative values
     {
-	$value = RDF::Base::List->new($value);
+        $value = RDF::Base::List->new($value);
     }
 
-    if( UNIVERSAL::isa( $value, 'Para::Frame::List' ) )
+    if ( UNIVERSAL::isa( $value, 'Para::Frame::List' ) )
     {
-	my $match = $args->{'match'} || 'eq';
-	if( $match eq 'ne' ) ### SPECIAL CASE; INVERT LOGIC
-	{
-	    $args->{'match'} = 'eq';
-	    my( $val_in, $error ) = $value->get_first;
-	    while(! $error )
-	    {
-		my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
-		return 0 if $target->matches( $val_parsed, $args );
-	    }
-	    continue
-	    {
-		( $val_in, $error ) = $value->get_next;
-	    };
-	    return $arc;
-	}
+        my $match = $args->{'match'} || 'eq';
+        if ( $match eq 'ne' )   ### SPECIAL CASE; INVERT LOGIC
+        {
+            $args->{'match'} = 'eq';
+            my( $val_in, $error ) = $value->get_first;
+            while (! $error )
+            {
+                my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
+                return 0 if $target->matches( $val_parsed, $args );
+            }
+            continue
+            {
+                ( $val_in, $error ) = $value->get_next;
+            }
+            ;
+            return $arc;
+        }
 
-	my( $val_in, $error ) = $value->get_first;
-	while(! $error )
-	{
-	    my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
+        my( $val_in, $error ) = $value->get_first;
+        while (! $error )
+        {
+            my $val_parsed = $R->get_by_anything($val_in, $args_valtype);
 #	    my $match = $args->{'match'} || 'eq';
 #	    debug sprintf "CHECKS %d if %s %s %s ", $arc->id, $target->sysdesig, $match, ,query_desig($val_parsed);
 
-	    return $arc if $target->matches( $val_parsed, $args );
+            return $arc if $target->matches( $val_parsed, $args );
 #	    debug "  no match";
-	}
-	continue
-	{
-	    ( $val_in, $error ) = $value->get_next;
-	};
-	return 0;
+        }
+        continue
+        {
+            ( $val_in, $error ) = $value->get_next;
+        }
+        ;
+        return 0;
     }
 
 
@@ -3401,104 +3403,104 @@ sub value_equals
     unless( $arc->meets_arclim( $arclim ) )
     {
 #	debug "  arc $arc->{id} doesn't meet arclim";
-	return 0;
+        return 0;
     }
 
-    if( $DEBUG )
+    if ( $DEBUG )
     {
         debug "Compares arc ".$arc->id." with ".query_desig($val2);
     }
 
 
-    if( $arc->objtype ) # Might be REMOVAL arc
+    if ( $arc->objtype )        # Might be REMOVAL arc
     {
-	if( $DEBUG )
-	{
-	    debug "Comparing values:";
-	    debug "1. ".$arc->obj->safedesig;
-	    debug "2. ".query_desig($val2);
-	}
+        if ( $DEBUG )
+        {
+            debug "Comparing values:";
+            debug "1. ".$arc->obj->safedesig;
+            debug "2. ".query_desig($val2);
+        }
 
-	if( $match eq 'eq' )
-	{
-	    return $arc->obj->equals( $val2, $args );
-	}
-	elsif( $match eq 'ne' )
-	{
-	    return not $arc->obj->equals( $val2, $args );
-	}
-	elsif( $match eq 'gt' )
-	{
-	    return( $arc->obj > $val2 );
-	}
-	elsif( $match eq 'lt' )
-	{
-	    return( $arc->obj < $val2 );
-	}
-	elsif( ($match eq 'begins') or ($match eq 'like') )
-	{
-	    return 0;
-	}
-	else
-	{
-	    confess "Matchtype $match not implemented";
-	}
+        if ( $match eq 'eq' )
+        {
+            return $arc->obj->equals( $val2, $args );
+        }
+        elsif ( $match eq 'ne' )
+        {
+            return not $arc->obj->equals( $val2, $args );
+        }
+        elsif ( $match eq 'gt' )
+        {
+            return( $arc->obj > $val2 );
+        }
+        elsif ( $match eq 'lt' )
+        {
+            return( $arc->obj < $val2 );
+        }
+        elsif ( ($match eq 'begins') or ($match eq 'like') )
+        {
+            return 0;
+        }
+        else
+        {
+            confess "Matchtype $match not implemented";
+        }
     }
-    elsif( ref $val2 eq 'RDF::Base::Resource' )
+    elsif ( ref $val2 eq 'RDF::Base::Resource' )
     {
-	debug "  A normal resource is compared with a Literal" if $DEBUG;
+        debug "  A normal resource is compared with a Literal" if $DEBUG;
 
-	# It seems that the value of the arc is a literal.  val2 is a
-	# node. They are not equal.
+        # It seems that the value of the arc is a literal.  val2 is a
+        # node. They are not equal.
 
-	return 0;
+        return 0;
     }
     else
     {
         my $val1 = $arc->value;
         my $coltype = $arc->coltype;
 
-	debug "  See if $val1 $match($clean) $val2" if $DEBUG;
-	unless( defined $val1 )
-	{
-	    debug "  val1 is not defined" if $DEBUG;
-	    return 1 unless defined $val2;
-	    return 0;
-	}
+        debug "  See if $val1 $match($clean) $val2" if $DEBUG;
+        unless( defined $val1 )
+        {
+            debug "  val1 is not defined" if $DEBUG;
+            return 1 unless defined $val2;
+            return 0;
+        }
 
-	if( ref $val2 )
-	{
+        if ( ref $val2 )
+        {
 #	    debug "Calling plain for value $val2";
-	    if( ref $val2 eq 'HASH' )
-	    {
-		confess query_desig( $val2 );
-	    }
-	}
+            if ( ref $val2 eq 'HASH' )
+            {
+                confess query_desig( $val2 );
+            }
+        }
 
 
-        if( $coltype eq 'valfloat')
+        if ( $coltype eq 'valfloat')
         {
             $val1 = $val1->plain;
-            if( ref $val2 )
+            if ( ref $val2 )
             {
                 $val2 = $val2->plain;
             }
         }
-        elsif( $coltype eq 'valtext' )
+        elsif ( $coltype eq 'valtext' )
         {
             $val1 = $val1->plain;
-            if( ref $val2 )
+            if ( ref $val2 )
             {
                 $val2 = $val2->plain;
             }
 
-            if( $clean )
+            if ( $clean )
             {
                 $val1 = valclean(\$val1);
                 $val2 = valclean(\$val2);
             }
         }
-        elsif( $coltype eq 'valdate' )
+        elsif ( $coltype eq 'valdate' )
         {
             unless( ref $val2 )
             {
@@ -3509,61 +3511,61 @@ sub value_equals
 
 
 
-	# This part is similar to RDF::Base::Object/matches
-	#
-	#
+        # This part is similar to RDF::Base::Object/matches
+        #
+        #
 
-	if( $match eq 'eq' )
-	{
- 	    if( $coltype eq 'valfloat' )
-	    {
+        if ( $match eq 'eq' )
+        {
+            if ( $coltype eq 'valfloat' )
+            {
                 return( $val1 == $val2 );
             }
-	    return $val1 eq $val2;
-	}
-	elsif( $match eq 'ne' )
-	{
- 	    if( $coltype eq 'valfloat' )
-	    {
+            return $val1 eq $val2;
+        }
+        elsif ( $match eq 'ne' )
+        {
+            if ( $coltype eq 'valfloat' )
+            {
                 return( $val1 != $val2 );
             }
-	    return $val1 ne $val2;
-	}
-	elsif( $match eq 'begins' )
-	{
-	    return 1 if $val1 =~ /^\Q$val2/;
-	}
-	elsif( $match eq 'like' )
-	{
-	    return 1 if $val1 =~ /\Q$val2/;
-	}
-	elsif( $match eq 'gt' )
-	{
-	    if( $coltype eq 'valtext' )
-	    {
-		return $arc if $val1 gt $val2;
-	    }
-	    else # Anything else should have overloaded '>'
-	    {
+            return $val1 ne $val2;
+        }
+        elsif ( $match eq 'begins' )
+        {
+            return 1 if $val1 =~ /^\Q$val2/;
+        }
+        elsif ( $match eq 'like' )
+        {
+            return 1 if $val1 =~ /\Q$val2/;
+        }
+        elsif ( $match eq 'gt' )
+        {
+            if ( $coltype eq 'valtext' )
+            {
+                return $arc if $val1 gt $val2;
+            }
+            else            # Anything else should have overloaded '>'
+            {
 #                debug "  comparing a ".ref($val1)." with a ".ref($val2);
-		return $arc if $val1 > $val2;
-	    }
-	}
-	elsif( $match eq 'lt' )
-	{
-	    if( $coltype eq 'valtext' )
-	    {
-		return $arc if $val1 lt $val2;
-	    }
-	    else # Anything else should have overloaded '<'
-	    {
-		return $arc if $val1 < $val2;
-	    }
-	}
-	else
-	{
-	    confess "Matchtype $match not implemented";
-	}
+                return $arc if $val1 > $val2;
+            }
+        }
+        elsif ( $match eq 'lt' )
+        {
+            if ( $coltype eq 'valtext' )
+            {
+                return $arc if $val1 lt $val2;
+            }
+            else            # Anything else should have overloaded '<'
+            {
+                return $arc if $val1 < $val2;
+            }
+        }
+        else
+        {
+            confess "Matchtype $match not implemented";
+        }
     }
 
     return 0;
@@ -3585,16 +3587,16 @@ sub meets_arclim
     return 1 unless @$arclim;
 
 #    debug "Filtering arc $arc->{id} on ".$arclim->sysdesig;
-    foreach( @$arclim )
+    foreach ( @$arclim )
     {
 #	debug "  Applying arclim $_";
 
-	next unless RDF::Base::Arc::Lim::arc_meets_lim( $arc, $_ );
+        next unless RDF::Base::Arc::Lim::arc_meets_lim( $arc, $_ );
 
 
 
 #	debug "    passed";
-	return 1;
+        return 1;
     }
 
 #    debug "    failed";
@@ -3625,18 +3627,18 @@ sub value_meets_proplim
 
     return 1 unless $proplim;
 
-    if( ref $proplim and ref $proplim eq 'HASH' )
+    if ( ref $proplim and ref $proplim eq 'HASH' )
     {
-	return 1 unless keys %$proplim;
-	if( $proplim->{'arclim'} )
-	{
-	    confess "args given in proplim place";
-	}
+        return 1 unless keys %$proplim;
+        if ( $proplim->{'arclim'} )
+        {
+            confess "args given in proplim place";
+        }
     }
 
-    if( my $val = $arc->value )
+    if ( my $val = $arc->value )
     {
-	return 1 if $val->meets_proplim($proplim, $args_in);
+        return 1 if $val->meets_proplim($proplim, $args_in);
     }
 
     return 0;
@@ -3700,9 +3702,9 @@ sub remove
     # If this arc is removed, there is nothing to remove
     return 0 if $arc->is_removed;
 
-    if( $args->{'recursive'} )
+    if ( $args->{'recursive'} )
     {
-	return $arc->remove_recursive( $args );
+        return $arc->remove_recursive( $args );
     }
 
     my $remove_if_no_longer_implicit = $args->{'implicit'} || 0;
@@ -3710,137 +3712,137 @@ sub remove
     my $force = $args->{'force'} || $args->{'force_recursive'} || 0;
     my $arc_id = $arc->id;
 
-    if( $DEBUG and not $remove_if_no_longer_implicit )
+    if ( $DEBUG and not $remove_if_no_longer_implicit )
     {
-	debug "REQ REM ARC ".$arc->sysdesig;
+        debug "REQ REM ARC ".$arc->sysdesig;
 
-	my($package, $filename, $line) = caller;
-	debug "  called from $package, line $line";
-	debug "  remove if no longer implicit: $remove_if_no_longer_implicit";
-	debug "  force: $force".($args->{'force_recursive'}?' RECURSIVE':'');
-	debug "  active: ".$arc->active;
-	debug "  validate_check";
+        my($package, $filename, $line) = caller;
+        debug "  called from $package, line $line";
+        debug "  remove if no longer implicit: $remove_if_no_longer_implicit";
+        debug "  force: $force".($args->{'force_recursive'}?' RECURSIVE':'');
+        debug "  active: ".$arc->active;
+        debug "  validate_check";
 #	debug "  res: ".datadump($res,2);
 
     }
 
     unless( $force )
     {
-	if( $arc->is_removal and $arc->activated )
-	{
-	    debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
-	    return 0;
-	}
+        if ( $arc->is_removal and $arc->activated )
+        {
+            debug "  Arc $arc->{id} is an removal arc. Let it be" if $DEBUG;
+            return 0;
+        }
 
-	if( ($arc->active or $arc->replaced_by->size )
-	    and $arc->explicit and not $remove_if_no_longer_implicit )
-	{
-	    # Create removals for active explicit arcs
+        if ( ($arc->active or $arc->replaced_by->size )
+             and $arc->explicit and not $remove_if_no_longer_implicit )
+        {
+            # Create removals for active explicit arcs
 
-	    # May be a submitted or new arc replaced by another
-	    # arc. That other arc should have been removed before this
-	    # one. But if this is asked to be removed, it must be done
-	    # by a removal arc
+            # May be a submitted or new arc replaced by another
+            # arc. That other arc should have been removed before this
+            # one. But if this is asked to be removed, it must be done
+            # by a removal arc
 
-	    debug "  Arc active or replaced but not flag implicit" if $DEBUG;
-	    $create_removal = 1;
-	}
-	elsif( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
-	{
-	    # TODO: FIXME, RG::Action::pr_update can't handle this...
-	    #throw('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
-	}
+            debug "  Arc active or replaced but not flag implicit" if $DEBUG;
+            $create_removal = 1;
+        }
+        elsif ( not $arc->is_owned_by( $Para::Frame::REQ->user ) )
+        {
+            # TODO: FIXME, RG::Action::pr_update can't handle this...
+            #throw('denied', sprintf "You (%s) don't own the arc %s", $Para::Frame::REQ->user->sysdesig, $arc->sysdesig);
+        }
 
-	# Can this arc be infered?
-	if( $arc->validate_check( $args ) )
-	{
-	    if( $remove_if_no_longer_implicit )
-	    {
-		debug "  Arc implicit and infered" if $DEBUG > 1;
-		return 0;
-	    }
-	    else
-	    {
-		# Arc was explicit but is now indirect implicit
-		debug "  Arc infered; set implicit" if $DEBUG;
-		$arc->set_implicit(1);
-		return 0;
-	    }
-	}
-	else
-	{
-	    if( $arc->implicit )
-	    {
-		# This arc can not be infered, so it can't be implicit any
-		# more. -- This was probably caused by some arc being
-		# disregarded.  (nested inference?)
+        # Can this arc be infered?
+        if ( $arc->validate_check( $args ) )
+        {
+            if ( $remove_if_no_longer_implicit )
+            {
+                debug "  Arc implicit and infered" if $DEBUG > 1;
+                return 0;
+            }
+            else
+            {
+                # Arc was explicit but is now indirect implicit
+                debug "  Arc infered; set implicit" if $DEBUG;
+                $arc->set_implicit(1);
+                return 0;
+            }
+        }
+        else
+        {
+            if ( $arc->implicit )
+            {
+                # This arc can not be infered, so it can't be implicit any
+                # more. -- This was probably caused by some arc being
+                # disregarded.  (nested inference?)
 
-		debug "  Arc implicit but not infered" if $DEBUG;
-		$remove_if_no_longer_implicit ++; # Implicit remove mode
-		$create_removal = 0;
-	    }
-	}
+                debug "  Arc implicit but not infered" if $DEBUG;
+                $remove_if_no_longer_implicit ++; # Implicit remove mode
+                $create_removal = 0;
+            }
+        }
 
-	if( $remove_if_no_longer_implicit and $arc->explicit ) # remove implicit
-	{
-	    debug "  removed implicit but arc explicit\n" if $DEBUG > 1;
-	    return 0;
-	}
-	elsif( not $remove_if_no_longer_implicit and $arc->implicit ) # remove explicit
-	{
-	    debug "  Removed explicit but arc implicit\n" if $DEBUG;
-	    return 0;
-	}
-	elsif( not $remove_if_no_longer_implicit and $arc->indirect ) # remove explicit
-	{
-	    # This arc is no longer explicitly stated, but if it's
-	    # indirectly infered, it will now be implicit
+        if ( $remove_if_no_longer_implicit and $arc->explicit ) # remove implicit
+        {
+            debug "  removed implicit but arc explicit\n" if $DEBUG > 1;
+            return 0;
+        }
+        elsif ( not $remove_if_no_longer_implicit and $arc->implicit ) # remove explicit
+        {
+            debug "  Removed explicit but arc implicit\n" if $DEBUG;
+            return 0;
+        }
+        elsif ( not $remove_if_no_longer_implicit and $arc->indirect ) # remove explicit
+        {
+            # This arc is no longer explicitly stated, but if it's
+            # indirectly infered, it will now be implicit
 
-	    debug "  Removed explicit for indirect arc.  Make arc implicit\n" if $DEBUG;
+            debug "  Removed explicit for indirect arc.  Make arc implicit\n" if $DEBUG;
 
-	    if( $create_removal )
-	    {
-		$arc->create_removal($args);
-		return 1;
-	    }
-	    else
-	    {
-		$arc->set_implicit(1);
-		return 0;
-	    }
-	}
+            if ( $create_removal )
+            {
+                $arc->create_removal($args);
+                return 1;
+            }
+            else
+            {
+                $arc->set_implicit(1);
+                return 0;
+            }
+        }
 
-	unless( $create_removal )
-	{
-	    foreach my $rarc ( $arc->replaced_by->nodes )
-	    {
-		if( $rarc->is_removal )
-		{
-		    unless( $rarc->replaced_by->size )
-		    {
-			$rarc->remove({%$args, force => 1});
-			next;
-		    }
-		}
+        unless( $create_removal )
+        {
+            foreach my $rarc ( $arc->replaced_by->nodes )
+            {
+                if ( $rarc->is_removal )
+                {
+                    unless( $rarc->replaced_by->size )
+                    {
+                        $rarc->remove({%$args, force => 1});
+                        next;
+                    }
+                }
 
-		$create_removal = 1;
-	    }
-	}
+                $create_removal = 1;
+            }
+        }
 
-	if( $create_removal )
-	{
-	    $arc->create_removal($args);
-	    return 1;
-	}
+        if ( $create_removal )
+        {
+            $arc->create_removal($args);
+            return 1;
+        }
     }
 
-    if( $args->{'force_recursive'} )
+    if ( $args->{'force_recursive'} )
     {
-	foreach my $repl ( $arc->replaced_by->as_array )
-	{
-	    debug "  removes dependant version" if $DEBUG;
-	    $repl->remove( $args );
-	}
+        foreach my $repl ( $arc->replaced_by->as_array )
+        {
+            debug "  removes dependant version" if $DEBUG;
+            $repl->remove( $args );
+        }
     }
 
 #    cluck "Forcing delete";
@@ -3864,7 +3866,7 @@ sub remove
 #    $::MRK = $mrk;
 
     debug "  SUPER::remove" if $DEBUG;
-    $arc->SUPER::remove( $args2 );  # Removes the arc node: the arcs properties
+    $arc->SUPER::remove( $args2 ); # Removes the arc node: the arcs properties
 
     my $dbh = $RDF::dbix->dbh;
 
@@ -3920,23 +3922,23 @@ sub remove
     # Sync with init() property setup
     debug "  clear arc data\n" if $DEBUG;
     foreach my $prop (qw(
-			    subj pred value value_node clean implicit
-			    indirect explain replaces source
-			    arc_weight arc_weight_last active
-			    submitted activated_by valtype
-			    arc_created_by arc_read_access
-			    arc_write_access arc_activated
-			    arc_deactivated arc_created arc_updated
-			    unsubmitted arc_created_obj
-			    arc_updated_obj arc_activated_obj
-			    arc_deactivated_obj arc_deactivated_by_obj
-			    arc_unsubmitted_obj activated_by_obj
-			    arc_created_by_obj source_obj
-			    arc_read_access_obj arc_write_access_obj
-			    value_node_obj
-		       ))
+                            subj pred value value_node clean implicit
+                            indirect explain replaces source
+                            arc_weight arc_weight_last active
+                            submitted activated_by valtype
+                            arc_created_by arc_read_access
+                            arc_write_access arc_activated
+                            arc_deactivated arc_created arc_updated
+                            unsubmitted arc_created_obj
+                            arc_updated_obj arc_activated_obj
+                            arc_deactivated_obj arc_deactivated_by_obj
+                            arc_unsubmitted_obj activated_by_obj
+                            arc_created_by_obj source_obj
+                            arc_read_access_obj arc_write_access_obj
+                            value_node_obj
+                       ))
     {
-	delete $arc->{$prop};
+        delete $arc->{$prop};
     }
 
     # Remove arc from cache
@@ -3947,7 +3949,7 @@ sub remove
     #
     $res->{'vacuumed'}{$arc->{'id'}} ++;
 
-    return 1; # One arc removed
+    return 1;                   # One arc removed
 }
 
 
@@ -3969,9 +3971,9 @@ sub remove_recursive
 
     my @rarcs;
     my $created_by = $arc->created_by;
-    if( my $obj = $arc->obj )
+    if ( my $obj = $arc->obj )
     {
-	@rarcs = $obj->arc_list(undef,undef,aais($args,'explicit'))->as_array;
+        @rarcs = $obj->arc_list(undef,undef,aais($args,'explicit'))->as_array;
     }
 
     $args->{'recursive'} = 0;
@@ -3980,11 +3982,11 @@ sub remove_recursive
 
     foreach my $rarc ( @rarcs )
     {
-	if( $rarc->created_by->equals( $created_by ) )
-	{
-	    debug 1, "Recursive removal of selected arcs";
-	    $rarc->remove($args);
-	}
+        if ( $rarc->created_by->equals( $created_by ) )
+        {
+            debug 1, "Recursive removal of selected arcs";
+            $rarc->remove($args);
+        }
     }
 }
 
@@ -4010,13 +4012,13 @@ sub create_removal
     # removal if args activate_new_arcs is true.
 
     my $arc_out =  RDF::Base::Arc->create({
-				   common      => $arc->common_id,
-				   replaces    => $arc->id,
-				   subj        => $arc->{'subj'},
-				   pred        => $arc->{'pred'},
-				   value       => is_undef,
-				   valtype     => 0,
-				  }, $args);
+                                           common      => $arc->common_id,
+                                           replaces    => $arc->id,
+                                           subj        => $arc->{'subj'},
+                                           pred        => $arc->{'pred'},
+                                           value       => is_undef,
+                                           valtype     => 0,
+                                          }, $args);
 #    debug "Created removal arc ".$arc->sysdesig;
     return $arc_out;
 }
@@ -4049,15 +4051,15 @@ sub update
 
     foreach my $pred_name ( keys %$props )
     {
-	my $val = $props->{$pred_name};
-	if( $pred_name eq 'value' )
-	{
-	    $arc = $arc->set_value( $val, $args );
-	}
-	else
-	{
-	    die "Not implemented: $pred_name";
-	}
+        my $val = $props->{$pred_name};
+        if ( $pred_name eq 'value' )
+        {
+            $arc = $arc->set_value( $val, $args );
+        }
+        else
+        {
+            die "Not implemented: $pred_name";
+        }
     }
     return $arc;
 }
@@ -4100,54 +4102,54 @@ sub set_value
 
     debug 3, sprintf "Set value of arc %s to '%s'",
       $arc->{'id'}, ((ref $value_new_in?$value_new_in->sysdesig :
-		      $value_new_in)||'<undef>');
+                      $value_new_in)||'<undef>');
 
     my $coltype_old  = $arc->coltype;
     my $value_new;
-    if( $args->{'force_set_value'} ) # accept new given value
+    if ( $args->{'force_set_value'} ) # accept new given value
     {
-	$value_new = $value_new_in;
+        $value_new = $value_new_in;
     }
-    else # lookup and validate the new given value
+    else                     # lookup and validate the new given value
     {
-	# Doesn't work for removals
+        # Doesn't work for removals
 
-	my $valtype = $args->{'valtype'} || $arc->valtype;
-	unless( $valtype )
-	{
-	    confess "Can't set the value of a removal ($value_new_in)";
-	}
+        my $valtype = $args->{'valtype'} || $arc->valtype;
+        unless( $valtype )
+        {
+            confess "Can't set the value of a removal ($value_new_in)";
+        }
 
-	debug 4, "Given valtype is ".$valtype->sysdesig;
+        debug 4, "Given valtype is ".$valtype->sysdesig;
 
-	# Get the value alternatives based on the current coltype.  That
-	# is; If the previous value was an object: try to find a new
-	# object.  Not a Literal.
-	#
-	my $value_new_list = RDF::Base::Resource->find_by_anything
-	  ( $value_new_in,
-	    {
-	     %$args,
-	     valtype => $valtype,
-	     arc     => $arc,
-	    });
+        # Get the value alternatives based on the current coltype.  That
+        # is; If the previous value was an object: try to find a new
+        # object.  Not a Literal.
+        #
+        my $value_new_list = RDF::Base::Resource->find_by_anything
+          ( $value_new_in,
+            {
+             %$args,
+             valtype => $valtype,
+             arc     => $arc,
+            });
 
-	$value_new_list->defined or die "wrong input '$value_new_in'";
+        $value_new_list->defined or die "wrong input '$value_new_in'";
 
-	if( $value_new_list->[1] ) # More than one
-	{
-	    # TODO: Explain 'kriterierna'
-	    my $result = $Para::Frame::REQ->result;
-	    $result->{'info'}{'alternatives'}{'alts'} = $value_new_list;
-	    $result->{'info'}{'alternatives'}{'query'} = $value_new_in;
-	    throw('alternatives', "More than one node matches the criterions");
-	}
+        if ( $value_new_list->[1] ) # More than one
+        {
+            # TODO: Explain 'kriterierna'
+            my $result = $Para::Frame::REQ->result;
+            $result->{'info'}{'alternatives'}{'alts'} = $value_new_list;
+            $result->{'info'}{'alternatives'}{'query'} = $value_new_in;
+            throw('alternatives', "More than one node matches the criterions");
+        }
 
-	$value_new = $value_new_list->get_first_nos;
-	unless( defined $value_new ) # Avoids using list overload
-	{
-	    $value_new = is_undef;
-	}
+        $value_new = $value_new_list->get_first_nos;
+        unless( defined $value_new ) # Avoids using list overload
+        {
+            $value_new = is_undef;
+        }
     }
 
 
@@ -4155,9 +4157,9 @@ sub set_value
     my $value_old = $arc->value;
 
     debug 4, "got new value ".$value_new->sysdesig;
-    if( $value_new_in and not $value_new )
+    if ( $value_new_in and not $value_new )
     {
-	confess "We should have got a value";
+        confess "We should have got a value";
     }
 
 
@@ -4165,27 +4167,27 @@ sub set_value
     #
     my $vnode_old   = $arc->value_node;
     my $vnode_new;
-    if( exists $args->{'value_node'} )
+    if ( exists $args->{'value_node'} )
     {
-	$vnode_new = RDF::Base::Resource->
-	  get_by_anything($args->{'value_node'});
+        $vnode_new = RDF::Base::Resource->
+          get_by_anything($args->{'value_node'});
     }
     else
     {
-	$vnode_new = $vnode_old;
+        $vnode_new = $vnode_old;
     }
 
-    if( $vnode_new )
+    if ( $vnode_new )
     {
-	if( UNIVERSAL::isa($value_new,'RDF::Base::Literal') )
-	{
-	    $value_new->node_set($vnode_new);
-	}
-	else
-	{
-	    debug $vnode_new->sysdesig." is not a value node anymore";
-	    $vnode_new = is_undef;
-	}
+        if ( UNIVERSAL::isa($value_new,'RDF::Base::Literal') )
+        {
+            $value_new->node_set($vnode_new);
+        }
+        else
+        {
+            debug $vnode_new->sysdesig." is not a value node anymore";
+            $vnode_new = is_undef;
+        }
     }
 
 
@@ -4197,11 +4199,11 @@ sub set_value
     my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
 
     # Tries to mimic valtype algorithm in /create
-    if( RDF::Base::Constants->get('resource')->equals($valtype_old) )
+    if ( RDF::Base::Constants->get('resource')->equals($valtype_old) )
     {
         $valtype_new = $valtype_old;
     }
-    elsif( $value_new->is_literal )
+    elsif ( $value_new->is_literal )
     {
         $valtype_new = $value_new->this_valtype;
     }
@@ -4211,17 +4213,17 @@ sub set_value
     }
 
 
-    if( debug > 1 )
+    if ( debug > 1 )
     {
-	debug "  value_old: ".$value_old->sysdesig();
-	debug "   type old: ".$valtype_old->sysdesig;
-	debug "  vnode old: ".$vnode_old->sysdesig;
-	debug "coltype old: ".$coltype_old;
-	debug "  value_new: ".$value_new->sysdesig();
-	debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
-	debug "   type new: ".$valtype_new->sysdesig;
-	debug "  vnode new: ".$vnode_new->sysdesig;
-	debug "coltype new: ".$coltype_new;
+        debug "  value_old: ".$value_old->sysdesig();
+        debug "   type old: ".$valtype_old->sysdesig;
+        debug "  vnode old: ".$vnode_old->sysdesig;
+        debug "coltype old: ".$coltype_old;
+        debug "  value_new: ".$value_new->sysdesig();
+        debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
+        debug "   type new: ".$valtype_new->sysdesig;
+        debug "  vnode new: ".$vnode_new->sysdesig;
+        debug "coltype new: ".$coltype_new;
     }
 
     my $same_value = $value_new->equals( $value_old, $args );
@@ -4230,113 +4232,113 @@ sub set_value
     # Are there any changes to be made?
     #
     unless( $same_value and
-	    $valtype_new->equals( $valtype_old ) and
-	    $vnode_old->equals($vnode_new)
-	  )
+            $valtype_new->equals( $valtype_old ) and
+            $vnode_old->equals($vnode_new)
+          )
     {
-	# Normal case: create a new version of the arc
-	#
-	unless( $arc->is_new or $args->{'force_set_value_same_version'} )
-	{
-	    my $new = RDF::Base::Arc->create({
-					      common      => $arc->common_id,
-					      replaces    => $arc->id,
-					      subj        => $arc->{'subj'},
-					      pred        => $arc->{'pred'},
-					      value       => $value_new,
-					      value_node  => $vnode_new,
-					     }, $args );
-	    return $new;
-	}
+        # Normal case: create a new version of the arc
+        #
+        unless ( $arc->is_new or $args->{'force_set_value_same_version'} )
+        {
+            my $new = RDF::Base::Arc->create({
+                                              common      => $arc->common_id,
+                                              replaces    => $arc->id,
+                                              subj        => $arc->{'subj'},
+                                              pred        => $arc->{'pred'},
+                                              value       => $value_new,
+                                              value_node  => $vnode_new,
+                                             }, $args );
+            return $new;
+        }
 
 
-	# Changing the existing arc, in place
-	#
-	debug 3, "    Changing value\n";
+        # Changing the existing arc, in place
+        #
+        debug 3, "    Changing value\n";
 
-	# If the value is the same, or we are changing to a literal
-	# resource, we should keep infered arcs
+        # If the value is the same, or we are changing to a literal
+        # resource, we should keep infered arcs
 
-	unless( $same_value or ($objtype_old and !$objtype_new) )
-	{
-	    $arc->schedule_check_remove( $args );
-	}
+        unless( $same_value or ($objtype_old and !$objtype_new) )
+        {
+            $arc->schedule_check_remove( $args );
+        }
 
-	my $arc_id      = $arc->id;
-	my $u_node      = $Para::Frame::REQ->user;
-	my $now         = now();
-	my $dbix        = $RDF::dbix;
-	my $dbh         = $dbix->dbh;
-	my $value_db;
+        my $arc_id      = $arc->id;
+        my $u_node      = $Para::Frame::REQ->user;
+        my $now         = now();
+        my $dbix        = $RDF::dbix;
+        my $dbh         = $dbix->dbh;
+        my $value_db;
 
-	my @dbvalues;
-	my @dbparts;
+        my @dbvalues;
+        my @dbparts;
 
-	if( $objtype_old )
-	{
-	    $arc->obj->reset_cache;
-	}
+        if ( $objtype_old )
+        {
+            $arc->obj->reset_cache;
+        }
 
-	if( $objtype_new )
-	{
-	    $value_db = $value_new->id;
-	    # $arc->subj->reset_cache # IS CALLED BELOW
-	}
-	else
-	{
-	    if( $coltype_new eq 'valdate' )
-	    {
-		$value_db = $dbix->format_datetime($value_new);
-	    }
-	    elsif( $coltype_new eq 'valfloat' )
-	    {
-		$value_db = $value_new;
+        if ( $objtype_new )
+        {
+            $value_db = $value_new->id;
+            # $arc->subj->reset_cache # IS CALLED BELOW
+        }
+        else
+        {
+            if ( $coltype_new eq 'valdate' )
+            {
+                $value_db = $dbix->format_datetime($value_new);
+            }
+            elsif ( $coltype_new eq 'valfloat' )
+            {
+                $value_db = $value_new;
                 confess "No number $value_db" unless looks_like_number($value_db);
-	    }
-	    elsif( $coltype_new eq 'valtext' )
-	    {
-		unless( UNIVERSAL::isa $value_new, "RDF::Base::Literal::String")
-		{
-		    confess "type mismatch for ".datadump($value_new,2);
-		}
+            }
+            elsif ( $coltype_new eq 'valtext' )
+            {
+                unless( UNIVERSAL::isa $value_new, "RDF::Base::Literal::String")
+                {
+                    confess "type mismatch for ".datadump($value_new,2);
+                }
 
-		$value_db = $value_new;
-		my $clean = $value_new->clean_plain;
+                $value_db = $value_new;
+                my $clean = $value_new->clean_plain;
 
-		push @dbparts, "valclean=?";
-		push @dbvalues, $clean;
+                push @dbparts, "valclean=?";
+                push @dbvalues, $clean;
 
-		$arc->{'clean'} = $clean;
-	    }
-	    elsif( $coltype_new eq 'valbin' )
-	    {
-		$value_db = $value_new;
-	    }
-	    else
-	    {
-		debug 3, "We do not specificaly handle coltype $coltype_new\n";
-		$value_db = $value_new;
-	    }
-	}
+                $arc->{'clean'} = $clean;
+            }
+            elsif ( $coltype_new eq 'valbin' )
+            {
+                $value_db = $value_new;
+            }
+            else
+            {
+                debug 3, "We do not specificaly handle coltype $coltype_new\n";
+                $value_db = $value_new;
+            }
+        }
 
-	# Turn to plain value if it's an object. (Works for both Literal, Undef and others)
-	$value_db = $value_db->plain if ref $value_db;
-	# Assume that ->plain() always returns charstring
-	utf8::upgrade( $value_db ) if defined $value_db; # May be undef
+        # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+        $value_db = $value_db->plain if ref $value_db;
+        # Assume that ->plain() always returns charstring
+        utf8::upgrade( $value_db ) if defined $value_db; # May be undef
 
-	my $now_db = $dbix->format_datetime($now);
+        my $now_db = $dbix->format_datetime($now);
 
-	push( @dbparts,
-	      "$coltype_new=?",
-	      "valtype=?",
-	      "updated=?"
-	    );
+        push( @dbparts,
+              "$coltype_new=?",
+              "valtype=?",
+              "updated=?"
+            );
 
-	push( @dbvalues,
-	      $value_db,
-	      $valtype_new->id,
-	      $now_db,
-	    );
+        push( @dbvalues,
+              $value_db,
+              $valtype_new->id,
+              $now_db,
+            );
 
 #	if( $arc->is_new )
 #	{
@@ -4352,88 +4354,88 @@ sub set_value
 #	}
 
 
-	if(     $objtype_old and  $objtype_new )
-	{
-	    # All good
-	}
-	elsif(  $objtype_old and !$objtype_new )
-	{
-	    if( $vnode_new )
-	    {
-		push @dbparts, "obj=?";
-		push @dbvalues, $vnode_new->id; # Also works for Undef
-	    }
-	}
-	elsif( !$objtype_old and  $objtype_new )
-	{
-	    push @dbparts, "$coltype_old=null";
-	    $arc->{$coltype_old} = undef;
-	}
-	else # !$objtype_old and !$objtype_new
-	{
-	    if( $vnode_old or $vnode_new )
-	    {
-		push @dbparts, "obj=?";
-		push @dbvalues, $vnode_new->id; # Also works for Undef
-	    }
+        if (     $objtype_old and  $objtype_new )
+        {
+            # All good
+        }
+        elsif (  $objtype_old and !$objtype_new )
+        {
+            if ( $vnode_new )
+            {
+                push @dbparts, "obj=?";
+                push @dbvalues, $vnode_new->id; # Also works for Undef
+            }
+        }
+        elsif ( !$objtype_old and  $objtype_new )
+        {
+            push @dbparts, "$coltype_old=null";
+            $arc->{$coltype_old} = undef;
+        }
+        else                    # !$objtype_old and !$objtype_new
+        {
+            if ( $vnode_old or $vnode_new )
+            {
+                push @dbparts, "obj=?";
+                push @dbvalues, $vnode_new->id; # Also works for Undef
+            }
 
-	    if( $coltype_old ne $coltype_new )
-	    {
-		push @dbparts, "$coltype_old=null";
-		$arc->{$coltype_old} = undef;
-	    }
-	}
+            if ( $coltype_old ne $coltype_new )
+            {
+                push @dbparts, "$coltype_old=null";
+                $arc->{$coltype_old} = undef;
+            }
+        }
 
 
-	my $sql_set = join ",",@dbparts;
-	my $st = "update arc set $sql_set where ver=?";
-	my $sth = $dbh->prepare($st);
-	$sth->execute(@dbvalues, $arc_id);
-	$RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
+        my $sql_set = join ",",@dbparts;
+        my $st = "update arc set $sql_set where ver=?";
+        my $sth = $dbh->prepare($st);
+        $sth->execute(@dbvalues, $arc_id);
+        $RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
-	$arc->{'value'}              = $value_new;
-	$arc->{$coltype_new}         = $value_new;
-	$arc->{'arc_updated'}        = $now_db;
-	$arc->{'arc_created'}        = $now_db;
-	$arc->{'arc_updated_obj'}    = $now;
-	$arc->{'arc_created_obj'}    = $now;
-	$arc->{'arc_created_by'}     = $u_node->id;
-	$arc->{'arc_created_by_obj'} = $u_node;
-	$arc->{'valtype'}            = $valtype_new->id;
-	$arc->{'value_node'}         = $vnode_new->id;
-	$arc->{'value_node_obj'}     = $vnode_new;
+        $arc->{'value'}              = $value_new;
+        $arc->{$coltype_new}         = $value_new;
+        $arc->{'arc_updated'}        = $now_db;
+        $arc->{'arc_created'}        = $now_db;
+        $arc->{'arc_updated_obj'}    = $now;
+        $arc->{'arc_created_obj'}    = $now;
+        $arc->{'arc_created_by'}     = $u_node->id;
+        $arc->{'arc_created_by_obj'} = $u_node;
+        $arc->{'valtype'}            = $valtype_new->id;
+        $arc->{'value_node'}         = $vnode_new->id;
+        $arc->{'value_node_obj'}     = $vnode_new;
 
-	debug 2, "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
+        debug 2, "UPDATED Arc $arc->{id} is created by $arc->{arc_created_by}";
 
-	$arc->subj->reset_cache;
+        $arc->subj->reset_cache;
 #	$arc->reset_cache; # not needed
-	# $arc->obj->reset_cache # IS CALLED ABOVE
+        # $arc->obj->reset_cache # IS CALLED ABOVE
 
-	$value_old->set_arc(undef);
-	$value_new->set_arc($arc);
+        $value_old->set_arc(undef);
+        $value_new->set_arc($arc);
 
-	$arc->schedule_check_create( $args );
-	$RDF::Base::Cache::Changes::Updated{$arc->id} ++;
-	if( $value_old->is_resource )
-	{
-	    $RDF::Base::Cache::Changes::Updated{$value_old->id} ++;
-	}
-	if( $value_new->is_resource )
-	{
-	    $RDF::Base::Cache::Changes::Updated{$value_new->id} ++;
-	}
+        $arc->schedule_check_create( $args );
+        $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
+        if ( $value_old->is_resource )
+        {
+            $RDF::Base::Cache::Changes::Updated{$value_old->id} ++;
+        }
+        if ( $value_new->is_resource )
+        {
+            $RDF::Base::Cache::Changes::Updated{$value_new->id} ++;
+        }
 
-	debug 0, "Updated arc ".$arc->sysdesig;
+        debug 0, "Updated arc ".$arc->sysdesig;
 
-	$res->changes_add;
-	unless( $arc->active )
-	{
-	    $res->add_newarc($arc);
-	}
+        $res->changes_add;
+        unless( $arc->active )
+        {
+            $res->add_newarc($arc);
+        }
     }
     else
     {
-	debug 3, "    Same value\n";
+        debug 3, "    Same value\n";
     }
 
     return $arc;
@@ -4471,23 +4473,23 @@ sub set_pred
 
     $args->{'updated'} = $now;
 
-    if( $new_pred_id != $old_pred_id )
+    if ( $new_pred_id != $old_pred_id )
     {
-	debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->plain."\n" if $DEBUG;
+        debug "Update arc ".$arc->sysdesig.", setting pred to ".$new_pred->plain."\n" if $DEBUG;
 
-	my $narc = RDF::Base::Arc->
-	  create({
-		  read_access  => $arc->read_access->id,
-		  write_access => $arc->write_access->id,
-		  subj         => $arc->subj->id,
-		  pred         => $new_pred,
-		  value        => $arc->value,
-		  value_node   => $arc->value_node,
-		 }, $args);
+        my $narc = RDF::Base::Arc->
+          create({
+                  read_access  => $arc->read_access->id,
+                  write_access => $arc->write_access->id,
+                  subj         => $arc->subj->id,
+                  pred         => $new_pred,
+                  value        => $arc->value,
+                  value_node   => $arc->value_node,
+                 }, $args);
 
-	$arc->remove( $args );
+        $arc->remove( $args );
 
-	return $narc;
+        return $narc;
     }
 
     return $arc;
@@ -4518,17 +4520,17 @@ sub submit
 
     unless( $arc->inactive )
     {
-	throw('validation', "Arc $aid is already active");
+        throw('validation', "Arc $aid is already active");
     }
 
-    if( $arc->submitted )
+    if ( $arc->submitted )
     {
-	throw('validation', "Arc $aid is already submitted");
+        throw('validation', "Arc $aid is already submitted");
     }
 
-    if( $arc->old )
+    if ( $arc->old )
     {
-	throw('validation', "Arc $aid is old");
+        throw('validation', "Arc $aid is old");
     }
 
     my $dbix = $RDF::dbix;
@@ -4573,19 +4575,19 @@ sub resubmit
 
     unless( $arc->old )
     {
-	throw('validation', "Arc is not old");
+        throw('validation', "Arc is not old");
     }
 
     my $new = RDF::Base::Arc->create({
-				      common      => $arc->common_id,
-				      replaces    => $arc->id,
-				      active      => 0,
-				      submitted   => 1,
-				      subj        => $arc->{'subj'},
-				      pred        => $arc->{'pred'},
-				      value       => $arc->{'value'},
-				      value_node  => $arc->value_node,
-				     }, $args );
+                                      common      => $arc->common_id,
+                                      replaces    => $arc->id,
+                                      active      => 0,
+                                      submitted   => 1,
+                                      subj        => $arc->{'subj'},
+                                      pred        => $arc->{'pred'},
+                                      value       => $arc->{'value'},
+                                      value_node  => $arc->value_node,
+                                     }, $args );
     return $new;
 }
 
@@ -4608,9 +4610,9 @@ sub unsubmit
 {
     my( $arc ) = @_;
 
-    if( $arc->unsubmitted )
+    if ( $arc->unsubmitted )
     {
-	throw('validation', "Arc is not submitted");
+        throw('validation', "Arc is not submitted");
     }
 
     my $dbix = $RDF::dbix;
@@ -4667,18 +4669,18 @@ sub activate
 
     my $aid = $arc->id;
 
-    unless( $args->{'force'} )
+    unless ( $args->{'force'} )
     {
-	unless( $arc->inactive )
-	{
-	    throw('validation', "Arc $aid is already active");
-	}
+        unless( $arc->inactive )
+        {
+            throw('validation', "Arc $aid is already active");
+        }
 
-	unless( $arc->submitted )
-	{
+        unless( $arc->submitted )
+        {
             cluck "Missed to validate arc";
-	    throw('validation', "Arc $aid is not yet submitted");
-	}
+            throw('validation', "Arc $aid is not yet submitted");
+        }
     }
 
     my $updated = $args->{'updated'} || now();
@@ -4694,64 +4696,64 @@ sub activate
     my $weight = $arc->weight;
     my $weight_last = $arc->{'arc_weight_last'};
 
-    if( $arc->{'valtype'} ) # Not a REMOVAL arc
+    if ( $arc->{'valtype'} )    # Not a REMOVAL arc
     {
 
 #        debug "  not a removal";
-	# Replaces is already set if this version is based on another
-	# It may be another version than the currently active one
+        # Replaces is already set if this version is based on another
+        # It may be another version than the currently active one
 
-	my $st = "update arc set updated=?, activated=?, activated_by=?, weight=?, active='true', submitted='false' where ver=?";
-	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $weight, $aid );
-	$RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+        my $st = "update arc set updated=?, activated=?, activated_by=?, weight=?, active='true', submitted='false' where ver=?";
+        my $sth = $dbix->dbh->prepare($st);
+        $sth->execute( $date_db, $date_db, $activated_by_id, $weight, $aid );
+        $RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
-	$arc->{'arc_updated_obj'} = $updated;
-	$arc->{'arc_activated_obj'} = $updated;
-	$arc->{'arc_updated'} = $date_db;
-	$arc->{'arc_activated'} = $date_db;
-	$arc->{'submitted'} = 0;
-	$arc->{'active'} = 1;
-	$arc->{'activated_by'} = $activated_by_id;
-	$arc->{'activated_by_obj'} = $activated_by;
+        $arc->{'arc_updated_obj'} = $updated;
+        $arc->{'arc_activated_obj'} = $updated;
+        $arc->{'arc_updated'} = $date_db;
+        $arc->{'arc_activated'} = $date_db;
+        $arc->{'submitted'} = 0;
+        $arc->{'active'} = 1;
+        $arc->{'activated_by'} = $activated_by_id;
+        $arc->{'activated_by_obj'} = $activated_by;
     }
-    else # This is a REMOVAL arc
+    else                        # This is a REMOVAL arc
     {
 #        debug "  is a removal";
-	if( my $rarc = $arc->replaces )
-	{
-	    if( $rarc->old )
-	    {
-		debug "Target arc already removed";
-		$arc->remove($args);
-		return 0;
-	    }
-	}
+        if ( my $rarc = $arc->replaces )
+        {
+            if ( $rarc->old )
+            {
+                debug "Target arc already removed";
+                $arc->remove($args);
+                return 0;
+            }
+        }
 
-	my $st = "update arc set updated=?, activated=?, activated_by=?, deactivated=?, active='false', submitted='false' where ver=?";
-	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $aid );
-	$RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+        my $st = "update arc set updated=?, activated=?, activated_by=?, deactivated=?, active='false', submitted='false' where ver=?";
+        my $sth = $dbix->dbh->prepare($st);
+        $sth->execute( $date_db, $date_db, $activated_by_id, $date_db, $aid );
+        $RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
-	$arc->{'arc_updated_obj'} = $updated;
-	$arc->{'arc_deactivated_obj'} = $updated;
-	$arc->{'arc_activated_obj'} = $updated;
-	$arc->{'arc_updated'} = $date_db;
-	$arc->{'arc_deactivated'} = $date_db;
-	$arc->{'arc_activated'} = $date_db;
-	$arc->{'submitted'} = 0;
-	$arc->{'active'} = 0;
-	$arc->{'activated_by'} = $activated_by_id;
-	$arc->{'activated_by_obj'} = $activated_by;
+        $arc->{'arc_updated_obj'} = $updated;
+        $arc->{'arc_deactivated_obj'} = $updated;
+        $arc->{'arc_activated_obj'} = $updated;
+        $arc->{'arc_updated'} = $date_db;
+        $arc->{'arc_deactivated'} = $date_db;
+        $arc->{'arc_activated'} = $date_db;
+        $arc->{'submitted'} = 0;
+        $arc->{'active'} = 0;
+        $arc->{'activated_by'} = $activated_by_id;
+        $arc->{'activated_by_obj'} = $activated_by;
 
-	# If this is a removal of a new or submitted arc, that arc
-	# should be deactivated
-	if( my $rarc = $arc->replaces )
-	{
-	    # rarc is not active. Assume we are allowed to
-	    # deactivate it
-	    $rarc->deactivate( $arc, $args );
-	}
+        # If this is a removal of a new or submitted arc, that arc
+        # should be deactivated
+        if ( my $rarc = $arc->replaces )
+        {
+            # rarc is not active. Assume we are allowed to
+            # deactivate it
+            $rarc->deactivate( $arc, $args );
+        }
     }
 
     # Reset caches
@@ -4763,9 +4765,9 @@ sub activate
     # If this is not a removal and we have another active arc, it must
     # be deactivated
     #
-    if( $aarc and $arc->{'valtype'} )
+    if ( $aarc and $arc->{'valtype'} )
     {
-	$aarc->deactivate( $arc, $args );
+        $aarc->deactivate( $arc, $args );
     }
 
     # Runs create_check AFTER deactivation of other arc version, since
@@ -4777,20 +4779,20 @@ sub activate
     $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
 
     my $obj = $arc->obj;
-    if( $args->{'recursive'} and $obj )
+    if ( $args->{'recursive'} and $obj )
     {
-	my $created_by = $arc->created_by;
-	foreach my $rarc ( $obj->arc_list(undef,undef,[['submitted','explicit']])->as_array )
-	{
-	    if( $rarc->created_by->equals( $created_by ) )
-	    {
-		debug "Recursive activation of submitted arc";
-		$rarc->activate($args);
-	    }
-	}
+        my $created_by = $arc->created_by;
+        foreach my $rarc ( $obj->arc_list(undef,undef,[['submitted','explicit']])->as_array )
+        {
+            if ( $rarc->created_by->equals( $created_by ) )
+            {
+                debug "Recursive activation of submitted arc";
+                $rarc->activate($args);
+            }
+        }
     }
 
-    if( $weight_last )
+    if ( $weight_last )
     {
         $arc->set_weight(0, {%$args,arc_weight_last=>1}); # Trigger a resort
     }
@@ -4818,38 +4820,38 @@ sub reactivate
     my $larcs = $arc->replaced_by->sorted( 'id', 'desc' );
     foreach my $larc ( $larcs->nodes )
     {
-	$larc->remove($rargs);
+        $larc->remove($rargs);
     }
 
-    if( $arc->old )
+    if ( $arc->old )
     {
-	my $dbix = $RDF::dbix;
-	my $updated = $args->{'updated'} || now();
-	my $updated_db = $dbix->format_datetime($updated);
-	my $aid = $arc->id;
+        my $dbix = $RDF::dbix;
+        my $updated = $args->{'updated'} || now();
+        my $updated_db = $dbix->format_datetime($updated);
+        my $aid = $arc->id;
 
-	my $st = "update arc set updated=?, active='true', deactivated=null where ver=?";
-	my $sth = $dbix->dbh->prepare($st);
-	$sth->execute( $updated_db, $aid );
-	$RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+        my $st = "update arc set updated=?, active='true', deactivated=null where ver=?";
+        my $sth = $dbix->dbh->prepare($st);
+        $sth->execute( $updated_db, $aid );
+        $RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
 
-	$arc->{'arc_updated_obj'} = $updated_db;
-	delete $arc->{'arc_deactivated_obj'};
-	delete $arc->{'arc_deactivated'};
-	$arc->{'active'} = 1;
+        $arc->{'arc_updated_obj'} = $updated_db;
+        delete $arc->{'arc_deactivated_obj'};
+        delete $arc->{'arc_deactivated'};
+        $arc->{'active'} = 1;
 
-	# Reset caches
-	#
-	$arc->obj->reset_cache if $arc->obj;
-	$arc->subj->reset_cache;
+        # Reset caches
+        #
+        $arc->obj->reset_cache if $arc->obj;
+        $arc->subj->reset_cache;
 
-	# Runs create_check AFTER deactivation of other arc version, since
-	# the new arc version may INFERE the old arc
-	#
-	$arc->schedule_check_create( $args );
-	$arc->notify_change( $args );
+        # Runs create_check AFTER deactivation of other arc version, since
+        # the new arc version may INFERE the old arc
+        #
+        $arc->schedule_check_create( $args );
+        $arc->notify_change( $args );
 
-	debug "Reactivated ".$arc->sysdesig;
+        debug "Reactivated ".$arc->sysdesig;
     }
 
     return $arc;
@@ -4873,14 +4875,14 @@ sub set_replaces
     my $common_id_old = $arc->common_id;
     my $common_id     = $arc2->common_id;
 
-    if( $RDF::Base::Cache::Resource{ $common_id } )
+    if ( $RDF::Base::Cache::Resource{ $common_id } )
     {
-	confess "Too late for changing arcs common_id";
+        confess "Too late for changing arcs common_id";
     }
 
-    if( $arc->active )
+    if ( $arc->active )
     {
-	confess "Can't set replaces for active arc";
+        confess "Can't set replaces for active arc";
     }
 
     my $arc2_id = $arc2->id;
@@ -4968,8 +4970,8 @@ sub set_implicit
     my $bool      = $val ? 't' : 'f';
 
     my $sth = $dbh->prepare("update arc set implicit=?, ".
-				   "updated=? ".
-				   "where ver=?");
+                            "updated=? ".
+                            "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
     $RDF::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
 
@@ -5033,7 +5035,7 @@ sub set_indirect
     # sets to 'true' if called without arg
     defined $val or $val = 1;
 
-    $val = $val ? 1 : 0; # normalize
+    $val = $val ? 1 : 0;              # normalize
     return if $val == $arc->indirect; # Return if no change
 
     my $desc_str = $val ? 'indirect' : 'direct';
@@ -5048,8 +5050,8 @@ sub set_indirect
     my $bool      = $val ? 't' : 'f';
 
     my $sth = $dbh->prepare("update arc set indirect=?, ".
-				   "updated=? ".
-				   "where ver=?");
+                            "updated=? ".
+                            "where ver=?");
     $sth->execute($bool, $now_db, $arc_ver);
     $RDF::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
 
@@ -5057,16 +5059,16 @@ sub set_indirect
     $arc->{'arc_updated'} = $now_db;
     $arc->{'indirect'} = $val;
 
-    if( not $val and $arc->implicit ) # direct ==> explicit
+    if ( not $val and $arc->implicit ) # direct ==> explicit
     {
-	# We can change this here because validation check is done
-	# before call to set_indirect
+        # We can change this here because validation check is done
+        # before call to set_indirect
 
-	if( $DEBUG )
-	{
-	    debug "  No arc can be both direct and implicit\n";
-	    debug "  This arc must change or be removed now!\n";
-	}
+        if ( $DEBUG )
+        {
+            debug "  No arc can be both direct and implicit\n";
+            debug "  This arc must change or be removed now!\n";
+        }
     }
 
     $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
@@ -5108,38 +5110,38 @@ sub set_weight
     my $DEBUG = 0;
 
     my $val = $val_in;
-    if( ref $val )
+    if ( ref $val )
     {
-	$val = $val_in->plain;
+        $val = $val_in->plain;
     }
 
     my $weight_old = $arc->weight;
 
-    if( defined $val )
+    if ( defined $val )
     {
-	unless( looks_like_number( $val ) )
-	{
-	    throw 'validation', "String $val is not a number";
-	}
+        unless( looks_like_number( $val ) )
+        {
+            throw 'validation', "String $val is not a number";
+        }
 
-	if( $args->{arc_weight_last} and $arc->active )
-	{
-	    unless( $val == 0 )
-	    {
+        if ( $args->{arc_weight_last} and $arc->active )
+        {
+            unless( $val == 0 )
+            {
                 cluck "error in set_weight";
-		throw 'validation', "$val must be 0 for weight last";
-	    }
+                throw 'validation', "$val must be 0 for weight last";
+            }
 
             $arc->weight_last( {%$args,arc_weight_last=>undef} );
         }
 
-	# Return if no change
-	return $arc if $weight_old and ($val == $weight_old);
+        # Return if no change
+        return $arc if $weight_old and ($val == $weight_old);
 
     }
     else
     {
-	return $arc unless defined $weight_old; # Return if no change
+        return $arc unless defined $weight_old; # Return if no change
     }
 
     my $desc_str = defined $val ? $val : '<undef>';
@@ -5148,27 +5150,27 @@ sub set_weight
     my $same_version = $args->{'force_same_version'} || 0;
     unless( $same_version )
     {
-	if( $arc->is_new )
-	{
-	    $same_version = 1;
-	}
+        if ( $arc->is_new )
+        {
+            $same_version = 1;
+        }
     }
 
     unless( $same_version )
     {
-	my $new = RDF::Base::Arc->create({
-					  common      => $arc->common_id,
-					  replaces    => $arc->id,
-					  subj        => $arc->{'subj'},
-					  pred        => $arc->{'pred'},
-					  value       => $arc->value,
-					  value_node  => $arc->value_node,
-					  arc_weight  => $val,
-					  arc_weight_last =>
-					  $args->{arc_weight_last},
-					 }, $args );
+        my $new = RDF::Base::Arc->create({
+                                          common      => $arc->common_id,
+                                          replaces    => $arc->id,
+                                          subj        => $arc->{'subj'},
+                                          pred        => $arc->{'pred'},
+                                          value       => $arc->value,
+                                          value_node  => $arc->value_node,
+                                          arc_weight  => $val,
+                                          arc_weight_last =>
+                                          $args->{arc_weight_last},
+                                         }, $args );
         $res->changes_add;
-	return $new;
+        return $new;
     }
 
 
@@ -5181,17 +5183,17 @@ sub set_weight
     my $now_db    = $dbix->format_datetime($now);
 
     my $sth = $dbh->prepare("update arc set weight=?, ".
-				   "updated=? ".
-				   "where ver=?");
+                            "updated=? ".
+                            "where ver=?");
     $sth->execute($val, $now_db, $arc_ver);
     $RDF::Base::Resource::TRANSACTION{ $arc_ver } = $Para::Frame::REQ;
 
     $arc->{'arc_updated_obj'} = $now;
     $arc->{'arc_updated'} = $now_db;
     $arc->{'arc_weight'} = $val;
-    unless( $arc->{'active'} )
+    unless ( $arc->{'active'} )
     {
-	$arc->{'arc_weight_last'} = $args->{arc_weight_last};
+        $arc->{'arc_weight_last'} = $args->{arc_weight_last};
     }
 
     $RDF::Base::Cache::Changes::Updated{$arc_ver} ++;
@@ -5280,24 +5282,24 @@ sub get_by_rec_and_register
     my $id = $_[0]->{'ver'} or
       croak "get_by_rec misses the id param: ".datadump($_[0],2);
 
-    if( my $arc = $RDF::Base::Cache::Resource{$id} )
+    if ( my $arc = $RDF::Base::Cache::Resource{$id} )
     {
 #	debug "Re-Registring arc $id";
 
-	# Calls init in case the arc init got an error the last time
-	# and hasn't got fully initialized. The init method will do a
-	# simple check and just return arc if it looks like it's
-	# initialized.
+        # Calls init in case the arc init got an error the last time
+        # and hasn't got fully initialized. The init method will do a
+        # simple check and just return arc if it looks like it's
+        # initialized.
 
-	# Re-regestring arc with nodes
-	#
-	$arc->init(@_)->register_with_nodes;
-	return $arc;
+        # Re-regestring arc with nodes
+        #
+        $arc->init(@_)->register_with_nodes;
+        return $arc;
     }
     else
     {
 #	debug "Calling firstbless for $id, with stmt"; ### DEBUG
-	return $this->new($id, @_)->first_bless()->init(@_);
+        return $this->new($id, @_)->first_bless()->init(@_);
     }
 }
 
@@ -5335,82 +5337,82 @@ sub init
     my $value = $args->{'value'};
     my $reset = $args->{'reset'};
 
-    if( $arc->{'ioid'} and not $reset )
+    if ( $arc->{'ioid'} and not $reset )
     {
-	# Arc aspect of node already initiated
-	return $arc;
+        # Arc aspect of node already initiated
+        return $arc;
     }
 
 #    my $ts = Time::HiRes::time();
 
     my $id = $arc->{'id'} or die "no id"; # Yes!
-    my $bless_subj = 0; # For initiating subj
+    my $bless_subj = 0;                   # For initiating subj
 
     $rec ||= delete $arc->{'original_rec'}; # TEST
 
 #    debug "init arc id $id";
 
-    if( $rec )
+    if ( $rec )
     {
-	$rec->{'ver'} or confess "no ver: ".datadump($rec);
-	unless( $id eq $rec->{'ver'} )
-	{
-	    confess "id mismatch: ".datadump($arc,2).datadump($rec,2);
-	}
+        $rec->{'ver'} or confess "no ver: ".datadump($rec);
+        unless ( $id eq $rec->{'ver'} )
+        {
+            confess "id mismatch: ".datadump($arc,2).datadump($rec,2);
+        }
     }
     else
     {
-	my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where ver = ?");
-	$sth_id->execute($id);
-	$rec = $sth_id->fetchrow_hashref;
-	$sth_id->finish;
+        my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where ver = ?");
+        $sth_id->execute($id);
+        $rec = $sth_id->fetchrow_hashref;
+        $sth_id->finish;
 
 #	$Para::Frame::REQ->{RBSTAT}{'arc init exec'}
 #	  += Time::HiRes::time() - $ts;
-	unless( $rec )
-	{
-	    if( $reset ) # NOT IN DB ANYMORE!
-	    {
-		debug "Arc $id does not exist in DB ";
-		$arc->subj->reset_cache;
-		$arc->value->reset_cache(undef);
-		$arc->{disregard} ++;
-		delete $RDF::Base::Cache::Resource{ $id };
-		return $arc;
-	    }
+        unless( $rec )
+        {
+            if ( $reset )       # NOT IN DB ANYMORE!
+            {
+                debug "Arc $id does not exist in DB ";
+                $arc->subj->reset_cache;
+                $arc->value->reset_cache(undef);
+                $arc->{disregard} ++;
+                delete $RDF::Base::Cache::Resource{ $id };
+                return $arc;
+            }
 
-	    confess "Arc $id not found";
-	}
+            confess "Arc $id not found";
+        }
     }
 
 
-    my $DEBUG = 0; #1 if $id == 4558203; ### DEBUG
-    if( $DEBUG )
+    my $DEBUG = 0;              #1 if $id == 4558203; ### DEBUG
+    if ( $DEBUG )
     {
-	debug "Initiating arc $id";
+        debug "Initiating arc $id";
     }
-    if( $DEBUG > 1 )
+    if ( $DEBUG > 1 )
     {
-	warn timediff("init");
-	carp datadump($rec,2);
+        warn timediff("init");
+        carp datadump($rec,2);
     }
 
-    unless( $subj )  # This will use CACHE
+    unless( $subj )             # This will use CACHE
     {
-	# Take care of recursive definition loop
+        # Take care of recursive definition loop
 
-	# A $n->revlist('is') will try to get the is-arcs (in
-	# find_class()) in the middle of setting up the is-arcs from
-	# the revlist.
-	#
-	# That's why we are doing the first_bless thing AFTER this arc
-	# is initiated!
+        # A $n->revlist('is') will try to get the is-arcs (in
+        # find_class()) in the middle of setting up the is-arcs from
+        # the revlist.
+        #
+        # That's why we are doing the first_bless thing AFTER this arc
+        # is initiated!
 
-	unless( $subj = $RDF::Base::Cache::Resource{ $rec->{'subj'} } )
-	{
-	    $subj = RDF::Base::Resource->new( $rec->{'subj'} );
-	    $bless_subj = 1;
-	}
+        unless ( $subj = $RDF::Base::Cache::Resource{ $rec->{'subj'} } )
+        {
+            $subj = RDF::Base::Resource->new( $rec->{'subj'} );
+            $bless_subj = 1;
+        }
 
 #	$Para::Frame::REQ->{RBSTAT}{'arc init subj'}
 #	  += Time::HiRes::time() - $ts;
@@ -5424,33 +5426,33 @@ sub init
     my $valtype_id = $rec->{'valtype'};
     unless( $value )
     {
-	### Bootstrap coltype
+        ### Bootstrap coltype
 
-	if( $valtype_id == 0 ) # Removal arc
-	{
-	    $value = is_undef;
-	}
-	else
-	{
-	    my $valtype = RDF::Base::Resource->get($valtype_id)
-	      or confess "Couldn't find the valtype $valtype_id ".
-		"for arc $id";
+        if ( $valtype_id == 0 ) # Removal arc
+        {
+            $value = is_undef;
+        }
+        else
+        {
+            my $valtype = RDF::Base::Resource->get($valtype_id)
+              or confess "Couldn't find the valtype $valtype_id ".
+                "for arc $id";
 #	    debug "Arc $id valtype is $valtype_id";
 
-	    # Literals (and arcs, preds and rules) must only have one
-	    # handler class. Other resources may have many handler
-	    # classes. So do not lookup instance_class for enything
-	    # other than literals
+            # Literals (and arcs, preds and rules) must only have one
+            # handler class. Other resources may have many handler
+            # classes. So do not lookup instance_class for enything
+            # other than literals
 
-	    if( ref($valtype) eq 'RDF::Base::Literal::Class' )
-	    {
-		$value = $valtype->instance_class->get_by_arc_rec($rec,$valtype);
-	    }
-	    else
-	    {
-		$value = RDF::Base::Resource->get_by_arc_rec($rec,$valtype);
-	    }
-	}
+            if ( ref($valtype) eq 'RDF::Base::Literal::Class' )
+            {
+                $value = $valtype->instance_class->get_by_arc_rec($rec,$valtype);
+            }
+            else
+            {
+                $value = RDF::Base::Resource->get_by_arc_rec($rec,$valtype);
+            }
+        }
 
 #	$Para::Frame::REQ->{RBSTAT}{'arc init novalue'}
 #	  += Time::HiRes::time() - $ts;
@@ -5467,20 +5469,20 @@ sub init
 
 
     # Clean out old values if this is a reset
-    if( $arc->{'ioid'} )
+    if ( $arc->{'ioid'} )
     {
-	foreach my $key (qw(
-			       arc_created_obj arc_updated_obj
-			       arc_activated_obj arc_deactivated_obj
-			       arc_deactivated_by_obj
-			       arc_unsubmitted_obj activated_by_obj
-			       arc_created_by_obj source_obj
-			       arc_read_access_obj
-			       arc_write_access_obj value_node_obj
-			  ))
-	{
-	    delete $arc->{$key};
-	}
+        foreach my $key (qw(
+                               arc_created_obj arc_updated_obj
+                               arc_activated_obj arc_deactivated_obj
+                               arc_deactivated_by_obj
+                               arc_unsubmitted_obj activated_by_obj
+                               arc_created_by_obj source_obj
+                               arc_read_access_obj
+                               arc_write_access_obj value_node_obj
+                          ))
+        {
+            delete $arc->{$key};
+        }
     }
 
     # Sync with remove() property cleanup
@@ -5488,15 +5490,15 @@ sub init
     # Setup data
     $arc->{'subj'} = $subj;
     $arc->{'pred'} = $pred;
-    $arc->{'value'} = $value;  # can be RDF::Base::Undef
+    $arc->{'value'} = $value;   # can be RDF::Base::Undef
     $arc->{'value_node'} = $pred->objtype ? undef : $rec->{'obj'};
 #    debug "Setting value node of arc $id to ".($rec->{obj}||'<undef>');
-    $arc->{'clean'} = $rec->{'valclean'}; # TODO: remove
-    $arc->{'implicit'} = $rec->{'implicit'} || 0; # default
+    $arc->{'clean'} = $rec->{'valclean'};          # TODO: remove
+    $arc->{'implicit'} = $rec->{'implicit'} || 0;  # default
     $arc->{'indirect'} = $rec->{'indirect'}  || 0; # default
-    $arc->{'disregard'} ||= 0; ### Keep previous value
+    $arc->{'disregard'} ||= 0;  ### Keep previous value
     $arc->{'in_remove_check'} = 0;
-    $arc->{'explain'} = []; # See explain() method
+    $arc->{'explain'} = [];                 # See explain() method
     $arc->{'ioid'} ||= ++ $RDF::Base::ioid; # To track obj identity
     $arc->{'common_id'} = $rec->{'id'}; # Compare with $rec->{'ver'}
     $arc->{'replaces'} = $rec->{'replaces'};
@@ -5509,11 +5511,11 @@ sub init
     $arc->{'arc_created_by'} = $rec->{'created_by'};
     $arc->{'arc_read_access'} = $rec->{'read_access'};
     $arc->{'arc_write_access'} = $rec->{'write_access'};
-    $arc->{'arc_activated'} = $rec->{'activated'};               #
-    $arc->{'arc_deactivated'} = $rec->{'deactivated'};           #
-    $arc->{'arc_created'} = $rec->{'created'};                   #
-    $arc->{'arc_updated'} = $rec->{'updated'};                   #
-    $arc->{'unsubmitted'} = $rec->{'unsubmitted'};               #
+    $arc->{'arc_activated'} = $rec->{'activated'};     #
+    $arc->{'arc_deactivated'} = $rec->{'deactivated'}; #
+    $arc->{'arc_created'} = $rec->{'created'};         #
+    $arc->{'arc_updated'} = $rec->{'updated'};         #
+    $arc->{'unsubmitted'} = $rec->{'unsubmitted'};     #
     #
     ####################################
 
@@ -5527,29 +5529,29 @@ sub init
     #
     $arc->register_with_nodes;
 
-    if( $DEBUG > 1 )
+    if ( $DEBUG > 1 )
     {
-	warn "Arc $arc->{id} $arc->{ioid} ($value) ".
-	  "has disregard value $arc->{'disregard'}\n";
+        warn "Arc $arc->{id} $arc->{ioid} ($value) ".
+          "has disregard value $arc->{'disregard'}\n";
 
-	my $pred_name = $pred->plain;
-	warn "arcs for $subj->{id} $pred_name:\n";
-	foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
-	{
-	    warn "- ".$arc->id."\n";
-	}
+        my $pred_name = $pred->plain;
+        warn "arcs for $subj->{id} $pred_name:\n";
+        foreach my $arc ( @{$subj->{'relarc'}{ $pred_name }} )
+        {
+            warn "- ".$arc->id."\n";
+        }
 
-	warn "revarcs for $subj->{id} $pred_name:\n";
-	foreach my $revarc ( @{$subj->{'revarc'}{ $pred_name }} )
-	{
-	    warn "- ".$revarc->id."\n";
-	}
+        warn "revarcs for $subj->{id} $pred_name:\n";
+        foreach my $revarc ( @{$subj->{'revarc'}{ $pred_name }} )
+        {
+            warn "- ".$revarc->id."\n";
+        }
     }
 
-    if( $bless_subj )
+    if ( $bless_subj )
     {
-	debug 3, "Calling first_bless for $subj->{id}";
-	$subj->first_bless->init;
+        debug 3, "Calling first_bless for $subj->{id}";
+        $subj->first_bless->init;
     }
 
     # The node sense of the arc should NOT be resetted. It must have
@@ -5587,32 +5589,32 @@ sub register_with_nodes
 #    debug "--> Registring arc $id pred $pred_name with subj $arc->{subj}{id} and obj";
 
     # Register the arc with the subj
-    unless( $subj->{'arc_id'}{$id}  )
+    unless ( $subj->{'arc_id'}{$id}  )
     {
-	if( $arc->{'active'} )
-	{
-	    if( ref $subj->{'relarc'}{ $pred_name } )
-	    {
-		push @{$subj->{'relarc'}{ $pred_name }}, $arc;
-	    }
-	    else
-	    {
-		$subj->{'relarc'}{ $pred_name } = [$arc];
-	    }
-	}
-	else
-	{
-	    if( ref $subj->{'relarc_inactive'}{ $pred_name } )
-	    {
-		push @{$subj->{'relarc_inactive'}{ $pred_name }}, $arc;
-	    }
-	    else
-	    {
-		$subj->{'relarc_inactive'}{ $pred_name } = [$arc];
-	    }
-	}
+        if ( $arc->{'active'} )
+        {
+            if ( ref $subj->{'relarc'}{ $pred_name } )
+            {
+                push @{$subj->{'relarc'}{ $pred_name }}, $arc;
+            }
+            else
+            {
+                $subj->{'relarc'}{ $pred_name } = [$arc];
+            }
+        }
+        else
+        {
+            if ( ref $subj->{'relarc_inactive'}{ $pred_name } )
+            {
+                push @{$subj->{'relarc_inactive'}{ $pred_name }}, $arc;
+            }
+            else
+            {
+                $subj->{'relarc_inactive'}{ $pred_name } = [$arc];
+            }
+        }
 
-	$subj->{'arc_id'}{$id} = $arc;
+        $subj->{'arc_id'}{$id} = $arc;
 
 #	debug "RELARC:";
 #	debug datadump( $subj->{'relarc'}, 1);
@@ -5626,59 +5628,59 @@ sub register_with_nodes
 #	check_value(\$value); # Already initiated
 #    }
 
-    if( UNIVERSAL::isa($value, "ARRAY") )
+    if ( UNIVERSAL::isa($value, "ARRAY") )
     {
-	confess "bad value ".datadump($value,2);
+        confess "bad value ".datadump($value,2);
     }
 #    elsif(! ref $value )
 #    {
 #	confess "bad value ".datadump($value,2);
 #    }
 
-    if( UNIVERSAL::isa($value, "RDF::Base::Literal") )
+    if ( UNIVERSAL::isa($value, "RDF::Base::Literal") )
     {
 #	debug "Setting arc for ".$value->sysdesig." to ".$arc->id;
-	$value->set_arc($arc);
+        $value->set_arc($arc);
     }
-    elsif( UNIVERSAL::isa($value, "RDF::Base::Resource::Literal") )
+    elsif ( UNIVERSAL::isa($value, "RDF::Base::Resource::Literal") )
     {
-	# Always revarc initiated
+        # Always revarc initiated
     }
-    elsif(not( $value->{'arc_id'} and $value->{'arc_id'}{$id} ))
+    elsif (not( $value->{'arc_id'} and $value->{'arc_id'}{$id} ))
     {
-	if( $arc->{'active'} )
-	{
-	    if( ref $value->{'revarc'}{ $pred_name } )
-	    {
-		push @{$value->{'revarc'}{ $pred_name }}, $arc;
-	    }
-	    else
-	    {
-		$value->{'revarc'}{ $pred_name } = [$arc];
-	    }
-	}
-	else
-	{
-	    if( ref $value->{'revarc_inactive'}{ $pred_name } )
-	    {
-		push @{$value->{'revarc_inactive'}{ $pred_name }}, $arc;
-	    }
-	    else
-	    {
-		$value->{'revarc_inactive'}{ $pred_name } = [$arc];
-	    }
-	}
+        if ( $arc->{'active'} )
+        {
+            if ( ref $value->{'revarc'}{ $pred_name } )
+            {
+                push @{$value->{'revarc'}{ $pred_name }}, $arc;
+            }
+            else
+            {
+                $value->{'revarc'}{ $pred_name } = [$arc];
+            }
+        }
+        else
+        {
+            if ( ref $value->{'revarc_inactive'}{ $pred_name } )
+            {
+                push @{$value->{'revarc_inactive'}{ $pred_name }}, $arc;
+            }
+            else
+            {
+                $value->{'revarc_inactive'}{ $pred_name } = [$arc];
+            }
+        }
 
-	$value->{'arc_id'}{$id} = $arc;
+        $value->{'arc_id'}{$id} = $arc;
     }
 
     # Nodes not new anymore... Not empty
     delete $subj->{'new'};
     delete $value->{'new'};
-    if( $arc->{'value_node'} )
+    if ( $arc->{'value_node'} )
     {
-	# Not empty now, since coupled to an arc
-	delete $arc->value_node->{'new'};
+        # Not empty now, since coupled to an arc
+        delete $arc->value_node->{'new'};
     }
 
 
@@ -5702,9 +5704,9 @@ sub deregister_with_nodes
 {
     my( $arc ) = @_;
 
-    unless( $arc->{disregard} )
+    unless ( $arc->{disregard} )
     {
-	confess(sprintf "Tried to deregister active arc %s", $arc->sysdesig);
+        confess(sprintf "Tried to deregister active arc %s", $arc->sysdesig);
     }
 
 
@@ -5724,123 +5726,123 @@ sub deregister_with_nodes
 #    }
 
     # Deregister the arc with the subj
-    if( $subj->{'arc_id'}{$id}  )
+    if ( $subj->{'arc_id'}{$id}  )
     {
-	if( $arc->{'active'} )
-	{
-	    if( my $alist = $subj->{'relarc'}{ $pred_name } )
-	    {
+        if ( $arc->{'active'} )
+        {
+            if ( my $alist = $subj->{'relarc'}{ $pred_name } )
+            {
 #		debug sprintf "  among %d %s arcs", $#$alist, $pred_name;
 
-		my $i=0;
-		while( $i<=$#$alist )
-		{
+                my $i=0;
+                while ( $i<=$#$alist )
+                {
 #		    debug "  $i: ".$alist->[$i]->{id};
-		    if( $alist->[$i]->{id} == $arc->{id} )
-		    {
+                    if ( $alist->[$i]->{id} == $arc->{id} )
+                    {
 #			debug "Removed $id from ".$subj->id;
 #			debug sprintf "  compared %s with %s", $alist->[$i], $arc;
-			splice @$alist, $i, 1;
-			last;
-		    }
-		    $i++;
-		}
-	    }
-	}
-	else
-	{
-	    if( my $alist = $subj->{'relarc_inactive'}{ $pred_name } )
-	    {
-		my $i=0;
-		while( $i<=$#$alist )
-		{
-		    if( $alist->[$i]->{id} eq $arc->{id} )
-		    {
+                        splice @$alist, $i, 1;
+                        last;
+                    }
+                    $i++;
+                }
+            }
+        }
+        else
+        {
+            if ( my $alist = $subj->{'relarc_inactive'}{ $pred_name } )
+            {
+                my $i=0;
+                while ( $i<=$#$alist )
+                {
+                    if ( $alist->[$i]->{id} eq $arc->{id} )
+                    {
 #			debug "Removed $id from ".$subj->id;
-			splice @$alist, $i, 1;
-			last;
-		    }
-		    $i++;
-		}
-	    }
-	}
+                        splice @$alist, $i, 1;
+                        last;
+                    }
+                    $i++;
+                }
+            }
+        }
 
-	delete $subj->{'arc_id'}{$id};
+        delete $subj->{'arc_id'}{$id};
     }
 
     # Setup Value
     my $value = $arc->{'value'};
 
-    if( UNIVERSAL::isa($value, "RDF::Base::Literal") )
+    if ( UNIVERSAL::isa($value, "RDF::Base::Literal") )
     {
-	$value->set_arc(undef);
+        $value->set_arc(undef);
     }
-    elsif( UNIVERSAL::isa($value, "RDF::Base::Resource::Literal") )
+    elsif ( UNIVERSAL::isa($value, "RDF::Base::Resource::Literal") )
     {
-	my $alist = $value->{'lit_revarc_active'};
-	my $i=0;
-	while( $i<=$#$alist )
-	{
-	    if( $alist->[$i]->{id} eq $arc->{id} )
-	    {
+        my $alist = $value->{'lit_revarc_active'};
+        my $i=0;
+        while ( $i<=$#$alist )
+        {
+            if ( $alist->[$i]->{id} eq $arc->{id} )
+            {
 #		debug "Removed $id from ".$value->sysdesig;
-		splice @$alist, $i, 1;
-		last;
-	    }
-	    $i++;
-	}
+                splice @$alist, $i, 1;
+                last;
+            }
+            $i++;
+        }
 
-	$alist = $value->{'lit_revarc_inactive'};
-	$i=0;
-	while( $i<=$#$alist )
-	{
-	    if( $alist->[$i]->{id} eq $arc->{id} )
-	    {
+        $alist = $value->{'lit_revarc_inactive'};
+        $i=0;
+        while ( $i<=$#$alist )
+        {
+            if ( $alist->[$i]->{id} eq $arc->{id} )
+            {
 #		debug "Removed $id from ".$value->sysdesig;
-		splice @$alist, $i, 1;
-		last;
-	    }
-	    $i++;
-	}
+                splice @$alist, $i, 1;
+                last;
+            }
+            $i++;
+        }
     }
-    elsif( $value->{'arc_id'} and $value->{'arc_id'}{$id} )
+    elsif ( $value->{'arc_id'} and $value->{'arc_id'}{$id} )
     {
-	if( $arc->{'active'} )
-	{
-	    if( my $alist = $value->{'revarc'}{ $pred_name } )
-	    {
-		my $i=0;
-		while( $i<=$#$alist )
-		{
-		    if( $alist->[$i]->{id} eq $arc->{id} )
-		    {
-			splice @$alist, $i, 1;
+        if ( $arc->{'active'} )
+        {
+            if ( my $alist = $value->{'revarc'}{ $pred_name } )
+            {
+                my $i=0;
+                while ( $i<=$#$alist )
+                {
+                    if ( $alist->[$i]->{id} eq $arc->{id} )
+                    {
+                        splice @$alist, $i, 1;
 #			debug "Removed $id from ".$value->sysdesig;
-			last;
-		    }
-		    $i++;
-		}
-	    }
-	}
-	else
-	{
-	    if( my $alist = $value->{'revarc_inactive'}{ $pred_name } )
-	    {
-		my $i=0;
-		while( $i<=$#$alist )
-		{
-		    if( $alist->[$i]->{id} eq $arc->{id} )
-		    {
-			splice @$alist, $i, 1;
+                        last;
+                    }
+                    $i++;
+                }
+            }
+        }
+        else
+        {
+            if ( my $alist = $value->{'revarc_inactive'}{ $pred_name } )
+            {
+                my $i=0;
+                while ( $i<=$#$alist )
+                {
+                    if ( $alist->[$i]->{id} eq $arc->{id} )
+                    {
+                        splice @$alist, $i, 1;
 #			debug "Removed $id from ".$value->sysdesig;
-			last;
-		    }
-		    $i++;
-		}
-	    }
-	}
+                        last;
+                    }
+                    $i++;
+                }
+            }
+        }
 
-	delete $value->{'arc_id'}{$id};
+        delete $value->{'arc_id'}{$id};
     }
 
     return $arc;
@@ -5921,14 +5923,14 @@ sub schedule_check_create
 #    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
 #    $args{unique_arcs_prio} = [1]; # active
 
-    if( $RDF::Base::Arc::lock_check ||= 0 )
+    if ( $RDF::Base::Arc::lock_check ||= 0 )
     {
-	push @RDF::Base::Arc::queue_check_add, [$arc, $args];
-	debug 3, "Added ".$arc->sysdesig." to queue check add";
+        push @RDF::Base::Arc::queue_check_add, [$arc, $args];
+        debug 3, "Added ".$arc->sysdesig." to queue check add";
     }
     else
     {
-	$arc->create_check( $args );
+        $arc->create_check( $args );
     }
 }
 
@@ -5956,14 +5958,14 @@ sub schedule_check_remove
     $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
     $args{unique_arcs_prio} = [1]; # active
 
-    if( $RDF::Base::Arc::lock_check ||= 0 )
+    if ( $RDF::Base::Arc::lock_check ||= 0 )
     {
-	push @RDF::Base::Arc::queue_check_remove, [$arc, \%args];
-	debug 3, "Added ".$arc->sysdesig." to queue check remove";
+        push @RDF::Base::Arc::queue_check_remove, [$arc, \%args];
+        debug 3, "Added ".$arc->sysdesig." to queue check remove";
     }
     else
     {
-	$arc->remove_check( \%args );
+        $arc->remove_check( \%args );
     }
 }
 
@@ -5978,34 +5980,34 @@ sub rollback
 {
 #    debug "ROLLBACK LOCKED ARCS";
 
-    while( my $params = shift @RDF::Base::Arc::queue_check_remove )
+    while ( my $params = shift @RDF::Base::Arc::queue_check_remove )
     {
-	my( $arc, $args ) = @$params;
-	$arc->reset_cache;
-	$arc->remove_check( $args );
+        my( $arc, $args ) = @$params;
+        $arc->reset_cache;
+        $arc->remove_check( $args );
     }
 
-    while( my $params = shift @RDF::Base::Arc::queue_check_add )
+    while ( my $params = shift @RDF::Base::Arc::queue_check_add )
     {
-	# These may have been rolled back. Check if they exist at all
-	my( $arc, $args ) = @$params;
-	my $arc_id = $arc->{'id'} or next;
+        # These may have been rolled back. Check if they exist at all
+        my( $arc, $args ) = @$params;
+        my $arc_id = $arc->{'id'} or next;
 
-	my $sth_id = $RDF::dbix->dbh->
-	  prepare("select * from arc where ver = ?");
-	$sth_id->execute($arc_id);
-	my $rec = $sth_id->fetchrow_hashref;
-	$sth_id->finish;
+        my $sth_id = $RDF::dbix->dbh->
+          prepare("select * from arc where ver = ?");
+        $sth_id->execute($arc_id);
+        my $rec = $sth_id->fetchrow_hashref;
+        $sth_id->finish;
 
-	if( $rec )
-	{
-	    $arc->reset_cache( $rec, $args );
-	    $arc->create_check( $args );
-	}
-	else # Not added to DB
-	{
-	    $arc->remove({%$args,force=>1});
-	}
+        if ( $rec )
+        {
+            $arc->reset_cache( $rec, $args );
+            $arc->create_check( $args );
+        }
+        else                    # Not added to DB
+        {
+            $arc->remove({%$args,force=>1});
+        }
     }
 
     $RDF::Base::Arc::lock_check = 0;
@@ -6026,10 +6028,10 @@ sub lock
 {
     my $cnt = ++ $RDF::Base::Arc::lock_check;
     my $DEBUG = 0;
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	my($package, $filename, $line) = caller(1);
-	warn "  Arc lock up on level $cnt, called from $package, line $line\n";
+        my($package, $filename, $line) = caller(1);
+        warn "  Arc lock up on level $cnt, called from $package, line $line\n";
     }
 }
 
@@ -6047,31 +6049,31 @@ Returns: ---
 sub unlock
 {
     my $cnt = -- $RDF::Base::Arc::lock_check;
-    if( $cnt < 0 )
+    if ( $cnt < 0 )
     {
-	debug "Unlock called without previous lock";
+        debug "Unlock called without previous lock";
     }
 
     my $DEBUG = 0;
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	my($package, $filename, $line) = caller(1);
-	warn "  Arc lock on level $cnt, called from $package, line $line\n";
+        my($package, $filename, $line) = caller(1);
+        warn "  Arc lock on level $cnt, called from $package, line $line\n";
     }
 
-    if( $RDF::Base::Arc::lock_check_active )
+    if ( $RDF::Base::Arc::lock_check_active )
     {
 #        debug "AVOID RECURSION"; ### TODO: Investigate...
         return;
     }
 
 
-    if( $cnt == 0 )
+    if ( $cnt == 0 )
     {
         $RDF::Base::Arc::lock_check_active = 1;
         eval
         {
-            while( my $params = shift @RDF::Base::Arc::queue_check_remove )
+            while ( my $params = shift @RDF::Base::Arc::queue_check_remove )
             {
                 my( $arc, $args ) = @$params;
                 $arc->remove_check( $args );
@@ -6089,7 +6091,7 @@ sub unlock
 
             #debug join " + ", map{ $_->[0]->pred->plain } @RDF::Base::Arc::queue_check_add;
 
-            while( my $params = shift @RDF::Base::Arc::queue_check_add )
+            while ( my $params = shift @RDF::Base::Arc::queue_check_add )
             {
                 my( $arc, $args ) = @$params;
                 $arc->create_check( $args );
@@ -6121,9 +6123,9 @@ sub unlock_all
     $RDF::Base::Arc::lock_check ||= 0;
     $RDF::Base::Arc::lock_check = 0 if $RDF::Base::Arc::lock_check < 0;
 
-    while( $RDF::Base::Arc::lock_check )
+    while ( $RDF::Base::Arc::lock_check )
     {
-	RDF::Base::Arc->unlock;
+        RDF::Base::Arc->unlock;
     }
 }
 
@@ -6183,16 +6185,16 @@ sub validate_check
 #    $arc->validate_valtype;
 
     debug( sprintf "  Retrieve list C for pred %s in %s",
-	  $pred->plain, $arc->sysdesig) if $DEBUG;
+           $pred->plain, $arc->sysdesig) if $DEBUG;
 
-    $arc->{'explain'} = []; # Reset the explain list
+    $arc->{'explain'} = [];     # Reset the explain list
 
-    if( my $list_c = RDF::Base::Rule->list_c($pred) )
+    if ( my $list_c = RDF::Base::Rule->list_c($pred) )
     {
-	foreach my $rule ( @$list_c )
-	{
-	    $validated += $rule->validate_infere( $arc, $args );
-	}
+        foreach my $rule ( @$list_c )
+        {
+            $validated += $rule->validate_infere( $arc, $args );
+        }
     }
     debug "  List C done" if $DEBUG;
 
@@ -6200,10 +6202,10 @@ sub validate_check
     $arc->set_indirect( $validated );
 
     $arc->{'disregard'} --;
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	debug "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})";
-	debug "  Validation for $arc->{id} is $validated";
+        debug "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})";
+        debug "  Validation for $arc->{id} is $validated";
     }
     return $validated;
 }
@@ -6234,30 +6236,30 @@ sub create_check
     my $pred      = $arc->pred;
 
     debug( sprintf  "create_check of %s",
-	   $arc->sysdesig ) if $DEBUG;
+           $arc->sysdesig ) if $DEBUG;
 
     $arc->validate_valtype;
 
-    if( my $list_a = RDF::Base::Rule->list_a($pred) )
+    if ( my $list_a = RDF::Base::Rule->list_a($pred) )
     {
-	foreach my $rule ( @$list_a )
-	{
-	    debug( sprintf  "  using %s",
-		   $rule->sysdesig) if $DEBUG;
+        foreach my $rule ( @$list_a )
+        {
+            debug( sprintf  "  using %s",
+                   $rule->sysdesig) if $DEBUG;
 
-	    $rule->create_infere_rel($arc, $args);
-	}
+            $rule->create_infere_rel($arc, $args);
+        }
     }
 
-    if( my $list_b = RDF::Base::Rule->list_b($pred) )
+    if ( my $list_b = RDF::Base::Rule->list_b($pred) )
     {
-	foreach my $rule ( @$list_b )
-	{
-	    debug( sprintf  "  using %s",
-		   $rule->sysdesig) if $DEBUG;
+        foreach my $rule ( @$list_b )
+        {
+            debug( sprintf  "  using %s",
+                   $rule->sysdesig) if $DEBUG;
 
-	    $rule->create_infere_rev($arc, $args);
-	}
+            $rule->create_infere_rev($arc, $args);
+        }
     }
 
     # Special creation rules
@@ -6265,20 +6267,20 @@ sub create_check
     my $pred_name = $arc->pred->plain;
     my $subj = $arc->subj;
 
-    if( $pred_name eq 'is' )
+    if ( $pred_name eq 'is' )
     {
-	$subj->update_valtype($args);
-	$subj->rebless( $args );
+        $subj->update_valtype($args);
+        $subj->rebless( $args );
     }
-    elsif( $pred_name eq 'class_handled_by_perl_module' )
+    elsif ( $pred_name eq 'class_handled_by_perl_module' )
     {
-	# TODO: Place this in RDF::Base::Class
-	$subj->on_class_perl_module_change($arc, $pred_name, $args);
+        # TODO: Place this in RDF::Base::Class
+        $subj->on_class_perl_module_change($arc, $pred_name, $args);
     }
 
     $subj->on_arc_add($arc, $pred_name, $args);
 
-    if( my $obj = $arc->obj )
+    if ( my $obj = $arc->obj )
     {
         $obj->on_revarc_add($arc, $pred_name, $args);
     }
@@ -6291,7 +6293,7 @@ sub create_check
 #        }
 #    }
 
- }
+}
 
 
 ###############################################################
@@ -6335,36 +6337,36 @@ sub remove_check
     my $pred_name = $pred->plain;
     my $subj = $arc->subj;
 
-    if( $pred_name eq 'is' )
+    if ( $pred_name eq 'is' )
     {
-	$subj->update_valtype($args);
-	$subj->rebless($args);
+        $subj->update_valtype($args);
+        $subj->rebless($args);
     }
-    elsif( $pred_name eq 'class_handled_by_perl_module' )
+    elsif ( $pred_name eq 'class_handled_by_perl_module' )
     {
-	# TODO: Place this in RDF::Base::Class
-	$subj->on_class_perl_module_change($arc, $pred_name, $args);
-    }
-
-    if( my $list_a = RDF::Base::Rule->list_a($pred) )
-    {
-	foreach my $rule ( @$list_a )
-	{
-	    $rule->remove_infered_rel($arc, $args);
-	}
+        # TODO: Place this in RDF::Base::Class
+        $subj->on_class_perl_module_change($arc, $pred_name, $args);
     }
 
-    if( my $list_b = RDF::Base::Rule->list_b($pred) )
+    if ( my $list_a = RDF::Base::Rule->list_a($pred) )
     {
-	foreach my $rule ( @$list_b )
-	{
-	    $rule->remove_infered_rev($arc, $args);
-	}
+        foreach my $rule ( @$list_a )
+        {
+            $rule->remove_infered_rel($arc, $args);
+        }
+    }
+
+    if ( my $list_b = RDF::Base::Rule->list_b($pred) )
+    {
+        foreach my $rule ( @$list_b )
+        {
+            $rule->remove_infered_rev($arc, $args);
+        }
     }
 
     $subj->on_arc_del($arc, $pred_name, $args);
 
-    if( my $obj = $arc->obj )
+    if ( my $obj = $arc->obj )
     {
         $obj->on_revarc_del($arc, $pred_name, $args);
     }
@@ -6401,9 +6403,9 @@ sub notify_change
 
     return if $pred_name =~ /^(un)?seen_by$/;
 
-    if( my $obj = $arc->obj ) # obj or value node
+    if ( my $obj = $arc->obj )  # obj or value node
     {
-	$obj->mark_updated($args->{'updated'}) if $obj->node_rec_exist;
+        $obj->mark_updated($args->{'updated'}) if $obj->node_rec_exist;
     }
 
     my $subj = $arc->subj;
@@ -6432,12 +6434,12 @@ sub validate_range
 
     unless( $valtype )
     {
-	return 1;
+        return 1;
     }
 
     unless( $pred->objtype )
     {
-	return 1;
+        return 1;
     }
 
 
@@ -6445,30 +6447,30 @@ sub validate_range
     # Falling back on arc valtype in case of Undef
     my $val_valtype = $value_obj->this_valtype || $arc->valtype;
 
-    if( $val_valtype->id == $RDF::Base::Resource::ID )
+    if ( $val_valtype->id == $RDF::Base::Resource::ID )
     {
-	# Always valid
+        # Always valid
     }
-    elsif( $valtype->id == $RDF::Base::Resource::ID )
+    elsif ( $valtype->id == $RDF::Base::Resource::ID )
     {
-	# Generic, to be specified
+        # Generic, to be specified
     }
-    elsif( not $valtype->equals( $val_valtype ) )
+    elsif ( not $valtype->equals( $val_valtype ) )
     {
-	if( $val_valtype->scof( $valtype ) )
-	{
-	    # In valid range
-	}
-	else
-	{
-	    my $subjd = $subj->sysdesig;
-	    my $predd = $pred->plain;
-	    my $val_valtd = $val_valtype->sysdesig;
-	    my $valtd = $valtype->sysdesig;
-	    my $vald = $value_obj->sysdesig;
-	    confess "Valtype check failed for $subjd -${predd}($valtd)-> $vald ".
-	      "(should have been $val_valtd)";
-	}
+        if ( $val_valtype->scof( $valtype ) )
+        {
+            # In valid range
+        }
+        else
+        {
+            my $subjd = $subj->sysdesig;
+            my $predd = $pred->plain;
+            my $val_valtd = $val_valtype->sysdesig;
+            my $valtd = $valtype->sysdesig;
+            my $vald = $value_obj->sysdesig;
+            confess "Valtype check failed for $subjd -${predd}($valtd)-> $vald ".
+              "(should have been $val_valtd)";
+        }
     }
 
     $valtype = $val_valtype;
@@ -6476,24 +6478,24 @@ sub validate_range
     ###### Validate pred range with value
 
     my $pred_valtype = $pred->valtype;
-    if( $pred_valtype->id != $RDF::Base::Resource::ID )
+    if ( $pred_valtype->id != $RDF::Base::Resource::ID )
     {
-	if( $value_obj->is( $pred_valtype ) )
-	{
-	    # In valid range
-	}
-	else
-	{
-	    my $subjd = $subj->sysdesig;
-	    my $predd = $pred->plain;
-	    my $val_valtd = $val_valtype->sysdesig;
-	    my $pred_valtd = $pred_valtype->sysdesig;
-	    my $vald = $value_obj->sysdesig;
+        if ( $value_obj->is( $pred_valtype ) )
+        {
+            # In valid range
+        }
+        else
+        {
+            my $subjd = $subj->sysdesig;
+            my $predd = $pred->plain;
+            my $val_valtd = $val_valtype->sysdesig;
+            my $pred_valtd = $pred_valtype->sysdesig;
+            my $vald = $value_obj->sysdesig;
 
-	    ### Unfinished?
-	    debug "Range check possibly failed for $subjd -${predd}-> $vald ".
-	      "(should have been $pred_valtd)";
-	}
+            ### Unfinished?
+            debug "Range check possibly failed for $subjd -${predd}-> $vald ".
+              "(should have been $pred_valtd)";
+        }
     }
 
     return 1;
@@ -6545,74 +6547,74 @@ sub validate_valtype
     #
     return 1 if $RDF::Base::IN_STARTUP;
 
-    if( ref $arc )
+    if ( ref $arc )
     {
-	$valtype = $arc->valtype;
-	$value_obj = $arc->value;
-	$pred = $arc->pred;
-	$subj = $arc->subj;
+        $valtype = $arc->valtype;
+        $value_obj = $arc->value;
+        $pred = $arc->pred;
+        $subj = $arc->subj;
     }
     else
     {
-	$value_obj = $args->{'value'} or confess "Missing value";
-	$pred = $args->{'pred'} or confess "Missing pred";
-	$subj = $args->{'subj'} or confess "Missing subj";
+        $value_obj = $args->{'value'} or confess "Missing value";
+        $pred = $args->{'pred'} or confess "Missing pred";
+        $subj = $args->{'subj'} or confess "Missing subj";
 
-	$valtype = $args->{'valtype'} || $pred->valtype;
+        $valtype = $args->{'valtype'} || $pred->valtype;
     }
 
-    if( $valtype )
+    if ( $valtype )
     {
-	if( $pred->objtype )
-	{
-	    # Fall back on 'resource' for Undef value_obj
-	    my $res = RDF::Base::Resource->get_by_id($RDF::Base::Resource::ID);
-	    my $val_valtype = $value_obj->this_valtype || $res;
+        if ( $pred->objtype )
+        {
+            # Fall back on 'resource' for Undef value_obj
+            my $res = RDF::Base::Resource->get_by_id($RDF::Base::Resource::ID);
+            my $val_valtype = $value_obj->this_valtype || $res;
 
-	    if( $valtype->id == $RDF::Base::Resource::ID )
-	    {
-		# Generic, to be specified
-	    }
-	    elsif( not $valtype->equals( $val_valtype ) )
-	    {
-		if( $val_valtype->scof( $valtype ) )
-		{
-		    # In valid range
-		}
-		elsif( $value_obj->is( $valtype ) )
-		{
-		    # In valid range
-		    $val_valtype = $valtype;
-		}
-		else
-		{
-		    my $subjd = $subj->sysdesig;
-		    my $predd = $pred->plain;
-		    my $val_valtd = $val_valtype->sysdesig;
-		    my $valtd = $valtype->sysdesig;
-		    my $vald = $value_obj->sysdesig;
-		    my $err = "Valtype validation failed for\n";
-		    $err .= "  $subjd --${predd}--> $vald\n";
-		    $err .= "  The expected valtype for the arc is $valtd\n";
-		    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
-		    if( $val_valtype->id == $RDF::Base::Resource::ID )
-		    {
-			$err .= "  Put $vald in the class $valtd\n";
-		    }
-		    else
-		    {
-			$err .= "  $val_valtd must be a subclass of $valtd\n";
-		    }
-		    $err .= "  (do you need to use arc_lock?)\n";
+            if ( $valtype->id == $RDF::Base::Resource::ID )
+            {
+                # Generic, to be specified
+            }
+            elsif ( not $valtype->equals( $val_valtype ) )
+            {
+                if ( $val_valtype->scof( $valtype ) )
+                {
+                    # In valid range
+                }
+                elsif ( $value_obj->is( $valtype ) )
+                {
+                    # In valid range
+                    $val_valtype = $valtype;
+                }
+                else
+                {
+                    my $subjd = $subj->sysdesig;
+                    my $predd = $pred->plain;
+                    my $val_valtd = $val_valtype->sysdesig;
+                    my $valtd = $valtype->sysdesig;
+                    my $vald = $value_obj->sysdesig;
+                    my $err = "Valtype validation failed for\n";
+                    $err .= "  $subjd --${predd}--> $vald\n";
+                    $err .= "  The expected valtype for the arc is $valtd\n";
+                    $err .= "  The valtype of $vald was found out to be $val_valtd\n";
+                    if ( $val_valtype->id == $RDF::Base::Resource::ID )
+                    {
+                        $err .= "  Put $vald in the class $valtd\n";
+                    }
+                    else
+                    {
+                        $err .= "  $val_valtd must be a subclass of $valtd\n";
+                    }
+                    $err .= "  (do you need to use arc_lock?)\n";
 
-		    throw('validation',$err, \ longmess);
+                    throw('validation',$err, \ longmess);
 #		    confess $err;
-		}
-	    }
-	}
-	else
-	{
-	    # Example of situation:
+                }
+            }
+        }
+        else
+        {
+            # Example of situation:
 
 #Valtype validation failed for
 # 6904167: 43ZAFV --due--> Date 2008-10-13 08.35.19 +0200
@@ -6651,7 +6653,7 @@ sub validate_valtype
 #		    confess $err;
 #		}
 #	    }
-	}
+        }
     }
 
     return 1;
@@ -6723,16 +6725,16 @@ sub info_updated_html
 
     $out .= "<span class=\"small_note\">" . $arc->view_flags;
 
-    if( $arc->updated_by )
+    if ( $arc->updated_by )
     {
-	$out .= " ".loc("by")." ";
-	my $updated_by = $arc->updated_by;
-	$out .= jump($updated_by->desig, $updated_by->form_url);
+        $out .= " ".loc("by")." ";
+        my $updated_by = $arc->updated_by;
+        $out .= jump($updated_by->desig, $updated_by->form_url);
     }
 
-    if( $arc->updated )
+    if ( $arc->updated )
     {
-	$out .= " " . $arc->updated;
+        $out .= " " . $arc->updated;
     }
 
     $out .= "</span>";
@@ -6752,13 +6754,13 @@ sub default_source
 {
     # May be called before constants init
     my $source = $Para::Frame::CFG->{'rb_default_source'};
-    if( ref $source )
+    if ( ref $source )
     {
-	return $source;
+        return $source;
     }
     else
     {
-	return RDF::Base::Resource->get_by_label('rdfbase');
+        return RDF::Base::Resource->get_by_label('rdfbase');
     }
 }
 
@@ -6773,13 +6775,13 @@ sub default_read_access
 {
     # May be called before constants init
     my $read_access = $Para::Frame::CFG->{'rb_default_read_access'};
-    if( ref $read_access )
+    if ( ref $read_access )
     {
-	return $read_access;
+        return $read_access;
     }
     else
     {
-	return RDF::Base::Resource->get_by_label('public');
+        return RDF::Base::Resource->get_by_label('public');
     }
 }
 
@@ -6794,13 +6796,13 @@ sub default_write_access
 {
     # May be called before constants init
     my $write_access = $Para::Frame::CFG->{'rb_default_write_access'};
-    if( ref $write_access )
+    if ( ref $write_access )
     {
-	return $write_access;
+        return $write_access;
     }
     else
     {
-	return RDF::Base::Resource->get_by_label('sysadmin_group');
+        return RDF::Base::Resource->get_by_label('sysadmin_group');
     }
 }
 
@@ -6842,7 +6844,7 @@ sub as_rdf
     my $out = "";
     my $predl = $a->pred->label;
     my $val = $a->value;
-    if( $val->is_literal )
+    if ( $val->is_literal )
     {
         my $type = $val->this_valtype;
         my $val_out = CGI->escapeHTML($val);
