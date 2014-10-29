@@ -6283,13 +6283,13 @@ sub create_check
         $obj->on_revarc_add($arc, $pred_name, $args);
     }
 
-    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
-    {
-        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
-        {
-            $parent->mark_child_changed($args);
-        }
-    }
+#    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
+#    {
+#        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
+#        {
+#            $parent->mark_child_changed($args);
+#        }
+#    }
 
  }
 
@@ -6369,13 +6369,13 @@ sub remove_check
         $obj->on_revarc_del($arc, $pred_name, $args);
     }
 
-    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
-    {
-        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
-        {
-            $parent->mark_child_changed($args);
-        }
-    }
+#    foreach my $pred ( $subj->revlist_preds(undef,$args)->as_array )
+#    {
+#        foreach my $parent ( $subj->revlist($pred,undef,$args)->as_array )
+#        {
+#            $parent->mark_child_changed($args);
+#        }
+#    }
 
     $arc->{'in_remove_check'} --;
     $arc->{'disregard'} --;

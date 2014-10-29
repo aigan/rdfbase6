@@ -6508,6 +6508,7 @@ sub wu_hiearchy_children
 
 
 ##############################################################################
+
 =head2 wu_select_tree_multiple
 
 =cut
@@ -7500,6 +7501,8 @@ sub mark_child_changed
     return if $CHILD_CHANGED{$n->id};
     $CHILD_CHANGED{$n->id} = $n;
 
+    debug "Marking cc for ".$n->id;
+
     foreach my $pred ( $n->revlist_preds(undef,$args)->as_array )
     {
         foreach my $subj ( $n->revlist($pred,undef,$args)->as_array )
@@ -8143,6 +8146,7 @@ sub commit
     eval
     {
         my $cnt = 0;
+        debug sprintf "Comitting %d unsaved", scalar(@unsaved);
         while ( my $node = shift @unsaved )
         {
             debug "Saving node ".$node->sysdesig;
@@ -8158,6 +8162,7 @@ sub commit
             }
         }
 
+        debug sprintf "Comitting %d cc", scalar(@child_changed);
         while ( my $node = shift @child_changed )
         {
             $node->on_child_changed();
@@ -8185,6 +8190,9 @@ sub commit
     }
 
 
+    debug sprintf "UNSAVED now at %d", scalar(keys %UNSAVED);
+    debug sprintf "CC now at %d", scalar(keys %CHILD_CHANGED);
+
     # DB synced with arc changes in cache
     %TRANSACTION = ();
     $in_commit = 0;
@@ -8206,7 +8214,6 @@ sub rollback
     }
     %UNSAVED = ();
 
-    debug "ROLLBACK NODES";
     foreach my $node ( values %CHILD_CHANGED )
     {
         $node->reset_cache;
@@ -8335,9 +8342,9 @@ sub save
 
 =head2 initiate_rel
 
-  =cut
+=cut
 
-  sub initiate_rel
+sub initiate_rel
 {
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -8487,9 +8494,9 @@ sub save
 
 =head2 initiate_rev
 
-  =cut
+=cut
 
-  sub initiate_rev
+sub initiate_rev
 {
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
