@@ -5700,12 +5700,12 @@ sub register_ajax_pagepart
     foreach my $key (keys %$args)
     {
         if ( $key =~ /label/ or
-	    $key eq 'arclim' or
-	    $key eq 'res' or
-	    $key eq 'depends_on'
-	  )
-	{
-    }
+             $key eq 'arclim' or
+             $key eq 'res' or
+             $key eq 'depends_on'
+           )
+        {
+        }
         elsif ( $key eq 'lookup_pred' )
         {
             $params->{$key} = $args->{$key};
@@ -5906,6 +5906,8 @@ sub wuirc
             $args->{'arc_type'} = 'singular';
         }
     }
+
+    debug "arc_type set to ".($args->{'arc_type'}||'<undef>') if $DEBUG;
 
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
@@ -6513,7 +6515,7 @@ sub wu_hiearchy_children
 
 =cut
 
-  sub wu_select_tree_multiple
+sub wu_select_tree_multiple
 {
     my( $node, $pred_name, $type, $args ) = @_;
 
