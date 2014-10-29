@@ -339,6 +339,7 @@ sub is_literal
 
 sub node
 {
+    confess "FIXME" unless ref $_[0];
     return( $_[0]->{'node'} ||= $_[0]->{'arc'} ?
 	    $_[0]->{'arc'}->value_node : is_undef );
 }
@@ -1668,6 +1669,20 @@ sub sysdesig  # The designation of obj, including node id
     {
 	return $out . "undef";
     }
+}
+
+
+##############################################################################
+
+=head2 table_columns
+
+  $n->table_columns()
+
+=cut
+
+sub table_columns
+{
+    return ['is_of_language.desig','arc_weight','-input'];
 }
 
 

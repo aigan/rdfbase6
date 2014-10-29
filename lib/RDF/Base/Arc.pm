@@ -45,6 +45,7 @@ use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Logging;
+use Para::Frame::Widget qw( input textarea htmlarea hidden radio input_image );
 
 use RDF::Base::Widget;
 use RDF::Base::List;
@@ -2410,6 +2411,21 @@ sub sysdesig_nosubj
 
   $a->table_row
 
+Special columns:
+
+ -arc_remove
+
+ -arc_updated
+
+ -arc_seen_status
+
+ desig
+
+ -input
+
+ -string_...
+
+
 =cut
 
 sub table_row
@@ -2508,6 +2524,55 @@ sub table_row
                               $item->wu_jump );
                 }
                 $out .= '&nbsp;' . $arc->edit_link_html;
+            }
+
+            when('-input')
+            {
+                if ( $disabled )
+                {
+                    $out .= ( $is_rev ? $check_subj->wu_jump :
+                              $item->wu_jump );
+                }
+                else
+                {
+                    if ( my $item_prefix = $args->{'item_prefix'} )
+                    {
+                        $out .= $item->$item_prefix." ";
+                    }
+
+                    my $field = $arc->build_field_key();
+                    my $tagid = $field;
+                    my $fargs =
+                    {
+                     class => $args->{'class'},
+                     size => $args->{'size'},
+                     rows => $args->{'rows'},
+                     maxlength => $args->{'maxlength'},
+                     image_url => $args->{'image_url'},
+#                     onchange => $onchange,  ## Implement this
+                     arc => $arc->id,
+                    };
+                    if ( $arc->indirect )
+                    {
+                        $fargs->{'disabled'} = 'disabled';
+                        $field = '-'.$field; # Don't read content
+                    }
+
+                    my $inputtype = $args->{'inputtype'} || 'input';
+                    no strict 'refs';           # For &{$inputtype} below
+                    $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
+                }
+
+                unless( $arc->indirect )
+                {
+                    $out .= $arc->edit_link_html;
+                }
+            }
+
+            when(/^-(string_.*)/)
+            {
+                debug "Adding $1 = ".$args->{$1};
+                $out .= $args->{$1};
             }
 
             default

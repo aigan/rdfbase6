@@ -5,7 +5,7 @@ package RDF::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -855,7 +855,24 @@ sub wuirc
 #    debug 2, "Using proplim ".query_desig($proplim); # DEBUG
 #    debug 2, "Using arclim ".query_desig($arclim); # DEBUG
 
-    my $multi = $args->{'multi'} || 0;
+
+    # Previous versions used arg multi. Migrate to use
+    # range_card_max. Use arc_type for backward compatability.
+    #
+    my $multi = $args->{'multi'};
+    unless ( defined $args->{'arc_type'} )
+    {
+        if ( $pred->first_prop('range_card_max')->equals(1) )
+        {
+            $args->{'arc_type'} = 'singular';
+        }
+    }
+    my $arc_type = $args->{'arc_type'};
+    my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
+    $multi //= $singular ? 0 : 1;
+
+
+
     my $no_arc = 0;             # for adding a second input field
 
     if ( ($args->{'disabled'}||'') eq 'disabled' )
@@ -871,14 +888,38 @@ sub wuirc
     {
         my $subj_id = $subj->id;
 
+
+        my $columns = $args->{'columns'} ||
+          $range->instance_class->table_columns( $pred, $args );
+        $args->{'columns'} = $columns;
+        $args->{'source'} = $subj;
+
+
+
         my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
         my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
 
         debug "Arcs list: @arcs" if $DEBUG;
         my $list_weight = 0;
 
-        foreach my $arc ( RDF::Base::List->new(\@arcs)->sorted(['obj.is_of_language.code',{on=>'weight', dir=>'desc'},{on=>'obj.weight', dir=>'desc'}])->as_array )
+        $out .= "<table class=\"wuirc\">\n";
+
+        foreach my $arc ( RDF::Base::List->new(\@arcs)->
+                          sorted(['obj.is_of_language.code',
+                                  {on=>'weight', dir=>'desc'},
+                                  {on=>'obj.weight', dir=>'desc'}])->
+                          as_array )
         {
+            $out .= $arc->table_row( $args );
+        }
+        $out .= "</table>\n";
+
+
+
+        if( 0 ) ####### OLD LOOP
+        {
+            my $arc; ### Just for syntax check now...
+
             my $arc_id = $arc->id;
             #debug $arc_id;
 
