@@ -8138,7 +8138,7 @@ sub commit
 
 	    unless( ++$cnt % 100 )
 	    {
-		debug "Saved $cnt";
+		debug "Saved n $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
@@ -8150,7 +8150,7 @@ sub commit
 
 	    unless( ++$cnt % 100 )
 	    {
-		debug "Saved $cnt";
+		debug "Saved cc $cnt";
 		$Para::Frame::REQ->may_yield;
 		die "cancelled" if $Para::Frame::REQ->cancelled;
 	    }
@@ -8165,6 +8165,7 @@ sub commit
 	# Re-add unhandled nodes.
 	# May miss the node triggering the error
 	#
+    debug "Re-adding unhandled nodes to unsaved and child_changed";
 	%UNSAVED = map { $_->id => $_ } @unsaved;
 	%CHILD_CHANGED = map { $_->id => $_ } @child_changed;
     }
@@ -8189,6 +8190,13 @@ sub rollback
 	$node->reset_cache;
     }
     %UNSAVED = ();
+
+    debug "ROLLBACK NODES";
+    foreach my $node ( values %CHILD_CHANGED )
+    {
+	$node->reset_cache;
+    }
+    %CHILD_CHANGED = ();
 
     foreach my $aid ( keys %TRANSACTION )
     {
