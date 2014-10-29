@@ -32,13 +32,13 @@ use constant CLUE_ANYTHING  => 128; # for overriding any other default
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
-use JSON; # to_json
+use JSON;                       # to_json
 
 use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Widget qw( hidden radio );
 use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
-			   package_to_module timediff compile );
+                           package_to_module timediff compile );
 
 use RDF::Base::Node;
 use RDF::Base::Search;
@@ -63,10 +63,10 @@ use RDF::Base::Constants qw( $C_language $C_valtext $C_valdate $C_root
                              $C_class $C_literal_class $C_resource $C_arc );
 
 use RDF::Base::Utils qw( valclean parse_query_props
-			 parse_form_field_prop is_undef arc_lock
-			 arc_unlock truncstring query_desig
-			 convert_query_prop_for_creation
-			 parse_propargs aais range_pred );
+                         parse_form_field_prop is_undef arc_lock
+                         arc_unlock truncstring query_desig
+                         convert_query_prop_for_creation
+                         parse_propargs aais range_pred );
 
 
 
@@ -74,9 +74,9 @@ use RDF::Base::Utils qw( valclean parse_query_props
 # DB rollbacks with a DB-connection that uses ONE db transaction, it
 # will roll back ALL things since the start of the transaction.
 
-our %UNSAVED;       # The node table
-our %CHILD_CHANGED; # For triggering on_child_changed
-our %TRANSACTION;   # The arc table
+our %UNSAVED;                   # The node table
+our %CHILD_CHANGED;             # For triggering on_child_changed
+our %TRANSACTION;               # The arc table
 our $ID;
 
 
@@ -186,71 +186,71 @@ sub get
 
     # Get the resource id
     #
-    if( $val_in !~ /^\d+$/ )
+    if ( $val_in !~ /^\d+$/ )
     {
-	if( ref $val_in and UNIVERSAL::isa($val_in, 'RDF::Base::Resource') )
-	{
-	    # This already is a (node?) obj
+        if ( ref $val_in and UNIVERSAL::isa($val_in, 'RDF::Base::Resource') )
+        {
+            # This already is a (node?) obj
 #	    debug "Got     $id";
-	    return $val_in;
-	}
+            return $val_in;
+        }
 
 #        if( ref $val_in )
 #        {
 #            confess "invalid value in get() ".datadump($val_in,1);
 #        }
 
-	if( $val_in eq 'new' ) # Minimal init for empty node
-	{
-	    $id = $RDF::dbix->get_nextval('node_seq');
-	    $node = $class->new( $id );
-	    $node->{'new'} = 1;
-	    $RDF::Base::Cache::Resource{ $id } = $node;
+        if ( $val_in eq 'new' ) # Minimal init for empty node
+        {
+            $id = $RDF::dbix->get_nextval('node_seq');
+            $node = $class->new( $id );
+            $node->{'new'} = 1;
+            $RDF::Base::Cache::Resource{ $id } = $node;
 
-	    if( my $nc = $args_in->{'new_class'} ) # Must be a Class node
-	    {
+            if ( my $nc = $args_in->{'new_class'} ) # Must be a Class node
+            {
 #                $nc->instance_class
 #                debug"NC: ".$nc->instance_class;
-		bless $node, $nc->instance_class;
+                bless $node, $nc->instance_class;
                 # for optimization
                 $node->initiate_rel; #if $node->can('initiate_rel');
-	    }
+            }
 
-	    return $node->init;
-	}
+            return $node->init;
+        }
 
 
-	# $val_in could be a hashref, but those are not chached
-	if( my $const = $RDF::Base::Constants::Label{$val_in} )
-	{
+        # $val_in could be a hashref, but those are not chached
+        if ( my $const = $RDF::Base::Constants::Label{$val_in} )
+        {
 #	    if( $val_in eq 'range' )
 #	    {
 #		cluck "Got const $val_in";
 #	    }
-	    return $const;
-	}
-	else
-	{
-	    unless( $node = $class->get_by_anything( $val_in ) )
-	    {
-		debug "Couldn't find $class what is ".query_desig($val_in);
-		return is_undef;
-	    }
+            return $const;
+        }
+        else
+        {
+            unless( $node = $class->get_by_anything( $val_in ) )
+            {
+                debug "Couldn't find $class what is ".query_desig($val_in);
+                return is_undef;
+            }
 
-	    $id = $node->id;
+            $id = $node->id;
 
-	    confess "no id for $node" unless $id; ### DEBUG
-	    # Cache id lookups
-	    #
+            confess "no id for $node" unless $id; ### DEBUG
+            # Cache id lookups
+            #
 #	    debug "Got $id: Caching node $id: $node";
-	    $RDF::Base::Cache::Resource{ $id } = $node;
+            $RDF::Base::Cache::Resource{ $id } = $node;
 
-	    return $node;
-	}
+            return $node;
+        }
     }
     else
     {
-	$id = $val_in;
+        $id = $val_in;
     }
 
 #    debug sprintf "id=%s (%s)", $id, ref($id);
@@ -258,10 +258,10 @@ sub get
     # Is the resource cached?
     #
     $node = $RDF::Base::Cache::Resource{ $id };
-    if( defined $node ) # May be literal with 'false' value
+    if ( defined $node )        # May be literal with 'false' value
     {
 #	debug "Got     $id from Resource cache: ".($node||'<undef>');
-	return $node;
+        return $node;
     }
 
 #    my $ts = Time::HiRes::time();
@@ -270,9 +270,9 @@ sub get
     # The node will be cached by the new()
 
     $args_in ||= {};
-    if( $args_in->{'initiate_rel'} ) # Optimization
+    if ( $args_in->{'initiate_rel'} ) # Optimization
     {
-	$node->initiate_rel;
+        $node->initiate_rel;
     }
 
     $node->first_bless(undef,$args_in->{'class_clue'})->init();
@@ -333,7 +333,7 @@ sub get_by_arc_rec
     my $id = $rec->{'obj'};
     unless( $id )
     {
-	return is_undef;
+        return is_undef;
     }
 
 #    debug "Arc rec $rec->{ver}";
@@ -359,7 +359,7 @@ sub get_by_id
 {
     my( $this, $id ) = @_;
 
-    return $this->get( $id ); # Now handles all types
+    return $this->get( $id );   # Now handles all types
 }
 
 
@@ -467,251 +467,251 @@ sub find_by_anything
 
 
 
-    if( debug > 1 )
+    if ( debug > 1 )
     {
-	debug "find_by_anything: $val ($coltype)";
-	if( $valtype )
-	{
-	    debug "  valtype ".$valtype->sysdesig;
-	}
+        debug "find_by_anything: $val ($coltype)";
+        if ( $valtype )
+        {
+            debug "  valtype ".$valtype->sysdesig;
+        }
     }
 
     # 1a. obj as object
     #
-    if( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Resource') )
+    if ( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Resource') )
     {
-	if( $coltype eq 'obj' )
-	{
-	    debug 3, "  obj as object";
-	    push @new, $val;
-	}
-	else # Resource as literal
-	{
-	    debug 3, "  obj as litral";
-	    push @new, $valtype->instance_class->parse($val,$args);
-	}
+        if ( $coltype eq 'obj' )
+        {
+            debug 3, "  obj as object";
+            push @new, $val;
+        }
+        else                    # Resource as literal
+        {
+            debug 3, "  obj as litral";
+            push @new, $valtype->instance_class->parse($val,$args);
+        }
     }
     # 1b. obj as literal
     #
-    elsif( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Literal') )
+    elsif ( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Literal') )
     {
-	debug 3, "  obj as litral";
-	push @new, $val;
+        debug 3, "  obj as litral";
+        push @new, $val;
     }
     #
     # 2. obj as subquery
     #
-    elsif( ref $val and ref $val eq 'HASH' )
+    elsif ( ref $val and ref $val eq 'HASH' )
     {
-	debug 3, "  obj as subquery";
-	debug "    query: ".query_desig($val) if debug > 3;
-	my $objs = $this->find($val, $args);
-	unless( $objs->size )
-	{
-	    return is_undef;
-	}
+        debug 3, "  obj as subquery";
+        debug "    query: ".query_desig($val) if debug > 3;
+        my $objs = $this->find($val, $args);
+        unless( $objs->size )
+        {
+            return is_undef;
+        }
 
-	push @new, $objs->as_array;
+        push @new, $objs->as_array;
     }
     #
     # 3. obj is not an obj.  Looking at coltype
     #
-    elsif( $coltype ne 'obj' )
+    elsif ( $coltype ne 'obj' )
     {
-	debug 3, "  obj as not an obj, It's a $coltype";
+        debug 3, "  obj as not an obj, It's a $coltype";
 
-	my( $valref );
-	if( ref $val )
-	{
-	    $valref = $val;
-	}
-	else
-	{
-	    $valref ||= \$val;
-	}
+        my( $valref );
+        if ( ref $val )
+        {
+            $valref = $val;
+        }
+        else
+        {
+            $valref ||= \$val;
+        }
 
-	$valtype ||= $this->get_by_label( $coltype );
+        $valtype ||= $this->get_by_label( $coltype );
 
 #	debug "Parsing literal using valtype ".$valtype->sysdesig;
 #	debug query_desig $valref;
 
-	$val = $valtype->instance_class->parse( $valref,
-						{
-						 %$args,
-						 aclim => 'active',
-						}
-					      );
-	push @new, $val;
+        $val = $valtype->instance_class->parse( $valref,
+                                                {
+                                                 %$args,
+                                                 aclim => 'active',
+                                                }
+                                              );
+        push @new, $val;
     }
     #
     # 4. obj as list
     #
-    elsif( ref $val and UNIVERSAL::isa( $val, 'Para::Frame::List') )
+    elsif ( ref $val and UNIVERSAL::isa( $val, 'Para::Frame::List') )
     {
-	debug 3, "  obj as list";
-	foreach my $elem ( $val->as_array )
-	{
-	    my $subl = $this->find_by_anything($elem);
-	    if( my $size = $subl->size )
-	    {
-		if( $size == 1 )
-		{
-		    push @new, $subl->get_first_nos;
-		}
-		else
-		{
-		    push @new, $subl;
-		}
-	    }
-	}
+        debug 3, "  obj as list";
+        foreach my $elem ( $val->as_array )
+        {
+            my $subl = $this->find_by_anything($elem);
+            if ( my $size = $subl->size )
+            {
+                if ( $size == 1 )
+                {
+                    push @new, $subl->get_first_nos;
+                }
+                else
+                {
+                    push @new, $subl;
+                }
+            }
+        }
     }
-    elsif( (ref $val) and (ref $val eq 'ARRAY') )
+    elsif ( (ref $val) and (ref $val eq 'ARRAY') )
     {
-	debug 3, "  obj as list";
-	foreach my $elem ( @$val )
-	{
-	    my $subl = $this->find_by_anything($elem);
-	    if( my $size = $subl->size )
-	    {
-		if( $size == 1 )
-		{
-		    push @new, $subl->get_first_nos;
-		}
-		else
-		{
-		    push @new, $subl;
-		}
-	    }
-	}
+        debug 3, "  obj as list";
+        foreach my $elem ( @$val )
+        {
+            my $subl = $this->find_by_anything($elem);
+            if ( my $size = $subl->size )
+            {
+                if ( $size == 1 )
+                {
+                    push @new, $subl->get_first_nos;
+                }
+                else
+                {
+                    push @new, $subl;
+                }
+            }
+        }
     }
     #
     # 5/6. obj as name of obj with criterions
     #
-    elsif( $val =~ /^\s*(.*?)\s*\(\s*(.*?)\s*\)\s*$/ )
+    elsif ( $val =~ /^\s*(.*?)\s*\(\s*(.*?)\s*\)\s*$/ )
     {
-	debug 3, "  obj as name of obj with criterions";
-	confess "CONFUSED ($val)" if $val =~ /HASH\(0x\w+\)$/;
+        debug 3, "  obj as name of obj with criterions";
+        confess "CONFUSED ($val)" if $val =~ /HASH\(0x\w+\)$/;
 
-	my $name = trim($1);
-	my $spec = trim($2);
-	my $objs;
-	if( $spec !~ /\s/ ) # just one word
-	{
-	    debug 3, "    Finding nodes with $spec = $name";
-	    $objs = $this->find({$spec => $name}, $args);
-	}
-	else
-	{
-	    my $props = parse_query_props( $spec );
-	    $props->{'predor_name_-_code_-_name_short_clean'} = $name;
-	    debug "    Constructing props for find: ".query_desig($props)
-	      if debug > 3;
-	    $objs = $this->find($props, $args);
-	}
+        my $name = trim($1);
+        my $spec = trim($2);
+        my $objs;
+        if ( $spec !~ /\s/ )    # just one word
+        {
+            debug 3, "    Finding nodes with $spec = $name";
+            $objs = $this->find({$spec => $name}, $args);
+        }
+        else
+        {
+            my $props = parse_query_props( $spec );
+            $props->{'predor_name_-_code_-_name_short_clean'} = $name;
+            debug "    Constructing props for find: ".query_desig($props)
+              if debug > 3;
+            $objs = $this->find($props, $args);
+        }
 
-	unless( $objs->size )
-	{
-	    croak "No obj with name '$val' found\n";
-	    return is_undef;
-	}
+        unless( $objs->size )
+        {
+            croak "No obj with name '$val' found\n";
+            return is_undef;
+        }
 
-	push @new, $objs->as_array;
+        push @new, $objs->as_array;
     }
     #
     # 7. obj as obj id and name
     #
-    elsif( $val =~ /^\s*(\d+)\s*:\s*(.*?)\s*$/ )
+    elsif ( $val =~ /^\s*(\d+)\s*:\s*(.*?)\s*$/ )
     {
-	debug 3, "  obj as obj id and name";
-	my $id = trim($1);
-	my $name = trim($2);
+        debug 3, "  obj as obj id and name";
+        my $id = trim($1);
+        my $name = trim($2);
 
-	my $obj = $this->get( $id );
-	my $desig = $obj->desig;
-	if( $desig ne $name )
-	{
-	    # The name could be truncated
+        my $obj = $this->get( $id );
+        my $desig = $obj->desig;
+        if ( $desig ne $name )
+        {
+            # The name could be truncated
 
-	    if( $name =~ s/\.\.\.$// and $name =~ /^$desig/ )
-	    {
-		debug 3, "    name was truncated";
-	    }
-	    else
-	    {
-		confess('validation', "id/name mismatch.\nid $id is called '$desig'");
-	    }
-	}
-	push @new, $obj;
+            if ( $name =~ s/\.\.\.$// and $name =~ /^$desig/ )
+            {
+                debug 3, "    name was truncated";
+            }
+            else
+            {
+                confess('validation', "id/name mismatch.\nid $id is called '$desig'");
+            }
+        }
+        push @new, $obj;
     }
     #
     # 8. obj as obj id with prefix '#'
     #
-    elsif( $val =~ /^\s*#(\d+)\s*$/ )
+    elsif ( $val =~ /^\s*#(\d+)\s*$/ )
     {
-	debug 3, "  obj as obj id with prefix '#'";
-	my $id = $1;
-	my $obj = $this->get( $id );
-	push @new, $obj;
+        debug 3, "  obj as obj id with prefix '#'";
+        my $id = $1;
+        my $obj = $this->get( $id );
+        push @new, $obj;
     }
     #
     # 9. no value
     #
-    elsif( not length $val )
+    elsif ( not length $val )
     {
-	# Keep @new empty
+        # Keep @new empty
     }
     #
     # 10. obj as label of obj or 11. obj as name of obj
     #
-    elsif( $val !~ /^\s*\d+\s*$/ )
+    elsif ( $val !~ /^\s*\d+\s*$/ )
     {
-	debug 3, "  obj as label or name of obj";
+        debug 3, "  obj as label or name of obj";
 
-	if( UNIVERSAL::isa($val, "RDF::Base::Literal" ) )
-	{
-	    $val = $val->plain;
-	}
-	elsif( not ref $val )
-	{
-	    trim(\$val);
-	}
+        if ( UNIVERSAL::isa($val, "RDF::Base::Literal" ) )
+        {
+            $val = $val->plain;
+        }
+        elsif ( not ref $val )
+        {
+            trim(\$val);
+        }
 
-	unless( ref $val )
-	{
-	    if( my $const = $this->get_by_label($val,{nonfatal=>1}) )
-	    {
-		@new = ( $const );
-	    }
+        unless( ref $val )
+        {
+            if ( my $const = $this->get_by_label($val,{nonfatal=>1}) )
+            {
+                @new = ( $const );
+            }
 
-	    unless( @new )
-	    {
-		# Used to use find_simple.  But this is a general find
-		# function and can not assume the simple case
+            unless( @new )
+            {
+                # Used to use find_simple.  But this is a general find
+                # function and can not assume the simple case
 #		debug "SEARCHING for name_clean $val that is ".$valtype->sysdesig;
-		confess "INVALID search; not a label or constant"
-		  if $RDF::Base::IN_STARTUP; # for $C_resource
+                confess "INVALID search; not a label or constant"
+                  if $RDF::Base::IN_STARTUP; # for $C_resource
 
-		if( $valtype->id == $C_resource->id )
-		{
-		    @new = $this->find({ name_clean => $val,
-				       }, $args)->as_array;
-		}
-		else
-		{
-		    @new = $this->find({ name_clean => $val,
-					 is => $valtype,
-				       }, $args)->as_array;
-		}
-	    }
-	}
+                if ( $valtype->id == $C_resource->id )
+                {
+                    @new = $this->find({ name_clean => $val,
+                                       }, $args)->as_array;
+                }
+                else
+                {
+                    @new = $this->find({ name_clean => $val,
+                                         is => $valtype,
+                                       }, $args)->as_array;
+                }
+            }
+        }
     }
     #
     # 12. obj as obj id
     #
     else
     {
-	debug 3, "  obj as obj id";
-	push @new, $this->get_by_id( trim($val) );
+        debug 3, "  obj as obj id";
+        push @new, $this->get_by_id( trim($val) );
     }
 
 #    warn "  returning @new\n";
@@ -737,12 +737,12 @@ sub find_by_string
     my $list = RDF::Base::Resource->find_by_anything( $value, $args );
 
     my $props = {};
-    if( $props_in->{'is'} )
+    if ( $props_in->{'is'} )
     {
         $props->{'is'} = $props_in->{'is'};
     }
 
-    if( $props_in->{'scof'} )
+    if ( $props_in->{'scof'} )
     {
         $props->{'scof'} = $props_in->{'scof'};
     }
@@ -777,9 +777,9 @@ sub get_id
     my $class = ref($this) || $this;
 
     return undef unless defined $label;
-    if( my $const = $RDF::Base::Constants::Label{$label} )
+    if ( my $const = $RDF::Base::Constants::Label{$label} )
     {
-	return $const->id;
+        return $const->id;
     }
 
     # TODO: Should return undef rather than is_undf
@@ -858,7 +858,7 @@ sub find
 
     unless( ref $query )
     {
-	$query = { 'name' => $query };
+        $query = { 'name' => $query };
     }
 
 #    debug "Finding ".query_desig($query);
@@ -875,32 +875,32 @@ sub find
     my $default = $args->{'default'} || {};
     foreach my $key ( keys %$default )
     {
-	unless( defined $query->{$key} )
-	{
-	    $query->{$key} = $default->{$key};
-	}
+        unless ( defined $query->{$key} )
+        {
+            $query->{$key} = $default->{$key};
+        }
     }
 
-    if( ref $this )
+    if ( ref $this )
     {
-	if( UNIVERSAL::isa($this, 'RDF::Base::Resource') )
-	{
-	    $this = RDF::Base::List->new([$this]);
-	}
+        if ( UNIVERSAL::isa($this, 'RDF::Base::Resource') )
+        {
+            $this = RDF::Base::List->new([$this]);
+        }
 
-	if( UNIVERSAL::isa($this, 'RDF::Base::List') )
-	{
-	    return $this->find($query, $args);
-	}
+        if ( UNIVERSAL::isa($this, 'RDF::Base::List') )
+        {
+            return $this->find($query, $args);
+        }
     }
     my $class = ref($this) || $this;
 
     foreach my $key ( keys %$query )
     {
-	unless( defined $query->{$key} )
-	{
-	    delete $query->{$key};
-	}
+        unless ( defined $query->{$key} )
+        {
+            delete $query->{$key};
+        }
     }
 
     my $search = RDF::Base::Search->new($args);
@@ -964,21 +964,21 @@ sub find_simple
 
     my $value = valclean($value_in);
     my $list = $RDF::Base::Cache::find_simple{$pred_id}{$value};
-    unless( defined $list ) # Avoid using list overload
+    unless( defined $list )     # Avoid using list overload
     {
-	my @nodes;
-	my $st = "select subj from arc where pred=? and valclean=? and active is true";
-	my $dbh = $RDF::dbix->dbh;
-	my $sth = $dbh->prepare($st);
-	$sth->execute($pred_id, $value);
-	while( my($subj_id) = $sth->fetchrow_array )
-	{
-	    push @nodes, RDF::Base::Resource->get( $subj_id );
-	}
-	$sth->finish;
+        my @nodes;
+        my $st = "select subj from arc where pred=? and valclean=? and active is true";
+        my $dbh = $RDF::dbix->dbh;
+        my $sth = $dbh->prepare($st);
+        $sth->execute($pred_id, $value);
+        while ( my($subj_id) = $sth->fetchrow_array )
+        {
+            push @nodes, RDF::Base::Resource->get( $subj_id );
+        }
+        $sth->finish;
 
-	$list = RDF::Base::List->new(\@nodes);
-	$RDF::Base::Cache::find_simple{$pred_id}{$value} = $list;
+        $list = RDF::Base::List->new(\@nodes);
+        $RDF::Base::Cache::find_simple{$pred_id}{$value} = $list;
     }
 
     return $list;
@@ -1026,93 +1026,93 @@ sub find_one
     my( $args ) = parse_propargs($args_in);
     my $nodes = $this->find( $query, $args );
 
-    if( $nodes->size > 1 )
+    if ( $nodes->size > 1 )
     {
-	my $new_nodes;
-	debug "Found more than one match";
+        my $new_nodes;
+        debug "Found more than one match";
 
-	if( $args->{'clean'} )
-	{
-	    # Look for an exact match
-	    debug "Trying to exclude some matches";
-	    my $new_nodes = $nodes->find($query,
-					 { %$args,
-					   clean => 0,
-					 });
+        if ( $args->{'clean'} )
+        {
+            # Look for an exact match
+            debug "Trying to exclude some matches";
+            my $new_nodes = $nodes->find($query,
+                                         { %$args,
+                                           clean => 0,
+                                         });
 
-	    # Go with the original search result if the exclusion
-	    # excluded all matches
+            # Go with the original search result if the exclusion
+            # excluded all matches
 
-	    unless( $new_nodes->[0] )
-	    {
-		$new_nodes = $nodes;
-	    }
-	}
-	else
-	{
-	    $new_nodes = $nodes;
-	}
+            unless( $new_nodes->[0] )
+            {
+                $new_nodes = $nodes;
+            }
+        }
+        else
+        {
+            $new_nodes = $nodes;
+        }
 
-	if( $new_nodes->[1] )
-	{
-	    # TODO: Explain 'kriterierna'
+        if ( $new_nodes->[1] )
+        {
+            # TODO: Explain 'kriterierna'
 
-	    my $req = $Para::Frame::REQ;
-	    my $uri = $req->page->url_path_slash;
-	    $req->session->route->bookmark;
-	    $req->set_error_response_path("/alternatives.tt");
+            my $req = $Para::Frame::REQ;
+            my $uri = $req->page->url_path_slash;
+            $req->session->route->bookmark;
+            $req->set_error_response_path("/alternatives.tt");
 
 
-	    my $result = $Para::Frame::REQ->result;
-	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
-	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    $result->{'info'}{'alternatives'}{'args'} = $args;
+            my $result = $Para::Frame::REQ->result;
+            $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+            $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+            $result->{'info'}{'alternatives'}{'query'} = $query;
+            $result->{'info'}{'alternatives'}{'args'} = $args;
 
-	    $result->{'info'}{'alternatives'}{'rowformat'} =
-	      sub
-	      {
-		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
-		  my $cstr = $item->list('scof',undef,['adirect'])->desig;
-		  my $desig = $item->desig;
-		  my $desc = "$tstr $desig";
-		  if( $cstr )
-		  {
-		      $desc .= " ($cstr)";
-		  }
-		  my $link = Para::Frame::Widget::jump($desc, $uri,
-						       {
-							route_alternative => $item->id,
-							run => 'next_step',
-							step_replace_params => 'route_alternative',
-						       });
-		  return $link;
-	      };
+            $result->{'info'}{'alternatives'}{'rowformat'} =
+              sub
+              {
+                  my( $item ) = @_;
+                  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
+                  my $cstr = $item->list('scof',undef,['adirect'])->desig;
+                  my $desig = $item->desig;
+                  my $desc = "$tstr $desig";
+                  if ( $cstr )
+                  {
+                      $desc .= " ($cstr)";
+                  }
+                  my $link = Para::Frame::Widget::jump($desc, $uri,
+                                                       {
+                                                        route_alternative => $item->id,
+                                                        run => 'next_step',
+                                                        step_replace_params => 'route_alternative',
+                                                       });
+                  return $link;
+              };
 
-	    $result->{'info'}{'alternatives'}{'button'} =
-	      [
-	       ['Backa', $req->referer_path(), 'skip_step'],
-	      ];
-	    $req->q->delete_all();
+            $result->{'info'}{'alternatives'}{'button'} =
+              [
+               ['Backa', $req->referer_path(), 'skip_step'],
+              ];
+            $req->q->delete_all();
 
-	    throw('alternatives', "More than one node matches the criterions");
-	}
+            throw('alternatives', "More than one node matches the criterions");
+        }
 
-	$nodes = $new_nodes;
+        $nodes = $new_nodes;
     }
 
     my $node = $nodes->[0];
     unless( $nodes->[0] )
     {
-	my $req = $Para::Frame::REQ;
-	my $result = $req->result;
-	$result->{'info'}{'alternatives'}{'alts'} = undef;
-	$result->{'info'}{'alternatives'}{'query'} = $query;
-	$result->{'info'}{'alternatives'}{'args'} = $args;
-	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	$req->set_error_response_path('/rb/node/query_error.tt');
-        if( debug )
+        my $req = $Para::Frame::REQ;
+        my $result = $req->result;
+        $result->{'info'}{'alternatives'}{'alts'} = undef;
+        $result->{'info'}{'alternatives'}{'query'} = $query;
+        $result->{'info'}{'alternatives'}{'args'} = $args;
+        $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+        $req->set_error_response_path('/rb/node/query_error.tt');
+        if ( debug )
         {
             debug(1,datadump($query,2));
             debug(1,datadump($args,2));
@@ -1171,110 +1171,110 @@ sub find_set
 
     my $nodes = $this->find( $query, $args )->as_arrayref;
 
-    if( $nodes->[1] )
+    if ( $nodes->[1] )
     {
-	debug "Found more than one match";
-	my $new_nodes;
+        debug "Found more than one match";
+        my $new_nodes;
 
-	if( $args->{'clean'} )
-	{
-	    # Look for an exact match
-	    debug "Trying to exclude some matches";
-	    $new_nodes = $nodes->find($query,
-				      {
-				       %$args,
-				       clean => 0,
-				      });
+        if ( $args->{'clean'} )
+        {
+            # Look for an exact match
+            debug "Trying to exclude some matches";
+            $new_nodes = $nodes->find($query,
+                                      {
+                                       %$args,
+                                       clean => 0,
+                                      });
 
-	    # Go with the original search result if the exclusion
-	    # excluded all matches
+            # Go with the original search result if the exclusion
+            # excluded all matches
 
-	    unless( $new_nodes->[0] )
-	    {
-		$new_nodes = $nodes;
-	    }
-	}
-	else
-	{
-	    $new_nodes = $nodes;
-	}
+            unless( $new_nodes->[0] )
+            {
+                $new_nodes = $nodes;
+            }
+        }
+        else
+        {
+            $new_nodes = $nodes;
+        }
 
-	if( $new_nodes->[1] )
-	{
-	    unless( $Para::Frame::REQ->is_from_client )
-	    {
-		throw('alternatives',
-		      "More than one node matches the criterions");
-	    }
+        if ( $new_nodes->[1] )
+        {
+            unless( $Para::Frame::REQ->is_from_client )
+            {
+                throw('alternatives',
+                      "More than one node matches the criterions");
+            }
 
-	    my $req = $Para::Frame::REQ;
-	    my $uri = $req->page->url_path_slash;
-	    $req->session->route->bookmark;
-	    $req->set_error_response_path("/alternatives.tt");
+            my $req = $Para::Frame::REQ;
+            my $uri = $req->page->url_path_slash;
+            $req->session->route->bookmark;
+            $req->set_error_response_path("/alternatives.tt");
 
-	    my $result = $Para::Frame::REQ->result;
-	    $result->{'info'}{'alternatives'}{'alts'} = $nodes;
-	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    $result->{'info'}{'alternatives'}{'query'} = $query;
-	    $result->{'info'}{'alternatives'}{'args'} = $args;
+            my $result = $Para::Frame::REQ->result;
+            $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+            $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+            $result->{'info'}{'alternatives'}{'query'} = $query;
+            $result->{'info'}{'alternatives'}{'args'} = $args;
 
-	    $result->{'info'}{'alternatives'}{'rowformat'} =
-	      sub
-	      {
-		  my( $item ) = @_;
-		  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
-		  my $cstr = $item->list('scof',undef,['adirect'])->desig;
-		  my $desig = $item->desig;
-		  my $desc = "$tstr $desig";
-		  if( $cstr )
-		  {
-		      $desc .= " ($cstr)";
-		  }
-		  my $link = Para::Frame::Widget::jump($desc, $uri,
-						       {
-							route_alternative => $item->id,
-							run => 'next_step',
-							step_replace_params => 'route_alternative',
-						       });
-		  return $link;
-	      };
+            $result->{'info'}{'alternatives'}{'rowformat'} =
+              sub
+              {
+                  my( $item ) = @_;
+                  my $tstr = $item->list('is', undef,['adirect'])->desig || '';
+                  my $cstr = $item->list('scof',undef,['adirect'])->desig;
+                  my $desig = $item->desig;
+                  my $desc = "$tstr $desig";
+                  if ( $cstr )
+                  {
+                      $desc .= " ($cstr)";
+                  }
+                  my $link = Para::Frame::Widget::jump($desc, $uri,
+                                                       {
+                                                        route_alternative => $item->id,
+                                                        run => 'next_step',
+                                                        step_replace_params => 'route_alternative',
+                                                       });
+                  return $link;
+              };
 
-	    $result->{'info'}{'alternatives'}{'button'} =
-	      [
-	       ['Backa', $req->referer_path(), 'skip_step'],
-	      ];
-	    $req->q->delete_all();
+            $result->{'info'}{'alternatives'}{'button'} =
+              [
+               ['Backa', $req->referer_path(), 'skip_step'],
+              ];
+            $req->q->delete_all();
 
-	    throw('alternatives', "More than one node matches the criterions");
-	}
+            throw('alternatives', "More than one node matches the criterions");
+        }
 
-	$nodes = $new_nodes;
+        $nodes = $new_nodes;
     }
 
     my $node = $nodes->[0];
     unless( $node )
     {
-	my $query_new = convert_query_prop_for_creation($query);
+        my $query_new = convert_query_prop_for_creation($query);
 
-	my $default_create = $args->{'default_create'} || {};
-	foreach my $pred ( keys %$default_create )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default_create->{$pred};
-	    }
-	}
+        my $default_create = $args->{'default_create'} || {};
+        foreach my $pred ( keys %$default_create )
+        {
+            unless ( defined $query_new->{$pred} )
+            {
+                $query_new->{$pred} = $default_create->{$pred};
+            }
+        }
 
-	my $default = $args->{'default'} || {};
-	foreach my $pred ( keys %$default )
-	{
-	    unless( defined $query_new->{$pred} )
-	    {
-		$query_new->{$pred} = $default->{$pred};
-	    }
-	}
+        my $default = $args->{'default'} || {};
+        foreach my $pred ( keys %$default )
+        {
+            unless ( defined $query_new->{$pred} )
+            {
+                $query_new->{$pred} = $default->{$pred};
+            }
+        }
 
-	return $this->create($query_new, $args);
+        return $this->create($query_new, $args);
     }
 
     return $node;
@@ -1326,13 +1326,13 @@ sub set_one
 
 #    debug "set_one found ".query_desig($nodes);
 
-    while( my $enode = $nodes->get_next_nos )
+    while ( my $enode = $nodes->get_next_nos )
     {
-	$enode->merge_node($node,
-			   {
-			    %$args,
-			    move_literals => 1,
-			   });
+        $enode->merge_node($node,
+                           {
+                            %$args,
+                            move_literals => 1,
+                           });
     }
 
     my $query_new = convert_query_prop_for_creation($query);
@@ -1340,7 +1340,7 @@ sub set_one
     my $default_create = $args->{'default_create'} || {};
     foreach my $pred ( keys %$default_create )
     {
-        unless( defined $query_new->{$pred} )
+        unless ( defined $query_new->{$pred} )
         {
             $query_new->{$pred} = $default_create->{$pred};
         }
@@ -1349,7 +1349,7 @@ sub set_one
     my $default = $args->{'default'} || {};
     foreach my $pred ( keys %$default )
     {
-        unless( defined $query_new->{$pred} )
+        unless ( defined $query_new->{$pred} )
         {
             $query_new->{$pred} = $default->{$pred};
         }
@@ -1357,14 +1357,14 @@ sub set_one
 
     unless( $node )
     {
-	return $this->create($query_new, $args);
+        return $this->create($query_new, $args);
     }
 
-    if( $args->{'activate_new_arcs'} )
+    if ( $args->{'activate_new_arcs'} )
     {
         foreach my $pred ( keys %$query_new )
         {
-            if( $pred =~ /^rev_(.*)/ )
+            if ( $pred =~ /^rev_(.*)/ )
             {
                 foreach my $arc ( $node->revarc_list($1,undef,['new','submitted'])->as_array )
                 {
@@ -1440,33 +1440,33 @@ sub create
 
     confess "invalid props: $props" unless ref $props;
 
-    my %s; #special
-    foreach my $pred_name (qw( created created_by update updated_by ))
-    {
-	$s{ $pred_name } = Para::Frame::List->
-	  new_any( $props->{ $pred_name} )->get_first_nos;
-	delete( ${$props}{$pred_name} );
-    }
+    my %s; #special             
+      foreach my $pred_name (qw( created created_by update updated_by ))
+      {
+          $s{ $pred_name } = Para::Frame::List->
+            new_any( $props->{ $pred_name} )->get_first_nos;
+          delete( ${$props}{$pred_name} );
+      }
 
     ### for creating and tagging the node
     my $create_node = $args->{'create_node_rec'};
-    if( $s{updated} or $s{created} or $s{updated_by} or $s{created_by} )
+    if ( $s{updated} or $s{created} or $s{updated_by} or $s{created_by} )
     {
-	$create_node = 1;
+        $create_node = 1;
     }
 
     $s{created} ||= $s{updated} || now();
     $s{created_by} ||= $s{updated_by};
-    unless( $s{created_by} )
+    unless ( $s{created_by} )
     {
-	if( $Para::Frame::REQ and $Para::Frame::REQ->user )
-	{
-	    $s{created_by} = $Para::Frame::REQ->user;
-	}
-	else
-	{
-	    $s{created_by} = $C_root;
-	}
+        if ( $Para::Frame::REQ and $Para::Frame::REQ->user )
+        {
+            $s{created_by} = $Para::Frame::REQ->user;
+        }
+        else
+        {
+            $s{created_by} = $C_root;
+        }
     }
 
 
@@ -1478,76 +1478,76 @@ sub create
 
     foreach my $pred_name ( @props_list )
     {
-	# May not be only Resources
-	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
+        # May not be only Resources
+        my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
 
-	# Check for definedness
-	foreach my $val ( $vals->as_array )
-	{
-	    debug 2, "Checking $pred_name = ".query_desig($val) if debug > 1;
-	    # '0' is valid
-	    if( ($val and ((ref $val and not $val->defined) or not length $val)) )
-	    {
-		confess "Tried to create a node with an undefined value as $pred_name";
-	    }
-	}
+        # Check for definedness
+        foreach my $val ( $vals->as_array )
+        {
+            debug 2, "Checking $pred_name = ".query_desig($val) if debug > 1;
+            # '0' is valid
+            if ( ($val and ((ref $val and not $val->defined) or not length $val)) )
+            {
+                confess "Tried to create a node with an undefined value as $pred_name";
+            }
+        }
 
-	if( $pred_name eq 'label' )
-	{
-	    my $node = RDF::Base::Resource->get( $subj_id );
-	    if( $vals->size > 1 )
-	    {
-		confess "Can't give a node more than one label";
-	    }
-	    $node->set_label( $vals->get_first_nos );
-	}
-	elsif( $pred_name =~ /^rev_(.*)$/ )
-	{
-	    $pred_name = $1;
+        if ( $pred_name eq 'label' )
+        {
+            my $node = RDF::Base::Resource->get( $subj_id );
+            if ( $vals->size > 1 )
+            {
+                confess "Can't give a node more than one label";
+            }
+            $node->set_label( $vals->get_first_nos );
+        }
+        elsif ( $pred_name =~ /^rev_(.*)$/ )
+        {
+            $pred_name = $1;
 
-	    foreach my $val ( $vals->as_array )
-	    {
-		RDF::Base::Arc->create({
-					subj       => $val,
-					pred       => $pred_name,
-					obj        => $subj_id,
-					created    => $s{created},
-					created_by => $s{created_by},
-				       }, $args);
-	    }
-	}
-	else
-	{
-	    foreach my $val ( $vals->as_array )
-	    {
-		RDF::Base::Arc->create({
-					subj    => $subj_id,
-					pred    => $pred_name,
-					value   => $val,
-					created    => $s{created},
-					created_by => $s{created_by},
-				       }, $args);
-	    }
-	}
+            foreach my $val ( $vals->as_array )
+            {
+                RDF::Base::Arc->create({
+                                        subj       => $val,
+                                        pred       => $pred_name,
+                                        obj        => $subj_id,
+                                        created    => $s{created},
+                                        created_by => $s{created_by},
+                                       }, $args);
+            }
+        }
+        else
+        {
+            foreach my $val ( $vals->as_array )
+            {
+                RDF::Base::Arc->create({
+                                        subj    => $subj_id,
+                                        pred    => $pred_name,
+                                        value   => $val,
+                                        created    => $s{created},
+                                        created_by => $s{created_by},
+                                       }, $args);
+            }
+        }
     }
 
     my $node = RDF::Base::Resource->get( $subj_id );
 
-    if( $create_node )
+    if ( $create_node )
     {
-	$node->mark_updated( $s{updated}||$s{created},
-			     $s{updated_by}||$s{created_by} );
+        $node->mark_updated( $s{updated}||$s{created},
+                             $s{updated_by}||$s{created_by} );
 
-	$node->{'created_obj'} = RDF::Base::Literal::Time->
-	  get( $s{created} );
+        $node->{'created_obj'} = RDF::Base::Literal::Time->
+          get( $s{created} );
 
-	$node->{'created_by_obj'} = RDF::Base::Resource->
-	  get( $s{created_by} );
+        $node->{'created_by_obj'} = RDF::Base::Resource->
+          get( $s{created_by} );
     }
 
     unless( @props_list )
     {
-	$node->{'new'} = 1;
+        $node->{'new'} = 1;
     }
 
 
@@ -1589,33 +1589,35 @@ sub form_url
 
 #    warn "$n\n";
 
-    if( $n->is_arc )
+    if ( $n->is_arc )
     {
 #	warn "  is an ARC\n";
-	$path = 'rb/node/arc/update.tt';
+        $path = 'rb/node/arc/update.tt';
     }
     else
     {
 
-	# In case we inherit in several steps, prioritise the direct
-	# is-property. The general solution would have use special
-	# sorting of arcs in order of deapth. On top of that, we would
-	# have to sort by weight for class_form_url on the same level.
+        # In case we inherit in several steps, prioritise the direct
+        # is-property. The general solution would have use special
+        # sorting of arcs in order of deapth. On top of that, we would
+        # have to sort by weight for class_form_url on the same level.
 
-	my $alts = $n->arc_list('is',undef,['active'])->
-	  sorted([{on=>'direct',dir=>'desc'},
-		  {on=>'obj.weight', dir=>'desc'},
-		  {on=>'distance'}])->
-		    vals->first_prop('class_form_url');
+        my $alts = $n->arc_list('is',undef,['active'])->
+          sorted([{on=>'direct',dir=>'desc'},
+                  {
+                   on=>'obj.weight', dir=>'desc'},
+                  {
+                   on=>'distance'}])->
+                     vals->first_prop('class_form_url');
 #	debug $alts;
-	if( my $path_node = $alts->get_first_nos )
-	{
-	    $path = $path_node->plain;
-	}
-	else
-	{
-	    $path = 'rb/node/update.tt';
-	}
+        if ( my $path_node = $alts->get_first_nos )
+        {
+            $path = $path_node->plain;
+        }
+        else
+        {
+            $path = 'rb/node/update.tt';
+        }
     }
 
     my $url = URI->new($path)->abs($base);
@@ -1686,13 +1688,13 @@ sub name
 {
     my $node = shift;
 #    warn "Called name...\n";
-    if( @_ )
+    if ( @_ )
     {
-	return $node->list('name', @_);
+        return $node->list('name', @_);
     }
     else
     {
-	return $node->prop('name');
+        return $node->prop('name');
     }
 }
 
@@ -1723,7 +1725,8 @@ Relevant for L<RDF::Base::Arc>. For other resources, calls L</empty>.
 sub is_removed
 {
     return shift->empty(@_);
-};
+}
+;
 
 
 ##############################################################################
@@ -1744,39 +1747,39 @@ sub empty
 
     my $DEBUG = 0;
     debug "node $node->{id} empty?" if $DEBUG;
-    if( $node->{'new'} )
+    if ( $node->{'new'} )
     {
-	debug "  new" if $DEBUG;
-	return 1;
+        debug "  new" if $DEBUG;
+        return 1;
     }
-    elsif( scalar keys(%{$node->{'arc_id'}}) )
+    elsif ( scalar keys(%{$node->{'arc_id'}}) )
     {
-	debug "  has arcs" if $DEBUG;
-	return 0;
+        debug "  has arcs" if $DEBUG;
+        return 0;
     }
     else
     {
-	$node->initiate_node;
-	if( $node->{'initiated_node'} > 1 )
-	{
-	    debug "  initiated_node" if $DEBUG;
-	    return 0;
-	}
+        $node->initiate_node;
+        if ( $node->{'initiated_node'} > 1 )
+        {
+            debug "  initiated_node" if $DEBUG;
+            return 0;
+        }
 
-	debug "  checking DB" if $DEBUG;
-	my $st = "select count(ver) from arc where subj=? or obj=? or ver=? or id=?";
-	my $dbh = $RDF::dbix->dbh;
-	my $sth = $dbh->prepare($st);
-	my $node_id = $node->id;
-	$sth->execute($node_id, $node_id, $node_id, $node_id);
-	my $res = 1;
-	if( $sth->fetchrow_array )
-	{
-	    debug "  found data in db" if $DEBUG;
-	    $res = 0;
-	}
-	$sth->finish;
-	return $res;
+        debug "  checking DB" if $DEBUG;
+        my $st = "select count(ver) from arc where subj=? or obj=? or ver=? or id=?";
+        my $dbh = $RDF::dbix->dbh;
+        my $sth = $dbh->prepare($st);
+        my $node_id = $node->id;
+        $sth->execute($node_id, $node_id, $node_id, $node_id);
+        my $res = 1;
+        if ( $sth->fetchrow_array )
+        {
+            debug "  found data in db" if $DEBUG;
+            $res = 0;
+        }
+        $sth->finish;
+        return $res;
     }
 }
 
@@ -1794,9 +1797,9 @@ Returns: L<RDF::Base::Literal::Time> object
 sub created
 {
     my( $n ) = @_;
-    if( defined $n->{'created_obj'} )
+    if ( defined $n->{'created_obj'} )
     {
-	return $n->{'created_obj'};
+        return $n->{'created_obj'};
     }
 
     return $n->{'created_obj'} =
@@ -1817,9 +1820,9 @@ Returns: L<RDF::Base::Literal::Time> object
 sub updated
 {
     my( $n ) = @_;
-    if( defined $n->{'updated_obj'} )
+    if ( defined $n->{'updated_obj'} )
     {
-	return $n->{'updated_obj'};
+        return $n->{'updated_obj'};
     }
 
     return $n->{'updated_obj'} =
@@ -1866,14 +1869,14 @@ sub is_owned_by
 {
     my( $n, $agent ) = @_;
 
-    if( UNIVERSAL::isa($agent, 'RDF::Base::User') )
+    if ( UNIVERSAL::isa($agent, 'RDF::Base::User') )
     {
-	return 1 if $agent->has_root_access;
+        return 1 if $agent->has_root_access;
     }
 
-    if( $agent->equals( $n->owned_by ) )
+    if ( $agent->equals( $n->owned_by ) )
     {
-	return 1;
+        return 1;
     }
 
     return 0;
@@ -2013,86 +2016,86 @@ sub list
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
-	confess "Not a resource: ".datadump($node);
+        confess "Not a resource: ".datadump($node);
     }
 
     my $DEBUG = 0;
 #    $DEBUG=1 if $pred_in eq 'has_av_telephony_priority';
 
-    if( $pred_in )
+    if ( $pred_in )
     {
-	debug timediff "list" if $DEBUG;
+        debug timediff "list" if $DEBUG;
 
-	my( $pred, $name );
-	if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
-	{
-	    $pred = $pred_in;
-	}
-	else
-	{
-	    $pred = RDF::Base::Pred->get($pred_in);
-	}
-	$name = $pred->plain;
+        my( $pred, $name );
+        if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+        {
+            $pred = $pred_in;
+        }
+        else
+        {
+            $pred = RDF::Base::Pred->get($pred_in);
+        }
+        $name = $pred->plain;
 
-	my( $active, $inactive ) = $arclim->incl_act;
-	my @arcs;
+        my( $active, $inactive ) = $arclim->incl_act;
+        my @arcs;
 
 #	$Para::Frame::REQ->{RBSTAT}{'list pred parse'} += Time::HiRes::time() - $ts;
 
-	if( $node->initiate_prop( $pred, $proplim, $args ) )
-	{
-	    if( $active and $node->{'relarc'}{$name} )
-	    {
+        if ( $node->initiate_prop( $pred, $proplim, $args ) )
+        {
+            if ( $active and $node->{'relarc'}{$name} )
+            {
 #		debug "Adding relarcs";
-		push @arcs, @{ $node->{'relarc'}{$name} };
-	    }
+                push @arcs, @{ $node->{'relarc'}{$name} };
+            }
 
-	    if( $inactive and $node->{'relarc_inactive'}{$name} )
-	    {
+            if ( $inactive and $node->{'relarc_inactive'}{$name} )
+            {
 #		debug "Adding relarcs inactive for $node->{id} prop $name";
-		push @arcs, @{ $node->{'relarc_inactive'}{$name} };
-	    }
-	}
-	else
-	{
+                push @arcs, @{ $node->{'relarc_inactive'}{$name} };
+            }
+        }
+        else
+        {
 #	    debug "No values for $node->{id} prop $name found!";
 #	    $Para::Frame::REQ->{RBSTAT}{'list pred empty'} += Time::HiRes::time() - $ts;
-	    return RDF::Base::List->new_empty();
-	}
+            return RDF::Base::List->new_empty();
+        }
 
 #	if( $node->{id} == 19646889 ){debug "List got arcs:".datadump($arcs[0],1)} # DEBUG
-	debug timediff "list initiate_prop" if $DEBUG;
+        debug timediff "list initiate_prop" if $DEBUG;
 
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
+        @arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	debug timediff "list meets_arclim" if $DEBUG;
+        debug timediff "list meets_arclim" if $DEBUG;
 
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    @arcs = RDF::Base::Arc::List->new(\@arcs)->
-	      unique_arcs_prio($uap)->as_array;
+        if ( my $uap = $args->{unique_arcs_prio} )
+        {
+            @arcs = RDF::Base::Arc::List->new(\@arcs)->
+              unique_arcs_prio($uap)->as_array;
 
-	    debug timediff "list unique_arcs_prio" if $DEBUG;
-	}
-	elsif( my $aod = $args->{arc_active_on_date} )
-	{
-	    @arcs = RDF::Base::Arc::List->new(\@arcs)->
-	      arc_active_on_date($aod)->as_array;
+            debug timediff "list unique_arcs_prio" if $DEBUG;
+        }
+        elsif ( my $aod = $args->{arc_active_on_date} )
+        {
+            @arcs = RDF::Base::Arc::List->new(\@arcs)->
+              arc_active_on_date($aod)->as_array;
 
-	    debug timediff "list arc_active_on_date" if $DEBUG;
-	}
+            debug timediff "list arc_active_on_date" if $DEBUG;
+        }
 
-	if( my $arclim2 = $args->{'arclim2'} )
-	{
-	    my $args2 = {%$args};
-	    $args2->{'arclim'} = $arclim2;
-	    delete $args2->{'arclim2'};
+        if ( my $arclim2 = $args->{'arclim2'} )
+        {
+            my $args2 = {%$args};
+            $args2->{'arclim'} = $arclim2;
+            delete $args2->{'arclim2'};
 
 #	    debug "Replacing arclim ".$arclim->sysdesig;
 #	    debug "            with ".$arclim2->sysdesig;
 
-	    $args = $args2;
-	}
+            $args = $args2;
+        }
 
 
 #	### DEBUG
@@ -2104,18 +2107,18 @@ sub list
 #        debug " Arclim for $name: ".join('/',map $_->sysdesig,@arcs) if $name eq 'is';
 
 
-	my $res = $pred->valtype->instance_class->list_class->
-	  new([ grep $_->meets_proplim($proplim,$args),
-		map $_->value($args), @arcs ]);
+        my $res = $pred->valtype->instance_class->list_class->
+          new([ grep $_->meets_proplim($proplim,$args),
+                map $_->value($args), @arcs ]);
 #	$Para::Frame::REQ->{RBSTAT}{'list pred list'} += Time::HiRes::time() - $ts;
 
-	debug timediff "list res" if $DEBUG;
+        debug timediff "list res" if $DEBUG;
 
-	return $res;
+        return $res;
     }
     else
     {
-	return $node->list_preds( $proplim, $args );
+        return $node->list_preds( $proplim, $args );
     }
 }
 
@@ -2141,9 +2144,9 @@ sub list_preds
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    if( $proplim )
+    if ( $proplim )
     {
-	confess "proplim not implemented";
+        confess "proplim not implemented";
     }
 
     my( $active, $inactive ) = $arclim->incl_act;
@@ -2151,56 +2154,56 @@ sub list_preds
     $node->initiate_rel( $proplim, $args );
 
     my %preds_name;
-    if( $active )
+    if ( $active )
     {
-	if( @$arclim )
-	{
+        if ( @$arclim )
+        {
 #	    debug "Finding active preds for node";
-	    foreach my $predname (keys %{$node->{'relarc'}})
-	    {
+            foreach my $predname (keys %{$node->{'relarc'}})
+            {
 #		debug "  testing $predname";
-		foreach my $arc (@{$node->{'relarc'}{$predname}})
-		{
-		    if( $arc->meets_arclim($arclim) )
-		    {
-			$preds_name{$predname} ++;
-			last;
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    foreach my $predname ( keys %{$node->{'relarc'}} )
-	    {
-		$preds_name{ $predname } ++;
-	    }
-	}
+                foreach my $arc (@{$node->{'relarc'}{$predname}})
+                {
+                    if ( $arc->meets_arclim($arclim) )
+                    {
+                        $preds_name{$predname} ++;
+                        last;
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach my $predname ( keys %{$node->{'relarc'}} )
+            {
+                $preds_name{ $predname } ++;
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( @$arclim )
-	{
-	    foreach my $predname (keys %{$node->{'relarc_inactive'}})
-	    {
-		foreach my $arc (@{$node->{'relarc_inactive'}{$predname}})
-		{
-		    if( $arc->meets_arclim($arclim) )
-		    {
-			$preds_name{$predname} ++;
-			last;
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    foreach my $predname ( keys %{$node->{'relarc'}} )
-	    {
-		$preds_name{ $predname } ++;
-	    }
-	}
+        if ( @$arclim )
+        {
+            foreach my $predname (keys %{$node->{'relarc_inactive'}})
+            {
+                foreach my $arc (@{$node->{'relarc_inactive'}{$predname}})
+                {
+                    if ( $arc->meets_arclim($arclim) )
+                    {
+                        $preds_name{$predname} ++;
+                        last;
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach my $predname ( keys %{$node->{'relarc'}} )
+            {
+                $preds_name{ $predname } ++;
+            }
+        }
     }
 
     # Only handles pred nodes
@@ -2233,72 +2236,72 @@ sub revlist
     my( $args, $arclim ) = parse_propargs($args_in);
     croak "Too many args" if $extra;
 
-    if( $pred_in )
+    if ( $pred_in )
     {
-	my( $pred, $name );
-	if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
-	{
-	    $pred = $pred_in;
-	    $name = $pred->plain;
-	}
-	else
-	{
-	    $pred = RDF::Base::Pred->get($pred_in);
-	    $name = $pred->plain
-	}
+        my( $pred, $name );
+        if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+        {
+            $pred = $pred_in;
+            $name = $pred->plain;
+        }
+        else
+        {
+            $pred = RDF::Base::Pred->get($pred_in);
+            $name = $pred->plain
+        }
 
 #	debug "revlist $name";
 
-	my( $active, $inactive ) = $arclim->incl_act;
-	my @arcs;
+        my( $active, $inactive ) = $arclim->incl_act;
+        my @arcs;
 
-	if( $node->initiate_revprop( $pred, $proplim, $args ) )
-	{
-	    if( $active and $node->{'revarc'}{$name} )
-	    {
-		push @arcs, @{ $node->{'revarc'}{$name} };
-	    }
+        if ( $node->initiate_revprop( $pred, $proplim, $args ) )
+        {
+            if ( $active and $node->{'revarc'}{$name} )
+            {
+                push @arcs, @{ $node->{'revarc'}{$name} };
+            }
 
-	    if( $inactive and $node->{'revarc_inactive'}{$name} )
-	    {
-		push @arcs, @{ $node->{'revarc_inactive'}{$name} };
-	    }
-	}
-	else
-	{
+            if ( $inactive and $node->{'revarc_inactive'}{$name} )
+            {
+                push @arcs, @{ $node->{'revarc_inactive'}{$name} };
+            }
+        }
+        else
+        {
 #	    debug 3, "  No values for revprop $name found!";
-	    return RDF::Base::List->new_empty();
-	}
+            return RDF::Base::List->new_empty();
+        }
 
-	@arcs = grep $_->meets_arclim($arclim), @arcs;
+        @arcs = grep $_->meets_arclim($arclim), @arcs;
 
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    @arcs = RDF::Base::Arc::List->new(\@arcs)->
-	      unique_arcs_prio($uap)->as_array;
-	}
-	elsif( my $aod = $args->{arc_active_on_date} )
-	{
-	    @arcs = RDF::Base::Arc::List->new(\@arcs)->
-	      arc_active_on_date($aod)->as_array;
-	}
+        if ( my $uap = $args->{unique_arcs_prio} )
+        {
+            @arcs = RDF::Base::Arc::List->new(\@arcs)->
+              unique_arcs_prio($uap)->as_array;
+        }
+        elsif ( my $aod = $args->{arc_active_on_date} )
+        {
+            @arcs = RDF::Base::Arc::List->new(\@arcs)->
+              arc_active_on_date($aod)->as_array;
+        }
 
-	if( my $arclim2 = $args->{'arclim2'} )
-	{
-	    my $args2 = {%$args};
-	    $args2->{'arclim'} = $arclim2;
-	    delete $args2->{'arclim2'};
+        if ( my $arclim2 = $args->{'arclim2'} )
+        {
+            my $args2 = {%$args};
+            $args2->{'arclim'} = $arclim2;
+            delete $args2->{'arclim2'};
 
-	    $args = $args2;
-	}
+            $args = $args2;
+        }
 
-	return $pred->valtype->instance_class->list_class->
-	  new([ grep $_->meets_proplim($proplim,$args),
-		map $_->subj, @arcs ]);
+        return $pred->valtype->instance_class->list_class->
+          new([ grep $_->meets_proplim($proplim,$args),
+                map $_->subj, @arcs ]);
     }
     else
     {
-	return $node->revlist_preds( $proplim, $args );
+        return $node->revlist_preds( $proplim, $args );
     }
 }
 
@@ -2324,9 +2327,9 @@ sub revlist_preds
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    if( $proplim )
+    if ( $proplim )
     {
-	die "proplim not implemented";
+        die "proplim not implemented";
     }
 
     my( $active, $inactive ) = $arclim->incl_act;
@@ -2334,54 +2337,54 @@ sub revlist_preds
     $node->initiate_rev( $proplim, $args );
 
     my %preds_name;
-    if( $active )
+    if ( $active )
     {
-	if( @$arclim )
-	{
-	    foreach my $predname (keys %{$node->{'revarc'}})
-	    {
-		foreach my $arc (@{$node->{'revarc'}{$predname}})
-		{
-		    if( $arc->meets_arclim($arclim) )
-		    {
-			$preds_name{$predname} ++;
-			last;
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    foreach my $predname ( keys %{$node->{'revarc'}} )
-	    {
-		$preds_name{ $predname } ++;
-	    }
-	}
+        if ( @$arclim )
+        {
+            foreach my $predname (keys %{$node->{'revarc'}})
+            {
+                foreach my $arc (@{$node->{'revarc'}{$predname}})
+                {
+                    if ( $arc->meets_arclim($arclim) )
+                    {
+                        $preds_name{$predname} ++;
+                        last;
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach my $predname ( keys %{$node->{'revarc'}} )
+            {
+                $preds_name{ $predname } ++;
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( @$arclim )
-	{
-	    foreach my $predname (keys %{$node->{'revarc_inactive'}})
-	    {
-		foreach my $arc (@{$node->{'revarc_inactive'}{$predname}})
-		{
-		    if( $arc->meets_arclim($arclim) )
-		    {
-			$preds_name{$predname} ++;
-			last;
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    foreach my $predname ( keys %{$node->{'revarc'}} )
-	    {
-		$preds_name{ $predname } ++;
-	    }
-	}
+        if ( @$arclim )
+        {
+            foreach my $predname (keys %{$node->{'revarc_inactive'}})
+            {
+                foreach my $arc (@{$node->{'revarc_inactive'}{$predname}})
+                {
+                    if ( $arc->meets_arclim($arclim) )
+                    {
+                        $preds_name{$predname} ++;
+                        last;
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach my $predname ( keys %{$node->{'revarc'}} )
+            {
+                $preds_name{ $predname } ++;
+            }
+        }
     }
 
     # Only handles pred nodes
@@ -2412,15 +2415,15 @@ sub first_prop
     my( $active, $inactive ) = $arclim->incl_act;
 
     my( $pred, $name );
-    if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+    if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
     {
-	$pred = $pred_in;
-	$name = $pred->plain;
+        $pred = $pred_in;
+        $name = $pred->plain;
     }
     else
     {
-	$pred = RDF::Base::Pred->get($pred_in);
-	$name = $pred->plain
+        $pred = RDF::Base::Pred->get($pred_in);
+        $name = $pred->plain
     }
 
     $node->initiate_prop( $pred, $proplim, $args );
@@ -2430,118 +2433,118 @@ sub first_prop
     # list never is empty
 
 
-    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    if ( my $sortargs_in = $args->{unique_arcs_prio} )
     {
-	#
-	# optimized version of RDF::Base::List->unique_arcs_prio
-	#
-	my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
+        #
+        # optimized version of RDF::Base::List->unique_arcs_prio
+        #
+        my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
 
-	my $arcs = [];
+        my $arcs = [];
 
-	if( $active and not $inactive )
-	{
-	    $arcs = $node->{'relarc'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $inactive and not $active )
-	{
-	    $arcs = $node->{'relarc_inactive'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $active and $inactive )
-	{
-	    if( defined $node->{'relarc'}{$name} )
-	    {
-		push @$arcs, @{$node->{'relarc'}{$name}};
-	    }
+        if ( $active and not $inactive )
+        {
+            $arcs = $node->{'relarc'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $inactive and not $active )
+        {
+            $arcs = $node->{'relarc_inactive'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $active and $inactive )
+        {
+            if ( defined $node->{'relarc'}{$name} )
+            {
+                push @$arcs, @{$node->{'relarc'}{$name}};
+            }
 
-	    if( defined $node->{'relarc_inactive'}{$name} )
-	    {
-		push @$arcs, @{$node->{'relarc_inactive'}{$name}};
-	    }
-	}
+            if ( defined $node->{'relarc_inactive'}{$name} )
+            {
+                push @$arcs, @{$node->{'relarc_inactive'}{$name}};
+            }
+        }
 
-	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+        my( $best_arc, $best_arc_cid, $best_arc_order, $i );
 
-	for( $i=0; $i<=$#$arcs; $i++ )
-	{
-	    my $arc = $arcs->[$i];
-	    if( $arc->meets_arclim($arclim) and
-		$arc->value_meets_proplim($proplim, $args) )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $sortargs->sortorder($best_arc);
-		last;
-	    }
-	}
+        for ( $i=0; $i<=$#$arcs; $i++ )
+        {
+            my $arc = $arcs->[$i];
+            if ( $arc->meets_arclim($arclim) and
+                 $arc->value_meets_proplim($proplim, $args) )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $sortargs->sortorder($best_arc);
+                last;
+            }
+        }
 
-	return is_undef unless $best_arc;
+        return is_undef unless $best_arc;
 
-	while( $i<=$#$arcs )
-	{
-	    my $arc = $arcs->[$i];
-	    unless( ($arc->common_id == $best_arc_cid) and
-		    $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args)
-		  )
-	    {
-		next;
-	    }
+        while ( $i<=$#$arcs )
+        {
+            my $arc = $arcs->[$i];
+            unless( ($arc->common_id == $best_arc_cid) and
+                    $arc->meets_arclim($arclim) and
+                    $arc->value_meets_proplim($proplim, $args)
+                  )
+            {
+                next;
+            }
 
-	    my $arc_order = $sortargs->sortorder($arc);
-	    if( $arc_order < $best_arc_order )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $arc_order;
-	    }
-	}
-	continue
-	{
-	    $i++;
-	}
+            my $arc_order = $sortargs->sortorder($arc);
+            if ( $arc_order < $best_arc_order )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $arc_order;
+            }
+        }
+        continue
+        {
+            $i++;
+        }
 
-	return $best_arc->value;
+        return $best_arc->value;
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	return $node->list($pred, $proplim, $args)->get_first_nos;
+        return $node->list($pred, $proplim, $args)->get_first_nos;
     }
 
 
     # No unique filter
 
 
-    if( $active )
+    if ( $active )
     {
-	if( defined $node->{'relarc'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'relarc'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args) )
-		{
-		    return $arc->value;
-		}
-	    }
-	}
+        if ( defined $node->{'relarc'}{$name} )
+        {
+            foreach my $arc (@{$node->{'relarc'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim, $args) )
+                {
+                    return $arc->value;
+                }
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( defined $node->{'relarc_inactive'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args) )
-		{
-		    return $arc->value;
-		}
-	    }
-	}
+        if ( defined $node->{'relarc_inactive'}{$name} )
+        {
+            foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim, $args) )
+                {
+                    return $arc->value;
+                }
+            }
+        }
     }
 
     return is_undef;
@@ -2569,15 +2572,15 @@ sub first_revprop
     my( $active, $inactive ) = $arclim->incl_act;
 
     my( $pred, $name );
-    if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+    if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
     {
-	$pred = $pred_in;
-	$name = $pred->plain;
+        $pred = $pred_in;
+        $name = $pred->plain;
     }
     else
     {
-	$pred = RDF::Base::Pred->get($pred_in);
-	$name = $pred->plain
+        $pred = RDF::Base::Pred->get($pred_in);
+        $name = $pred->plain
     }
 
     # NOTE: We should make sure that if a relarc key exists, that the
@@ -2586,118 +2589,118 @@ sub first_revprop
 
     $node->initiate_revprop( $pred, $proplim, $args );
 
-    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    if ( my $sortargs_in = $args->{unique_arcs_prio} )
     {
-	#
-	# optimized version of RDF::Base::List->unique_arcs_prio
-	#
-	my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
+        #
+        # optimized version of RDF::Base::List->unique_arcs_prio
+        #
+        my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
 
-	my $arcs = [];
+        my $arcs = [];
 
-	if( $active and not $inactive )
-	{
-	    $arcs = $node->{'revarc'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $inactive and not $active )
-	{
-	    $arcs = $node->{'revarc_inactive'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $active and $inactive )
-	{
-	    if( defined $node->{'revarc'}{$name} )
-	    {
-		push @$arcs, @{$node->{'revarc'}{$name}};
-	    }
+        if ( $active and not $inactive )
+        {
+            $arcs = $node->{'revarc'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $inactive and not $active )
+        {
+            $arcs = $node->{'revarc_inactive'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $active and $inactive )
+        {
+            if ( defined $node->{'revarc'}{$name} )
+            {
+                push @$arcs, @{$node->{'revarc'}{$name}};
+            }
 
-	    if( defined $node->{'revarc_inactive'}{$name} )
-	    {
-		push @$arcs, @{$node->{'revarc_inactive'}{$name}};
-	    }
-	}
+            if ( defined $node->{'revarc_inactive'}{$name} )
+            {
+                push @$arcs, @{$node->{'revarc_inactive'}{$name}};
+            }
+        }
 
-	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+        my( $best_arc, $best_arc_cid, $best_arc_order, $i );
 
-	for( $i=0; $i<=$#$arcs; $i++ )
-	{
-	    my $arc = $arcs->[$i];
-	    if( $arc->meets_arclim($arclim) and
-		$arc->subj->meets_proplim($proplim, $args) )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $sortargs->sortorder($best_arc);
-		last;
-	    }
-	}
+        for ( $i=0; $i<=$#$arcs; $i++ )
+        {
+            my $arc = $arcs->[$i];
+            if ( $arc->meets_arclim($arclim) and
+                 $arc->subj->meets_proplim($proplim, $args) )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $sortargs->sortorder($best_arc);
+                last;
+            }
+        }
 
-	return is_undef unless $best_arc;
+        return is_undef unless $best_arc;
 
-	while( $i<=$#$arcs )
-	{
-	    my $arc = $arcs->[$i];
-	    unless( ($arc->common_id == $best_arc_cid) and
-		    $arc->meets_arclim($arclim) and
-		    $arc->subj->meets_proplim($proplim, $args)
-		  )
-	    {
-		next;
-	    }
+        while ( $i<=$#$arcs )
+        {
+            my $arc = $arcs->[$i];
+            unless( ($arc->common_id == $best_arc_cid) and
+                    $arc->meets_arclim($arclim) and
+                    $arc->subj->meets_proplim($proplim, $args)
+                  )
+            {
+                next;
+            }
 
-	    my $arc_order = $sortargs->sortorder($arc);
-	    if( $arc_order < $best_arc_order )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $arc_order;
-	    }
-	}
-	continue
-	{
-	    $i++;
-	}
+            my $arc_order = $sortargs->sortorder($arc);
+            if ( $arc_order < $best_arc_order )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $arc_order;
+            }
+        }
+        continue
+        {
+            $i++;
+        }
 
-	return $best_arc->subj;
+        return $best_arc->subj;
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	return $node->revlist($pred, $proplim, $args)->get_first_nos;
+        return $node->revlist($pred, $proplim, $args)->get_first_nos;
     }
 
 
     # No unique filter
 
 
-    if( $active )
+    if ( $active )
     {
-	if( defined $node->{'revarc'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'revarc'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->subj->meets_proplim($proplim, $args) )
-		{
-		    return $arc->subj;
-		}
-	    }
-	}
+        if ( defined $node->{'revarc'}{$name} )
+        {
+            foreach my $arc (@{$node->{'revarc'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->subj->meets_proplim($proplim, $args) )
+                {
+                    return $arc->subj;
+                }
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( defined $node->{'revarc_inactive'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->subj->meets_proplim($proplim, $args) )
-		{
-		    return $arc->subj;
-		}
-	    }
-	}
+        if ( defined $node->{'revarc_inactive'}{$name} )
+        {
+            foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->subj->meets_proplim($proplim, $args) )
+                {
+                    return $arc->subj;
+                }
+            }
+        }
     }
 
     return is_undef;
@@ -2793,16 +2796,16 @@ sub has_value
     # property with the given pred and value, rather than matching
     # nodes that has a property with a pred that doen't have the
     # value.
-    if( $match eq 'ne' )
+    if ( $match eq 'ne' )
     {
-	return( $node->has_value($preds, {%$args, match=>'eq'} ) ? 0 : 1 );
+        return( $node->has_value($preds, {%$args, match=>'eq'} ) ? 0 : 1 );
     }
 
 
 
     my( $pred_name, $value ) = %$preds;
 
-    delete( $args->{'rev'} ); ### NOT passing rev on!
+    delete( $args->{'rev'} );   ### NOT passing rev on!
 
     # Can we also handle dynamic preds like id or desig?
     my $pred = RDF::Base::Pred->get( $pred_name );
@@ -2810,242 +2813,245 @@ sub has_value
     $pred_name = $pred->plain;
 
     my $revprefix = $rev ? "rev_" : "";
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	debug "  Checking if node $node->{'id'} has $revprefix$pred_name $match($clean) ".query_desig($value);
+        debug "  Checking if node $node->{'id'} has $revprefix$pred_name $match($clean) ".query_desig($value);
     }
 
-    my @arcs_in; # Same content in diffrent parts of this method
+    my @arcs_in;       # Same content in diffrent parts of this method
 
     # Sub query
-    if( ref $value eq 'HASH' )
+    if ( ref $value eq 'HASH' )
     {
-	if( $DEBUG )
-	{
-	    debug "  Checking if ".$node->desig.
-	      " has $revprefix$pred_name with the props ". query_desig($value);
-	}
+        if ( $DEBUG )
+        {
+            debug "  Checking if ".$node->desig.
+              " has $revprefix$pred_name with the props ". query_desig($value);
+        }
 
-	unless( $match eq 'eq' )
-	{
-	    confess "subquery not implemented for matchtype $match";
-	}
+        unless( $match eq 'eq' )
+        {
+            confess "subquery not implemented for matchtype $match";
+        }
 
-	if( $rev )
-	{
-	    @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
-	}
-	else
-	{
-	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
-	}
+        if ( $rev )
+        {
+            @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
+        }
+        else
+        {
+            @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
+        }
 
-	my $uap = $args->{unique_arcs_prio};
-	my $aod = $args->{arc_active_on_date};
+        my $uap = $args->{unique_arcs_prio};
+        my $aod = $args->{arc_active_on_date};
 
-	if( $uap or $aod )
-	{
-	    my @arcs;
-	    if( !$rev )
-	    {
-		foreach my $arc ( @arcs_in )
-		{
-		    if( $arc->is_removal )
-		    {
-			if( $arc->replaces->obj->find($value, $args)->size )
-			{
-			    push @arcs, $arc;
-			}
-		    }
-		    elsif( $arc->obj->find($value, $args)->size )
-		    {
-			push @arcs, $arc;
-		    }
-		}
-	    }
-	    else # rev
-	    {
-		foreach my $arc ( @arcs_in )
-		{
-		    if( $arc->is_removal )
-		    {
-			if( $arc->replaces->subj->find($value, $args)->size )
-			{
-			    push @arcs, $arc;
-			}
-		    }
-		    elsif( $arc->subj->find($value, $args)->size )
-		    {
-			push @arcs, $arc;
-		    }
-		}
-	    }
+        if ( $uap or $aod )
+        {
+            my @arcs;
+            if ( !$rev )
+            {
+                foreach my $arc ( @arcs_in )
+                {
+                    if ( $arc->is_removal )
+                    {
+                        if ( $arc->replaces->obj->find($value, $args)->size )
+                        {
+                            push @arcs, $arc;
+                        }
+                    }
+                    elsif ( $arc->obj->find($value, $args)->size )
+                    {
+                        push @arcs, $arc;
+                    }
+                }
+            }
+            else                # rev
+            {
+                foreach my $arc ( @arcs_in )
+                {
+                    if ( $arc->is_removal )
+                    {
+                        if ( $arc->replaces->subj->find($value, $args)->size )
+                        {
+                            push @arcs, $arc;
+                        }
+                    }
+                    elsif ( $arc->subj->find($value, $args)->size )
+                    {
+                        push @arcs, $arc;
+                    }
+                }
+            }
 
 
-	    if( @arcs )
-	    {
-		if( $uap )
-		{
-		    foreach my $arc ( RDF::Base::Arc::List->new(\@arcs)->
-				      unique_arcs_prio($uap)->as_array )
-		    {
-			return $arc unless $arc->is_removal;
-		    }
-		}
-		elsif( $aod )
-		{
-		    return RDF::Base::Arc::List->new(\@arcs)->
-		      arc_active_on_date($aod)->get_first_nos;
-		}
-	    }
-	}
-	else
-	{
-	    if( !$rev )
-	    {
-		foreach my $arc ( @arcs_in )
-		{
-		    if( $arc->obj->find($value, $args)->size )
-		    {
-			return $arc;
-		    }
-		}
-	    }
-	    else # rev
-	    {
-		foreach my $arc ( @arcs_in )
-		{
-		    if( $arc->subj->find($value, $args)->size )
-		    {
-			return $arc;
-		    }
-		}
-	    }
-	}
-	return 0;
+            if ( @arcs )
+            {
+                if ( $uap )
+                {
+                    foreach my $arc ( RDF::Base::Arc::List->new(\@arcs)->
+                                      unique_arcs_prio($uap)->as_array )
+                    {
+                        return $arc unless $arc->is_removal;
+                    }
+                }
+                elsif ( $aod )
+                {
+                    return RDF::Base::Arc::List->new(\@arcs)->
+                      arc_active_on_date($aod)->get_first_nos;
+                }
+            }
+        }
+        else
+        {
+            if ( !$rev )
+            {
+                foreach my $arc ( @arcs_in )
+                {
+                    if ( $arc->obj->find($value, $args)->size )
+                    {
+                        return $arc;
+                    }
+                }
+            }
+            else                # rev
+            {
+                foreach my $arc ( @arcs_in )
+                {
+                    if ( $arc->subj->find($value, $args)->size )
+                    {
+                        return $arc;
+                    }
+                }
+            }
+        }
+        return 0;
     }
 
     # $value holds alternative values
-    elsif( ref $value eq 'ARRAY' )
+    elsif ( ref $value eq 'ARRAY' )
     {
-	if( my $uap = $args->{unique_arcs_prio} )
-	{
-	    my @arcs;
-	    foreach my $val (@$value )
-	    {
-		my $arc = $node->has_value({$pred_name=>$val},
-					   {%$args,rev=>$rev});
-		push @arcs, $arc if $arc;
-	    }
+        if ( my $uap = $args->{unique_arcs_prio} )
+        {
+            my @arcs;
+            foreach my $val (@$value )
+            {
+                my $arc = $node->has_value({$pred_name=>$val},
+                                           {
+                                            %$args,rev=>$rev});
+                push @arcs, $arc if $arc;
+            }
 
-	    if( @arcs )
-	    {
-		return RDF::Base::Arc::List->new(\@arcs)->
-		  unique_arcs_prio($uap)->get_first_nos;
-	    }
-	}
-	elsif( my $aod = $args->{arc_active_on_date} )
-	{
-	    my @arcs;
-	    foreach my $val (@$value )
-	    {
-		my $arc = $node->has_value({$pred_name=>$val},
-					   {%$args,rev=>$rev});
-		push @arcs, $arc if $arc;
-	    }
+            if ( @arcs )
+            {
+                return RDF::Base::Arc::List->new(\@arcs)->
+                  unique_arcs_prio($uap)->get_first_nos;
+            }
+        }
+        elsif ( my $aod = $args->{arc_active_on_date} )
+        {
+            my @arcs;
+            foreach my $val (@$value )
+            {
+                my $arc = $node->has_value({$pred_name=>$val},
+                                           {
+                                            %$args,rev=>$rev});
+                push @arcs, $arc if $arc;
+            }
 
-	    if( @arcs )
-	    {
-		return RDF::Base::Arc::List->new(\@arcs)->
-		  arc_active_on_date($aod)->get_first_nos;
-	    }
-	}
-	else
-	{
-	    foreach my $val (@$value )
-	    {
-		my $arc = $node->has_value({$pred_name=>$val},
-					   {%$args,rev=>$rev});
-		return $arc if $arc;
-	    }
-	}
-	return 0;
+            if ( @arcs )
+            {
+                return RDF::Base::Arc::List->new(\@arcs)->
+                  arc_active_on_date($aod)->get_first_nos;
+            }
+        }
+        else
+        {
+            foreach my $val (@$value )
+            {
+                my $arc = $node->has_value({$pred_name=>$val},
+                                           {
+                                            %$args,rev=>$rev});
+                return $arc if $arc;
+            }
+        }
+        return 0;
     }
 
 
     # Check the dynamic properties (methods) for the node
     # Special case for optimized name
-    if( $node->can($pred_name)
-	and ($pred_name ne 'name')
-	and not $rev
-      )
+    if ( $node->can($pred_name)
+         and ($pred_name ne 'name')
+         and not $rev
+       )
     {
-	debug "  check method $pred_name" if $DEBUG;
-	my $prop_value = $node->$pred_name( {}, $args );
+        debug "  check method $pred_name" if $DEBUG;
+        my $prop_value = $node->$pred_name( {}, $args );
 
-	if( $match eq 'eq' )
-	{
-	    if( ref $prop_value )
-	    {
-		$prop_value = $prop_value->desig;
-	    }
+        if ( $match eq 'eq' )
+        {
+            if ( ref $prop_value )
+            {
+                $prop_value = $prop_value->desig;
+            }
 
-	    if( $clean )
-	    {
-		$prop_value = valclean(\$prop_value);
-		$value = valclean(\$value);
-	    }
+            if ( $clean )
+            {
+                $prop_value = valclean(\$prop_value);
+                $value = valclean(\$value);
+            }
 
-	    return -1 if $prop_value eq $value;
-	}
-	elsif( $match eq 'begins' )
-	{
-	    if( ref $prop_value )
-	    {
-		$prop_value = $prop_value->desig;
-	    }
+            return -1 if $prop_value eq $value;
+        }
+        elsif ( $match eq 'begins' )
+        {
+            if ( ref $prop_value )
+            {
+                $prop_value = $prop_value->desig;
+            }
 
-	    if( $clean )
-	    {
-		$prop_value = valclean(\$prop_value);
-		$value = valclean(\$value);
-	    }
+            if ( $clean )
+            {
+                $prop_value = valclean(\$prop_value);
+                $value = valclean(\$value);
+            }
 
-	    return -1 if $prop_value =~ /^\Q$value/;
-	}
-	elsif( $match eq 'like' )
-	{
-	    if( ref $prop_value )
-	    {
-		$prop_value = $prop_value->desig;
-	    }
+            return -1 if $prop_value =~ /^\Q$value/;
+        }
+        elsif ( $match eq 'like' )
+        {
+            if ( ref $prop_value )
+            {
+                $prop_value = $prop_value->desig;
+            }
 
-	    if( $clean )
-	    {
-		$prop_value = valclean(\$prop_value);
-		$value = valclean(\$value);
-	    }
+            if ( $clean )
+            {
+                $prop_value = valclean(\$prop_value);
+                $value = valclean(\$value);
+            }
 
-	    return -1 if $prop_value =~ /\Q$value/;
-	}
-	elsif( $match eq 'gt' )
-	{
+            return -1 if $prop_value =~ /\Q$value/;
+        }
+        elsif ( $match eq 'gt' )
+        {
 #	    debug "prop_value: ".datadump($prop_value,1);
 #	    debug "targ_value: ".datadump($value,1);
-	    return -1 if $prop_value > $value;
-	}
-	elsif( $match eq 'lt' )
-	{
-	    return -1 if $prop_value < $value;
-	}
-	else
-	{
-	    confess "Matchtype $match not implemented";
-	}
+            return -1 if $prop_value > $value;
+        }
+        elsif ( $match eq 'lt' )
+        {
+            return -1 if $prop_value < $value;
+        }
+        else
+        {
+            confess "Matchtype $match not implemented";
+        }
     }
 
 
-    if( $pred_name eq 'is' )
+    if ( $pred_name eq 'is' )
     {
         return 1 if $C_resource->equals($value);
     }
@@ -3055,86 +3061,86 @@ sub has_value
     # @arcs_in may have been defined above
     unless( @arcs_in )
     {
-	if( $rev )
-	{
-	    @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
+        if ( $rev )
+        {
+            @arcs_in = $node->revarc_list($pred_name, undef, $args)->as_array;
 #	    debug "    found ".int(@arcs_in)." arcs";
-	}
-	else
-	{
+        }
+        else
+        {
 #	    debug "  getting arcs for node with pred $pred_name and args ".query_desig($args);
-	    @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
+            @arcs_in = $node->arc_list($pred_name, undef, $args)->as_array;
 #	    debug "    found ".int(@arcs_in)." arcs";
-	}
+        }
     }
 
     my $uap = $args->{unique_arcs_prio};
     my $aod = $args->{arc_active_on_date};
 
-    if( $uap or $aod )
+    if ( $uap or $aod )
     {
-	my @arcs;
+        my @arcs;
 #	debug "In has_value";
-	foreach my $arc ( @arcs_in )
-	{
+        foreach my $arc ( @arcs_in )
+        {
 #	    debug 1, "  check arc ".$arc->id;
-	    if( $arc->is_removal )
-	    {
-		if( $arc->replaces->value_equals( $value, $args ) )
-		{
+            if ( $arc->is_removal )
+            {
+                if ( $arc->replaces->value_equals( $value, $args ) )
+                {
 #		    debug "    removal passed";
-		    push @arcs, $arc;
-		}
-	    }
-	    elsif( $arc->value_equals( $value, $args ) )
-	    {
+                    push @arcs, $arc;
+                }
+            }
+            elsif ( $arc->value_equals( $value, $args ) )
+            {
 #		debug "    passed";
-		push @arcs, $arc;
-	    }
-	}
+                push @arcs, $arc;
+            }
+        }
 
-	if( @arcs )
-	{
-	    if( $uap )
-	    {
-		foreach my $arc ( RDF::Base::Arc::List->new(\@arcs)->
-				  unique_arcs_prio($uap)->as_array )
-		{
-		    return $arc unless $arc->is_removal;
-		}
-	    }
-	    elsif( $aod )
-	    {
-		return RDF::Base::Arc::List->new(\@arcs)->
-		  arc_active_on_date($aod)->get_first_nos;
-	    }
-	}
+        if ( @arcs )
+        {
+            if ( $uap )
+            {
+                foreach my $arc ( RDF::Base::Arc::List->new(\@arcs)->
+                                  unique_arcs_prio($uap)->as_array )
+                {
+                    return $arc unless $arc->is_removal;
+                }
+            }
+            elsif ( $aod )
+            {
+                return RDF::Base::Arc::List->new(\@arcs)->
+                  arc_active_on_date($aod)->get_first_nos;
+            }
+        }
     }
     else
     {
-	if( $rev )
-	{
-	    foreach my $arc ( @arcs_in )
-	    {
-		debug "  check arc ".$arc->id if $DEBUG;
-		return $arc if $arc->subj->equals( $value, $args );
-	    }
-	}
-	else
-	{
-	    foreach my $arc ( @arcs_in )
-	    {
-		debug "  check arc ".$arc->id if $DEBUG;
-		return $arc if $arc->value_equals( $value, $args );
-	    }
-	}
+        if ( $rev )
+        {
+            foreach my $arc ( @arcs_in )
+            {
+                debug "  check arc ".$arc->id if $DEBUG;
+                return $arc if $arc->subj->equals( $value, $args );
+            }
+        }
+        else
+        {
+            foreach my $arc ( @arcs_in )
+            {
+                debug "  check arc ".$arc->id if $DEBUG;
+                return $arc if $arc->value_equals( $value, $args );
+            }
+        }
     }
 
 
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	my $value_str = query_desig($value);
-	debug "  no such value $value_str for ".$node->{'id'};
+        my $value_str = query_desig($value);
+        debug "  no such value $value_str for ".$node->{'id'};
     }
 
     return 0;
@@ -3170,24 +3176,24 @@ sub count
     my( $node, $tmpl, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    if( ref $tmpl and ref $tmpl eq 'HASH' )
+    if ( ref $tmpl and ref $tmpl eq 'HASH' )
     {
-	throw('action',"count( \%tmpl, ... ) not implemented");
+        throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
     unless( ref $tmpl )
     {
-	if( $node->can("count_$tmpl") )
-	{
+        if ( $node->can("count_$tmpl") )
+        {
 #	    debug "Counting $tmpl";
-	    my $countpred = "count_$tmpl";
-	    return $node->$countpred;
-	}
-	elsif( $node->can($tmpl) )
-	{
+            my $countpred = "count_$tmpl";
+            return $node->$countpred;
+        }
+        elsif ( $node->can($tmpl) )
+        {
 #	    debug "Getting $tmpl and return its size";
-	    return $node->$tmpl->size;
-	}
+            return $node->$tmpl->size;
+        }
     }
 
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
@@ -3234,9 +3240,9 @@ sub revcount
     my( $node, $tmpl, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
 
-    if( ref $tmpl and ref $tmpl eq 'HASH' )
+    if ( ref $tmpl and ref $tmpl eq 'HASH' )
     {
-	throw('action',"count( \%tmpl, ... ) not implemented");
+        throw('action',"count( \%tmpl, ... ) not implemented");
     }
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
 
@@ -3293,28 +3299,28 @@ sub set_label
     my $label_old = $node->label || '';
     $label_new ||= '';
 
-    if( $label_old ne $label_new )
+    if ( $label_old ne $label_new )
     {
-	debug "Node $node->{id} label set to '$label_new'";
+        debug "Node $node->{id} label set to '$label_new'";
 
-	delete $RDF::Base::Constants::Label{$label_old};
-	$node->{'label'} = $label_new;
-	$RDF::Base::Constants::Label{$label_new} = $node;
-	$node->mark_updated;
+        delete $RDF::Base::Constants::Label{$label_old};
+        $node->{'label'} = $label_new;
+        $RDF::Base::Constants::Label{$label_new} = $node;
+        $node->mark_updated;
 
-	# New labels must be immideatly saved, since they may be
-	# refered to by arcs. The database has constraints for only
-	# using existing nodes as preds.
+        # New labels must be immideatly saved, since they may be
+        # refered to by arcs. The database has constraints for only
+        # using existing nodes as preds.
 
-	unless( $node->has_node_record )
-	{
-	    $node->save;
+        unless( $node->has_node_record )
+        {
+            $node->save;
 
-	    # But save it again later, in the normal commit fase, then
-	    # we may have added extra metadata
+            # But save it again later, in the normal commit fase, then
+            # we may have added extra metadata
 
-	    $UNSAVED{$node->id} = $node;
-	}
+            $UNSAVED{$node->id} = $node;
+        }
     }
 
     return $label_new;
@@ -3332,7 +3338,7 @@ debugging.
 
 =cut
 
-sub desig  # The designation of obj, meant for human admins
+sub desig             # The designation of obj, meant for human admins
 {
     my( $node, $args ) = @_;
 
@@ -3342,25 +3348,25 @@ sub desig  # The designation of obj, meant for human admins
 
     my $desig;
 
-    if( $node->has_pred('name',undef,$args) )
+    if ( $node->has_pred('name',undef,$args) )
     {
-	$desig = $node->list('name',undef,$args)->loc();
+        $desig = $node->list('name',undef,$args)->loc();
     }
-    elsif( $node->has_pred('name_short',undef,$args) )
+    elsif ( $node->has_pred('name_short',undef,$args) )
     {
-	$desig = $node->list('name_short',undef,$args)->loc();
+        $desig = $node->list('name_short',undef,$args)->loc();
     }
-    elsif( $desig = $node->label )
+    elsif ( $desig = $node->label )
     {
-	# That's good
+        # That's good
     }
-    elsif( $node->has_pred('code',undef,$args) )
+    elsif ( $node->has_pred('code',undef,$args) )
     {
-	$desig = $node->list('code',undef,$args)->loc;
+        $desig = $node->list('code',undef,$args)->loc;
     }
     else
     {
-	$desig = $node->id;
+        $desig = $node->id;
     }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
@@ -3385,9 +3391,9 @@ sub shortdesig
 {
     my( $node, $args ) = @_;
 
-    if( $node->has_pred('name_short',undef,$args) )
+    if ( $node->has_pred('name_short',undef,$args) )
     {
-	return $node->list('name_short',undef,$args)->loc();
+        return $node->list('name_short',undef,$args)->loc();
     }
 
     return $node->desig($args);
@@ -3410,25 +3416,25 @@ sub safedesig
 
     my $desig;
 
-    if( $node->{'relarc'}{'name'} )
+    if ( $node->{'relarc'}{'name'} )
     {
-	$desig = $node->list('name',undef,$args)->loc();
+        $desig = $node->list('name',undef,$args)->loc();
     }
-    elsif( $node->{'relarc'}{'name_short'} )
+    elsif ( $node->{'relarc'}{'name_short'} )
     {
-	$desig = $node->list('name_short',undef,$args)->loc();
+        $desig = $node->list('name_short',undef,$args)->loc();
     }
-    elsif( $desig = $node->label )
+    elsif ( $desig = $node->label )
     {
-	# That's good
+        # That's good
     }
-    elsif( $node->{'relarc'}{'code'} )
+    elsif ( $node->{'relarc'}{'code'} )
     {
-	$desig = $node->list('code',undef,$args)->loc;
+        $desig = $node->list('code',undef,$args)->loc;
     }
     else
     {
-	$desig = $node->id;
+        $desig = $node->id;
     }
 
     $desig = $desig->loc if ref $desig; # Could be a Literal Resource
@@ -3458,13 +3464,13 @@ sub sysdesig
 
 #    debug "Sysdesig for $node->{id}: $desig";
 
-    if( $desig eq $node->{'id'} )
+    if ( $desig eq $node->{'id'} )
     {
-	return $desig;
+        return $desig;
     }
     else
     {
-	return "$node->{'id'}: $desig";
+        return "$node->{'id'}: $desig";
     }
 }
 
@@ -3558,103 +3564,103 @@ sub arc_list
     my( $active, $inactive ) = $arclim->incl_act;
 
     my @arcs;
-    if( $pred_in )
+    if ( $pred_in )
     {
-	my( $pred, $name );
-	if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
-	{
-	    $pred = $pred_in;
-	    $name = $pred->plain;
-	}
-	else
-	{
-	    $pred = RDF::Base::Pred->get($pred_in);
-	    $name = $pred->plain
-	}
+        my( $pred, $name );
+        if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+        {
+            $pred = $pred_in;
+            $name = $pred->plain;
+        }
+        else
+        {
+            $pred = RDF::Base::Pred->get($pred_in);
+            $name = $pred->plain
+        }
 
 
 #	debug sprintf("Got arc_list for %s prop %s with arclim %s", $node->sysdesig, $name, query_desig($arclim));
 
-	if( $node->initiate_prop( $pred, $proplim, $args ) )
-	{
-	    if( $active and $node->{'relarc'}{$name} )
-	    {
-		push @arcs, @{ $node->{'relarc'}{$name} };
-	    }
+        if ( $node->initiate_prop( $pred, $proplim, $args ) )
+        {
+            if ( $active and $node->{'relarc'}{$name} )
+            {
+                push @arcs, @{ $node->{'relarc'}{$name} };
+            }
 
-	    if( $inactive and $node->{'relarc_inactive'}{$name} )
-	    {
-		push @arcs, @{ $node->{'relarc_inactive'}{$name} };
-	    }
-	}
-	else
-	{
+            if ( $inactive and $node->{'relarc_inactive'}{$name} )
+            {
+                push @arcs, @{ $node->{'relarc_inactive'}{$name} };
+            }
+        }
+        else
+        {
 #	    debug 1, "  No values for relprop $name found!";
-	    return RDF::Base::Arc::List->new_empty();
-	}
+            return RDF::Base::Arc::List->new_empty();
+        }
     }
     else
     {
-	$node->initiate_rel($proplim, $args);
+        $node->initiate_rel($proplim, $args);
 
-	if( $active )
-	{
-	    foreach my $pred_name ( keys %{$node->{'relarc'}} )
-	    {
-		push @arcs, @{ $node->{'relarc'}{$pred_name} };
-	    }
-	}
+        if ( $active )
+        {
+            foreach my $pred_name ( keys %{$node->{'relarc'}} )
+            {
+                push @arcs, @{ $node->{'relarc'}{$pred_name} };
+            }
+        }
 
-	if( $inactive )
-	{
-	    foreach my $pred_name ( keys %{$node->{'relarc_inactive'}} )
-	    {
-		push @arcs, @{ $node->{'relarc_inactive'}{$pred_name} };
-	    }
-	}
+        if ( $inactive )
+        {
+            foreach my $pred_name ( keys %{$node->{'relarc_inactive'}} )
+            {
+                push @arcs, @{ $node->{'relarc_inactive'}{$pred_name} };
+            }
+        }
     }
 
     # Proplim is probably more restricting than arclim. Thus, filter
     # on that first
 
-    if( defined $proplim ) # The Undef Literal is also an proplim
+    if ( defined $proplim )     # The Undef Literal is also an proplim
     {
-	if( ref $proplim and ref $proplim eq 'HASH' )
-	{
-	    # $n->arc_list( $predname, { $pred => $value } )
-	    #
-	    @arcs = RDF::Base::Arc::List->new(\@arcs)->
-	      find($proplim, $args)->as_array;
-	}
-	elsif( not( ref $proplim) and not( length $proplim ) )
-	{
-	    # Treat as no proplim given
-	}
-	else
-	{
-	    # $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
-	    #
-	    unless( ref $proplim and ref $proplim eq 'ARRAY' )
-	    {
-		$proplim = [$proplim];
-	    }
+        if ( ref $proplim and ref $proplim eq 'HASH' )
+        {
+            # $n->arc_list( $predname, { $pred => $value } )
+            #
+            @arcs = RDF::Base::Arc::List->new(\@arcs)->
+              find($proplim, $args)->as_array;
+        }
+        elsif ( not( ref $proplim) and not( length $proplim ) )
+        {
+            # Treat as no proplim given
+        }
+        else
+        {
+            # $n->arc_list( $predname, [ $val1, $val2, $val3, ... ] )
+            #
+            unless( ref $proplim and ref $proplim eq 'ARRAY' )
+            {
+                $proplim = [$proplim];
+            }
 
-	    # proplim can be given as a PF::List
-	    my $proplist = RDF::Base::List->new($proplim);
+            # proplim can be given as a PF::List
+            my $proplist = RDF::Base::List->new($proplim);
 
-	    my @newlist;
-	    foreach my $arc ( @arcs )
-	    {
-		# May return is_undef object
-		# No match gives literal undef
-		if( ref $proplist->contains( $arc->value, $args ) )
-		{
-		    push @newlist, $arc;
-		}
-	    }
+            my @newlist;
+            foreach my $arc ( @arcs )
+            {
+                # May return is_undef object
+                # No match gives literal undef
+                if ( ref $proplist->contains( $arc->value, $args ) )
+                {
+                    push @newlist, $arc;
+                }
+            }
 
-	    @arcs = @newlist;
-	}
+            @arcs = @newlist;
+        }
     }
 
 
@@ -3668,14 +3674,14 @@ sub arc_list
 
 #    debug timediff("arc_list new list");
 
-    if( my $uap = $args->{unique_arcs_prio} )
+    if ( my $uap = $args->{unique_arcs_prio} )
     {
-	$lr = $lr->unique_arcs_prio($uap);
+        $lr = $lr->unique_arcs_prio($uap);
 #	debug timediff("arc_list unique_arcs_prio");
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	$lr = $lr->arc_active_on_date($aod);
+        $lr = $lr->arc_active_on_date($aod);
     }
 
 #    if( defined $proplim ) # The Undef Literal is also an proplim
@@ -3748,80 +3754,80 @@ sub revarc_list
     my( $active, $inactive ) = $arclim->incl_act;
 
     my @arcs;
-    if( $pred_in )
+    if ( $pred_in )
     {
-	my( $pred, $name );
-	if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
-	{
-	    $pred = $pred_in;
-	    $name = $pred->plain;
-	}
-	else
-	{
-	    $pred = RDF::Base::Pred->get($pred_in);
-	    $name = $pred->plain
-	}
+        my( $pred, $name );
+        if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+        {
+            $pred = $pred_in;
+            $name = $pred->plain;
+        }
+        else
+        {
+            $pred = RDF::Base::Pred->get($pred_in);
+            $name = $pred->plain
+        }
 
-	if( $node->initiate_revprop( $pred, $proplim, $args ) )
-	{
-	    if( $active and $node->{'revarc'}{$name} )
-	    {
-		push @arcs, @{ $node->{'revarc'}{$name} };
-	    }
+        if ( $node->initiate_revprop( $pred, $proplim, $args ) )
+        {
+            if ( $active and $node->{'revarc'}{$name} )
+            {
+                push @arcs, @{ $node->{'revarc'}{$name} };
+            }
 
-	    if( $inactive and $node->{'revarc_inactive'}{$name} )
-	    {
-		push @arcs, @{ $node->{'revarc_inactive'}{$name} };
-	    }
-	}
-	else
-	{
-	    if( debug > 2 )
-	    {
-		debug 2, "  No values for revprop $name found!";
-		debug 2, "    with arclim ".$arclim->sysdesig;
-		debug 2, "    and proplim ".query_desig($proplim);
-	    }
-	    return RDF::Base::Arc::List->new_empty();
-	}
+            if ( $inactive and $node->{'revarc_inactive'}{$name} )
+            {
+                push @arcs, @{ $node->{'revarc_inactive'}{$name} };
+            }
+        }
+        else
+        {
+            if ( debug > 2 )
+            {
+                debug 2, "  No values for revprop $name found!";
+                debug 2, "    with arclim ".$arclim->sysdesig;
+                debug 2, "    and proplim ".query_desig($proplim);
+            }
+            return RDF::Base::Arc::List->new_empty();
+        }
     }
     else
     {
-	$node->initiate_rev($proplim, $args);
+        $node->initiate_rev($proplim, $args);
 
-	if( $active )
-	{
-	    foreach my $pred_name ( keys %{$node->{'revarc'}} )
-	    {
-		push @arcs, @{ $node->{'revarc'}{$pred_name} };
-	    }
-	}
+        if ( $active )
+        {
+            foreach my $pred_name ( keys %{$node->{'revarc'}} )
+            {
+                push @arcs, @{ $node->{'revarc'}{$pred_name} };
+            }
+        }
 
-	if( $inactive )
-	{
-	    foreach my $pred_name ( keys %{$node->{'revarc_inactive'}} )
-	    {
-		push @arcs, @{ $node->{'revarc_inactive'}{$pred_name} };
-	    }
-	}
+        if ( $inactive )
+        {
+            foreach my $pred_name ( keys %{$node->{'revarc_inactive'}} )
+            {
+                push @arcs, @{ $node->{'revarc_inactive'}{$pred_name} };
+            }
+        }
     }
 
     @arcs = grep $_->meets_arclim($arclim), @arcs;
 
     my $lr = RDF::Base::Arc::List->new(\@arcs);
 
-    if( my $uap = $args->{unique_arcs_prio} )
+    if ( my $uap = $args->{unique_arcs_prio} )
     {
-	$lr = $lr->unique_arcs_prio($uap);
+        $lr = $lr->unique_arcs_prio($uap);
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	$lr = $lr->arc_active_on_date($aod);
+        $lr = $lr->arc_active_on_date($aod);
     }
 
-    if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+    if ( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
-	$lr = $lr->find($proplim, $args);
+        $lr = $lr->find($proplim, $args);
     }
 
     return $lr;
@@ -3846,15 +3852,15 @@ sub first_arc
     my( $active, $inactive ) = $arclim->incl_act;
 
     my( $pred, $name );
-    if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+    if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
     {
-	$pred = $pred_in;
-	$name = $pred->plain;
+        $pred = $pred_in;
+        $name = $pred->plain;
     }
     else
     {
-	$pred = RDF::Base::Pred->get($pred_in);
-	$name = $pred->plain
+        $pred = RDF::Base::Pred->get($pred_in);
+        $name = $pred->plain
     }
 
     # NOTE: We should make sure that if a relarc key exists, that the
@@ -3862,119 +3868,119 @@ sub first_arc
 
     $node->initiate_prop( $pred, $proplim, $args );
 
-    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    if ( my $sortargs_in = $args->{unique_arcs_prio} )
     {
-	#
-	# optimized version of RDF::Base::List->unique_arcs_prio
-	#
-	my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
+        #
+        # optimized version of RDF::Base::List->unique_arcs_prio
+        #
+        my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
 
-	my $arcs = [];
+        my $arcs = [];
 
-	if( $active and not $inactive )
-	{
-	    $arcs = $node->{'relarc'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $inactive and not $active )
-	{
-	    $arcs = $node->{'relarc_inactive'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $active and $inactive )
-	{
-	    if( defined $node->{'relarc'}{$name} )
-	    {
-		push @$arcs, @{$node->{'relarc'}{$name}};
-	    }
+        if ( $active and not $inactive )
+        {
+            $arcs = $node->{'relarc'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $inactive and not $active )
+        {
+            $arcs = $node->{'relarc_inactive'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $active and $inactive )
+        {
+            if ( defined $node->{'relarc'}{$name} )
+            {
+                push @$arcs, @{$node->{'relarc'}{$name}};
+            }
 
-	    if( defined $node->{'relarc_inactive'}{$name} )
-	    {
-		push @$arcs, @{$node->{'relarc_inactive'}{$name}};
-	    }
-	}
+            if ( defined $node->{'relarc_inactive'}{$name} )
+            {
+                push @$arcs, @{$node->{'relarc_inactive'}{$name}};
+            }
+        }
 
-	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+        my( $best_arc, $best_arc_cid, $best_arc_order, $i );
 
-	for( $i=0; $i<=$#$arcs; $i++ )
-	{
-	    my $arc = $arcs->[$i];
-	    if( $arc->meets_arclim($arclim) and
-		$arc->value_meets_proplim($proplim, $args) )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $sortargs->sortorder($best_arc);
-		last;
-	    }
-	}
+        for ( $i=0; $i<=$#$arcs; $i++ )
+        {
+            my $arc = $arcs->[$i];
+            if ( $arc->meets_arclim($arclim) and
+                 $arc->value_meets_proplim($proplim, $args) )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $sortargs->sortorder($best_arc);
+                last;
+            }
+        }
 
-	return is_undef unless $best_arc;
+        return is_undef unless $best_arc;
 
-	while( $i<=$#$arcs )
-	{
-	    my $arc = $arcs->[$i];
-	    unless( ($arc->common_id == $best_arc_cid) and
-		    $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args)
-		  )
-	    {
-		next;
-	    }
+        while ( $i<=$#$arcs )
+        {
+            my $arc = $arcs->[$i];
+            unless( ($arc->common_id == $best_arc_cid) and
+                    $arc->meets_arclim($arclim) and
+                    $arc->value_meets_proplim($proplim, $args)
+                  )
+            {
+                next;
+            }
 
-	    my $arc_order = $sortargs->sortorder($arc);
-	    if( $arc_order < $best_arc_order )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $arc_order;
-	    }
-	}
-	continue
-	{
-	    $i++;
-	}
+            my $arc_order = $sortargs->sortorder($arc);
+            if ( $arc_order < $best_arc_order )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $arc_order;
+            }
+        }
+        continue
+        {
+            $i++;
+        }
 
-	return $best_arc;
+        return $best_arc;
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	return $node->arc_list($pred, $proplim, $args)->get_first_nos;
+        return $node->arc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 
     # No unique filter
 
 
-    if( $active )
+    if ( $active )
     {
-	if( defined $node->{'relarc'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'relarc'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
-		{
-		    return $arc;
-		}
-	    }
-	}
+        if ( defined $node->{'relarc'}{$name} )
+        {
+            foreach my $arc (@{$node->{'relarc'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim) )
+                {
+                    return $arc;
+                }
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( defined $node->{'relarc_inactive'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
-		{
+        if ( defined $node->{'relarc_inactive'}{$name} )
+        {
+            foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim) )
+                {
 #		    debug "Arc ".$arc->sysdesig." meets ".$arclim->sysdesig;
-		    return $arc;
-		}
-	    }
-	}
+                    return $arc;
+                }
+            }
+        }
     }
 
     return is_undef;
@@ -3999,15 +4005,15 @@ sub first_revarc
     my( $active, $inactive ) = $arclim->incl_act;
 
     my( $pred, $name );
-    if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+    if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
     {
-	$pred = $pred_in;
-	$name = $pred->plain;
+        $pred = $pred_in;
+        $name = $pred->plain;
     }
     else
     {
-	$pred = RDF::Base::Pred->get($pred_in);
-	$name = $pred->plain
+        $pred = RDF::Base::Pred->get($pred_in);
+        $name = $pred->plain
     }
 
     # TODO: We should make sure that if a relarc key exists, that the
@@ -4015,118 +4021,118 @@ sub first_revarc
 
     $node->initiate_revprop( $pred, $proplim, $args );
 
-    if( my $sortargs_in = $args->{unique_arcs_prio} )
+    if ( my $sortargs_in = $args->{unique_arcs_prio} )
     {
-	#
-	# optimized version of RDF::Base::List->unique_arcs_prio
-	#
-	my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
+        #
+        # optimized version of RDF::Base::List->unique_arcs_prio
+        #
+        my $sortargs = RDF::Base::Arc::Lim->parse($sortargs_in);
 
-	my $arcs = [];
+        my $arcs = [];
 
-	if( $active and not $inactive )
-	{
-	    $arcs = $node->{'revarc'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $inactive and not $active )
-	{
-	    $arcs = $node->{'revarc_inactive'}{$name};
-	    return is_undef unless defined $arcs;
-	}
-	elsif( $active and $inactive )
-	{
-	    if( defined $node->{'revarc'}{$name} )
-	    {
-		push @$arcs, @{$node->{'revarc'}{$name}};
-	    }
+        if ( $active and not $inactive )
+        {
+            $arcs = $node->{'revarc'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $inactive and not $active )
+        {
+            $arcs = $node->{'revarc_inactive'}{$name};
+            return is_undef unless defined $arcs;
+        }
+        elsif ( $active and $inactive )
+        {
+            if ( defined $node->{'revarc'}{$name} )
+            {
+                push @$arcs, @{$node->{'revarc'}{$name}};
+            }
 
-	    if( defined $node->{'revarc_inactive'}{$name} )
-	    {
-		push @$arcs, @{$node->{'revarc_inactive'}{$name}};
-	    }
-	}
+            if ( defined $node->{'revarc_inactive'}{$name} )
+            {
+                push @$arcs, @{$node->{'revarc_inactive'}{$name}};
+            }
+        }
 
-	my( $best_arc, $best_arc_cid, $best_arc_order, $i );
+        my( $best_arc, $best_arc_cid, $best_arc_order, $i );
 
-	for( $i=0; $i<=$#$arcs; $i++ )
-	{
-	    my $arc = $arcs->[$i];
-	    if( $arc->meets_arclim($arclim) and
-		$arc->value_meets_proplim($proplim, $args) )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $sortargs->sortorder($best_arc);
-		last;
-	    }
-	}
+        for ( $i=0; $i<=$#$arcs; $i++ )
+        {
+            my $arc = $arcs->[$i];
+            if ( $arc->meets_arclim($arclim) and
+                 $arc->value_meets_proplim($proplim, $args) )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $sortargs->sortorder($best_arc);
+                last;
+            }
+        }
 
-	return is_undef unless $best_arc;
+        return is_undef unless $best_arc;
 
-	while( $i<=$#$arcs )
-	{
-	    my $arc = $arcs->[$i];
-	    unless( ($arc->common_id == $best_arc_cid) and
-		    $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim, $args)
-		  )
-	    {
-		next;
-	    }
+        while ( $i<=$#$arcs )
+        {
+            my $arc = $arcs->[$i];
+            unless( ($arc->common_id == $best_arc_cid) and
+                    $arc->meets_arclim($arclim) and
+                    $arc->value_meets_proplim($proplim, $args)
+                  )
+            {
+                next;
+            }
 
-	    my $arc_order = $sortargs->sortorder($arc);
-	    if( $arc_order < $best_arc_order )
-	    {
-		$best_arc = $arc;
-		$best_arc_cid = $arc->common_id;
-		$best_arc_order = $arc_order;
-	    }
-	}
-	continue
-	{
-	    $i++;
-	}
+            my $arc_order = $sortargs->sortorder($arc);
+            if ( $arc_order < $best_arc_order )
+            {
+                $best_arc = $arc;
+                $best_arc_cid = $arc->common_id;
+                $best_arc_order = $arc_order;
+            }
+        }
+        continue
+        {
+            $i++;
+        }
 
-	return $best_arc;
+        return $best_arc;
     }
-    elsif( my $aod = $args->{arc_active_on_date} )
+    elsif ( my $aod = $args->{arc_active_on_date} )
     {
-	return $node->revarc_list($pred, $proplim, $args)->get_first_nos;
+        return $node->revarc_list($pred, $proplim, $args)->get_first_nos;
     }
 
 
     # No unique filter
 
 
-    if( $active )
+    if ( $active )
     {
-	if( defined $node->{'revarc'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'revarc'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
-		{
-		    return $arc;
-		}
-	    }
-	}
+        if ( defined $node->{'revarc'}{$name} )
+        {
+            foreach my $arc (@{$node->{'revarc'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim) )
+                {
+                    return $arc;
+                }
+            }
+        }
     }
 
-    if( $inactive )
+    if ( $inactive )
     {
-	if( defined $node->{'revarc_inactive'}{$name} )
-	{
-	    foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
-	    {
-		if( $arc->meets_arclim($arclim) and
-		    $arc->value_meets_proplim($proplim) )
-		{
-		    return $arc;
-		}
-	    }
-	}
+        if ( defined $node->{'revarc_inactive'}{$name} )
+        {
+            foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
+            {
+                if ( $arc->meets_arclim($arclim) and
+                     $arc->value_meets_proplim($proplim) )
+                {
+                    return $arc;
+                }
+            }
+        }
     }
 
     return is_undef;
@@ -4151,13 +4157,13 @@ sub arc
     my $node = shift;
     my $arcs = $node->arc_list(@_);
 
-    if( defined $arcs->[1] ) # More than one element
+    if ( defined $arcs->[1] )   # More than one element
     {
-	return $arcs;
+        return $arcs;
     }
     else
     {
-	return $arcs->get_first_nos;
+        return $arcs->get_first_nos;
     }
 }
 
@@ -4180,13 +4186,13 @@ sub revarc
     my $node = shift;
     my $arcs = $node->revarc_list(@_);
 
-    if( defined $arcs->[1] ) # More than one element
+    if ( defined $arcs->[1] )   # More than one element
     {
-	return $arcs;
+        return $arcs;
     }
     else
     {
-	return $arcs->get_first_nos;
+        return $arcs->get_first_nos;
     }
 }
 
@@ -4212,18 +4218,18 @@ L<RDF::Base::Arc/this_valtype>, L</is_value_node>.
 
 sub this_valtype
 {
-    unless( $_[0]->{'valtype'} )
+    unless ( $_[0]->{'valtype'} )
     {
-	debug 2, "Letting find_class find out type for $_[0]->{id}";
-	$_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
+        debug 2, "Letting find_class find out type for $_[0]->{id}";
+        $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
 
-	unless( $_[0]->{'valtype'} )
-	{
-	    debug "Tried to find valtype of ".$_[0]->id;
-	    $Para::Frame::REQ->session->set_debug(3);
-	    $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
-	    confess "CONFUSED";
-	}
+        unless ( $_[0]->{'valtype'} )
+        {
+            debug "Tried to find valtype of ".$_[0]->id;
+            $Para::Frame::REQ->session->set_debug(3);
+            $_[0]->find_class((CLUE_NOARC|CLUE_NOVALUENODE));
+            confess "CONFUSED";
+        }
     }
 
     return $_[0]->{'valtype'};
@@ -4253,11 +4259,11 @@ sub update_seen_by
     return $user if $user->id == $C_root->id;
 
     $node->add({'seen_by'=>$user},
-		 {
-		  %$args,
-		  mark_updated => 1,
-		  activate_new_arcs => 1,
-		 });
+               {
+                %$args,
+                mark_updated => 1,
+                activate_new_arcs => 1,
+               });
 
     $node->arc_list('unseen_by',{obj=>$user})->remove({force_recursive=>1});
 
@@ -4309,21 +4315,21 @@ sub mark_updated
     my( $n, $time, $u ) = @_;
 
     $n->initiate_node;
-    if( $n->{'created'} || $n->{'created_obj'} )
+    if ( $n->{'created'} || $n->{'created_obj'} )
     {
-	$time ||= now();
-	$u ||= $Para::Frame::REQ->user;
+        $time ||= now();
+        $u ||= $Para::Frame::REQ->user;
 
-	$n->{'updated_obj'} = $time;
-	$n->{'updated_by_obj'} = $u;
-	delete $n->{'updated'};
-	delete $n->{'updated_by'};
+        $n->{'updated_obj'} = $time;
+        $n->{'updated_by_obj'} = $u;
+        delete $n->{'updated'};
+        delete $n->{'updated_by'};
     }
     else
     {
-	# Will call back here with created_obj set
-	$n->create_rec({time=>$time,
-			   user=> $u});
+        # Will call back here with created_obj set
+        $n->create_rec({time=>$time,
+                        user=> $u});
     }
 
     $n->mark_unsaved;
@@ -4373,31 +4379,31 @@ sub add
 
     unless( UNIVERSAL::isa($props, 'HASH') )
     {
-	confess "Invalid parameter ".query_desig($props);
+        confess "Invalid parameter ".query_desig($props);
     }
 
-    my $mark_updated = undef; # for tagging node with timestamp
-    my $mark_created = undef; # for tagging node with timestamp
+    my $mark_updated = undef;   # for tagging node with timestamp
+    my $mark_created = undef;   # for tagging node with timestamp
 
     my( $args_parsed ) = parse_propargs($args_in);
     my $args = {%$args_parsed}; # Shallow copy
 
     my %extra;
-    if( $args->{'read_access'} )
+    if ( $args->{'read_access'} )
     {
-	$extra{ read_access } = $args->{'read_access'}->id;
+        $extra{ read_access } = $args->{'read_access'}->id;
     }
-    if( $args->{'write_access'} )
+    if ( $args->{'write_access'} )
     {
-	$extra{ write_access } = $args->{'write_access'}->id;
+        $extra{ write_access } = $args->{'write_access'}->id;
     }
-    if( $args->{'arc_weight'} )
+    if ( $args->{'arc_weight'} )
     {
-	$extra{ arc_weight } = int( $args->{'arc_weight'} );
+        $extra{ arc_weight } = int( $args->{'arc_weight'} );
     }
-    if( $args->{'arc_weight_last'} )
+    if ( $args->{'arc_weight_last'} )
     {
-	$extra{ arc_weight_last } = int( $args->{'arc_weight_last'} );
+        $extra{ arc_weight_last } = int( $args->{'arc_weight_last'} );
     }
 #    if( $args->{'replaces'} ) # Not good. Must be one for each
 #    {
@@ -4406,119 +4412,121 @@ sub add
 
     foreach my $pred_name ( keys %$props )
     {
-	# Must be pred_name, not pred
+        # Must be pred_name, not pred
 
-	# Values may be other than Resources
-	my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
+        # Values may be other than Resources
+        my $vals = Para::Frame::List->new_any( $props->{$pred_name} );
 
-	if( $pred_name eq 'label' )
-	{
-	    if( $vals->size > 1 )
-	    {
-		confess "Can't give a node more than one label";
-	    }
-	    $node->set_label( $vals->get_first_nos );
-	}
-	elsif( $pred_name eq 'created' )
-	{
-	    $mark_created = $vals->get_first_nos;
-	}
-	elsif( $pred_name eq 'updated' )
-	{
-	    $mark_updated = $vals->get_first_nos;
-	}
-	elsif( $pred_name =~ /^rev_(.*)$/ )
-	{
-	    $pred_name = $1;
+        if ( $pred_name eq 'label' )
+        {
+            if ( $vals->size > 1 )
+            {
+                confess "Can't give a node more than one label";
+            }
+            $node->set_label( $vals->get_first_nos );
+        }
+        elsif ( $pred_name eq 'created' )
+        {
+            $mark_created = $vals->get_first_nos;
+        }
+        elsif ( $pred_name eq 'updated' )
+        {
+            $mark_updated = $vals->get_first_nos;
+        }
+        elsif ( $pred_name =~ /^rev_(.*)$/ )
+        {
+            $pred_name = $1;
 
-	    foreach my $val ( $vals->as_array )
-	    {
-		$val->add({$pred_name => $node}, $args);
-	    }
-	}
-	else
-	{
-	    my $pred = RDF::Base::Pred->get($pred_name);
-	    my $tot = $vals->size;
+            foreach my $val ( $vals->as_array )
+            {
+                $val->add({$pred_name => $node}, $args);
+            }
+        }
+        else
+        {
+            my $pred = RDF::Base::Pred->get($pred_name);
+            my $tot = $vals->size;
 
-	    if( $pred->objtype and $tot > 10 )
-	    {
-		# Pre-check for EXISTING
-		my %existing;
-		my %check;
-		my $existing_arcs = $node->arc_list($pred_name, undef, ['active', 'submitted', 'new']);
-		my( $arc, $eaerror ) = $existing_arcs->get_first;
-		while( !$eaerror )
-		{
-		    my $key = $arc->value->id;
-		    if( $existing{ $key } ++ )
-		    {
-			$check{ $key } ++;
-		    }
-		}
-		continue
-		{
-		    ( $arc, $eaerror ) = $existing_arcs->get_next;
-		};
+            if ( $pred->objtype and $tot > 10 )
+            {
+                # Pre-check for EXISTING
+                my %existing;
+                my %check;
+                my $existing_arcs = $node->arc_list($pred_name, undef, ['active', 'submitted', 'new']);
+                my( $arc, $eaerror ) = $existing_arcs->get_first;
+                while ( !$eaerror )
+                {
+                    my $key = $arc->value->id;
+                    if ( $existing{ $key } ++ )
+                    {
+                        $check{ $key } ++;
+                    }
+                }
+                continue
+                {
+                    ( $arc, $eaerror ) = $existing_arcs->get_next;
+                }
+                ;
 
-		my( $val, $verror ) = $vals->get_first;
-		while( !$verror )
-		{
-		    my $key = $val->id;
-		    if( $existing{ $key } ++ )
-		    {
-			$check{ $key } ++;
-		    }
-		}
-		continue
-		{
-		    ( $val, $verror ) = $vals->get_next;
-		};
+                my( $val, $verror ) = $vals->get_first;
+                while ( !$verror )
+                {
+                    my $key = $val->id;
+                    if ( $existing{ $key } ++ )
+                    {
+                        $check{ $key } ++;
+                    }
+                }
+                continue
+                {
+                    ( $val, $verror ) = $vals->get_next;
+                }
+                ;
 
-		$args->{'arc_create_check'} = \%check;
-	    }
+                $args->{'arc_create_check'} = \%check;
+            }
 
-	    my $mrkp = Time::HiRes::time();
-	    my $cnt = 0;
-	    RDF::Base::Arc->lock;
-	    foreach my $val ( $vals->as_array )
-	    {
-		RDF::Base::Arc->create({
-					subj => $node,
-					pred => $pred_name,
-					value => $val,
-					%extra,
-				       }, $args);
-		unless( ++ $cnt % 100 )
-		{
-		    if( $Para::Frame::REQ )
-		    {
+            my $mrkp = Time::HiRes::time();
+            my $cnt = 0;
+            RDF::Base::Arc->lock;
+            foreach my $val ( $vals->as_array )
+            {
+                RDF::Base::Arc->create({
+                                        subj => $node,
+                                        pred => $pred_name,
+                                        value => $val,
+                                        %extra,
+                                       }, $args);
+                unless( ++ $cnt % 100 )
+                {
+                    if ( $Para::Frame::REQ )
+                    {
 #			$Para::Frame::REQ->note("Created $cnt of $tot");
 
-			unless( $cnt % 500 )
-			{
-			    my $mrk = Time::HiRes::time();
-			    $Para::Frame::REQ->note(sprintf "Created %6d of %6d in %7.3f", $cnt, $tot, $mrk - $mrkp);
-			    $mrkp = $mrk;
-			}
+                        unless( $cnt % 500 )
+                        {
+                            my $mrk = Time::HiRes::time();
+                            $Para::Frame::REQ->note(sprintf "Created %6d of %6d in %7.3f", $cnt, $tot, $mrk - $mrkp);
+                            $mrkp = $mrk;
+                        }
 
-			die "cancelled" if $Para::Frame::REQ->cancelled;
-			$Para::Frame::REQ->may_yield;
-		    }
-		}
+                        die "cancelled" if $Para::Frame::REQ->cancelled;
+                        $Para::Frame::REQ->may_yield;
+                    }
+                }
 
-	    }
-	    RDF::Base::Arc->unlock;
-	}
+            }
+            RDF::Base::Arc->unlock;
+        }
     }
 
-    if( $mark_created or $mark_updated )
+    if ( $mark_created or $mark_updated )
     {
-	$node->mark_updated($mark_updated);
-	if( $mark_created )
-	{
-	    $node->{'created_obj'} = $mark_created;
-	}
+        $node->mark_updated($mark_updated);
+        if ( $mark_created )
+        {
+            $node->{'created_obj'} = $mark_created;
+        }
     }
 
     return $node;
@@ -4585,8 +4593,8 @@ sub update
     foreach my $pred_name ( keys %$props )
     {
         next if $pred_name eq 'label';
-	my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
-	push @arcs_old, $old->as_array;
+        my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
+        push @arcs_old, $old->as_array;
     }
 
     $node->replace(\@arcs_old, $props, $args);
@@ -4654,108 +4662,108 @@ sub equals
     $args ||= {};
     my $match = $args->{'match'} || 'eq';
 
-    if( $match eq 'ne' )
+    if ( $match eq 'ne' )
     {
-	return $node->equals($node2,{%$args, match=>'eq'}) ? 0 : 1;
+        return $node->equals($node2,{%$args, match=>'eq'}) ? 0 : 1;
     }
 
     return 0 unless defined $node2;
 
     my $DEBUG = 0;
 
-    if( ref $node2 )
+    if ( ref $node2 )
     {
         ### Handle some bootstrap issues...
-        if( ref $node2 eq 'RDF::Base::Constants' )
+        if ( ref $node2 eq 'RDF::Base::Constants' )
         {
             $node2 = $node2->hurry_init;
         }
 
 
-	if( UNIVERSAL::isa $node2, 'RDF::Base::Resource' )
-	{
-	    if( $DEBUG )
-	    {
-		debug "Comparing values:";
-		debug "1. ".$node->safedesig;
-		debug "2. ".$node2->safedesig;
-	    }
+        if ( UNIVERSAL::isa $node2, 'RDF::Base::Resource' )
+        {
+            if ( $DEBUG )
+            {
+                debug "Comparing values:";
+                debug "1. ".$node->safedesig;
+                debug "2. ".$node2->safedesig;
+            }
 
-	    if( $match eq 'eq' )
-	    {
-		return( ($node->id == $node2->id) ? 1 : 0 );
-	    }
-	    elsif( $match eq 'gt' )
-	    {
-		return( $node > $node2 );
-	    }
-	    elsif( $match eq 'lt' )
-	    {
-		return( $node < $node2 );
-	    }
-	    elsif( ($match eq 'begins') or ($match eq 'like') )
-	    {
-		return 0;
-	    }
-	    else
-	    {
-		confess "Matchtype $match not implemented";
-	    }
+            if ( $match eq 'eq' )
+            {
+                return( ($node->id == $node2->id) ? 1 : 0 );
+            }
+            elsif ( $match eq 'gt' )
+            {
+                return( $node > $node2 );
+            }
+            elsif ( $match eq 'lt' )
+            {
+                return( $node < $node2 );
+            }
+            elsif ( ($match eq 'begins') or ($match eq 'like') )
+            {
+                return 0;
+            }
+            else
+            {
+                confess "Matchtype $match not implemented";
+            }
 
-	}
-	elsif( ref $node2 eq 'HASH' )
-	{
-	    return RDF::Base::List->new([$node])->find($node2, $args)->size;
-	}
-	elsif( UNIVERSAL::isa($node2, 'RDF::Base::List') )
-	{
-	    foreach my $val ( $node2->as_array )
-	    {
-		return 1 if $node->equals($val, $args);
-	    }
-	    return 0;
-	}
-	elsif( ref $node2 eq 'ARRAY' )
-	{
-	    foreach my $val (@$node2 )
-	    {
-		return 1 if $node->equals($val, $args);
-	    }
-	    return 0;
-	}
-	elsif( ref $node2 eq 'RDF::Base::Undef' )
-	{
-	    return 0; # Resource is defined
-	}
-	elsif( ref $node2 and UNIVERSAL::isa($node2, 'RDF::Base::Literal') )
-	{
+        }
+        elsif ( ref $node2 eq 'HASH' )
+        {
+            return RDF::Base::List->new([$node])->find($node2, $args)->size;
+        }
+        elsif ( UNIVERSAL::isa($node2, 'RDF::Base::List') )
+        {
+            foreach my $val ( $node2->as_array )
+            {
+                return 1 if $node->equals($val, $args);
+            }
+            return 0;
+        }
+        elsif ( ref $node2 eq 'ARRAY' )
+        {
+            foreach my $val (@$node2 )
+            {
+                return 1 if $node->equals($val, $args);
+            }
+            return 0;
+        }
+        elsif ( ref $node2 eq 'RDF::Base::Undef' )
+        {
+            return 0;           # Resource is defined
+        }
+        elsif ( ref $node2 and UNIVERSAL::isa($node2, 'RDF::Base::Literal') )
+        {
 #	    debug sprintf "Comparing %s with %s", $node->sysdesig, $node2->sysdesig;
 
-	    if( $node->is_value_node )
-	    {
-		if( $node->first_literal->equals( $node2 ) )
-		{
-		    return 1;
-		}
-	    }
+            if ( $node->is_value_node )
+            {
+                if ( $node->first_literal->equals( $node2 ) )
+                {
+                    return 1;
+                }
+            }
 
-	    return 0;
-	}
-	else
-	{
+            return 0;
+        }
+        else
+        {
 #	    die "not implemented: $node2";
-	    debug "While comparing $node->{id} with other";
-	    confess "not implemented: ".datadump($node2,1);
-	}
+            debug "While comparing $node->{id} with other";
+            confess "not implemented: ".datadump($node2,1);
+        }
     }
 
-    if( $node2 =~ /^\d+$/ and ($match eq 'eq') )
+    if ( $node2 =~ /^\d+$/ and ($match eq 'eq') )
     {
-	return( ($node->id == $node2) ? 1 : 0 );
+        return( ($node->id == $node2) ? 1 : 0 );
     }
-    elsif( $node2 = RDF::Base::Resource->get( $node2 ) )
+    elsif ( $node2 = RDF::Base::Resource->get( $node2 ) )
     {
-	return $node->equals( $node2, $args );
+        return $node->equals( $node2, $args );
     }
 
     return 0;
@@ -4809,21 +4817,21 @@ sub vacuum_node
     #### Also call custom resource class, if existing
 
     my @classlist = reverse $class, @{"${class}::ISA"};
-    if( my $rc = $Para::Frame::CFG->{'resource_class'} )
+    if ( my $rc = $Para::Frame::CFG->{'resource_class'} )
     {
         unshift @classlist, $rc;
     }
 
     foreach my $sc (@classlist)
     {
-	debug "  Vacuum ${$n}{id} via $sc" if $DEBUG;
-	if( my $method = $sc->can("vacuum_facet") )
-	{
+        debug "  Vacuum ${$n}{id} via $sc" if $DEBUG;
+        if ( my $method = $sc->can("vacuum_facet") )
+        {
             next if $methods{$method}++;
             next unless $n->isa($sc); # Might have changed
             debug "  found $method" if $DEBUG;
-	    &{$method}($n, $args);
-	}
+            &{$method}($n, $args);
+        }
     }
 
     return $n;
@@ -4853,10 +4861,10 @@ sub vacuum_facet
     my $no_lim = RDF::Base::Arc::Lim->parse(['active','inactive']);
     foreach my $arc ( $node->arc_list( undef, undef, $no_lim )->as_array )
     {
-	next if $arc->disregard;
-	$Para::Frame::REQ->may_yield;
-	$arc->vacuum_facet( $args );
-	$arc->vacuum_node( $args );
+        next if $arc->disregard;
+        $Para::Frame::REQ->may_yield;
+        $arc->vacuum_facet( $args );
+        $arc->vacuum_node( $args );
     }
 
     $node->vacuum_range_card_max( $args );
@@ -4879,7 +4887,7 @@ sub vacuum_range_card_max
 #    debug "Enforcing cardinality";
     foreach my $pred ( $node->list_preds->as_array )
     {
-        if( my $rcm = $pred->first_prop('range_card_max')->plain )
+        if ( my $rcm = $pred->first_prop('range_card_max')->plain )
         {
             $node->arc_list( $pred, undef, $args )->sorted('id','desc')->slice($rcm)->remove($args);
         }
@@ -4925,13 +4933,13 @@ sub merge_node
     my( $node1, $node2, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    if( $node1->equals( $node2, $args ) )
+    if ( $node1->equals( $node2, $args ) )
     {
-	throw('validation', "You can't merge a node into itself");
+        throw('validation', "You can't merge a node into itself");
     }
 
     # Avoide recursive loops
-    if( $node1->{'merging'} )
+    if ( $node1->{'merging'} )
     {
         cluck sprintf("Merging of %d with %d in progress", $node1->id, $node2->id);
         return $node2;
@@ -4940,11 +4948,11 @@ sub merge_node
 
 
     debug sprintf("Merging %s with %s",
-		  $node1->sysdesig($args),
-		  $node2->sysdesig($args),
-		 );
+                  $node1->sysdesig($args),
+                  $node2->sysdesig($args),
+                 );
 
-    RDF::Base::Arc->lock; ### Complete merge before triggers
+    RDF::Base::Arc->lock;       ### Complete merge before triggers
 
     $args->{'ignore_card_check'} = 1;
 
@@ -4956,10 +4964,10 @@ sub merge_node
         next unless $arc->active;
         next if $arc->disregard;
 
-	my $pred_name = $arc->pred->plain;
-	if( my $obj = $arc->obj )
-	{
-	    debug sprintf "  Moving %s", $arc->sysdesig;
+        my $pred_name = $arc->pred->plain;
+        if ( my $obj = $arc->obj )
+        {
+            debug sprintf "  Moving %s", $arc->sysdesig;
 
             RDF::Base::Arc->create({
                                     subj => $node2,
@@ -4973,27 +4981,27 @@ sub merge_node
 #            {
 #                die "THIS IS A VALUE NODE: ".$obj->sysdesig;
 #            }
-	}
-	elsif( $move_literals )
-	{
-	    debug sprintf "  Moving %s", $arc->sysdesig($args);
-	    $node2->add({$pred_name => $arc->value}, $args );
-	}
-	$arc->remove( $args );
+        }
+        elsif ( $move_literals )
+        {
+            debug sprintf "  Moving %s", $arc->sysdesig($args);
+            $node2->add({$pred_name => $arc->value}, $args );
+        }
+        $arc->remove( $args );
     }
 
     foreach my $arc ( $node1->revarc_list(undef, undef, ['active','explicit'])->nodes )
     {
-	my $pred_name = $arc->pred->plain;
-	if( my $subj = $arc->subj )
-	{
-	    $subj->add({ $pred_name => $node2 }, $args);
-	}
-	$arc->remove( $args );
+        my $pred_name = $arc->pred->plain;
+        if ( my $subj = $arc->subj )
+        {
+            $subj->add({ $pred_name => $node2 }, $args);
+        }
+        $arc->remove( $args );
     }
 
 
-    RDF::Base::Arc->unlock; ### Complete merge before triggers
+    RDF::Base::Arc->unlock;     ### Complete merge before triggers
 
     $node2->vacuum_node;
 
@@ -5033,37 +5041,37 @@ sub link_paths
 
     # TODO:  ----> merge arclim with 'direct' with a method
     my @parents = $node->list('scof', {inactive_ne=>1},
-			      aais($args,'adirect'))->nodes;
+                              aais($args,'adirect'))->nodes;
 
     foreach my $parent ( @parents )
     {
-	debug 3, '  'x$lvl . "  parent ".$parent->id;
-	foreach my $part ( @{ $parent->link_paths($args, $lvl) } )
-	{
-	    if( debug > 2 )
-	    {
-		debug '  'x$lvl . "    part has: ".join(', ', map $_->id, @$part);
-	    }
+        debug 3, '  'x$lvl . "  parent ".$parent->id;
+        foreach my $part ( @{ $parent->link_paths($args, $lvl) } )
+        {
+            if ( debug > 2 )
+            {
+                debug '  'x$lvl . "    part has: ".join(', ', map $_->id, @$part);
+            }
 
-	    push @$part, $parent;
-	    push @link_paths, $part;
-	}
+            push @$part, $parent;
+            push @link_paths, $part;
+        }
     }
 
     unless( @parents )
     {
-	push @link_paths, [];
+        push @link_paths, [];
     }
 
 
-    if( debug > 2 )
+    if ( debug > 2 )
     {
-	debug '  'x$lvl . "  Returning:";
-	foreach my $row ( @link_paths )
-	{
-	    debug '  'x$lvl . "    " . join(", ", map $_->id, @$row);
-	}
-	debug '  'x$lvl . "  ----------";
+        debug '  'x$lvl . "  Returning:";
+        foreach my $row ( @link_paths )
+        {
+            debug '  'x$lvl . "    " . join(", ", map $_->id, @$row);
+        }
+        debug '  'x$lvl . "  ----------";
     }
 
     return \@link_paths;
@@ -5090,7 +5098,7 @@ sub arcversions
 
 #    debug "In arcversions for $predname for ".$node->sysdesig;
 
-    return #probably new...
+    return                      #probably new...
       unless( UNIVERSAL::isa($node, 'RDF::Base::Resource') );
 
 
@@ -5100,17 +5108,17 @@ sub arcversions
 
     my %arcversions;
 
-    while( my $arc = $arcs->get_next_nos )
+    while ( my $arc = $arcs->get_next_nos )
     {
-	my @versions;
+        my @versions;
 
-	push @versions,
-	  $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
-	#debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
+        push @versions,
+          $arc->versions($proplim, ['active','submitted'])->sorted('updated')->as_array;
+        #debug "Getting versions of ". $arc->id .".  Got ". $arc->versions($proplim, ['active','submitted'])->size;
 
-	$arcversions{$arc->id} = \@versions
-	  if( @versions );
-	#debug "Added arc ". $arc->sysdesig;
+        $arcversions{$arc->id} = \@versions
+          if ( @versions );
+        #debug "Added arc ". $arc->sysdesig;
     }
 
     #debug datadump( \%arcversions, 2 );
@@ -5134,7 +5142,7 @@ sub restore_points
 {
     my( $node ) = @_;
 
-    return #probably new...
+    return                      #probably new...
       unless( UNIVERSAL::isa($node, 'RDF::Base::Resource') );
 
 
@@ -5143,7 +5151,7 @@ sub restore_points
     my $arcs = $node->arc_list( undef, $proplim, [['old','not_removal']] );
 
     my %points;
-    while( my $arc = $arcs->get_next_nos )
+    while ( my $arc = $arcs->get_next_nos )
     {
         my $ts = $arc->deactivated->syskey;
         $points{$ts} ||=
@@ -5273,43 +5281,43 @@ sub wn
     my $divid = $args->{'divid'} ||
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
 
-    if( $divid and not $from_ajax )
+    if ( $divid and not $from_ajax )
     {
-	$args->{'divid'} = $divid;
+        $args->{'divid'} = $divid;
 #	$out .= "(>$divid)";
-	$out .= '<div id="'. $divid .'" style="position: relative;">';
+        $out .= '<div id="'. $divid .'" style="position: relative;">';
     }
 
     $out .= $node->label_from_params( $args );
 
     my $view = $args->{'view'} ||= '';
-    if( $view )
+    if ( $view )
     {
-	my $method = "view_$view";
+        my $method = "view_$view";
 
-	if( $node->can($method) )
-	{
-	    $out .= $node->$method( $args );
-	}
-	else
-	{
-	    my $noded = $node->sysdesig;
-	    die "Node $noded misses method $method";
-	}
+        if ( $node->can($method) )
+        {
+            $out .= $node->$method( $args );
+        }
+        else
+        {
+            my $noded = $node->sysdesig;
+            die "Node $noded misses method $method";
+        }
     }
     else
     {
 	    my $noded = $node->sysdesig;
-	$out .= "TODO: implement wn for $noded"
+        $out .= "TODO: implement wn for $noded"
     }
 
-    if( $divid and not $from_ajax )
+    if ( $divid and not $from_ajax )
     {
-	$out .= '</div>';
-	$out .= $node->register_ajax_pagepart( $divid,
-					       {
-						%$args,
-					       });
+        $out .= '</div>';
+        $out .= $node->register_ajax_pagepart( $divid,
+                                               {
+                                                %$args,
+                                               });
     }
 
     return $out;
@@ -5343,10 +5351,10 @@ sub display
 #    my $R = RDF::Base->Resource;
     my $rev = 0;
 
-    if( $pred_name =~ /^rev_(.*)$/ )
+    if ( $pred_name =~ /^rev_(.*)$/ )
     {
-	$pred_name = $1;
-	$rev = 1;
+        $pred_name = $1;
+        $rev = 1;
     }
 
     # Should we support dynamic preds?
@@ -5354,20 +5362,20 @@ sub display
 
 #    debug "  DISPLAY ".$pred->desig;
 
-    if( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
+    if ( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
     {
-	$args->{'format'} ||= $format;
+        $args->{'format'} ||= $format;
 #	debug "  WITH FORMAT";
     }
 
     my $value;
-    if( $rev )
+    if ( $rev )
     {
-	$value = $node->rev_prop($pred, undef, $args );
+        $value = $node->rev_prop($pred, undef, $args );
     }
     else
     {
-	$value = $node->prop($pred, undef, $args );
+        $value = $node->prop($pred, undef, $args );
     }
 
 #    my $out = $value->desig($args);
@@ -5399,9 +5407,9 @@ sub wdirc
     my( $this, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    unless( $args->{'arclim'}->size ) # Defaults to active arcs
+    unless ( $args->{'arclim'}->size ) # Defaults to active arcs
     {
-	$args->{'arclim'} =  RDF::Base::Arc::Lim->parse('active');
+        $args->{'arclim'} =  RDF::Base::Arc::Lim->parse('active');
     }
 
     my( $range, $range_pred ) = range_pred($args)
@@ -5410,62 +5418,62 @@ sub wdirc
     my $out = '';
     my $is_rev = $args->{'rev'} || '';
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
-		 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
+                 $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
+                 : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
 
-    if( $is_rev )
+    if ( $is_rev )
     {
-	$list = $list->find({ subj => { $range_pred => $range }}) # Sort out arcs on range...
-	  if( $range and $range ne $C_resource );
+        $list = $list->find({ subj => { $range_pred => $range }}) # Sort out arcs on range...
+          if ( $range and $range ne $C_resource );
     }
     else
     {
-	$list = $list->find({ obj => { $range_pred => $range }}) # Sort out arcs on range...
-	  if( $range and $range ne $C_resource );
+        $list = $list->find({ obj => { $range_pred => $range }}) # Sort out arcs on range...
+          if ( $range and $range ne $C_resource );
     }
 
     $out .= $pred->label_from_params({
-			       label       => delete $args->{'label'},
-			       tdlabel     => delete $args->{'tdlabel'},
-			       separator   => $args->{'separator'},
-			       id          => $args->{'id'},
-			       label_class => delete $args->{'label_class'},
-			      });
+                                      label       => delete $args->{'label'},
+                                      tdlabel     => delete $args->{'tdlabel'},
+                                      separator   => $args->{'separator'},
+                                      id          => $args->{'id'},
+                                      label_class => delete $args->{'label_class'},
+                                     });
 
     $out .= '<ul>'
-      if( $list->size > 1);
+      if ( $list->size > 1);
 
     debug "Making a wdirc for ". $pred->label ." with ". $list->size ." items.  Range: ". $range->sysdesig;
     foreach my $arc ($list->as_array)
     {
-	$out .= '<li>'
-	  if( $list->size > 1);
+        $out .= '<li>'
+          if ( $list->size > 1);
 
-	my $item;
-	if( $is_rev )
-	{
-	    $item = $arc->subj;
-	}
-	else
-	{
-	    $item = $arc->value;
-	}
+        my $item;
+        if ( $is_rev )
+        {
+            $item = $arc->subj;
+        }
+        else
+        {
+            $item = $arc->value;
+        }
 
-	#$out .= $item->name->loc;
-	$out .= $item->as_html;
+        #$out .= $item->name->loc;
+        $out .= $item->as_html;
 
-	if( $list->size > 1)
-	{
-	    $out .= '</li>';
-	}
-	else
-	{
-	    $out .= '<br/>';
-	}
+        if ( $list->size > 1)
+        {
+            $out .= '</li>';
+        }
+        else
+        {
+            $out .= '<br/>';
+        }
     }
 
     $out .= '</ul>'
-      if( $list->size > 1);
+      if ( $list->size > 1);
 
     return $out;
 }
@@ -5519,11 +5527,11 @@ sub wu
     my $R = RDF::Base->Resource;
     my $rev = $args->{'rev'} || 0;
 
-    if( $pred_name =~ /^rev_(.*)$/ )
+    if ( $pred_name =~ /^rev_(.*)$/ )
     {
-	$pred_name = $1;
-	$rev = 1;
-	$args->{'rev'} = 1;
+        $pred_name = $1;
+        $rev = 1;
+        $args->{'rev'} = 1;
     }
 
     # Should we support dynamic preds?
@@ -5532,12 +5540,12 @@ sub wu
     my( $range, $range_pred ) = range_pred($args);
     my( $range_is, $range_scof, $range_class );
 
-    if( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
+    if ( my $format = $pred->first_prop('has_pred_format',undef,['active']) )
     {
-	$args->{'format'} ||= $format;
+        $args->{'format'} ||= $format;
     }
 
-    if( $range )
+    if ( $range )
     {
         $range = $R->get($range) unless ref $range;
         given($range_pred)
@@ -5546,23 +5554,23 @@ sub wu
             when('scof'){ $range_scof = $range }
         }
     }
-    elsif( $rev )
+    elsif ( $rev )
     {
         $range_is = $pred->first_prop('domain',undef,['active'])
           || $C_resource;
         $range_scof = $pred->first_prop('domain_scof',undef,['active']);
-	#debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
-	#  $range->sysdesig;
+        #debug "REV Range". ( $range_scof ? ' (scof)' : '') .": ".
+        #  $range->sysdesig;
     }
     else
     {
-	$range_is = $pred->valtype;
-	$range_scof = $pred->first_prop('range_scof',undef,['active']);
+        $range_is = $pred->valtype;
+        $range_scof = $pred->first_prop('range_scof',undef,['active']);
     }
 
     unless( $range_pred )
     {
-        if( $range_scof )
+        if ( $range_scof )
         {
             $range_pred = 'scof';
             $range = $range_scof;
@@ -5574,7 +5582,7 @@ sub wu
         }
     }
 
-    if( $range->is_resource )
+    if ( $range->is_resource )
     {
         $range_class = $range->instance_class;
     }
@@ -5606,10 +5614,10 @@ sub wu
 
 
 
-    if( $divid and not $from_ajax )
+    if ( $divid and not $from_ajax )
     {
 #	$out .= "(>$divid)";
-	$out .= '<div id="'. $divid .'" style="position: relative;">';
+        $out .= '<div id="'. $divid .'" style="position: relative;">';
     }
 
     # widget for updating subclass of range class
@@ -5617,15 +5625,15 @@ sub wu
     $out .= $out_wuirc;
     $out .= $extra_html if $extra_html;
 
-    if( $divid and not $from_ajax )
+    if ( $divid and not $from_ajax )
     {
-	$out .= '</div>';
+        $out .= '</div>';
 
-	if( $ajax )
-	{
-	    $args->{'pred_name'} = $pred_name;
-	    $out .= $node->register_ajax_pagepart( $divid, $args );
-	}
+        if ( $ajax )
+        {
+            $args->{'pred_name'} = $pred_name;
+            $out .= $node->register_ajax_pagepart( $divid, $args );
+        }
     }
 
     return $out;
@@ -5653,9 +5661,9 @@ sub wuh
                                        if => $args->{'if'},
                                       });
 
-    if( ref $value and UNIVERSAL::isa $value, "RDF::Base::Resource" )
+    if ( ref $value and UNIVERSAL::isa $value, "RDF::Base::Resource" )
     {
-	$value = $value->id;
+        $value = $value->id;
     }
 
     return Para::Frame::Widget::hidden($fkey, $value);
@@ -5687,31 +5695,32 @@ sub register_ajax_pagepart
 
     my $out = "";
     my $params = {
-		  from_ajax => 1,
-		 };
+                  from_ajax => 1,
+                 };
     foreach my $key (keys %$args)
     {
-	if( $key =~ /label/ or
+        if ( $key =~ /label/ or
 	    $key eq 'arclim' or
 	    $key eq 'res' or
 	    $key eq 'depends_on'
 	  )
-	{}
-	elsif( $key eq 'lookup_pred' )
 	{
-	    $params->{$key} = $args->{$key};
-	}
-	elsif( ref $args->{$key} and UNIVERSAL::isa $args->{$key}, 'RDF::Base::Resource' )
-	{
-	    $params->{$key} = $args->{$key}->id;
-	}
-	elsif( ref $args->{$key} )
-	{
-	}
-	else
-	{
-	    $params->{$key} = $args->{$key};
-	}
+    }
+        elsif ( $key eq 'lookup_pred' )
+        {
+            $params->{$key} = $args->{$key};
+        }
+        elsif ( ref $args->{$key} and UNIVERSAL::isa $args->{$key}, 'RDF::Base::Resource' )
+        {
+            $params->{$key} = $args->{$key}->id;
+        }
+        elsif ( ref $args->{$key} )
+        {
+        }
+        else
+        {
+            $params->{$key} = $args->{$key};
+        }
     }
 
     my $home = $Para::Frame::REQ->site->home_url_path;
@@ -5722,31 +5731,31 @@ sub register_ajax_pagepart
             { params: { subj: '". $node->id ."',
                         params: '". to_json( $params ) ."'";
 
-    if( my $pred_name = $args->{'pred_name'} )
+    if ( my $pred_name = $args->{'pred_name'} )
     {
-	$out .= ", pred_name: '$pred_name'";
+        $out .= ", pred_name: '$pred_name'";
     }
 
-    if( my $view = $args->{'view'} )
+    if ( my $view = $args->{'view'} )
     {
-	$out .= ", view: '$view'";
+        $out .= ", view: '$view'";
     }
 
     $out .= "}";
 
-    if( my $depends_on = $args->{'depends_on'} )
+    if ( my $depends_on = $args->{'depends_on'} )
     {
-	if( ref $depends_on )
-	{
+        if ( ref $depends_on )
+        {
 #	    debug "Ref depends_on: ". ref $depends_on;
-	    $depends_on = join(', ', map("'$_'", @$depends_on));
-	}
-	else
-	{
-	    $depends_on = "'$depends_on'";
-	}
+            $depends_on = join(', ', map("'$_'", @$depends_on));
+        }
+        else
+        {
+            $depends_on = "'$depends_on'";
+        }
 #	debug "Depends on now: ". $depends_on;
-	$out .= ", depends_on: [ $depends_on ]";
+        $out .= ", depends_on: [ $depends_on ]";
     }
     $out .= "}); //--> </script>";
 
@@ -5846,9 +5855,9 @@ sub wuirc
 
 #    debug "args:".query_desig($args);
 
-    unless( $args->{'arclim'}->size ) # Defaults to active arcs
+    unless ( $args->{'arclim'}->size ) # Defaults to active arcs
     {
-	$args->{'arclim'} =  RDF::Base::Arc::Lim->parse('active');
+        $args->{'arclim'} =  RDF::Base::Arc::Lim->parse('active');
     }
 
     my $DEBUG = 0;
@@ -5871,13 +5880,13 @@ sub wuirc
     my $lookup_pred = $args->{'lookup_pred'} || 'name_clean_like';
     unless( UNIVERSAL::isa( $lookup_pred, 'ARRAY' ) )
     {
-	$lookup_pred = [$lookup_pred];
+        $lookup_pred = [$lookup_pred];
     }
 
     $args->{'source'} = $subj;
 
     my $show_args;
-    if( $args->{show_implicit} )
+    if ( $args->{show_implicit} )
     {
         $show_args = $args;
     }
@@ -5887,15 +5896,15 @@ sub wuirc
     }
 
     my $list = ( $is_rev ?
-		 $subj->revarc_list( $pred->label, undef, $show_args )
-		 : $subj->arc_list( $pred->label, undef, $show_args ) );
+                 $subj->revarc_list( $pred->label, undef, $show_args )
+                 : $subj->arc_list( $pred->label, undef, $show_args ) );
 
-    unless( defined $args->{'arc_type'} )
+    unless ( defined $args->{'arc_type'} )
     {
-	if( $pred->first_prop('range_card_max')->equals(1) )
-	{
-	    $args->{'arc_type'} = 'singular';
-	}
+        if ( $pred->first_prop('range_card_max')->equals(1) )
+        {
+            $args->{'arc_type'} = 'singular';
+        }
     }
 
     my $arc_type = $args->{'arc_type'};
@@ -5909,11 +5918,11 @@ sub wuirc
     my $rev_range_pred = 'rev_'.$range_pred;
     $rev_range_pred =~ s/^rev_rev_//;
 
-    if( $alternatives )
+    if ( $alternatives )
     {
         $range_count = $alternatives->size;
     }
-    elsif( $range_pred =~ /^rev_/ )
+    elsif ( $range_pred =~ /^rev_/ )
     {
         $range_count = $range->count($rev_range_pred);
     }
@@ -5926,31 +5935,31 @@ sub wuirc
                      ( $is_scof ? 'select_tree' : 'select' )
                      : 'text' );
 
-   if( $DEBUG )
+    if ( $DEBUG )
     {
-	debug "FOUND list ".$list->sysdesig;
-	debug "range_pred $range_pred";
-	debug "range ".$range->sysdesig;
-	debug "is_rev ".($is_rev//'undef');
+        debug "FOUND list ".$list->sysdesig;
+        debug "range_pred $range_pred";
+        debug "range ".$range->sysdesig;
+        debug "is_rev ".($is_rev//'undef');
         debug "arc_type ".($arc_type//'undef');
         debug "singular ".($singular//'undef');
         debug "inputtype ".$inputtype;
     }
 
     # Sort out arcs on range...
-    if( $is_rev )
+    if ( $is_rev )
     {
-	$list = $list->find({ subj => { $range_pred => $range }});
+        $list = $list->find({ subj => { $range_pred => $range }});
     }
     else
     {
-	$list = $list->find({ obj => { $range_pred => $range }});
+        $list = $list->find({ obj => { $range_pred => $range }});
     }
 #    debug "FILTERED on range list ".$list->sysdesig;
 
     # Prefere, but don't require direct arcs
     my $list_direct = $list->direct;
-    if( $list_direct->size )
+    if ( $list_direct->size )
     {
         $list = $list_direct;
     }
@@ -5963,29 +5972,29 @@ sub wuirc
     my $cur_value_is_in_input_widget =
       ( $singular and ($inputtype ne 'text') );
 
-    if( $list and not $cur_value_is_in_input_widget )
+    if ( $list and not $cur_value_is_in_input_widget )
     {
-	debug "wuirc 1" if $DEBUG;
+        debug "wuirc 1" if $DEBUG;
 
-	delete $args->{'default_value'}; # No default when values exist...
+        delete $args->{'default_value'}; # No default when values exist...
 
-	$out .= "<table class=\"wuirc\">\n";
+        $out .= "<table class=\"wuirc\">\n";
 #	$out .= "<ul id=\"$divid-list\">"
 #	  if( $list->size > 1);
 
 #	debug "Getting table columns for range ".$range->sysdesig;
 #	debug "Getting table columns for class ".$range->find_class;
-	my $columns = $args->{'columns'} ||
-	  $range->instance_class->table_columns( $pred, $args );
-	push @$columns, '-arc_remove';
-	$args->{'columns'} = $columns;
+        my $columns = $args->{'columns'} ||
+          $range->instance_class->table_columns( $pred, $args );
+        push @$columns, '-arc_remove';
+        $args->{'columns'} = $columns;
 #	debug "Columns: ".datadump($columns);
 
-	foreach my $arc (@$list)
-	{
-	    $out .= $arc->table_row( $args );
-	}
-	$out .= "</table>\n";
+        foreach my $arc (@$list)
+        {
+            $out .= $arc->table_row( $args );
+        }
+        $out .= "</table>\n";
     }
 
 #    $out .= "</ul>"
@@ -5996,86 +6005,86 @@ sub wuirc
     #
     my $card_reached = ($singular and $list );
 
-    if( $cur_value_is_in_input_widget or
-        ( not $disabled and not $card_reached )
-      )
+    if ( $cur_value_is_in_input_widget or
+         ( not $disabled and not $card_reached )
+       )
     {
-	debug "wuirc 2" if $DEBUG;
+        debug "wuirc 2" if $DEBUG;
 
-	if( $inputtype eq 'text' and $ajax and not $disabled )
-	{
-	    debug "wuirc 3" if $DEBUG;
+        if ( $inputtype eq 'text' and $ajax and not $disabled )
+        {
+            debug "wuirc 3" if $DEBUG;
 
-	    my $search_params = { $range_pred => $range->id };
+            my $search_params = { $range_pred => $range->id };
 
-	    # Stringify
-	    my $default = "" . ($args->{'default_value'}||"");
+            # Stringify
+            my $default = "" . ($args->{'default_value'}||"");
 
-	    my $on_arc_add = $args->{'on_arc_add'};
+            my $on_arc_add = $args->{'on_arc_add'};
 
-	    $out .= "
+            $out .= "
               <input type=\"button\" id=\"$divid-button\" class=\"btn btn-primary wuirc-add\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
-	    $out .= sprintf(q{
+            $out .= sprintf(q{
 <script type="text/javascript">
 <!--
   new RBInputPopup(%s);
 //-->
 </script>
 },
-			    to_json({
-				     button => $divid.'-button',
-				     divid  => $divid,
-				     search_crit => $search_params,
-				     search_type => $lookup_pred,
-				     pred_name => $pred->plain,
-				     subj => $subj->id,
-				     rev => ($is_rev?1:0),
-				     seen_node => $subj->id,
-				     hide_create_button => $hide_create_button,
-				     default_value => $default,
-				     on_arc_add => $on_arc_add,
-				    }));
-	}
-	elsif( $inputtype eq 'text' and not $disabled )
-	{
-	    debug "wuirc 4" if $DEBUG;
+                            to_json({
+                                     button => $divid.'-button',
+                                     divid  => $divid,
+                                     search_crit => $search_params,
+                                     search_type => $lookup_pred,
+                                     pred_name => $pred->plain,
+                                     subj => $subj->id,
+                                     rev => ($is_rev?1:0),
+                                     seen_node => $subj->id,
+                                     hide_create_button => $hide_create_button,
+                                     default_value => $default,
+                                     on_arc_add => $on_arc_add,
+                                    }));
+        }
+        elsif ( $inputtype eq 'text' and not $disabled )
+        {
+            debug "wuirc 4" if $DEBUG;
 
-	    my $fkeys =
-	    {
-	     $is_rev.'pred' => $pred,
-	    };
-	    $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
+            my $fkeys =
+            {
+             $is_rev.'pred' => $pred,
+            };
+            $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
-	    my $input_id = $subj->build_field_key($fkeys);
-	    $args->{id} = $input_id;
+            my $input_id = $subj->build_field_key($fkeys);
+            $args->{id} = $input_id;
 
-	    $out .=
-	      Para::Frame::Widget::input($input_id,
-					 $args->{'default_value'},
-					 {
-					  label => Para::Frame::L10N::loc('Add'),
-					 });
-	}
-	elsif( $inputtype eq 'select' )
-	{
-	    debug "wuirc 5" if $DEBUG;
+            $out .=
+              Para::Frame::Widget::input($input_id,
+                                         $args->{'default_value'},
+                                         {
+                                          label => Para::Frame::L10N::loc('Add'),
+                                         });
+        }
+        elsif ( $inputtype eq 'select' )
+        {
+            debug "wuirc 5" if $DEBUG;
 
-	    my $header = $args->{'header'} ||
-	      ( $args->{'default_value'} ? '' :
-		Para::Frame::L10N::loc('Select') );
-	    $args->{header} = $header;
-	    $out .= $subj->wu_select( $pred->label, $range, $args);
-	}
-	elsif( $inputtype eq 'select_tree' )
-	{
-	    debug "wuirc 6" if $DEBUG;
+            my $header = $args->{'header'} ||
+              ( $args->{'default_value'} ? '' :
+                Para::Frame::L10N::loc('Select') );
+            $args->{header} = $header;
+            $out .= $subj->wu_select( $pred->label, $range, $args);
+        }
+        elsif ( $inputtype eq 'select_tree' )
+        {
+            debug "wuirc 6" if $DEBUG;
 
-	    $out .= $subj->wu_select_tree( $pred->label, $range, $args );
-	}
-	else
-	{
-	    confess "Unknown input type: $inputtype";
-	}
+            $out .= $subj->wu_select_tree( $pred->label, $range, $args );
+        }
+        else
+        {
+            confess "Unknown input type: $inputtype";
+        }
     }
 
     return $out;
@@ -6131,7 +6140,7 @@ sub wu_select_tree
 
     unless( UNIVERSAL::isa $type, 'RDF::Base::Node' )
     {
-	confess "type missing: ".datadump($type,2);
+        confess "type missing: ".datadump($type,2);
     }
 
 #     $out .= label_from_params({
@@ -6142,15 +6151,15 @@ sub wu_select_tree
 #			       label_class => $args->{'label_class'},
 #			      });
 
-    if( $disabled and $set_value )
+    if ( $disabled and $set_value )
     {
-	my $arclist = $subj->arc_list($pred_name, undef, $args);
+        my $arclist = $subj->arc_list($pred_name, undef, $args);
 
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
-	}
-	return $out;
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+        }
+        return $out;
     }
 
     $out .= '<select name="parameter_in_value"><option rel="nop-'.
@@ -6163,16 +6172,16 @@ sub wu_select_tree
     my $val_query = $q->param($val_stripped);
 
     my $selected = $subj->first_prop($pred_name);
-    if( not $selected and $args->{'default_value'} )
+    if ( not $selected and $args->{'default_value'} )
     {
         $selected = $R->get($args->{'default_value'});
     }
     $selected ||= is_undef;
 
 
-    while( my $subtype = $subtypes->get_next_nos )
+    while ( my $subtype = $subtypes->get_next_nos )
     {
-	$out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
+        $out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
         my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
           .'pred_'. $pred_name .'='. $subtype->id;
@@ -6182,45 +6191,45 @@ sub wu_select_tree
             $out .= " value=\"$value\"";
         }
 
-        if( $val_query )
+        if ( $val_query )
         {
-            if( $val_query eq $subtype->id )
+            if ( $val_query eq $subtype->id )
             {
                 $out .= ' selected="selected"';
             }
         }
-        elsif( $set_value )
+        elsif ( $set_value )
         {
-            if( $selected->equals($subtype) or
-                $selected->scof( $subtype )
-              )
+            if ( $selected->equals($subtype) or
+                 $selected->scof( $subtype )
+               )
             {
                 $out .= ' selected="selected"';
                 $arc = $subj->arc( $pred_name, $subtype );
             }
         }
 
-	$out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
+        $out .= '>'. ( $subtype->name_short->loc || $subtype->desig || $subtype->label) .'</option>';
     }
     $out .= '</select>';
 
-    if( $set_value )
+    if ( $set_value )
     {
         $out .= $arc->edit_link_html
-          if( $arc );
+          if ( $arc );
     }
 
     $out .= '<div rel="nop-'. $type->id .'-'. $subj->id .'" style="display: none"></div>'; # usableforms quirk...
 
     $subtypes->reset;
-    while( my $subtype = $subtypes->get_next_nos )
+    while ( my $subtype = $subtypes->get_next_nos )
     {
-	$out .= '<div rel="'. $subtype->id .'-'. $subj->id .'" style="display: inline">';
+        $out .= '<div rel="'. $subtype->id .'-'. $subj->id .'" style="display: inline">';
 
-	$out .= wu_select_tree( $subj, $pred_name, $subtype, $args )
-	  if( $subtype->has_revpred( 'scof' ) );
+        $out .= wu_select_tree( $subj, $pred_name, $subtype, $args )
+          if ( $subtype->has_revpred( 'scof' ) );
 
-	$out .= '</div>';
+        $out .= '</div>';
     }
 
     # TODO: Recurse for all subtypes, make rel-divs etc...
@@ -6256,7 +6265,7 @@ sub wu_select
     unless( UNIVERSAL::isa $type, 'RDF::Base::Object' and
             $type->size )
     {
-	confess "type missing: ".datadump($type,2);
+        confess "type missing: ".datadump($type,2);
     }
 
     my $rev = $args->{'is_rev'} || '';
@@ -6277,7 +6286,7 @@ sub wu_select
       if $args->{'class'};
 
     $arc ||= $subj->arc( $pred_name, undef, 'direct' )->get_first_nos
-      if( $singular );
+      if ( $singular );
 
 #    $out .= label_from_params({
 #			       label       => $args->{'label'},
@@ -6287,15 +6296,15 @@ sub wu_select
 #			       label_class => $args->{'label_class'},
 #			      });
 
-    if( $disabled )
+    if ( $disabled )
     {
-	my $arclist = $subj->arc_list($pred_name, undef, $args);
+        my $arclist = $subj->arc_list($pred_name, undef, $args);
 
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= $arc->value->$desig_pred .'&nbsp;'. $arc->edit_link_html .'<br/>';
-	}
-	return $out;
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= $arc->value->$desig_pred .'&nbsp;'. $arc->edit_link_html .'<br/>';
+        }
+        return $out;
     }
 
 #    debug 1, "Building select widget for ".$subj->desig." $pred_name";
@@ -6307,13 +6316,13 @@ sub wu_select
     $out .= "<select id=\"$key\" name=\"$key\"$extra>";
 
     my $default_value;
-    if( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
+    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
     {
-	$default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
+        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
     }
     $default_value ||= $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
-      if( $header );
+      if ( $header );
 
     my( $range, $range_pred ) = range_pred($args);
     $range_pred ||= 'is';
@@ -6328,7 +6337,7 @@ sub wu_select
     my $optgroup_pred = $args->{select_optgroup};
 
     my @sortargs = 'distance';
-    if( $optgroup_pred )
+    if ( $optgroup_pred )
     {
         push @sortargs, $dir.'.'.$optgroup_pred.'.desig';
     }
@@ -6337,16 +6346,16 @@ sub wu_select
 #    debug "SORTARGS: @sortargs";
 
 
-    if( my $alts = $args->{'alternatives'} )
+    if ( my $alts = $args->{'alternatives'} )
     {
         $req->may_yield;
         die "cancelled" if $req->cancelled;
 
         confess( "Trying to make a select of ". $alts->size .".  That's not wise." )
-          if( $alts->size > 500 );
+          if ( $alts->size > 500 );
 
         $alts->reset;
-        while( my $item = $alts->get_next_nos )
+        while ( my $item = $alts->get_next_nos )
         {
             unless( $alts->count % 100 )
             {
@@ -6358,11 +6367,11 @@ sub wu_select
 
             $out .= '<option value="'. $item->id .'"';
 
-            if( $set_value )
+            if ( $set_value )
             {
                 $out .= ' selected="selected"'
-                  if( $default_value eq $item->id or
-                      $subj->prop( $pred_name, $item, 'adirect' ) );
+                  if ( $default_value eq $item->id or
+                       $subj->prop( $pred_name, $item, 'adirect' ) );
             }
 
             $out .= '>'.$item->$desig_pred.'</option>';
@@ -6372,8 +6381,8 @@ sub wu_select
     }
     else
     {
-        my $ais; # arc items
-        if( $dir eq 'subj' )
+        my $ais;                # arc items
+        if ( $dir eq 'subj' )
         {
             $ais = $type->revarc_list($range_pred, undef, $args)->sorted(\@sortargs)->as_listobj;
         }
@@ -6386,14 +6395,14 @@ sub wu_select
         die "cancelled" if $req->cancelled;
 
         confess( "Trying to make a select of ". $ais->size .".  That's not wise." )
-          if( $ais->size > 500 );
+          if ( $ais->size > 500 );
 
         my $optgroup;
         my $args_direct = aais($args,'direct');
         my $cur_optgroup = '';
 
         $ais->reset;
-        while( my $ai = $ais->get_next_nos )
+        while ( my $ai = $ais->get_next_nos )
         {
             unless( $ais->count % 100 )
             {
@@ -6406,12 +6415,12 @@ sub wu_select
             my $lvl = $ai->distance;
             my $item = $ai->$dir;
 
-            if( $optgroup_pred )
+            if ( $optgroup_pred )
             {
                 $optgroup = $item->arc_list($optgroup_pred, undef, $args_direct)->obj->desig;
                 unless( $optgroup eq $cur_optgroup )
                 {
-                    if( $cur_optgroup )
+                    if ( $cur_optgroup )
                     {
                         $out .= '</optgroup>';
                     }
@@ -6423,16 +6432,16 @@ sub wu_select
 
             $out .= '<option class="rb_arc_distance_'.$lvl.'" value="'. $item->id .'"';
 
-            if( $set_value )
+            if ( $set_value )
             {
                 $out .= ' selected="selected"'
-                  if( $default_value eq $item->id or
-                      $subj->prop( $pred_name, $item, 'adirect' ) );
+                  if ( $default_value eq $item->id or
+                       $subj->prop( $pred_name, $item, 'adirect' ) );
             }
 
             $out .= '>'.$item->$desig_pred.'</option>';
         }
-        if( $cur_optgroup )
+        if ( $cur_optgroup )
         {
             $out .= "</optgroup>";
         }
@@ -6440,10 +6449,10 @@ sub wu_select
         $out .= '</select>';
     }
 
-    if( $set_value )
+    if ( $set_value )
     {
         $out .= $arc->edit_link_html
-          if( $arc );
+          if ( $arc );
     }
 
     return $out;
@@ -6464,7 +6473,7 @@ sub wu_hiearchy
 
     my $out = $top->wu_hiearchy_children;
 
-    if( $out )
+    if ( $out )
     {
         return  '<span class="main_url">' . $top->wu_jump . '</span>'. $out; 
     }
@@ -6503,13 +6512,13 @@ sub wu_hiearchy_children
 
 =cut
 
-sub wu_select_tree_multiple
+  sub wu_select_tree_multiple
 {
     my( $node, $pred_name, $type, $args ) = @_;
 
     my $out = "";
 
-    if( $args->{header} )
+    if ( $args->{header} )
     {
         $out .= "<p class='left'>";
         $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
@@ -6518,8 +6527,8 @@ sub wu_select_tree_multiple
     }
 
     my $suggestions = $node->arc_list($pred_name, undef, ['submitted'])->unique_arcs_prio;
-    if( $suggestions->active_version->find({obj => { scof => $type }})
-        or $suggestions->find({obj => {scof => $type}}) )
+    if ( $suggestions->active_version->find({obj => { scof => $type }})
+         or $suggestions->find({obj => {scof => $type}}) )
     {
         $out .= "<table class='suggestion nopad'>";
         $out .= "<tr><th>".aloc('Suggestions').":</th></tr>";
@@ -6530,7 +6539,7 @@ sub wu_select_tree_multiple
             $out .= "<tr><td>";
             my $val = $arc->value || $arc->active_version->value;
             $out .= $val->as_html;
-            if( $arc->is_removal )
+            if ( $arc->is_removal )
             {
                 $out .= '<span style="color: red">'.locnl('OFF').'</span>';
             }
@@ -6585,7 +6594,7 @@ sub relative_top
     my( $node, $args ) = @_;
 
     my $parent = $node->first_prop('parent_org',undef,$args);
-    if( $parent )
+    if ( $parent )
     {
         return $parent->relative_top( $args );
     }
@@ -6671,9 +6680,9 @@ sub find_class
 
 
     # Assume that we only has ONE type of arc
-    if( ref $node eq 'RDF::Base::Arc' )
+    if ( ref $node eq 'RDF::Base::Arc' )
     {
-	return 'RDF::Base::Arc';
+        return 'RDF::Base::Arc';
     }
 
 #    # May only be necessary for PgLite DB bootstrap
@@ -6688,24 +6697,24 @@ sub find_class
     # only look for 'is' arcs. Pred and Rule nodes should have an
     # 'is' arc. Lastly, look if it's an arc if it's nothing else.
 
-    if( $clue & CLUE_VALUENODE )
+    if ( $clue & CLUE_VALUENODE )
     {
-	my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where obj = ?");
-	$sth_id->execute($id);
-	my $rec = $sth_id->fetchrow_hashref;
-	if( $rec )
-	{
-	    $node->{'revrecs'} = [ $rec ];
-	    while( $rec = $sth_id->fetchrow_hashref )
-	    {
-		push @{$node->{'revrecs'}}, $rec;
-	    }
-	    $sth_id->finish;
-	    return "RDF::Base::Resource::Literal";
-	}
-	$sth_id->finish;
+        my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where obj = ?");
+        $sth_id->execute($id);
+        my $rec = $sth_id->fetchrow_hashref;
+        if ( $rec )
+        {
+            $node->{'revrecs'} = [ $rec ];
+            while ( $rec = $sth_id->fetchrow_hashref )
+            {
+                push @{$node->{'revrecs'}}, $rec;
+            }
+            $sth_id->finish;
+            return "RDF::Base::Resource::Literal";
+        }
+        $sth_id->finish;
 
-	confess "Assumed valuenod $id was not a valuenode";
+        confess "Assumed valuenod $id was not a valuenode";
     }
 
 
@@ -6714,26 +6723,26 @@ sub find_class
     # it's not a special node.
     unless( $clue & CLUE_NOUSEREVARC )
     {
-	# Check if this is a known value node. (It may be it even if
-	# this test fails.)
-	#
-	foreach my $pred_name ( keys %{$node->{'revarc'}} )
-	{
-	    # if pred_name has a literal range...
-	    my $pred = RDF::Base::Pred->get($pred_name);
-	    if( $pred->objtype )
-	    {
-		# Assume that ALL preds should have a literal valtype
-		last;
-	    }
+        # Check if this is a known value node. (It may be it even if
+        # this test fails.)
+        #
+        foreach my $pred_name ( keys %{$node->{'revarc'}} )
+        {
+            # if pred_name has a literal range...
+            my $pred = RDF::Base::Pred->get($pred_name);
+            if ( $pred->objtype )
+            {
+                # Assume that ALL preds should have a literal valtype
+                last;
+            }
 
-	    my $valtype = $pred->valtype;
-	    $node->{'valtype'} = $valtype;
-	    debug "Setting1 valtype for $id to $valtype->{id}" if $DEBUG;
-	    my $class = $valtype->instance_class;
-	    debug "----> Got class from revarc ($class)!!!!!" if $DEBUG;
-	    return $class;
-	}
+            my $valtype = $pred->valtype;
+            $node->{'valtype'} = $valtype;
+            debug "Setting1 valtype for $id to $valtype->{id}" if $DEBUG;
+            my $class = $valtype->instance_class;
+            debug "----> Got class from revarc ($class)!!!!!" if $DEBUG;
+            return $class;
+        }
     }
 
 
@@ -6751,235 +6760,236 @@ sub find_class
 #    debug "got islist for $id:\n".datadump($islist->{'_DATA'},1);
     my( $class_arc, $islist_error ) = $islist_arcs->get_first;
     my @pmodules;
-    while(! $islist_error )
+    while (! $islist_error )
     {
         next if $class_arc->disregard;
-	my $class = $class_arc->obj;
+        my $class = $class_arc->obj;
 
-	debug "Looking at $id is $class->{id}" if $DEBUG;
-	unless( $class->{'id'} )
-	{
-	    cluck "Should not bee possible. Element must be a class! ".datadump($class,1);
-	    die;
-	    next;
-	}
+        debug "Looking at $id is $class->{id}" if $DEBUG;
+        unless ( $class->{'id'} )
+        {
+            cluck "Should not bee possible. Element must be a class! ".datadump($class,1);
+            die;
+            next;
+        }
 
-	if( $class->{'id'} == $RDF::Base::Literal::Class::ID )
-	{
-	    $node->{'valtype'} = $class;
-	    debug "Setting2 valtype for $id to $class->{id}" if $DEBUG;
-	    return "RDF::Base::Literal::Class";
-	}
+        if ( $class->{'id'} == $RDF::Base::Literal::Class::ID )
+        {
+            $node->{'valtype'} = $class;
+            debug "Setting2 valtype for $id to $class->{id}" if $DEBUG;
+            return "RDF::Base::Literal::Class";
+        }
 
-	# Bootstrap workaround...
-	if( not $RDF::Base::IN_STARTUP )
-	{
-	    # This pre-caching may be a litle slower in some cases,
-	    # but seems to be a litle faster over all
-	    $class->initiate_rel; ### PRE-CACH!
-	}
+        # Bootstrap workaround...
+        if ( not $RDF::Base::IN_STARTUP )
+        {
+            # This pre-caching may be a litle slower in some cases,
+            # but seems to be a litle faster over all
+            $class->initiate_rel; ### PRE-CACH!
+        }
 
-	my $p_chbpm = RDF::Base::Pred->
-	  get_by_label('class_handled_by_perl_module');
+        my $p_chbpm = RDF::Base::Pred->
+          get_by_label('class_handled_by_perl_module');
 
-	my $pmodule_node_list = $class->list($p_chbpm,undef,['active']);
-	my( $pmodule_node, $pmodule_node_list_error )
-	  = $pmodule_node_list->get_first;
-	while(! $pmodule_node_list_error )
-	{
-	    my $pkg = $pmodule_node->first_prop($p_code,undef,['active'])->plain;
-	    debug "  found $pkg" if $DEBUG;
+        my $pmodule_node_list = $class->list($p_chbpm,undef,['active']);
+        my( $pmodule_node, $pmodule_node_list_error )
+          = $pmodule_node_list->get_first;
+        while (! $pmodule_node_list_error )
+        {
+            my $pkg = $pmodule_node->first_prop($p_code,undef,['active'])->plain;
+            debug "  found $pkg" if $DEBUG;
 
-	    # Let confident classes handle themself
-	    if( UNIVERSAL::can($pkg, 'use_class') )
-	    {
-		debug "    using a custom class" if $DEBUG;
-		# Should only be for classes that never should be
-		# metaclasses
-		#
-		# Those classes should also define a this_valtype()
+            # Let confident classes handle themself
+            if ( UNIVERSAL::can($pkg, 'use_class') )
+            {
+                debug "    using a custom class" if $DEBUG;
+                # Should only be for classes that never should be
+                # metaclasses
+                #
+                # Those classes should also define a this_valtype()
 
 #		$Para::Frame::REQ->{RBSTAT}{'find_class use_class'} += Time::HiRes::time() - $ts;
-		if( UNIVERSAL::can($pkg, 'this_valtype') )
-		{
-		    # In case we was called from RB::Resource->this_valtype
-		    $node->{'valtype'} = $pkg->this_valtype();
-		}
-		else
-		{
-		    debug "NOT able to get valtytype for $id" if $DEBUG;
-		}
+                if ( UNIVERSAL::can($pkg, 'this_valtype') )
+                {
+                    # In case we was called from RB::Resource->this_valtype
+                    $node->{'valtype'} = $pkg->this_valtype();
+                }
+                else
+                {
+                    debug "NOT able to get valtytype for $id" if $DEBUG;
+                }
 
-		return $pkg->use_class;
-	    }
+                return $pkg->use_class;
+            }
 
-	    debug "  Handled by ".$pmodule_node->sysdesig if $DEBUG;
-	    push @pmodules, [$pmodule_node,$class,$class_arc];
+            debug "  Handled by ".$pmodule_node->sysdesig if $DEBUG;
+            push @pmodules, [$pmodule_node,$class,$class_arc];
 
-	    # continue!
-	    ( $pmodule_node, $pmodule_node_list_error )
-	      = $pmodule_node_list->get_next;
-	}
+            # continue!
+            ( $pmodule_node, $pmodule_node_list_error )
+              = $pmodule_node_list->get_next;
+        }
     }
     continue
     {
-	( $class_arc, $islist_error ) = $islist_arcs->get_next;
-    };
+        ( $class_arc, $islist_error ) = $islist_arcs->get_next;
+    }
+    ;
 
 
     my $package = "RDF::Base::Resource"; # Default
     my $valtype = $RDF::Base::Constants::Label{'resource'};
 
-    if( $pmodules[0] )
+    if ( $pmodules[0] )
     {
-	# Class and Valtype should be defined in pair, but we check
-	# both in case of bugs...
+        # Class and Valtype should be defined in pair, but we check
+        # both in case of bugs...
 
-	# The key consists of the id's of the nodes representing the
-	# perl modules for the class handling instances of the valtype
-	# class. In other words: the key is NOT the valtype id.
+        # The key consists of the id's of the nodes representing the
+        # perl modules for the class handling instances of the valtype
+        # class. In other words: the key is NOT the valtype id.
 
-	# We sort on direct and obj.weight because if several classes
-	# implement a method, like desig, the one in the most relevant
-	# class should be used. The direct 'is' should be the more
-	# specialized class.
+        # We sort on direct and obj.weight because if several classes
+        # implement a method, like desig, the one in the most relevant
+        # class should be used. The direct 'is' should be the more
+        # specialized class.
 
 #	my @pmodules_sorted = sort { $a->[0]->id <=> $b->[0]->id } @pmodules;
 
-	my @pmodules_sorted = sort
-	{
-	    $a->[2]->distance <=> $b->[2]->distance
-            ||
-	    ($b->[1]->first_prop('weight',undef,['active'])->plain||0) <=>
-	    ($a->[1]->first_prop('weight',undef,['active'])->plain||0)
-            ||
-            $a->[1]->id <=> $b->[1]->id
-	} @pmodules;
+        my @pmodules_sorted = sort
+        {
+            $a->[2]->distance <=> $b->[2]->distance
+              ||
+                ($b->[1]->first_prop('weight',undef,['active'])->plain||0) <=>
+                  ($a->[1]->first_prop('weight',undef,['active'])->plain||0)
+                    ||
+                      $a->[1]->id <=> $b->[1]->id
+                  } @pmodules;
 
-	my $key = join '_', map $_->[0]->id, @pmodules_sorted;
+        my $key = join '_', map $_->[0]->id, @pmodules_sorted;
 
-	debug "Find class $key for $id (clue $clue)" if $DEBUG;
-	if( ($package = $RDF::Base::Cache::Class{ $key }) and
-	    ($node->{'valtype'} = $RDF::Base::Cache::Valtype{ $key })
-	  )
-	{
+        debug "Find class $key for $id (clue $clue)" if $DEBUG;
+        if ( ($package = $RDF::Base::Cache::Class{ $key }) and
+             ($node->{'valtype'} = $RDF::Base::Cache::Valtype{ $key })
+           )
+        {
 #	    $Para::Frame::REQ->{RBSTAT}{'find_class cache'} += Time::HiRes::time() - $ts;
-	    if( $DEBUG )
-	    {
-		debug "Setting3 valtype for $id to $node->{valtype}{id}";
-		debug "returning package $package";
-		debug "Based on the key $key";
-	    }
-	    return $package;
-	}
+            if ( $DEBUG )
+            {
+                debug "Setting3 valtype for $id to $node->{valtype}{id}";
+                debug "returning package $package";
+                debug "Based on the key $key";
+            }
+            return $package;
+        }
 
-	my( @classnames );
-	foreach my $class ( map $_->[0], @pmodules_sorted )
-	{
-	    my $classname = $class->first_prop($p_code,undef,['active'])->plain;
-	    unless( $classname )
-	    {
-		debug datadump($class,2);
-		confess "No classname found for class $class->{id}";
-	    }
+        my( @classnames );
+        foreach my $class ( map $_->[0], @pmodules_sorted )
+        {
+            my $classname = $class->first_prop($p_code,undef,['active'])->plain;
+            unless( $classname )
+            {
+                debug datadump($class,2);
+                confess "No classname found for class $class->{id}";
+            }
 
-	    my $filename = package_to_module($classname);
-	    eval{ compile( $filename ) };
-	    if( $@ )
-	    {
-		warn "****  IGNORING perl class $filename\n";
-		warn "****  ".$@;
-	    }
-	    else
-	    {
-		push @classnames, $classname;
-	    }
-	}
+            my $filename = package_to_module($classname);
+            eval{ compile( $filename ) };
+            if ( $@ )
+            {
+                warn "****  IGNORING perl class $filename\n";
+                warn "****  ".$@;
+            }
+            else
+            {
+                push @classnames, $classname;
+            }
+        }
 
-	no strict "refs";
-	if( $classnames[1] ) # Multiple inheritance
-	{
-	    $package = "RDF::Base::Metaclass::$key";
+        no strict "refs";
+        if ( $classnames[1] )   # Multiple inheritance
+        {
+            $package = "RDF::Base::Metaclass::$key";
 #	    debug "Creating a package $package";
-	    @{"${package}::ISA"} = ("RDF::Base::Metaclass",
-				    @classnames,
-				    "RDF::Base::Resource");
-	    $valtype = $RDF::Base::Constants::Label{'resource'};
-	}
-	elsif( $classnames[0] ) # Single inheritance
-	{
-	    my $classname = $classnames[0];
-	    $package = "RDF::Base::Metaclass::$classname";
+            @{"${package}::ISA"} = ("RDF::Base::Metaclass",
+                                    @classnames,
+                                    "RDF::Base::Resource");
+            $valtype = $RDF::Base::Constants::Label{'resource'};
+        }
+        elsif ( $classnames[0] ) # Single inheritance
+        {
+            my $classname = $classnames[0];
+            $package = "RDF::Base::Metaclass::$classname";
 #	    debug "Creating b package $package";
-	    @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
 #	    $valtype = $pmodules_sorted[0][1];
-	    $valtype = $RDF::Base::Constants::Label{'resource'};
-	}
+            $valtype = $RDF::Base::Constants::Label{'resource'};
+        }
 
 #	confess "BOGUS VALTYPE ".datadump($valtype) unless
 #	  UNIVERSAL::isa($valtype,'RDF::Base::Resource');
 
 #	$Para::Frame::REQ->{RBSTAT}{'find_class constructed'} += Time::HiRes::time() - $ts;
-	$node->{'valtype'} = $RDF::Base::Cache::Valtype{ $key } = $valtype;
-	debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
-	debug "Based on the key $key" if $DEBUG;
-	return $RDF::Base::Cache::Class{ $key } = $package;
+        $node->{'valtype'} = $RDF::Base::Cache::Valtype{ $key } = $valtype;
+        debug "Setting4 valtype for $id to $valtype->{id}" if $DEBUG;
+        debug "Based on the key $key" if $DEBUG;
+        return $RDF::Base::Cache::Class{ $key } = $package;
     }
 
 #    $Para::Frame::REQ->{RBSTAT}{'find_class default'} += Time::HiRes::time() - $ts;
 
     unless( ($clue & CLUE_NOARC) and ($clue & CLUE_NOVALUENODE) )
     {
-	debug "IDENTIFYING $id" if $DEBUG;
+        debug "IDENTIFYING $id" if $DEBUG;
 #	confess "HERE" unless grep{$id==$_}(2672025);
 
-	# Check if this is an arc
-	#
-	# Avoid large return lists. But optimize for the common case
-	#
-	my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where ver=? or obj=? limit 2");
-	$sth_id->execute($id,$id);
-	my $rec = $sth_id->fetchrow_hashref;
-	if( $rec )
-	{
-	    if( $rec->{'ver'} == $id )
-	    {
-		debug "  arc" if $DEBUG;
-		$package = "RDF::Base::Arc";
-		$valtype = $C_arc;
-		$node->{'original_rec'} = $rec; # Used in RDF::Base::Arc
-	    }
-	    elsif( $rec->{'obj'} == $id )
-	    {
-		if( RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj($rec->{'valtype'}) ne 'obj' )
-		{
-		    debug "  literal" if $DEBUG;
-		    $package = "RDF::Base::Resource::Literal";
+        # Check if this is an arc
+        #
+        # Avoid large return lists. But optimize for the common case
+        #
+        my $sth_id = $RDF::dbix->dbh->prepare("select * from arc where ver=? or obj=? limit 2");
+        $sth_id->execute($id,$id);
+        my $rec = $sth_id->fetchrow_hashref;
+        if ( $rec )
+        {
+            if ( $rec->{'ver'} == $id )
+            {
+                debug "  arc" if $DEBUG;
+                $package = "RDF::Base::Arc";
+                $valtype = $C_arc;
+                $node->{'original_rec'} = $rec; # Used in RDF::Base::Arc
+            }
+            elsif ( $rec->{'obj'} == $id )
+            {
+                if ( RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj($rec->{'valtype'}) ne 'obj' )
+                {
+                    debug "  literal" if $DEBUG;
+                    $package = "RDF::Base::Resource::Literal";
 
-		    # We can store the revarcs for later literal init
-		    # if where only was one arc. Since we want to keep
-		    # data already retrieved, but not take the chanse
-		    # to retrieve all the data since it's often not
-		    # going to be used.
+                    # We can store the revarcs for later literal init
+                    # if where only was one arc. Since we want to keep
+                    # data already retrieved, but not take the chanse
+                    # to retrieve all the data since it's often not
+                    # going to be used.
 
-		    unless( $sth_id->fetchrow_hashref )
-		    {
-			$node->{'revrecs'} = [ $rec ];
-		    }
-		}
-		else
-		{
-		    debug "  generic obj" if $DEBUG;
-		    # Ignoring data...
-		    # Avoid deep recursion
-		}
-	    }
-	}
-	elsif( $DEBUG )
-	{
-	    debug "  neither ver or obj in arc table";
-	}
-	$sth_id->finish;
+                    unless( $sth_id->fetchrow_hashref )
+                    {
+                        $node->{'revrecs'} = [ $rec ];
+                    }
+                }
+                else
+                {
+                    debug "  generic obj" if $DEBUG;
+                    # Ignoring data...
+                    # Avoid deep recursion
+                }
+            }
+        }
+        elsif ( $DEBUG )
+        {
+            debug "  neither ver or obj in arc table";
+        }
+        $sth_id->finish;
     }
 
     debug "Setting5 valtype for $id to $valtype->{id}" if $DEBUG;
@@ -7020,18 +7030,18 @@ sub first_bless
 #    if( $_[0] and  ($_[0]->{'id'}!=$ID) ) # $valtype is not $C_resource?
 
     # Else, no fancy stuff... Take the longer route
-    if( 0 )
+    if ( 0 )
     {
-	confess("Not a node '$_[0]'") unless UNIVERSAL::isa($_[0],"RDF::Base::Resource");
-	$class = $_[0]->instance_class;
-	debug 2, "Blessing $node->{id} to $class ($_[0]->{id})";
-	bless $node, $class;
+        confess("Not a node '$_[0]'") unless UNIVERSAL::isa($_[0],"RDF::Base::Resource");
+        $class = $_[0]->instance_class;
+        debug 2, "Blessing $node->{id} to $class ($_[0]->{id})";
+        bless $node, $class;
 #	confess "HERE" if grep{$_[0]->{'id'}==$_}(5863813);
     }
-    elsif( $RDF::Base::LOOKUP_CLASS_FOR{ $class } )
+    elsif ( $RDF::Base::LOOKUP_CLASS_FOR{ $class } )
     {
-	$class = $node->find_class($_[1]);
-	bless $node, $class;
+        $class = $node->find_class($_[1]);
+        bless $node, $class;
     }
 
 #    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
@@ -7064,31 +7074,31 @@ sub on_class_perl_module_change
 
     # Check out new module  ### Must only handle objective (active) relations
     my $modules = $node->list('class_handled_by_perl_module',undef,'solid');
-    while( my $module = $modules->get_next_nos )
+    while ( my $module = $modules->get_next_nos )
     {
-	eval
-	{
-	    my $code = $module->code->plain;
-	    require(package_to_module($code));
-	};
-	if( $@ )
-	{
-	    debug $@;
-	}
+        eval
+        {
+            my $code = $module->code->plain;
+            require(package_to_module($code));
+        };
+        if ( $@ )
+        {
+            debug $@;
+        }
     }
 
-    if( $node->isa('RDF::Base::Literal::Class') )
+    if ( $node->isa('RDF::Base::Literal::Class') )
     {
-	debug "TODO: rebless literals for ".$node->sysdesig;
+        debug "TODO: rebless literals for ".$node->sysdesig;
     }
     else
     {
-	# TODO: only get nodes in memory
-	my $childs = $node->revlist('is');
-	while( my $child = $childs->get_next_nos )
-	{
-	    $child->rebless($args_in);
-	}
+        # TODO: only get nodes in memory
+        my $childs = $node->revlist('is');
+        while ( my $child = $childs->get_next_nos )
+        {
+            $child->rebless($args_in);
+        }
     }
 }
 
@@ -7136,157 +7146,157 @@ sub rebless
     my $class_old = ref $node;
     my $clue = $args_in->{'clue_find_class'} ||
       ( CLUE_NOARC       |
-	CLUE_NOUSEREVARC |
-	CLUE_NOVALUENODE );
+        CLUE_NOUSEREVARC |
+        CLUE_NOVALUENODE );
     my $class_new = $node->find_class($clue);
-    if( $class_old ne $class_new )
+    if ( $class_old ne $class_new )
     {
-	debug 2, "Reblessing ".$node->sysdesig;
-	debug 2, "  from $class_old\n    to $class_new";
-	unless($class_new =~ /^RDF::Base::Metaclass::/ )
-	{
-	    eval
-	    {
-		require(package_to_module($class_new));
-	    };
-	    if( $@ )
-	    {
-		debug $@;
-	    }
-	}
+        debug 2, "Reblessing ".$node->sysdesig;
+        debug 2, "  from $class_old\n    to $class_new";
+        unless($class_new =~ /^RDF::Base::Metaclass::/ )
+        {
+            eval
+            {
+                require(package_to_module($class_new));
+            };
+            if ( $@ )
+            {
+                debug $@;
+            }
+        }
 
-	if( $node->isa("RDF::Base::Metaclass") )
-	{
-	    if( $class_new->isa("RDF::Base::Metaclass") )
-	    {
-		no strict "refs";
-		foreach my $class_old_real (@{"${class_old}::ISA"})
-		{
-		  REBLESS_BMM:
-		    {
-			foreach my $class_new_real (@{"${class_new}::ISA"})
-			{
-			    if( $class_old_real eq $class_new_real )
-			    {
-				last REBLESS_BMM;
-			    }
-			}
+        if ( $node->isa("RDF::Base::Metaclass") )
+        {
+            if ( $class_new->isa("RDF::Base::Metaclass") )
+            {
+                no strict "refs";
+                foreach my $class_old_real (@{"${class_old}::ISA"})
+                {
+                  REBLESS_BMM:
+                    {
+                        foreach my $class_new_real (@{"${class_new}::ISA"})
+                        {
+                            if ( $class_old_real eq $class_new_real )
+                            {
+                                last REBLESS_BMM;
+                            }
+                        }
 
-			if( my $method = $class_old->can("on_unbless") )
-			{
-			    &{$method}($node, $class_new, $args_in);
-			}
-		    }
-		}
-	    }
-	    else
-	    {
-		no strict "refs";
-		foreach my $class_old_real (@{"${class_old}::ISA"})
-		{
-		    if( $class_old_real ne $class_new )
-		    {
-			if( my $method = $class_old_real->can("on_unbless") )
-			{
-			    &{$method}($node, $class_new, $args_in);
-			}
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    if( $class_new->isa("RDF::Base::Metaclass") )
-	    {
-	      REBLESS_BNM:
-		{
-		    no strict "refs";
-		    foreach my $class_new_real (@{"${class_new}::ISA"})
-		    {
-			if( $class_old eq $class_new_real )
-			{
-			    last REBLESS_BNM;
-			}
-		    }
+                        if ( my $method = $class_old->can("on_unbless") )
+                        {
+                            &{$method}($node, $class_new, $args_in);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                no strict "refs";
+                foreach my $class_old_real (@{"${class_old}::ISA"})
+                {
+                    if ( $class_old_real ne $class_new )
+                    {
+                        if ( my $method = $class_old_real->can("on_unbless") )
+                        {
+                            &{$method}($node, $class_new, $args_in);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if ( $class_new->isa("RDF::Base::Metaclass") )
+            {
+              REBLESS_BNM:
+                {
+                    no strict "refs";
+                    foreach my $class_new_real (@{"${class_new}::ISA"})
+                    {
+                        if ( $class_old eq $class_new_real )
+                        {
+                            last REBLESS_BNM;
+                        }
+                    }
 
-		    if( my $method = $class_old->can("on_unbless") )
-		    {
-			&{$method}($node, $class_new, $args_in);
-		    }
-		}
-	    }
-	    else
-	    {
-		$node->on_unbless( $class_new, $args_in );
-	    }
-	}
+                    if ( my $method = $class_old->can("on_unbless") )
+                    {
+                        &{$method}($node, $class_new, $args_in);
+                    }
+                }
+            }
+            else
+            {
+                $node->on_unbless( $class_new, $args_in );
+            }
+        }
 
-	######################
-	#
-	bless $node, $class_new;
-	#
-	######################
+        ######################
+        #
+        bless $node, $class_new;
+        #
+        ######################
 
-	if( $class_old->isa("RDF::Base::Metaclass") )
-	{
-	    if( $node->isa("RDF::Base::Metaclass") )
-	    {
-		no strict "refs";
-		foreach my $class_new_real (@{"${class_new}::ISA"})
-		{
-		  REBLESS_AMM:
-		    {
-			foreach my $class_old_real (@{"${class_old}::ISA"})
-			{
-			    if( $class_old_real eq $class_new_real )
-			    {
-				last REBLESS_AMM;
-			    }
-			}
+        if ( $class_old->isa("RDF::Base::Metaclass") )
+        {
+            if ( $node->isa("RDF::Base::Metaclass") )
+            {
+                no strict "refs";
+                foreach my $class_new_real (@{"${class_new}::ISA"})
+                {
+                  REBLESS_AMM:
+                    {
+                        foreach my $class_old_real (@{"${class_old}::ISA"})
+                        {
+                            if ( $class_old_real eq $class_new_real )
+                            {
+                                last REBLESS_AMM;
+                            }
+                        }
 
-			if( my $method = $class_new_real->can("on_bless") )
-			{
-			    &{$method}($node, $class_old, $args_in);
-			}
-		    }
-		}
-	    }
-	    else
-	    {
-		no strict "refs";
-		foreach my $class_old_real (@{"${class_old}::ISA"})
-		{
-		    if( $class_old_real ne $class_new )
-		    {
-			if( my $method = $class_new->can("on_bless") )
-			{
-			    &{$method}($node, $class_old, $args_in);
-			}
-		    }
-		}
-	    }
-	}
-	else
-	{
-	    if( $node->isa("RDF::Base::Metaclass") )
-	    {
-		no strict "refs";
-		foreach my $class_new_real (@{"${class_new}::ISA"})
-		{
-		    if( $class_old ne $class_new_real )
-		    {
-			if( my $method = $class_new_real->can("on_bless") )
-			{
-			    &{$method}($node, $class_old, $args_in);
-			}
-		    }
-		}
-	    }
-	    else
-	    {
-		$node->on_bless( $class_old, $args_in );
-	    }
-	}
+                        if ( my $method = $class_new_real->can("on_bless") )
+                        {
+                            &{$method}($node, $class_old, $args_in);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                no strict "refs";
+                foreach my $class_old_real (@{"${class_old}::ISA"})
+                {
+                    if ( $class_old_real ne $class_new )
+                    {
+                        if ( my $method = $class_new->can("on_bless") )
+                        {
+                            &{$method}($node, $class_old, $args_in);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if ( $node->isa("RDF::Base::Metaclass") )
+            {
+                no strict "refs";
+                foreach my $class_new_real (@{"${class_new}::ISA"})
+                {
+                    if ( $class_old ne $class_new_real )
+                    {
+                        if ( my $method = $class_new_real->can("on_bless") )
+                        {
+                            &{$method}($node, $class_old, $args_in);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                $node->on_bless( $class_old, $args_in );
+            }
+        }
     }
 
     return $node;
@@ -7541,14 +7551,14 @@ sub new
     # Resources not stored in DB can have negative numbers
     unless( $id =~ /^-?\d+$/ )
     {
-	confess "Invalid id for node: $id";
+        confess "Invalid id for node: $id";
     }
 
     confess "class $class invalid" if ref $class;
 
     my $node = bless
     {
-	'id' => $id,
+     'id' => $id,
     }, $class;
 
     $RDF::Base::Cache::Resource{ $id } = $node;
@@ -7587,96 +7597,96 @@ sub get_by_anything
 
     unless( $list->size )
     {
-	if( $args->{'valtype'} )
-	{
-	    if( $args->{'valtype'}->coltype eq 'obj' )
-	    {
-		unless( $val )
-		{
-		    return is_undef;
-		}
-	    }
-	}
+        if ( $args->{'valtype'} )
+        {
+            if ( $args->{'valtype'}->coltype eq 'obj' )
+            {
+                unless( $val )
+                {
+                    return is_undef;
+                }
+            }
+        }
 
-	my $msg = "";
-	if( $req and $req->is_from_client )
-	{
-	    debug "Couldn't find node that is ".query_desig([$val,$args]);
+        my $msg = "";
+        if ( $req and $req->is_from_client )
+        {
+            debug "Couldn't find node that is ".query_desig([$val,$args]);
 
-	    my $result = $req->result;
-	    $result->{'info'}{'alternatives'}{'query'} = $val;
-	    $result->{'info'}{'alternatives'}{'args'} = $args;
-	    $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	    $req->set_error_response_path("/rb/node/query_error.tt");
+            my $result = $req->result;
+            $result->{'info'}{'alternatives'}{'query'} = $val;
+            $result->{'info'}{'alternatives'}{'args'} = $args;
+            $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+            $req->set_error_response_path("/rb/node/query_error.tt");
 #	    debug datadump($result,5);
-	}
-	else
-	{
-	    $msg .= query_desig($val);
-	    $msg .= Carp::longmess;
-	}
+        }
+        else
+        {
+            $msg .= query_desig($val);
+            $msg .= Carp::longmess;
+        }
 #	cluck("No nodes matches query:\n$msg");
-	throw('notfound', "No nodes matches query:\n$msg");
+        throw('notfound', "No nodes matches query:\n$msg");
     }
 
-    if( $list->size > 1 )
+    if ( $list->size > 1 )
     {
-	# Did we make the choice for this?
+        # Did we make the choice for this?
 
-	# TODO: Handle situations with multipple choices (in sequence (nested))
+        # TODO: Handle situations with multipple choices (in sequence (nested))
 
-	unless( $req and $req->is_from_client )
-	{
-	    confess "We got a list: ".$list->sysdesig;
-	}
+        unless( $req and $req->is_from_client )
+        {
+            confess "We got a list: ".$list->sysdesig;
+        }
 
-	my $home = $req->site->home_url_path;
-	if( my $item_id = $req->q->param('route_alternative') )
-	{
+        my $home = $req->site->home_url_path;
+        if ( my $item_id = $req->q->param('route_alternative') )
+        {
             debug "*********** USING route_alternative $item_id";
             # Avoid cases of unending route asking
 #	    $req->q->delete('route_alternative');
-	    return RDF::Base::Resource->get( $item_id );
-	}
+            return RDF::Base::Resource->get( $item_id );
+        }
 
-	# Ask for which alternative; redo
+        # Ask for which alternative; redo
 
-	$req->session->route->bookmark;
-	$req->set_error_response_path("/alternatives.tt");
-	my $page = $req->page;
-	my $uri = $page->url_path_slash;
-	my $result = $req->result;
-	$result->{'info'}{'alternatives'} =
-	{
-	 title => "Välj alterativ",
-	 text  => "Sökning gav flera alternativ\n",
-	 alts => $list,
-	 rowformat => sub
-	 {
-	     my( $item ) = @_;
-	     my $tstr = $item->list('is', undef, ['adirect'])->desig || '';
-	     my $cstr = $item->list('scof',undef, ['adirect'])->desig;
-	     my $desig = $item->desig;
-	     my $desc = "$tstr $desig";
-	     if( $cstr )
-	     {
-		 $desc .= " ($cstr)";
-	     }
-	     my $link = Para::Frame::Widget::jump($desc, $uri,
-					      {
-					       route_alternative => $item->id,
-					       run => 'next_step',
-					       step_replace_params => 'route_alternative',
-					      });
-	     return $link;
-	 },
-	 button =>
-	 [
-	  ['Backa', $req->referer_path(), 'skip_step'],
-	 ],
-	};
-	$req->q->delete_all();
-	throw('alternatives', 'Specificera alternativ');
+        $req->session->route->bookmark;
+        $req->set_error_response_path("/alternatives.tt");
+        my $page = $req->page;
+        my $uri = $page->url_path_slash;
+        my $result = $req->result;
+        $result->{'info'}{'alternatives'} =
+        {
+         title => "Välj alterativ",
+         text  => "Sökning gav flera alternativ\n",
+         alts => $list,
+         rowformat => sub
+         {
+             my( $item ) = @_;
+             my $tstr = $item->list('is', undef, ['adirect'])->desig || '';
+             my $cstr = $item->list('scof',undef, ['adirect'])->desig;
+             my $desig = $item->desig;
+             my $desc = "$tstr $desig";
+             if ( $cstr )
+             {
+                 $desc .= " ($cstr)";
+             }
+             my $link = Para::Frame::Widget::jump($desc, $uri,
+                                                  {
+                                                   route_alternative => $item->id,
+                                                   run => 'next_step',
+                                                   step_replace_params => 'route_alternative',
+                                                  });
+             return $link;
+         },
+         button =>
+         [
+          ['Backa', $req->referer_path(), 'skip_step'],
+         ],
+        };
+        $req->q->delete_all();
+        throw('alternatives', 'Specificera alternativ');
     }
 
     return $list->get_first_nos;
@@ -7705,55 +7715,55 @@ sub get_by_label
 
     $args ||= {};
 
-    unless( $RDF::Base::Constants::Label{$label} )
+    unless ( $RDF::Base::Constants::Label{$label} )
     {
-	if( ref $label )
-	{
-	    confess "label must be a plain string";
-	}
-	utf8::upgrade($label); # for Pg export
-	my $sth = $RDF::dbix->dbh->prepare(
-		  "select * from node where label=?");
-	$sth->execute( $label );
-	my( $rec ) = $sth->fetchrow_hashref;
-	$sth->finish;
-	my $id = $rec->{'node'};
+        if ( ref $label )
+        {
+            confess "label must be a plain string";
+        }
+        utf8::upgrade($label);  # for Pg export
+        my $sth = $RDF::dbix->dbh->prepare(
+                                           "select * from node where label=?");
+        $sth->execute( $label );
+        my( $rec ) = $sth->fetchrow_hashref;
+        $sth->finish;
+        my $id = $rec->{'node'};
 
-	unless( $id )
-	{
+        unless( $id )
+        {
             cluck "Constant not found";
-	    if( $args->{'nonfatal'} )
-	    {
-		debug "!!!! Constant $label doesn't exist";
-		return undef;
-	    }
-	    throw('notfound', "Constant $label doesn't exist");
-	}
+            if ( $args->{'nonfatal'} )
+            {
+                debug "!!!! Constant $label doesn't exist";
+                return undef;
+            }
+            throw('notfound', "Constant $label doesn't exist");
+        }
 
-	# We have to trust that the label is of the class given with
-	# $this. Otherwise, we would have to look up the class, which
-	# would result in infinite recursion during startup on the
-	# first use of pred 'is'.
+        # We have to trust that the label is of the class given with
+        # $this. Otherwise, we would have to look up the class, which
+        # would result in infinite recursion during startup on the
+        # first use of pred 'is'.
 
-	# Each class init should validate the node...
+        # Each class init should validate the node...
 
-	$RDF::Base::Constants::Label{$label} = $this->get( $id, { class_clue => (CLUE_NOARC|CLUE_NOVALUENODE) } );
-	$RDF::Base::Constants::Label{$label}->initiate_node($rec);
+        $RDF::Base::Constants::Label{$label} = $this->get( $id, { class_clue => (CLUE_NOARC|CLUE_NOVALUENODE) } );
+        $RDF::Base::Constants::Label{$label}->initiate_node($rec);
     }
 
     my $class = ref $this || $this;
-    if( $class ne 'RDF::Base::Resource' ) # Validate constant class
+    if ( $class ne 'RDF::Base::Resource' ) # Validate constant class
     {
-	if( my $obj = $RDF::Base::Constants::Label{$label} )
-	{
-	    unless( UNIVERSAL::isa $obj, $class )
-	    {
-		confess "Constant $label is not a $class";
-	    }
+        if ( my $obj = $RDF::Base::Constants::Label{$label} )
+        {
+            unless( UNIVERSAL::isa $obj, $class )
+            {
+                confess "Constant $label is not a $class";
+            }
 
-	    return $obj;
-	}
-	return undef;
+            return $obj;
+        }
+        return undef;
     }
 
     return $RDF::Base::Constants::Label{$label};
@@ -7846,32 +7856,32 @@ sub initiate_cache
     $node->{'valtype'}                = undef; # See this_valtype()
 
     $node->{'initiated_node'} ||= 0;
-    if( $node->{'initiated_node'} > 1 )
+    if ( $node->{'initiated_node'} > 1 )
     {
-	if( $UNSAVED{$node->{'id'}} )
-	{
+        if ( $UNSAVED{$node->{'id'}} )
+        {
 #	    debug "CHANGES of node $node->{id} not yet saved";
-	}
-	else
-	{
-	    foreach my $key (qw(
-                       coltype label owned_by_obj owned_by
-                       read_access_obj read_access write_access_obj
-                       write_access created created_by_obj created_by
-                       updated updated_by_obj updated_by
-                       ))
-	    {
-		delete $node->{$key};
-	    }
+        }
+        else
+        {
+            foreach my $key (qw(
+                                   coltype label owned_by_obj owned_by
+                                   read_access_obj read_access write_access_obj
+                                   write_access created created_by_obj created_by
+                                   updated updated_by_obj updated_by
+                              ))
+            {
+                delete $node->{$key};
+            }
 
-	    $node->{'initiated_node'} = 0;
+            $node->{'initiated_node'} = 0;
 
-	    # We want to reinitiate the node since for exampel preds
-	    # should always be initiated.
+            # We want to reinitiate the node since for exampel preds
+            # should always be initiated.
 
 #	    debug "RE-initiating node $node->{id} from DB";
-	    $node->initiate_node;
-	}
+            $node->initiate_node;
+        }
     }
 
     return $node;
@@ -7898,39 +7908,39 @@ sub initiate_node
 
     unless( $rec )
     {
-	my $sth_node = $RDF::dbix->dbh->prepare("select * from node where node = ?");
-	$sth_node->execute($nid);
-	$rec = $sth_node->fetchrow_hashref;
-	$sth_node->finish;
+        my $sth_node = $RDF::dbix->dbh->prepare("select * from node where node = ?");
+        $sth_node->execute($nid);
+        $rec = $sth_node->fetchrow_hashref;
+        $sth_node->finish;
     }
 
-    if( $rec )
+    if ( $rec )
     {
-	if( my $pred_coltype = $rec->{'pred_coltype'} )
-	{
-	    $class = "RDF::Base::Pred";
-	    bless $node, $class;
-	    $node->{'coltype'} = $pred_coltype;
-	}
+        if ( my $pred_coltype = $rec->{'pred_coltype'} )
+        {
+            $class = "RDF::Base::Pred";
+            bless $node, $class;
+            $node->{'coltype'} = $pred_coltype;
+        }
 
-	if( my $label = $rec->{'label'} )
-	{
-	    $node->{'label'} = $label;
-	}
+        if ( my $label = $rec->{'label'} )
+        {
+            $node->{'label'} = $label;
+        }
 
-	$node->{'owned_by'} = $rec->{'owned_by'};
-	$node->{'read_access'} = $rec->{'read_access'};
-	$node->{'write_access'} = $rec->{'write_access'};
-	$node->{'created'} = $rec->{'created'};
-	$node->{'created_by'} = $rec->{'created_by'};
-	$node->{'updated'} = $rec->{'updated'};
-	$node->{'updated_by'} = $rec->{'updated_by'};
+        $node->{'owned_by'} = $rec->{'owned_by'};
+        $node->{'read_access'} = $rec->{'read_access'};
+        $node->{'write_access'} = $rec->{'write_access'};
+        $node->{'created'} = $rec->{'created'};
+        $node->{'created_by'} = $rec->{'created_by'};
+        $node->{'updated'} = $rec->{'updated'};
+        $node->{'updated_by'} = $rec->{'updated_by'};
 
-	$node->{'initiated_node'} = 2;
+        $node->{'initiated_node'} = 2;
     }
     else
     {
-	$node->{'initiated_node'} = 1;
+        $node->{'initiated_node'} = 1;
     }
 
     return $node;
@@ -7963,12 +7973,12 @@ sub create_rec
     return $n if $n->has_node_record;
 
     $args ||= {};
-    if( $args->{'time'} and $args->{'user'} )
+    if ( $args->{'time'} and $args->{'user'} )
     {
-	$n->{'created_obj'} = $args->{'time'};
-	$n->{'created_by_obj'} = $args->{'user'};
-	$n->mark_updated( $args->{'time'}, $args->{'user'} );
-	return $n;
+        $n->{'created_obj'} = $args->{'time'};
+        $n->{'created_by_obj'} = $args->{'user'};
+        $n->mark_updated( $args->{'time'}, $args->{'user'} );
+        return $n;
     }
 
 
@@ -7994,25 +8004,25 @@ sub create_rec
     # returned with local time zone and will in most cases be valid
     # for comparison.
 
-    while( my $arc = $arcs->get_next_nos )
+    while ( my $arc = $arcs->get_next_nos )
     {
-	$created = $arc->created_iso8601;
-	$updated = $arc->updated_iso8601;
+        $created = $arc->created_iso8601;
+        $updated = $arc->updated_iso8601;
 
-	confess datadump($arc,1) if ref $updated;
+        confess datadump($arc,1) if ref $updated;
 
 
-	if( $created lt $first_c )
-	{
-	    $first = $arc;
-	    $first_c = $created;
-	}
+        if ( $created lt $first_c )
+        {
+            $first = $arc;
+            $first_c = $created;
+        }
 
-	if( $updated gt $last_u )
-	{
-	    $last = $arc;
-	    $last_u = $updated;
-	}
+        if ( $updated gt $last_u )
+        {
+            $last = $arc;
+            $last_u = $updated;
+        }
     }
 
 #    debug sprintf "Looking finished";
@@ -8023,24 +8033,24 @@ sub create_rec
     delete $n->{'created'};
     delete $n->{'created_by'};
 
-    if( $first ) # ... and $last
+    if ( $first )               # ... and $last
     {
-	$n->{'created_obj'} = $first->created;
-	$n->{'created_by_obj'} = $first->created_by;
+        $n->{'created_obj'} = $first->created;
+        $n->{'created_by_obj'} = $first->created_by;
 
-	$n->mark_updated( $last->updated, $last->updated_by );
+        $n->mark_updated( $last->updated, $last->updated_by );
     }
     else
     {
-	$args ||= {};
-	my $time = $args->{'time'} || now();
-	my $user = $args->{'user'} ||
-	  $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
+        $args ||= {};
+        my $time = $args->{'time'} || now();
+        my $user = $args->{'user'} ||
+          $Para::Frame::REQ ? $Para::Frame::REQ->user : $C_root;
 
-	$n->{'created_obj'} = $time;
-	$n->{'created_by_obj'} = $user;
+        $n->{'created_obj'} = $time;
+        $n->{'created_by_obj'} = $user;
 
-	$n->mark_updated( $time, $user );
+        $n->mark_updated( $time, $user );
     }
 
     # Either this or setting up the corresponding properties in memory
@@ -8118,6 +8128,10 @@ sub commit
 #    debug "Comitting Resource node changes";
     return if $Para::Frame::FORK;
 
+    state $in_commit = 0;
+    return if $in_commit;
+    $in_commit = 1;
+
     # Set up job now in case of recursive call to this method
     #
     my @unsaved = values %UNSAVED;
@@ -8128,51 +8142,52 @@ sub commit
 
     eval
     {
-	my $cnt = 0;
-	while( my $node = shift @unsaved )
-	{
-	    debug "Saving node ".$node->sysdesig;
-	    $node->update_unseen_by;
-	    $node->on_updated;
-	    $node->save;
+        my $cnt = 0;
+        while ( my $node = shift @unsaved )
+        {
+            debug "Saving node ".$node->sysdesig;
+            $node->update_unseen_by;
+            $node->on_updated;
+            $node->save;
 
-	    unless( ++$cnt % 100 )
-	    {
-		debug "Saved n $cnt";
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-	    }
-	}
+            unless( ++$cnt % 100 )
+            {
+                debug "Saved n $cnt";
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+            }
+        }
 
-	while( my $node = shift @child_changed )
-	{
+        while ( my $node = shift @child_changed )
+        {
             $node->on_child_changed();
 
-	    unless( ++$cnt % 100 )
-	    {
-		debug "Saved cc $cnt";
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-	    }
-	}
+            unless( ++$cnt % 100 )
+            {
+                debug "Saved cc $cnt";
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+            }
+        }
 
     };
-    if( $@ )
+    if ( $@ )
     {
-	debug $@;
-	RDF::Base::Resource->rollback;
+        debug $@;
+        RDF::Base::Resource->rollback;
 
-	# Re-add unhandled nodes.
-	# May miss the node triggering the error
-	#
-    debug "Re-adding unhandled nodes to unsaved and child_changed";
-	%UNSAVED = map { $_->id => $_ } @unsaved;
-	%CHILD_CHANGED = map { $_->id => $_ } @child_changed;
+        # Re-add unhandled nodes.
+        # May miss the node triggering the error
+        #
+        debug "Re-adding unhandled nodes to unsaved and child_changed";
+        %UNSAVED = map { $_->id => $_ } @unsaved;
+        %CHILD_CHANGED = map { $_->id => $_ } @child_changed;
     }
 
 
     # DB synced with arc changes in cache
     %TRANSACTION = ();
+    $in_commit = 0;
 }
 
 
@@ -8187,20 +8202,20 @@ sub rollback
     debug "ROLLBACK NODES";
     foreach my $node ( values %UNSAVED )
     {
-	$node->reset_cache;
+        $node->reset_cache;
     }
     %UNSAVED = ();
 
     debug "ROLLBACK NODES";
     foreach my $node ( values %CHILD_CHANGED )
     {
-	$node->reset_cache;
+        $node->reset_cache;
     }
     %CHILD_CHANGED = ();
 
     foreach my $aid ( keys %TRANSACTION )
     {
-	RDF::Base::Arc->get( $aid )->reset_cache;
+        RDF::Base::Arc->get( $aid )->reset_cache;
     }
     %TRANSACTION = ();
 
@@ -8238,24 +8253,24 @@ sub save
     $node->{'created_obj'}    ||= $node->created || $now;
     delete $node->{'created'};
 
-    if( $node->{'created_by_obj'} )
+    if ( $node->{'created_by_obj'} )
     {
-	$node->{'created_by'}   = $node->{'created_by_obj'}->id;
+        $node->{'created_by'}   = $node->{'created_by_obj'}->id;
     }
     $node->{'created_by'}     ||= $uid;
 
     $node->{'updated_obj'}    ||= $node->updated || $now;
     delete $node->{'updated'};
 
-    if( $node->{'updated_by_obj'} )
+    if ( $node->{'updated_by_obj'} )
     {
-	$node->{'updated_by'}   = $node->{'updated_by_obj'}->id;
+        $node->{'updated_by'}   = $node->{'updated_by_obj'}->id;
     }
     $node->{'updated_by'}     ||= $node->{'created_by'};
 
-    if( $node->{'owned_by_obj'} )
+    if ( $node->{'owned_by_obj'} )
     {
-	$node->{'owned_by'}     = $node->{'owned_by_obj'}->id;
+        $node->{'owned_by'}     = $node->{'owned_by_obj'}->id;
     }
     $node->{'owned_by'}       ||= $node->{'created_by'};
 
@@ -8276,9 +8291,9 @@ sub save
        $nid,
       );
 
-    if( $node->{'initiated_node'} == 2 ) # Existing node part
+    if ( $node->{'initiated_node'} == 2 ) # Existing node part
     {
-	my $sth = $dbix->dbh->prepare("update node set
+        my $sth = $dbix->dbh->prepare("update node set
                                         label=?,
                                         owned_by=?,
                                         read_access=?,
@@ -8292,11 +8307,11 @@ sub save
 
 #	debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
-	$sth->execute(@values) or die;
+        $sth->execute(@values) or die;
     }
     else
     {
-	my $sth = $dbix->dbh->prepare("insert into node (label, owned_by,
+        my $sth = $dbix->dbh->prepare("insert into node (label, owned_by,
                                         read_access, write_access,
                                         pred_coltype, created,
                                         created_by, updated,
@@ -8305,8 +8320,8 @@ sub save
 
 #	debug "Creating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
-	$sth->execute(@values) or die;
-	$node->{'initiated_node'} = 2;
+        $sth->execute(@values) or die;
+        $node->{'initiated_node'} = 2;
     }
 
     $RDF::Base::Cache::Changes::Updated{$nid} ++;
@@ -8320,9 +8335,9 @@ sub save
 
 =head2 initiate_rel
 
-=cut
+  =cut
 
-sub initiate_rel
+  sub initiate_rel
 {
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -8331,137 +8346,137 @@ sub initiate_rel
 
     debug 3, "initiating $nid";
 
-    if( $arclim->size )
+    if ( $arclim->size )
     {
 #	debug "Initiating node $nid rel with arclim";
 
-	my( $active, $inactive ) = $arclim->incl_act();
+        my( $active, $inactive ) = $arclim->incl_act();
 
-	my $sql = "select * from arc where subj=?";
+        my $sql = "select * from arc where subj=?";
 
-	if( $active and not $inactive )
-	{
-	    return if $_[0]->{'initiated_rel'};
-	    $sql .= " and active is true";
-	}
-	elsif( $inactive and not $active )
-	{
-	    return if $_[0]->{'initiated_rel_inactive'};
-	    $sql .= " and active is false";
-	}
-	elsif( $active and $inactive )
-	{
-	    if( $_[0]->{'initiated_rel'} and
-		$_[0]->{'initiated_rel_inactive'} )
-	    {
-		return;
-	    }
-	}
+        if ( $active and not $inactive )
+        {
+            return if $_[0]->{'initiated_rel'};
+            $sql .= " and active is true";
+        }
+        elsif ( $inactive and not $active )
+        {
+            return if $_[0]->{'initiated_rel_inactive'};
+            $sql .= " and active is false";
+        }
+        elsif ( $active and $inactive )
+        {
+            if ( $_[0]->{'initiated_rel'} and
+                 $_[0]->{'initiated_rel_inactive'} )
+            {
+                return;
+            }
+        }
 
-	# TODO:
-	# Here we have to make an intelligent guess if it's faster to
-	# initiate all the arcs or just the ones that are asked for.
-	# (using $arclim->sql )
+        # TODO:
+        # Here we have to make an intelligent guess if it's faster to
+        # initiate all the arcs or just the ones that are asked for.
+        # (using $arclim->sql )
 
-	my $extralim = 0;
+        my $extralim = 0;
 
 #	debug "Initiating node $nid with $sql";
-	my $sth_init_subj = $RDF::dbix->dbh->prepare($sql);
-	$sth_init_subj->execute($nid);
-	my $recs = $sth_init_subj->fetchall_arrayref({});
-	$sth_init_subj->finish;
+        my $sth_init_subj = $RDF::dbix->dbh->prepare($sql);
+        $sth_init_subj->execute($nid);
+        my $recs = $sth_init_subj->fetchall_arrayref({});
+        $sth_init_subj->finish;
 
-	my $rowcount = $sth_init_subj->rows;
-	if( $rowcount > 1000 )
-	{
-	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
-				    $node->safedesig);
+        my $rowcount = $sth_init_subj->rows;
+        if ( $rowcount > 1000 )
+        {
+            $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+                                    $node->safedesig);
 #            cluck "loading";
-	}
+        }
 
-	my $cnt = 0;
-	foreach my $rec ( @$recs )
-	{
-	    $node->populate_rel( $rec );
+        my $cnt = 0;
+        foreach my $rec ( @$recs )
+        {
+            $node->populate_rel( $rec );
 
-	    # Handle long lists
-	    unless( ++$cnt % 100 )
-	    {
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-		unless( $cnt % 1000 )
-		{
-		    $Para::Frame::REQ->note("  loaded $cnt");
-		}
-	    }
-	}
+            # Handle long lists
+            unless( ++$cnt % 100 )
+            {
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+                unless( $cnt % 1000 )
+                {
+                    $Para::Frame::REQ->note("  loaded $cnt");
+                }
+            }
+        }
 
-	if( $rowcount > 1000 )
-	{
-	    $Para::Frame::REQ->note("Loading arcs done for ".$node->safedesig);
+        if ( $rowcount > 1000 )
+        {
+            $Para::Frame::REQ->note("Loading arcs done for ".$node->safedesig);
 #            cluck "loading";
-	}
+        }
 
-	unless( $extralim )
-	{
-	    if( $active )
-	    {
-		$node->{'initiated_rel'} = 1;
+        unless( $extralim )
+        {
+            if ( $active )
+            {
+                $node->{'initiated_rel'} = 1;
 
-		# Mark up all individual preds for the node as initiated
-		foreach my $name ( keys %{$node->{'relarc'}} )
-		{
-		    $node->{'initiated_relprop'}{$name} = 2;
-		}
+                # Mark up all individual preds for the node as initiated
+                foreach my $name ( keys %{$node->{'relarc'}} )
+                {
+                    $node->{'initiated_relprop'}{$name} = 2;
+                }
 
-	    }
+            }
 
-	    if( $inactive )
-	    {
-		$node->{'initiated_rel_inactive'} = 1;
-	    }
-	}
+            if ( $inactive )
+            {
+                $node->{'initiated_rel_inactive'} = 1;
+            }
+        }
     }
     else
     {
-	return if $_[0]->{'initiated_rel'};
+        return if $_[0]->{'initiated_rel'};
 
 #	my $ts = Time::HiRes::time();
 
 #	debug "Initiating node $nid rel WITHOUT arclim";
 
-	# Optimized for also getting value nodes
-	my $sth_init_subj_name = $RDF::dbix->dbh->prepare("select * from arc where subj=$nid and active is true");
-	$sth_init_subj_name->execute();
-	my $recs = $sth_init_subj_name->fetchall_arrayref({});
-	$sth_init_subj_name->finish;
+        # Optimized for also getting value nodes
+        my $sth_init_subj_name = $RDF::dbix->dbh->prepare("select * from arc where subj=$nid and active is true");
+        $sth_init_subj_name->execute();
+        my $recs = $sth_init_subj_name->fetchall_arrayref({});
+        $sth_init_subj_name->finish;
 
 #	debug timediff "exec done";
 #	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM exec'} += Time::HiRes::time() - $ts;
 
-	my $cnt = 0;
-	foreach my $rec ( @$recs )
-	{
-	    $node->populate_rel( $rec );
+        my $cnt = 0;
+        foreach my $rec ( @$recs )
+        {
+            $node->populate_rel( $rec );
 
-	    # Handle long lists
-	    unless( ++$cnt % 100 )
-	    {
-		debug 2, "Populated $cnt";
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-	    }
-	}
+            # Handle long lists
+            unless( ++$cnt % 100 )
+            {
+                debug 2, "Populated $cnt";
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+            }
+        }
 
-	# Mark up all individual preds for the node as initiated
-	foreach my $name ( keys %{$node->{'relarc'}} )
-	{
-	    $node->{'initiated_relprop'}{$name} = 2;
-	}
+        # Mark up all individual preds for the node as initiated
+        foreach my $name ( keys %{$node->{'relarc'}} )
+        {
+            $node->{'initiated_relprop'}{$name} = 2;
+        }
 
 #    warn "End   init all props of node $node->{id}\n";
 
-	$node->{'initiated_rel'} = 1;
+        $node->{'initiated_rel'} = 1;
 
 #	$Para::Frame::REQ->{RBSTAT}{'initiate_rel NOARCLIM'} += Time::HiRes::time() - $ts;
     }
@@ -8472,9 +8487,9 @@ sub initiate_rel
 
 =head2 initiate_rev
 
-=cut
+  =cut
 
-sub initiate_rev
+  sub initiate_rev
 {
     my( $node, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -8490,21 +8505,21 @@ sub initiate_rev
 
     my $sql = "select * from arc where obj=?";
 
-    if( $active and not $inactive )
+    if ( $active and not $inactive )
     {
-	return if $_[0]->{'initiated_rev'};
+        return if $_[0]->{'initiated_rev'};
     }
-    elsif( $inactive and not $active )
+    elsif ( $inactive and not $active )
     {
-	return if $_[0]->{'initiated_rev_inactive'};
+        return if $_[0]->{'initiated_rev_inactive'};
     }
-    elsif( $active and $inactive )
+    elsif ( $active and $inactive )
     {
-	if( $_[0]->{'initiated_rev'} and
-	    $_[0]->{'initiated_rev_inactive'} )
-	{
-	    return;
-	}
+        if ( $_[0]->{'initiated_rev'} and
+             $_[0]->{'initiated_rev_inactive'} )
+        {
+            return;
+        }
     }
 
     # TODO:
@@ -8514,9 +8529,9 @@ sub initiate_rev
     # The revarc list may be much larger than the relarc list
 
     my( $arclim_sql, $extralim ) = $arclim->sql;
-    if( $arclim_sql )
+    if ( $arclim_sql )
     {
-	$sql .= " and ".$arclim_sql;
+        $sql .= " and ".$arclim_sql;
     }
 
     my $sth_init_obj = $RDF::dbix->dbh->prepare($sql);
@@ -8525,11 +8540,11 @@ sub initiate_rev
     $sth_init_obj->finish;
 
     my $rowcount = $sth_init_obj->rows;
-    if( $rowcount > 1000 )
+    if ( $rowcount > 1000 )
     {
-	debug 2, "initiate_rev $node->{id}";
-	$Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
-				$node->safedesig);
+        debug 2, "initiate_rev $node->{id}";
+        $Para::Frame::REQ->note("Loading $rowcount reverse arcs for ".
+                                $node->safedesig);
 #            cluck "loading";
 #	debug "ARGS: ".query_desig($args);
     }
@@ -8537,45 +8552,45 @@ sub initiate_rev
     my $cnt = 0;
     foreach my $rec ( @$recs )
     {
-	$node->populate_rev( $rec, undef );
+        $node->populate_rev( $rec, undef );
 
-	# Handle long lists
-	unless( ++$cnt % 100 )
-	{
-	    $Para::Frame::REQ->may_yield;
-	    die "cancelled" if $Para::Frame::REQ->cancelled;
-	    unless( $cnt % 1000 )
-	    {
-		$Para::Frame::REQ->note("  loaded $cnt");
-	    }
-	}
+        # Handle long lists
+        unless( ++$cnt % 100 )
+        {
+            $Para::Frame::REQ->may_yield;
+            die "cancelled" if $Para::Frame::REQ->cancelled;
+            unless( $cnt % 1000 )
+            {
+                $Para::Frame::REQ->note("  loaded $cnt");
+            }
+        }
     }
 
-    if( $rowcount > 1000 )
+    if ( $rowcount > 1000 )
     {
-	$Para::Frame::REQ->note("Loading reverse arcs done for ".
-				$node->safedesig);
+        $Para::Frame::REQ->note("Loading reverse arcs done for ".
+                                $node->safedesig);
 #            cluck "loading";
     }
 
     unless( $extralim )
     {
-	if( $active )
-	{
-	    $node->{'initiated_rev'} = 1;
+        if ( $active )
+        {
+            $node->{'initiated_rev'} = 1;
 
-	    # Mark up all individual preds for the node as initiated
-	    foreach my $name ( keys %{$node->{'revarc'}} )
-	    {
-		$node->{'initiated_revprop'}{$name} = 2;
-	    }
+            # Mark up all individual preds for the node as initiated
+            foreach my $name ( keys %{$node->{'revarc'}} )
+            {
+                $node->{'initiated_revprop'}{$name} = 2;
+            }
 
-	}
+        }
 
-	if( $inactive )
-	{
-	    $node->{'initiated_rev_inactive'} = 1;
-	}
+        if ( $inactive )
+        {
+            $node->{'initiated_rev_inactive'} = 1;
+        }
     }
 }
 
@@ -8599,47 +8614,47 @@ sub initiate_prop
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
-	confess "Not a resource: ".datadump($node);
+        confess "Not a resource: ".datadump($node);
     }
 
-    if( $inactive and not $active )
+    if ( $inactive and not $active )
     {
-	if( $node->{'initiated_rel_inactive'} )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'relarc_inactive'}{ $name };
-	}
+        if ( $node->{'initiated_rel_inactive'} )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'relarc_inactive'}{ $name };
+        }
     }
-    elsif( $active and not $inactive )
+    elsif ( $active and not $inactive )
     {
-	if( $node->{'initiated_relprop'}{$name} and
-	    $node->{'initiated_relprop'}{$name} > 1
-	  )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'relarc'}{ $name };
-	}
+        if ( $node->{'initiated_relprop'}{$name} and
+             $node->{'initiated_relprop'}{$name} > 1
+           )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'relarc'}{ $name };
+        }
 
-	if( $node->{'initiated_rel'} )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'relarc'}{ $name };
-	}
+        if ( $node->{'initiated_rel'} )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'relarc'}{ $name };
+        }
     }
-    elsif( $active and $inactive )
+    elsif ( $active and $inactive )
     {
-	if( $node->{'initiated_relprop'}{$name} and
-	    $node->{'initiated_relprop'}{$name} > 1 and
-	    $node->{'initiated_rel_inactive'} )
-	{
-	    return 1;
-	}
+        if ( $node->{'initiated_relprop'}{$name} and
+             $node->{'initiated_relprop'}{$name} > 1 and
+             $node->{'initiated_rel_inactive'} )
+        {
+            return 1;
+        }
     }
 
-    my $extralim = 0; # Getting less than all?
-    if( $active )
+    my $extralim = 0;           # Getting less than all?
+    if ( $active )
     {
-	$node->{'initiated_relprop'}{$name} = 1;
+        $node->{'initiated_relprop'}{$name} = 1;
     }
 
 
@@ -8652,122 +8667,122 @@ sub initiate_prop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = $pred->id )
+    if ( my $pred_id = $pred->id )
     {
 #	debug "initiate_prop $node->{id} $name";
-	if( debug > 3 )
-	{
-	    $RDF::Base::timestamp = time;
-	}
+        if ( debug > 3 )
+        {
+            $RDF::Base::timestamp = time;
+        }
 
-	my $recs;
-	my $sql = "select * from arc where subj=$nid and pred=$pred_id";
-	if( $inactive and not $active )
-	{
-	    $sql .= " and active is false";
-	}
-	if( $active and not $inactive )
-	{
-	    $sql .= " and active is true";
-	}
+        my $recs;
+        my $sql = "select * from arc where subj=$nid and pred=$pred_id";
+        if ( $inactive and not $active )
+        {
+            $sql .= " and active is false";
+        }
+        if ( $active and not $inactive )
+        {
+            $sql .= " and active is true";
+        }
 
-	my $sth_init_subj_pred = $RDF::dbix->dbh->prepare($sql);
-	$sth_init_subj_pred->execute();
-	$recs = $sth_init_subj_pred->fetchall_arrayref({});
-	$sth_init_subj_pred->finish;
+        my $sth_init_subj_pred = $RDF::dbix->dbh->prepare($sql);
+        $sth_init_subj_pred->execute();
+        $recs = $sth_init_subj_pred->fetchall_arrayref({});
+        $sth_init_subj_pred->finish;
 
-	my $rowcount = $sth_init_subj_pred->rows;
-	if( $rowcount > 100 )
-	{
-	    if( UNIVERSAL::isa $proplim, "RDF::Base::Resource" )
-	    {
-		my $obj_id = $proplim->id;
-		debug 2, "  rowcount > 100. Using obj_id from proplim $obj_id";
-		$sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
-		my( $arclim_sql, $extralim_sql ) = $arclim->sql;
-		if( $arclim_sql )
-		{
-		    $sql .= " and ".$arclim_sql;
-		}
+        my $rowcount = $sth_init_subj_pred->rows;
+        if ( $rowcount > 100 )
+        {
+            if ( UNIVERSAL::isa $proplim, "RDF::Base::Resource" )
+            {
+                my $obj_id = $proplim->id;
+                debug 2, "  rowcount > 100. Using obj_id from proplim $obj_id";
+                $sql = "select * from arc where subj=$nid and pred=$pred_id and obj=$obj_id";
+                my( $arclim_sql, $extralim_sql ) = $arclim->sql;
+                if ( $arclim_sql )
+                {
+                    $sql .= " and ".$arclim_sql;
+                }
 
-		my $sth = $RDF::dbix->dbh->prepare($sql);
-		$sth->execute();
-		$recs = $sth->fetchall_arrayref({});
-		$sth->finish;
-		$extralim ++;
-		$rowcount = $sth->rows;
-	    }
-	}
+                my $sth = $RDF::dbix->dbh->prepare($sql);
+                $sth->execute();
+                $recs = $sth->fetchall_arrayref({});
+                $sth->finish;
+                $extralim ++;
+                $rowcount = $sth->rows;
+            }
+        }
 
-	if( $rowcount > 1000  )
-	{
-	    debug 2, "initiate_prop $node->{id} $name";
+        if ( $rowcount > 1000  )
+        {
+            debug 2, "initiate_prop $node->{id} $name";
 #	    debug "ARGS: ".query_desig($args);
-	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
-				    $node->safedesig);
+            $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+                                    $node->safedesig);
 #            cluck "loading";
-	}
+        }
 
 #	    $Para::Frame::REQ->{RBSTAT}{'initiate_propname exec'} += Time::HiRes::time() - $ts;
 
-	my $cnt = 0;
-	foreach my $rec ( @$recs )
-	{
-	    $node->populate_rel( $rec, $args );
+        my $cnt = 0;
+        foreach my $rec ( @$recs )
+        {
+            $node->populate_rel( $rec, $args );
 
-	    # Handle long lists
-	    unless( ++$cnt % 100 )
-	    {
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-		unless( $cnt % 1000 )
-		{
-		    $Para::Frame::REQ->note("  loaded $cnt");
-		}
-	    }
-	}
+            # Handle long lists
+            unless( ++$cnt % 100 )
+            {
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+                unless( $cnt % 1000 )
+                {
+                    $Para::Frame::REQ->note("  loaded $cnt");
+                }
+            }
+        }
 
-	if( $rowcount > 1000 )
-	{
-	    $Para::Frame::REQ->note("Loading arcs done for ".
-				    $node->safedesig);
+        if ( $rowcount > 1000 )
+        {
+            $Para::Frame::REQ->note("Loading arcs done for ".
+                                    $node->safedesig);
 #            cluck "loading";
-	}
+        }
 
 #	debug "* prop $name for $nid is now initiated";
     }
     else
     {
-	debug "* prop $name does not exist!";
+        debug "* prop $name does not exist!";
     }
 
-    if( $extralim )
+    if ( $extralim )
     {
-	$node->{'initiated_relprop'}{$name} = 0;
+        $node->{'initiated_relprop'}{$name} = 0;
     }
-    elsif( $active )
+    elsif ( $active )
     {
 #	debug "prop $nid $name initiaded to 2";
-	$node->{'initiated_relprop'}{$name} = 2;
+        $node->{'initiated_relprop'}{$name} = 2;
     }
 
 #    $Para::Frame::REQ->{RBSTAT}{'initiate_prop processed'} += Time::HiRes::time() - $ts;
 
     # Keeps key nonexistent if nonexistent
-    if( $active and not $inactive )
+    if ( $active and not $inactive )
     {
-	return $node->{'relarc'}{ $name };
+        return $node->{'relarc'}{ $name };
     }
-    elsif( $inactive and not $active )
+    elsif ( $inactive and not $active )
     {
-	return $node->{'relarc_inactive'}{ $name };
+        return $node->{'relarc_inactive'}{ $name };
     }
     else
     {
-	return $node->{'relarc'}{ $name } ||
-	  $node->{'relarc_inactive'}{ $name };
+        return $node->{'relarc'}{ $name } ||
+          $node->{'relarc_inactive'}{ $name };
     }
- }
+}
 
 #########################################################################
 
@@ -8788,43 +8803,43 @@ sub initiate_revprop
     my $nid = $node->id;
     my $name = $pred->plain;
 
-    if( $inactive and not $active )
+    if ( $inactive and not $active )
     {
-	if( $node->{'initiated_rev_inactive'} )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'revarc_inactive'}{ $name };
-	}
+        if ( $node->{'initiated_rev_inactive'} )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'revarc_inactive'}{ $name };
+        }
     }
-    elsif( $active and not $inactive )
+    elsif ( $active and not $inactive )
     {
-	if( $node->{'initiated_revprop'}{$name} and
-	    $node->{'initiated_revprop'}{$name} > 1
-	  )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'revarc'}{ $name };
-	}
+        if ( $node->{'initiated_revprop'}{$name} and
+             $node->{'initiated_revprop'}{$name} > 1
+           )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'revarc'}{ $name };
+        }
 
-	if( $node->{'initiated_rev'} )
-	{
-	    # Keeps key nonexistent if nonexistent
-	    return $node->{'revarc'}{ $name };
-	}
+        if ( $node->{'initiated_rev'} )
+        {
+            # Keeps key nonexistent if nonexistent
+            return $node->{'revarc'}{ $name };
+        }
     }
-    elsif( $active and $inactive )
+    elsif ( $active and $inactive )
     {
-	if( $node->{'initiated_revprop'}{$name} and
-	    $node->{'initiated_revprop'}{$name} > 1 and
-	    $node->{'initiated_rev_inactive'} )
-	{
-	    return 1;
-	}
+        if ( $node->{'initiated_revprop'}{$name} and
+             $node->{'initiated_revprop'}{$name} > 1 and
+             $node->{'initiated_rev_inactive'} )
+        {
+            return 1;
+        }
     }
 
-    if( $active )
+    if ( $active )
     {
-	$node->{'initiated_revprop'}{$name} = 1;
+        $node->{'initiated_revprop'}{$name} = 1;
     }
 
 
@@ -8836,100 +8851,100 @@ sub initiate_revprop
 
     # arc_id and arc->name is connected. don't clear one
 
-    if( my $pred_id = $pred->id )
+    if ( my $pred_id = $pred->id )
     {
-	if( debug > 1 )
-	{
-	    $RDF::Base::timestamp = time;
-	}
+        if ( debug > 1 )
+        {
+            $RDF::Base::timestamp = time;
+        }
 
-	my $sql = "select * from arc where obj=$nid and pred=$pred_id";
+        my $sql = "select * from arc where obj=$nid and pred=$pred_id";
 
-	my $arclim_sql;
-	( $arclim_sql, $extralim ) = $arclim->sql;
-	if( $arclim_sql )
-	{
-	    $sql .= " and ".$arclim_sql;
-	}
+        my $arclim_sql;
+        ( $arclim_sql, $extralim ) = $arclim->sql;
+        if ( $arclim_sql )
+        {
+            $sql .= " and ".$arclim_sql;
+        }
 
 
-	my $sth_init_obj_pred = $RDF::dbix->dbh->prepare($sql);
-	$sth_init_obj_pred->execute();
-	my $recs = $sth_init_obj_pred->fetchall_arrayref({});
-	$sth_init_obj_pred->finish;
+        my $sth_init_obj_pred = $RDF::dbix->dbh->prepare($sql);
+        $sth_init_obj_pred->execute();
+        my $recs = $sth_init_obj_pred->fetchall_arrayref({});
+        $sth_init_obj_pred->finish;
 
-	my $num_of_arcs = scalar( @$recs );
-	if( debug > 1 )
-	{
-	    my $ts = $RDF::Base::timestamp;
-	    $RDF::Base::timestamp = time;
-	    debug sprintf("Got %d arcs in %2.2f secs",
-			  $num_of_arcs, time - $ts);
-	}
+        my $num_of_arcs = scalar( @$recs );
+        if ( debug > 1 )
+        {
+            my $ts = $RDF::Base::timestamp;
+            $RDF::Base::timestamp = time;
+            debug sprintf("Got %d arcs in %2.2f secs",
+                          $num_of_arcs, time - $ts);
+        }
 
-	my $cnt = 0;
+        my $cnt = 0;
 
-	my $rowcount = $sth_init_obj_pred->rows;
-	if( $rowcount > 1000 )
-	{
-	    debug 2, "initiate_revprop $node->{id} $name";
-	    $Para::Frame::REQ->note("Loading $rowcount arcs for ".
-				    $node->safedesig);
+        my $rowcount = $sth_init_obj_pred->rows;
+        if ( $rowcount > 1000 )
+        {
+            debug 2, "initiate_revprop $node->{id} $name";
+            $Para::Frame::REQ->note("Loading $rowcount arcs for ".
+                                    $node->safedesig);
 #	    debug "ARGS: ".query_desig($args);
 #            cluck "loading";
-	}
+        }
 
-	foreach my $rec ( @$recs )
-	{
-	    $node->populate_rev( $rec, $args );
+        foreach my $rec ( @$recs )
+        {
+            $node->populate_rev( $rec, $args );
 
-	    # Handle long lists
-	    unless( ++$cnt % 100 )
-	    {
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-		unless( $cnt % 1000 )
-		{
-		    $Para::Frame::REQ->note("  loaded $cnt");
-		}
-	    }
-	}
+            # Handle long lists
+            unless( ++$cnt % 100 )
+            {
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+                unless( $cnt % 1000 )
+                {
+                    $Para::Frame::REQ->note("  loaded $cnt");
+                }
+            }
+        }
 
-	if( $rowcount > 1000 )
-	{
-	    $Para::Frame::REQ->note("Loading arcs done for ".
-				    $node->safedesig);
+        if ( $rowcount > 1000 )
+        {
+            $Para::Frame::REQ->note("Loading arcs done for ".
+                                    $node->safedesig);
 #            cluck "loading";
-	}
+        }
 
-	debug 3, "* revprop $name for $node->{id} is now initiated";
+        debug 3, "* revprop $name for $node->{id} is now initiated";
     }
     else
     {
-	debug "* revprop $name does not exist!";
+        debug "* revprop $name does not exist!";
     }
 
     unless( $extralim )
     {
-	if( $active )
-	{
-	    $node->{'initiated_revprop'}{$name} = 2;
-	}
+        if ( $active )
+        {
+            $node->{'initiated_revprop'}{$name} = 2;
+        }
     }
 
     # Keeps key nonexistent if nonexistent
-    if( $active and not $inactive )
+    if ( $active and not $inactive )
     {
-	return $node->{'revarc'}{ $name };
+        return $node->{'revarc'}{ $name };
     }
-    elsif( $inactive and not $active )
+    elsif ( $inactive and not $active )
     {
-	return $node->{'revarc_inactive'}{ $name };
+        return $node->{'revarc_inactive'}{ $name };
     }
     else
     {
-	return $node->{'revarc'}{ $name } ||
-	  $node->{'revarc_inactive'}{ $name };
+        return $node->{'revarc'}{ $name } ||
+          $node->{'revarc_inactive'}{ $name };
     }
 }
 
@@ -8949,17 +8964,17 @@ sub populate_rel
 
     # Oh, yeah? Like I care?!?
     my $pred_name = RDF::Base::Pred->get( $rec->{'pred'} )->plain;
-    if( $rec->{'active'} and (($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1))
+    if ( $rec->{'active'} and (($node->{'initiated_relprop'}{$pred_name} ||= 1) > 1))
     {
-	debug 4, "NOT creating arc";
-	return;
+        debug 4, "NOT creating arc";
+        return;
     }
 
 #    debug "Creating arc for $node with $rec";
     my $arc = RDF::Base::Arc->get_by_rec_and_register( $rec,
-						       {
-							subj => $node,
-						       });
+                                                       {
+                                                        subj => $node,
+                                                       });
 #    debug "  Created";
 
 #    debug "**Add prop $pred_name to $node->{id}";
@@ -8984,26 +8999,26 @@ sub populate_rev
     # Oh, yeah? Like I care?!?
     debug 3, timediff("populate_rev");
     my $pred_name = RDF::Base::Pred->get( $rec->{'pred'} )->plain;
-    if( $rec->{'active'} and (($node->{'initiated_revprop'}{$pred_name} ||= 1) > 1))
+    if ( $rec->{'active'} and (($node->{'initiated_revprop'}{$pred_name} ||= 1) > 1))
     {
-	debug 4, "NOT creating arc";
-	return;
+        debug 4, "NOT creating arc";
+        return;
     }
 
-    if( debug > 3 )
+    if ( debug > 3 )
     {
-	debug "Creating arc for $node->{id} with ".datadump($rec,4);
+        debug "Creating arc for $node->{id} with ".datadump($rec,4);
 #	debug timediff("new arc");
     }
     my $arc = RDF::Base::Arc->get_by_rec_and_register( $rec,
-						       {
-							value => $node,
-						       });
-    if( debug > 3 )
+                                                       {
+                                                        value => $node,
+                                                       });
+    if ( debug > 3 )
     {
-	debug "  Created";
-	debug "**Add revprop $pred_name to $node->{id}";
-	debug timediff("done");
+        debug "  Created";
+        debug "**Add revprop $pred_name to $node->{id}";
+        debug timediff("done");
     }
 
     return 1;
@@ -9045,13 +9060,13 @@ sub dereference_nesting
 sub session_history_add
 {
     my( $node, $table ) = @_;
-    if( $Para::Frame::REQ and $Para::Frame::REQ->is_from_client )
+    if ( $Para::Frame::REQ and $Para::Frame::REQ->is_from_client )
     {
-	$table ||= 'visited';
-	my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
-	  ||= RDF::Base::List->new();
-	$list->unshift_uniq($node);
-	return $list;
+        $table ||= 'visited';
+        my $list = $Para::Frame::REQ->session->{'nodes'}{$table}
+          ||= RDF::Base::List->new();
+        $list->unshift_uniq($node);
+        return $list;
     }
 }
 
@@ -9165,9 +9180,9 @@ sub instance_class
 {
     # Used in startup.
 
-    if( $_[0]->{'id'} == $ID )
+    if ( $_[0]->{'id'} == $ID )
     {
-	return 'RDF::Base::Resource';
+        return 'RDF::Base::Resource';
     }
 
     my $package = 'RDF::Base::Resource';
@@ -9176,36 +9191,36 @@ sub instance_class
     my $p_chbpm = RDF::Base::Pred->
       get_by_label('class_handled_by_perl_module');
 
-    if( my $class_node = $_[0]->first_prop($p_chbpm,undef,['active']) )
+    if ( my $class_node = $_[0]->first_prop($p_chbpm,undef,['active']) )
     {
-	eval
-	{
-	    # Mirrors find_class()
-	    my $key = $class_node->id;
-	    if( $package = $RDF::Base::Cache::Class{ $key } )
-	    {
-		return $package;
-	    }
+        eval
+        {
+            # Mirrors find_class()
+            my $key = $class_node->id;
+            if ( $package = $RDF::Base::Cache::Class{ $key } )
+            {
+                return $package;
+            }
 
-	    my $p_code = RDF::Base::Pred->get_by_label('code');
-	    my $classname = $class_node->first_prop($p_code,undef,['active'])->plain
-	      or confess "No classname found for class $class_node->{id}";
+            my $p_code = RDF::Base::Pred->get_by_label('code');
+            my $classname = $class_node->first_prop($p_code,undef,['active'])->plain
+              or confess "No classname found for class $class_node->{id}";
 
-	    require(package_to_module($classname));
+            require(package_to_module($classname));
 
-	    $package = "RDF::Base::Metaclass::$classname";
-	    no strict "refs";
-	    @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
-	    $RDF::Base::Cache::Class{ $key } = $package;
-	    $RDF::Base::Cache::Valtype{ $key } = $_[0];
+            $package = "RDF::Base::Metaclass::$classname";
+            no strict "refs";
+            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            $RDF::Base::Cache::Class{ $key } = $package;
+            $RDF::Base::Cache::Valtype{ $key } = $_[0];
 #	    debug "Setting_ic valtype for $key to $_[0]->{id}";
-	    1;
-	};
-	if( $@ )
-	{
-	    debug $@;
-	    $package = 'RDF::Base::Resource';
-	}
+            1;
+        };
+        if ( $@ )
+        {
+            debug $@;
+            $package = 'RDF::Base::Resource';
+        }
     }
 
     return $package;
@@ -9238,17 +9253,17 @@ sub update_valtype
 
     my $revarcs = $node->revarc_list;
     my( $arc, $err ) = $revarcs->get_first;
-    while(!$err)
+    while (!$err)
     {
-	next if $arc->is_removed; # Found a case of arc with undef valtype
-	unless( $valtype->equals($arc->valtype) )
-	{
-	    $arc->set_value( $arc->value, $newargs );
-	}
+        next if $arc->is_removed; # Found a case of arc with undef valtype
+        unless( $valtype->equals($arc->valtype) )
+        {
+            $arc->set_value( $arc->value, $newargs );
+        }
     }
     continue
     {
-	( $arc, $err ) = $revarcs->get_next;
+        ( $arc, $err ) = $revarcs->get_next;
     }
 
     return $valtype;
@@ -9267,27 +9282,27 @@ sub update_unseen_by
 
     my %uns;
     my $unseers = $node->list('unseen_by');
-    while( my $unseer = $unseers->get_next_nos )
+    while ( my $unseer = $unseers->get_next_nos )
     {
-	$uns{$unseer->id} = $unseer;
+        $uns{$unseer->id} = $unseer;
     }
 
     my $updated = $node->updated;
 
     my $watchers = $node->watchers;
-    while( my $watcher = $watchers->get_next_nos )
+    while ( my $watcher = $watchers->get_next_nos )
     {
-	next if $uns{$watcher->id}; # Already added
+        next if $uns{$watcher->id}; # Already added
 
-	if( my $seen_arc = $node->first_arc('seen_by', $watcher) )
-	{
-	    next if $seen_arc->updated >= $updated;
-	}
+        if ( my $seen_arc = $node->first_arc('seen_by', $watcher) )
+        {
+            next if $seen_arc->updated >= $updated;
+        }
 
-	$node->add({unseen_by => $watcher},
-		   {activate_new_arcs => 1,
-		    updated => $node->updated,
-		   });
+        $node->add({unseen_by => $watcher},
+                   {activate_new_arcs => 1,
+                    updated => $node->updated,
+                   });
     }
 
 }
@@ -9308,28 +9323,28 @@ sub update_by_query_arc
     my $pred = $props_in->{'pred'} || $arc->pred;
     my $res = $args->{'res'};
 
-    if( $value )
+    if ( $value )
     {
-	if( ref $value )
-	{
-	    # Should already be ok...
-	    $value = RDF::Base::Resource->get( $value );
-	}
-	else
-	{
+        if ( ref $value )
+        {
+            # Should already be ok...
+            $value = RDF::Base::Resource->get( $value );
+        }
+        else
+        {
 #            debug "Trying to find $value with args ".
 #              datadump($args,1)." and props ".datadump($props_in,1).
 #                " for $node";
 
             $value = $node->find_by_string($value, $props_in, $args);
 #            debug "  found ".$value->sysdesig;
-	}
+        }
 
-	$arc = $arc->set_value( $value, $args );
+        $arc = $arc->set_value( $value, $args );
     }
     else
     {
-	$res->add_to_deathrow( $arc );
+        $res->add_to_deathrow( $arc );
     }
 
     return $arc;
@@ -9366,32 +9381,32 @@ sub handle_query_newsubjs
 
     foreach my $param (@$newsubj_params)
     {
-	my $arg = parse_form_field_prop($param);
+        my $arg = parse_form_field_prop($param);
 
-	#debug "Newsubj param: $param: ". $q->param($param);
-	if( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
-	{
-	    next unless $q->param( $param );
-	    my $main = $1;
-	    my $no = $2;
+        #debug "Newsubj param: $param: ". $q->param($param);
+        if ( $arg->{'newsubj'} =~ m/^(main_)?(.*?)$/ )
+        {
+            next unless $q->param( $param );
+            my $main = $1;
+            my $no = $2;
 
-	    $keysubjs{$no} = 'True'
-	      if( $main );
-	    debug " adding $no"
-	      if( $main );
+            $keysubjs{$no} = 'True'
+              if ( $main );
+            debug " adding $no"
+              if ( $main );
 
-	    $newsubj{$no} = {} unless $newsubj{$no};
-	    $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
+            $newsubj{$no} = {} unless $newsubj{$no};
+            $newsubj{$no}{$arg->{'pred'}} = $q->param( $param );
 
-	    # Cleaning up newsubj-params to get a clean form...
-	    $q->delete($param);
-	}
+            # Cleaning up newsubj-params to get a clean form...
+            $q->delete($param);
+        }
     }
 
     foreach my $ns (keys %keysubjs)
     {
-	debug "Newsubj creating a node: ". datadump $newsubj{$ns};
-	RDF::Base::Resource->create( $newsubj{$ns}, $args );
+        debug "Newsubj creating a node: ". datadump $newsubj{$ns};
+        RDF::Base::Resource->create( $newsubj{$ns}, $args );
     }
 
     return $res->changes - $changes_prev;
@@ -9407,12 +9422,12 @@ sub label_from_params
 {
     my( $n, $args ) = @_;
 
-    if( ($args->{'label'}||'') eq '1' )
+    if ( ($args->{'label'}||'') eq '1' )
     {
         $args->{'label'} = $n;
     }
 
-    if( ($args->{'tdlabel'}||'') eq '1' )
+    if ( ($args->{'tdlabel'}||'') eq '1' )
     {
         $args->{'tdlabel'} = $n;
     }
@@ -9431,11 +9446,11 @@ sub build_field_key
 {
     my( $this, $args ) = @_;
 
-    if( $this->isa('RDF::Base::Arc') )
+    if ( $this->isa('RDF::Base::Arc') )
     {
         $args->{arc} //= $this->id; # Must be scalar
     }
-    elsif( $this->isa('RDF::Base::Pred') )
+    elsif ( $this->isa('RDF::Base::Pred') )
     {
         $args->{pred} //= $this;
     }
@@ -9464,12 +9479,12 @@ sub on_startup
 
     unless( $ID )
     {
-	die "Failed to initiate resource constant";
+        die "Failed to initiate resource constant";
     }
 
     $RDF::Base::Constants::Label{'resource'} =
       $RDF::Base::Cache::Resource{ $ID } ||=
-	RDF::Base::Resource->new($ID)->init();
+        RDF::Base::Resource->new($ID)->init();
 }
 
 
