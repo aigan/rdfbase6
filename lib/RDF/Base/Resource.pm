@@ -5799,7 +5799,6 @@ supported args are
   inputtype
   default_value
   header
-  item_prefix
   on_arc_add
 
 args are forwarded to
@@ -5988,7 +5987,7 @@ sub wuirc
 #	debug "Getting table columns for class ".$range->find_class;
         my $columns = $args->{'columns'} ||
           $range->instance_class->table_columns( $pred, $args );
-        push @$columns, '-arc_remove';
+        push @$columns, '-edit_link', '-arc_remove';
         $args->{'columns'} = $columns;
 #	debug "Columns: ".datadump($columns);
 
@@ -6617,7 +6616,7 @@ sub relative_top
 
 sub table_columns
 {
-    return ['desig'];
+    return ['-desig'];
 }
 
 

@@ -756,6 +756,8 @@ sub wuirc
     my $divid = $args->{divid};
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
+    my $disabled = $args->{'disabled'} ? 1 : 0;
+
     my $onchange = '';
     my $pattern = $range->has_input_pattern;
     if ( $pattern )
@@ -780,6 +782,7 @@ sub wuirc
     if ( $args->{'live_update'} )
     {
         $onchange = "RDF.Base.pageparts['$divid'].node_update()";
+        $args->{'onchange'} = $onchange;
     }
 
     my $tb = $C_textbox;
@@ -869,40 +872,42 @@ sub wuirc
     }
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    $multi //= $singular ? 0 : 1;
 
+#    $multi //= $singular ? 0 : 1; # Default to singular...
 
 
     my $no_arc = 0;             # for adding a second input field
 
-    if ( ($args->{'disabled'}||'') eq 'disabled' )
+    my $columns = $args->{'columns'} ||
+      $range->instance_class->table_columns( $pred, $args );
+    push @$columns, '-edit_link';
+    $args->{'columns'} = $columns;
+    $args->{'source'} = $subj;
+
+    my $wide_class = $size ? '' : ' wide';
+
+    if ( $disabled )
     {
+        $out .= "<table class=\"wuirc\">\n";
+
         my $arclist = $subj->arc_list($predname, $proplim, $args);
 
         while ( my $arc = $arclist->get_next_nos )
         {
-            $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+            $out .= $arc->table_row( $args );
         }
     }
     elsif ( $subj->list($predname,$proplim,$arclim)->is_true )
     {
+        $out .= "<table class=\"wuirc text_input$wide_class\">\n";
+
         my $subj_id = $subj->id;
-
-
-        my $columns = $args->{'columns'} ||
-          $range->instance_class->table_columns( $pred, $args );
-        $args->{'columns'} = $columns;
-        $args->{'source'} = $subj;
-
-
 
         my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
         my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
 
         debug "Arcs list: @arcs" if $DEBUG;
         my $list_weight = 0;
-
-        $out .= "<table class=\"wuirc\">\n";
 
         foreach my $arc ( RDF::Base::List->new(\@arcs)->
                           sorted(['obj.is_of_language.code',
@@ -912,7 +917,6 @@ sub wuirc
         {
             $out .= $arc->table_row( $args );
         }
-        $out .= "</table>\n";
 
 
 
@@ -1053,11 +1057,13 @@ sub wuirc
     }
     else
     {
+        $out .= "<table class=\"wuirc text_input$wide_class\">\n";
+
         $no_arc = 1;
         debug 2, "No arc?";
     }
 
-    if ( $no_arc or $multi )
+    if ( $no_arc or $multi and not $disabled )
     {
         my $def_value = $args->{'default_value'};
         if ( UNIVERSAL::can($def_value, 'plain') )
@@ -1087,20 +1093,28 @@ sub wuirc
 
 #	debug 1, "Default value is ".$default->sysdesig; ### DEBUG
 
-        $out .= &{$inputtype}(build_field_key($props),
-                              $default->plain,
-                              {
-                               class => $args->{'class'},
-                               size => $size,
-                               rows => $rows,
-                               maxlength => $args->{'maxlength'},
-                               maxw => $maxw,
-                               maxh => $maxh,
-                               id => $args->{'id'},
-                               image_url => $args->{'image_url'},
-                               onchange => $onchange,
-                              });
+        $out .= "<tr>";
+        foreach my $col ( @{$args->{'columns'}} )
+        {
+            if( $col eq '-input' )
+            {
+                $out .= "<td class='col_input col_new'>";
+                $out .= &{$inputtype}(build_field_key($props),
+                                      $default->plain,
+                                      {
+                                       class => $args->{'class'},
+                                       size => $size,
+                                       rows => $rows,
+                                       maxlength => $args->{'maxlength'},
+                                       maxw => $maxw,
+                                       maxh => $maxh,
+                                       id => $args->{'id'},
+                                       image_url => $args->{'image_url'},
+                                       onchange => $onchange,
+                                      });
 
+                ### OLDER CODE:
+                #
         foreach my $key ( keys %$dc )
         {
             my $pred = RDF::Base::Pred->get($key);
@@ -1133,7 +1147,21 @@ sub wuirc
                 }
             }
         }
+                #
+                ### /older code
+
+
+                $out .= "</td>";
+            }
+            else
+            {
+                $out .= "<td></td>";
+            }
+        }
+        $out .= "</tr>";
     }
+
+    $out .= "</table>\n";
 
 #    debug 2, "returning: $out" ;
     return $out;

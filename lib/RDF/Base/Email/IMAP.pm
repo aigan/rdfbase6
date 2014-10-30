@@ -556,6 +556,7 @@ sub is_top
 #
 #
 package IMAP::BodyStructure;
+no warnings 'redefine';
 sub _get_nstring(\$) {
 #    warn "in patched _get_nstring";
 

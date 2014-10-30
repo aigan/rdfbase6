@@ -2423,6 +2423,8 @@ Special columns:
 
  -input
 
+ -edit_link
+
  -string_...
 
 
@@ -2456,10 +2458,19 @@ sub table_row
 
     foreach my $col ( @{$args->{'columns'}} )
     {
-        $out .= "<td>";
-        given( $col )
+        my( $meta ) = $col =~ /^-(.*)/;
+        if( $meta )
         {
-            when('-arc_remove')
+            $out .= "<td class='col_$meta'>";
+        }
+        else
+        {
+            $out .= "<td>";
+        }
+
+        given( $meta )
+        {
+            when('arc_remove')
             {
                 if ( not $disabled )
                 {
@@ -2480,12 +2491,12 @@ sub table_row
                 }
             }
 
-            when('-arc_updated')
+            when('arc_updated')
             {
                 $out .= $arc->updated;
             }
 
-            when('-arc_seen_status')
+            when('arc_seen_status')
             {
                 die "not implemented" if $is_rev;
                 if ( $check_subj->first_arc('unseen_by',$item) )
@@ -2516,17 +2527,12 @@ sub table_row
                 }
                 else
                 {
-                    if ( my $item_prefix = $args->{'item_prefix'} )
-                    {
-                        $out .= $item->$item_prefix." ";
-                    }
                     $out .= ( $is_rev ? $check_subj->wu_jump :
                               $item->wu_jump );
                 }
-                $out .= '&nbsp;' . $arc->edit_link_html;
             }
 
-            when('-input')
+            when('input')
             {
                 if ( $disabled )
                 {
@@ -2535,11 +2541,6 @@ sub table_row
                 }
                 else
                 {
-                    if ( my $item_prefix = $args->{'item_prefix'} )
-                    {
-                        $out .= $item->$item_prefix." ";
-                    }
-
                     my $field = $arc->build_field_key();
                     my $tagid = $field;
                     my $fargs =
@@ -2549,7 +2550,7 @@ sub table_row
                      rows => $args->{'rows'},
                      maxlength => $args->{'maxlength'},
                      image_url => $args->{'image_url'},
-#                     onchange => $onchange,  ## Implement this
+                     onchange => $args->{'onchange'},
                      arc => $arc->id,
                     };
                     if ( $arc->indirect )
@@ -2562,17 +2563,20 @@ sub table_row
                     no strict 'refs';           # For &{$inputtype} below
                     $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
                 }
+            }
 
+            when('edit_link')
+            {
                 unless( $arc->indirect )
                 {
                     $out .= $arc->edit_link_html;
                 }
             }
 
-            when(/^-(string_.*)/)
+            when(/^string_/)
             {
-                debug "Adding $1 = ".$args->{$1};
-                $out .= $args->{$1};
+                debug "Adding $meta = ".$args->{$meta};
+                $out .= $args->{$meta};
             }
 
             default
