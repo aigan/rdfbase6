@@ -21,9 +21,11 @@ RDF::Base::Email::Address
 use 5.010;
 use strict;
 use warnings;
+no warnings 'experimental::smartmatch';
 use constant C => 'RDF::Base::Constants';
 use constant LEA => 'RDF::Base::Literal::Email::Address';
 use feature "switch";
+
 
 use Carp qw( cluck confess longmess );
 use Mail::Address;

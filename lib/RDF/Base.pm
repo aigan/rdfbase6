@@ -163,7 +163,7 @@ sub init
 
     RDF::Base::Widget->on_configure();
 
-    warn "Done adding hooks for RDF::Base\n";
+#    warn "Done adding hooks for RDF::Base\n";
 
     return 1;
 }

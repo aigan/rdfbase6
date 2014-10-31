@@ -735,7 +735,7 @@ sub wuirc
 
 #    Para::Frame::Logging->this_level(5);
 #    my $DEBUG = Para::Frame::Logging->at_level(3);
-    my $DEBUG = 1;
+    my $DEBUG = 0;
 
     no strict 'refs';           # For &{$inputtype} below
     my $out = "";
@@ -757,6 +757,8 @@ sub wuirc
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
     my $disabled = $args->{'disabled'} ? 1 : 0;
+
+    my $extra_html = ""; # For adding hidden fields, etc.
 
     my $onchange = '';
     my $pattern = $range->has_input_pattern;
@@ -883,6 +885,8 @@ sub wuirc
     push @$columns, '-edit_link';
     $args->{'columns'} = $columns;
     $args->{'source'} = $subj;
+
+#    debug "Columns set to @$columns";
 
     my $wide_class = $size ? '' : ' wide';
 
@@ -1093,25 +1097,46 @@ sub wuirc
 
 #	debug 1, "Default value is ".$default->sysdesig; ### DEBUG
 
-        $out .= "<tr>";
+        my $row = "<tr>";
         foreach my $col ( @{$args->{'columns'}} )
         {
-            if( $col eq '-input' )
+            my( $meta ) = $col =~ /^-(.*)/;
+            if( $meta )
             {
-                $out .= "<td class='col_input col_new'>";
-                $out .= &{$inputtype}(build_field_key($props),
-                                      $default->plain,
-                                      {
-                                       class => $args->{'class'},
-                                       size => $size,
-                                       rows => $rows,
-                                       maxlength => $args->{'maxlength'},
-                                       maxw => $maxw,
-                                       maxh => $maxh,
-                                       id => $args->{'id'},
-                                       image_url => $args->{'image_url'},
-                                       onchange => $onchange,
-                                      });
+                $row .= "<td class='col_$meta col_new'>";
+            }
+            else
+            {
+                $meta = '';
+                $row .= "<td>";
+            }
+
+            given( $meta )
+            {
+                when( 'input' )
+                {
+                    $row .= &{$inputtype}
+                      (build_field_key($props),
+                       $default->plain,
+                       {
+                        class => $args->{'class'},
+                        size => $size,
+                        rows => $rows,
+                        maxlength => $args->{'maxlength'},
+                        maxw => $maxw,
+                        maxh => $maxh,
+                        id => $args->{'id'},
+                        image_url => $args->{'image_url'},
+                        onchange => $onchange,
+                       });
+                }
+
+                when(/^string_/)
+                {
+                    debug "Adding $meta = ".$args->{$meta};
+                    $row .= $args->{$meta};
+                }
+            }
 
                 ### OLDER CODE:
                 #
@@ -1134,7 +1159,7 @@ sub wuirc
                                                  if => 'subj',
                                                  parse => 'id',
                                                 });
-                    $out .= &hidden($field,$val->id);
+                    $extra_html .= &hidden($field,$val->id);
                 }
                 else
                 {
@@ -1143,25 +1168,26 @@ sub wuirc
                                                  subj => $vnode,
                                                  if => 'subj',
                                                 });
-                    $out .= &hidden($field,$val->plain);
+                    $extra_html .= &hidden($field,$val->plain);
                 }
             }
         }
-                #
-                ### /older code
+            #
+            ### /older code
 
-
-                $out .= "</td>";
-            }
-            else
-            {
-                $out .= "<td></td>";
-            }
+            $row .= "</td>";
         }
-        $out .= "</tr>";
+
+        # Remove empty elements at the end of row
+        $row =~ s/(<td[^>]*><\/td>)+$//;
+
+        $out .= $row . "</tr>";
+
     }
 
     $out .= "</table>\n";
+    $out .= $extra_html;
+
 
 #    debug 2, "returning: $out" ;
     return $out;

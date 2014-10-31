@@ -2427,7 +2427,6 @@ Special columns:
 
  -string_...
 
-
 =cut
 
 sub table_row
@@ -2452,7 +2451,7 @@ sub table_row
     my $check_subj = $arc->subj;
     my $item = $arc->value;
 
-#    debug "table row for ".$arc->sysdesig;
+    debug "=== table row for ".$arc->sysdesig;
 #    debug query_desig $args;
 
 
@@ -2601,6 +2600,9 @@ sub table_row
         }
         $out .= "</td>";
     }
+
+    # Remove empty elements at the end of row
+    $out =~ s/(<td[^>]*><\/td>)+$//;
 
     $out .= "</tr>\n";
 

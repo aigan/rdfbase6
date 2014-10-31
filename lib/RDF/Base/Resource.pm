@@ -209,8 +209,13 @@ sub get
 
             if ( my $nc = $args_in->{'new_class'} ) # Must be a Class node
             {
-#                $nc->instance_class
-#                debug"NC: ".$nc->instance_class;
+                my $ic = $nc->instance_class;
+                if( $ic eq 'RDF::Base::Resource' )
+                {
+                    confess "No class directly associated with ".$nc->sysdesig;
+                }
+
+#               debug"NC: ".$nc->instance_class;
                 bless $node, $nc->instance_class;
                 # for optimization
                 $node->initiate_rel; #if $node->can('initiate_rel');
@@ -6018,8 +6023,16 @@ sub wuirc
 
             my $search_params = { $range_pred => $range->id };
 
-            # Stringify
-            my $default = "" . ($args->{'default_value'}||"");
+            my $default;
+            if( UNIVERSAL::can $args->{'default_value'}, 'id' )
+            {
+                $default = $args->{'default_value'}->id;
+            }
+            else
+            {
+                # Stringify
+                $default = "" . ($args->{'default_value'}||"");
+            }
 
             my $on_arc_add = $args->{'on_arc_add'};
 
@@ -8147,7 +8160,7 @@ sub commit
     eval
     {
         my $cnt = 0;
-        debug sprintf "Comitting %d unsaved", scalar(@unsaved);
+#        debug sprintf "Comitting %d unsaved", scalar(@unsaved);
         while ( my $node = shift @unsaved )
         {
             debug "Saving node ".$node->sysdesig;
@@ -8163,7 +8176,7 @@ sub commit
             }
         }
 
-        debug sprintf "Comitting %d cc", scalar(@child_changed);
+#        debug sprintf "Comitting %d cc", scalar(@child_changed);
         while ( my $node = shift @child_changed )
         {
             $node->on_child_changed();
@@ -8191,8 +8204,8 @@ sub commit
     }
 
 
-    debug sprintf "UNSAVED now at %d", scalar(keys %UNSAVED);
-    debug sprintf "CC now at %d", scalar(keys %CHILD_CHANGED);
+#    debug sprintf "UNSAVED now at %d", scalar(keys %UNSAVED);
+#    debug sprintf "CC now at %d", scalar(keys %CHILD_CHANGED);
 
     # DB synced with arc changes in cache
     %TRANSACTION = ();
