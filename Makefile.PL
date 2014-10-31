@@ -78,7 +78,7 @@ $db_port_in =~ s/\/?\s*\n*$//;
 $db_port_in =~ s/^\s+//;
 $db_port_in ||= $db_port;
 
-$db_name ||= 'rb-test';
+$db_name ||= 'rb_test';
 print "DB name for the test and demo?\n";
 print "[$db_name] ";
 my $db_name_in = <STDIN>;

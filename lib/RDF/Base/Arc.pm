@@ -2465,6 +2465,7 @@ sub table_row
         }
         else
         {
+            $meta = '';
             $out .= "<td>";
         }
 
@@ -2584,8 +2585,15 @@ sub table_row
 #		debug "Calling method $col ($is_rev) on node ".$item->sysdesig;
 
 #		debug query_desig($args);
-                my $val = ( $is_rev ? $check_subj->$col() : $item->$col() );
+
+                my $val = ( $is_rev ? $check_subj->$col() : $item->$col() ) // '';
+
 #		my $val = $item->weight($args);
+#                unless( defined $val )
+#                {
+#                    debug sprintf "Could not get column %s for %s in %s", $col, $item->sysdesig, $arc->sysdesig;
+#                }
+
 #		debug "  got ".query_desig($val);
 
                 $out .= $val;
