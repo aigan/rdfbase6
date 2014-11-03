@@ -32,7 +32,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Widget qw( input textarea hidden radio jump calendar
-filefield input_image );
+                            filefield input_image );
 
 
 use RDF::Base;
@@ -62,7 +62,7 @@ sub aloc
 {
     my $phrase = shift;
 
-    if( $Para::Frame::REQ->session->admin_mode )
+    if ( $Para::Frame::REQ->session->admin_mode )
     {
         my $id = RDF::Base::L10N::find_translation_node_id($phrase);
         my $R = RDF::Base->Resource;
@@ -88,10 +88,11 @@ sub aloc
 
         my $translation;
         if (not $translation = $node->first_prop('has_translation',
-                                                 {is_of_language=>$lang}
+                                                 {
+                                                  is_of_language=>$lang}
                                                 )->plain )
         {
-          $translation = $phrase;
+            $translation = $phrase;
         }
 
         $out
@@ -124,11 +125,12 @@ sub locn
     unless( $node )
     {
 #	debug "  creates and returns new translatable node";
-	return RDF::Base::Resource->create({
-					    translation_label => $phrase,
-					    is => $C_translatable,
-					   },
-					   { activate_new_arcs => 1 });
+        return RDF::Base::Resource->create({
+                                            translation_label => $phrase,
+                                            is => $C_translatable,
+                                           },
+                                           {
+                                            activate_new_arcs => 1 });
     }
 
     return $node;
@@ -154,11 +156,12 @@ sub locnl
     unless( $node )
     {
 #	debug "  creates and returns new translatable node";
-	$node = RDF::Base::Resource->create({
-					     translation_label => $phrase,
-					     is => $C_translatable,
-					    },
-					    { activate_new_arcs => 1 });
+        $node = RDF::Base::Resource->create({
+                                             translation_label => $phrase,
+                                             is => $C_translatable,
+                                            },
+                                            {
+                                             activate_new_arcs => 1 });
     }
 
     return $node->loc(@_);
@@ -185,24 +188,24 @@ sub sloc
     my $out = "";
 
     my $compiled = ($Para::Frame::REQ->in_precompile
-      and not $Para::Frame::File::COMPILING);
+                    and not $Para::Frame::File::COMPILING);
 
-    if( $compiled or $Para::Frame::REQ->session->admin_mode )
+    if ( $compiled or $Para::Frame::REQ->session->admin_mode )
     {
-	my $home = $Para::Frame::REQ->site->home_url_path;
+        my $home = $Para::Frame::REQ->site->home_url_path;
         my $id = RDF::Base::L10N::find_translation_node_id( $text );
 
         $out .= "[% IF admin_mode %]" if $compiled;
-	$out .=
-	  (
-	   jump("Edit", "$home/rb/translation/node.tt",
-		{
+        $out .=
+          (
+           jump("Edit", "$home/rb/translation/node.tt",
+                {
                  id => $id,
                  pred => $C_has_translation->id,
-		 tag_attr => {class => "paraframe_edit_link_overlay"},
-		 tag_image => "$home/pf/images/edit.gif",
-		})
-	  );
+                 tag_attr => {class => "paraframe_edit_link_overlay"},
+                 tag_image => "$home/pf/images/edit.gif",
+                })
+          );
 
         $out .= "[% END %]" if $compiled;
     }
@@ -231,9 +234,9 @@ sub locpp
     my $req = $Para::Frame::REQ;
 
     my $code = $req->page->base;
-    if( $name )
+    if ( $name )
     {
-	$code = $code.'#'.$name;
+        $code = $code.'#'.$name;
     }
 
     return alocpp_raw($code,1,@_);
@@ -260,9 +263,9 @@ sub alocpp
     my $req = $Para::Frame::REQ;
 
     my $code = $req->page->base;
-    if( $name )
+    if ( $name )
     {
-	$code = $code.'#'.$name;
+        $code = $code.'#'.$name;
     }
 
     return alocpp_raw($code,0,@_);
@@ -320,49 +323,49 @@ sub alocpp_raw
 
     my $out = "";
 
-    if( $req->in_precompile and not $no_admin )
+    if ( $req->in_precompile and not $no_admin )
     {
         $out .= "[% IF admin_mode %]";
-        if( $node )
-	{
-	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
-			 {
-			  id => $node->id,
-			  tag_image => "$home/pf/images/edit.gif",
-			  tag_attr => {class=>"paraframe_edit_link_overlay"},
-			 });
-	}
-	else
-	{
-	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
-			 {
-			  code => $code,
-			  tag_image => "$home/pf/images/edit.gif",
-			  tag_attr => {class=>"paraframe_edit_link_overlay"},
-			 });
-	}
+        if ( $node )
+        {
+            $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+                         {
+                          id => $node->id,
+                          tag_image => "$home/pf/images/edit.gif",
+                          tag_attr => {class=>"paraframe_edit_link_overlay"},
+                         });
+        }
+        else
+        {
+            $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+                         {
+                          code => $code,
+                          tag_image => "$home/pf/images/edit.gif",
+                          tag_attr => {class=>"paraframe_edit_link_overlay"},
+                         });
+        }
         $out .= "[% END %]";
     }
-    elsif( $req->session->{'admin_mode'} and not $no_admin )
+    elsif ( $req->session->{'admin_mode'} and not $no_admin )
     {
-	if( $node )
-	{
-	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
-			 {
-			  id => $node->id,
-			  tag_image => "$home/pf/images/edit.gif",
-			  tag_attr => {class=>"paraframe_edit_link_overlay"},
-			 });
-	}
-	else
-	{
-	    $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
-			 {
-			  code => $code,
-			  tag_image => "$home/pf/images/edit.gif",
-			  tag_attr => {class=>"paraframe_edit_link_overlay"},
-			 });
-	}
+        if ( $node )
+        {
+            $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+                         {
+                          id => $node->id,
+                          tag_image => "$home/pf/images/edit.gif",
+                          tag_attr => {class=>"paraframe_edit_link_overlay"},
+                         });
+        }
+        else
+        {
+            $out .= jump(locn("Edit"), "$home/rb/translation/html.tt",
+                         {
+                          code => $code,
+                          tag_image => "$home/pf/images/edit.gif",
+                          tag_attr => {class=>"paraframe_edit_link_overlay"},
+                         });
+        }
     }
 
     ### TEST: change to list...
@@ -423,12 +426,12 @@ sub build_field_key
     my( $props ) = @_;
     unless( ref $props eq 'HASH' )
     {
-	confess "Invalid argument: ".datadump($props,1);
+        confess "Invalid argument: ".datadump($props,1);
     }
     my $arc_id = '';
-    if( my $arc_in = delete($props->{'arc'}) )
+    if ( my $arc_in = delete($props->{'arc'}) )
     {
-        if( $arc_in eq 'singular' )
+        if ( $arc_in eq 'singular' )
         {
             $arc_id = $arc_in;
         }
@@ -443,22 +446,22 @@ sub build_field_key
 
     foreach my $key (sort keys %$props)
     {
-	my $val = $props->{$key} || '';
-	if( grep{$key eq $_} qw( subj type scof vnode ) )
-	{
-	    $val = RDF::Base::Resource->get($val)->id;
-	}
-	elsif( grep{$key eq $_} qw( pred desig ) )
-	{
-	    $val = RDF::Base::Pred->get($val)->plain;
-	}
+        my $val = $props->{$key} || '';
+        if ( grep{$key eq $_} qw( subj type scof vnode ) )
+        {
+            $val = RDF::Base::Resource->get($val)->id;
+        }
+        elsif ( grep{$key eq $_} qw( pred desig ) )
+        {
+            $val = RDF::Base::Pred->get($val)->plain;
+        }
 
-	unless( length $val ) # Not inserting empty fields
-	{
-	    next if grep{$key eq $_} qw( if );
-	}
+        unless( length $val )   # Not inserting empty fields
+        {
+            next if grep{$key eq $_} qw( if );
+        }
 
-	$out .= '__'.$key.'_'.$val;
+        $out .= '__'.$key.'_'.$val;
     }
     return $out;
 }
