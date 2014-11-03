@@ -21,7 +21,7 @@ RDF::Base::Email::Address
 use 5.010;
 use strict;
 use warnings;
-use experimental qw(smartmatch);
+#use experimental qw(smartmatch); # Not working before 5.18
 #no warnings 'experimental::smartmatch'; # Not working before 5.18
 use constant C => 'RDF::Base::Constants';
 use constant LEA => 'RDF::Base::Literal::Email::Address';

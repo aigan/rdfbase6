@@ -2451,7 +2451,7 @@ sub table_row
     my $check_subj = $arc->subj;
     my $item = $arc->value;
 
-    debug "=== table row for ".$arc->sysdesig;
+#    debug "=== table row for ".$arc->sysdesig;
 #    debug query_desig $args;
 
 
