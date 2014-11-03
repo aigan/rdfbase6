@@ -21,6 +21,7 @@ RDF::Base::Literal::String
 use 5.010;
 use strict;
 use warnings;
+#no warnings 'experimental::smartmatch'; # Not working before 5.18
 use utf8;
 use base qw( RDF::Base::Literal );
 use overload
