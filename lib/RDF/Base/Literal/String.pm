@@ -1134,7 +1134,7 @@ sub wuirc
 
                 when(/^string_/)
                 {
-                    debug "Adding $meta = ".$args->{$meta};
+#                    debug "Adding $meta = ".$args->{$meta};
                     $row .= $args->{$meta};
                 }
             }

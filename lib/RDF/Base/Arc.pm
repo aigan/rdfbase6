@@ -2575,7 +2575,7 @@ sub table_row
 
             when(/^string_/)
             {
-                debug "Adding $meta = ".$args->{$meta};
+#                debug "Adding $meta = ".$args->{$meta};
                 $out .= $args->{$meta};
             }
 
