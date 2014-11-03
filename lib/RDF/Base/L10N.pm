@@ -87,46 +87,46 @@ sub maketext
 
     my $DEBUG = Para::Frame::Logging->at_level(2);
 
-    if( $phrase =~ /Ã/ )
+    if ( $phrase =~ /Ã/ )
     {
-	#cluck "Encoded but not marked as encoded ($phrase)";
-	debug "Encoded but not marked as encoded ($phrase)";
+        #cluck "Encoded but not marked as encoded ($phrase)";
+        debug "Encoded but not marked as encoded ($phrase)";
     }
 
     my $node;
-    if( ref $phrase )
+    if ( ref $phrase )
     {
-	if( ref $phrase eq 'RDF::Base::List' )
-	{
-	    return $phrase->loc;
-	}
-	elsif( UNIVERSAL::isa $phrase, 'RDF::Base::Literal' )
-	{
-	    $phrase = $phrase->literal;
-	}
-	elsif( UNIVERSAL::isa $phrase, 'RDF::Base::Object' )
-	{
-	    if( $phrase->is_value_node )
-	    {
+        if ( ref $phrase eq 'RDF::Base::List' )
+        {
+            return $phrase->loc;
+        }
+        elsif ( UNIVERSAL::isa $phrase, 'RDF::Base::Literal' )
+        {
+            $phrase = $phrase->literal;
+        }
+        elsif ( UNIVERSAL::isa $phrase, 'RDF::Base::Object' )
+        {
+            if ( $phrase->is_value_node )
+            {
 #                debug "Returning value node ".ref($phrase->plain);
 
-		return $phrase->plain;
-	    }
+                return $phrase->plain;
+            }
 
-	    if( my $label = $phrase->first_prop('translation_label')->plain )
-	    {
-		$node = $phrase;
-		$phrase = $label;
-	    }
-	    else
-	    {
-		confess "Can't translate: ".$phrase->sysdesig;
-	    }
-	}
-	else
-	{
-	    confess "Can't translate value: ". datadump($phrase, 2);
-	}
+            if ( my $label = $phrase->first_prop('translation_label')->plain )
+            {
+                $node = $phrase;
+                $phrase = $label;
+            }
+            else
+            {
+                confess "Can't translate: ".$phrase->sysdesig;
+            }
+        }
+        else
+        {
+            confess "Can't translate value: ". datadump($phrase, 2);
+        }
     }
 
     utf8::upgrade($phrase);
@@ -137,37 +137,38 @@ sub maketext
     foreach my $langcode ( @alts )
     {
 #	debug "  ... in $langcode\n";
-	$value = $TRANSLATION{$phrase}{$langcode};
+        $value = $TRANSLATION{$phrase}{$langcode};
 
-	unless( exists $TRANSLATION{$phrase}{$langcode} )
-	{
-	    debug "Looking up phrase '$phrase' in DB" if $DEBUG;
-	    $node ||= RDF::Base::Resource->
-	      find({ translation_label => $phrase })->get_first_nos;
-	    if( $node )
-	    {
+        unless ( exists $TRANSLATION{$phrase}{$langcode} )
+        {
+            debug "Looking up phrase '$phrase' in DB" if $DEBUG;
+            $node ||= RDF::Base::Resource->
+              find({ translation_label => $phrase })->get_first_nos;
+            if ( $node )
+            {
                 debug "Found a node: " . $node->sysdesig if $DEBUG;
-		my $lang = $C_language->first_revprop('is',{code => $langcode});
+                my $lang = $C_language->first_revprop('is',{code => $langcode});
 
 #		RDF::Base::Resource->get({
 #						     code => $langcode,
 #						     is => $C_language,
 #						     });
                 debug "Found a lang: " . $lang->sysdesig if $DEBUG;
-		if( my $trans = $node->first_prop('has_translation',
-						  {is_of_language=>$lang}
-						 )->plain )
-		{
+                if ( my $trans = $node->first_prop('has_translation',
+                                                   {
+                                                    is_of_language=>$lang}
+                                                  )->plain )
+                {
                     debug "Found a trans: $trans" if $DEBUG;
-		    $value = $TRANSLATION{$phrase}{$langcode} =
-		      $lh->_compile($trans);
-		    last;
-		}
-	    }
-	    $TRANSLATION{$phrase}{$langcode} = undef;
-	    next;
-	}
-	last;
+                    $value = $TRANSLATION{$phrase}{$langcode} =
+                      $lh->_compile($trans);
+                    last;
+                }
+            }
+            $TRANSLATION{$phrase}{$langcode} = undef;
+            next;
+        }
+        last;
     }
 
     return $lh->compute($value, \$phrase, @_);
@@ -181,20 +182,20 @@ sub find_translation_node_id
     my( $phrase ) = @_;
 #    debug "find_translation_node_id $phrase";
 
-    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    unless ( exists $TRANSLATION{$phrase}{'node_id'} )
     {
 #	debug "  looking for translation_label in DB";
-        if( my $node = RDF::Base::Resource->
-	    find({ translation_label => $phrase })->get_first_nos )
-	{
+        if ( my $node = RDF::Base::Resource->
+             find({ translation_label => $phrase })->get_first_nos )
+        {
 #	    debug "    found ".$node->sysdesig;
             $TRANSLATION{$phrase}{'node_id'} = $node->id;
         }
-	else
-	{
+        else
+        {
 #	    debug "    non found";
-	    $TRANSLATION{$phrase}{'node_id'} = 0;
-	}
+            $TRANSLATION{$phrase}{'node_id'} = 0;
+        }
     }
 
     return $TRANSLATION{$phrase}{'node_id'};
@@ -208,14 +209,14 @@ sub find_translation_node
     my( $phrase ) = @_;
 #    debug "find_translation_node $phrase";
 
-    unless( exists $TRANSLATION{$phrase}{'node_id'} )
+    unless ( exists $TRANSLATION{$phrase}{'node_id'} )
     {
-	find_translation_node_id( $phrase );
+        find_translation_node_id( $phrase );
     }
 
-    if( my $id = $TRANSLATION{$phrase}{'node_id'} )
+    if ( my $id = $TRANSLATION{$phrase}{'node_id'} )
     {
-	return RDF::Base::Resource->get($id);
+        return RDF::Base::Resource->get($id);
     }
 
     return is_undef;
@@ -229,6 +230,6 @@ sub find_translation_node
 
 =head1 SEE ALSO
 
-L<RDF::Base>
+  L<RDF::Base>
 
-=cut
+  =cut
