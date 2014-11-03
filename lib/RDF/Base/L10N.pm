@@ -193,7 +193,7 @@ sub find_translation_node_id
         }
         else
         {
-#	    debug "    non found";
+#            debug "Could not find tranlsation node for ".$phrase;
             $TRANSLATION{$phrase}{'node_id'} = 0;
         }
     }
