@@ -34,7 +34,7 @@
     [% input("header_$c", '', label=c) %]<br/>
     [% c = c+1 %]
   [% END %]
-  [% input('limit',search_result.page_size, label='Pagelimit',size=10) %]<br/>
+  [% input('limit',search_result.page_size, label='Pagelimit',tag_attr={size=10}) %]<br/>
   [% submit(loc('Update')) %]
   [% go('Export to excel', me, 'search_to_excel') %]
 </p>

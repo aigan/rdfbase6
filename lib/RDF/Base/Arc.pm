@@ -2543,19 +2543,23 @@ sub table_row
                 {
                     my $field = $arc->build_field_key();
                     my $tagid = $field;
+
+                    my $tag_attr = $args->{tag_attr} || {};
+                    $tag_attr->{class}= $args->{'class'};
+                    $tag_attr->{size} = $args->{'size'};
+                    $tag_attr->{rows} = $args->{'rows'};
+                    $tag_attr->{maxlength} = $args->{'maxlength'};
+                    $tag_attr->{onchange} = $args->{'onchange'};
+
                     my $fargs =
                     {
-                     class => $args->{'class'},
-                     size => $args->{'size'},
-                     rows => $args->{'rows'},
-                     maxlength => $args->{'maxlength'},
+                     tag_attr => $tag_attr,
                      image_url => $args->{'image_url'},
-                     onchange => $args->{'onchange'},
                      arc => $arc->id,
                     };
                     if ( $arc->indirect )
                     {
-                        $fargs->{'disabled'} = 'disabled';
+                        $tag_attr->{'disabled'} = 'disabled';
                         $field = '-'.$field; # Don't read content
                     }
 

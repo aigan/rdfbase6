@@ -994,14 +994,17 @@ sub wuirc
                                               $version->value->plain,
                                               {
                                                disabled => "disabled",
-                                               class => "suggestion_field",
-                                               size => $size,
-                                               rows => $rows,
-                                               maxlength => $args->{'maxlength'},
+                                               tag_attr =>
+                                               {
+                                                class => "suggestion_field",
+                                                size => $size,
+                                                rows => $rows,
+                                                maxlength => $args->{'maxlength'},
+                                                id => $args->{'id'},
+                                                onchange => $onchange,
+                                               },
                                                version => $version,
                                                image_url => $args->{'image_url'},
-                                               id => $args->{'id'},
-                                               onchange => $onchange,
                                               });
                     }
 
@@ -1030,19 +1033,23 @@ sub wuirc
             {
                 my $field = build_field_key({arc => $arc});
                 $args->{id} = $field;
+
+                my $tag_attr = $args->{tag_attr} || {};
+                $tag_attr->{class}= $args->{'class'};
+                $tag_attr->{size} = $size;
+                $tag_attr->{rows} = $rows;
+                $tag_attr->{maxlength} = $args->{'maxlength'};
+                $tag_attr->{onchange} = $onchange;
+
                 my $fargs =
                 {
-                 class => $args->{'class'},
-                 size => $size,
-                 rows => $rows,
-                 maxlength => $args->{'maxlength'},
                  image_url => $args->{'image_url'},
-                 onchange => $onchange,
                  arc => $arc->id,
+                 tag_attr => $tag_attr,
                 };
                 if ( $arc->indirect )
                 {
-                    $fargs->{'disabled'} = 'disabled';
+                    $tag_attr->{'disabled'} = 'disabled';
                     $field = '-'.$field; # Don't read content
                 }
 
@@ -1120,15 +1127,18 @@ sub wuirc
                       (build_field_key($props),
                        $default->plain,
                        {
-                        class => $args->{'class'},
-                        size => $size,
-                        rows => $rows,
-                        maxlength => $args->{'maxlength'},
+                        tag_attr =>
+                        {
+                         class => $args->{'class'},
+                         size => $size,
+                         rows => $rows,
+                         maxlength => $args->{'maxlength'},
+                         id => $args->{'id'},
+                         onchange => $onchange,
+                        },
                         maxw => $maxw,
                         maxh => $maxh,
-                        id => $args->{'id'},
                         image_url => $args->{'image_url'},
-                        onchange => $onchange,
                        });
                 }
 

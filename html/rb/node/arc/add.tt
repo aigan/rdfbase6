@@ -14,9 +14,9 @@
 [% END %]
 
 [% IF node %]
-   [% input('query_row','',class='wide') %]<br>
+   [% input('query_row','',tag_attr={class='wide'}) %]<br>
 [% END %]
-[% textarea('query', undef,class='wide') %]
+[% textarea('query', undef,tag_attr={class='wide'}) %]
 
 [% hidden("id", node.id) %]
 

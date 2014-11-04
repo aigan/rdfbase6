@@ -10,11 +10,11 @@
 [ [% jump('List preds', 'pred/list.tt') +%]
 ]</p>
 
-[% input('query_row','', size=42) %]<br>
+[% input('query_row','', tag_attr={size=42}) %]<br>
 
 [% textarea('query', undef, cols=60, rows=10) %]
 
-<p>Resultat per sida [% input('limit',50, size=5) %]
+<p>Resultat per sida [% input('limit',50, tag_attr={size=5}) %]
 
 <p>[% submit('Sök') %]
 

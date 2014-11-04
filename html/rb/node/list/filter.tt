@@ -6,7 +6,7 @@
  focus='filter'
 %]
 
-[% textarea('filter', '', class='wide') %]<br/>
+[% textarea('filter', '', tag_attr={class='wide'}) %]<br/>
 [% step('Filter') %]
 
 &nbsp; List has [% searchobj.result.size %] elements
