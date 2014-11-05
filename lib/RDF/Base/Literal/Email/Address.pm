@@ -92,25 +92,25 @@ sub parse
 
     my $parse_val;
 
-    if( UNIVERSAL::isa $val_in, "RDF::Base::Literal::Email::Address" )
+    if ( UNIVERSAL::isa $val_in, "RDF::Base::Literal::Email::Address" )
     {
-	return $val_in;
+        return $val_in;
     }
-    elsif( UNIVERSAL::isa $val_in, "RDF::Base::Email::Address" )
-    {
-	$parse_val = $val_in->original;
-    }
-    elsif( UNIVERSAL::isa $val_in, "Para::Frame::Email::Address" )
+    elsif ( UNIVERSAL::isa $val_in, "RDF::Base::Email::Address" )
     {
         $parse_val = $val_in->original;
     }
-    elsif( UNIVERSAL::isa $val_in, "Mail::Address" )
+    elsif ( UNIVERSAL::isa $val_in, "Para::Frame::Email::Address" )
+    {
+        $parse_val = $val_in->original;
+    }
+    elsif ( UNIVERSAL::isa $val_in, "Mail::Address" )
     {
         $parse_val = $val_in->format;
     }
-    elsif( UNIVERSAL::isa $val_in, "RDF::Base::Undef" )
+    elsif ( UNIVERSAL::isa $val_in, "RDF::Base::Undef" )
     {
-	$parse_val = undef;
+        $parse_val = undef;
     }
     else
     {
@@ -124,11 +124,11 @@ sub parse
 
     my $val_mod;
 
-    if( UNIVERSAL::isa $val, "RDF::Base::Literal" )
+    if ( UNIVERSAL::isa $val, "RDF::Base::Literal" )
     {
-	$val_mod = $val->plain;
+        $val_mod = $val->plain;
     }
-    elsif( ref $val eq 'SCALAR' )
+    elsif ( ref $val eq 'SCALAR' )
     {
         $val_mod = $$val;
     }
@@ -193,9 +193,9 @@ sub as_html
     my $method = $args->{'method'} || 'format';
 
     my $label;
-    if( $method and $a->can($method) )
+    if ( $method and $a->can($method) )
     {
-	$label = $a->$method();
+        $label = $a->$method();
     }
     $label ||= $a->format;
 
@@ -205,26 +205,26 @@ sub as_html
     my %attr;
     foreach my $key ( keys %$args )
     {
-	# DEPRECATED
-	if( $key =~ /^href_/ )
-	{
-	    $attr{ $key } = $args->{$key};
-	}
+        # DEPRECATED
+        if ( $key =~ /^href_/ )
+        {
+            $attr{ $key } = $args->{$key};
+        }
 
-	if( $key =~ /^tag_/ )
-	{
-	    $attr{ $key } = $args->{$key};
-	}
+        if ( $key =~ /^tag_/ )
+        {
+            $attr{ $key } = $args->{$key};
+        }
     }
-    if( $args->{'id'} )
+    if ( $args->{'id'} )
     {
-	$attr{ id } = $args->{'id'};
+        $attr{ id } = $args->{'id'};
     }
 
 #    debug "Lookup email address $adr";
     my $out;
     my $an = RDF::Base::Email::Address->exist($adr);
-    if( $an )
+    if ( $an )
     {
         $out .= $an->wu_jump({label=>$label,%attr});
     }
@@ -233,9 +233,9 @@ sub as_html
         $out = escapeHTML($label);
     }
 
-    if( $a->broken )
+    if ( $a->broken )
     {
-	return "<span class=\"broken\">$out</span>";
+        return "<span class=\"broken\">$out</span>";
     }
     else
     {
@@ -381,14 +381,14 @@ sub name
     return undef unless $a->address;
 #    debug "Finding a name for ".$a->address;
 
-    if( my $name = $a->SUPER::name )
+    if ( my $name = $a->SUPER::name )
     {
-	return $name;
+        return $name;
     }
-    elsif( my $subj = $a->subj )
+    elsif ( my $subj = $a->subj )
     {
 #	debug "  subj ".$subj->sysdesig;
-	return $subj->name->loc;
+        return $subj->name->loc;
     }
 
     return undef;
@@ -423,31 +423,31 @@ sub vacuum_facet
 
     debug 2, "vaccuum $orig";
 
-    if( $orig ne $addr )
+    if ( $orig ne $addr )
     {
-	debug "  Cleaning to $addr";
+        debug "  Cleaning to $addr";
 
-	my $a_new = $class->new($addr, $a->this_valtype);
+        my $a_new = $class->new($addr, $a->this_valtype);
 
-	if( my $arc = $a->lit_revarc )
-	{
-	    $arc->set_value( $a_new, $args );
+        if ( my $arc = $a->lit_revarc )
+        {
+            $arc->set_value( $a_new, $args );
 
-	    if( my $name = $a->name )
-	    {
-		my $subj = $arc->subj;
-		if( $subj->has_value({'is'=>$C_intelligent_agent }, $args) )
-		{
-		    unless( $subj->prop('name',undef,$args) )
-		    {
-			$subj->add({name=>$name},
-				   { %$args,
-				     'activate_new_arcs' => 1,
-				   });
-		    }
-		}
-	    }
-	}
+            if ( my $name = $a->name )
+            {
+                my $subj = $arc->subj;
+                if ( $subj->has_value({'is'=>$C_intelligent_agent }, $args) )
+                {
+                    unless( $subj->prop('name',undef,$args) )
+                    {
+                        $subj->add({name=>$name},
+                                   { %$args,
+                                     'activate_new_arcs' => 1,
+                                   });
+                    }
+                }
+            }
+        }
     }
 }
 
