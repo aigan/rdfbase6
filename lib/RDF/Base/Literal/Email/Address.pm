@@ -222,24 +222,24 @@ sub as_html
     }
 
 #    debug "Lookup email address $adr";
-    my $out;
-    my $an = RDF::Base::Email::Address->exist($adr);
-    if ( $an )
-    {
-        $out .= $an->wu_jump({label=>$label,%attr});
-    }
-    else
-    {
-        $out = escapeHTML($label);
-    }
+#    my $out;
+#    my $an = RDF::Base::Email::Address->exist($adr);
+#    if ( $an )
+#    {
+#        $out .= $an->wu_jump({label=>$label,%attr});
+#    }
+#    else
+#    {
+#        $out = escapeHTML($label);
+#    }
 
     if ( $a->broken )
     {
-        return "<span class=\"broken\">$out</span>";
+        return sprintf "<span class=\"broken\">%s</span>", escapeHTML($label);
     }
     else
     {
-        return $out;
+        return sprintf '<a href="mailto:%s">%s</a>', $a->format, escapeHTML($label);
     }
 
 

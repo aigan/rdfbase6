@@ -444,7 +444,7 @@ The literal value that this object represents.
 
 sub literal
 {
-#    warn "\t\t\t${$_[0]}\n";
+#    debug "\t\t\t".$_[0]->{'value'};
     return $_[0]->{'value'};
 }
 

@@ -26,6 +26,7 @@ use warnings;
 use constant C => 'RDF::Base::Constants';
 use constant LEA => 'RDF::Base::Literal::Email::Address';
 use feature "switch";
+use CGI qw( escapeHTML );
 
 
 use Carp qw( cluck confess longmess );
@@ -40,7 +41,7 @@ use Para::Frame::Utils qw( debug datadump catch );
 
 use RDF::Base::Utils qw( parse_propargs solid_propargs );
 use RDF::Base::Email::Classifier;
-use RDF::Base::Widget qw( aloc build_field_key );
+use RDF::Base::Widget qw( aloc build_field_key locnl);
 
 use RDF::Base::Constants qw( $C_intelligent_agent
                              $C_email_address_holder
@@ -493,38 +494,38 @@ sub deliverability_as_html
 {
     my( $ea, $args ) = @_;
 
-    my $color;
+    my $status;
 
     if ( $ea->broken )
     {
-        $color = 'red';
+        $status = 'ed_broken';
     }
     elsif ( $ea->has_email_deliverability('ed_agent_away') )
     {
-        $color = '#8B0';
+        $status = 'ed_agent_away';
     }
     elsif ( $ea->has_email_deliverability('ed_deliverable') )
     {
-        $color = '#5F5';
+        $status = 'ed_deliverable';
     }
     elsif ( $ea->has_email_deliverability('ed_delayed') )
     {
-        $color = '#FA0';
+        $status = 'ed_delayed';
     }
     elsif ( $ea->has_email_deliverability('ed_address_changed') )
     {
-        $color = '#F0F';
+        $status = 'ed_address_changed';
     }
     elsif ( $ea->has_email_deliverability('ed_unclassified') )
     {
-        $color = 'blue';
+        $status = 'ed_unclassified';
     }
     else
     {
-        $color = 'grey';
+        $status = 'ed_unknown';
     }
 
-    return "<i style=\"color:$color\" class=\"fa fa-circle\"></i>";
+    return sprintf '<a href="%s" class="fa fa-circle %s" title="%s"></a>', $ea->form_url($args), $status, escapeHTML locnl $status;
 }
 
 ##############################################################################
