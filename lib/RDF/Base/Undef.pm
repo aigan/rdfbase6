@@ -24,7 +24,7 @@ use warnings;
 use base qw( RDF::Base::Node );
 use vars qw($AUTOLOAD);
 use overload
-    '""'   => 'as_string',
+    '""'   => sub{""},
     'bool' => sub{0},
     '0+'   => sub{0},
     'cmp'  => 'cmp_string',
