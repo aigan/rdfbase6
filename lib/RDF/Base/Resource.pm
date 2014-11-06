@@ -5915,31 +5915,10 @@ sub wuirc
 
     my $arc_type = $args->{'arc_type'};
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $alternatives = $args->{'alternatives'};
 
 
-#    debug "Selecting inputtype for ".$pred->desig;
-    my $inputtype = $args->{'inputtype'};
-    my $range_count;
-    my $rev_range_pred = 'rev_'.$range_pred;
-    $rev_range_pred =~ s/^rev_rev_//;
-
-    if ( $alternatives )
-    {
-        $range_count = $alternatives->size;
-    }
-    elsif ( $range_pred =~ /^rev_/ )
-    {
-        $range_count = $range->count($rev_range_pred);
-    }
-    else
-    {
-        $range_count = $range->revcount($range_pred);
-    }
-
-    $inputtype ||= ( ( $range_count < 25 ) ?
-                     ( $is_scof ? 'select_tree' : 'select' )
-                     : 'text' );
+    #    debug "Selecting inputtype for ".$pred->desig;
+    my $inputtype = $args->{'inputtype'} || $this->wuirc_input_type($args);
 
     if ( $DEBUG )
     {
@@ -5973,7 +5952,9 @@ sub wuirc
 
 
     ### The current value will be displayed in the input widget if the
-    ### type allows it and if only one value is allowed
+    ### type allows it and if only one value is allowed. The inputtype
+    ### 'text' can't hold nodes and will thus not display the value.
+
     #
     my $cur_value_is_in_input_widget =
       ( $singular and ($inputtype ne 'text') );
@@ -5985,11 +5966,6 @@ sub wuirc
         delete $args->{'default_value'}; # No default when values exist...
 
         $out .= "<table class=\"wuirc\">\n";
-#	$out .= "<ul id=\"$divid-list\">"
-#	  if( $list->size > 1);
-
-#	debug "Getting table columns for range ".$range->sysdesig;
-#	debug "Getting table columns for class ".$range->find_class;
         my $columns = $args->{'columns'} ||
           $range->instance_class->table_columns( $pred, $args );
         push @$columns, '-edit_link', '-arc_remove';

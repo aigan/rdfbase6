@@ -24,12 +24,14 @@ use warnings;
 use base qw( RDF::Base::Literal::URL );
 
 use Carp qw( cluck confess longmess );
+use CGI qw( escapeHTML );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug throw datadump );
 use Para::Frame::L10N qw( loc );
 
 use RDF::Base::Utils qw( );
+use RDF::Base::Widget qw( locnl);
 
 
 =head1 DESCRIPTION
@@ -160,11 +162,51 @@ sub parse
 
 ##############################################################################
 
+=head2 table_columns
+
+  $n->table_columns()
+
+=cut
+
+sub table_columns
+{
+    return ['arc_weight','-.action_icon','-input'];
+}
+
+
+##############################################################################
+
+=head2 action_icon
+
+  $n->action_icon()
+
+=cut
+
+sub action_icon
+{
+    my( $url ) = @_;
+
+    if( ref $url )
+    {
+        my $text = escapeHTML($url->as_string);
+        return sprintf '<a href="%s" class="fa fa-link" title="%s"></a>',
+          $text, escapeHTML(locnl("Visit the website"));;
+    }
+    else
+    {
+        return '<i class="fa fa-link broken"></i>';
+    }
+
+}
+
+
+##############################################################################
+
 =head3 default_valtype
 
-  =cut
+=cut
 
-  sub default_valtype
+sub default_valtype
 {
     return RDF::Base::Literal::Class->get_by_label('website_url');
 }

@@ -222,7 +222,7 @@ works for Undef objects.
 
 sub plain
 {
-    return $_[0]->desig;
+    return $_[0]->as_string;
 }
 
 

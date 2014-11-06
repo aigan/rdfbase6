@@ -2419,13 +2419,15 @@ Special columns:
 
  -arc_seen_status
 
- desig
+ -desig
 
  -input
 
  -edit_link
 
  -string_...
+
+ -.$method  = methods for use both on node and class
 
 =cut
 
@@ -2457,7 +2459,7 @@ sub table_row
 
     foreach my $col ( @{$args->{'columns'}} )
     {
-        my( $meta ) = $col =~ /^-(.*)/;
+        my( $meta ) = $col =~ /^-\.?(.*)/;
         if( $meta )
         {
             $out .= "<td class='col_$meta'>";
@@ -2583,22 +2585,14 @@ sub table_row
                 $out .= $args->{$meta};
             }
 
+            when($col =~ /^-\./) # Method for both class and node
+            {
+                $out .= $item->$meta() // '';
+            }
+
             default
             {
-#		debug "Calling method $col ($is_rev) on node ".$item->sysdesig;
-
-#		debug query_desig($args);
-
                 my $val = ( $is_rev ? $check_subj->$col() : $item->$col() ) // '';
-
-#		my $val = $item->weight($args);
-#                unless( defined $val )
-#                {
-#                    debug sprintf "Could not get column %s for %s in %s", $col, $item->sysdesig, $arc->sysdesig;
-#                }
-
-#		debug "  got ".query_desig($val);
-
                 $out .= $val;
             }
         }

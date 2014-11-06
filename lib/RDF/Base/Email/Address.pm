@@ -75,7 +75,9 @@ Will B<not> throw an exception if email address is faulty
 
 =cut
 
-  sub new
+  ;# cperl formatting
+
+sub new
 {
     my( $class, $in_value, $args ) = @_;
 
@@ -142,6 +144,12 @@ sub exist
 
 sub wuirc
 {
+    my( $this ) = shift @_;
+    return RDF::Base::Literal::String->wuirc(@_);
+}
+
+sub wuirc_disabled
+{
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
@@ -162,6 +170,8 @@ sub wuirc
 
     my $divid = $args->{divid};
     my $size = $args->{'size'} ||"";
+    my $wide_class = $size ? '' : ' wide';
+
 
     $args->{'id'} ||= build_field_key({
                                        pred => $predname,
@@ -176,6 +186,16 @@ sub wuirc
     my $multi = $args->{'multi'} // not $pred->range_card_max_1;
 
     my $onchange = "";  #"RDF.Base.pageparts['$divid'].node_update()";
+
+
+    my $columns = $args->{'columns'} ||
+      $class->table_columns( $pred, $args );
+    push @$columns, '-edit_link';
+    $args->{'columns'} = $columns;
+    $args->{'source'} = $subj;
+
+
+
 
     foreach my $arc ( RDF::Base::List->new(\@arcs)->sorted([{on=>'obj.weight', dir=>'desc'}])->as_array )
     {
@@ -205,17 +225,24 @@ sub wuirc
 
         if ( $disabled )
         {
-            $out .= $arc->value->as_html({method=>'address'});
+            $out .= "<table class=\"wuirc\">\n";
+            $out .= $arc->table_row( $args );
+
+#            $out .= $arc->value->as_html({method=>'address'});
         }
         else
         {
-            my $val = $arc->value;
-            $out .= input($field, $val->code->plain, {tag_attr=>$fargs});
-            $out .= ' '.$val->deliverability_as_html($args);
+            $out .= "<table class=\"wuirc text_input$wide_class\">\n";
+            $out .= $arc->table_row( $args );
+
+#            my $val = $arc->value;
+#            $out .= input($field, $val->code->plain, {tag_attr=>$fargs});
+#            $out .= ' '.$val->deliverability_as_html($args);
         }
-        $out .= "&nbsp;" . $arc->edit_link_html;
-        $out .= "<br>";
-    }
+#        $out .= "&nbsp;" . $arc->edit_link_html;
+#        $out .= "<br>";
+        $out .= "</table>\n";
+     }
 
     if ( ($multi or not @arcs) and not $disabled )
     {
@@ -246,6 +273,44 @@ sub wuirc
 
     return $out;
 }
+
+##############################################################################
+
+=head2 table_columns
+
+  $n->table_columns()
+
+=cut
+
+sub table_columns
+{
+    return ['arc_weight','-.action_icon','-input','deliverability_as_html'];
+}
+
+
+##############################################################################
+
+=head2 action_icon
+
+  $n->action_icon()
+
+=cut
+
+sub action_icon
+{
+    my( $ea ) = @_;
+
+    if( !ref $ea or $ea->broken  )
+    {
+        return '<i class="broken">@</i>';
+    }
+    else
+    {
+        return sprintf '<a href="%s" title="%s">@</a>',
+          escapeHTML($ea->format), escapeHTML(locnl('Send email'));
+    }
+}
+
 
 ##############################################################################
 

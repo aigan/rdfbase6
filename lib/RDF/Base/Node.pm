@@ -34,7 +34,7 @@ use RDF::Base::Utils qw(valclean parse_query_props
 			 is_undef arc_lock
 			 arc_unlock truncstring query_desig
 			 convert_query_prop_for_creation
-			 parse_propargs aais parse_query_value );
+			 parse_propargs aais parse_query_value range_pred );
 
 
 =head1 DESCRIPTION
@@ -1729,6 +1729,45 @@ sub code_class
     my( $node ) = @_;
 
     return Para::Frame::Code::Class->get($node);
+}
+
+
+#########################################################################
+
+=head2 wuirc_input_type
+
+=cut
+
+sub wuirc_input_type
+{
+    my( $this, $args ) = @_;
+
+    my $alternatives = $args->{'alternatives'};
+    my $is_scof = $args->{'range_scof'};
+    my $range_count;
+
+    my( $range, $range_pred ) = range_pred($args)
+      or confess "Range missing ".datadump($args,1);
+
+    my $rev_range_pred = 'rev_'.$range_pred;
+    $rev_range_pred =~ s/^rev_rev_//;
+
+    if ( $alternatives )
+    {
+        $range_count = $alternatives->size;
+    }
+    elsif ( $range_pred =~ /^rev_/ )
+    {
+        $range_count = $range->count($rev_range_pred);
+    }
+    else
+    {
+        $range_count = $range->revcount($range_pred);
+    }
+
+    return ( ( $range_count < 25 ) ?
+             ( $is_scof ? 'select_tree' : 'select' )
+             : 'text' );
 }
 
 

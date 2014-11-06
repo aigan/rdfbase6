@@ -1328,7 +1328,16 @@ sub has_value
 
 sub arc_weight
 {
-    return $_[0]->{'arc'} ? $_[0]->{'arc'}->arc_weight : undef;
+    my( $arc ) = $_[0]->{arc};
+
+    return undef unless $arc;
+    return $arc->weight if $arc->weight;
+
+    if( my $vn = $arc->value_node )
+    {
+        return $vn->first_prop('weight')->plain;
+    }
+    return undef;
 }
 
 

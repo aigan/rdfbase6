@@ -239,7 +239,7 @@ sub as_html
     }
     else
     {
-        return sprintf '<a href="mailto:%s">%s</a>', $a->format, escapeHTML($label);
+        return sprintf '<a href="mailto:%s">%s</a>', escapeHTML($a->format), escapeHTML($label);
     }
 
 

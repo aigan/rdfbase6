@@ -44,7 +44,7 @@ This is an <strong>active</strong> version.
 [% END %]
 </p>
 
-<table class='admin'>
+<table class="admin">
 <tr><td>Common</td><td>
 <span style="float: right">ID: <strong>[% arc.id %]</strong></span>
                        [% arc.common_id %]</td></tr>
@@ -107,7 +107,7 @@ This is an <strong>active</strong> version.
 <tr>
    <td colspan="2">
       Add arcs to the literal:<br>
-      [% textarea('literal_arcs','', cols=35, rows=3 ) %]
+      [% textarea('literal_arcs','', tag_attr={rows=3,class="wide"} ) %]
    </td>
 </tr>
 [% END %]
@@ -127,7 +127,7 @@ This is an <strong>active</strong> version.
    [% IF arc.is_removal %]
       [% arc.pred.label %]
    [% ELSE %]
-      [% input('pred', arc.pred.label) %]
+      [% input('pred', arc.pred.label, tag_attr={class='wide'}) %]
    [% END %]
    </td>
 </tr>
@@ -153,7 +153,7 @@ This is an <strong>active</strong> version.
 [% ELSIF arc.objtype %]
 <tr>
    <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
-   <td>[% input('val', arc.obj.sysdesig) %]</td>
+   <td>[% input('val', arc.obj.sysdesig, tag_attr={class='wide'}) %]</td>
 </tr>
 [% ELSE %]
 <tr>
@@ -163,7 +163,7 @@ This is an <strong>active</strong> version.
       </td>
    [% ELSE %]
       <td>[% arc.valtype.wu_jump %]</td>
-      <td>[% input('val', arc.value.plain) %]</td>
+      <td>[% input('val', arc.value.plain, tag_attr={class='wide'}) %]</td>
    [% END %]
 </tr>
 [% vnode = arc.value_node %]
@@ -176,14 +176,14 @@ This is an <strong>active</strong> version.
 <tr>
    <td colspan="2">
       Add arcs to the literal:<br>
-      [% textarea('literal_arcs','', cols=35, rows=3 ) %]
+      [% textarea('literal_arcs','', tag_attr={class="wide",rows=3} ) %]
    </td>
 </tr>
 [% END %]
 [% END %]
 [% END %]
 
-<tr><td>Weight</td><td>[% input('weight', arc.weight) %]</td></tr>
+<tr><td>Weight</td><td>[% input('weight', arc.weight, tag_attr={class='wide'}) %]</td></tr>
 
 <tr><td>Replaces</td><td>
 [% IF arc.replaces_id %]
@@ -233,7 +233,7 @@ This is an <strong>active</strong> version.
 [% END %]
 [% IF arc.inactive %]
    [% UNLESS arc.deactivated %]
-      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr=>{class="alert",style="float:right"}) %]
+      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="alert",style="float:right"}) %]
    [% END %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]

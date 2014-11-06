@@ -887,9 +887,14 @@ sub wuirc
     $args->{'columns'} = $columns;
     $args->{'source'} = $subj;
 
-#    debug "Columns set to @$columns";
+    debug "Columns set to @$columns" if $DEBUG;
 
     my $wide_class = $size ? '' : ' wide';
+
+
+
+    ######### BEGIN arc loop ########################
+    #
 
     if ( $disabled )
     {
@@ -925,147 +930,148 @@ sub wuirc
 
 
 
-        if( 0 ) ####### OLD LOOP
-        {
-            my $arc; ### Just for syntax check now...
-
-            my $arc_id = $arc->id;
-            #debug $arc_id;
-
-            if ( my $lang = $arc->value_node->list('is_of_language', undef,'auto') )
-            {
-                $out .= "(".$lang->desig."): ";
-            }
-
-            if ( my $weight = $arc->weight )
-            {
-                $out .= $weight. " ";
-                $list_weight = 1;
-            }
-            elsif ( $weight = $arc->value_node->prop('weight',undef,'auto') )
-            {
-                $out .= $weight->desig . " ";
-                $list_weight = 1;
-            }
-            elsif ( $list_weight )
-            {
-                $out .= "0 ";
-            }
-
-            if ( $Para::Frame::U->has_root_access and ( (@{$arcversions->{$arc_id}} > 1) or
-                                                        $arcversions->{$arc_id}[0]->submitted ) )
-            {
-                debug "  multiple";
-
-                $out .=
-                  (
-                   "<table class=\"wide suggestion nopad\">".
-                   "<tr><th colspan=\"2\">".
-                   aloc("Choose one").
-                   "</th></tr>"
-                  );
-
-                foreach my $version (@{$arcversions->{$arc_id}})
-                {
-                    # TODO: Handle mixxed infered / noninfered arcs
-                    debug "  version $version";
-                    $out .=
-                      (
-                       "<tr><td>".
-                       &hidden("version_${arc_id}", $version->id).
-                       &radio("arc_${arc_id}__select_version",
-                              $version->id,
-                              0,
-                              {
-                               id => $version->id,
-                              }).
-                       "</td>"
-                      );
-
-                    $out .= "<td style=\"border-bottom: 1px solid black\">";
-
-                    if ( $version->is_removal )
-                    {
-                        $out .= "<span style=\"font-weight: bold\">REMOVAL</span>";
-                    }
-                    else
-                    {
-                        $out .= &{$inputtype}("undef",
-                                              $version->value->plain,
-                                              {
-                                               disabled => "disabled",
-                                               tag_attr =>
-                                               {
-                                                class => "suggestion_field",
-                                                size => $size,
-                                                rows => $rows,
-                                                maxlength => $args->{'maxlength'},
-                                                id => $args->{'id'},
-                                                onchange => $onchange,
-                                               },
-                                               version => $version,
-                                               image_url => $args->{'image_url'},
-                                              });
-                    }
-
-                    $out .= $version->edit_link_html;
-                    $out .= "</td></tr>";
-                }
-
-                $out .=
-                  (
-                   "<tr><td>".
-                   &radio("arc_${arc_id}__select_version",
-                          'deactivate',
-                          0,
-                          {
-                           id => "arc_${arc_id}__activate_version--undef",
-                          }).
-                   "</td><td>".
-                   "<label for=\"arc_${arc_id}__activate_version--undef\">".
-                   Para::Frame::L10N::loc("Deactivate group").
-                   "</label>".
-                   "</td></tr>".
-                   "</table><br/>"
-                  );
-            }
-            else                ### LIST OF ACTIVE VALUES
-            {
-                my $field = build_field_key({arc => $arc});
-                $args->{id} = $field;
-
-                my $tag_attr = $args->{tag_attr} || {};
-                $tag_attr->{class}= $args->{'class'};
-                $tag_attr->{size} = $size;
-                $tag_attr->{rows} = $rows;
-                $tag_attr->{maxlength} = $args->{'maxlength'};
-                $tag_attr->{onchange} = $onchange;
-
-                my $fargs =
-                {
-                 image_url => $args->{'image_url'},
-                 arc => $arc->id,
-                 tag_attr => $tag_attr,
-                };
-                if ( $arc->indirect )
-                {
-                    $tag_attr->{'disabled'} = 'disabled';
-                    $field = '-'.$field; # Don't read content
-                }
-
-
-#		debug "Creating an input with value ".$arc->value->plain;
-
-                $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
-                unless( $arc->indirect )
-                {
-                    $out .= $arc->edit_link_html;
-                }
-
-                $out .= '<br/>'
-                  if ( scalar(keys %$arcversions) > 1 or $multi );
-            }
-        }
+#        if( 0 ) ####### OLD LOOP
+#        {
+#            my $arc; ### Just for syntax check now...
+#
+#            my $arc_id = $arc->id;
+#            #debug $arc_id;
+#
+#            if ( my $lang = $arc->value_node->list('is_of_language', undef,'auto') )
+#            {
+#                $out .= "(".$lang->desig."): ";
+#            }
+#
+#            if ( my $weight = $arc->weight )
+#            {
+#                $out .= $weight. " ";
+#                $list_weight = 1;
+#            }
+#            elsif ( $weight = $arc->value_node->prop('weight',undef,'auto') )
+#            {
+#                $out .= $weight->desig . " ";
+#                $list_weight = 1;
+#            }
+#            elsif ( $list_weight )
+#            {
+#                $out .= "0 ";
+#            }
+#
+#            if ( $Para::Frame::U->has_root_access and ( (@{$arcversions->{$arc_id}} > 1) or
+#                                                        $arcversions->{$arc_id}[0]->submitted ) )
+#            {
+#                debug "  multiple";
+#
+#                $out .=
+#                  (
+#                   "<table class=\"wide suggestion nopad\">".
+#                   "<tr><th colspan=\"2\">".
+#                   aloc("Choose one").
+#                   "</th></tr>"
+#                  );
+#
+#                foreach my $version (@{$arcversions->{$arc_id}})
+#                {
+#                    # TODO: Handle mixxed infered / noninfered arcs
+#                    debug "  version $version";
+#                    $out .=
+#                      (
+#                       "<tr><td>".
+#                       &hidden("version_${arc_id}", $version->id).
+#                       &radio("arc_${arc_id}__select_version",
+#                              $version->id,
+#                              0,
+#                              {
+#                               id => $version->id,
+#                              }).
+#                       "</td>"
+#                      );
+#
+#                    $out .= "<td style=\"border-bottom: 1px solid black\">";
+#
+#                    if ( $version->is_removal )
+#                    {
+#                        $out .= "<span style=\"font-weight: bold\">REMOVAL</span>";
+#                    }
+#                    else
+#                    {
+#                        $out .= &{$inputtype}("undef",
+#                                              $version->value->plain,
+#                                              {
+#                                               disabled => "disabled",
+#                                               tag_attr =>
+#                                               {
+#                                                class => "suggestion_field",
+#                                                size => $size,
+#                                                rows => $rows,
+#                                                maxlength => $args->{'maxlength'},
+#                                                id => $args->{'id'},
+#                                                onchange => $onchange,
+#                                               },
+#                                               version => $version,
+#                                               image_url => $args->{'image_url'},
+#                                              });
+#                    }
+#
+#                    $out .= $version->edit_link_html;
+#                    $out .= "</td></tr>";
+#                }
+#
+#                $out .=
+#                  (
+#                   "<tr><td>".
+#                   &radio("arc_${arc_id}__select_version",
+#                          'deactivate',
+#                          0,
+#                          {
+#                           id => "arc_${arc_id}__activate_version--undef",
+#                          }).
+#                   "</td><td>".
+#                   "<label for=\"arc_${arc_id}__activate_version--undef\">".
+#                   Para::Frame::L10N::loc("Deactivate group").
+#                   "</label>".
+#                   "</td></tr>".
+#                   "</table><br/>"
+#                  );
+#            }
+#            else                ### LIST OF ACTIVE VALUES
+#            {
+#                my $field = build_field_key({arc => $arc});
+#                $args->{id} = $field;
+#
+#                my $tag_attr = $args->{tag_attr} || {};
+#                $tag_attr->{class}= $args->{'class'};
+#                $tag_attr->{size} = $size;
+#                $tag_attr->{rows} = $rows;
+#                $tag_attr->{maxlength} = $args->{'maxlength'};
+#                $tag_attr->{onchange} = $onchange;
+#
+#                my $fargs =
+#                {
+#                 image_url => $args->{'image_url'},
+#                 arc => $arc->id,
+#                 tag_attr => $tag_attr,
+#                };
+#                if ( $arc->indirect )
+#                {
+#                    $tag_attr->{'disabled'} = 'disabled';
+#                    $field = '-'.$field; # Don't read content
+#                }
+#
+#
+##		debug "Creating an input with value ".$arc->value->plain;
+#
+#                $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
+#                unless( $arc->indirect )
+#                {
+#                    $out .= $arc->edit_link_html;
+#                }
+#
+#                $out .= '<br/>'
+#                  if ( scalar(keys %$arcversions) > 1 or $multi );
+#            }
+#
+#        }
     }
     else
     {
@@ -1108,7 +1114,7 @@ sub wuirc
         my $row = "<tr>";
         foreach my $col ( @{$args->{'columns'}} )
         {
-            my( $meta ) = $col =~ /^-(.*)/;
+            my( $meta ) = $col =~ /^-\.?(.*)/;
             if( $meta )
             {
                 $row .= "<td class='col_$meta col_new'>";
@@ -1140,6 +1146,11 @@ sub wuirc
                         maxh => $maxh,
                         image_url => $args->{'image_url'},
                        });
+                }
+
+                when($col =~ /^-\./) # Method for both class and node
+                {
+                    $row .= $class->$meta() // '';
                 }
 
                 when(/^string_/)
