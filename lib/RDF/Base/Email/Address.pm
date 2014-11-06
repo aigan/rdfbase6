@@ -144,8 +144,7 @@ sub exist
 
 sub wuirc
 {
-    my( $this ) = shift @_;
-    return RDF::Base::Literal::String->wuirc(@_);
+    return RDF::Base::Literal::String::wuirc(@_);
 }
 
 sub wuirc_disabled

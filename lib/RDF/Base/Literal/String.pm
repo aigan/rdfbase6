@@ -1097,16 +1097,20 @@ sub wuirc
         };
 
         my $dc = $args->{'default_create'} || {};
-        my $vnode = $default->node || $args->{'vnode'};
-        if ( keys %$dc and not $vnode )
+        my $vnode;
+        if( keys %$dc )
         {
-            $vnode = $default->node_set;
-            $props->{'vnode'} = $vnode;
-            $args->{'id'} = build_field_key({
-                                             pred => $predname,
-                                             subj => $subj,
-                                             vnode => $vnode,
-                                            });
+            $vnode = $default->node || $args->{'vnode'};
+            if (  not $vnode )
+            {
+                $vnode = $default->node_set;
+                $props->{'vnode'} = $vnode;
+                $args->{'id'} = build_field_key({
+                                                 pred => $predname,
+                                                 subj => $subj,
+                                                 vnode => $vnode,
+                                                });
+            }
         }
 
 #	debug 1, "Default value is ".$default->sysdesig; ### DEBUG
@@ -1160,40 +1164,40 @@ sub wuirc
                 }
             }
 
-                ### OLDER CODE:
-                #
-        foreach my $key ( keys %$dc )
-        {
-            my $pred = RDF::Base::Pred->get($key);
-#	    debug "  default cerate: $key";
-#	    debug "    looking up ".$dc->{$key};
-            my $vallist = $R->find_by_anything($dc->{$key},
-                                               {
-                                                valtype=>$pred->valtype});
-            foreach my $val ( $vallist->as_array )
+            ### OLDER CODE:
+            #
+            foreach my $key ( keys %$dc )
             {
-#		debug "    $val";
-                if ( UNIVERSAL::isa( $val, "RDF::Base::Resource" ) )
+                my $pred = RDF::Base::Pred->get($key);
+                #	    debug "  default cerate: $key";
+                #	    debug "    looking up ".$dc->{$key};
+                my $vallist = $R->find_by_anything($dc->{$key},
+                                                   {
+                                                    valtype=>$pred->valtype});
+                foreach my $val ( $vallist->as_array )
                 {
-                    my $field = build_field_key({
-                                                 pred => $pred,
-                                                 subj => $vnode,
-                                                 if => 'subj',
-                                                 parse => 'id',
-                                                });
-                    $extra_html .= &hidden($field,$val->id);
-                }
-                else
-                {
-                    my $field = build_field_key({
-                                                 pred => $pred,
-                                                 subj => $vnode,
-                                                 if => 'subj',
-                                                });
-                    $extra_html .= &hidden($field,$val->plain);
+                    #		debug "    $val";
+                    if ( UNIVERSAL::isa( $val, "RDF::Base::Resource" ) )
+                    {
+                        my $field = build_field_key({
+                                                     pred => $pred,
+                                                     subj => $vnode,
+                                                     if => 'subj',
+                                                     parse => 'id',
+                                                    });
+                        $extra_html .= &hidden($field,$val->id);
+                    }
+                    else
+                    {
+                        my $field = build_field_key({
+                                                     pred => $pred,
+                                                     subj => $vnode,
+                                                     if => 'subj',
+                                                    });
+                        $extra_html .= &hidden($field,$val->plain);
+                    }
                 }
             }
-        }
             #
             ### /older code
 
@@ -1233,6 +1237,19 @@ the query param "arc___pred_$pred" can be used for default new value
 sub wul
 {
     die "FIXME";
+}
+
+
+##############################################################################
+
+=head3 action_icon
+
+=cut
+
+sub action_icon
+{
+    confess "who called me";
+    return "";
 }
 
 
