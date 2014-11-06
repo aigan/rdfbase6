@@ -70,88 +70,88 @@ sub parse
       $class->extract_string($val_in, $args_in);
     my $url;
 
-    if( ref $val eq 'SCALAR' )
+    if ( ref $val eq 'SCALAR' )
     {
-	$url = $class->new( $$val_in, $valtype );
+        $url = $class->new( $$val_in, $valtype );
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::URL::Website" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::URL::Website" )
     {
-	$url = $val_in;
+        $url = $val_in;
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
     {
-	$url = $class->new( $val_in->plain, $valtype );
+        $url = $class->new( $val_in->plain, $valtype );
     }
     else
     {
-	confess "Can't parse $val";
+        confess "Can't parse $val";
     }
 
     return $url unless length( $url->plain ); # undef
 
-    if( my $scheme = $url->scheme )
+    if ( my $scheme = $url->scheme )
     {
-	unless( $scheme =~ /^https?$/ )
-	{
-	    my $str = $url->as_string;
-	    if( $str =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}):(\d+)//i )
-	    {
-		my $host = $1;
-		my $port = $2;
+        unless( $scheme =~ /^https?$/ )
+        {
+            my $str = $url->as_string;
+            if ( $str =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}):(\d+)//i )
+            {
+                my $host = $1;
+                my $port = $2;
 
-		$url->scheme('http');
-		$url->host( $host );
-		$url->port( $port );
-		$url->path_query( $str );
-	    }
-	    else
-	    {
-		throw 'validation', loc "Invalid scheme in website URL $url";
-	    }
-	}
+                $url->scheme('http');
+                $url->host( $host );
+                $url->port( $port );
+                $url->path_query( $str );
+            }
+            else
+            {
+                throw 'validation', loc "Invalid scheme in website URL $url";
+            }
+        }
     }
     else
     {
-	$url->scheme('http');
+        $url->scheme('http');
     }
 
     unless( $url->host )
     {
-	my $path = $url->path || '';
-	debug 3, "Initial path is $path";
-	if( $path =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}\b)//i )
-	{
-	    my $host = $1;
-	    $url->host($host);
-	    $url->path($path);
-	    debug 3, "Host is now $host";
-	}
+        my $path = $url->path || '';
+        debug 3, "Initial path is $path";
+        if ( $path =~ s/^([a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}\b)//i )
+        {
+            my $host = $1;
+            $url->host($host);
+            $url->path($path);
+            debug 3, "Host is now $host";
+        }
     }
 
-    if( my $path = $url->path )
+    if ( my $path = $url->path )
     {
-	debug 3, "Path is now $path";
-	unless( $path =~ /^\// )
-	{
-	    throw 'validation', loc "Malformed path in website URL $url";
-	}
+        debug 3, "Path is now $path";
+        unless( $path =~ /^\// )
+        {
+            throw 'validation', loc "Malformed path in website URL $url";
+        }
     }
     else
     {
-	$url->path('/');
+        $url->path('/');
     }
 
-    if( my $host = $url->host )
+    if ( my $host = $url->host )
     {
-	debug 3, "Host is now $host";
-	unless( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}$/i )
-	{
-	    throw 'validation', loc "Malformed hostname in website URL $url";
-	}
+        debug 3, "Host is now $host";
+        unless ( $host =~ /^[a-z0-9][a-z0-9\-\.]*\.[a-z0-9]{1,6}$/i )
+        {
+            throw 'validation', loc "Malformed hostname in website URL $url";
+        }
     }
     else
     {
-	throw 'validation', loc "Hostname missing from website URL $url";
+        throw 'validation', loc "Hostname missing from website URL $url";
     }
 
     return $class->new( $url->canonical, $valtype );
@@ -162,9 +162,9 @@ sub parse
 
 =head3 default_valtype
 
-=cut
+  =cut
 
-sub default_valtype
+  sub default_valtype
 {
     return RDF::Base::Literal::Class->get_by_label('website_url');
 }
@@ -175,7 +175,7 @@ sub default_valtype
 
 =head1 SEE ALSO
 
-L<RDF::Base::Literal::URL>,
-L<Para::Frame::URI>,
+  L<RDF::Base::Literal::URL>,
+  L<Para::Frame::URI>,
 
-=cut
+  =cut
