@@ -44,7 +44,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
    RDF.Base.makeEditable = function() {
      var $pen
-       = $('<img/>')
+       = $('<img>')
        .attr('src', "[%home%]/pf/images/edit.gif")
        .css('border', 'none');
 
@@ -81,7 +81,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          type      : 'wysiwyg',
          cancel    : 'Cancel',
          submit    : 'OK',
-         indicator : '<img src="[%home%]/img/loading_small.gif" />',
+         indicator : '<img src="[%home%]/img/loading_small.gif">',
          tooltip   : "[% loc('Click to edit') %]",
          onblur    : 'ignore'
        }
@@ -92,7 +92,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
          type      : 'wysiwyg',
          cancel    : 'Cancel',
          submit    : 'OK',
-         indicator : '<img src="[%home%]/img/loading_small.gif" />',
+         indicator : '<img src="[%home%]/img/loading_small.gif">',
          tooltip   : "[% loc('Click to edit') %]",
          onblur    : 'ignore'
        }
