@@ -29,7 +29,7 @@ use feature "switch";
 use CGI qw( escapeHTML );
 
 
-use Carp qw( cluck confess longmess );
+use Carp qw( cluck confess longmess croak );
 use Mail::Address;
 use DateTime::Duration;
 
@@ -39,7 +39,7 @@ use Para::Frame::Reload;
 use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( debug datadump catch );
 
-use RDF::Base::Utils qw( parse_propargs solid_propargs );
+use RDF::Base::Utils qw( parse_propargs solid_propargs is_undef );
 use RDF::Base::Email::Classifier;
 use RDF::Base::Widget qw( aloc build_field_key locnl);
 
@@ -83,7 +83,15 @@ sub new
 
     my $a = LEA->parse($in_value);
 
-    my $code_in = lc $a->address;
+
+    my $code_in = $a->address;
+    unless( $code_in )
+    {
+        cluck "empty email address";
+        return is_undef;
+    }
+
+    my $code = lc $code_in;
 
     my $an_args = solid_propargs({
                                   default_create =>
@@ -94,7 +102,7 @@ sub new
                                  });
 
     my $an = RDF::Base::Resource->set_one({
-                                           code=>$code_in,
+                                           code=>$code,
                                            is=>$C_email_address_holder,
                                           }, $an_args);
 

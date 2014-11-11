@@ -763,8 +763,8 @@ C<clean>: If C<clean>, uses the clean version of strings in the
 search. This will override the value of C<args.clean>. Defaults to
 false.
 
-C<comp>: Any of C<eq>, C<like>, C<begins>, C<gt>, C<lt>, C<ne>,
-C<exist>.
+C<comp>: Any of C<eq>, C<like>, C<nlike>, C<begins>, C<gt>, C<lt>, C<ne>,
+C<exist>, C<undef>.
 
 C<prio>: One or more digits.
 
@@ -825,7 +825,7 @@ sub modify
                 next;
             }
 
-#            debug "SUBQUERY: ".query_desig($query);
+#            debug "SUBQUERY $key: ".query_desig($query);
 
             my $sub = RDF::Base::Search->new($args);
             $sub->modify($query, $args);
@@ -973,7 +973,7 @@ sub modify
 
             # Parse obj and value after coltype established
         }
-        elsif ($key =~ m/^(rev_)?(.*?)(?:_(adirect|direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x)
+        elsif ($key =~ m/^(rev_)?(.*?)(?:_(adirect|direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|nlike|begins|gt|lt|ne|exist|undef)(?:_(\d+))?)?$/x)
         {
             my $rev    = $1;
             my $pred   = $2;
@@ -1081,6 +1081,22 @@ sub modify
                 if ( $values[1] )
                 {
                     confess "Can't use more than one value for exist";
+                }
+
+                if ( $values[0] )
+                {
+                    @values = (1);
+                }
+                else
+                {
+                    @values = (0);
+                }
+            }
+            elsif ( $match eq 'undef' )
+            {
+                if ( $values[1] )
+                {
+                    confess "Can't use more than one value for undef";
                 }
 
                 if ( $values[0] )
@@ -2617,7 +2633,10 @@ sub elements_nodes
         my $pred_name = $snode->{'pred_name'};
         my $prio_override = $snode->{'prio'};
         my $match = $snode->{'match'} || 'eq';
-        my $negate = ( $match eq 'ne' ? 1 : 0 );
+        my $negate = ( $match =~ /^(ne|nlike)$/ ? 1 : 0 );
+
+#        debug "pred $pred_name ".$negate;
+
         my $invalues = $snode->{'values'};
 
         my @outvalues;
@@ -2629,7 +2648,20 @@ sub elements_nodes
             $prio = 1;
         }
 
-        if ( $match eq 'exist' ) # match any
+        if ( $match eq 'undef' ) # match null
+        {
+            if ( $invalues->[0] == 0 ) # NOT undef
+            {
+                $where = "($pred_name is not null)";
+                $prio += 2;
+            }
+            else
+            {
+                $where = "($pred_name is null)";
+                $prio += 2;
+            }
+        }
+        elsif ( $match eq 'exist' ) # match any
         {
             $where = "($pred_name is not null)";
             $prio += 2;
@@ -2660,6 +2692,24 @@ sub elements_nodes
             unless( $match eq 'eq' )
             {
                 $prio += 4;
+            }
+
+            if( $negate )
+            {
+                if( $match eq 'ne' )
+                {
+                    $matchpart = '<>';
+                }
+                elsif( $match eq 'nlike' )
+                {
+                    $matchpart = "not like";
+                }
+                else
+                {
+                    die "define sql for $match";
+                }
+
+                $negate = 0;
             }
 
             if ( BINDVALS )
@@ -2927,8 +2977,7 @@ sub elements_props
         my $invalues = $cond->{'values'};
         my $prio = $cond->{'prio'};
         my $arclim = $cond->{'arclim'} || $search->arclim;
-
-        my $negate = ( $match eq 'ne' ? 1 : 0 );
+        my $negate = ( $match =~ /^(ne|nlike)$/ ? 1 : 0 );
 
         unless( $prio )
         {
@@ -2984,10 +3033,25 @@ sub elements_props
             }
         }
 
+#        debug "elements_props ".$preds->desig." ".$negate;
 
-        if ( $match eq 'exist' ) # match any
+        if ( $match eq 'undef' ) # match null
+        {
+            if ( $invalues->[0] == 0 ) # match defined
+            {
+                $where = "$pred_part and $type is not null $arclim_sql";
+                @outvalues = @pred_ids;
+            }
+            else
+            {
+                $where = "$pred_part and $type is null $arclim_sql";
+                @outvalues = @pred_ids;
+            }
+        }
+        elsif ( $match eq 'exist' ) # match any
         {
             $where = "$pred_part $arclim_sql";
+#            debug "WHERE: $pred_part / $arclim_sql";
             @outvalues = @pred_ids;
             if ( $invalues->[0] == 0 ) # NOT exist
             {
@@ -3022,6 +3086,25 @@ sub elements_props
             confess "In elements_props: ".datadump $cond unless $type; ### DEBUG
 
             my $matchpart = matchpart( $match );
+
+            if( $negate )
+            {
+                if( $match eq 'ne' )
+                {
+                    $matchpart = '<>';
+                }
+                elsif( $match eq 'nlike' )
+                {
+                    $matchpart = "not like";
+                }
+                else
+                {
+                    die "define sql for $match";
+                }
+
+                $negate = 0;
+            }
+
             my @matchvalues;
             if ( BINDVALS )
             {
@@ -3061,6 +3144,8 @@ sub elements_props
          prio => $prio,
          negate => $negate,
         };
+
+#        debug "WHERE $where";
     }
 
     return \@element;
@@ -3266,6 +3351,10 @@ sub set_prio
         {
             return 5;
         }
+        elsif ( $match eq 'nlike' )
+        {
+            return 6;
+        }
         elsif ( $match eq 'exist' )
         {
             if ( $vals->[0] )
@@ -3361,6 +3450,10 @@ sub set_prio
 
         my @svals = @$vals;
         if ( $match eq 'exist' )
+        {
+            pop @svals;
+        }
+        elsif ( $match eq 'undef' )
         {
             pop @svals;
         }
@@ -3625,6 +3718,17 @@ sub searchvals
             s/(.*)/%$1%/;
         }
     }
+    elsif ( $match eq 'nlike' )
+    {
+        # Assume the SQL escape char is '\'
+        foreach ( @searchvals )
+        {
+            s/\\/\\/g;
+            s/%/\%/g;
+            s/_/\_/g;
+            s/(.*)/%$1%/;
+        }
+    }
     elsif ( $match eq 'begins' )
     {
         # Assume the SQL escape char is '\'
@@ -3655,6 +3759,7 @@ sub matchpart
     $matchpart =~ s/lt/</;
     $matchpart =~ s/ne/=/;
     $matchpart =~ s/begins/like/;
+    $matchpart =~ s/nlike/like/;
 
     return $matchpart;
 }

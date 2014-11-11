@@ -88,6 +88,7 @@ sub init_to
 {
     return if $_[0]->{'rb_head_to_initiated'};
 
+    my $DEBUG = 0;
     debug "Initiating RB 'to' field";
 #    cluck "Initiating RB 'to' field";
 
@@ -129,17 +130,14 @@ sub init_to
 
         ($to_obj, $to_err) = $to_obj_list->get_next;
     }
-    my @to_uniq = grep defined, uniq @to_list;
+    my @to_uniq = grep $_, uniq @to_list;
 
 #    debug timediff('init_to to_list');
 #    $Para::Frame::REQ->may_yield;
 
     $head->header_set('to', @to_uniq );
 
-    if ( debug > 1 )
-    {
-        debug 2, "Creating TO header field with @to_uniq";
-    }
+    debug "Creating TO header field with ".join('/',@to_uniq) if $DEBUG;
 
     $head->{'rb_head_to_initiated'} = 1;
 

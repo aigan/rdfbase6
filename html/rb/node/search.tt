@@ -6,17 +6,11 @@
 %]
 
 [% CALL searchobj.first_rb_part.query_setup %]
-<p>
-[ [% jump('List preds', 'pred/list.tt') +%]
-]</p>
 
-[% input('query_row','', tag_attr={size=42}) %]<br>
-
-[% textarea('query', undef, cols=60, rows=10) %]
-
-<p>Resultat per sida [% input('limit',50, tag_attr={size=5}) %]
+[% textarea('query', undef, tag_attr={rows=10,class='wide'}) %]
 
 <p>[% submit('Sök') %]
+Resultat per sida [% input('limit',50, tag_attr={size=5}) %]
 
 <h2>Exempel</h2>
 

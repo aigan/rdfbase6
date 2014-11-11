@@ -10,6 +10,6 @@ rev
 [ pred ]
 [ [% rb.Arc_Lim.names.join(' | ') %] ]
 clean
-[ eq | like | begins | gt | lt | ne | exist ]
+[ eq | like | nlike | begins | gt | lt | ne | exist | undef ]
 [ prio ]
 </pre>

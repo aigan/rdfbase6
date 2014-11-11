@@ -642,7 +642,7 @@ sub analyze_auto_reply
     my $o = $c->email_obj;
     debug "Analyzing for Auto-reply" if $DEBUG;
 
-    if( $o->header('Return-path') =~ /<mailer-daemon\@.*>/ )
+    if( ($o->header('Return-path')//'') =~ /<mailer-daemon\@.*>/ )
     {
         $c->{is}{auto_reply} ++;
         return;
@@ -1146,9 +1146,9 @@ sub analyze_verp
     debug "Analyzing for VERP" if $DEBUG;
 #                debug datadump($c,2);
 
-    my $to =  $o->head->parsed_address('to') ;
+    my $to =  $o->head->parsed_address('to');
     my $be = $Para::Frame::CFG->{'bounce_emails'} or return;
-    if( $to->address =~ /.+$be$/i  )
+    if( $to and $to->address =~ /.+$be$/i  )
     {
         if( $to->address =~ /t(\d+)-/ )
         {

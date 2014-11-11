@@ -1083,12 +1083,17 @@ sub wuirc
 
     if ( $no_arc or $multi and not $disabled )
     {
+        my $default;
         my $def_value = $args->{'default_value'};
         if ( UNIVERSAL::can($def_value, 'plain') )
         {
             $def_value = $def_value->plain;
         }
-        my $default = $class->new($def_value, $range);
+        if( $def_value )
+        {
+            $default = $class->new($def_value, $range);
+        }
+        $default //= is_undef;
 
         my $props =
         {

@@ -266,6 +266,8 @@ sub parsed_address
         push @addr, EA->parse($dec);
     }
 
+#    debug "Got addr list ".join('/',@addr);
+
     return RDF::Base::List->new(\@addr);
 }
 
