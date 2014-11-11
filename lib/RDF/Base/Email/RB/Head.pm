@@ -28,7 +28,7 @@ use base qw( RDF::Base::Email::Head );
 
 use Carp qw( croak confess cluck );
 use Scalar::Util qw(weaken);
-use List::Uniq qw( uniq ); # keeps first of each value
+use List::Uniq qw( uniq );      # keeps first of each value
 use MIME::Words qw( encode_mimeword );
 
 use Para::Frame::Reload;
@@ -109,25 +109,25 @@ sub init_to
 #    debug timediff('init_to email_to_obj');
 #    $Para::Frame::REQ->may_yield;
 
-    if( $to_obj_list->size > 1000 )
+    if ( $to_obj_list->size > 1000 )
     {
-	$Para::Frame::REQ->note(sprintf "Email has %d recipients",
-				$to_obj_list->size);
+        $Para::Frame::REQ->note(sprintf "Email has %d recipients",
+                                $to_obj_list->size);
     }
 
     my( $to_obj, $to_err ) = $to_obj_list->get_first;
-    while( !$to_err )
+    while ( !$to_err )
     {
-	push @to_list, $to_obj->has_email_address_holder->loc, $to_obj->has_contact_email_address_holder->loc;
+        push @to_list, $to_obj->has_email_address_holder->loc, $to_obj->has_contact_email_address_holder->loc;
 
-	unless( $to_obj_list->count % 1000 )
-	{
-	    $Para::Frame::REQ->note("  at recipient ".$to_obj_list->count);
-	    $Para::Frame::REQ->may_yield;
-	    die "cancelled" if $Para::Frame::REQ->cancelled;
-	}
+        unless( $to_obj_list->count % 1000 )
+        {
+            $Para::Frame::REQ->note("  at recipient ".$to_obj_list->count);
+            $Para::Frame::REQ->may_yield;
+            die "cancelled" if $Para::Frame::REQ->cancelled;
+        }
 
-	($to_obj, $to_err) = $to_obj_list->get_next;
+        ($to_obj, $to_err) = $to_obj_list->get_next;
     }
     my @to_uniq = grep defined, uniq @to_list;
 
@@ -136,9 +136,9 @@ sub init_to
 
     $head->header_set('to', @to_uniq );
 
-    if( debug > 1 )
+    if ( debug > 1 )
     {
-	debug 2, "Creating TO header field with @to_uniq";
+        debug 2, "Creating TO header field with @to_uniq";
     }
 
     $head->{'rb_head_to_initiated'} = 1;
@@ -155,9 +155,9 @@ sub init_to
 
 sub count_to
 {
-    if( $_[0]->{'rb_head_to_count'} )
+    if ( $_[0]->{'rb_head_to_count'} )
     {
-	return $_[0]->{'rb_head_to_count'};
+        return $_[0]->{'rb_head_to_count'};
     }
 
     my( $head ) = @_;
