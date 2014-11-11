@@ -29,7 +29,7 @@ use feature "switch";
 use CGI qw( escapeHTML );
 
 
-use Carp qw( cluck confess longmess );
+use Carp qw( cluck confess longmess croak );
 use Mail::Address;
 use DateTime::Duration;
 
@@ -39,13 +39,16 @@ use Para::Frame::Reload;
 use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( debug datadump catch );
 
-use RDF::Base::Utils qw( parse_propargs solid_propargs );
+use RDF::Base::Utils qw( parse_propargs solid_propargs is_undef );
 use RDF::Base::Email::Classifier;
 use RDF::Base::Widget qw( aloc build_field_key locnl);
 
 use RDF::Base::Constants qw( $C_intelligent_agent
                              $C_email_address_holder
                              $C_ed_non_deliverable );
+
+our %EA_CACHE = ();
+
 
 =head1 DESCRIPTION
 
@@ -83,26 +86,48 @@ sub new
 
     my $a = LEA->parse($in_value);
 
-    my $code_in = lc $a->address;
 
-    my $an_args = solid_propargs({
-                                  default_create =>
-                                  {
-                                   ea_original => $a,
-                                   name => $a->name,
-                                  }
-                                 });
+    my $code_in = $a->address;
+    unless( $code_in )
+    {
+        cluck "empty email address";
+        return is_undef;
+    }
 
-    my $an = RDF::Base::Resource->set_one({
-                                           code=>$code_in,
-                                           is=>$C_email_address_holder,
-                                          }, $an_args);
+    my $code = lc $code_in;
 
-#    $an->update({ea_original => $a}, $an_args);
-#    $an->update({name => $a->name}, $an_args) if $a->name;
+    # The search will not find EAs not yet comitted. Since they are
+    # supposed to be unique, we can cache the keys here, in order to
+    # avoid duplicates.
+    #
+    my $an = $EA_CACHE{$code};
+
+    unless( $an )
+    {
+        my $an_args = solid_propargs({
+                                      default_create =>
+                                      {
+                                       ea_original => $a,
+                                       name => $a->name,
+                                      }
+                                     });
+
+        $an = RDF::Base::Resource->set_one({
+                                            code=>$code,
+                                            is=>$C_email_address_holder,
+                                           }, $an_args);
+    }
+
+    if( $a->name and not $an->name->loc )
+    {
+        $an->update({ea_original => $a}, $args);
+        $an->update({name => $a->name}, $args);
+    }
+
 #    cluck "Name changed to ".$a->name if $a->name;
+#    cluck "Created ".$an->sysdesig;
 
-    return $an;
+    return $EA_CACHE{$code} = $an;
 }
 
 
@@ -978,6 +1003,55 @@ sub is_nonhuman
                         ^www-data\@|
                         ^root\@
                 }xmi;
+}
+
+
+##############################################################################
+
+=head2 vacuum_facet
+
+=cut
+
+sub vacuum_facet
+{
+    my( $ea, $args ) = @_;
+
+    my $a = $ea->first_prop('ea_original', undef, $args);
+    delete $EA_CACHE{$a->code->plain};
+
+    unless( $a )
+    {
+        $ea->remove($args);
+        return $ea;
+    }
+
+    my $code_in = $a->address;
+    unless( $code_in )
+    {
+        $ea->remove($args);
+        return $ea;
+    }
+
+    my $code = lc $code_in;
+    delete $EA_CACHE{$code};
+
+    $ea->update({code => $code}, $args);
+
+    my $nodes = $ea->find({
+                           code => $code,
+                           is => $C_email_address_holder,
+                          }, $args)->sorted('id');
+    my $node = $nodes->get_first_nos;
+    while ( my $enode = $nodes->get_next_nos )
+    {
+        $enode->merge_node($node,
+                           {
+                            %$args,
+                            move_literals => 1,
+                           });
+    }
+
+    return $EA_CACHE{$code} = $node;
 }
 
 

@@ -671,44 +671,24 @@ sub find_by_anything
     elsif ( $val !~ /^\s*\d+\s*$/ )
     {
         debug 3, "  obj as label or name of obj";
+#        debug "VALTYPE ".$valtype->sysdesig;
 
-        if ( UNIVERSAL::isa($val, "RDF::Base::Literal" ) )
+        my( $valref );
+        if ( ref $val )
         {
-            $val = $val->plain;
+            $valref = $val;
         }
-        elsif ( not ref $val )
+        else
         {
-            trim(\$val);
+            $valref ||= \$val;
         }
 
-        unless( ref $val )
-        {
-            if ( my $const = $this->get_by_label($val,{nonfatal=>1}) )
-            {
-                @new = ( $const );
-            }
-
-            unless( @new )
-            {
-                # Used to use find_simple.  But this is a general find
-                # function and can not assume the simple case
-#		debug "SEARCHING for name_clean $val that is ".$valtype->sysdesig;
-                confess "INVALID search; not a label or constant"
-                  if $RDF::Base::IN_STARTUP; # for $C_resource
-
-                if ( $valtype->id == $C_resource->id )
-                {
-                    @new = $this->find({ name_clean => $val,
-                                       }, $args)->as_array;
-                }
-                else
-                {
-                    @new = $this->find({ name_clean => $val,
-                                         is => $valtype,
-                                       }, $args)->as_array;
-                }
-            }
-        }
+        @new = $valtype->instance_class->parse( $valref,
+                                                {
+                                                 %$args,
+                                                 aclim => 'active',
+                                                }
+                                              );
     }
     #
     # 12. obj as obj id
@@ -722,6 +702,100 @@ sub find_by_anything
 #    warn "  returning @new\n";
 
     return RDF::Base::List->new(\@new);
+}
+
+
+##############################################################################
+
+=head2 parse_to_list
+
+Compatible with L<RDF::Base::Literal/parse>
+
+Returns a L<RDF::Base::List> or L<RDF::Base::Resource>
+
+=cut
+
+sub parse_to_list
+{
+    my( $class, $val_in, $args ) = @_;
+
+    my $val;
+    if ( ref $val_in )
+    {
+        $val = $val_in;
+    }
+    else
+    {
+        $val = \$val_in;
+    }
+
+    if ( UNIVERSAL::isa($val, "RDF::Base::Literal" ) )
+    {
+        $val = $val->plain;
+    }
+    elsif ( ref $val eq 'SCALAR' )
+    {
+        trim($val);
+        $val = $$val;
+    }
+
+    if ( my $const = $class->get_by_label($val,{nonfatal=>1}) )
+    {
+        return $const;
+    }
+
+    # Used to use find_simple.  But this is a general find
+    # function and can not assume the simple case
+
+    confess "INVALID search; not a label or constant"
+      if $RDF::Base::IN_STARTUP; # for $C_resource
+
+    my $valtype = $args->{'valtype'} || $class->instance_class;
+
+    if ( $valtype->id == $C_resource->id )
+    {
+        return $class->find({ name_clean => $val,
+                           }, $args);
+    }
+
+    return $class->find({ name_clean => $val,
+                         is => $valtype,
+                       }, $args);
+}
+
+
+##############################################################################
+
+=head2 parse
+
+Compatible with L<RDF::Base::Literal/parse>
+
+uses L</parse_to_list> and throws exception if more than one node if
+found.
+
+=cut
+
+sub parse
+{
+    my( $class, $val_in, $args_in ) = @_;
+
+    my $n = $class->parse_to_list( $val_in, $args_in );
+
+    # Works both for lists and resources
+    #
+    if( $n->is_list )
+    {
+        if( $n->size > 1 )
+        {
+            throw('alternatives', "More than one node matches the criterions");
+        }
+        elsif( $n->size < 1 )
+        {
+            throw('notfound', "No nodes matches query (3)");
+        }
+    }
+
+    return $n->get_first_nos;
 }
 
 

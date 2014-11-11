@@ -447,6 +447,7 @@ sub build_field_key
     foreach my $key (sort keys %$props)
     {
         my $val = $props->{$key} || '';
+#        cluck "build from $key=$val" unless length $val;
         if ( grep{$key eq $_} qw( subj type scof vnode ) )
         {
             $val = RDF::Base::Resource->get($val)->id;

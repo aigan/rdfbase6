@@ -70,11 +70,11 @@ sub as_html
     $header->load_all if $header->can('load_all');
 
     my @headers = $header->header_pairs;
-    for(my $i=0; $i<= $#headers; $i+=2 )
+    for (my $i=0; $i<= $#headers; $i+=2 )
     {
-	my( $key ) = $headers[$i];
-	my( $val ) = $header->parsed_field($key, $headers[$i+1])->as_html;
-	$msg .= "<tr><td style=\"text-align:right;font-weight:bold;vertical-align:top\">$key</td><td>$val</td></tr>\n";
+        my( $key ) = $headers[$i];
+        my( $val ) = $header->parsed_field($key, $headers[$i+1])->as_html;
+        $msg .= "<tr><td style=\"text-align:right;font-weight:bold;vertical-align:top\">$key</td><td>$val</td></tr>\n";
     }
     $msg .= "</table>\n";
 
@@ -102,9 +102,9 @@ sub parsed_field
 
 #    debug "  parsing field '$field'";
 
-    if( $field eq 'subject' )
+    if ( $field eq 'subject' )
     {
-	return $header->parsed_subject($field, $value);
+        return $header->parsed_subject($field, $value);
     }
 #    elsif( $field eq "message-id" )
 #    {
@@ -118,41 +118,41 @@ sub parsed_field
 #    {
 #	return $header->parsed_message_id($field, $value);
 #    }
-    elsif( $field eq "date" )
+    elsif ( $field eq "date" )
     {
-	return $header->parsed_date($field, $value);
+        return $header->parsed_date($field, $value);
     }
-    elsif( $field eq "from" )
+    elsif ( $field eq "from" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "sender" )
+    elsif ( $field eq "sender" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "to" )
+    elsif ( $field eq "to" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "bcc" )
+    elsif ( $field eq "bcc" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "cc" )
+    elsif ( $field eq "cc" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "reply-to" )
+    elsif ( $field eq "reply-to" )
     {
-	return $header->parsed_address($field, $value);
+        return $header->parsed_address($field, $value);
     }
-    elsif( $field eq "content-description" )
+    elsif ( $field eq "content-description" )
     {
-	return $header->parsed_text($field, $value);
+        return $header->parsed_text($field, $value);
     }
     else
     {
-	return $header->parsed_default($field, $value);
+        return $header->parsed_default($field, $value);
     }
 }
 
@@ -212,12 +212,12 @@ sub parsed_date
 
     eval
     {
-	$date = RDF::Base::Literal::Time->get( $value );
+        $date = RDF::Base::Literal::Time->get( $value );
     };
-    if( $@ )
+    if ( $@ )
     {
-	debug $@;
-	$date = is_undef;
+        debug $@;
+        $date = is_undef;
     }
 
     return $date;
@@ -244,27 +244,29 @@ sub parsed_address
 {
     my( $header, $field_in, $value ) = @_;
 
-    if( not $value )
+    if ( not $value )
     {
-	unless( $field_in )
-	{
-	    confess "missing field name";
-	}
+        unless( $field_in )
+        {
+            confess "missing field name";
+        }
 
-	$header->init_to if $field_in eq 'to';
-	$value = [ $header->header($field_in) ];
+        $header->init_to if $field_in eq 'to';
+        $value = [ $header->header($field_in) ];
     }
-    elsif( not( ref($value) eq 'ARRAY' ) )
+    elsif ( not( ref($value) eq 'ARRAY' ) )
     {
-	$value = [$value];
+        $value = [$value];
     }
 
     my @addr;
     foreach my $raw ( @$value )
     {
-	my $dec = mime_to_perl_string( $raw );
-	push @addr, EA->parse($dec);
+        my $dec = mime_to_perl_string( $raw );
+        push @addr, EA->parse($dec);
     }
+
+#    debug "Got addr list ".join('/',@addr);
 
     return RDF::Base::List->new(\@addr);
 }
@@ -286,13 +288,13 @@ sub parsed_default
 {
     my( $header, $field_in, $value ) = @_;
 
-    if( not defined $value )
+    if ( not defined $value )
     {
-	confess "missing field value";
+        confess "missing field value";
     }
-    elsif( ref($value) eq 'ARRAY' )
+    elsif ( ref($value) eq 'ARRAY' )
     {
-	croak "field value must be a plain string";
+        croak "field value must be a plain string";
     }
 
     return RDF::Base::Literal::String->new_from_db($value, $C_text);
@@ -315,13 +317,13 @@ sub parsed_text
 {
     my( $header, $field_in, $value ) = @_;
 
-    if( not defined $value )
+    if ( not defined $value )
     {
-	confess "missing field value";
+        confess "missing field value";
     }
-    elsif( ref($value) eq 'ARRAY' )
+    elsif ( ref($value) eq 'ARRAY' )
     {
-	croak "field value must be a plain string";
+        croak "field value must be a plain string";
     }
 
     my $dec = mime_to_perl_string( $value );

@@ -1083,12 +1083,7 @@ sub wuirc
 
     if ( $no_arc or $multi and not $disabled )
     {
-        my $def_value = $args->{'default_value'};
-        if ( UNIVERSAL::can($def_value, 'plain') )
-        {
-            $def_value = $def_value->plain;
-        }
-        my $default = $class->new($def_value, $range);
+        my $default = is_undef;
 
         my $props =
         {
@@ -1100,6 +1095,13 @@ sub wuirc
         my $vnode;
         if( keys %$dc )
         {
+            my $def_value = $args->{'default_value'};
+            if ( UNIVERSAL::can($def_value, 'plain') )
+            {
+                $def_value = $def_value->plain;
+            }
+            $default = $class->new($def_value, $range);
+
             $vnode = $default->node || $args->{'vnode'};
             if (  not $vnode )
             {

@@ -109,20 +109,20 @@ Identifies the format and makes the apropriate literal object of it.
 
 =cut
 
-sub new
+  sub new
 {
     my( $this, $val_in, $valtype_in ) = @_;
 
     unless( $valtype_in )
     {
-	confess "valtype missing";
+        confess "valtype missing";
     }
 
     my $valtype = RDF::Base::Resource->get($valtype_in);
     unless( $valtype->UNIVERSAL::isa('RDF::Base::Literal::Class') )
     {
-	my $valtype_desig = $valtype->desig;
-	confess "valtype $valtype_desig is not a literal class";
+        my $valtype_desig = $valtype->desig;
+        confess "valtype $valtype_desig is not a literal class";
     }
 
     my $class_name = $valtype->instance_class;
@@ -154,13 +154,13 @@ sub new_from_db
 
     unless( $valtype )
     {
- 	confess "valtype missing";
+        confess "valtype missing";
     }
 
     unless( $valtype->UNIVERSAL::isa('RDF::Base::Literal::Class') )
     {
-	my $valtype_desig = $valtype->desig;
-	confess "valtype $valtype_desig is not a literal class";
+        my $valtype_desig = $valtype->desig;
+        confess "valtype $valtype_desig is not a literal class";
     }
 
     my $class_name = $valtype->instance_class;
@@ -268,13 +268,13 @@ Just as L</as_list> but regards the SCALAR/ARRAY context.
 sub nodes
 {
     # Used by List AUTOLOAD
-    if( wantarray )
+    if ( wantarray )
     {
-	return(shift);
+        return(shift);
     }
     else
     {
-	return RDF::Base::List->new([shift]);
+        return RDF::Base::List->new([shift]);
     }
 }
 
@@ -341,7 +341,7 @@ sub node
 {
     confess "FIXME" unless ref $_[0];
     return( $_[0]->{'node'} ||= $_[0]->{'arc'} ?
-	    $_[0]->{'arc'}->value_node : is_undef );
+            $_[0]->{'arc'}->value_node : is_undef );
 }
 
 
@@ -386,52 +386,52 @@ Returns: the node
 
 sub node_set
 {
-    if( not($_[0]->{'node'}) or $_[1] )
+    if ( not($_[0]->{'node'}) or $_[1] )
     {
 #	debug "  setting vnode";
-	my( $lit, $node ) = @_;
-	if( my $arc = $lit->{'arc'} )
-	{
-	    if( $node )
-	    {
-		if( my $old_node = $arc->value_node )
-		{
-		    if( $old_node->equals($node) )
-		    {
+        my( $lit, $node ) = @_;
+        if ( my $arc = $lit->{'arc'} )
+        {
+            if ( $node )
+            {
+                if ( my $old_node = $arc->value_node )
+                {
+                    if ( $old_node->equals($node) )
+                    {
 #			debug "  no change in value_node";
-			# No change...
-			return $old_node;
-		    }
-		    confess "Can't set node for lit belonging to an arc: ".
-		      $lit->sysdesig;
-		}
+                        # No change...
+                        return $old_node;
+                    }
+                    confess "Can't set node for lit belonging to an arc: ".
+                      $lit->sysdesig;
+                }
 
-		confess "CHECKME: ".$lit->sysdesig." / ".$arc->sysdesig;
-	    }
+                confess "CHECKME: ".$lit->sysdesig." / ".$arc->sysdesig;
+            }
 
-	    if( $node = $arc->value_node )
-	    {
+            if ( $node = $arc->value_node )
+            {
 #		debug "  set by arc value_node";
-		$lit->{'node'} = $node;
-	    }
-	    else
-	    {
+                $lit->{'node'} = $node;
+            }
+            else
+            {
 #		debug "  set to new value_node for arc";
-		$lit->{'node'} = $arc->set_value_node();
-	    }
-	}
-	elsif( $node )
-	{
+                $lit->{'node'} = $arc->set_value_node();
+            }
+        }
+        elsif ( $node )
+        {
 #	    debug "  set to given value";
-	    $lit->{'node'} = $node;
-	}
-	else
-	{
+            $lit->{'node'} = $node;
+        }
+        else
+        {
 #	    debug "  Creating a new value_node for literal";
 #            debug "    Valtype is ".$lit->this_valtype->sysdesig;
             ### Must be crated as a Resource Literal
-	    $lit->{'node'} = RDF::Base::Resource::Literal->get('new');
-	}
+            $lit->{'node'} = RDF::Base::Resource::Literal->get('new');
+        }
     }
 #    else
 #    {
@@ -468,27 +468,27 @@ sub equals
     $val = RDF::Base::Literal::String->new($val)
       unless( ref $val );
 
-    if( ref $val and UNIVERSAL::isa($val, 'RDF::Base::Literal') )
+    if ( ref $val and UNIVERSAL::isa($val, 'RDF::Base::Literal') )
     {
-	if( $lit->syskey($args) eq $val->syskey($args) )
-	{
-	    if( my $lit_id = $lit->id )
-	    {
-		if( $val->id and ($lit_id == $val->id) )
-		{
-		    return 1;
-		}
-		# Values equals. But diffrent value nodes
-		return 0;
-	    }
-	    elsif( $val->id )
-	    {
-		# Values equals. But diffrent value nodes
-		return 0;
-	    }
+        if ( $lit->syskey($args) eq $val->syskey($args) )
+        {
+            if ( my $lit_id = $lit->id )
+            {
+                if ( $val->id and ($lit_id == $val->id) )
+                {
+                    return 1;
+                }
+                # Values equals. But diffrent value nodes
+                return 0;
+            }
+            elsif ( $val->id )
+            {
+                # Values equals. But diffrent value nodes
+                return 0;
+            }
 
-	    return 1;
-	}
+            return 1;
+        }
     }
 
     return 0;
@@ -532,26 +532,26 @@ sub update
 #    cluck "GOT HERE";
 #    debug "---";
 
-    if( my $new_val = $props->{'value'} )
+    if ( my $new_val = $props->{'value'} )
     {
-	delete $props->{'value'};
-	if( my $arc = $lit->lit_revarc )
-	{
-	    my $newarc = $arc->set_value($new_val, $args );
-	    $lit = $newarc->value;
-	}
-	else
-	{
-	    $lit = RDF::Base::Resource->get_by_anything($new_val, $args);
-	}
+        delete $props->{'value'};
+        if ( my $arc = $lit->lit_revarc )
+        {
+            my $newarc = $arc->set_value($new_val, $args );
+            $lit = $newarc->value;
+        }
+        else
+        {
+            $lit = RDF::Base::Resource->get_by_anything($new_val, $args);
+        }
 
-	$lit->update($props, $args);
+        $lit->update($props, $args);
     }
-    elsif( %$props ) # not if empty
+    elsif ( %$props )           # not if empty
     {
-	my $node = $lit->node_set;
-	debug "Getting value node ".$node->sysdesig;
-	$node->update($props, $args);
+        my $node = $lit->node_set;
+        debug "Getting value node ".$node->sysdesig;
+        $node->update($props, $args);
 
 #	$lit->node_set->update($props, $args);
     }
@@ -577,12 +577,12 @@ sub this_valtype
 {
     unless( ref $_[0] )
     {
-	return $_[0]->default_valtype;
+        return $_[0]->default_valtype;
     }
 
-    if( my $valtype = $_[0]->{'valtype'} )
+    if ( my $valtype = $_[0]->{'valtype'} )
     {
-	return $valtype;
+        return $valtype;
     }
 
     return $_[0]->default_valtype();
@@ -647,19 +647,19 @@ sub subj
 {
     my( $this, $args_in ) = @_;
 
-    if( ref $this )
+    if ( ref $this )
     {
-	my $lit = $this;
-	if( my $arc = $lit->lit_revarc )
-	{
-	    return $arc->subj;
-	}
+        my $lit = $this;
+        if ( my $arc = $lit->lit_revarc )
+        {
+            return $arc->subj;
+        }
     }
 
     my( $args ) = parse_propargs($args_in);
-    if( my $arc = $args->{'arc'} )
+    if ( my $arc = $args->{'arc'} )
     {
-	return $arc->subj;
+        return $arc->subj;
     }
 
     return $args->{'subj_new'} || is_undef;
@@ -684,19 +684,19 @@ sub pred
 {
     my( $this, $args_in ) = @_;
 
-    if( ref $this )
+    if ( ref $this )
     {
-	my $lit = $this;
-	if( my $arc = $lit->lit_revarc )
-	{
-	    return $arc->pred;
-	}
+        my $lit = $this;
+        if ( my $arc = $lit->lit_revarc )
+        {
+            return $arc->pred;
+        }
     }
 
     my( $args ) = parse_propargs($args_in);
-    if( my $arc = $args->{'arc'} )
+    if ( my $arc = $args->{'arc'} )
     {
-	return $arc->pred;
+        return $arc->pred;
     }
 
     return $args->{'pred_new'} || is_undef;
@@ -731,61 +731,61 @@ sub extract_string
     my $coltype = $valtype->coltype;
 
     my $val;
-    if( ref $val_in )
+    if ( ref $val_in )
     {
-	$val = $val_in;
+        $val = $val_in;
     }
     else
     {
-	$val = \$val_in;
+        $val = \$val_in;
     }
 
-    if( ref $val eq 'SCALAR' )
+    if ( ref $val eq 'SCALAR' )
     {
-	return( $val, $coltype, $valtype, $args );
+        return( $val, $coltype, $valtype, $args );
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal" )
     {
-	# Validate below
+        # Validate below
     }
-    elsif( (ref $val eq 'HASH') or
-	   (ref $val eq 'ARRAY') or
-	   (UNIVERSAL::isa $val, "Para::Frame::List")
-	 )
+    elsif ( (ref $val eq 'HASH') or
+            (ref $val eq 'ARRAY') or
+            (UNIVERSAL::isa $val, "Para::Frame::List")
+          )
     {
-	$val = RDF::Base::Resource->get_by_anything( $val,
-						     {
-						      %$args,
-						      valtype => $valtype,
-						     });
-	return( $val, $coltype, $valtype, $args );
+        $val = RDF::Base::Resource->get_by_anything( $val,
+                                                     {
+                                                      %$args,
+                                                      valtype => $valtype,
+                                                     });
+        return( $val, $coltype, $valtype, $args );
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Resource::Literal" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Resource::Literal" )
     {
 #	debug "Val isa Res Lit: ".$val->id;
 #	debug "Using args:\n".query_desig($args);
 
-	# Sort by id in order to use the original arc as a base of
-	# reference for the value, in case that other arc points to
-	# the same node.
+        # Sort by id in order to use the original arc as a base of
+        # reference for the value, in case that other arc points to
+        # the same node.
 
-	my $node = $val;
-	$val = $node->first_literal();
+        my $node = $val;
+        $val = $node->first_literal();
 
 #	debug "  Extracted ".$val->sysdesig;
-	unless( UNIVERSAL::isa $val, "RDF::Base::Literal" )
-	{
-	    debug "First literal of node is a ".ref($val);
-	    throw('validation', $node->id." is not a literal resource");
-	}
+        unless( UNIVERSAL::isa $val, "RDF::Base::Literal" )
+        {
+            debug "First literal of node is a ".ref($val);
+            throw('validation', $node->id." is not a literal resource");
+        }
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Undef" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Undef" )
     {
-	return( \ undef, $coltype, $valtype, $args );
+        return( \ undef, $coltype, $valtype, $args );
     }
     else
     {
-	confess "Can't parse $val";
+        confess "Can't parse $val";
     }
 
     # TODO: check for compatible valtype
@@ -872,13 +872,13 @@ sub form_url
 {
     my( $lit ) = shift;
 
-    if( my $subj = $lit->subj )
+    if ( my $subj = $lit->subj )
     {
-	return $subj->form_url(@_);
+        return $subj->form_url(@_);
     }
     else
     {
-	confess "fixme";
+        confess "fixme";
     }
 }
 
@@ -893,13 +893,13 @@ sub page_url_path_slash
 {
     my( $lit ) = shift;
 
-    if( my $subj = $lit->subj )
+    if ( my $subj = $lit->subj )
     {
-	return $subj->page_url_path_slash(@_);
+        return $subj->page_url_path_slash(@_);
     }
     else
     {
-	confess "fixme";
+        confess "fixme";
     }
 }
 
@@ -932,9 +932,9 @@ sub empty
 
 sub created
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->created;
+        return $arc->created;
     }
 
     cluck "FIXME";
@@ -951,9 +951,9 @@ sub created
 
 sub updated
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->updated;
+        return $arc->updated;
     }
 
     cluck "FIXME";
@@ -970,9 +970,9 @@ sub updated
 
 sub owned_by
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->subj->owned_by;
+        return $arc->subj->owned_by;
     }
 
     return is_undef;
@@ -987,9 +987,9 @@ sub owned_by
 
 sub read_access
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->read_access;
+        return $arc->read_access;
     }
 
     return is_undef;
@@ -1004,9 +1004,9 @@ sub read_access
 
 sub write_access
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->write_access;
+        return $arc->write_access;
     }
 
     return is_undef;
@@ -1021,9 +1021,9 @@ sub write_access
 
 sub created_by
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->created_by;
+        return $arc->created_by;
     }
 
     return is_undef;
@@ -1038,9 +1038,9 @@ sub created_by
 
 sub updated_by
 {
-    if( my $arc = $_[0]->lit_revarc )
+    if ( my $arc = $_[0]->lit_revarc )
     {
-	return $arc->updated_by;
+        return $arc->updated_by;
     }
 
     return is_undef;
@@ -1056,56 +1056,56 @@ sub updated_by
 sub list
 {
     my( $lit, $pred_in, $proplim, $args_in ) = @_;
-    if( $pred_in )
+    if ( $pred_in )
     {
-	my( $pred, $name );
-	if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
-	{
-	    $pred = $pred_in;
-	}
-	else
-	{
-	    $pred = RDF::Base::Pred->get($pred_in);
-	}
-	$name = $pred->plain;
+        my( $pred, $name );
+        if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+        {
+            $pred = $pred_in;
+        }
+        else
+        {
+            $pred = RDF::Base::Pred->get($pred_in);
+        }
+        $name = $pred->plain;
 
-	unless( $name eq 'value' )
-	{
-	    return $lit->node->list($pred, $proplim, $args_in);
-	}
+        unless( $name eq 'value' )
+        {
+            return $lit->node->list($pred, $proplim, $args_in);
+        }
 
-	my $node = $lit->node;
-	unless( $node )
-	{
-	    return RDF::Base::List->new_empty();
-	}
+        my $node = $lit->node;
+        unless( $node )
+        {
+            return RDF::Base::List->new_empty();
+        }
 
 
-	my( $args, $arclim ) = parse_propargs($args_in);
-	unless( RDF::Base::Arc::Lim::literal_meets_lim($lit, $arclim ) )
-	{
-	    return RDF::Base::List->new_empty();
-	}
+        my( $args, $arclim ) = parse_propargs($args_in);
+        unless( RDF::Base::Arc::Lim::literal_meets_lim($lit, $arclim ) )
+        {
+            return RDF::Base::List->new_empty();
+        }
 
-	# Don't call find if proplim is empty
-	if( $proplim and (ref $proplim eq 'HASH' ) and not keys %$proplim )
-	{
-	    undef $proplim;
-	}
+        # Don't call find if proplim is empty
+        if ( $proplim and (ref $proplim eq 'HASH' ) and not keys %$proplim )
+        {
+            undef $proplim;
+        }
 
-	if( $proplim ) # May be a value or anything taken by find
-	{
-	    unless( $node->find($proplim, $args)->size )
-	    {
-		return RDF::Base::List->new_empty();
-	    }
-	}
+        if ( $proplim )     # May be a value or anything taken by find
+        {
+            unless( $node->find($proplim, $args)->size )
+            {
+                return RDF::Base::List->new_empty();
+            }
+        }
 
-	return $lit;
+        return $lit;
     }
     else
     {
-	return $lit->node->list_preds( $proplim, $args_in );
+        return $lit->node->list_preds( $proplim, $args_in );
     }
 }
 
@@ -1136,39 +1136,39 @@ sub revlist
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
-	return RDF::Base::List->new_empty();
+        return RDF::Base::List->new_empty();
     }
 
-    if( $name )
+    if ( $name )
     {
- 	if( UNIVERSAL::isa($name,'RDF::Base::Pred') )
- 	{
- 	    $name = $name->plain;
- 	}
+        if ( UNIVERSAL::isa($name,'RDF::Base::Pred') )
+        {
+            $name = $name->plain;
+        }
 
- 	unless( $arc->pred->plain eq $name )
- 	{
- 	    return RDF::Base::List->new_empty();
- 	}
+        unless( $arc->pred->plain eq $name )
+        {
+            return RDF::Base::List->new_empty();
+        }
 
- 	unless( $arc->meets_arclim($arclim) )
- 	{
- 	    return RDF::Base::List->new_empty();
- 	}
+        unless( $arc->meets_arclim($arclim) )
+        {
+            return RDF::Base::List->new_empty();
+        }
 
 
- 	my $vals = RDF::Base::List->new([$arc->subj]);
+        my $vals = RDF::Base::List->new([$arc->subj]);
 
- 	if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
- 	{
- 	    $vals = $vals->find($proplim, $args);
- 	}
+        if ( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+        {
+            $vals = $vals->find($proplim, $args);
+        }
 
- 	return $vals;
+        return $vals;
     }
     else
     {
- 	return $node->revlist_preds( $proplim, $args );
+        return $node->revlist_preds( $proplim, $args );
     }
 }
 
@@ -1184,7 +1184,7 @@ sub revlist_preds
     my $arc = $_[0]->lit_revarc;
     unless( $arc )
     {
- 	return RDF::Base::Pred::List->new_empty();
+        return RDF::Base::Pred::List->new_empty();
     }
 
     my $pred = $arc->pred;
@@ -1243,30 +1243,30 @@ sub has_value
 
     #debug sprintf "Checking if %s  --%s--> %s", $lit, $pred_name, $value;
 
-    if( $pred_name eq 'is' ) # checking valtype for implicit is arcs
+    if ( $pred_name eq 'is' )  # checking valtype for implicit is arcs
     {
-	my $valtype = $lit->this_valtype;
-	unless( UNIVERSAL::isa $value, 'RDF::Base::Resource' )
-	{
-	    $value = RDF::Base::Resource->get($value);
-	}
+        my $valtype = $lit->this_valtype;
+        unless( UNIVERSAL::isa $value, 'RDF::Base::Resource' )
+        {
+            $value = RDF::Base::Resource->get($value);
+        }
 
-	if( $valtype->equals( $value ) )
-	{
+        if ( $valtype->equals( $value ) )
+        {
 #	    debug "  matches valtype";
-	    return 1;
-	}
-	elsif( $valtype->scof( $value ) )
-	{
+            return 1;
+        }
+        elsif ( $valtype->scof( $value ) )
+        {
 #	    debug "  matches scof of valtype";
-	    return 1;
-	}
+            return 1;
+        }
     }
 
     unless( $pred_name eq 'value' )
     {
 #        debug "BACK TO has_value for lit node";
-	return $lit->node->has_value($preds, $args_in);
+        return $lit->node->has_value($preds, $args_in);
     }
 
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -1277,45 +1277,45 @@ sub has_value
     my $pred = RDF::Base::Pred->get( $pred_name );
 
     # Sub query
-    if( ref $value eq 'HASH' )
+    if ( ref $value eq 'HASH' )
     {
-	unless( $match eq 'eq' )
-	{
-	    confess "subquery not implemented for matchtype $match";
-	}
-	return 0;
+        unless( $match eq 'eq' )
+        {
+            confess "subquery not implemented for matchtype $match";
+        }
+        return 0;
     }
 
     # $value holds alternative values
-    elsif( ref $value eq 'ARRAY' )
+    elsif ( ref $value eq 'ARRAY' )
     {
-	foreach my $val (@$value )
-	{
-	    my $res = $lit->has_value({$pred_name=>$val},  $args);
-	    return $res if $res;
-	}
-	return 0;
+        foreach my $val (@$value )
+        {
+            my $res = $lit->has_value({$pred_name=>$val},  $args);
+            return $res if $res;
+        }
+        return 0;
     }
 
-    if( $match eq 'eq' )
+    if ( $match eq 'eq' )
     {
-	return $lit->equals( $value, $args );
+        return $lit->equals( $value, $args );
     }
 
     my $val1 = $lit->plain;
     my $val2 = $value->plain;
 
-    if( $match eq 'begins' )
+    if ( $match eq 'begins' )
     {
-	return 1 if $val1 =~ /^\Q$val2/;
+        return 1 if $val1 =~ /^\Q$val2/;
     }
-    elsif( $match eq 'like' )
+    elsif ( $match eq 'like' )
     {
-	return 1 if $val1 =~ /\Q$val2/;
+        return 1 if $val1 =~ /\Q$val2/;
     }
     else
     {
-	confess "Matchtype $match not implemented";
+        confess "Matchtype $match not implemented";
     }
 }
 
@@ -1333,7 +1333,7 @@ sub arc_weight
     return undef unless $arc;
     return $arc->weight if $arc->weight;
 
-    if( my $vn = $arc->value_node )
+    if ( my $vn = $arc->value_node )
     {
         return $vn->first_prop('weight')->plain;
     }
@@ -1367,23 +1367,23 @@ sub revcount
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
- 	return 0;
+        return 0;
     }
 
-    if( ref $tmpl and ref $tmpl eq 'HASH' )
+    if ( ref $tmpl and ref $tmpl eq 'HASH' )
     {
- 	throw('action',"count( \%tmpl, ... ) not implemented");
+        throw('action',"count( \%tmpl, ... ) not implemented");
     }
 
     # Only handles pred nodes
     my $pred = RDF::Base::Pred->get_by_label( $tmpl );
 
-    if( $pred->equals( $arc->pred )  )
+    if ( $pred->equals( $arc->pred )  )
     {
- 	if( $arc->meets_arclim( $arclim ) )
- 	{
- 	    return 1;
- 	}
+        if ( $arc->meets_arclim( $arclim ) )
+        {
+            return 1;
+        }
     }
 
     return 0;
@@ -1444,32 +1444,32 @@ sub revarc_list
     my $arc = $node->lit_revarc;
     unless( $arc )
     {
- 	return RDF::Base::Arc::List->new_empty();
+        return RDF::Base::Arc::List->new_empty();
     }
 
-    if( $name )
+    if ( $name )
     {
- 	if( UNIVERSAL::isa($name,'RDF::Base::Pred') )
- 	{
- 	    $name = $name->plain;
- 	}
+        if ( UNIVERSAL::isa($name,'RDF::Base::Pred') )
+        {
+            $name = $name->plain;
+        }
 
- 	unless( $name eq $arc->pred->plain )
- 	{
- 	    return RDF::Base::Arc::List->new_empty();
- 	}
+        unless( $name eq $arc->pred->plain )
+        {
+            return RDF::Base::Arc::List->new_empty();
+        }
     }
 
     unless( $arc->meets_arclim($arclim) )
     {
- 	return RDF::Base::Arc::List->new_empty();
+        return RDF::Base::Arc::List->new_empty();
     }
 
     my $vals = RDF::Base::Arc::List->new([$arc]);
 
-    if( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
+    if ( $proplim and (ref $proplim eq 'HASH' ) and keys %$proplim )
     {
- 	$vals = $vals->find($proplim, $args);
+        $vals = $vals->find($proplim, $args);
     }
 
     return $vals;
@@ -1564,13 +1564,13 @@ sub vacuum_node
 
     foreach my $sc ($class, @{"${class}::ISA"})
     {
-	debug 2, "  Vacuum literal via $sc";
-	if( my $method = $sc->can("vacuum_facet") )
-	{
+        debug 2, "  Vacuum literal via $sc";
+        if ( my $method = $sc->can("vacuum_facet") )
+        {
             next if $methods{$method}++;
 #            debug "  found $method";
-	    &{$method}($n, @_);
-	}
+            &{$method}($n, @_);
+        }
     }
 
     return $n;
@@ -1644,7 +1644,7 @@ debugging.  This version of desig indludes the node id, if existing.
 
 =cut
 
-sub sysdesig  # The designation of obj, including node id
+sub sysdesig               # The designation of obj, including node id
 {
     my( $lit, $args_in ) = @_;
 
@@ -1655,9 +1655,9 @@ sub sysdesig  # The designation of obj, including node id
       if $lit eq 'RDF::Base::Literal::String';
     #unless( UNIVERSAL::isa $lit, 'RDF::Base::Literal' );
 
-    if( my $id = $lit->id )
+    if ( my $id = $lit->id )
     {
-	$out .= "$id: ";
+        $out .= "$id: ";
     }
 
     my $valtypename = $lit->this_valtype->desig;
@@ -1668,15 +1668,15 @@ sub sysdesig  # The designation of obj, including node id
 
     my $plain = $lit->plain;
 
-    if( defined $plain )
+    if ( defined $plain )
     {
-	my $value  = truncstring( shift->{'value'} );
-	$value =~ s/\n/\\n/g;
-	return $out . '"'.$value.'"';
+        my $value  = truncstring( shift->{'value'} );
+        $value =~ s/\n/\\n/g;
+        return $out . '"'.$value.'"';
     }
     else
     {
-	return $out . "undef";
+        return $out . "undef";
     }
 }
 
@@ -1726,25 +1726,25 @@ sub wdirc
     my $out = "";
 
     my $predname;
-    if( ref $pred )
+    if ( ref $pred )
     {
-	$predname = $pred->label;
+        $predname = $pred->label;
 
-	debug 2, "String wuirc for $predname";
-	debug 2, "$predname class is ". $pred->range->instance_class;
+        debug 2, "String wuirc for $predname";
+        debug 2, "$predname class is ". $pred->range->instance_class;
     }
     else
     {
-	$predname = $pred;
-	# Only handles pred nodes
-	$pred = RDF::Base::Pred->get_by_label($predname);
+        $predname = $pred;
+        # Only handles pred nodes
+        $pred = RDF::Base::Pred->get_by_label($predname);
     }
 
     my $arclist = $subj->arc_list($predname, undef, $args);
 
-    while( my $arc = $arclist->get_next_nos )
+    while ( my $arc = $arclist->get_next_nos )
     {
-	$out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+        $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
     }
 
     return $out;
@@ -1766,36 +1766,36 @@ sub update_by_query_arc
     my $pred = $props->{'pred'} || $arc->pred;
     my $res = $args->{'res'};
 
-    if( ref $value )
+    if ( ref $value )
     {
-	my $coltype = $pred->coltype;
-	die "This must be an object. But coltype is set to $coltype: $value";
+        my $coltype = $pred->coltype;
+        die "This must be an object. But coltype is set to $coltype: $value";
     }
-    elsif( length $value )
+    elsif ( length $value )
     {
-	# Give the valtype of the pred. We want to use the
-	# current valtype rather than the previous one that
-	# maight not be the same.  ... unless for value
-	# nodes. But take care of that in set_value()
+        # Give the valtype of the pred. We want to use the
+        # current valtype rather than the previous one that
+        # maight not be the same.  ... unless for value
+        # nodes. But take care of that in set_value()
 
-	my $valtype = $pred->valtype;
-	if( debug > 1 and $valtype->isa('RDF::Base::Literal::Class') )
-	{
-	    debug "arc is $arc->{id}";
-	    debug "valtype is ".$valtype->desig;
-	    debug "pred is ".$pred->desig;
-	    debug "setting value to $value";
-	}
+        my $valtype = $pred->valtype;
+        if ( debug > 1 and $valtype->isa('RDF::Base::Literal::Class') )
+        {
+            debug "arc is $arc->{id}";
+            debug "valtype is ".$valtype->desig;
+            debug "pred is ".$pred->desig;
+            debug "setting value to $value";
+        }
 
-	$arc = $arc->set_value( $value,
-				{
-				 %$args,
-				 valtype => $valtype,
-				});
+        $arc = $arc->set_value( $value,
+                                {
+                                 %$args,
+                                 valtype => $valtype,
+                                });
     }
     else
     {
-	$res->add_to_deathrow( $arc );
+        $res->add_to_deathrow( $arc );
     }
 
     return $arc;
