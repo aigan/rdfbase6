@@ -991,6 +991,53 @@ sub is_nonhuman
 
 ##############################################################################
 
+=head2 vacuum_facet
+
+=cut
+
+sub vacuum_facet
+{
+    my( $ea, $args ) = @_;
+
+    my $a = $ea->first_prop('ea_original', undef, $args);
+
+    unless( $a )
+    {
+        $ea->remove($args);
+        return $ea;
+    }
+
+    my $code_in = $a->address;
+    unless( $code_in )
+    {
+        $ea->remove($args);
+        return $ea;
+    }
+
+    my $code = lc $code_in;
+
+    $ea->update({code => $code}, $args);
+
+    my $nodes = $ea->find({
+                           code => $code,
+                           is => $C_email_address_holder,
+                          }, $args)->sorted('id');
+    my $node = $nodes->get_first_nos;
+    while ( my $enode = $nodes->get_next_nos )
+    {
+        $enode->merge_node($node,
+                           {
+                            %$args,
+                            move_literals => 1,
+                           });
+    }
+
+    return $node;
+}
+
+
+##############################################################################
+
 1;
 
 =head1 SEE ALSO
