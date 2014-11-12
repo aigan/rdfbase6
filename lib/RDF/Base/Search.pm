@@ -2694,20 +2694,20 @@ sub elements_nodes
                 $prio += 4;
             }
 
-            if( $negate )
+            if( $negate and  $match eq 'nlike' )
             {
-                if( $match eq 'ne' )
-                {
-                    $matchpart = '<>';
-                }
-                elsif( $match eq 'nlike' )
-                {
+#                if( $match eq 'ne' )
+#                {
+#                    $matchpart = '<>';
+#                }
+#                elsif( $match eq 'nlike' )
+#                {
                     $matchpart = "not like";
-                }
-                else
-                {
-                    die "define sql for $match";
-                }
+#                }
+#                else
+#                {
+#                    die "define sql for $match";
+#                }
 
                 $negate = 0;
             }
@@ -3087,20 +3087,20 @@ sub elements_props
 
             my $matchpart = matchpart( $match );
 
-            if( $negate )
+            if( $negate and $match eq 'nlike' )
             {
-                if( $match eq 'ne' )
-                {
-                    $matchpart = '<>';
-                }
-                elsif( $match eq 'nlike' )
-                {
+#                if( $match eq 'ne' )
+#                {
+#                    $matchpart = '<>';
+#                }
+#                elsif( $match eq 'nlike' )
+#                {
                     $matchpart = "not like";
-                }
-                else
-                {
-                    die "define sql for $match";
-                }
+#                }
+#                else
+#                {
+#                    die "define sql for $match";
+#                }
 
                 $negate = 0;
             }
