@@ -683,12 +683,13 @@ sub find_by_anything
             $valref ||= \$val;
         }
 
-        @new = $valtype->instance_class->parse( $valref,
-                                                {
-                                                 %$args,
-                                                 aclim => 'active',
-                                                }
-                                              );
+        @new = $valtype->instance_class->
+          parse_to_list( $valref,
+                         {
+                          %$args,
+                          aclim => 'active',
+                         }
+                       )->as_array;
     }
     #
     # 12. obj as obj id
@@ -717,7 +718,8 @@ Returns a L<RDF::Base::List> or L<RDF::Base::Resource>
 
 sub parse_to_list
 {
-    my( $class, $val_in, $args ) = @_;
+    my( $this, $val_in, $args ) = @_;
+    my $class = ref($this) || $this;
 
     my $val;
     if ( ref $val_in )
@@ -750,7 +752,8 @@ sub parse_to_list
     confess "INVALID search; not a label or constant"
       if $RDF::Base::IN_STARTUP; # for $C_resource
 
-    my $valtype = $args->{'valtype'} || $class->instance_class;
+    my $valtype = $args->{'valtype'}
+      ||= RDF::Base::Resource->get_by_label('resource');
 
     if ( $valtype->id == $C_resource->id )
     {
@@ -791,6 +794,7 @@ sub parse
         }
         elsif( $n->size < 1 )
         {
+            cluck "notfound";
             throw('notfound', "No nodes matches query (3)");
         }
     }
@@ -9251,6 +9255,7 @@ sub instance_class
 {
     # Used in startup.
 
+    cluck "Not a object" unless ref $_[0];
     if ( $_[0]->{'id'} == $ID )
     {
         return 'RDF::Base::Resource';
