@@ -19,6 +19,7 @@ use warnings;
 use Para::Frame::Utils qw( throw trim debug datadump );
 
 use RDF::Base::Utils qw( query_desig parse_query_props );
+use RDF::Base::Literal::Time;
 use RDF::Base::Search;
 
 =head1 DESCRIPTION
@@ -44,6 +45,13 @@ sub handler
     if ( my $arclim_in = delete $props->{'arclim'} )
     {
         $args->{'arclim'} = $arclim_in;
+    }
+
+    if ( my $aod_in = delete $props->{'arc_active_on_date'} )
+    {
+        my $aod = RDF::Base::Literal::Time->parse( $aod_in );
+        $args->{'arc_active_on_date'} = $aod;
+#        debug datadump($aod,1);
     }
 
 

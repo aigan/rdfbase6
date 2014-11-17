@@ -12,6 +12,4 @@
 <p>[% submit('Sök') %]
 Resultat per sida [% input('limit',50, tag_attr={size=5}) %]
 
-<h2>Exempel</h2>
-
 [% PROCESS rb_search_example.tt %]
