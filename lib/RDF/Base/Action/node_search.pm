@@ -41,7 +41,7 @@ sub handler
     my $props = parse_query_props( $query );
 
     my $args = {};
-    if( my $arclim_in = delete $props->{'arclim'} )
+    if ( my $arclim_in = delete $props->{'arclim'} )
     {
         $args->{'arclim'} = $arclim_in;
     }
@@ -60,14 +60,14 @@ sub handler
 #    debug datadump($search_col,2);
 
 
-    if( my $result_url = $req->q->param('search_result') )
+    if ( my $result_url = $req->q->param('search_result') )
     {
-	$search_col->result_url( $result_url );
+        $search_col->result_url( $result_url );
     }
 
-    if( my $form_url = $req->q->param('search_form') )
+    if ( my $form_url = $req->q->param('search_form') )
     {
-	$search_col->form_url( $form_url );
+        $search_col->form_url( $form_url );
     }
 
     return "";
