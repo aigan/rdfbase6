@@ -6988,9 +6988,16 @@ sub find_class
         elsif ( $classnames[0] ) # Single inheritance
         {
             my $classname = $classnames[0];
-            $package = "RDF::Base::Metaclass::$classname";
+            if( $classname eq 'RDF::Base::Pred' )
+            {
+                $package = $classname;
+            }
+            else
+            {
+                $package = "RDF::Base::Metaclass::$classname";
 #	    debug "Creating b package $package";
-            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+                @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            }
 #	    $valtype = $pmodules_sorted[0][1];
             $valtype = $RDF::Base::Constants::Label{'resource'};
         }
@@ -7829,7 +7836,7 @@ sub get_by_label
         {
             unless( UNIVERSAL::isa $obj, $class )
             {
-                confess "Constant $label is not a $class";
+                confess "Constant $label ($obj) is not a $class";
             }
 
             return $obj;
@@ -9282,11 +9289,19 @@ sub instance_class
             my $classname = $class_node->first_prop($p_code,undef,['active'])->plain
               or confess "No classname found for class $class_node->{id}";
 
-            require(package_to_module($classname));
 
-            $package = "RDF::Base::Metaclass::$classname";
-            no strict "refs";
-            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            if( $classname eq 'RDF::Base::Pred' )
+            {
+                $package = $classname;
+            }
+            else
+            {
+                require(package_to_module($classname));
+                $package = "RDF::Base::Metaclass::$classname";
+                no strict "refs";
+                @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            }
+
             $RDF::Base::Cache::Class{ $key } = $package;
             $RDF::Base::Cache::Valtype{ $key } = $_[0];
 #	    debug "Setting_ic valtype for $key to $_[0]->{id}";
@@ -9558,9 +9573,23 @@ sub on_startup
         die "Failed to initiate resource constant";
     }
 
-    $RDF::Base::Constants::Label{'resource'} =
+    my $r = $RDF::Base::Constants::Label{'resource'} =
       $RDF::Base::Cache::Resource{ $ID } ||=
         RDF::Base::Resource->new($ID)->init();
+
+
+#    ### Built-in classes that should not be placed under
+#    ### RDF::Base::Metaclass
+#
+#    $sth->execute( 'predicate' );
+#    my $pred_id = $sth->fetchrow_array; # Store in GLOBAL id
+#    $sth->finish;
+#
+#    $RDF::Base::Cache::Class{ $pred_id } = 'RDF::Base::Pred';
+#    $RDF::Base::Cache::Valtype{ $pred_id } = $r;
+#
+
+
 }
 
 
