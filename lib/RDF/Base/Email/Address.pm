@@ -100,6 +100,9 @@ sub new
     # supposed to be unique, we can cache the keys here, in order to
     # avoid duplicates.
     #
+    # But that cache must be purged in case of rollbacks. That is done
+    # in /rollback
+    #
     my $an = $EA_CACHE{$code};
 
     unless( $an )
@@ -1056,6 +1059,18 @@ sub vacuum_facet
     }
 
     return $EA_CACHE{$code} = $node;
+}
+
+
+##############################################################################
+
+=head2 rollback
+
+=cut
+
+sub rollback
+{
+    %EA_CACHE = ();
 }
 
 

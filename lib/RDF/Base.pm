@@ -116,6 +116,7 @@ sub init
 			  {
 			      RDF::Base::Resource->rollback();
 			      RDF::Base::Arc->rollback();
+                  RDF::Base::Email::Address->rollback();
 			  });
 
     Para::Frame->add_hook('done', \&on_done);
