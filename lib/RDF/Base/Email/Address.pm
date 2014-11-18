@@ -123,6 +123,10 @@ sub new
         $an->update({ea_original => $a}, $args);
         $an->update({name => $a->name}, $args);
     }
+    elsif( not $an->first_prop('ea_original') )
+    {
+        $an->update({ea_original => $a}, $args);
+    }
 
 #    cluck "Name changed to ".$a->name if $a->name;
 #    cluck "Created ".$an->sysdesig;
@@ -531,10 +535,10 @@ sub shortdesig
 
 ##############################################################################
 
-#sub sysdesig
-#{
-#    return shift->first_prop('ea_original')->sysdesig();
-#}
+sub sysdesig
+{
+    return $_[0]->id . ': '. $_[0]->code->plain;
+}
 
 ##############################################################################
 
