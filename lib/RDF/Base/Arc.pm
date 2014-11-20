@@ -2708,10 +2708,17 @@ node.
 sub coltype
 {
     # The arc value may be undefined.
-    # Assume that all valtypes not in the COLTYPE hash are objs
+    # Assume that all valtypes not in the COLTYPE hash are objs.
 
-#    debug "Getting coltype for $_[0]->{id}";
-    return RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj( $_[0]->{'valtype'} );
+    my $valtype = $_[0]->{'valtype'};
+
+    # Removal arcs has undef valtypes.
+    unless( $valtype )
+    {
+#        debug "Getting coltype for $_[0]->{id} with undef valtype";
+        return  $_[0]->pred->coltype;
+    }
+    return RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj( $valtype );
 }
 
 
@@ -2938,7 +2945,7 @@ sub vacuum_facet
 
     my $DEBUG = 0;
 
-    return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
+#    return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig if $DEBUG;
 
     $arc->remove_duplicates( $args );

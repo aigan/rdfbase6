@@ -215,11 +215,7 @@ sub valtype
 
   $p->objtype()
 
-Returns true if the L</coltype> the value is 'obj'.  This will not
-return true if the real value is a literal resource, unless the
-literal resource has a value that is a node.
-
-Calls L</coltype>.
+Returns true if the range of the predicate is a type of resource.
 
 Returns: 1 or 0
 

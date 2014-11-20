@@ -3543,7 +3543,7 @@ sub sysdesig
 {
     my( $node, $args ) = @_;
 
-    my $desig = $node->desig( $args );
+    my $desig = $node->label || $node->desig( $args );
 
 #    debug "Sysdesig for $node->{id}: $desig";
 
