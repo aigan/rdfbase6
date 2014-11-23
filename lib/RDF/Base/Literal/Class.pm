@@ -335,7 +335,7 @@ sub instance_class
             }
         }
 
-        if ( $id == $C_literal->id )
+        if ( $id == $RDF::Base::Literal::ID )
         {
             # Should be a value literal
             $classname = "RDF::Base::Resource";

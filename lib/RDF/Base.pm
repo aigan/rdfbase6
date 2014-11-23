@@ -41,7 +41,7 @@ use RDF::Base::Plugins;
 use IMAP::BodyStructure 1.02;
 
 
-our $VERSION = "6.70";
+our $VERSION = "6.71";
 
 
 =head1 NAME
@@ -202,6 +202,7 @@ sub init_on_startup
 
     RDF::Base::Resource->on_startup();
 #    warn "init_on_startup 2\n";
+    RDF::Base::Literal->on_startup();
     RDF::Base::Literal::Class->on_startup();
 #    warn "init_on_startup 3\n";
     RDF::Base::Constants->on_startup();

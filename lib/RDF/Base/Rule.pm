@@ -57,7 +57,7 @@ Inherits from L<RDF::Base::Resource>.
 
 sub on_configure
 {
-#    warn "  ----------> Initializing \%Rules\n";
+#    cluck "  ----------> Initializing \%Rules\n";
 
     %Rules = ();
 

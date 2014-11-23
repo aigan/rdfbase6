@@ -97,6 +97,10 @@ sub on_startup
 {
     my( $class ) = @_;
 
+    debug "Initiating key nodes";
+    $class->get('class')->initiate_rel;
+
+
     debug "Initiating constants";
 
     eval
@@ -108,6 +112,12 @@ sub on_startup
             my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
             *{$export->[0]} = \ $obj;
         }
+
+#        while( my $node = shift @RDF::Base::Resource::STARTUP_NODES )
+#        {
+#            debug "prosponed init of ".$node->{id};
+#            $node->first_bless->init;
+#        }
     };
     if ( $@ )
     {
@@ -115,8 +125,8 @@ sub on_startup
         debug "Continuing without constants";
     }
 
-    debug "Initiating key nodes";
-    $class->get('class')->initiate_rel;
+#    debug "Initiating key nodes";
+#    $class->get('class')->initiate_rel;
 }
 
 

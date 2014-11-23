@@ -1333,6 +1333,65 @@ sub upgrade_db
     }
 
 
+    if( $ver < 10 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        my $access = $R->find_set({label => 'acl_access'},$args)
+          ->update({
+                    is => $C->get('class'),
+                    has_cyc_id => 'AccessingAnIBT',
+                    admin_comment => "An action by which an agent accesses the content of some instance(s) of InformationBearingThing. Cyc differs between FilePermission for the specific permission types and FileOperation for the activities those permissions allows. This class denotes the activity rather than the actual permission type. See http://www.w3.org/wiki/WebAccessControl",
+                   },$args);
+
+        $R->find_set({label => 'acl_append'},$args)
+          ->update({
+                    scof => $access,
+                    admin_comment => "Append accesses are specific write access which only add information, and do not remove information.
+For text files, for example, append access allows bytes to be added onto the end of the file.
+For RDF graphs, Append access allows adds triples to the graph but does not remove any.
+Append access is useful for dropbox functionality.
+Dropbox can be used for link notification, which the information added is a notification that a some link has been made elsewhere relevant to the given resource.
+http://www.w3.org/ns/auth/acl#Append",
+                   },$args);
+
+        $R->find_set({label => 'acl_control'},$args)
+          ->update({
+                    scof => $access,
+                    admin_comment => "Allows read/write access to the ACL for the resource(s). Might be better implemented by specifying access to the node talking about the access of the resource.
+http://www.w3.org/ns/auth/acl#Control",
+                   },$args);
+
+        $R->find_set({label => 'acl_read'},$args)
+          ->update({
+                    scof => $access,
+                    admin_comment => "The class of read operations.
+http://www.w3.org/ns/auth/acl#Read",
+                   },$args);
+
+        $R->find_set({label => 'acl_write'},$args)
+          ->update({
+                    scof => $access,
+                    admin_comment => "The class of write operations.
+http://www.w3.org/ns/auth/acl#Write",
+                   },$args);
+
+
+        my $chbpm = 'class_handled_by_perl_module';
+        my $class_module =
+          $R->find_set({
+                        code => 'RDF::Base::Class',
+                        is   => 'class_perl_module',
+                       }, $args);
+        $C->get('class')->update({ $chbpm => $class_module }, $args);
+
+
+#        $rb->update({ has_version => 10 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+
 
 
 

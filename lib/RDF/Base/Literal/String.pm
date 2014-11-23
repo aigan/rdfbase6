@@ -410,6 +410,10 @@ sub syskey
 {
     if ( defined $_[0]->{'value'} )
     {
+        # There might not be any wide characters even if the utf8 flag
+        # is turned on. Threfore it might be exactly the same string
+        # as a non-utf8-flagged string.
+
         if ( utf8::is_utf8( $_[0]->{'value'} ) )
         {
             my $encoded = $_[0]->{'value'};
@@ -418,7 +422,7 @@ sub syskey
 #            my $val = sprintf("lit:utf8:%s", md5_base64($encoded));
 #            debug "syskey $val";
 #            return $val;
-            return sprintf("lit:utf8:%s", md5_base64($encoded));
+            return sprintf("lit:%s", md5_base64($encoded));
         }
 #        my $val = sprintf("lit:%s", md5_base64($_[0]->{'value'}));
 #        debug "syskey $val";

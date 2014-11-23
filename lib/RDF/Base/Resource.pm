@@ -78,6 +78,7 @@ our %UNSAVED;                   # The node table
 our %CHILD_CHANGED;             # For triggering on_child_changed
 our %TRANSACTION;               # The arc table
 our $ID;
+#our @STARTUP_NODES;
 
 
 =head1 DESCRIPTION
@@ -279,6 +280,13 @@ sub get
     {
         $node->initiate_rel;
     }
+
+#    if( $RDF::Base::IN_STARTUP )
+#    {
+#        debug "first_bless for $id prosponed";
+#        push @STARTUP_NODES, $node;
+#        return $node;
+#    }
 
     $node->first_bless(undef,$args_in->{'class_clue'})->init();
 
@@ -6854,7 +6862,7 @@ sub find_class
         {
             # This pre-caching may be a litle slower in some cases,
             # but seems to be a litle faster over all
-            $class->initiate_rel; ### PRE-CACH!
+            $class->initiate_rel; ### PRE-CACHE!
         }
 
         my $p_chbpm = RDF::Base::Pred->
@@ -6958,7 +6966,7 @@ sub find_class
             my $classname = $class->first_prop($p_code,undef,['active'])->plain;
             unless( $classname )
             {
-                debug datadump($class,2);
+                debug datadump($class,3);
                 confess "No classname found for class $class->{id}";
             }
 

@@ -1006,8 +1006,6 @@ sub replace
 
     # Replace value where it can be done
 
-#    Para::Frame::Logging->this_level(4);
-
 
     my( %add, %del, %del_pred );
 
