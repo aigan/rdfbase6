@@ -790,6 +790,9 @@ sub modify
 
     $args ||= {};
 
+
+    $search->{args_in} = $args;
+
     my $private = $args->{'private'} || 0;
 
     if ( my $arclim_in = $args->{'arclim'} )

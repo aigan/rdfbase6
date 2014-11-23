@@ -87,7 +87,8 @@ sub on_startup
 
         $COLTYPE_valtype2name{$colid} = $colname;
     }
-    $COLTYPE_valtype2name{5} = 'obj';
+
+    $COLTYPE_valtype2name{$RDF::Base::Constants::Label{'resource'}{id}} = 'obj';
 
     %COLTYPE_name2num = reverse %COLTYPE_num2name;
 
@@ -403,7 +404,8 @@ sub coltype_by_valtype_id
 
 RDF::Base::Literal::Class->coltype_by_valtype_id( $id )
 
-Defaults to 'obj' for unregistred valtypes
+Defaults to 'obj' for unregistred valtypes. Use
+L</coltype_by_valtype_id> if there souldn't be an undefined value.
 
 Returns: a coltype as a string
 

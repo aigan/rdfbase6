@@ -98,11 +98,11 @@ sub parse
     }
     elsif ( UNIVERSAL::isa $val_in, "RDF::Base::Email::Address" )
     {
-        $parse_val = $val_in->original;
+        $parse_val = $val_in->original || $val_in->address;
     }
     elsif ( UNIVERSAL::isa $val_in, "Para::Frame::Email::Address" )
     {
-        $parse_val = $val_in->original;
+        $parse_val = $val_in->original || $val_in->address;
     }
     elsif ( UNIVERSAL::isa $val_in, "Mail::Address" )
     {

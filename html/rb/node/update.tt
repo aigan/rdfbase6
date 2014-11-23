@@ -139,6 +139,7 @@ END;
 [% END %]
 
 [% IF node.is_arc %]
+   <tr><td colspan="5" class="center">[% jump('Update arc', 'arc/update.tt',id=node.id) %]</td></tr>
    <tr>
       <td>[% jump('E', node.form_url ) %]</td>
       <td>subj</td>
@@ -153,11 +154,17 @@ END;
       <td>core</td>
       <td>-</td>
    </tr>
-   [% IF node.obj %]
+   [% IF node.objtype %]
       <tr>
          <td>[% jump('E', node.form_url ) %]</td>
          <td>obj</td>
-         <td>[% jump(node.obj.desig, me, id=node.obj.id) %]</td>
+         <td>
+           [% IF node.is_removal %]
+             undef
+           [% ELSE %]
+              [% jump(node.obj.desig, me, id=node.obj.id) %]
+           [% END %]
+         </td>
          <td>core</td>
          <td>-</td>
       </tr>

@@ -96,13 +96,13 @@ sub name
 {
     my( $pred, $args ) = @_;
 
-    if( $pred->has_pred('name',undef,$args) )
+    if ( $pred->has_pred('name',undef,$args) )
     {
-	return $pred->prop('name',undef,$args);
+        return $pred->prop('name',undef,$args);
     }
     else
     {
-	return new RDF::Base::Literal::String $pred->{'label'};
+        return new RDF::Base::Literal::String $pred->{'label'};
     }
 }
 
@@ -180,32 +180,32 @@ sub valtype
 {
     my( $pred ) = @_;
 
-    if( my $range_arcs = $pred->{'relarc'}{'range'} )
+    if ( my $range_arcs = $pred->{'relarc'}{'range'} )
     {
-	return $range_arcs->[0]{'value'}; # Optimization shortcut
+        return $range_arcs->[0]{'value'}; # Optimization shortcut
     }
 
-    if( my $range = $pred->first_prop('range') )
+    if ( my $range = $pred->first_prop('range') )
     {
 #	debug datadump($pred,3);
-	return $range;
+        return $range;
     }
     else
     {
-	my $coltype = $pred->coltype;
-	if( $coltype eq 'obj' )
-	{
-	    return RDF::Base::Constants->get('resource');
-	}
-	else
-	{
-	    unless( defined $coltype )
-	    {
-		die "Undefined coltype for pred ".datadump($pred,1);
-	    }
+        my $coltype = $pred->coltype;
+        if ( $coltype eq 'obj' )
+        {
+            return RDF::Base::Constants->get('resource');
+        }
+        else
+        {
+            unless( defined $coltype )
+            {
+                die "Undefined coltype for pred ".datadump($pred,1);
+            }
 
-	    return RDF::Base::Constants->get( $coltype );
-	}
+            return RDF::Base::Constants->get( $coltype );
+        }
     }
 }
 
@@ -215,11 +215,7 @@ sub valtype
 
   $p->objtype()
 
-Returns true if the L</coltype> the value is 'obj'.  This will not
-return true if the real value is a literal resource, unless the
-literal resource has a value that is a node.
-
-Calls L</coltype>.
+Returns true if the range of the predicate is a type of resource.
 
 Returns: 1 or 0
 
@@ -248,9 +244,9 @@ Returns: A scalar string
 
 sub coltype
 {
-    unless( $_[0]->{'coltype'} )
+    unless ( $_[0]->{'coltype'} )
     {
-	cluck "Pred ".$_[0]->sysdesig." is missing a coltype";
+        cluck "Pred ".$_[0]->sysdesig." is missing a coltype";
     }
 
     return RDF::Base::Literal::Class->
@@ -271,9 +267,9 @@ Returns: An integer as a scalar string
 
 sub coltype_id
 {
-    unless( $_[0]->{'coltype'} > 0 )
+    unless ( $_[0]->{'coltype'} > 0 )
     {
-	confess "Pred ".$_[0]->sysdesig." is missing a coltype";
+        confess "Pred ".$_[0]->sysdesig." is missing a coltype";
     }
 
     return $_[0]->{'coltype'};
@@ -287,9 +283,9 @@ sub coltype_id
 
 sub range_card_max_1
 {
-    if( my $rcm = $_[0]->first_prop('range_card_max')->plain )
+    if ( my $rcm = $_[0]->first_prop('range_card_max')->plain )
     {
-        if( $rcm == 1 )
+        if ( $rcm == 1 )
         {
             return 1;
         }
@@ -305,9 +301,9 @@ sub range_card_max_1
 
 sub domain_card_max_1
 {
-    if( my $dcm = $_[0]->first_prop('domain_card_max')->plain )
+    if ( my $dcm = $_[0]->first_prop('domain_card_max')->plain )
     {
-        if( $dcm == 1 )
+        if ( $dcm == 1 )
         {
             return 1;
         }
@@ -323,9 +319,9 @@ sub domain_card_max_1
 
 sub range_card_min_1
 {
-    if( my $rcm = $_[0]->first_prop('range_card_min')->plain )
+    if ( my $rcm = $_[0]->first_prop('range_card_min')->plain )
     {
-        if( $rcm == 1 )
+        if ( $rcm == 1 )
         {
             return 1;
         }
@@ -341,9 +337,9 @@ sub range_card_min_1
 
 sub domain_card_min_1
 {
-    if( my $dcm = $_[0]->first_prop('domain_card_min')->plain )
+    if ( my $dcm = $_[0]->first_prop('domain_card_min')->plain )
     {
-        if( $dcm == 1 )
+        if ( $dcm == 1 )
         {
             return 1;
         }
@@ -386,24 +382,24 @@ sub find_by_anything
 
 #    warn "New pred $label\n"; ### DEBUG
 
-    if( ref $label )
+    if ( ref $label )
     {
-	if( UNIVERSAL::isa( $label, 'RDF::Base::Literal') )
-	{
-	    $label = $label->literal;
-	}
-	elsif( UNIVERSAL::isa( $label, 'RDF::Base::Pred') )
-	{
-	    return RDF::Base::List->new([$label]);
-	}
-	else
-	{
-	    if( UNIVERSAL::isa( $label, 'RDF::Base::Resource') )
-	    {
-		confess "Pred not a pred: ".$label->sysdesig;
-	    }
-	    confess "Pred label format $label not supported";
-	}
+        if ( UNIVERSAL::isa( $label, 'RDF::Base::Literal') )
+        {
+            $label = $label->literal;
+        }
+        elsif ( UNIVERSAL::isa( $label, 'RDF::Base::Pred') )
+        {
+            return RDF::Base::List->new([$label]);
+        }
+        else
+        {
+            if ( UNIVERSAL::isa( $label, 'RDF::Base::Resource') )
+            {
+                confess "Pred not a pred: ".$label->sysdesig;
+            }
+            confess "Pred label format $label not supported";
+        }
     }
 
     $label or confess "get_by_anything got empty label";
@@ -411,66 +407,66 @@ sub find_by_anything
 
     # TODO: Insert special predicates subj, pred, obj, coltype
 
-    if( $label =~ /^-\d+$/ )
+    if ( $label =~ /^-\d+$/ )
     {
-	$label = $special_label->{$label};
+        $label = $special_label->{$label};
     }
 
 
     # Special properties
-    if( $label =~ /^(id|score|random|direct|distance|arc_weight|size)$/ )
+    if ( $label =~ /^(id|score|random|direct|distance|arc_weight|size)$/ )
     {
-	push @new, $class->get_by_node_rec({
-					    label   => $1,
-					    node    => $special_id->{$1},
-					    pred_coltype => 2, # valfloat
-					   });
+        push @new, $class->get_by_node_rec({
+                                            label   => $1,
+                                            node    => $special_id->{$1},
+                                            pred_coltype => 2, # valfloat
+                                           });
     }
-    elsif( $label =~ /^(desig|id_alphanum|loc|plain|label)$/ )
+    elsif ( $label =~ /^(desig|id_alphanum|loc|plain|label)$/ )
     {
-	push @new, $class->get_by_node_rec({
-					    label   => $1,
-					    node    => $special_id->{$1},
-					    pred_coltype => 5, # valtext
-					   });
+        push @new, $class->get_by_node_rec({
+                                            label   => $1,
+                                            node    => $special_id->{$1},
+                                            pred_coltype => 5, # valtext
+                                           });
     }
-    elsif( $label =~ /^(created|updated)$/ )
+    elsif ( $label =~ /^(created|updated)$/ )
     {
-	push @new, $class->get_by_node_rec({
-					    label   => $1,
-					    node    => $special_id->{$1},
-					    pred_coltype => 4, # valdate
-					   });
+        push @new, $class->get_by_node_rec({
+                                            label   => $1,
+                                            node    => $special_id->{$1},
+                                            pred_coltype => 4, # valdate
+                                           });
     }
-    elsif( $label =~ /^(owned_by|read_access|write_access|created_by|updated_by|subj|pred|obj)$/ )
+    elsif ( $label =~ /^(owned_by|read_access|write_access|created_by|updated_by|subj|pred|obj)$/ )
     {
-	push @new, $class->get_by_node_rec({
-					    label   => $1,
-					    node    => $special_id->{$1},
-					    pred_coltype => 1, # obj
-					   });
+        push @new, $class->get_by_node_rec({
+                                            label   => $1,
+                                            node    => $special_id->{$1},
+                                            pred_coltype => 1, # obj
+                                           });
     }
-    elsif( $label =~ /^\d+$/ )
+    elsif ( $label =~ /^\d+$/ )
     {
-	# Check that this is a pred is done in init()
-	push @new, $this->get($label);
+        # Check that this is a pred is done in init()
+        push @new, $this->get($label);
     }
-    elsif( ref $label )
+    elsif ( ref $label )
     {
-	my $list = $this->SUPER::find_by_anything($label);
-	foreach my $pred ( $list->as_array )
-	{
-	    unless( $pred->is_pred )
-	    {
-		confess "$pred is not a predicate";
-	    }
-	}
-	return $list;
+        my $list = $this->SUPER::find_by_anything($label);
+        foreach my $pred ( $list->as_array )
+        {
+            unless( $pred->is_pred )
+            {
+                confess "$pred is not a predicate";
+            }
+        }
+        return $list;
     }
     else
     {
-	# Check that this is a pred is done in init()
-	push @new, $this->get_by_label($label, $args);
+        # Check that this is a pred is done in init()
+        push @new, $this->get_by_label($label, $args);
     }
 
     return RDF::Base::List->new(\@new);
@@ -492,9 +488,9 @@ sub init
 
     $pred->initiate_node($node_rec);
 
-    unless( $pred->{coltype} )
+    unless ( $pred->{coltype} )
     {
-	confess "Node $pred->{id} is not a predicate";
+        confess "Node $pred->{id} is not a predicate";
     }
 
 #    debug "Pred coltype of $pred->{label} is $pred->{coltype}";
@@ -534,7 +530,7 @@ sub on_bless
     # This initiates the node, if existing
     unless( $pred->label )
     {
-	confess "A pred must have a label";
+        confess "A pred must have a label";
     }
 
     $pred->on_new_range($args_in);
@@ -551,9 +547,9 @@ sub on_unbless
 {
     my( $pred, $class_new, $args_in ) = @_;
 
-    if( $pred->has_arcs )
+    if ( $pred->has_arcs )
     {
-	confess "You can't remove a pred used in arcs";
+        confess "You can't remove a pred used in arcs";
     }
 
     $pred->on_new_range($args_in);
@@ -572,19 +568,19 @@ sub on_arc_add
     # TODO: This will be called for the arc range in vacuum of the
     # pred. It's then not a new range, but vacuum of an old.
 
-    if( $pred_name eq 'range' )
+    if ( $pred_name eq 'range' )
     {
-	$pred->on_new_range($args_in);
+        $pred->on_new_range($args_in);
     }
 
-    if( $pred_name eq 'range_card_max' )
+    if ( $pred_name eq 'range_card_max' )
     {
-	$pred->on_new_range_card($args_in);
+        $pred->on_new_range_card($args_in);
     }
 
-    if( $pred_name eq 'range_card_min' )
+    if ( $pred_name eq 'range_card_min' )
     {
-	$pred->on_new_range_card($args_in);
+        $pred->on_new_range_card($args_in);
     }
 
 }
@@ -599,9 +595,9 @@ sub on_arc_del
 {
     my( $pred, $arc, $pred_name, $args_in ) = @_;
 
-    if( $pred_name eq 'range' )
+    if ( $pred_name eq 'range' )
     {
-	$pred->on_new_range($args_in);
+        $pred->on_new_range($args_in);
     }
 }
 
@@ -624,35 +620,35 @@ sub on_new_range_card
     my $rch = $pred->first_prop('range_card_max')->plain;
     my $rcl = $pred->first_prop('range_card_min')->plain || 0;
 
-    if( $rch or $rcl )
+    if ( $rch or $rcl )
     {
-	my $arcs = $pred->active_arcs();
-	my( $arc, $error ) = $arcs->get_first;
-	while(! $error )
-	{
-	    my $subj = $arc->subj;
-	    my $cnt = $subj->count($pred,'solid');
+        my $arcs = $pred->active_arcs();
+        my( $arc, $error ) = $arcs->get_first;
+        while (! $error )
+        {
+            my $subj = $arc->subj;
+            my $cnt = $subj->count($pred,'solid');
 
-	    if( $rch and ($cnt > $rch) )
-	    {
-		if( $args_in->{'force_range_card_max'} )
-		{
-		    $subj->arc_list( $pred, undef, $args_in )->sorted('id','desc')->slice($rch)->remove($args_in);
-		}
-		else
-		{
-		    throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
-		}
-	    }
+            if ( $rch and ($cnt > $rch) )
+            {
+                if ( $args_in->{'force_range_card_max'} )
+                {
+                    $subj->arc_list( $pred, undef, $args_in )->sorted('id','desc')->slice($rch)->remove($args_in);
+                }
+                else
+                {
+                    throw('validation', sprintf 'Cardinality check of arc failed. %s exceeds cardinality for pred %s, %d > %d', $subj->sysdesig, $pred->desig, $cnt, $rch )
+                }
+            }
 
-	    if( $cnt < $rcl )
-	    {
-		throw('validation', sprintf 'Cardinality check of arc failed. %s subseeds cardinality for pred %s, %d < %d', $subj->sysdesig, $pred->desig, $cnt, $rcl )
-	    }
-	}
-	continue
-	{
-	    ( $arc, $error ) = $arcs->get_next;
+            if ( $cnt < $rcl )
+            {
+                throw('validation', sprintf 'Cardinality check of arc failed. %s subseeds cardinality for pred %s, %d < %d', $subj->sysdesig, $pred->desig, $cnt, $rcl )
+            }
+        }
+        continue
+        {
+            ( $arc, $error ) = $arcs->get_next;
 
             unless( $arcs->count % 1000 )
             {
@@ -660,7 +656,8 @@ sub on_new_range_card
                                          $arcs->count, $arcs->size );
                 $Para::Frame::REQ->may_yield;
             }
-	};
+        }
+        ;
     }
 }
 
@@ -682,18 +679,18 @@ sub on_new_range
     my $C_resource = RDF::Base::Constants->get('resource');
 
     my( $range_new, $range_old );
-    if( my $range_arc = $pred->first_arc('range',undef,$args_in) )
+    if ( my $range_arc = $pred->first_arc('range',undef,$args_in) )
     {
-	$range_new = $range_arc->value;
-	if( my $prev_arc = $range_arc->previous_active_version )
-	{
-	    $range_old = $prev_arc->value;
-	}
+        $range_new = $range_arc->value;
+        if ( my $prev_arc = $range_arc->previous_active_version )
+        {
+            $range_old = $prev_arc->value;
+        }
 
-	unless( $range_new ) # A removal arc?
-	{
-	    $range_new = $C_resource;
-	}
+        unless( $range_new )    # A removal arc?
+        {
+            $range_new = $C_resource;
+        }
     }
 
     $range_new ||= $pred->valtype;
@@ -708,24 +705,24 @@ sub on_new_range
 
 
     # Updating coltype
-    if( $old_coltype_id != $range_new->coltype_id )
+    if ( $old_coltype_id != $range_new->coltype_id )
     {
-	$pred->set_coltype( $range_new->coltype_id, $args_in );
+        $pred->set_coltype( $range_new->coltype_id, $args_in );
     }
     $args_in->{'old_coltype_id'} = $old_coltype_id;
 
 
     # Range unchanged?
-    if( $range_old->equals($range_new) )
+    if ( $range_old->equals($range_new) )
     {
-	return;
+        return;
     }
 
 
     # was the old range more specific?
-    if( $range_old->scof($range_new) )
+    if ( $range_old->scof($range_new) )
     {
-	# This is (not) compatible with all existing arcs
+        # This is (not) compatible with all existing arcs
 #	return;
     }
 
@@ -758,9 +755,9 @@ sub vacuum_pred_arcs
     my( $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
-    if( $RDF::Base::VACUUM_ALL )
+    if ( $RDF::Base::VACUUM_ALL )
     {
-	return; # On the way...
+        return;                 # On the way...
     }
 
     my $arcs = $pred->active_arcs;
@@ -771,7 +768,7 @@ sub vacuum_pred_arcs
     my $remove_faulty = $args->{'remove_faulty'} || 0;
     my $old_coltype_id = $args->{old_coltype_id};
     my $old_coltype;
-    if( $old_coltype_id )
+    if ( $old_coltype_id )
     {
         $old_coltype = RDF::Base::Literal::Class->coltype_by_coltype_id($old_coltype_id);
     }
@@ -781,43 +778,44 @@ sub vacuum_pred_arcs
 
 #    RDF::Base::Arc->lock;
     my( $arc, $error ) = $arcs->get_first;
-    while(! $error )
+    while (! $error )
     {
-	eval
-	{
-	    $arc->vacuum_node( $args );
+        eval
+        {
+            $arc->vacuum_node( $args );
             my $coltype = $arc->coltype;
             my $val = $arc->value;
-            if( $old_coltype and $old_coltype ne $coltype )
+            if ( $old_coltype and $old_coltype ne $coltype )
             {
                 $sth->execute($arc->id);
                 my( $val ) = $sth->fetchrow_array();
-                if( $val )
+                if ( $val )
                 {
                     $arc->set_value($val, $args);
                 }
             }
-	};
-	if( my $err = catch(['validation']) )
-	{
-	    debug 1, $err->as_string;
-	    if( $remove_faulty )
-	    {
-		$arc->remove({'activate_new_arcs'=>1});
-	    }
-	}
+        };
+        if ( my $err = catch(['validation']) )
+        {
+            debug 1, $err->as_string;
+            if ( $remove_faulty )
+            {
+                $arc->remove({'activate_new_arcs'=>1});
+            }
+        }
     }
     continue
     {
         unless( $arcs->count % 1000 )
-	{
-	    $Para::Frame::REQ->note( sprintf "Vacuumed pred %s arc %6d of %6d",
+        {
+            $Para::Frame::REQ->note( sprintf "Vacuumed pred %s arc %6d of %6d",
                                      $pred->desig, $arcs->count, $arcs->size );
-	    $Para::Frame::REQ->may_yield;
-	}
+            $Para::Frame::REQ->may_yield;
+        }
 
-	( $arc, $error ) = $arcs->get_next;
-    };
+        ( $arc, $error ) = $arcs->get_next;
+    }
+    ;
 #    RDF::Base::Arc->unlock;
 
     return;
@@ -843,44 +841,44 @@ sub set_coltype
 #    debug "Set coltype for pred ".$pred->sysdesig. " ".refaddr($pred);
 #    debug "Set coltype for pred ".refaddr($pred);
 
-    unless( $pred->{'label'} )
+    unless ( $pred->{'label'} )
     {
-	debug datadump($pred,2);
-	confess "Has this been initiated as a pred?!";
+        debug datadump($pred,2);
+        confess "Has this been initiated as a pred?!";
     }
 #    $pred->initiate_node;
 
     my $coltype_old_id = $pred->{'coltype'} || 0;
     $coltype_new_id ||= 0;
 
-    if( $coltype_new_id !~ /^\d+$/ )
+    if ( $coltype_new_id !~ /^\d+$/ )
     {
-	$coltype_new_id = RDF::Base::Literal::Class->
-	  coltype_id_by_coltype( $coltype_new_id );
+        $coltype_new_id = RDF::Base::Literal::Class->
+          coltype_id_by_coltype( $coltype_new_id );
     }
 
-    if( $coltype_old_id != $coltype_new_id )
+    if ( $coltype_old_id != $coltype_new_id )
     {
-	if( my $range = $pred->first_prop('range',undef,$args) )
-	{
-	    if( $range->coltype_id != $coltype_new_id )
-	    {
-		confess "Caller has to set the range first";
-	    }
-	}
+        if ( my $range = $pred->first_prop('range',undef,$args) )
+        {
+            if ( $range->coltype_id != $coltype_new_id )
+            {
+                confess "Caller has to set the range first";
+            }
+        }
 
-	my $pred_id = $pred->id;
+        my $pred_id = $pred->id;
 
-	debug "Pred $pred_id coltype set to '$coltype_new_id'";
-	$pred->{'coltype'} = $coltype_new_id;
-	$pred->mark_updated;
-	$res->changes_add();
+        debug "Pred $pred_id coltype set to '$coltype_new_id'";
+        $pred->{'coltype'} = $coltype_new_id;
+        $pred->mark_updated;
+        $res->changes_add();
 
-	if( $coltype_old_id )
-	{
-	    debug "Changing coltype id from $coltype_old_id to $coltype_new_id!!!";
-	    debug "EXISTING ARCS MUST BE VACUUMED";
-	}
+        if ( $coltype_old_id )
+        {
+            debug "Changing coltype id from $coltype_old_id to $coltype_new_id!!!";
+            debug "EXISTING ARCS MUST BE VACUUMED";
+        }
     }
 
     return $coltype_new_id;
@@ -1013,9 +1011,9 @@ sub active_arcs
 
     my @list;
     my $i=0;
-    while( my $rec = $sth->fetchrow_hashref )
+    while ( my $rec = $sth->fetchrow_hashref )
     {
-	push @list, $rec;
+        push @list, $rec;
     }
     $sth->finish;
 

@@ -100,6 +100,9 @@ sub new
     # supposed to be unique, we can cache the keys here, in order to
     # avoid duplicates.
     #
+    # But that cache must be purged in case of rollbacks. That is done
+    # in /rollback
+    #
     my $an = $EA_CACHE{$code};
 
     unless( $an )
@@ -122,6 +125,10 @@ sub new
     {
         $an->update({ea_original => $a}, $args);
         $an->update({name => $a->name}, $args);
+    }
+    elsif( not $an->first_prop('ea_original') )
+    {
+        $an->update({ea_original => $a}, $args);
     }
 
 #    cluck "Name changed to ".$a->name if $a->name;
@@ -531,10 +538,10 @@ sub shortdesig
 
 ##############################################################################
 
-#sub sysdesig
-#{
-#    return shift->first_prop('ea_original')->sysdesig();
-#}
+sub sysdesig
+{
+    return $_[0]->id . ': '. $_[0]->code->plain;
+}
 
 ##############################################################################
 
@@ -1052,6 +1059,18 @@ sub vacuum_facet
     }
 
     return $EA_CACHE{$code} = $node;
+}
+
+
+##############################################################################
+
+=head2 rollback
+
+=cut
+
+sub rollback
+{
+    %EA_CACHE = ();
 }
 
 
