@@ -33,19 +33,19 @@ use RDF::Base::Resource;
 use RDF::Base::Utils qw( is_undef parse_propargs );
 
 our %COLTYPE_num2name =
-(
- 1 => 'obj',
- 2 => 'valfloat',
- 3 => 'valbin',
- 4 => 'valdate',
- 5 => 'valtext',
-);
+  (
+   1 => 'obj',
+   2 => 'valfloat',
+   3 => 'valbin',
+   4 => 'valdate',
+   5 => 'valtext',
+  );
 
 our %COLTYPE_name2num;
 
-our %COLTYPE_valtype2name; # For bootstrapping
+our %COLTYPE_valtype2name;      # For bootstrapping
 
-our $ID; # Node id (used in RDF::Base::Resource)
+our $ID;                       # Node id (used in RDF::Base::Resource)
 
 
 =head1 DESCRIPTION
@@ -72,20 +72,20 @@ sub on_startup
     my $sth_child = $dbh->prepare("select subj from arc where pred=2 and obj=?") or die;
     foreach my $colname (qw(valdate valfloat valtext valbin))
     {
-	$sth_label->execute($colname) or die "could not get constant $colname";
-	my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
-	$sth_label->finish;
+        $sth_label->execute($colname) or die "could not get constant $colname";
+        my( $colid ) = $sth_label->fetchrow_array or confess "could not get constant $colname";
+        $sth_label->finish;
 
 #	debug "Caching colname $colname";
-	$sth_child->execute($colid) or die;
-	while(my( $nid ) = $sth_child->fetchrow_array)
-	{
-	    $COLTYPE_valtype2name{$nid} = $colname;
+        $sth_child->execute($colid) or die;
+        while (my( $nid ) = $sth_child->fetchrow_array)
+        {
+            $COLTYPE_valtype2name{$nid} = $colname;
 #	    debug "Valtype $nid = $colname";
-	}
-	$sth_child->finish;
+        }
+        $sth_child->finish;
 
-	$COLTYPE_valtype2name{$colid} = $colname;
+        $COLTYPE_valtype2name{$colid} = $colname;
     }
     $COLTYPE_valtype2name{5} = 'obj';
 
@@ -102,10 +102,10 @@ sub on_startup
 
     unless( $ID )
     {
-	die "Failed to initiate literal_class constant";
+        die "Failed to initiate literal_class constant";
 
 
-    #################### CREATION
+        #################### CREATION
 #	my( $args, $arclim, $res ) = parse_propargs('auto');
 #	my $req = Para::Frame::Request->new_bgrequest();
 #	$req->user->set_default_propargs({activate_new_arcs => 1 });
@@ -119,7 +119,7 @@ sub on_startup
 
     $RDF::Base::Constants::Label{'literal_class'} =
       $RDF::Base::Cache::Resource{ $ID } ||=
-	RDF::Base::Resource->new($ID)->init();
+        RDF::Base::Resource->new($ID)->init();
 }
 
 
@@ -135,53 +135,53 @@ sub set_valtype2name
 
     my $scofs = $node->list('scof');
     my $found = 0;
-    while( my $parent = $scofs->get_next_nos )
+    while ( my $parent = $scofs->get_next_nos )
     {
-	my $label = $parent->label;
-	next unless $label;
+        my $label = $parent->label;
+        next unless $label;
 
-	if( $COLTYPE_name2num{$label} ) #not expecting 6
-	{
-	    $node->{'lit_coltype'} =
-	      $COLTYPE_valtype2name{ $node->id } = $label;
-	    if( debug )
-	    {
-		debug sprintf "Adding valtype %d -> %s in coltype cache",
-		  $node->id, $label;
-	    }
-	    $found ++;
-	    last;
-	}
+        if ( $COLTYPE_name2num{$label} ) #not expecting 6
+        {
+            $node->{'lit_coltype'} =
+              $COLTYPE_valtype2name{ $node->id } = $label;
+            if ( debug )
+            {
+                debug sprintf "Adding valtype %d -> %s in coltype cache",
+                  $node->id, $label;
+            }
+            $found ++;
+            last;
+        }
     }
 
     unless( $found )
     {
-	if( my $label = $node->label )
-	{
-	    if( $COLTYPE_name2num{$label} )
-	    {
-		$node->{'lit_coltype'} =
-		  $COLTYPE_valtype2name{ $node->id } = $label;
-		if( debug )
-		{
-		    debug sprintf "Adding valtype %d -> %s in coltype cache",
-		      $node->id, $label;
-		}
-		$found ++;
-	    }
-	}
+        if ( my $label = $node->label )
+        {
+            if ( $COLTYPE_name2num{$label} )
+            {
+                $node->{'lit_coltype'} =
+                  $COLTYPE_valtype2name{ $node->id } = $label;
+                if ( debug )
+                {
+                    debug sprintf "Adding valtype %d -> %s in coltype cache",
+                      $node->id, $label;
+                }
+                $found ++;
+            }
+        }
     }
 
     unless( $found )
     {
-	my $nid = $node->id;
-	if( $COLTYPE_valtype2name{ $nid } )
-	{
-	    debug sprintf "Removing valtype %d -> %s in coltype cache",
-	      $node->id, $COLTYPE_valtype2name{ $nid };
-	    delete $COLTYPE_valtype2name{ $nid };
-	}
-	delete $node->{'lit_coltype'};
+        my $nid = $node->id;
+        if ( $COLTYPE_valtype2name{ $nid } )
+        {
+            debug sprintf "Removing valtype %d -> %s in coltype cache",
+              $node->id, $COLTYPE_valtype2name{ $nid };
+            delete $COLTYPE_valtype2name{ $nid };
+        }
+        delete $node->{'lit_coltype'};
     }
 }
 
@@ -222,9 +222,9 @@ sub on_arc_add
 {
     my( $node, $arc, $pred_name, $args_in ) = @_;
 
-    if( $pred_name eq 'scof' )
+    if ( $pred_name eq 'scof' )
     {
-	$node->set_valtype2name();
+        $node->set_valtype2name();
     }
 }
 
@@ -239,9 +239,9 @@ sub on_arc_del
 {
     my( $node, $arc, $pred_name, $args_in ) = @_;
 
-    if( $pred_name eq 'scof' )
+    if ( $pred_name eq 'scof' )
     {
-	$node->set_valtype2name();
+        $node->set_valtype2name();
     }
 }
 
@@ -262,10 +262,10 @@ Will not return C<obj>
 sub coltype
 {
     return(
-	   ( $_[0]->{'lit_coltype'}
-	     ||= $COLTYPE_valtype2name{ $_[0]->id } )
-	   || confess("coltype missing for $_[0]->{id}")
-	  );
+           ( $_[0]->{'lit_coltype'}
+             ||= $COLTYPE_valtype2name{ $_[0]->id } )
+           || confess("coltype missing for $_[0]->{id}")
+          );
 }
 
 
@@ -316,57 +316,57 @@ sub instance_class
     {
 #	debug "Getting instance class for $id";
 
-	if( my $class = $node->first_prop('class_handled_by_perl_module') )
-	{
-	    eval
-	    {
-		$classname = $class->first_prop('code')->plain
-		  or confess "No classname found for class $class->{id}";
-		require(package_to_module($classname));
-	    };
-	    if( $@ )
-	    {
-		cluck $@;
-	    }
-	    else
-	    {
-		$RDF::Base::Cache::Class{ $id } = $classname;
-		return $classname;
-	    }
-	}
+        if ( my $class = $node->first_prop('class_handled_by_perl_module') )
+        {
+            eval
+            {
+                $classname = $class->first_prop('code')->plain
+                  or confess "No classname found for class $class->{id}";
+                require(package_to_module($classname));
+            };
+            if ( $@ )
+            {
+                cluck $@;
+            }
+            else
+            {
+                $RDF::Base::Cache::Class{ $id } = $classname;
+                return $classname;
+            }
+        }
 
-	if( $id == $C_literal->id )
-	{
-	    # Should be a value literal
-	    $classname = "RDF::Base::Resource";
-	}
-	else
-	{
-	    my $coltype = $node->coltype;
+        if ( $id == $C_literal->id )
+        {
+            # Should be a value literal
+            $classname = "RDF::Base::Resource";
+        }
+        else
+        {
+            my $coltype = $node->coltype;
 
-	    if( $coltype eq 'valtext' )
-	    {
-		$classname = "RDF::Base::Literal::String";
-	    }
-	    elsif( $coltype eq 'valdate' )
-	    {
-		$classname = "RDF::Base::Literal::Time";
-	    }
-	    elsif( $coltype eq "valfloat" )
-	    {
-		$classname = "RDF::Base::Literal::String";
-	    }
-	    elsif( $coltype eq "valbin" )
-	    {
-		$classname = "RDF::Base::Literal::String";
-	    }
-	    else
-	    {
-		confess "Coltype $coltype not supported";
-	    }
-	}
+            if ( $coltype eq 'valtext' )
+            {
+                $classname = "RDF::Base::Literal::String";
+            }
+            elsif ( $coltype eq 'valdate' )
+            {
+                $classname = "RDF::Base::Literal::Time";
+            }
+            elsif ( $coltype eq "valfloat" )
+            {
+                $classname = "RDF::Base::Literal::String";
+            }
+            elsif ( $coltype eq "valbin" )
+            {
+                $classname = "RDF::Base::Literal::String";
+            }
+            else
+            {
+                confess "Coltype $coltype not supported";
+            }
+        }
 
-	$RDF::Base::Cache::Class{ $id } = $classname;
+        $RDF::Base::Cache::Class{ $id } = $classname;
     }
 
     return $classname;
@@ -393,7 +393,7 @@ sub coltype_by_valtype_id
 {
     debug "coltype_by_valtype_id for $_[1] is $COLTYPE_valtype2name{ $_[1] }"; # DEBUG
     return( $COLTYPE_valtype2name{ $_[1] }
-	    or confess "coltype not found for valtype id $_[1]" );
+            or confess "coltype not found for valtype id $_[1]" );
 }
 
 
