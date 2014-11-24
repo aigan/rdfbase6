@@ -65,12 +65,12 @@ sub on_configure
 
     foreach my $rule ( $rules->as_array )
     {
-	$Rules{$rule->id} = $rule;
+        $Rules{$rule->id} = $rule;
     }
 
     RDF::Base::Rule->build_lists();
 
-    $INITIALIZED = 1; # Class flag
+    $INITIALIZED = 1;           # Class flag
 
     return 1;
 }
@@ -87,9 +87,9 @@ sub build_lists
 
     foreach my $rule ( values %Rules )
     {
-	push @{$List_A{ $rule->a->id }}, $rule;
-	push @{$List_B{ $rule->b->id }}, $rule;
-	push @{$List_C{ $rule->c->id }}, $rule;
+        push @{$List_A{ $rule->a->id }}, $rule;
+        push @{$List_B{ $rule->b->id }}, $rule;
+        push @{$List_C{ $rule->c->id }}, $rule;
     }
 }
 
@@ -144,62 +144,62 @@ sub on_unbless
 
     foreach my $key (keys %List_A)
     {
-	my @newlist;
-	foreach my $rule ( @{$List_A{$key}} )
-	{
-	    if( $rule->id eq $id )
-	    {
-		debug "Skipping rule $id in A";
-		next;
-	    }
-	    push @newlist, $rule;
-	}
+        my @newlist;
+        foreach my $rule ( @{$List_A{$key}} )
+        {
+            if ( $rule->id eq $id )
+            {
+                debug "Skipping rule $id in A";
+                next;
+            }
+            push @newlist, $rule;
+        }
 
-	$List_A{$key} = \@newlist;
+        $List_A{$key} = \@newlist;
     }
 
     foreach my $key (keys %List_B)
     {
-	my @newlist;
-	foreach my $rule ( @{$List_B{$key}} )
-	{
-	    if( $rule->id eq $id )
-	    {
-		debug "Skipping rule $id in B";
-		next;
-	    }
-	    push @newlist, $rule;
-	}
+        my @newlist;
+        foreach my $rule ( @{$List_B{$key}} )
+        {
+            if ( $rule->id eq $id )
+            {
+                debug "Skipping rule $id in B";
+                next;
+            }
+            push @newlist, $rule;
+        }
 
-	$List_B{$key} = \@newlist;
+        $List_B{$key} = \@newlist;
     }
 
     foreach my $key (keys %List_C)
     {
-	my @newlist;
-	foreach my $rule ( @{$List_C{$key}} )
-	{
-	    if( $rule->id eq $id )
-	    {
+        my @newlist;
+        foreach my $rule ( @{$List_C{$key}} )
+        {
+            if ( $rule->id eq $id )
+            {
                 $pred = RDF::Base::Resource->get($key);
-		debug "Skipping rule $id in C";
-		next;
-	    }
-	    push @newlist, $rule;
-	}
+                debug "Skipping rule $id in C";
+                next;
+            }
+            push @newlist, $rule;
+        }
 
-	$List_C{$key} = \@newlist;
+        $List_C{$key} = \@newlist;
     }
 
     delete $Rules{$id};
     my $req = $Para::Frame::REQ;
 
-    if( $pred )
+    if ( $pred )
     {
         my $arcs = $pred->active_arcs;
         $req->note(sprintf "Vacuuming %d arcs", $arcs->size);
         my( $arc, $error ) = $arcs->get_first;
-        while(! $error )
+        while (! $error )
         {
             next unless $arc->objtype;
             next unless $arc->active;
@@ -285,7 +285,7 @@ sub create
 
     unless( $a and $b and $c )
     {
-	throw('action', "Invalid parameters to Rule add");
+        throw('action', "Invalid parameters to Rule add");
     }
 
     my $props =
@@ -298,11 +298,11 @@ sub create
 
 
     my $existing_list = RDF::Base::Resource->find($props);
-    if( $existing_list->size )
+    if ( $existing_list->size )
     {
-	my $rule = $existing_list->get_first;
-	debug sprintf "%s already exist\n", $rule->sysdesig;
-	return $rule;
+        my $rule = $existing_list->get_first;
+        debug sprintf "%s already exist\n", $rule->sysdesig;
+        return $rule;
     }
 
     my $rule = RDF::Base::Resource->create($props, $args);
@@ -313,9 +313,9 @@ sub create
 
     debug sprintf "Created %s\n", $rule->sysdesig;
 
-    if( $vacuum )
+    if ( $vacuum )
     {
-	$rule->vacuum_node;
+        $rule->vacuum_node;
     }
 
     return $rule;
@@ -434,10 +434,10 @@ sub desig
     my( $rule ) = @_;
 
     return sprintf( "( A %s B ) and ( B %s C ) ==> ( A %s C )",
-		    $rule->a->plain,
-		    $rule->b->plain,
-		    $rule->c->plain,
-		  );
+                    $rule->a->plain,
+                    $rule->b->plain,
+                    $rule->c->plain,
+                  );
 }
 
 
@@ -520,12 +520,12 @@ sub equals
 {
     my( $rule, $val ) = @_;
 
-    if( UNIVERSAL::isa($val,'RDF::Base::Rule') )
+    if ( UNIVERSAL::isa($val,'RDF::Base::Rule') )
     {
-	if( $rule->{'id'} eq $val->{'id'} )
-	{
-	    return 1;
-	}
+        if ( $rule->{'id'} eq $val->{'id'} )
+        {
+            return 1;
+        }
     }
 
     return 0;
@@ -556,7 +556,7 @@ sub validate_infere
     my $DEBUG = 0;
 
     debug( sprintf  "validate_infere of %s using %s",
-	  $arc->sysdesig, $rule->sysdesig) if $DEBUG;
+           $arc->sysdesig, $rule->sysdesig) if $DEBUG;
 
     # Check subj and obj
     my $subj = $arc->subj;
@@ -565,38 +565,38 @@ sub validate_infere
 
     foreach my $arc2 (@{ $subj->arc_list($rule->a) })
     {
-	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
+        debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
 
-	next if disregard $arc2;
-	next if $arc2->id == $arc->id;
+        next if disregard $arc2;
+        next if $arc2->id == $arc->id;
 
-	foreach my $arc3 (@{ $arc2->obj->arc_list($rule->b) })
-	{
-	    debug( sprintf  "    Check %s", $arc3->sysdesig) if $DEBUG;
+        foreach my $arc3 (@{ $arc2->obj->arc_list($rule->b) })
+        {
+            debug( sprintf  "    Check %s", $arc3->sysdesig) if $DEBUG;
 
-	    next if disregard $arc3;
+            next if disregard $arc3;
 
-	    if( $arc3->obj->id == $obj->id )
-	    {
-		unless( $arc3->objtype ) # Value node
-		{
-		    next unless $arc3->value->equals($arc->value);
-		}
+            if ( $arc3->obj->id == $obj->id )
+            {
+                unless( $arc3->objtype ) # Value node
+                {
+                    next unless $arc3->value->equals($arc->value);
+                }
 
-		debug( "      Match!") if $DEBUG;
+                debug( "      Match!") if $DEBUG;
 
-		my $exp =
-		{
-		 a => $arc2,
-		 b => $arc3,
-		 c => $arc,
-		 rule => $rule,
-		};
-		# $arc->{explain} are resetted in $arc->validate_check
-		push @{$arc->{'explain'}}, $exp;
-		return 1;
-	    }
-	}
+                my $exp =
+                {
+                 a => $arc2,
+                 b => $arc3,
+                 c => $arc,
+                 rule => $rule,
+                };
+                # $arc->{explain} are resetted in $arc->validate_check
+                push @{$arc->{'explain'}}, $exp;
+                return 1;
+            }
+        }
     }
 
     debug( "  No match") if $DEBUG;
@@ -627,54 +627,55 @@ sub create_infere_rev
 
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
-	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
+        debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
 
-	next if disregard $arc2;
+        next if disregard $arc2;
 
-	my $pred = $rule->c;
-	my $subj3 = $arc2->subj;
-	my $arc3_list = $subj3->arc_list($pred, $obj);
+        my $pred = $rule->c;
+        my $subj3 = $arc2->subj;
+        my $arc3_list = $subj3->arc_list($pred, $obj);
 
-	if( $arc3_list->size < 1 )
-	{
-	    debug "    Less than 1" if $DEBUG;
-	    RDF::Base::Arc->create({
-				    subj => $subj3,
-				    pred => $pred,
-				    value => $obj,
-				    implicit => 1,
-				   },
-				   {
-				    activate_new_arcs => 1, # Activate directly
-				    res => $args->{'res'},
-				   });
-	}
-	elsif( $arc3_list->size > 1 ) # cleanup
-	{
-	    debug "    More than 1" if $DEBUG;
-	    # prioritize on explict, indirect, other
-	    my $choice = $arc3_list->explicit->indirect->get_first_nos
-	      || $arc3_list->indirect->get_first_nos
-		|| $arc3_list->get_first_nos;
+        if ( $arc3_list->size < 1 )
+        {
+            debug "    Less than 1" if $DEBUG;
+            RDF::Base::Arc->create({
+                                    subj => $subj3,
+                                    pred => $pred,
+                                    value => $obj,
+                                    implicit => 1,
+                                   },
+                                   {
+                                    activate_new_arcs => 1, # Activate directly
+                                    res => $args->{'res'},
+                                   });
+        }
+        elsif ( $arc3_list->size > 1 ) # cleanup
+        {
+            debug "    More than 1" if $DEBUG;
+            # prioritize on explict, indirect, other
+            my $choice = $arc3_list->explicit->indirect->get_first_nos
+              || $arc3_list->indirect->get_first_nos
+                || $arc3_list->get_first_nos;
 
-	    my( $arc3, $err ) = $arc3_list->get_first;
-	    while(!$err)
-	    {
-		next if $arc3->equals($choice);
-		$arc3->remove({%$args, force=>1});
-	    }
-	    continue
-	    {
-		( $arc3, $err ) = $arc3_list->get_next;
-	    };
+            my( $arc3, $err ) = $arc3_list->get_first;
+            while (!$err)
+            {
+                next if $arc3->equals($choice);
+                $arc3->remove({%$args, force=>1});
+            }
+            continue
+            {
+                ( $arc3, $err ) = $arc3_list->get_next;
+            }
+            ;
 
-	    $choice->set_indirect;
-	}
-	else
-	{
-	    debug "    Just 1" if $DEBUG;
-	    $arc3_list->get_first_nos->set_indirect;
-	}
+            $choice->set_indirect;
+        }
+        else
+        {
+            debug "    Just 1" if $DEBUG;
+            $arc3_list->get_first_nos->set_indirect;
+        }
 
 
 #	RDF::Base::Arc->find_set({
@@ -717,54 +718,55 @@ sub create_infere_rel
 
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
-	debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
+        debug( sprintf  "  Check %s", $arc2->sysdesig) if $DEBUG;
 
-	next if disregard $arc2;
+        next if disregard $arc2;
 
-	my $pred = $rule->c;
-	my $obj3 = $arc2->obj;
-	my $arc3_list = $subj->arc_list($pred, $obj3);
+        my $pred = $rule->c;
+        my $obj3 = $arc2->obj;
+        my $arc3_list = $subj->arc_list($pred, $obj3);
 
-	if( $arc3_list->size < 1 )
-	{
-	    debug "    Less than 1" if $DEBUG;
-	    RDF::Base::Arc->create({
-				    subj => $subj,
-				    pred => $pred,
-				    value => $obj3,
-				    implicit => 1,
-				   },
-				   {
-				    activate_new_arcs => 1, # Activate directly
-				    res => $args->{'res'},
-				   });
-	}
-	elsif( $arc3_list->size > 1 ) # cleanup
-	{
-	    debug "    More than 1" if $DEBUG;
-	    # prioritize on explict, indirect, other
-	    my $choice = $arc3_list->explicit->indirect->get_first_nos
-	      || $arc3_list->indirect->get_first_nos
-		|| $arc3_list->get_first_nos;
+        if ( $arc3_list->size < 1 )
+        {
+            debug "    Less than 1" if $DEBUG;
+            RDF::Base::Arc->create({
+                                    subj => $subj,
+                                    pred => $pred,
+                                    value => $obj3,
+                                    implicit => 1,
+                                   },
+                                   {
+                                    activate_new_arcs => 1, # Activate directly
+                                    res => $args->{'res'},
+                                   });
+        }
+        elsif ( $arc3_list->size > 1 ) # cleanup
+        {
+            debug "    More than 1" if $DEBUG;
+            # prioritize on explict, indirect, other
+            my $choice = $arc3_list->explicit->indirect->get_first_nos
+              || $arc3_list->indirect->get_first_nos
+                || $arc3_list->get_first_nos;
 
-	    my( $arc3, $err ) = $arc3_list->get_first;
-	    while(!$err)
-	    {
-		next if $arc3->equals($choice);
-		$arc3->remove({%$args, force=>1});
-	    }
-	    continue
-	    {
-		( $arc3, $err ) = $arc3_list->get_next;
-	    };
+            my( $arc3, $err ) = $arc3_list->get_first;
+            while (!$err)
+            {
+                next if $arc3->equals($choice);
+                $arc3->remove({%$args, force=>1});
+            }
+            continue
+            {
+                ( $arc3, $err ) = $arc3_list->get_next;
+            }
+            ;
 
-	    $choice->set_indirect;
-	}
-	else
-	{
-	    debug "    Just 1" if $DEBUG;
-	    $arc3_list->get_first_nos->set_indirect;
-	}
+            $choice->set_indirect;
+        }
+        else
+        {
+            debug "    Just 1" if $DEBUG;
+            $arc3_list->get_first_nos->set_indirect;
+        }
 
 
 #	RDF::Base::Arc->find_set({
@@ -806,15 +808,15 @@ sub remove_infered_rev
     foreach my $arc2 (@{ $subj->revarc_list($rule->a) })
     {
 #	next if disregard $arc2; # not
-	RDF::Base::Arc->find_remove({
-				     subj => $arc2->subj,
-				     pred => $rule->c,
-				     obj  => $obj,
-				    },
-				    {
-				     implicit => 1,
-				     res => $args->{'res'},
-				    });
+        RDF::Base::Arc->find_remove({
+                                     subj => $arc2->subj,
+                                     pred => $rule->c,
+                                     obj  => $obj,
+                                    },
+                                    {
+                                     implicit => 1,
+                                     res => $args->{'res'},
+                                    });
     }
 
 }
@@ -842,15 +844,15 @@ sub remove_infered_rel
     foreach my $arc2 (@{ $obj->arc_list($rule->b) })
     {
 #	next if disregard $arc2; # not
-	RDF::Base::Arc->find_remove({
-				     subj => $subj,
-				     pred => $rule->c,
-				     obj  => $arc2->obj,
-				    },
-				    {
-				     implicit => 1,
-				     res => $args->{'res'},
-				    });
+        RDF::Base::Arc->find_remove({
+                                     subj => $subj,
+                                     pred => $rule->c,
+                                     obj  => $arc2->obj,
+                                    },
+                                    {
+                                     implicit => 1,
+                                     res => $args->{'res'},
+                                    });
     }
 
 }
@@ -867,12 +869,12 @@ sub vacuum_facet
     my( $rule, $args_in ) = @_;
 
     foreach my $pred ( uniq sort
-		       $rule->first_prop('pred_1'),
-		       $rule->first_prop('pred_2'),
-		       $rule->first_prop('pred_3'),
-		     )
+                       $rule->first_prop('pred_1'),
+                       $rule->first_prop('pred_2'),
+                       $rule->first_prop('pred_3'),
+                     )
     {
-	$pred->vacuum_pred_arcs;
+        $pred->vacuum_pred_arcs;
     }
 
     return $rule;
