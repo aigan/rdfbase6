@@ -46,7 +46,7 @@ use overload
   '""'         => 'desig',
   '.'          => 'concatenate_by_overload',
   'cmp'        => 'cmp_by_overload',
-  'fallback'   => 0; # This and NOTHING else!
+  'fallback'   => 0;            # This and NOTHING else!
 
 
 =head1 DESCRIPTION
@@ -103,21 +103,21 @@ sub new
     my( $this, $listref, $args ) = @_;
     my $class = ref($this) || $this;
 
-    if( (ref $listref eq "ARRAY") or (not defined $listref) )
+    if ( (ref $listref eq "ARRAY") or (not defined $listref) )
     {
-	return $class->SUPER::new($listref, $args);
+        return $class->SUPER::new($listref, $args);
     }
-    elsif( ref $listref eq "RDF::Base::List" )
+    elsif ( ref $listref eq "RDF::Base::List" )
     {
-	return $listref;
+        return $listref;
     }
-    elsif( ref $listref eq "Para::Frame::List" )
+    elsif ( ref $listref eq "Para::Frame::List" )
     {
-	return $class->SUPER::new([@$listref], $args);
+        return $class->SUPER::new([@$listref], $args);
     }
     else
     {
-	confess "Malformed listref: $listref";
+        confess "Malformed listref: $listref";
     }
 }
 
@@ -325,7 +325,7 @@ sub find
 #    }
 
     # Support finds with no criterions
-    return $l unless $tmpl; # Handling tmpl={} later
+    return $l unless $tmpl;     # Handling tmpl={} later
 
 
     # Two ways to use find:
@@ -335,31 +335,31 @@ sub find
     unless( ref $tmpl and ref $tmpl eq 'HASH' )
     {
 #	debug 2, "Does list contain $tmpl?";
-	return $l->contains( $tmpl, $args );
+        return $l->contains( $tmpl, $args );
     }
 
-    if( $tmpl->{'arclim'} or $tmpl->{'res'} )
+    if ( $tmpl->{'arclim'} or $tmpl->{'res'} )
     {
-	confess datadump(\@_,2);
+        confess datadump(\@_,2);
     }
 
-    if( $DEBUG > 1 )
+    if ( $DEBUG > 1 )
     {
-	debug "QUERY ".query_desig($tmpl);
-	debug  "ON LIST ".$l->sysdesig;
+        debug "QUERY ".query_desig($tmpl);
+        debug  "ON LIST ".$l->sysdesig;
     }
 
 
     # En empty tmpl matches the whole list (regardless of args)
     unless( keys %$tmpl )
     {
-	return $l;
+        return $l;
     }
 
     # Takes a list and check each value in the list against the
     # template.  Returned those that matches the template.
 
-    if( $l->size > 100 )
+    if ( $l->size > 100 )
     {
         $Para::Frame::REQ->note(sprintf "Filtering %d nodes", $l->size);
     }
@@ -371,27 +371,27 @@ sub find
     my( $node, $error ) = $l->get_first;
 
   NODE:
-    while(! $error )
+    while (! $error )
     {
-	# Check each prop in the template.  All must match.  One
-	# failed match and this $node in not placed in @newlist
+        # Check each prop in the template.  All must match.  One
+        # failed match and this $node in not placed in @newlist
 
-	if( not $node )
-	{
-	    # just drop it
-	}
-	elsif( $node->is_list )
-	{
-	    CORE::push @newlist, $node->find( $tmpl, $args )->as_array;
-	}
-	elsif( $node->meets_proplim( $tmpl, $args ) )
-	{
-	    CORE::push @newlist, $node;
-	}
+        if ( not $node )
+        {
+            # just drop it
+        }
+        elsif ( $node->is_list )
+        {
+            CORE::push @newlist, $node->find( $tmpl, $args )->as_array;
+        }
+        elsif ( $node->meets_proplim( $tmpl, $args ) )
+        {
+            CORE::push @newlist, $node;
+        }
 
-	( $node, $error ) = $l->get_next;
+        ( $node, $error ) = $l->get_next;
 
-        if( not $l->count % 500 )
+        if ( not $l->count % 500 )
         {
             $Para::Frame::REQ->note(sprintf "%5d", $l->count);
             $Para::Frame::REQ->may_yield;
@@ -438,27 +438,27 @@ sub find_one
 
     my $nodes = $list->find( $tmpl, $args );
 
-    if( $nodes->[1] )
+    if ( $nodes->[1] )
     {
-	my $result = $Para::Frame::REQ->result;
-	$result->{'info'}{'alternatives'}{'alts'} = $nodes;
-	$result->{'info'}{'alternatives'}{'query'} = $tmpl;
-	$result->{'info'}{'alternatives'}{'args'} = $args;
-	throw('alternatives', "Flera noder matchar kriterierna");
+        my $result = $Para::Frame::REQ->result;
+        $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+        $result->{'info'}{'alternatives'}{'query'} = $tmpl;
+        $result->{'info'}{'alternatives'}{'args'} = $args;
+        throw('alternatives', "Flera noder matchar kriterierna");
     }
 
     unless( $nodes->[0] )
     {
-	my $req = $Para::Frame::REQ;
-	my $result = $req->result;
-	my $site = $req->site;
-	$result->{'info'}{'alternatives'}{'alts'} = undef;
-	$result->{'info'}{'alternatives'}{'query'} = $tmpl;
-	$result->{'info'}{'alternatives'}{'args'} = $args;
-	$result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
-	my $home = $req->site->home_url_path;
-	$req->set_error_response($home.'/rb/node/query_error.tt');
-	throw('notfound', "No nodes matches query");
+        my $req = $Para::Frame::REQ;
+        my $result = $req->result;
+        my $site = $req->site;
+        $result->{'info'}{'alternatives'}{'alts'} = undef;
+        $result->{'info'}{'alternatives'}{'query'} = $tmpl;
+        $result->{'info'}{'alternatives'}{'args'} = $args;
+        $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
+        my $home = $req->site->home_url_path;
+        $req->set_error_response($home.'/rb/node/query_error.tt');
+        throw('notfound', "No nodes matches query");
     }
 
     return $nodes->[0];
@@ -566,36 +566,36 @@ sub sorted
 
     my( $sort_str, $sort_key, $dir );
 
-    if( ref $dir_in eq 'HASH' )
+    if ( ref $dir_in eq 'HASH' )
     {
-	$sort_str = $dir_in->{'sort_str'};
-	$sort_key = $dir_in->{'sort_key'};
-	$dir      = $dir_in->{'dir'};
+        $sort_str = $dir_in->{'sort_str'};
+        $sort_key = $dir_in->{'sort_key'};
+        $dir      = $dir_in->{'dir'};
 
-	unless( $dir or $sort_str or $sort_key or $args_in )
-	{
-	    $args_in = $dir_in;
-	    $dir_in = undef;
-	}
+        unless( $dir or $sort_str or $sort_key or $args_in )
+        {
+            $args_in = $dir_in;
+            $dir_in = undef;
+        }
     }
-    elsif( $dir_in )
+    elsif ( $dir_in )
     {
-	$dir = $dir_in;
+        $dir = $dir_in;
     }
 
     unless( $sort_key )
     {
-	( $sortargs, $sort_str, $sort_key ) =
-	  $list->parse_sortargs( $sortargs, $dir );
+        ( $sortargs, $sort_str, $sort_key ) =
+          $list->parse_sortargs( $sortargs, $dir );
     }
 
-    if( $sort_key eq ($list->{'sorted_on_key'}||'') )
+    if ( $sort_key eq ($list->{'sorted_on_key'}||'') )
     {
-	return $list;
+        return $list;
     }
 
 
-    $list->materialize_all; # for sorting on props
+    $list->materialize_all;     # for sorting on props
 
     my( $args ) = parse_propargs($args_in);
 
@@ -604,7 +604,7 @@ sub sorted
 
 
     my $size = $list->size;
-    if( $size > 100 )
+    if ( $size > 100 )
     {
         $Para::Frame::REQ->note(sprintf "Sorting %d nodes", $size);
     }
@@ -613,73 +613,73 @@ sub sorted
     my @props;
 
     my( $item, $error ) = $list->get_first;
-    while(! $error )
+    while (! $error )
     {
-	$item->{'sort_arg'} = [];
-	debug sprintf("  add item %s", $item->safedesig) if $DEBUG;
-	for( my $i=0; $i<@$sortargs; $i++ )
-	{
-	    my $method = $sortargs->[$i]{'on'};
-	    debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'}) if $DEBUG;
-	    my $val = $item;
-	    foreach my $part ( split /\./, $method )
-	    {
-		unless( UNIVERSAL::isa $val, "RDF::Base::Object" )
-		{
-		    last; # skipping undef values...
-		}
+        $item->{'sort_arg'} = [];
+        debug sprintf("  add item %s", $item->safedesig) if $DEBUG;
+        for ( my $i=0; $i<@$sortargs; $i++ )
+        {
+            my $method = $sortargs->[$i]{'on'};
+            debug sprintf("    arg $i: %s", $sortargs->[$i]{'on'}) if $DEBUG;
+            my $val = $item;
+            foreach my $part ( split /\./, $method )
+            {
+                unless( UNIVERSAL::isa $val, "RDF::Base::Object" )
+                {
+                    last;       # skipping undef values...
+                }
                 #         The position of $args varies!!! 
-		#$val = $val->$part(undef,$args);
-		$val = $val->$part(); ### FIXME
-		debug sprintf("      -> %s", $val) if $DEBUG;
-	    }
+                #$val = $val->$part(undef,$args);
+                $val = $val->$part(); ### FIXME
+                debug sprintf("      -> %s", $val) if $DEBUG;
+            }
 
-	    my $coltype = $sortargs->[$i]->{'coltype'} || '';
-	    if( $coltype eq 'valfloat' )
-	    {
-		if( UNIVERSAL::isa $val, 'RDF::Base::List' )
-		{
-		    $val = List::Util::min( $val->as_array );
-		}
+            my $coltype = $sortargs->[$i]->{'coltype'} || '';
+            if ( $coltype eq 'valfloat' )
+            {
+                if ( UNIVERSAL::isa $val, 'RDF::Base::List' )
+                {
+                    $val = List::Util::min( $val->as_array );
+                }
 
-		# Make it an integer
-		$val ||= 0;
-	    }
-	    elsif( $coltype eq 'valdate' )
-	    {
-		if( UNIVERSAL::isa $val, 'RDF::Base::List' )
-		{
-		    $val = List::Util::minstr( $val->as_array );
-		}
+                # Make it an integer
+                $val ||= 0;
+            }
+            elsif ( $coltype eq 'valdate' )
+            {
+                if ( UNIVERSAL::isa $val, 'RDF::Base::List' )
+                {
+                    $val = List::Util::minstr( $val->as_array );
+                }
 
-		# Infinite future date
-		use DateTime::Infinite;
-		$val ||= DateTime::Infinite::Future->new;
-		debug "Date value is $val" if $DEBUG;
-	    }
-	    elsif( $coltype eq 'valtext' )
-	    {
-		if( UNIVERSAL::isa $val, 'RDF::Base::List' )
-		{
-		    $val = $val->loc;
-		}
+                # Infinite future date
+                use DateTime::Infinite;
+                $val ||= DateTime::Infinite::Future->new;
+                debug "Date value is $val" if $DEBUG;
+            }
+            elsif ( $coltype eq 'valtext' )
+            {
+                if ( UNIVERSAL::isa $val, 'RDF::Base::List' )
+                {
+                    $val = $val->loc;
+                }
 
-		$val ||= '';
-	    }
+                $val ||= '';
+            }
 
-	    debug sprintf("      => %s", $val) if $DEBUG;
+            debug sprintf("      => %s", $val) if $DEBUG;
 
-	    CORE::push @{$props[$i]}, $val;
+            CORE::push @{$props[$i]}, $val;
 #	    debug $item->safedesig .' : '.$val;
-	    CORE::push @{$item->{'sort_arg'}}, $val;
+            CORE::push @{$item->{'sort_arg'}}, $val;
 #	    CORE::push @{$props[$i]}, $item->$method;
-	}
+        }
     }
     continue
     {
         ( $item, $error ) = $list->get_next;
 
-        if( not $list->count % 1000 )
+        if ( not $list->count % 1000 )
         {
             $Para::Frame::REQ->note(sprintf "%5d", $list->count);
             $Para::Frame::REQ->may_yield;
@@ -687,27 +687,27 @@ sub sorted
     }
 
 
-    if( $DEBUG )
+    if ( $DEBUG )
     {
-	debug "And the props is: \n";
-	for( my $i=0; $i<=$#$list; $i++ )
-	{
-	    my $out = "  ".$list->[$i]->safedesig.": ";
-	    for( my $x=0; $x<=$#props; $x++ )
-	    {
-		if( ref $props[$x][$i] )
-		{
-		    $out .= $props[$x][$i]->safedesig .' - ';
-		}
-		else
-		{
-		    $out .= $props[$x][$i] .' - ';
-		}
-	    }
-	    debug $out;
-	}
+        debug "And the props is: \n";
+        for ( my $i=0; $i<=$#$list; $i++ )
+        {
+            my $out = "  ".$list->[$i]->safedesig.": ";
+            for ( my $x=0; $x<=$#props; $x++ )
+            {
+                if ( ref $props[$x][$i] )
+                {
+                    $out .= $props[$x][$i]->safedesig .' - ';
+                }
+                else
+                {
+                    $out .= $props[$x][$i] .' - ';
+                }
+            }
+            debug $out;
+        }
 
-	debug "Sort string: { $sort_str }";
+        debug "Sort string: { $sort_str }";
     }
 
     # The Schwartzian transform:
@@ -741,104 +741,104 @@ sub parse_sortargs
     $sortargs ||= 'desig';
 
     unless( ref $sortargs and ( ref $sortargs eq 'ARRAY' or
-			    ref $sortargs eq 'RDF::Base::List' )
-	  )
+                                ref $sortargs eq 'RDF::Base::List' )
+          )
     {
-	$sortargs = [ $sortargs ];
+        $sortargs = [ $sortargs ];
     }
 
-    if( $dir )
+    if ( $dir )
     {
-	unless( $dir =~ /^(asc|desc)$/ )
-	{
-	    die "direction '$dir' out of bound";
-	}
+        unless( $dir =~ /^(asc|desc)$/ )
+        {
+            die "direction '$dir' out of bound";
+        }
 
-	for( my $i = 0; $i < @$sortargs; $i++ )
-	{
-	    unless( ref $sortargs->[$i] eq 'HASH' )
-	    {
-		$sortargs->[$i] =
-		{
-		 on => $sortargs->[$i],
-		 dir => $dir,
-		};
-	    }
-	}
+        for ( my $i = 0; $i < @$sortargs; $i++ )
+        {
+            unless( ref $sortargs->[$i] eq 'HASH' )
+            {
+                $sortargs->[$i] =
+                {
+                 on => $sortargs->[$i],
+                 dir => $dir,
+                };
+            }
+        }
     }
 
     my @sort;
     my @prop_str_list;
-    for( my $i = 0; $i < @$sortargs; $i++ )
+    for ( my $i = 0; $i < @$sortargs; $i++ )
     {
-	if( $DEBUG )
-	{
-	    debug "i: $i";
-	    debug sprintf("sortargs: %d\n", scalar @$sortargs);
-	}
-	unless( ref $sortargs->[$i] eq 'HASH' )
-	{
-	    $sortargs->[$i] =
-	    {
-		on => $sortargs->[$i],
-	    };
-	}
+        if ( $DEBUG )
+        {
+            debug "i: $i";
+            debug sprintf("sortargs: %d\n", scalar @$sortargs);
+        }
+        unless( ref $sortargs->[$i] eq 'HASH' )
+        {
+            $sortargs->[$i] =
+            {
+             on => $sortargs->[$i],
+            };
+        }
 
-	$sortargs->[$i]->{'dir'} ||= 'asc';
+        $sortargs->[$i]->{'dir'} ||= 'asc';
 
-	# Find out if we should do a numeric or literal sort
-	#
-	my $on =  $sortargs->[$i]->{'on'};
-	if( ref $on )
-	{
-	    die "not implemented ($on)";
-	}
-	CORE::push @prop_str_list, $on;
+        # Find out if we should do a numeric or literal sort
+        #
+        my $on =  $sortargs->[$i]->{'on'};
+        if ( ref $on )
+        {
+            die "not implemented ($on)";
+        }
+        CORE::push @prop_str_list, $on;
 
-	$on =~ /([^\.]+)$/; #match last part
-	my $pred_str = $1;
+        $on =~ /([^\.]+)$/;     #match last part
+        my $pred_str = $1;
 
 
-	my $cmp = $sortargs->[$i]->{'cmp'};
-	unless( $cmp )
-	{
-	    $cmp = 'cmp';
+        my $cmp = $sortargs->[$i]->{'cmp'};
+        unless( $cmp )
+        {
+            $cmp = 'cmp';
 
-	    # Silently ignore dynamic props (that isn't preds)
-	    eval
-	    {
-		if( my $pred = RDF::Base::Pred->get_by_anything( $pred_str,
-								 {
-								  %$args,
-                                                                  nonfatal => 1,
-								 }))
-		{
-		    my $coltype = $pred->coltype;
-		    $sortargs->[$i]->{'coltype'} = $coltype;
-		    if( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
-		    {
-			$cmp = '<=>';
-		    }
-		}
-	    };
-	    if( $@ )  # Just dump any errors to log...
-	    {
-		undef $@;
-		debug "Sortarg $pred_str not a predicate";
-		debug "Specify cmp argument for optimization";
-	    }
+            # Silently ignore dynamic props (that isn't preds)
+            eval
+            {
+                if ( my $pred = RDF::Base::Pred->get_by_anything( $pred_str,
+                                                                  {
+                                                                   %$args,
+                                                                   nonfatal => 1,
+                                                                  }))
+                {
+                    my $coltype = $pred->coltype;
+                    $sortargs->[$i]->{'coltype'} = $coltype;
+                    if ( ($coltype eq 'valfloat') or ($coltype eq 'valdate') )
+                    {
+                        $cmp = '<=>';
+                    }
+                }
+            };
+            if ( $@ )           # Just dump any errors to log...
+            {
+                undef $@;
+                debug "Sortarg $pred_str not a predicate";
+                debug "Specify cmp argument for optimization";
+            }
 
-	    $sortargs->[$i]->{'cmp'} = $cmp;
-	}
+            $sortargs->[$i]->{'cmp'} = $cmp;
+        }
 
-	if( $sortargs->[$i]->{'dir'} eq 'desc')
-	{
-	    CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
-	}
-	else
-	{
-	    CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
-	}
+        if ( $sortargs->[$i]->{'dir'} eq 'desc')
+        {
+            CORE::push @sort, "\$props[$i][\$b] $cmp \$props[$i][\$a]";
+        }
+        else
+        {
+            CORE::push @sort, "\$props[$i][\$a] $cmp \$props[$i][\$b]";
+        }
     }
     my $sort_str = join ' || ', @sort;
 
@@ -870,11 +870,11 @@ sub uniq
 {
     my $l = $_[0]->SUPER::uniq();
     my $s = $l->size;
-    if( $s > 1 )
+    if ( $s > 1 )
     {
         return $l;
     }
-    elsif( $s < 1 )
+    elsif ( $s < 1 )
     {
         return is_undef;
     }
@@ -918,18 +918,19 @@ sub unique_arcs_prio
     my( $arc, $error ) = $list->get_first;
     confess( "Not arc in unique_arcs_prio; $error - $arc" )
       unless( $error or ($arc and $arc->is_arc) );
-    while(! $error )
+    while (! $error )
     {
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
 #	debug "Sort $sor: ".$arc->safedesig;
 #	$points{ $cid }[ $sor ] = $arc;
-	$points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
+        $points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
     }
     continue
     {
-	( $arc, $error ) = $list->get_next;
-    };
+        ( $arc, $error ) = $list->get_next;
+    }
+    ;
 
     $list->set_index( $index );
 
@@ -940,14 +941,14 @@ sub unique_arcs_prio
     my @arcs;
     foreach my $group ( values %points )
     {
-	foreach my $arc (@$group)
-	{
-	    if( $arc )
-	    {
-		CORE::push @arcs, $arc;
-		last;
-	    }
-	}
+        foreach my $arc (@$group)
+        {
+            if ( $arc )
+            {
+                CORE::push @arcs, $arc;
+                last;
+            }
+        }
     }
 
     return RDF::Base::List->new( \@arcs );
@@ -1004,25 +1005,25 @@ sub as_string
     unless( ref $self )
     {
 #	warn "  returning $self\n";
-	return $self;
+        return $self;
     }
 
     my $list = $self->as_list;
 
     my $val = "";
 
-    if( $#$list ) # More than one element
+    if ( $#$list )              # More than one element
     {
-	for( my $i = 0; $i<= $#$list; $i++)
-	{
-	    $val .= "* ";
-	    $val .= $list->[$i]->sysdesig;
-	    $val .= "\n";
-	}
+        for ( my $i = 0; $i<= $#$list; $i++)
+        {
+            $val .= "* ";
+            $val .= $list->[$i]->sysdesig;
+            $val .= "\n";
+        }
     }
     else
     {
-	$val .= $self->[0];
+        $val .= $self->[0];
     }
 
     return $val;
@@ -1048,19 +1049,19 @@ sub literal
 {
     my( $list ) = @_;
 
-    if( @$list == 1 )
+    if ( @$list == 1 )
     {
-	$list->[0]->literal;
+        $list->[0]->literal;
     }
-    elsif( @$list == 0 )
+    elsif ( @$list == 0 )
     {
-	return is_undef->as_string;
+        return is_undef->as_string;
     }
     else
     {
 #	confess "More than one value returned: ".$list->desig;
 #	debug "Tryning to turn the list to a literal\n";
-	return $list->loc;
+        return $list->loc;
     }
 }
 
@@ -1108,151 +1109,155 @@ sub loc
 
     foreach my $item ( @$list )
     {
-	if( ref $item )
-	{
-	    if( UNIVERSAL::isa($item, 'RDF::Base::Node') )
-	    {
-		debug 3, sprintf "Res '%s' (%s)",
-		  ($item||'<undef>'), blessed($item) if $DEBUG;
+        if ( ref $item )
+        {
+            if ( UNIVERSAL::isa($item, 'RDF::Base::Node') )
+            {
+                debug 3, sprintf "Res '%s' (%s)",
+                  ($item||'<undef>'), blessed($item) if $DEBUG;
 
-		my $langs = $item->list('is_of_language');
-		if( @$langs )
-		{
-		    foreach my $lang ( @$langs )
-		    {
-			next unless $lang;
-			my $code = $lang->first_prop('code')->plain;
-			CORE::push @{$alts{$code}}, $item;
-			unless( $code )
-			{
-			    throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
-			}
-			debug 4,"Lang $code: ".$item->id if $DEBUG;
-		    }
-		}
-		else
-		{
-		    CORE::push @{$alts{'c'}}, $item;
+                my $langs = $item->list('is_of_language');
+                if ( @$langs )
+                {
+                    foreach my $lang ( @$langs )
+                    {
+                        next unless $lang;
+                        my $code = $lang->first_prop('code')->plain;
+                        CORE::push @{$alts{$code}}, $item;
+                        unless( $code )
+                        {
+                            throw('dbi', sprintf("Language %s does not have a code", $lang->sysdesig));
+                        }
+                        debug 4,"Lang $code: ".$item->id if $DEBUG;
+                    }
+                }
+                else
+                {
+                    CORE::push @{$alts{'c'}}, $item;
                     # $item may stringify to undef
-		    # debug 4, "Lang c: $item ($langs)";
-		}
-	    }
-	    elsif( UNIVERSAL::isa($item, 'RDF::Base::List') )
-	    {
-		$is_nested_list++;
-		last;
-	    }
-	    else
-	    {
-		$default = $item;
-		debug 3, sprintf "No translation '%s' (%s)",
-		  $item, blessed($item) if $DEBUG;
-	    }
-	}
-	else
-	{
-	    $default = $item;
-	    debug 3,"No translation" if $DEBUG;
-	}
+                    # debug 4, "Lang c: $item ($langs)";
+                }
+            }
+            elsif ( UNIVERSAL::isa($item, 'RDF::Base::List') )
+            {
+                $is_nested_list++;
+                last;
+            }
+            else
+            {
+                $default = $item;
+                debug 3, sprintf "No translation '%s' (%s)",
+                  $item, blessed($item) if $DEBUG;
+            }
+        }
+        else
+        {
+            $default = $item;
+            debug 3,"No translation" if $DEBUG;
+        }
     }
 
-    if( $is_nested_list++ )
+    if ( $is_nested_list++ )
     {
-	debug 3, "This is a nested list. Returning a list." if $DEBUG;
-	my @new;
-	foreach my $item ( @$list )
-	{
-	    CORE::push @new, $item->loc(@_);
-	}
-	return $list->new(\@new);
+        debug 3, "This is a nested list. Returning a list." if $DEBUG;
+        my @new;
+        foreach my $item ( @$list )
+        {
+            CORE::push @new, $item->loc(@_);
+        }
+        return $list->new(\@new);
     }
 
 
     # TODO: Chose value even with no language priority
     my @alternatives;
-    if( my $req = $Para::Frame::REQ )
+    if ( my $req = $Para::Frame::REQ )
     {
-	@alternatives = ($req->language->alternatives, 'c');
+        @alternatives = ($req->language->alternatives, 'c');
     }
     else
     {
-	@alternatives = ('c');
+        @alternatives = ('c');
     }
 
     foreach my $lang ( @alternatives )
     {
-	debug 3, "Checking lang $lang" if $DEBUG;
-	# Try to handle the cases in order of commonality
-	next unless $alts{$lang} and @{$alts{$lang}};
-	unless( $alts{$lang}[1] )
-	{
-	    # Not using ->value, since this may be a Literal
-	    debug 3, "  Returning only alternative" if $DEBUG;
+        debug 3, "Checking lang $lang" if $DEBUG;
+        # Try to handle the cases in order of commonality
+        next unless $alts{$lang} and @{$alts{$lang}};
+        unless ( $alts{$lang}[1] )
+        {
+            # Not using ->value, since this may be a Literal
+            debug 3, "  Returning only alternative" if $DEBUG;
 #	    debug(0,$alts{$lang}[0]->{'id'});
-	    return $alts{$lang}[0]->loc(@_);
-	}
+            return $alts{$lang}[0]->loc(@_);
+        }
 
-	# Order by highest weight
-	my %list;
-	foreach( @{$alts{$lang}} )
-	{
-	    my $weight =
-	      ($_->is_literal ? $_->arc_weight : undef)
-		|| $_->weight->literal || 0;
+        # Order by highest weight
+        my %list;
+        foreach ( @{$alts{$lang}} )
+        {
+            my $weight =
+              ($_->is_literal ? $_->arc_weight : undef)
+                || $_->weight->literal || 0;
 
-	    if( $DEBUG ){debug 4, "  $_ has weight $weight" if $weight };
-	    $list{ $weight } = $_;
-	}
+            if ( $DEBUG )
+            {
+                debug 4, "  $_ has weight $weight" if $weight;
+            }
+            ;
+            $list{ $weight } = $_;
+        }
 
 #	debug 1,"Returning (one) literal with highest weight";
 #	debug query_desig \%list;
 #        debug datadump(\%list,1);
-	# Not using ->value, since this may be a Literal
-	return $list{ List::Util::max( keys %list ) }->loc(@_);
+        # Not using ->value, since this may be a Literal
+        return $list{ List::Util::max( keys %list ) }->loc(@_);
     }
 
     ## Set default.  (*any* default)
     unless( defined $default )
     {
-	if( $alts{'c'}[0] )
-	{
-	    $default = $alts{'c'}[0];
-	}
+        if ( $alts{'c'}[0] )
+        {
+            $default = $alts{'c'}[0];
+        }
     }
     unless( defined $default )
     {
-	foreach my $lang ( keys %alts )
-	{
-	    if( $alts{$lang}[0] )
-	    {
-		$default = $alts{$lang}[0];
-		last;
-	    }
-	}
+        foreach my $lang ( keys %alts )
+        {
+            if ( $alts{$lang}[0] )
+            {
+                $default = $alts{$lang}[0];
+                last;
+            }
+        }
     }
 
-    if( defined $default )
+    if ( defined $default )
     {
-	debug 3, "  Returning default" if $DEBUG;
-	if( ref $default and UNIVERSAL::isa $default, "RDF::Base::Object" )
-	{
-	    return $default->loc(@_);
-	}
-	else
-	{
-	    return $default;
-	}
+        debug 3, "  Returning default" if $DEBUG;
+        if ( ref $default and UNIVERSAL::isa $default, "RDF::Base::Object" )
+        {
+            return $default->loc(@_);
+        }
+        else
+        {
+            return $default;
+        }
     }
     else
     {
-	# Was this an empty list to begin with?
-	unless( $list->size )
-	{
-	    return "";
-	}
+        # Was this an empty list to begin with?
+        unless( $list->size )
+        {
+            return "";
+        }
 
-	# The only choice is an undefined value!!!
-	return "<undef>"; # This should not be common. Be clear!
+        # The only choice is an undefined value!!!
+        return "<undef>";       # This should not be common. Be clear!
     }
 }
 
@@ -1278,7 +1283,7 @@ sub loc_by_lang
     my $langprio = 100;
     foreach my $lc ( @$lc_list )
     {
-	$lang{ $lc } = $langprio--;
+        $lang{ $lc } = $langprio--;
     }
 
     my $got_weight = -1;
@@ -1287,33 +1292,33 @@ sub loc_by_lang
 
     debug "Getting loc_by_list from: ". $list->sysdesig if $DEBUG;
 
-    while( my $prop = $list->get_next_nos )
+    while ( my $prop = $list->get_next_nos )
     {
-	if( ref $prop and
-	    UNIVERSAL::isa($prop, 'RDF::Base::Resource') )
-	{
-	    my $propweight = $prop->first_prop('weight', {}, $args) || 0;
-	    my $lprio = $lang{ $prop->first_prop('is_of_language', {}, $args)->first_prop('code', {}, $args)->plain } || 0;
+        if ( ref $prop and
+             UNIVERSAL::isa($prop, 'RDF::Base::Resource') )
+        {
+            my $propweight = $prop->first_prop('weight', {}, $args) || 0;
+            my $lprio = $lang{ $prop->first_prop('is_of_language', {}, $args)->first_prop('code', {}, $args)->plain } || 0;
 
-	    next unless( $lprio or defined $lang{'c'} );
+            next unless( $lprio or defined $lang{'c'} );
 
-	    if( $lprio gt $got_lprio )
-	    {
-		$got_prop   = $prop;
-		$got_weight = $propweight;
-		$got_lprio  = $lprio;
-	    }
-	    elsif( $lprio eq $got_lprio and
-		   $propweight gt $got_weight )
-	    {
-		$got_prop   = $prop;
-		$got_weight = $propweight;
-	    }
-	}
-	elsif( $got_lprio eq -1 )
-	{
-	    $got_prop = $prop;
-	}
+            if ( $lprio gt $got_lprio )
+            {
+                $got_prop   = $prop;
+                $got_weight = $propweight;
+                $got_lprio  = $lprio;
+            }
+            elsif ( $lprio eq $got_lprio and
+                    $propweight gt $got_weight )
+            {
+                $got_prop   = $prop;
+                $got_weight = $propweight;
+            }
+        }
+        elsif ( $got_lprio eq -1 )
+        {
+            $got_prop = $prop;
+        }
     }
 
     return $got_prop;
@@ -1341,21 +1346,22 @@ sub desig
 
     my $index = $list->index;
     my( $elem, $error ) = $list->get_first;
-    while(! $error )
+    while (! $error )
     {
-	if( (ref $elem) and ( UNIVERSAL::isa $elem, 'RDF::Base::Object' ) )
-	{
-	    CORE::push @part, $elem->desig($args_in);
-	}
-	else
-	{
-	    CORE::push @part, "$elem"; # stringify
-	}
+        if ( (ref $elem) and ( UNIVERSAL::isa $elem, 'RDF::Base::Object' ) )
+        {
+            CORE::push @part, $elem->desig($args_in);
+        }
+        else
+        {
+            CORE::push @part, "$elem"; # stringify
+        }
     }
     continue
     {
-	( $elem, $error ) = $list->get_next;
-    };
+        ( $elem, $error ) = $list->get_next;
+    }
+    ;
     $list->set_index( $index );
 
     return join ' / ', @part;
@@ -1384,32 +1390,33 @@ sub as_html
 
     my $index = $list->index;
     my( $elem, $error ) = $list->get_first;
-    while(! $error )
+    while (! $error )
     {
-	if( ref $elem )
-	{
-	    if( UNIVERSAL::isa $elem, 'RDF::Base::Object' )
-	    {
-		CORE::push @part, $elem->as_html($args);
-	    }
-	    elsif( $elem->can('as_html') )
-	    {
-		CORE::push @part, $elem->as_html;
-	    }
-	    else
-	    {
-		CORE::push @part, "$elem"; # stringify
-	    }
-	}
-	else
-	{
-	    CORE::push @part, "$elem"; # stringify
-	}
+        if ( ref $elem )
+        {
+            if ( UNIVERSAL::isa $elem, 'RDF::Base::Object' )
+            {
+                CORE::push @part, $elem->as_html($args);
+            }
+            elsif ( $elem->can('as_html') )
+            {
+                CORE::push @part, $elem->as_html;
+            }
+            else
+            {
+                CORE::push @part, "$elem"; # stringify
+            }
+        }
+        else
+        {
+            CORE::push @part, "$elem"; # stringify
+        }
     }
     continue
     {
-	( $elem, $error ) = $list->get_next;
-    };
+        ( $elem, $error ) = $list->get_next;
+    }
+    ;
     $list->set_index( $index );
 
     my $join = $args->{'join'} || "<br/>\n";
@@ -1448,13 +1455,13 @@ Just as L</as_list> but regards the SCALAR/ARRAY context.
 sub nodes
 {
 #    warn " --> wantarray?\n"; ### DEBUG
-    if( wantarray )
+    if ( wantarray )
     {
-	return @{CORE::shift->as_list(@_)};
+        return @{CORE::shift->as_list(@_)};
     }
     else
     {
-	return CORE::shift->as_list(@_);
+        return CORE::shift->as_list(@_);
     }
 }
 
@@ -1471,13 +1478,13 @@ Just as L</nodes>.
 
 sub plain
 {
-    if( wantarray )
+    if ( wantarray )
     {
-	return @{CORE::shift->as_list(@_)};
+        return @{CORE::shift->as_list(@_)};
     }
     else
     {
-	return CORE::shift->as_list(@_);
+        return CORE::shift->as_list(@_);
     }
 }
 
@@ -1500,9 +1507,9 @@ sub is_true
     return 1 if @{$_[0]};
     return 0 unless $_[0][0];
 
-    if( ref $_[0][0] )
+    if ( ref $_[0][0] )
     {
-	return $_[0][0]->is_true;
+        return $_[0][0]->is_true;
     }
 
     return $_[0][0] ? 1 : 0;
@@ -1546,49 +1553,49 @@ sub contains
 {
     my( $list, $tmpl, $args ) = @_;
 
-    if( ref $tmpl )
+    if ( ref $tmpl )
     {
-	if( ref $tmpl eq 'RDF::Base::List' )
-	{
-	    foreach my $val (@{$tmpl->as_list})
-	    {
-		return 0 unless $list->contains($val, $args);
-	    }
-	    return 1;
-	}
-	elsif( ref $tmpl eq 'ARRAY' )
-	{
-	    foreach my $val (@$tmpl )
-	    {
-		return 0 unless $list->equals($val, $args);
-	    }
-	    return 1;
-	}
-	elsif( ref $tmpl eq 'Para::Frame::List' )
-	{
-	    foreach my $val ($tmpl->as_list)
-	    {
-		return 0 unless $list->contains($val, $args);
-	    }
-	    return 1;
-	}
-	elsif( ref $tmpl eq 'HASH' )
-	{
-	    die "Not implemented: $tmpl";
-	}
+        if ( ref $tmpl eq 'RDF::Base::List' )
+        {
+            foreach my $val (@{$tmpl->as_list})
+            {
+                return 0 unless $list->contains($val, $args);
+            }
+            return 1;
+        }
+        elsif ( ref $tmpl eq 'ARRAY' )
+        {
+            foreach my $val (@$tmpl )
+            {
+                return 0 unless $list->equals($val, $args);
+            }
+            return 1;
+        }
+        elsif ( ref $tmpl eq 'Para::Frame::List' )
+        {
+            foreach my $val ($tmpl->as_list)
+            {
+                return 0 unless $list->contains($val, $args);
+            }
+            return 1;
+        }
+        elsif ( ref $tmpl eq 'HASH' )
+        {
+            die "Not implemented: $tmpl";
+        }
 
-	# else: go to the default handling below
+        # else: go to the default handling below
     }
 
     # Default for simple values and objects:
 
     foreach my $node ( @{$list->as_list} )
     {
-	unless( UNIVERSAL::isa $node, "RDF::Base::Object" )
-	{
-	    confess "List element not a RB object: ".query_desig($node);
-	}
-	return $node if $node->equals($tmpl, $args);
+        unless( UNIVERSAL::isa $node, "RDF::Base::Object" )
+        {
+            confess "List element not a RB object: ".query_desig($node);
+        }
+        return $node if $node->equals($tmpl, $args);
     }
     return undef;
 }
@@ -1624,7 +1631,7 @@ sub contains_any_of
 
     my $DEBUG = 0;
 
-    if( $DEBUG )
+    if ( $DEBUG )
     {
         debug "Checking list with content:";
         foreach my $node ( $list->nodes )
@@ -1633,51 +1640,51 @@ sub contains_any_of
         }
     }
 
-    if( ref $tmpl )
+    if ( ref $tmpl )
     {
-	if( UNIVERSAL::isa $tmpl, 'RDF::Base::List' )
-	{
-	    foreach my $val (@{$tmpl->as_list})
-	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed" if $DEBUG;
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'ARRAY' )
-	{
-	    foreach my $val (@$tmpl )
-	    {
-		debug 2, sprintf "  check array item %s", $val->sysdesig if $DEBUG;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed" if $DEBUG;
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'Para::Frame::List' )
-	{
-	    foreach my $val ($tmpl->as_list)
-	    {
-		debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
-		return 1 if $list->contains_any_of($val, $args);
-	    }
-	    debug 2, "    failed" if $DEBUG;
-	    return 0;
-	}
-	elsif( ref $tmpl eq 'HASH' )
-	{
-	    die "Not implemented: $tmpl";
-	}
+        if ( UNIVERSAL::isa $tmpl, 'RDF::Base::List' )
+        {
+            foreach my $val (@{$tmpl->as_list})
+            {
+                debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif ( ref $tmpl eq 'ARRAY' )
+        {
+            foreach my $val (@$tmpl )
+            {
+                debug 2, sprintf "  check array item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif ( ref $tmpl eq 'Para::Frame::List' )
+        {
+            foreach my $val ($tmpl->as_list)
+            {
+                debug 2, sprintf "  check list item %s", $val->sysdesig if $DEBUG;
+                return 1 if $list->contains_any_of($val, $args);
+            }
+            debug 2, "    failed" if $DEBUG;
+            return 0;
+        }
+        elsif ( ref $tmpl eq 'HASH' )
+        {
+            die "Not implemented: $tmpl";
+        }
     }
 
     # Default for simple values and objects:
 
     foreach my $node ( @{$list->as_list} )
     {
-	debug 2, sprintf "  check node %s", $node->sysdesig if $DEBUG;
-	debug 2, sprintf "  against %s", $tmpl->sysdesig if $DEBUG;
-	return $node if $node->equals($tmpl, $args);
+        debug 2, sprintf "  check node %s", $node->sysdesig if $DEBUG;
+        debug 2, sprintf "  against %s", $tmpl->sysdesig if $DEBUG;
+        return $node if $node->equals($tmpl, $args);
     }
     debug 2,"    failed" if $DEBUG;
     return undef;
@@ -1707,13 +1714,13 @@ sub has_value
 
     my( $node, $error );
     my $index = $l->index;
-    for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
+    for ( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
     {
-	if( $node->has_value($value, $args) )
-	{
-	    $l->set_index( $index );
-	    return $node;
-	}
+        if ( $node->has_value($value, $args) )
+        {
+            $l->set_index( $index );
+            return $node;
+        }
     }
 
     $l->set_index( $index );
@@ -1742,15 +1749,15 @@ sub has_pred
     # This is an optimized version of list autoload has_pred...
 
     my( $pred, $predname );
-    if( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
+    if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
     {
-	$pred = $pred_in;
-	$predname = $pred->plain;
+        $pred = $pred_in;
+        $predname = $pred->plain;
     }
     else
     {
-	$pred = RDF::Base::Pred->get($pred_in);
-	$predname = $pred->plain;
+        $pred = RDF::Base::Pred->get($pred_in);
+        $predname = $pred->plain;
     }
 
     my @grep;
@@ -1759,35 +1766,35 @@ sub has_pred
 
     my( $node, $error );
     my $index = $l->index;
-    for( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
+    for ( ($node,$error)=$l->get_first; !$error; ($node,$error)=$l->get_next )
     {
 #	debug "  checking ".$node->desig;
-	my @arcs;
-	if( $node->initiate_prop( $pred, $proplim, $args ) )
-	{
-	    if( $active and $node->{'relarc'}{$predname} )
-	    {
-		CORE::push @arcs, @{ $node->{'relarc'}{$predname} };
-	    }
+        my @arcs;
+        if ( $node->initiate_prop( $pred, $proplim, $args ) )
+        {
+            if ( $active and $node->{'relarc'}{$predname} )
+            {
+                CORE::push @arcs, @{ $node->{'relarc'}{$predname} };
+            }
 
-	    if( $inactive and $node->{'relarc_inactive'}{$predname} )
-	    {
-		CORE::push @arcs, @{ $node->{'relarc_inactive'}{$predname} };
-	    }
-	}
-	else
-	{
-	    next;
-	}
+            if ( $inactive and $node->{'relarc_inactive'}{$predname} )
+            {
+                CORE::push @arcs, @{ $node->{'relarc_inactive'}{$predname} };
+            }
+        }
+        else
+        {
+            next;
+        }
 
-	foreach my $arc (@arcs )
-	{
-	    next unless $arc->meets_arclim($arclim);
-	    next unless $arc->value_meets_proplim($proplim, $args);
+        foreach my $arc (@arcs )
+        {
+            next unless $arc->meets_arclim($arclim);
+            next unless $arc->value_meets_proplim($proplim, $args);
 
-	    CORE::push @grep, $node;
-	    last;
-	}
+            CORE::push @grep, $node;
+            last;
+        }
     }
     $l->set_index( $index );
 
@@ -1813,37 +1820,37 @@ sub materialize
     confess "FIXME" unless defined $i;
 
     my $elem = $l->{'_DATA'}[$i];
-    if( ref $elem )
+    if ( ref $elem )
     {
-	return $elem;
+        return $elem;
     }
-    elsif( $elem )
+    elsif ( $elem )
     {
-	# Handle long lists
-	unless( $i % 25 )
-	{
-	    if( $Para::Frame::REQ )
-	    {
-		$Para::Frame::REQ->may_yield;
-		die "cancelled" if $Para::Frame::REQ->cancelled;
-	    }
-	}
+        # Handle long lists
+        unless( $i % 25 )
+        {
+            if ( $Para::Frame::REQ )
+            {
+                $Para::Frame::REQ->may_yield;
+                die "cancelled" if $Para::Frame::REQ->cancelled;
+            }
+        }
 
-	# TODO: Maby not call initiate_rel for arcs
-	my $obj = RDF::Base::Resource->get( $elem,
-					    {
-					     initiate_rel =>
-					     $l->{'rb_initiate_rel'},
-					    });
-	if( debug > 2 )
-	{
-	    debug "Materializing element $i -> ".$obj->sysdesig;
-	}
-	return $obj;
+        # TODO: Maby not call initiate_rel for arcs
+        my $obj = RDF::Base::Resource->get( $elem,
+                                            {
+                                             initiate_rel =>
+                                             $l->{'rb_initiate_rel'},
+                                            });
+        if ( debug > 2 )
+        {
+            debug "Materializing element $i -> ".$obj->sysdesig;
+        }
+        return $obj;
     }
     else
     {
-	return is_undef; # For special cases (in search_smart)
+        return is_undef;        # For special cases (in search_smart)
     }
 }
 
@@ -1863,15 +1870,15 @@ sub materialize_by_rec
     # Handle long lists
     unless( $i % 25 )
     {
-	$Para::Frame::REQ->may_yield;
-	die "cancelled" if $Para::Frame::REQ->cancelled;
+        $Para::Frame::REQ->may_yield;
+        die "cancelled" if $Para::Frame::REQ->cancelled;
     }
 
     my $node = RDF::Base::Arc->get_by_rec( $rec );
 
-    if( debug > 2 )
+    if ( debug > 2 )
     {
-	debug "Materializing element $i -> ".$node->sysdesig;
+        debug "Materializing element $i -> ".$node->sysdesig;
     }
 
     return $node;
@@ -1894,9 +1901,9 @@ sub initiate_rel
 {
     my( $l ) = CORE::shift;
 
-    foreach( @$l )
+    foreach ( @$l )
     {
-	$_->initiate_rel(@_);
+        $_->initiate_rel(@_);
     }
     return $l;
 }
@@ -1916,18 +1923,18 @@ sub cmp_by_overload
 {
     my $val_a = $_[0]->desig;
     my $val_b = "";
-    if( ref $_[1] )
+    if ( ref $_[1] )
     {
-	$val_b = $_[1]->desig;
+        $val_b = $_[1]->desig;
     }
 
-    if( $_[2] ) # Reverse?
+    if ( $_[2] )                # Reverse?
     {
-	return( $val_b cmp $val_a );
+        return( $val_b cmp $val_a );
     }
     else
     {
-	return( $val_a cmp $val_b );
+        return( $val_a cmp $val_b );
     }
 }
 
@@ -1961,9 +1968,9 @@ Returns: A boolean value
 
 sub equals
 {
-    foreach( $_[0]->nodes )
+    foreach ( $_[0]->nodes )
     {
-	return 0 unless $_->equals($_[1]);
+        return 0 unless $_->equals($_[1]);
     }
 
     return 1;
@@ -1982,13 +1989,13 @@ L<RDF::Base::Undef> if no element found
 sub get_first_nos
 {
     my( $val, $err ) = $_[0]->get_first;
-    if( $err )
+    if ( $err )
     {
-	return is_undef;
+        return is_undef;
     }
     else
     {
-	return $val;
+        return $val;
     }
 }
 
@@ -2005,13 +2012,13 @@ L<RDF::Base::Undef> if no element found
 sub get_next_nos
 {
     my( $val, $err ) = $_[0]->get_next;
-    if( $err )
+    if ( $err )
     {
-	return is_undef;
+        return is_undef;
     }
     else
     {
-	return $val;
+        return $val;
     }
 }
 
@@ -2030,13 +2037,13 @@ sub concatenate_by_overload
 #    carp "* OVERLOAD concatenate for list obj used";
 
     my $lstr = $l->desig;
-    if( $is_rev )
+    if ( $is_rev )
     {
-	return $str.$lstr;
+        return $str.$lstr;
     }
     else
     {
-	return $lstr.$str;
+        return $lstr.$str;
     }
 }
 
@@ -2066,7 +2073,7 @@ sub parse_prop
 #    debug "Parsing $crit for list";
 
     my $step;
-    if( $crit =~ s/\.(.*)// )
+    if ( $crit =~ s/\.(.*)// )
     {
         $step = $1;
     }
@@ -2074,10 +2081,10 @@ sub parse_prop
     my($prop_name, $propargs) = split(/\s+/, $crit, 2);
     trim(\$prop_name);
     my( $proplim, $arclim2 );
-    if( $propargs )
+    if ( $propargs )
     {
         ($proplim, $arclim2) = parse_query_value($propargs);
-        if( $arclim2 )
+        if ( $arclim2 )
         {
             $args->{'arclim'} = $arclim2;
         }
@@ -2086,7 +2093,7 @@ sub parse_prop
 #    debug "  Calling method $prop_name";
     my $res = $l->$prop_name($proplim, $args);
 
-    if( $step )
+    if ( $step )
     {
 #        debug "  calling $res -> $step";
 #        debug "  res is ".ref($res);
@@ -2121,28 +2128,28 @@ sub transform
 
     my $index = $l->index;
     my( $elem, $error ) = $l->get_first;
-    while(! $error )
+    while (! $error )
     {
-	foreach my $elem2 ( $elem->$lookup->as_listobj->flatten->as_array )
-	{
-	    next unless $elem2->defined;
-	    die datadump($elem2,1) if $elem2->is_list;
-	    next if $seen{ $elem2->id };
-	    $l2->push( $elem2 );
-	    $seen{ $elem2->id } ++;
-	}
+        foreach my $elem2 ( $elem->$lookup->as_listobj->flatten->as_array )
+        {
+            next unless $elem2->defined;
+            die datadump($elem2,1) if $elem2->is_list;
+            next if $seen{ $elem2->id };
+            $l2->push( $elem2 );
+            $seen{ $elem2->id } ++;
+        }
 
 #	$l2->push( $elem->$lookup->as_array );
 #	$l2->push_uniq( grep $_->defined, $elem->$lookup->flatten->as_array );
     }
     continue
     {
-        if( $Para::Frame::REQ )
+        if ( $Para::Frame::REQ )
         {
             $Para::Frame::REQ->note("...". $l->count ."/". $l->size)
               unless( $l->count % 100 );
         }
-	( $elem, $error ) = $l->get_next;
+        ( $elem, $error ) = $l->get_next;
     }
     $l->set_index( $index );
 
@@ -2216,24 +2223,24 @@ AUTOLOAD
     my $DEBUG = 0;
 
     debug "List autoloading $propname for $thingtype" if $DEBUG>1;
-    if( $DEBUG>3 )
+    if ( $DEBUG>3 )
     {
-	debug "LIST params ".query_desig(\@_);
-	debug "LIST IN ".query_desig($self);
-	debug "Got ".$self->size." elements";
+        debug "LIST params ".query_desig(\@_);
+        debug "LIST IN ".query_desig($self);
+        debug "Got ".$self->size." elements";
     }
 
     confess "Self not a list: ".datadump($self) unless UNIVERSAL::isa($self,'RDF::Base::List');
     unless( $self->size )
     {
 #	return $self->new_empty();
-	return is_undef->$propname(@_,undef);
+        return is_undef->$propname(@_,undef);
     }
 
-    if( $propname =~ /([^\.]+)\.(.*)/ )
+    if ( $propname =~ /([^\.]+)\.(.*)/ )
     {
-	my( $first, $last ) = ( $1, $2 );
-	return $self->$first->$last(@_);
+        my( $first, $last ) = ( $1, $2 );
+        return $self->$first->$last(@_);
     }
 
 
@@ -2241,73 +2248,73 @@ AUTOLOAD
     my $list_class;
     my $index = $self->index;
     my( $elem, $error ) = $self->get_first;
-    while(! $error )
+    while (! $error )
     {
-	next unless defined $elem;
-	if( UNIVERSAL::isa( $elem, 'RDF::Base::Object' ) )
-	{
-	    next unless $elem->defined;
+        next unless defined $elem;
+        if ( UNIVERSAL::isa( $elem, 'RDF::Base::Object' ) )
+        {
+            next unless $elem->defined;
 
-	    # Add a undef to force list context in Resource AUTOLOAD
-	    my $res = $elem->$propname(@_,undef);
-	    if( UNIVERSAL::isa( $res, 'RDF::Base::Object' ) )
-	    {
-		if( $res->is_list )
-		{
-		    $list_class ||= ref($res);
-		    if( $res->size )
-		    {
-			CORE::push @list, $res;
-		    }
-		}
-		elsif( $res->defined )
-		{
-		    $list_class ||= $res->list_class;
-		    CORE::push @list, $res;
-		}
-	    }
-	    else
-	    {
-		CORE::push @list, $res;
-	    }
-	}
+            # Add a undef to force list context in Resource AUTOLOAD
+            my $res = $elem->$propname(@_,undef);
+            if ( UNIVERSAL::isa( $res, 'RDF::Base::Object' ) )
+            {
+                if ( $res->is_list )
+                {
+                    $list_class ||= ref($res);
+                    if ( $res->size )
+                    {
+                        CORE::push @list, $res;
+                    }
+                }
+                elsif ( $res->defined )
+                {
+                    $list_class ||= $res->list_class;
+                    CORE::push @list, $res;
+                }
+            }
+            else
+            {
+                CORE::push @list, $res;
+            }
+        }
     }
     continue
     {
-	( $elem, $error ) = $self->get_next;
+        ( $elem, $error ) = $self->get_next;
     }
     $self->set_index( $index );
 
     # Don't assume it is the same as the call class
     $list_class ||= "RDF::Base::List";
 
-    if( $DEBUG > 2 )
+    if ( $DEBUG > 2 )
     {
-	debug( "LIST WASHED ".query_desig(\@list) );
+        debug( "LIST WASHED ".query_desig(\@list) );
     }
 
-    if( my $size = scalar @list )
+    if ( my $size = scalar @list )
     {
-	if( $size == 1 )
-	{
-	    return $list[0];
-	}
-	else
-	{
-	    return $list_class->new(\@list);
-	}
+        if ( $size == 1 )
+        {
+            return $list[0];
+        }
+        else
+        {
+            return $list_class->new(\@list);
+        }
     }
     else
     {
-	debug "  No value returned" if $DEBUG>2;
-	return $list_class->new_empty();
+        debug "  No value returned" if $DEBUG>2;
+        return $list_class->new_empty();
     }
 }
 
 
 ##############################################################################
 
-1;
+  1;
 
 =head1 SEE ALSO
 
