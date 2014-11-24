@@ -80,31 +80,31 @@ sub parse
       $class->extract_string($val_in, $args_in);
 
     my $val_mod;
-    if( ref $val eq 'SCALAR' )
+    if ( ref $val eq 'SCALAR' )
     {
-	$val_mod = $$val;
+        $val_mod = $$val;
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
     {
-	$val_mod = $val->plain;
+        $val_mod = $val->plain;
     }
     else
     {
-	confess "Can't parse $val";
+        confess "Can't parse $val";
     }
 
     unless( length $val_mod )
     {
-	$class->new( undef, $valtype );
+        $class->new( undef, $valtype );
     }
 
     # Always return the incoming object. This may MODIFY the object
     #
-    if( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
+    if ( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
     {
-	$val->{'value'} = URI->new($val_mod);
-	$val->{'valtype'} = $valtype;
-	return $val;
+        $val->{'value'} = URI->new($val_mod);
+        $val->{'valtype'} = $valtype;
+        return $val;
     }
 
     # Implementing class may not take scalarref
@@ -150,15 +150,15 @@ Updated the arc
 sub getset
 {
     my( $u, $method ) = (shift, shift);
-    if( my $uri = $u->{'value'} )
+    if ( my $uri = $u->{'value'} )
     {
-	if( @_ and $u->arc )
-	{
-	    my $res = $uri->$method(@_);
-	    $u->arc->set_value($u->plain);
-	    return $res;
-	}
-	return $uri->$method(@_);
+        if ( @_ and $u->arc )
+        {
+            my $res = $uri->$method(@_);
+            $u->arc->set_value($u->plain);
+            return $res;
+        }
+        return $uri->$method(@_);
     }
 
     return "";
@@ -239,15 +239,15 @@ Updated the arc
 sub getset_query
 {
     my( $u, $method ) = (shift, shift);
-    if( my $uri = $u->{'value'} )
+    if ( my $uri = $u->{'value'} )
     {
-	if( (@_>1) and $u->arc )
-	{
-	    my $res = $uri->$method(@_);
-	    $u->arc->set_value($u->plain);
-	    return $res;
-	}
-	return $uri->$method(@_);
+        if ( (@_>1) and $u->arc )
+        {
+            my $res = $uri->$method(@_);
+            $u->arc->set_value($u->plain);
+            return $res;
+        }
+        return $uri->$method(@_);
     }
 
     return "";
