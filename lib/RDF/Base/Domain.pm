@@ -121,6 +121,22 @@ sub find_by_string
 
 ##############################################################################
 
+=head2 parse_to_list
+
+=cut
+
+sub parse_to_list
+{
+    if( my $domain = shift->parse(@_) )
+    {
+        return RDF::Base::List->new([$domain]);
+    }
+
+    return RDF::Base::List->new_empty();
+}
+
+##############################################################################
+
 =head2 parse
 
 =cut
@@ -129,10 +145,7 @@ sub parse
 {
     my( $this, $value_in, $args ) = @_;
 
-    # Just expecting a domain. But handle some variations
-    $value_in =~ s{^(https?://)?}{http://};
-
-    my $u = RDF::Base::Literal::URL->parse($value_in);
+    my $u = RDF::Base::Literal::URL->parse($value_in, {with_host=>1});
 
     my $host = lc $u->host || '';
 
@@ -149,6 +162,8 @@ sub parse
         return is_undef;
     }
 
+#    debug "Parsed to host $host";
+
 
     # The search will not find domains not yet comitted. Since they are
     # supposed to be unique, we can cache the keys here, in order to
@@ -163,6 +178,9 @@ sub parse
                             code => $host,
                             is   => R->get('internet_domain'),
                            }, solid_propargs );
+
+
+#    cluck "Found domain ".$domain->sysdesig;
 
     return $DOMAIN_CACHE{$host} = $domain;
 

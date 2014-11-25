@@ -71,6 +71,10 @@ sub new
 
   $this->parse( $value, $valtype )
 
+special args:
+
+  with_host
+
 =cut
 
 sub parse
@@ -93,10 +97,16 @@ sub parse
         confess "Can't parse $val";
     }
 
-    unless( length $val_mod )
+    if( not length $val_mod )
     {
-        $class->new( undef, $valtype );
+        $val_mod = undef;
     }
+    elsif( $args->{with_host} )
+    {
+        # Just expecting a domain. But handle some variations
+        $val_mod =~ s{^(https?://)?}{http://};
+    }
+
 
     # Always return the incoming object. This may MODIFY the object
     #

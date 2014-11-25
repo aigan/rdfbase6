@@ -131,6 +131,9 @@ sub new
         $an->update({ea_original => $a}, $args);
     }
 
+    $an->update({in_internet_domain => $a->host}, $args);
+
+
 #    cluck "Name changed to ".$a->name if $a->name;
 #    cluck "Created ".$an->sysdesig;
 
@@ -354,6 +357,22 @@ sub find_by_string
 
 
     return RDF::Base::Email::Address->new( $value, $args );
+}
+
+##############################################################################
+
+=head2 parse_to_list
+
+=cut
+
+sub parse_to_list
+{
+    if( my $node = shift->parse(@_) )
+    {
+        return RDF::Base::List->new([$node]);
+    }
+
+    return RDF::Base::List->new_empty();
 }
 
 ##############################################################################
@@ -1024,7 +1043,7 @@ sub vacuum_facet
     my( $ea, $args ) = @_;
 
     my $a = $ea->first_prop('ea_original', undef, $args);
-    delete $EA_CACHE{$a->code->plain};
+    delete $EA_CACHE{$ea->code->plain};
 
     unless( $a )
     {
@@ -1057,6 +1076,8 @@ sub vacuum_facet
                             move_literals => 1,
                            });
     }
+
+    $ea->update({in_internet_domain => $a->host}, $args);
 
     return $EA_CACHE{$code} = $node;
 }
