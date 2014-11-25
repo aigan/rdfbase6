@@ -2543,8 +2543,15 @@ sub table_row
                 }
                 else
                 {
-                    my $field = $arc->build_field_key();
+                    my $field_keys = {};
+                    if( $is_rev )
+                    {
+                        $field_keys->{revpred} = $arc->pred->label;
+                    }
+                    my $field = $arc->build_field_key($field_keys);
                     my $tagid = $field;
+
+#                    debug "Fieldkey: $field";
 
                     my $tag_attr = $args->{tag_attr} || {};
                     $tag_attr->{class}= $args->{'class'};
@@ -2565,9 +2572,11 @@ sub table_row
                         $field = '-'.$field; # Don't read content
                     }
 
+                    my $val = $is_rev ? $arc->subj : $arc->value;
+
                     my $inputtype = $args->{'inputtype'} || 'input';
                     no strict 'refs';           # For &{$inputtype} below
-                    $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
+                    $out .= &{$inputtype}($field, $val->plain, $fargs);
                 }
             }
 

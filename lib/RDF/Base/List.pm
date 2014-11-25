@@ -1173,6 +1173,7 @@ sub loc
     my @alternatives;
     if ( my $req = $Para::Frame::REQ )
     {
+        confess( datadump($req,1) ) unless UNIVERSAL::can($req,'language');
         @alternatives = ($req->language->alternatives, 'c');
     }
     else

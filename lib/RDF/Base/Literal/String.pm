@@ -735,7 +735,7 @@ the query param "arc___pred_$pred" can be used for default new value
 
 sub wuirc
 {
-    my( $class, $subj, $pred, $args_in ) = @_;
+    my( $class, $node, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(5);
@@ -759,9 +759,15 @@ sub wuirc
     }
 
     my $divid = $args->{divid};
+
+    # Let range be the target valtype, regardless of if this is a
+    # reverse arc or not.
+    #
     my $range = $args->{'range'} || $args->{'range_scof'}
       || $class->this_valtype;
     my $disabled = $args->{'disabled'} ? 1 : 0;
+
+#    debug "Range ".$range->sysdesig;
 
     my $extra_html = ""; # For adding hidden fields, etc.
 
@@ -823,6 +829,9 @@ sub wuirc
         $args->{'maxlength'} ||= 2800;
     }
 
+    my $rev = $args->{'rev'} || 0;
+    # Subj is used also for reverse arcs in the input key
+    my $src = $rev ? 'obj' : 'subj';
 
     my $size = $args->{'size'} ||"";
 
@@ -836,7 +845,14 @@ sub wuirc
         if ( $DEBUG )
         {
             debug "String wuirc for $predname";
-            debug "$predname class is ". $pred->range->instance_class;
+            if( $rev )
+            {
+                debug "rev $predname class is ". $pred->domain->instance_class;
+            }
+            else
+            {
+                debug "$predname class is ". $pred->range->instance_class;
+            }
         }
     }
     else
@@ -846,8 +862,7 @@ sub wuirc
         $pred = RDF::Base::Pred->get_by_label($predname);
     }
 
-
-    debug "wub $inputtype $predname for ".$subj->sysdesig if $DEBUG;
+    debug "wub $inputtype $predname ($rev) for ".$node->sysdesig if $DEBUG;
 
     my $newsubj = $args->{'newsubj'};
     my $rows = $args->{'rows'};
@@ -855,9 +870,11 @@ sub wuirc
     my $maxh = $args->{'maxh'};
 
     $args->{'id'} ||= build_field_key({
-                                       pred => $predname,
-                                       subj => $subj,
+                                       ($rev?'rev':'').pred => $predname,
+                                       subj => $node,
                                       });
+
+#    debug "Fieldkey ".$args->{'id'};
 
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];
@@ -889,7 +906,7 @@ sub wuirc
       $range->instance_class->table_columns( $pred, $args );
     push @$columns, '-edit_link';
     $args->{'columns'} = $columns;
-    $args->{'source'} = $subj;
+    $args->{'source'} = $node;
 
     debug "Columns set to @$columns" if $DEBUG;
 
@@ -902,26 +919,32 @@ sub wuirc
 
     if ( $disabled )
     {
+#        debug "disabled";
         $out .= "<table class=\"wuirc\">\n";
 
-        my $arclist = $subj->arc_list($predname, $proplim, $args);
+        my $arclist = $node->arc_list($predname, $proplim, $args);
 
         while ( my $arc = $arclist->get_next_nos )
         {
             $out .= $arc->table_row( $args );
         }
     }
-    elsif ( $subj->list($predname,$proplim,$arclim)->is_true )
+    elsif ( $rev ?
+            $node->revlist($predname,$proplim,$arclim)->is_true :
+            $node->list($predname,$proplim,$arclim)->is_true )
     {
+#        debug "previous values";
         $out .= "<table class=\"wuirc text_input$wide_class\">\n";
 
-        my $subj_id = $subj->id;
+        my $node_id = $node->id;
 
-        my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
+        my $arcversions =  $node->arcversions($predname, proplim_to_arclim($proplim), {rev=>$rev});
         my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
 
         debug "Arcs list: @arcs" if $DEBUG;
         my $list_weight = 0;
+
+#        debug "Args: ".query_desig($args);
 
         foreach my $arc ( RDF::Base::List->new(\@arcs)->
                           sorted(['obj.is_of_language.code',
@@ -1079,6 +1102,7 @@ sub wuirc
     }
     else
     {
+#        debug "empty";
         $out .= "<table class=\"wuirc text_input$wide_class\">\n";
 
         $no_arc = 1;
@@ -1087,12 +1111,14 @@ sub wuirc
 
     if ( $no_arc or $multi and not $disabled )
     {
+#        debug "Drawing inputfield for new value";
+
         my $default = is_undef;
 
         my $props =
         {
-         pred => $predname,
-         subj => $subj,
+         ($rev?'rev':'').pred => $predname,
+         subj => $node,
         };
 
         my $dc = $args->{'default_create'} || {};
@@ -1112,8 +1138,8 @@ sub wuirc
                 $vnode = $default->node_set;
                 $props->{'vnode'} = $vnode;
                 $args->{'id'} = build_field_key({
-                                                 pred => $predname,
-                                                 subj => $subj,
+                                                 ($rev?'rev':'').pred => $predname,
+                                                 subj => $node,
                                                  vnode => $vnode,
                                                 });
             }
@@ -1186,9 +1212,9 @@ sub wuirc
                     if ( UNIVERSAL::isa( $val, "RDF::Base::Resource" ) )
                     {
                         my $field = build_field_key({
-                                                     pred => $pred,
+                                                     ($rev?'rev':'').pred => $pred,
                                                      subj => $vnode,
-                                                     if => 'subj',
+                                                     if => $src,
                                                      parse => 'id',
                                                     });
                         $extra_html .= &hidden($field,$val->id);
@@ -1196,9 +1222,9 @@ sub wuirc
                     else
                     {
                         my $field = build_field_key({
-                                                     pred => $pred,
+                                                     ($rev?'rev':'').pred => $pred,
                                                      subj => $vnode,
-                                                     if => 'subj',
+                                                     if => $src,
                                                     });
                         $extra_html .= &hidden($field,$val->plain);
                     }

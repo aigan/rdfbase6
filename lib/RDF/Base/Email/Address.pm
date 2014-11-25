@@ -179,7 +179,7 @@ sub wuirc
     return RDF::Base::Literal::String::wuirc(@_);
 }
 
-sub wuirc_disabled
+sub wuirc_disabled # Not used anymore
 {
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -1065,6 +1065,8 @@ sub vacuum_facet
 ##############################################################################
 
 =head2 rollback
+
+Hooked by RDF::Base/init
 
 =cut
 

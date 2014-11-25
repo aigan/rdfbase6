@@ -36,6 +36,7 @@ use RDF::Base::Widget;
 use RDF::Base::Search::Collection;
 use RDF::Base::Search::Result;
 use RDF::Base::Literal::String; # Needed by RB::Utils
+use RDF::Base::Class;
 use RDF::Base::Setup;
 use RDF::Base::Plugins;
 use IMAP::BodyStructure 1.02;
@@ -117,6 +118,7 @@ sub init
                               RDF::Base::Resource->rollback();
                               RDF::Base::Arc->rollback();
                               RDF::Base::Email::Address->rollback();
+                              RDF::Base::Domain->rollback();
                           });
 
     Para::Frame->add_hook('done', \&on_done);
@@ -174,6 +176,14 @@ sub init
 
 =head2 init_on_startup
 
+Sets up db if first run.
+
+Calls on_startup() for a series of RB classes.
+
+Calls L<RDF::Base::Setup/upgrade_db>.
+
+Runs hook "on_rdfbase_ready" after init.
+
 =cut
 
 sub init_on_startup
@@ -227,6 +237,9 @@ sub init_on_startup
 
 
     RDF::Base::Setup->upgrade_db();
+
+    RDF::Base::Class->on_startup();
+
 
 #    warn "init_on_startup 5\n";
 

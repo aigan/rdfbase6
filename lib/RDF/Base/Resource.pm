@@ -483,10 +483,7 @@ sub find_by_anything
     if ( debug > 1 )
     {
         debug "find_by_anything: $val ($coltype)";
-        if ( $valtype )
-        {
-            debug "  valtype ".$valtype->sysdesig;
-        }
+        debug "  valtype ".$valtype->sysdesig;
     }
 
     # 1a. obj as object
@@ -1080,14 +1077,20 @@ sub find_simple
 
 =head2 find_one
 
-  $n->find_one( $query )
+  $class->find_one( $query )
 
-  $n->find_one( $query, \%args )
+  $class->find_one( $query, \%args )
+
+  $node->find_one()
+
+  $node->find_one( $query, \%args )
 
 Does a L</find>, but excpect to fins just one.
 
 If more than one match is found, tries one more time to find exact
 matchas.
+
+If called as a node, thecks that that node matches the query if given.
 
 Supported args are:
 
@@ -1115,7 +1118,24 @@ sub find_one
     my( $this, $query, $args_in ) = @_;
 
     my( $args ) = parse_propargs($args_in);
-    my $nodes = $this->find( $query, $args );
+    my $nodes;
+
+    if( $query )
+    {
+        $nodes = $this->find( $query, $args );
+    }
+    else
+    {
+        if( ref $this ) # Assume its an object
+        {
+            $nodes = RDF::Base::List->new([$this]);
+        }
+        else
+        {
+            $nodes = RDF::Base::List->new_empty();
+        }
+    }
+
 
     if ( $nodes->size > 1 )
     {
@@ -1761,6 +1781,7 @@ The unique node id as a plain string.
 
 sub id
 {
+    confess unless ref $_[0];
     return $_[0]->{'id'};
 }
 
@@ -2103,7 +2124,7 @@ sub list
     my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
 #    my $ts = Time::HiRes::time();
     my( $args, $arclim ) = parse_propargs($args_in);
-    croak "Too many args" if $extra;
+    confess "Too many args" if $extra;
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
@@ -2325,7 +2346,7 @@ sub revlist
 {
     my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
-    croak "Too many args" if $extra;
+    confess "Too many args" if $extra;
 
     if ( $pred_in )
     {
@@ -5185,17 +5206,26 @@ relevant versions, used for chosing version to activate/deactivate.
 
 sub arcversions
 {
-    my( $node, $predname, $proplim ) = @_;
+    my( $node, $predname, $proplim, $args ) = @_;
 
 #    debug "In arcversions for $predname for ".$node->sysdesig;
 
     return                      #probably new...
       unless( UNIVERSAL::isa($node, 'RDF::Base::Resource') );
 
+    $args ||= {};
 
     #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
 
-    my $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    my $arcs;
+    if( $args->{rev} )
+    {
+        $arcs = $node->revarc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    }
+    else
+    {
+        $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    }
 
     my %arcversions;
 
@@ -5215,6 +5245,29 @@ sub arcversions
     #debug datadump( \%arcversions, 2 );
 
     return \%arcversions;
+}
+
+
+##############################################################################
+
+=head2 rev_arcversions
+
+  $n->arcversions( $pred, $proplim, \%args )
+
+Produces a list of all relevant common-arcs, with lists of their
+relevant versions, used for chosing version to activate/deactivate.
+
+  language (if applicable)
+    arc-list...
+
+=cut
+
+sub rev_arcversions
+{
+    my( $node, $predname, $proplim, $args ) = @_;
+
+    $args ||= {}; $args->{rev} = 1;
+    return $node->arcversions( $predname, $proplim, $args );
 }
 
 
@@ -5636,6 +5689,8 @@ sub wu
         $args->{'format'} ||= $format;
     }
 
+#    debug "Range $range, Rangepred $range_pred";
+
     if ( $range )
     {
         $range = $R->get($range) unless ref $range;
@@ -5659,6 +5714,10 @@ sub wu
         $range_scof = $pred->first_prop('range_scof',undef,['active']);
     }
 
+#    debug "Range_is ".$range_is->sysdesig if $range_is;
+#    debug "Range_scof ".$range_scof->sysdesig if $range_scof;
+
+
     unless( $range_pred )
     {
         if ( $range_scof )
@@ -5681,6 +5740,8 @@ sub wu
     {
         $range_class = 'RDF::Base::Resource';
     }
+
+#    debug "range class ".$range_class;
 
     my $range_key = 'range_'.$range_pred;
     $range_key =~ s/^range_is$/range/;
@@ -7130,7 +7191,15 @@ sub first_bless
 
 #    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
 
-#    debug "Initiated $node->{id} as a ".ref($node);
+#    if( ref($node) =~ /Metaclass/ )
+#    {
+#        debug "Initiated $node->{id} as a ".ref($node);
+#    }
+
+    if( $node->can('on_first_bless') )
+    {
+        $node->on_first_bless();
+    }
 
     return $node;
 }

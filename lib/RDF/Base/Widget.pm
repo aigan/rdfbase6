@@ -419,6 +419,8 @@ sub wu_row
 
   build_field_key( \%props )
 
+  In case of reverse arcs, still use subj rather than obj.
+
 =cut
 
 sub build_field_key

@@ -255,7 +255,8 @@ Works like L</if> but checks for falsehood instead.
 
 =cut
 
-  sub update_by_query
+  ;
+sub update_by_query
 {
     my( $class, $args_in ) = @_;
     my( $args_hash, $arclim, $res ) = parse_propargs($args_in);
@@ -547,7 +548,7 @@ sub handle_query_arc_value
         debug "handle_query_arc $arc_id";
         debug "  param $param = $value";
         debug "  subj : ".($subj||'');
-        debug "  pred : ".($pred_name||'');
+        debug "  pred : ".($pred_name||($rev?'rev_'.$rev:''));
         debug "  type : ".($type||'');
         debug "  scof : ".($scof||'');
         debug "  desig: ".($desig||'');
@@ -998,12 +999,12 @@ sub handle_query_arc_value
 
         ### Set up subj and pred_name if missing
         $pred_name ||= $arc->pred->plain;
-        unless( $rev )
-        {
-            $subj ||= $arc->subj;
-        }
 
+        # Will switch place later if reverse
+        $subj ||= $rev ? $arc->obj : $arc->subj;
         $vnode ||= $arc->value_node;
+
+#        debug "Subj set from arc";
     }
 
 
@@ -1026,7 +1027,12 @@ sub handle_query_arc_value
         {
             debug 3, "  Reversing arc update";
 
-            my $subjs = $R->find_by_anything( $value, $args );
+            # Using the same method for lookup as in not rev
+
+            my $valtype = $pred->first_prop('domain',undef,['active']) || $R->get('resource');
+            my $range_class = $valtype->instance_class;
+            my $subjs = $range_class->find_by_string($value, {}, $args);
+
             if ( $type )
             {
                 $subjs = $subjs->find({ is => $type }, $args);
@@ -1036,13 +1042,17 @@ sub handle_query_arc_value
                 $subjs = $subjs->find({ scof => $scof }, $args);
             }
 
+#            debug "  Found ".$subjs->sysdesig;
+
+            #### SWITCHING PLACE OF SUBJ/VALUE
+            #
             $value = $subj;
             $subj = $subjs->find_one; # Expect only one value
 
             if ( debug > 3 )
             {
-                debug sprintf "  New node : %s", $subj->sysdesig;
-                debug sprintf "  New value: %s", $value->sysdesig;
+                debug sprintf "  New node : %s", query_desig($subj);
+                debug sprintf "  New value: %s", query_desig($value);
             }
 
             if ( $arc and not $arc->subj->equals( $subj ) )
@@ -1143,6 +1153,8 @@ sub handle_query_arc_value
 #                    debug "VALTYPE ".$pred->valtype->instance_class;
                     #die "fixme";
                     ### DEBUG: FIXME
+
+                    ### Could use find_by_anything() with valtype. Should use the same route here as for rev
 
                     my $objs = $range_class->find_by_string($val, {}, $args);
 

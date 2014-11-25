@@ -1386,7 +1386,26 @@ http://www.w3.org/ns/auth/acl#Write",
         $C->get('class')->update({ $chbpm => $class_module }, $args);
 
 
-#        $rb->update({ has_version => 10 },$args);
+        $rb->update({ has_version => 10 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+    if( $ver < 11 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        $R->find_set({label => 'exclusive_domain_holder'},$args)
+          ->update({
+                    domain => $C->get('internet_domain'),
+                    range => $C->get('intelligent_agent'),
+                    range_card_max => 1,
+                    is => $C->get('predicate'),
+                    admin_comment => "The only agent that uses this domain. Engough to derive connections for web- and email- addresses.",
+                   },$args);
+
+
+#        $rb->update({ has_version => 11 },$args);
         $res->autocommit;
         $req->done;
     }
