@@ -46,8 +46,8 @@
 </p>
 
 <br clear="both">
-<h3 class="float-left table_txt_light">[% loc("[quant,_1,hit]",  search_result.size) %]</h3>
-<h3 class="float-right table_txt_light">[% search_result.pagelist %]</h3>
+<h3 class="float_left table_txt_light">[% loc("[quant,_1,hit]",  search_result.size) %]</h3>
+<h3 class="float_right table_txt_light">[% search_result.pagelist %]</h3>
 
 <table class="admin">
   <tr>
@@ -68,4 +68,4 @@
   [% END %]
 </table>
 
-<h3 class="float-right table_txt_light">[% search_result.pagelist %]</h3>
+<h3 class="float_right table_txt_light">[% search_result.pagelist %]</h3>
