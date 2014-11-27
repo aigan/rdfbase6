@@ -43,9 +43,9 @@ RDFbase Resource Session class
 sub search_collection
 {
     my( $s, $val ) = @_;
-    if( defined $val )
+    if ( defined $val )
     {
-	return $s->{'search_collection'} = $val;
+        return $s->{'search_collection'} = $val;
     }
 
     return $s->{'search_collection'} ||=
