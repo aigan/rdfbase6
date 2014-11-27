@@ -82,13 +82,13 @@ sub set_result
 {
     my( $search, $result_in ) = @_;
 
-    if( UNIVERSAL::isa $result_in, 'RDF::Base::List' )
+    if ( UNIVERSAL::isa $result_in, 'RDF::Base::List' )
     {
         $search->{'custom_result'} = $result_in;
     }
-    elsif( ref $result_in eq 'ARRAY' )
+    elsif ( ref $result_in eq 'ARRAY' )
     {
-       $search->{'custom_result'} = RDF::Base::List->new($result_in);
+        $search->{'custom_result'} = RDF::Base::List->new($result_in);
     }
     else
     {
@@ -112,13 +112,13 @@ sub has_criterions
 {
     my( $search ) = @_;
 
-    if( @{$search->{'rb_search'}} or $search->{'custom_result'} )
+    if ( @{$search->{'rb_search'}} or $search->{'custom_result'} )
     {
-	return 1;
+        return 1;
     }
     else
     {
-	return 0;
+        return 0;
     }
 }
 
@@ -130,13 +130,13 @@ sub has_criterions
 
 sub is_rb_search
 {
-    if( $_[0]->{'rb_search'}[0] )
+    if ( $_[0]->{'rb_search'}[0] )
     {
-	return 1;
+        return 1;
     }
     else
     {
-	return 0;
+        return 0;
     }
 }
 
@@ -158,12 +158,12 @@ sub result
 
     unless( $result )
     {
-	my( $search ) = @_;
+        my( $search ) = @_;
 
-	my %params = ( search => $search );
-	$result = $search->{'result'} =
-	  $Para::Frame::CFG->{'search_result_class'}->
-	    new(undef, \%params );
+        my %params = ( search => $search );
+        $result = $search->{'result'} =
+          $Para::Frame::CFG->{'search_result_class'}->
+            new(undef, \%params );
     }
 
     return $result;
@@ -186,7 +186,7 @@ sub reset
 
     foreach my $key ( keys %$search )
     {
-	delete $search->{$key};
+        delete $search->{$key};
     }
 
 
@@ -206,15 +206,15 @@ sub reset
 #    delete $search->{'limit_display'};
 
 
-    if( my $req = $Para::Frame::REQ )
+    if ( my $req = $Para::Frame::REQ )
     {
-	my $user = $req->user;
-	if( $user and $req->is_from_client )
-	{
-	    my $q = $req->q;
+        my $user = $req->user;
+        if ( $user and $req->is_from_client )
+        {
+            my $q = $req->q;
 
-	    $search->{'page_size'} = $q->param('limit');
-	}
+            $search->{'page_size'} = $q->param('limit');
+        }
     }
 
     return $search;
@@ -244,13 +244,13 @@ sub size
 
     my $result = $search->result;
 
-    if( $result )
+    if ( $result )
     {
-	return $result->size;
+        return $result->size;
     }
     else
     {
-	return undef;
+        return undef;
     }
 }
 
@@ -300,8 +300,8 @@ sub first_rb_part
 {
     my( $search ) = @_;
 
-   return $search->{'rb_search'}[0] ||=
-     RDF::Base::Search->new();
+    return $search->{'rb_search'}[0] ||=
+      RDF::Base::Search->new();
 }
 
 ##############################################################################
@@ -326,13 +326,13 @@ sub rb_parts
 
 sub custom_parts
 {
-    if( $_[0]->{'custom_result'} )
+    if ( $_[0]->{'custom_result'} )
     {
-	return [$_[0]->{'custom_result'}];
+        return [$_[0]->{'custom_result'}];
     }
     else
     {
-	return [];
+        return [];
     }
 }
 
@@ -361,8 +361,8 @@ sub modify
     debug sprintf "MODIFYING %d parts", scalar(@$parts);
     foreach my $s (@$parts)
     {
-	debug "  MODIFYING search $s";
-	$s->modify(@_);
+        debug "  MODIFYING search $s";
+        $s->modify(@_);
     }
 
     undef $search->{'result'};
@@ -380,7 +380,7 @@ sub add_stats
 {
     foreach my $s (@{shift->rb_parts})
     {
-	$s->add_stats(@_);
+        $s->add_stats(@_);
     }
 }
 
@@ -394,7 +394,7 @@ sub order_default
 {
     foreach my $s (@{shift->rb_parts})
     {
-	$s->order_default(@_);
+        $s->order_default(@_);
     }
 }
 
@@ -410,7 +410,7 @@ sub execute
     my( $search ) = shift;
     foreach my $s (@{$search->rb_parts})
     {
-	$s->execute(@_);
+        $s->execute(@_);
     }
 
     $search->{'is_active'} = 1;
