@@ -20,7 +20,7 @@ use RDF::Base::Search;
 
 =head1 DESCRIPTION
 
-RDFbase Action for saving sessionobj search in session
+RDFbase Action for loading sessionobj search from session
 
 =cut
 
@@ -36,7 +36,7 @@ sub handler
 
     my $col = $req->session->search_load($label);
 
-    return "Saved search as ".$col->label;
+    return "Loaded search ".$col->label;
 }
 
 

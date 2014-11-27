@@ -49,7 +49,7 @@ sub search_collection
     }
 
     return $s->{'search_collection'} ||=
-      $Para::Frame::CFG->{'search_collection_class'}->new();
+      RDF::Base->Search_Collection->new();
 }
 
 ###########################################################################
@@ -109,9 +109,10 @@ sub search_save
 
 =head2 search_load
 
+  $s->search_load();
   $s->search_load( $label );
 
-returns the saved $collection.
+returns the saved $collection. Sets the current search.
 
 =cut
 
@@ -136,6 +137,30 @@ sub search_load
     }
 
     return $s->{'search_collection'} = $col;
+}
+
+###########################################################################
+
+=head2 search_get
+
+  $s->search_get( $label );
+
+returns the saved $collection.
+
+=cut
+
+sub search_get
+{
+    my( $s, $label ) = @_;
+
+    my $saved = $s->{'search_saved'} ||= {};
+
+    unless( $label )
+    {
+        throw('validation',"Label missing");
+    }
+
+    return $saved->{$label};
 }
 
 ###########################################################################

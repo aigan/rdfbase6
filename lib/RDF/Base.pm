@@ -342,6 +342,21 @@ sub Literal ()
 
 ######################################################################
 
+=head2 Search_Collection
+
+Returns class object for L<RDF::Base::Search::Colletion> or what was
+specified by $Para::Frame::CFG->{'search_collection_class'}
+
+=cut
+
+sub Search_Collection ()
+{
+    return $Para::Frame::CFG->{'search_collection_class'};
+}
+
+
+######################################################################
+
 =head2 on_done
 
   Runs after each request

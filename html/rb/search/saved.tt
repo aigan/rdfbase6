@@ -4,11 +4,24 @@
 
 <p>Only saved in current session. It can expire at any time.</p>
 
+<p>
+<select name="do">
+<option value="">Choose action</option>
+<option value="merge">Merge</option>
+</select>
+[% go('Utför', undef, 'search_multi', tag_attr = {id="do_button" class="btn-xs"}) %]
+
+
 <table class="admin">
-<tr><th class="narrow">Do <th>Label <th>Size </tr>
+<tr><th class="narrow">Do <th class="wide">Label <th>Parts <th>Size </tr>
 
 [% FOREACH col IN req.s.search_saved_list %]
-<tr><td><td>[% jump(col.label,"$home/rb/search/saved.tt", run='search_load',label=col.label) %] <td>[% col.size %]</tr>
+<tr>
+<td>[% checkbox('do_item', col.label, 0) %]
+<td>[% jump(col.label,"$home/rb/search/saved.tt", run='search_load',label=col.label) %] 
+<td>[% col.parts.size %]
+<td>[% col.size %]
+</tr>
 [% END %]
 </table>
 
