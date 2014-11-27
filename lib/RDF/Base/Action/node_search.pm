@@ -32,8 +32,22 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search_col = $req->session->search_collection;
-    $search_col->reset;
+    my $s = $req->session;
+    my $col = $s->search_collection;
+
+    if( $col->label )
+    {
+        debug "Active 1 col is $col";
+
+        $col = $col->new; # Get a new object;
+        $s->search_collection( $col ); # Seitch t new object
+
+        debug "Active 2 col is $col";
+    }
+    else
+    {
+        $col->reset;
+    }
 
     my $query = $req->q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
@@ -63,19 +77,19 @@ sub handler
 #    debug "Search result contains";
 #    debug datadump($search->{'result'},2);
 
-    $search_col->add($search);
+    $col->add($search);
 #    debug "Search_col now contains";
-#    debug datadump($search_col,2);
+#    debug datadump($col,2);
 
 
     if ( my $result_url = $req->q->param('search_result') )
     {
-        $search_col->result_url( $result_url );
+        $col->result_url( $result_url );
     }
 
     if ( my $form_url = $req->q->param('search_form') )
     {
-        $search_col->form_url( $form_url );
+        $col->form_url( $form_url );
     }
 
     return "";

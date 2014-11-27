@@ -45,8 +45,10 @@ sub handler
 
         debug "Active 2 col is $col";
     }
-
-    $col->reset;
+    else
+    {
+        $col->reset;
+    }
 
     my $q = $req->q;
 

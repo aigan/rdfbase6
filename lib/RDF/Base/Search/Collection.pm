@@ -184,6 +184,9 @@ sub reset
 {
     my( $search ) = @_;
 
+    cluck "Reset search collection ".($search->label||'');
+
+
     foreach my $key ( keys %$search )
     {
         delete $search->{$key};
