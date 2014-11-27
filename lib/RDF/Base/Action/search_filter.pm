@@ -40,12 +40,12 @@ sub handler
     my $params = {};
     foreach my $key ( $q->param() )
     {
-	next unless $key =~ /^prop_(.*)/;
+        next unless $key =~ /^prop_(.*)/;
 
-	$params->{$1} = $q->param($key);
+        $params->{$1} = $q->param($key);
     }
 
-    if( my $box = $q->param('filter') )
+    if ( my $box = $q->param('filter') )
     {
         my $bprops = parse_query_props($box);
 #        debug( query_desig( $bprops ) );
