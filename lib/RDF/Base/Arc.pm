@@ -6786,7 +6786,7 @@ sub edit_link_html
                   fallback => $arc->info_updated_html($args),
                   html     => 'true',
 #                  live     => 'true',
-                  delayOut => 2000,
+#                  delayOut => 2000,
                  })
        . "  );"
        . "</script>"

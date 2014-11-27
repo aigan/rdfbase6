@@ -16,11 +16,16 @@ use 5.010;
 use strict;
 use warnings;
 
+use Para::Frame::Utils qw( debug datadump throw );
+
 use RDF::Base::Search;
 
 =head1 DESCRIPTION
 
 RDFbase Action for clearing sessionobj search
+
+Will instead create a new search obj if existing search obj has been
+given a label. (Becaus that search has been saved)
 
 =cut
 
@@ -28,23 +33,35 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search_col = $req->session->search_collection;
-    $search_col->reset;
+    my $s = $req->session;
+    my $col = $s->search_collection;
+
+    if( $col->label )
+    {
+        debug "Active 1 col is $col";
+
+        $col = $col->new; # Get a new object;
+        $s->search_collection( $col ); # Seitch t new object
+
+        debug "Active 2 col is $col";
+    }
+
+    $col->reset;
 
     my $q = $req->q;
 
-    if( my $form_url = $req->q->param('search_form') )
+    if ( my $form_url = $req->q->param('search_form') )
     {
-	$search_col->form_url( $form_url );
+        $col->form_url( $form_url );
     }
 #    else
 #    {
-#	$search_col->form_url( $req->referer_path );
+#	$col->form_url( $req->referer_path );
 #    }
 
-    if( my $result_url = $req->q->param('search_result') )
+    if ( my $result_url = $req->q->param('search_result') )
     {
-	$search_col->result_url( $result_url );
+        $col->result_url( $result_url );
     }
 
 

@@ -1,0 +1,14 @@
+[% META title="Saved searches"
+   level = 1
+%]
+
+<p>Only saved in current session. It can expire at any time.</p>
+
+<table class="admin">
+<tr><th class="narrow">Do <th>Label <th>Size </tr>
+
+[% FOREACH col IN req.s.search_saved_list %]
+<tr><td><td>[% jump(col.label,"$home/rb/search/saved.tt", run='search_load',label=col.label) %] <td>[% col.size %]</tr>
+[% END %]
+</table>
+

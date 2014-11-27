@@ -7,8 +7,8 @@
     [% IF searchobj.result_url; %]<li><i class="fa fa-list-ul"></i> [% jump('Resultatlista', searchobj.result_url); %]</li>[% END %]   
     [% IF searchobj.form_url; %]<li><i class="fa fa-columns"></i> [% jump('Sökformulär', searchobj.form_url); %]</li>[% END %]			
 		[% IF searchobj.is_rb_search %]
-			<li><i class="fa fa-bars"></i> [% jump('Söktext', "$home/rb/node/search.tt") %]</li>		
-			<li><i class="fa fa-th"></i> [% jump('Sökkomponenter', "$home/rb/node/search_parts.tt") %]</li>
+			<li><i class="fa fa-bars"></i> [% jump('Söktext', "$home/rb/search/") %]</li>		
+			<li><i class="fa fa-th"></i> [% jump('Sökkomponenter', "$home/rb/search/parts.tt") %]</li>
 		[% END %]
 		<li><i class="fa fa-ban"></i> [% jump('Rensa sökning', searchobj.form_url, run="search_clear", tag_attr={class='none'}) %]</li>
 		[% IF req.session.advanced_mode %]

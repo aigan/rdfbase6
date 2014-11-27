@@ -5,7 +5,7 @@ package RDF::Base::Search::Collection;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -21,7 +21,7 @@ RDF::Base::Search::Collection
 use 5.010;
 use strict;
 use warnings;
-use Carp qw( confess );
+use Carp qw( confess cluck );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump deunicode throw );
@@ -484,6 +484,30 @@ Sets and returns the given C<$page_size>
 sub set_page_size
 {
     return $_[0]->{'page_size'} = int($_[1]);
+}
+
+
+######################################################################
+
+=head2 label
+
+  $l->label( $page_size )
+  $l->label( $new_label )
+
+Get/set label for search
+
+=cut
+
+sub label
+{
+    if( $_[1] and length $_[1] )
+    {
+        debug "Setting search col label to $_[1]";
+
+        $_[0]->{'label'} = $_[1];
+    }
+
+    return $_[0]->{'label'};
 }
 
 
