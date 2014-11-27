@@ -233,7 +233,7 @@ sub id_alphanum
 Parses C<$criterion>...
 
 Returns the values of the property matching the criterion.  See
-L</list> for explanation of the params.
+L<RDF::Base::Resource/list> for explanation of the params.
 
 See also L<RDF::Base::List/parse_prop>
 
@@ -329,11 +329,11 @@ sub parse_prop
   $n->prop( $predname, $value, \%args )
 
 Returns the values of the property with predicate C<$predname>.  See
-L</list> for explanation of the params.
+L<RDF::Base::Resource/list> for explanation of the params.
 
 For special predname C<id>, returns the id.
 
-Use L</first_prop> or L</list> instead if that's what you want!
+Use L</first_prop> or L<RDF::Base::Resource/list> instead if that's what you want!
 
 If given a value instead of a proplim, returns true/false based on if
 the node has a property with the specified $predname and $value.
@@ -396,7 +396,7 @@ sub prop
   $n->revprop( $predname, $proplim, \%args )
 
 Returns the values of the reverse property with predicate
-C<$predname>.  See L</list> for explanation of the params.
+C<$predname>.  See L<RDF::Base::Resource/list> for explanation of the params.
 
 Returns:
 
@@ -1813,8 +1813,9 @@ arclim2 and will be used for proplims. The given arclim will be used
 in the arclim for the given $method.
 
 If C<$proplim> or C<$arclim> are given, we return the result of
-C<$n-E<gt>L<list|/list>( $proplim, $arclim )>. In the other case, we return the
-result of C<$n-E<gt>L<prop|/prop>( $proplim, $args )>.
+C<$n-E<gt>L<list|RDF::Base::Resource/list>( $proplim, $arclim )>. In
+the other case, we return the result of C<$n-E<gt>L<prop|/prop>(
+$proplim, $args )>.
 
 But if C<$method> begins with C<rev_> we instead call the
 corresponding L</revlist> or L</revprop> correspondingly, with the

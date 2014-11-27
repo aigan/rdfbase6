@@ -47,7 +47,7 @@ sub handler
         }
 
         my $col = RDF::Base->Search_Collection->new();
-        my( $form_url, $result_url );
+        my( $form_url, $result_url, $active );
 
 
         foreach my $label ( @items )
@@ -66,12 +66,15 @@ sub handler
 
             $form_url ||= $pcol->form_url;
             $result_url ||= $pcol->result_url;
+            $active ||= $pcol->is_active;
 
             debug "Do $label";
         }
 
         $col->result_url($result_url);
         $col->form_url($form_url);
+
+        $col->set_active if $active;
 
         $s->search_collection($col);
     }

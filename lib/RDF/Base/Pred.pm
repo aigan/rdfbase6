@@ -33,7 +33,7 @@ use Para::Frame::Widget;
 use Para::Frame::Reload;
 
 use RDF::Base::List;
-use RDF::Base::Utils qw( valclean is_undef parse_propargs );
+use RDF::Base::Utils qw( valclean is_undef parse_propargs query_desig );
 use RDF::Base::Literal::String;
 use RDF::Base::Constants qw( $C_predicate );
 
@@ -377,6 +377,8 @@ sub find_by_anything
     my( $this, $label, $args ) = @_;
     my $class = ref($this) || $this;
 
+#    confess "RB Pred find_by_anything $label with ".query_desig($args) unless $args;
+
     $args ||= {};
     my( @new );
 
@@ -462,6 +464,15 @@ sub find_by_anything
             }
         }
         return $list;
+    }
+    elsif( $label =~ /\.|\[/ )
+    {
+        # Dynamic property
+        unless( $args->{nonfatal} )
+        {
+#            debug "Args: ".query_desig($args);
+            die "$label is not a predicate";
+        }
     }
     else
     {

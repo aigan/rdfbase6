@@ -286,6 +286,9 @@ sub parse_query_props
         trim(\$prop_name);
         $props->{$prop_name} = parse_query_value($value);
     }
+
+#    debug " parse_query_props gave:\n".query_desig($props);
+
     return $props;
 }
 
@@ -296,6 +299,13 @@ sub parse_query_props
 
 used by parse_query_props
 
+Format: 
+
+In list context, returns ( $value, $arclim )
+
+In scalar context, returns either $value or $arclim. (Throws exception
+if both are provided.)
+
 =cut
 
 
@@ -303,38 +313,47 @@ sub parse_query_value
 {
     my( $val_in ) = @_;
 
-    my $val = $val_in;
     my $arclim;
-    if ( $val_in =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
+
+    unless( $val_in =~ /^\s*(.*?)\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
     {
-#        debug "Creating subcriterion from $val_in";
-        my $pairs = $1;
-        my $alim_in = $2;
-        my %sub;
+        confess "Failed to parse query value $val_in";
+    }
+
+    my $val = $1;
+    my $pairs = $2;
+    my $alim_in = $3;
+    my %sub;
 
 #        debug "query proplims $pairs" if $pairs;
 #        debug "query arclims $alim_in" if $alim_in;
 
-        if ( $pairs )
+    if ( $pairs )
+    {
+        foreach my $part ( split /\s*,\s*/, $pairs )
         {
-            foreach my $part ( split /\s*,\s*/, $pairs )
-            {
-#            debug "  Processing $part";
-                my( $skey, $svalue ) = split(/\s+/, $part, 2);
-#            debug "  $skey = $svalue";
-                $sub{ $skey } = parse_query_value($svalue);
-            }
+            #            debug "  Processing $part";
+            my( $skey, $svalue ) = split(/\s+/, $part, 2);
+            #            debug "  $skey = $svalue";
+            $sub{ $skey } = parse_query_value($svalue);
         }
-        $val = \%sub;
 
-        if ( $alim_in )
+        if( length($val) )
         {
-#            debug "Parsing alim $alim_in";
-            $arclim = RDF::Base::Arc::Lim->parse_string("[$alim_in]");
+            throw('validation', "Both value and subquery not supported: $val_in");
         }
+
+        $val = \%sub;
+    }
+
+    if ( $alim_in )
+    {
+#            debug "Parsing alim $alim_in";
+        $arclim = RDF::Base::Arc::Lim->parse_string("[$alim_in]");
+    }
 
 #        debug "Got ".query_desig($val);
-    }
+
 #    elsif( length $val )
 #    {
 #        confess "Failed to parse query value $val";
@@ -345,9 +364,9 @@ sub parse_query_value
     {
         return( $val, $arclim );
     }
-    elsif ( $arclim and keys %$val )
+    elsif ( $arclim and $val )
     {
-        throw("Both subquery and arclim: $val_in");
+        throw('validation', "Both subquery and arclim: $val_in");
     }
     elsif ( $arclim )
     {

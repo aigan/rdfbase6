@@ -186,4 +186,49 @@ sub search_saved_list
 
 ###########################################################################
 
+=head2 search_delete
+
+  $s->search_delete
+  $s->search_delete( $label )
+
+  Returns false if collection was empty.
+
+  Returns the collection deleted from session.
+
+=cut
+
+sub search_delete
+{
+    my( $s, $label ) = @_;
+
+    my $col;
+    if( $label )
+    {
+        $col = $s->search_get( $label );
+    }
+    else
+    {
+        $col = $s->search_collection();
+        $label = $col->label;
+    }
+
+    if( $label )
+    {
+        my $saved = $s->{'search_saved'} ||= {};
+        delete $saved->{$label};
+    }
+
+    if( $col eq $s->search_collection() )
+    {
+        $s->{'search_collection'} =
+          RDF::Base->Search_Collection->new();
+    }
+
+    return 0 unless scalar @{$col->parts};
+
+    return $col;
+}
+
+###########################################################################
+
 1;

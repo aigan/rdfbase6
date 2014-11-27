@@ -735,7 +735,6 @@ sub parse_sortargs
 {
     my( $this, $sortargs, $dir ) = @_;
 
-    my $args = {};
     my $DEBUG = 0;
 
     $sortargs ||= 'desig';
@@ -776,6 +775,10 @@ sub parse_sortargs
             debug "i: $i";
             debug sprintf("sortargs: %d\n", scalar @$sortargs);
         }
+
+        my $args = {};
+        my $arclim;
+
         unless( ref $sortargs->[$i] eq 'HASH' )
         {
             $sortargs->[$i] =
@@ -793,11 +796,22 @@ sub parse_sortargs
         {
             die "not implemented ($on)";
         }
+
+        ### Parse out arclim
+        #
+        ( $on, $arclim ) = parse_query_value( $on );
+        $sortargs->[$i]->{'on'} = $on;
+        if( $arclim )
+        {
+            $sortargs->[$i]->{'arclim'} = $arclim;
+            $args->{arclim} = $arclim;
+        }
+
+
         CORE::push @prop_str_list, $on;
 
         $on =~ /([^\.]+)$/;     #match last part
         my $pred_str = $1;
-
 
         my $cmp = $sortargs->[$i]->{'cmp'};
         unless( $cmp )
@@ -2056,6 +2070,12 @@ sub concatenate_by_overload
   $n->parse_prop( $criterion, \%args )
 
 Parses C<$criterion>...
+
+Formats handled:
+
+  prop1.prop2.prop3
+
+
 
 Returns the values of the property matching the criterion.  See
 L</list> for explanation of the params.

@@ -608,7 +608,7 @@ sub sysdesig
             $num *=2;
         }
 
-        push @limpart, "(".join(' and ', @parts).")";
+        push @limpart, "[".join(' and ', @parts)."]";
     }
 
     return join(' or ', @limpart).".";
