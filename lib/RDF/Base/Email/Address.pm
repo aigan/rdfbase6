@@ -82,10 +82,9 @@ Will B<not> throw an exception if email address is faulty
 
 sub new
 {
-    my( $class, $in_value, $args ) = @_;
+    my( $class, $in_value, $args_in ) = @_;
 
     my $a = LEA->parse($in_value);
-
 
     my $code_in = $a->address;
     unless( $code_in )
@@ -120,6 +119,8 @@ sub new
                                             is=>$C_email_address_holder,
                                            }, $an_args);
     }
+
+    my $args = solid_propargs($args_in);
 
     if( $a->name and not $an->name->loc )
     {
