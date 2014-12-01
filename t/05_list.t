@@ -73,9 +73,7 @@ my $cfg_in =
 };
 
 warnings_like {Para::Frame->configure($cfg_in)}
-[ qr/^Timezone set to /,
-  qr/^Stringify now set$/,
-  qr/^Registring ext tt to burner html$/,
+[ qr/^Registring ext tt to burner html$/,
   qr/^Registring ext html_tt to burner html$/,
   qr/^Registring ext xtt to burner html$/,
   qr/^Registring ext css_tt to burner plain$/,
@@ -114,7 +112,7 @@ warnings_like
 }[
   qr/^Adding hooks for RDF::Base$/,
   qr/^Registring ext js to burner plain$/,
-  qr/^Done adding hooks for RDF::Base$/,
+#  qr/^Done adding hooks for RDF::Base$/,
  ], "RB Init";
 
 

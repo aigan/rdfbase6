@@ -5,7 +5,7 @@ package RDF::Base::Email::Bulk;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2010-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2010-2014 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -185,7 +185,14 @@ sub process
             my $err = $@;
             chomp($err);
             debug "Problem sending to $to: $err";
-            $bulk->{'state'}{'err'}{$to->plain} = $err;
+            if(my $to_str = eval{$to->[0]->plain})
+            {
+                $bulk->{'state'}{'err'}{$to_str} = $err;
+            }
+            else
+            {
+                $bulk->{'state'}{'err'}{$to} = $err;
+            }
             $bulk->{'state'}{'cnt_failed'} ++;
         }
     }

@@ -149,7 +149,7 @@ sub parse
 
     my $host = lc $u->host || '';
 
-    if( $host =~ /^\d/ ) # Probably ip
+    if( $host =~ /^[\d\.]{7,15}$/ ) # Probably ip
     {
         $host = '';
     }

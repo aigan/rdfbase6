@@ -71,9 +71,7 @@ my $cfg_in =
 
 #Para::Frame->configure($cfg_in); ## TEST
 warnings_like {Para::Frame->configure($cfg_in)}
-[ qr/^Timezone set to /,
-  qr/^Stringify now set$/,
-  qr/^Registring ext tt to burner html$/,
+[ qr/^Registring ext tt to burner html$/,
   qr/^Registring ext html_tt to burner html$/,
   qr/^Registring ext xtt to burner html$/,
   qr/^Registring ext css_tt to burner plain$/,
@@ -108,9 +106,9 @@ warnings_like
 	   import_tt_params => 0,
 	  });
 }[
-  qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
+#  qr/^DBIx uses package Para::Frame::DBIx::Pg$/,
   qr/^REGISTER MODULE Para::Frame::DBIx::Pg$/,
-  qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
+#  qr/^Reblessing dbix into Para::Frame::DBIx::Pg$/,
  ], "DBIx config";
 
 
