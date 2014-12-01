@@ -61,21 +61,21 @@ sub select
     my $vardir = $class->vardir;
     create_dir($vardir);
     my $d = IO::Dir->new($vardir);
-    while( defined(my $bulkid = $d->read) )
+    while ( defined(my $bulkid = $d->read) )
     {
-	next if $bulkid =~/^\./;
-	debug "Dir $bulkid";
+        next if $bulkid =~/^\./;
+        debug "Dir $bulkid";
 
-	my $bulk = $class->new_by_file( $bulkid );
-	if( $bulk->at_end )
-	{
-	    $bulk->report;
-	    $bulk->remove;
-	}
-	else
-	{
-	    return $bulk;
-	}
+        my $bulk = $class->new_by_file( $bulkid );
+        if ( $bulk->at_end )
+        {
+            $bulk->report;
+            $bulk->remove;
+        }
+        else
+        {
+            return $bulk;
+        }
     }
 
     return;
@@ -138,56 +138,56 @@ sub process
     my $esp = $es->params;
 
 
-    if( $esp->{'email_body'} )
+    if ( $esp->{'email_body'} )
     {
-	$esp->{'plaintext'} = $esp->{'email_body'};
-	$esp->{'template'}  = 'plaintext.tt';
+        $esp->{'plaintext'} = $esp->{'email_body'};
+        $esp->{'template'}  = 'plaintext.tt';
     }
-    elsif( my $te_in = $esp->{'has_email_body_template_email'} )
+    elsif ( my $te_in = $esp->{'has_email_body_template_email'} )
     {
-	debug "Adding email as a template";
+        debug "Adding email as a template";
 
-	my $te = $R->get($te_in);
-	my $rend = RDF::Base::Renderer::Email::From_email->
-	  new({ template => $te, params => $esp });
+        my $te = $R->get($te_in);
+        my $rend = RDF::Base::Renderer::Email::From_email->
+          new({ template => $te, params => $esp });
 
-	$es->{'renderer'}  = $rend;
+        $es->{'renderer'}  = $rend;
     }
     else
     {
-	throw 'validation', "Email has no body";
+        throw 'validation', "Email has no body";
     }
 
 
-    for( my $i=0; $i<$batch; $i++ )
+    for ( my $i=0; $i<$batch; $i++ )
     {
-	my $to_id = <$fh>;
-	unless( $to_id )
-	{
-	    debug "Got to end of file";
-	    $bulk->{'state'}{'at_end'} = 1;
-	    last;
-	}
-	chomp($to_id);
-	my $to_obj = $R->get($to_id);
-	my $to = $to_obj->list('has_email_address_holder')->first_prop('code')->as_arrayref;
+        my $to_id = <$fh>;
+        unless( $to_id )
+        {
+            debug "Got to end of file";
+            $bulk->{'state'}{'at_end'} = 1;
+            last;
+        }
+        chomp($to_id);
+        my $to_obj = $R->get($to_id);
+        my $to = $to_obj->list('has_email_address_holder')->first_prop('code')->as_arrayref;
 #	debug "To ".datadump($to_obj->list('has_email_address_holder')->first_prop('code')->as_arrayref,1);
-	$bulk->{'state'}{'cnt_proc'} ++;
-	eval
-	{
-	    $es->send_by_proxy({to => $to,
-				to_obj => $to_obj,
-			       });
-	    $bulk->{'state'}{'cnt_sent'} ++;
-	};
-	if( $@ )
-	{
-	    my $err = $@;
-	    chomp($err);
-	    debug "Problem sending to $to: $err";
-	    $bulk->{'state'}{'err'}{$to->plain} = $err;
-	    $bulk->{'state'}{'cnt_failed'} ++;
-	}
+        $bulk->{'state'}{'cnt_proc'} ++;
+        eval
+        {
+            $es->send_by_proxy({to => $to,
+                                to_obj => $to_obj,
+                               });
+            $bulk->{'state'}{'cnt_sent'} ++;
+        };
+        if ( $@ )
+        {
+            my $err = $@;
+            chomp($err);
+            debug "Problem sending to $to: $err";
+            $bulk->{'state'}{'err'}{$to->plain} = $err;
+            $bulk->{'state'}{'cnt_failed'} ++;
+        }
     }
 
     $bulk->{'state'}{'at'} = $fh->tell;
@@ -211,10 +211,10 @@ sub store_state
     store( $state, $dirname.'/state.new' );
     rename( $dirname.'/state.new', $dirname.'/state' );
 
-    if( $bulk->at_end )
+    if ( $bulk->at_end )
     {
-	$bulk->report;
-	$bulk->remove;
+        $bulk->report;
+        $bulk->remove;
     }
 }
 
@@ -229,15 +229,15 @@ sub report
 
     debug "Finished sending bulkmail ".$bulk->id;
     debug sprintf "Sent %d of %d", $bulk->cnt_proc, $bulk->cnt_total;
-    if( my $err = $bulk->{'state'}{'err'} )
+    if ( my $err = $bulk->{'state'}{'err'} )
     {
-	my $fcnt = $bulk->cnt_failed;
-	debug "$fcnt failures:";
-	foreach my $key ( keys %$err )
-	{
-	    my $emsg = $err->{$key};
-	    debug "  $key: $emsg";
-	}
+        my $fcnt = $bulk->cnt_failed;
+        debug "$fcnt failures:";
+        foreach my $key ( keys %$err )
+        {
+            my $emsg = $err->{$key};
+            debug "  $key: $emsg";
+        }
     }
 }
 
