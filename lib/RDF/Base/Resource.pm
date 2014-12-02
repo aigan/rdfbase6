@@ -5642,6 +5642,7 @@ Supported args are
   ajax
   from_ajax
   divid
+  divstyle
   label
   tdlabel
   separator
@@ -5756,6 +5757,7 @@ sub wu
     my $from_ajax = $args->{'from_ajax'} || 0;
     my $divid = $args->{'divid'} ||=
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
+    my $divstyle = $args->{'divstyle'} // 'position: relative';
 
     # Will update $args with context properties
     #
@@ -5769,7 +5771,7 @@ sub wu
     if ( $divid and not $from_ajax )
     {
 #	$out .= "(>$divid)";
-        $out .= '<div id="'. $divid .'" style="position: relative;">';
+        $out .= sprintf '<div id="%s" style="%s">', $divid, $divstyle;
     }
 
     # widget for updating subclass of range class

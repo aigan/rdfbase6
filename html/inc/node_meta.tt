@@ -20,4 +20,5 @@
 [% node.updated.ymd %] | [% node.updated.strftime('%H.%M') %]<br>
 <span class="p_small">Av [% node.updated_by.as_html %]</span>
 [% END %]
+</section>
 [% END %]
