@@ -2538,8 +2538,10 @@ sub table_row
             {
                 if ( $disabled )
                 {
-                    $out .= ( $is_rev ? $check_subj->wu_jump :
-                              $item->wu_jump );
+#                    $out .= ( $is_rev ? $check_subj->wu_jump :
+#                              $item->wu_jump );
+                    $out .= ( $is_rev ? $check_subj->as_thml :
+                              $item->as_html );
                 }
                 else
                 {
