@@ -37,7 +37,7 @@ use MIME::Types;
 #use CGI;
 use Number::Bytes::Human qw(format_bytes);
 use File::MMagic::XS qw(:compat);
-use Encode; # encode decode
+use Encode;                     # encode decode
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump validate_utf8 );
@@ -184,7 +184,7 @@ sub first_part_with_type
 #    debug "first_part_with_type($type)";
     my $class = ref($part);
 
-    if( $part->type =~ /^$type/ )
+    if ( $part->type =~ /^$type/ )
     {
         return $part;
     }
@@ -210,19 +210,19 @@ sub first_subpart_with_type
     foreach my $sub ( $part->parts )
     {
 #        debug "  check ".$sub->type;
-	if( $sub->type =~ /^$type/ )
-	{
-	    return $sub;
-	}
-        elsif( my $match = $sub->first_subpart_with_type($type) )
+        if ( $sub->type =~ /^$type/ )
+        {
+            return $sub;
+        }
+        elsif ( my $match = $sub->first_subpart_with_type($type) )
         {
             return $match;
         }
     }
 
-    if( $part->guess_type eq 'message/rfc822' )
+    if ( $part->guess_type eq 'message/rfc822' )
     {
-        if( my $body_part = $part->body_part )
+        if ( my $body_part = $part->body_part )
         {
             return $body_part->first_part_with_type($type);
         }
@@ -243,11 +243,11 @@ sub first_non_multi_part
     my( $part ) = @_;
     my $class = ref($part);
 
-    if( $part->type =~ /^multipart\// )
+    if ( $part->type =~ /^multipart\// )
     {
-	my( $sub ) = ($part->parts)[0]
-	  or return $part; # type may be wrong
-	return $sub->first_non_multi_part;
+        my( $sub ) = ($part->parts)[0]
+          or return $part;      # type may be wrong
+        return $sub->first_non_multi_part;
     }
 
     return $part;
@@ -290,10 +290,10 @@ sub path
 
 sub parent
 {
-    unless( $_[0]->{'parent'} )
+    unless ( $_[0]->{'parent'} )
     {
-	debug datadump $_[0];
-	confess "no parent";
+        debug datadump $_[0];
+        confess "no parent";
     }
     return $_[0]->{'parent'};
 }
@@ -388,9 +388,9 @@ See also: L<MIME::Entity/effective_type>
 
 sub effective_type
 {
-    if( $_[0]->{'effective_type'} )
+    if ( $_[0]->{'effective_type'} )
     {
-	return $_[0]->{'effective_type'};
+        return $_[0]->{'effective_type'};
     }
 
     my $MIME_TYPES = MIME::Types->new();
@@ -400,45 +400,45 @@ sub effective_type
 
     unless( $type_name =~ /^[a-z]+\/[a-z\-\+\.0-9]+$/ )
     {
-	if( $type_name =~ s/\s*charset\s*=.*//i )
-	{
+        if ( $type_name =~ s/\s*charset\s*=.*//i )
+        {
 #	    debug "Cleaning up mimetype";
-	    return $_[0]->effective_type($type_name);
-	}
+            return $_[0]->effective_type($type_name);
+        }
 
-	debug "Mime-type $type_name malformed";
-	$type_name = 'application/octet-stream';
+        debug "Mime-type $type_name malformed";
+        $type_name = 'application/octet-stream';
     }
 
-    if( $type_name eq 'image/jpg' )
+    if ( $type_name eq 'image/jpg' )
     {
-	$type_name = 'image/jpeg';
+        $type_name = 'image/jpeg';
     }
 
     unless( $MIME_TYPES->type($type_name) )
     {
-	debug "Mime-type $type_name not recognized";
-	$type_name = 'application/octet-stream';
+        debug "Mime-type $type_name not recognized";
+        $type_name = 'application/octet-stream';
     }
 
 
-    if( $type_name eq 'application/octet-stream' )
+    if ( $type_name eq 'application/octet-stream' )
     {
-	$_[0]->filename =~ /\.([^\.]+)$/;
-	if( my $ext = $1 )
-	{
-	    if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
-	    {
-		$type_name = $type->type;
+        $_[0]->filename =~ /\.([^\.]+)$/;
+        if ( my $ext = $1 )
+        {
+            if ( my $type = $MIME_TYPES->mimeTypeOf($ext) )
+            {
+                $type_name = $type->type;
 #		cluck "HERE";
 #		debug "Got type $type_name from extension";
-	    }
-	}
+            }
+        }
     }
 
-    if( $type_name eq 'application/octet-stream' )
+    if ( $type_name eq 'application/octet-stream' )
     {
-	$type_name = $_[0]->guess_type;
+        $type_name = $_[0]->guess_type;
     }
 
     return $_[0]->{'effective_type'} = $type_name;
@@ -473,24 +473,24 @@ sub guess_type
 
     # File::MMagic::XS may/will not recognize message/rfc822
     #
-    if( $res eq 'text/plain' )
+    if ( $res eq 'text/plain' )
     {
 #        debug "  looking at text/plain for possibly headers";
         my $ok = 1;
         my $rows = 0;
-        foreach( split /^/, $$body_part )
+        foreach ( split /^/, $$body_part )
         {
-            if( /^[A-Za-z\-]+:/ )
+            if ( /^[A-Za-z\-]+:/ )
             {
                 $rows++;
 #                debug "  Yes: $_";
             }
-            elsif( /^\r?\n$/ )
+            elsif ( /^\r?\n$/ )
             {
                 # End of header
                 last;
             }
-            elsif( /^\s+/ )
+            elsif ( /^\s+/ )
             {
 #                debug "  Yes: $_";
                 # ok
@@ -504,7 +504,7 @@ sub guess_type
             }
         }
 
-        if( $ok and $rows )
+        if ( $ok and $rows )
         {
             $res = 'message/rfc822';
         }
@@ -513,10 +513,10 @@ sub guess_type
 
 #   debug "Guessed content type '$res'";
 
-    if( $res eq 'message/rfc822' )
+    if ( $res eq 'message/rfc822' )
     {
-	# Assume we have to convert to raw part
-	# ... (the need for it could be checked)
+        # Assume we have to convert to raw part
+        # ... (the need for it could be checked)
 #	$part->{'_convert_to_raw'} = 1;
 #	debug "should convert to raw part"; ### DEBUG
     }
@@ -583,9 +583,9 @@ sub size
 sub size_human
 {
     my $size = $_[0]->size;
-    if( defined $size )
+    if ( defined $size )
     {
-	return format_bytes($size);
+        return format_bytes($size);
     }
 
     return "";
@@ -700,46 +700,46 @@ sub header
 {
 #    debug "Getting header $_[1]";
 
-    if( $_[1] eq 'to' )
+    if ( $_[1] eq 'to' )
     {
-	$_[0]->head->init_to;
+        $_[0]->head->init_to;
     }
 
-    if( wantarray )
+    if ( wantarray )
     {
-	my( @h ) = $_[0]->head->
-	  header($_[1]);
+        my( @h ) = $_[0]->head->
+          header($_[1]);
 
-	my @res;
+        my @res;
 
-	foreach my $str (@h )
-	{
-	    $str =~ s/;\s+(.*?)\s*$//;
+        foreach my $str (@h )
+        {
+            $str =~ s/;\s+(.*?)\s*$//;
 
-	    if( $_[2] )
-	    {
-		my $params = $1;
-		foreach my $param (split /\s*;\s*/, $params )
-		{
-		    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
-		    {
-			my $key = lc $1;
-			next unless $key eq $_[2];
+            if ( $_[2] )
+            {
+                my $params = $1;
+                foreach my $param (split /\s*;\s*/, $params )
+                {
+                    if ( $param =~ /^(.*?)\s*=\s*(.*)/ )
+                    {
+                        my $key = lc $1;
+                        next unless $key eq $_[2];
 
-			my $val = $2;
-			$val =~ s/^"(.*)"$/$1/; # non-standard variant
+                        my $val = $2;
+                        $val =~ s/^"(.*)"$/$1/; # non-standard variant
 
-			push @res, $val;
-		    }
-		}
-	    }
-	    else
-	    {
-		push @res, $str;
-	    }
-	}
+                        push @res, $val;
+                    }
+                }
+            }
+            else
+            {
+                push @res, $str;
+            }
+        }
 
-	return @res;
+        return @res;
     }
 
     # SCALAR CONTEXT
@@ -750,24 +750,24 @@ sub header
 
     $str =~ s/;\s+(.*?)\s*$//;
 
-    if( $_[2] )
+    if ( $_[2] )
     {
 #	my %param;
-	my $params = $1;
-	foreach my $param (split /\s*;\s*/, $params )
-	{
-	    if( $param =~ /^(.*?)\s*=\s*(.*)/ )
-	    {
-		my $key = lc $1;
-		next unless $key eq $_[2];
+        my $params = $1;
+        foreach my $param (split /\s*;\s*/, $params )
+        {
+            if ( $param =~ /^(.*?)\s*=\s*(.*)/ )
+            {
+                my $key = lc $1;
+                next unless $key eq $_[2];
 
-		my $val = $2;
-		$val =~ s/^"(.*)"$/$1/; # non-standard variant
+                my $val = $2;
+                $val =~ s/^"(.*)"$/$1/; # non-standard variant
 
-		return $val;
+                return $val;
 #		$param{ $key } = $val;
-	    }
-	}
+            }
+        }
 
 #	return $param{$_[1]};
     }
@@ -817,10 +817,10 @@ sub charset_guess
 
     my $charset = $part->{'charset'};
 
-    if( $charset )
+    if ( $charset )
     {
-        $charset =~ s/'//g; # Cleanup
-        if( find_encoding($charset) )
+        $charset =~ s/'//g;     # Cleanup
+        if ( find_encoding($charset) )
         {
             debug "Charset previously set to $charset" if $DEBUG;
             return $charset;
@@ -834,7 +834,7 @@ sub charset_guess
     # windows-1252 is backward compatible with Latin-1 for all
     # printable chars and many texts that are windows-1252 is labeld
     # as Latin-1
-    if( $charset eq 'iso-8859-1' )
+    if ( $charset eq 'iso-8859-1' )
     {
         $charset = 'windows-1252';
     }
@@ -844,42 +844,42 @@ sub charset_guess
     unless( $charset )
     {
 #	my $type = $args->{'unwind'} ? $part->type : $part->effective_type;
-	my $type = $part->effective_type;
-	if( $type =~ /^text\// )
-	{
-	    my $sample;
-	    if( $args->{'sample'} )
-	    {
+        my $type = $part->effective_type;
+        if ( $type =~ /^text\// )
+        {
+            my $sample;
+            if ( $args->{'sample'} )
+            {
 #		debug "Finding charset from provided sample";
-		$sample = $args->{'sample'};
+                $sample = $args->{'sample'};
 #		debug "SAMPLE: $$sample"
-	    }
-	    else
-	    {
+            }
+            else
+            {
 #		debug "Finding charset from body";
-		$sample = $part->body_with_original_charset(2000);
+                $sample = $part->body_with_original_charset(2000);
 #		debug "BODY SAMPLE: $$sample"
-	    }
+            }
 
-	    require Encode::Detect::Detector;
-	    $charset = lc Encode::Detect::Detector::detect($$sample);
+            require Encode::Detect::Detector;
+            $charset = lc Encode::Detect::Detector::detect($$sample);
 
-	    if( $charset )
-	    {
-		debug "Got charset from content sample: $charset";
-	    }
-	    elsif( not $part->is_top )
-	    {
-		$charset = $part->top->charset_guess;
-	    }
+            if ( $charset )
+            {
+                debug "Got charset from content sample: $charset";
+            }
+            elsif ( not $part->is_top )
+            {
+                $charset = $part->top->charset_guess;
+            }
 
-	    unless( $charset )
-	    {
-		debug "Should guess charset from language";
-		debug "Falling back on Latin-1";
-		$charset = "iso-8859-1";
-	    }
-	}
+            unless( $charset )
+            {
+                debug "Should guess charset from language";
+                debug "Falling back on Latin-1";
+                $charset = "iso-8859-1";
+            }
+        }
     }
 
     debug "Found charset $charset" if $DEBUG;
@@ -902,16 +902,16 @@ sub url_path
     my $email = $part->email;
     my $nid = $email->id;
     my $path = $part->path;
-    $path =~ s/\.TEXT$/.1/; # For embedded messages
+    $path =~ s/\.TEXT$/.1/;     # For embedded messages
 
-    if( $name )
+    if ( $name )
     {
-	my $safe = $part->filename_safe($name,$type_name);
+        my $safe = $part->filename_safe($name,$type_name);
 
-	my $s = $Para::Frame::REQ->session
-	  or die "Session not found";
-	$s->{'email_imap'}{$nid}{$safe} = $path;
-	$path = $safe;
+        my $s = $Para::Frame::REQ->session
+          or die "Session not found";
+        $s->{'email_imap'}{$nid}{$safe} = $path;
+        $path = $safe;
     }
 
     my $email_url = $email->url_path;
@@ -936,12 +936,12 @@ sub filename_safe
     $type_name ||= $part->type;
 
     my $safe = lc $name;
-    $safe =~ s/.*[\/\\]//; # Remove path
-    $safe =~ s/\..{1,4}\././;  # Remove multiple extenstions
+    $safe =~ s/.*[\/\\]//;      # Remove path
+    $safe =~ s/\..{1,4}\././;   # Remove multiple extenstions
     my $ext;
-    if( $safe =~ s/\.([^.]*)$// ) # Extract the extenstion
+    if ( $safe =~ s/\.([^.]*)$// ) # Extract the extenstion
     {
-	$ext = $1;
+        $ext = $1;
     }
 
     $safe =~ tr[àáâäãåæéèêëíìïîóòöôõøúùüûýÿðþß]
@@ -958,49 +958,49 @@ sub filename_safe
     my $MIME_TYPES = MIME::Types->new();
 
     # Try to figure out octet-streams
-    if( $ext and ($type_name eq 'application/octet-stream') )
+    if ( $ext and ($type_name eq 'application/octet-stream') )
     {
-	debug "Guessing type from ext $ext for octet-stream";
-	if( my $type = $MIME_TYPES->mimeTypeOf($ext) )
-	{
-	    $type_name = $type->type;
-	    debug "  Guessed $type_name";
-	}
-	else
-	{
-	    debug "  No type associated to ext $ext for application/octet-stream";
-	}
+        debug "Guessing type from ext $ext for octet-stream";
+        if ( my $type = $MIME_TYPES->mimeTypeOf($ext) )
+        {
+            $type_name = $type->type;
+            debug "  Guessed $type_name";
+        }
+        else
+        {
+            debug "  No type associated to ext $ext for application/octet-stream";
+        }
     }
 
 
-    if( $type_name eq 'file/pdf' )
+    if ( $type_name eq 'file/pdf' )
     {
-	$type_name = 'application/pdf';
+        $type_name = 'application/pdf';
     }
 
-    if( my $type = $MIME_TYPES->type($type_name) )
+    if ( my $type = $MIME_TYPES->type($type_name) )
     {
-	# debug "Got type $type";
+        # debug "Got type $type";
 
-	if( $ext )
-	{
-	    foreach my $e ( $type->extensions )
-	    {
-		if( $ext eq $e )
-		{
-		    return $safe .'.'. $ext;
-		}
-	    }
-	    $ext = undef;
-	}
+        if ( $ext )
+        {
+            foreach my $e ( $type->extensions )
+            {
+                if ( $ext eq $e )
+                {
+                    return $safe .'.'. $ext;
+                }
+            }
+            $ext = undef;
+        }
 
-	unless( $ext )
-	{
-	    ( $ext ) = $type->extensions;
-	}
+        unless( $ext )
+        {
+            ( $ext ) = $type->extensions;
+        }
     }
 
-    $ext ||= 'bin'; # default coupled to 'application/octet-stream'
+    $ext ||= 'bin';    # default coupled to 'application/octet-stream'
 
 #    debug "  extension $ext";
 
@@ -1019,23 +1019,23 @@ sub filename
     my( $part ) = @_;
 
     my $name = (
-		$part->disp('filename')
-		||
-		$part->disp('name')
-		||
-		$part->type('filename')
-		||
-		$part->type('name')
-	       );
+                $part->disp('filename')
+                ||
+                $part->disp('name')
+                ||
+                $part->type('filename')
+                ||
+                $part->type('name')
+               );
 
-    if( $name ) # decode fields
+    if ( $name )                # decode fields
     {
-	$name = mime_to_perl_string( $name );
-	utf8::upgrade( $name );
+        $name = mime_to_perl_string( $name );
+        utf8::upgrade( $name );
     }
-    elsif( $part->type eq "message/rfc822" )
+    elsif ( $part->type eq "message/rfc822" )
     {
-	$name = $part->body_head->parsed_subject->plain.".eml";
+        $name = $part->body_head->parsed_subject->plain.".eml";
     }
 
     return lc $name;
@@ -1071,26 +1071,26 @@ sub select_renderer
 
     my $renderer;
     foreach (
-	     [ qr{text/plain}            => '_render_textplain'  ],
-	     [ qr{text/html}             => '_render_texthtml'   ],
-	     [ qr{multipart/alternative} => '_render_alt'        ],
-	     [ qr{multipart/mixed}       => '_render_mixed'      ],
-	     [ qr{multipart/related}     => '_render_related'    ],
-	     [ qr{image/gif}             => '_render_image'      ],
-	     [ qr{image/jpeg}            => '_render_image'      ],
-	     [ qr{image/png}             => '_render_image'      ],
-	     [ qr{message/rfc822}        => '_render_rfc822'     ],
-	     [ qr{multipart/parallel}    => '_render_mixed'      ],
-	     [ qr{multipart/report}      => '_render_mixed'      ],
-	     [ qr{multipart/}            => '_render_mixed'      ],
-	     [ qr{text/rfc822-headers}   => '_render_headers'    ],
-	     [ qr{text/}                 => '_render_textplain'  ],
-	     [ qr{message/delivery-status}=>'_render_delivery_status' ],
-	     [ qr{message/disposition-notification}=>'_render_delivery_status' ],
-	    )
+             [ qr{text/plain}            => '_render_textplain'  ],
+             [ qr{text/html}             => '_render_texthtml'   ],
+             [ qr{multipart/alternative} => '_render_alt'        ],
+             [ qr{multipart/mixed}       => '_render_mixed'      ],
+             [ qr{multipart/related}     => '_render_related'    ],
+             [ qr{image/gif}             => '_render_image'      ],
+             [ qr{image/jpeg}            => '_render_image'      ],
+             [ qr{image/png}             => '_render_image'      ],
+             [ qr{message/rfc822}        => '_render_rfc822'     ],
+             [ qr{multipart/parallel}    => '_render_mixed'      ],
+             [ qr{multipart/report}      => '_render_mixed'      ],
+             [ qr{multipart/}            => '_render_mixed'      ],
+             [ qr{text/rfc822-headers}   => '_render_headers'    ],
+             [ qr{text/}                 => '_render_textplain'  ],
+             [ qr{message/delivery-status}=>'_render_delivery_status' ],
+             [ qr{message/disposition-notification}=>'_render_delivery_status' ],
+            )
     {
         $type =~ $_->[0]
-	  and $renderer = $_->[1]
+          and $renderer = $_->[1]
             and last;
     }
 
@@ -1112,7 +1112,7 @@ sub _render_textplain
 
 #    my $charset = $part->charset_guess;
 #   my $msg = "| $charset\n<br/>\n";
-     my $msg = "<br/>\n";
+    my $msg = "<br/>\n";
     $data_enc =~ s/\n/<br>\n/g;
     $msg .= $data_enc;
 
@@ -1132,7 +1132,7 @@ sub _render_texthtml
     my $minimal = $args->{'minimal'} || 0;
 
     my $url_path = $part->url_path(undef,'text/html');
-    if( $args->{'tt'} )
+    if ( $args->{'tt'} )
     {
         $url_path .= '.tt';
     }
@@ -1144,7 +1144,7 @@ sub _render_texthtml
     {
         $msg .= qq(| <a href="$url_path">View HTML message</a>\n );
 
-        if( my $other = $part->top->{'other'} )
+        if ( my $other = $part->top->{'other'} )
         {
             foreach my $alt (@$other)
             {
@@ -1157,11 +1157,11 @@ sub _render_texthtml
         $msg .= "<br>";
     }
 
-$msg .= <<EOT;
+    $msg .= <<EOT;
 <iframe class="iframe_autoresize_height" src="$url_path" scrolling="auto" marginwidth="0" marginheight="0" frameborder="0" vspace="0" hspace="0" width="100%" height="500" style="overflow:scroll; display:block; position:static"></iframe>
 
 EOT
-;
+    ;
 
 #    debug "  rendering texthtml - done";
 
@@ -1205,12 +1205,12 @@ sub _render_headers
     my $header = RDF::Base::Email::Head->new($$data_dec );
     unless( $header )
     {
-	$msg = "<h3>Malformed header</h3>\n";
-	$msg .= $part->_render_textplain;
+        $msg = "<h3>Malformed header</h3>\n";
+        $msg .= $part->_render_textplain;
     }
     else
     {
-	$msg = $header->as_html;
+        $msg = $header->as_html;
     }
 
 #    debug "  rendering headers - done";
@@ -1250,28 +1250,28 @@ sub _render_alt
     foreach my $alt (@alts)
     {
         next unless $alt;
-	my $type = $alt->type;
+        my $type = $alt->type;
 #	debug "Considering $type at ".$alt->path;
 
-	unless( $type )
-	{
-	    push @other, $alt;
-	    next;
-	}
+        unless( $type )
+        {
+            push @other, $alt;
+            next;
+        }
 
-	if( ($prio{$type}||0) > $score )
-	{
+        if ( ($prio{$type}||0) > $score )
+        {
 #	    debug sprintf "  %d is better than %d",
 #	      ($prio{$type}||1), $score;
-	    push @other, $choice;
-	    $choice = $alt;
-	    $score = $prio{$type};
-	}
-	else
-	{
+            push @other, $choice;
+            $choice = $alt;
+            $score = $prio{$type};
+        }
+        else
+        {
 #	    debug "  not better";
-	    push @other, $alt;
-	}
+            push @other, $alt;
+        }
     }
 
     $part->top->{'other'} = \@other;
@@ -1282,8 +1282,8 @@ sub _render_alt
     my $renderer = $part->select_renderer($type);
     unless( $renderer )
     {
-	debug "No renderer defined for $type";
-	return "<code>No renderer defined for <strong>$type</strong></code>";
+        debug "No renderer defined for $type";
+        return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
 #    debug "  rendering alt - done";
@@ -1303,23 +1303,23 @@ sub _render_mixed
 
     unless( $part->is_top or $part->parent->effective_type eq 'message/rfc822' )
     {
-	# It is possible that the parent should have been a
-	# rfc822, but that the email is malformed
+        # It is possible that the parent should have been a
+        # rfc822, but that the email is malformed
 
-	# Treat this as a rfc822 if it has a subject, from or recieved
-	# header
+        # Treat this as a rfc822 if it has a subject, from or recieved
+        # header
 
-	my $h = $part->head_complete;
-	if( $h->header('received') or
-	    $h->header('from') or
-	    $h->header('subject') )
-	{
+        my $h = $part->head_complete;
+        if ( $h->header('received') or
+             $h->header('from') or
+             $h->header('subject') )
+        {
 #	    debug "Interpart a RFC822";
-	    my $rfc822 = $part->parent->interpart($part);
-	    my $msg = $rfc822->_render_rfc822($args);
+            my $rfc822 = $part->parent->interpart($part);
+            my $msg = $rfc822->_render_rfc822($args);
 #	    debug "Interpart a RFC822 - done";
-	    return $msg;
-	}
+            return $msg;
+        }
     }
 
 
@@ -1333,12 +1333,12 @@ sub _render_mixed
 
     foreach my $alt (@alts)
     {
-	my $apath = $alt->path;
+        my $apath = $alt->path;
 
 #	debug "  mixed part $apath";
 
-	my $type = $alt->effective_type;
-	my $renderer = $part->select_renderer($type);
+        my $type = $alt->effective_type;
+        my $renderer = $part->select_renderer($type);
 
 #	unless( $alt->disp )
 #	{
@@ -1346,47 +1346,47 @@ sub _render_mixed
 #	    debug $alt->head->as_string;
 #	}
 
-	if( ($alt->disp||'') eq 'inline' )
-	{
-	    if( $alt ne $alts[0] )
-	    {
-		$msg .= "<hr/>\n";
-	    }
+        if ( ($alt->disp||'') eq 'inline' )
+        {
+            if ( $alt ne $alts[0] )
+            {
+                $msg .= "<hr/>\n";
+            }
 
 
-	    if( $renderer )
-	    {
-		$msg .= $alt->$renderer($args);
-	    }
-	    else
-	    {
-		debug "No renderer defined for $type";
-		$msg .= "<code>No renderer defined for part $apath <strong>$type</strong></code>";
-		$part->top->{'attachemnts'}{$alt->path} = $alt;
-	    }
-	}
-	#
-	# Part marked as NOT inline
-	# ... but if we know how to render the part,
-	# we may want to do it anyway.
-	#
-	elsif( $renderer )
-	{
+            if ( $renderer )
+            {
+                $msg .= $alt->$renderer($args);
+            }
+            else
+            {
+                debug "No renderer defined for $type";
+                $msg .= "<code>No renderer defined for part $apath <strong>$type</strong></code>";
+                $part->top->{'attachemnts'}{$alt->path} = $alt;
+            }
+        }
+        #
+        # Part marked as NOT inline
+        # ... but if we know how to render the part,
+        # we may want to do it anyway.
+        #
+        elsif ( $renderer )
+        {
 #	    if( $type eq 'message/rfc822' or
 #		$type eq 'multipart/alternative'
 #	      )
 #	    {
-		$msg .= $alt->$renderer($args);
+            $msg .= $alt->$renderer($args);
 #	    }
 #	    else
 #	    {
 #		$part->top->{'attachemnts'}{$alt->path} = $alt;
 #	    }
-	}
-	else # Not requested for inline display
-	{
-	    $part->top->{'attachemnts'}{$alt->path} = $alt;
-	}
+        }
+        else                    # Not requested for inline display
+        {
+            $part->top->{'attachemnts'}{$alt->path} = $alt;
+        }
     }
 
 #    debug "  rendering mixed - done";
@@ -1419,20 +1419,20 @@ sub _render_related
 
     foreach my $alt (@alts)
     {
-	my $apath = $alt->path;
+        my $apath = $alt->path;
 
-	if( my $file = $alt->filename )
-	{
-	    $files{$file} = $apath;
-	}
+        if ( my $file = $alt->filename )
+        {
+            $files{$file} = $apath;
+        }
 
-	if( my $cid = $alt->cid )
-	{
-	    $cid =~ s/^<//;
-	    $cid =~ s/>$//;
-	    $files{$cid} = $apath;
+        if ( my $cid = $alt->cid )
+        {
+            $cid =~ s/^<//;
+            $cid =~ s/>$//;
+            $files{$cid} = $apath;
 #	    debug "Path $apath -> $cid";
-	}
+        }
     }
 
     my $s = $req->session
@@ -1440,7 +1440,7 @@ sub _render_related
     my $id = $part->email->id;
     foreach my $file ( keys %files )
     {
-	$s->{'email_imap'}{$id}{$file} = $files{$file};
+        $s->{'email_imap'}{$id}{$file} = $files{$file};
     }
 
     my $choice = shift @alts;
@@ -1448,22 +1448,22 @@ sub _render_related
 
     foreach my $alt (@alts)
     {
-	my $type = $alt->effective_type;
-	next unless $type;
+        my $type = $alt->effective_type;
+        next unless $type;
 
-	if( ($prio{$type}||0) > $score )
-	{
-	    $choice = $alt;
-	    $score = $prio{$type};
-	}
+        if ( ($prio{$type}||0) > $score )
+        {
+            $choice = $alt;
+            $score = $prio{$type};
+        }
     }
 
     my $type = $choice->effective_type;
     my $renderer = $part->select_renderer($type);
     unless( $renderer )
     {
-	debug "No renderer defined for $type";
-	return "<code>No renderer defined for <strong>$type</strong></code>";
+        debug "No renderer defined for $type";
+        return "<code>No renderer defined for <strong>$type</strong></code>";
     }
 
     my $data = $choice->$renderer($args);
@@ -1490,9 +1490,9 @@ sub _render_image
     my $url_path = $part->url_path;
 
     my $desig = $part->filename || "image";
-    if( my $desc = $part->description )
+    if ( my $desc = $part->description )
     {
-	$desig .= " - $desc";
+        $desig .= " - $desc";
     }
 
     my $desig_out = CGI->escapeHTML($desig);
@@ -1569,9 +1569,9 @@ sub _render_rfc822
 
     unless( $renderer )
     {
-	my $sub_path = $sub->path;
-	debug "No renderer defined for $sub_type";
-	return "<code>No renderer defined for part $sub_path <strong>$sub_type</strong></code>";
+        my $sub_path = $sub->path;
+        debug "No renderer defined for $sub_type";
+        return "<code>No renderer defined for part $sub_path <strong>$sub_type</strong></code>";
     }
 
     $msg .= $sub->$renderer($args);
@@ -1600,7 +1600,7 @@ sub body_with_sensible_charset
 
     unless( $part->type =~ m/^text\// )
     {
-	return( $dataref, undef );
+        return( $dataref, undef );
     }
 
     $args ||= {};
@@ -1608,18 +1608,18 @@ sub body_with_sensible_charset
     my $charset = $part->charset_guess({%$args,sample=>$dataref});
 #    debug "Body charset is $charset";
 #    debug "Data ".validate_utf8($dataref);
-    if( $charset eq 'iso-8859-1' )
+    if ( $charset eq 'iso-8859-1' )
     {
-	# No changes
+        # No changes
     }
-    elsif( $charset eq 'windows-1252' )
+    elsif ( $charset eq 'windows-1252' )
     {
-	# No changes
+        # No changes
     }
-    elsif( $charset eq 'utf-8' )
+    elsif ( $charset eq 'utf-8' )
     {
 #        debug "Decode utf8 to internal format";
-	utf8::decode( $$dataref );
+        utf8::decode( $$dataref );
     }
     else
     {
@@ -1663,32 +1663,32 @@ sub body_with_original_charset
 
     unless( $encoding )
     {
-	my $path = $part->path;
+        my $path = $part->path;
 #	debug "No encoding found for body $path. Using 8bit";
-	$encoding = '8bit';
+        $encoding = '8bit';
     }
 
 #    debug "Original body with encoding $encoding: ".$dataref;
 
-    if( $encoding eq 'quoted-printable' )
+    if ( $encoding eq 'quoted-printable' )
     {
-	$dataref = \ decode_qp($$dataref);
+        $dataref = \ decode_qp($$dataref);
     }
-    elsif( $encoding eq '8bit' )
+    elsif ( $encoding eq '8bit' )
     {
-	#
+        #
     }
-    elsif( $encoding eq 'binary' )
+    elsif ( $encoding eq 'binary' )
     {
-	#
+        #
     }
-    elsif( $encoding eq '7bit' )
+    elsif ( $encoding eq '7bit' )
     {
-	#
+        #
     }
-    elsif( $encoding eq 'base64' )
+    elsif ( $encoding eq 'base64' )
     {
-	$dataref = \ decode_base64($$dataref);
+        $dataref = \ decode_base64($$dataref);
     }
     else
     {
@@ -1717,13 +1717,13 @@ sub body
 
     unless( $part->type =~ m/^text\// )
     {
-	return $dataref;
+        return $dataref;
     }
 
     # RB::Email::RB takes body from DB and is already valid utf8. Only
     # decode body if it is not marked and valid.
     #
-    if( utf8::is_utf8($$dataref) and utf8::valid($$dataref) )
+    if ( utf8::is_utf8($$dataref) and utf8::valid($$dataref) )
     {
         return $dataref;
     }
@@ -1787,19 +1787,19 @@ sub guess_content_part
 
     # Prefere html for some systems
     my $return_path = $part->header('return-path')||'';
-    if( $return_path =~ /\@live\.\w\w\w?>/ )
+    if ( $return_path =~ /\@live\.\w\w\w?>/ )
     {
         $ctype = "text/html";
     }
 
     my( $cpart );
-    if( $part->effective_type eq $ctype )
+    if ( $part->effective_type eq $ctype )
     {
         $cpart = $part;
     }
-    elsif( $part->effective_type =~ /multipart/i )
+    elsif ( $part->effective_type =~ /multipart/i )
     {
-	($cpart) = $part->first_part_with_type($ctype);
+        ($cpart) = $part->first_part_with_type($ctype);
     }
 
     $cpart ||= $part->first_non_multi_part() || $part;
@@ -1825,12 +1825,12 @@ sub body_as_text
     my( $bodyr, $ct_source );
 
     my $ctype = $part->effective_type;
-    if( $ctype eq 'text/plain' )
+    if ( $ctype eq 'text/plain' )
     {
         $ct_source =  'plain';
         $bodyr = $part->body(@_);
     }
-    elsif( $ctype eq 'text/html' )
+    elsif ( $ctype eq 'text/html' )
     {
 #        debug "Returning body as text from html";
         require HTML::TreeBuilder;
@@ -1882,21 +1882,21 @@ sub body_extract
     # Remove header
     #
     $str =~ s/^\s*//;
-    my @p; # Paragraphs of content
-    for(0..2)
+    my @p;                      # Paragraphs of content
+    for (0..2)
     {
         $str =~ s/^(.*?(\h*\r?\n)+)//s or last;
         push @p, $1;
     }
     push @p, $str if length($str);
 
-    for( my $i=0; $i<=$#p; $i++ )
+    for ( my $i=0; $i<=$#p; $i++ )
     {
         my $len1 = length($p[$i]);
         my $len2 = length($p[$i+1]||'');
 #        debug "Part $i: ".$p[$i];
 
-        if( $len1 < 40 and $len2-$len1 > 20 )
+        if ( $len1 < 40 and $len2-$len1 > 20 )
         {
 #            debug "  len ".$len1;
 #            debug "  next is ".$len2;
@@ -1915,7 +1915,7 @@ sub body_extract
     # Reformat
     $body =~ s/(\h*\r?\n){2,}/\n\n/g;
     $body =~ s/\s*$//;
-    if( $ct_source eq 'plain' )
+    if ( $ct_source eq 'plain' )
     {
         $body =~ s/^(.{70,}?)\h*\r?\n(\S+)/$1 $2/mg;
     }
@@ -1965,12 +1965,12 @@ sub viewtree
     foreach my $subpart ( $part->parts )
     {
 #	debug "  subpart $subpart";
-	$msg .= $subpart->viewtree($ident);
+        $msg .= $subpart->viewtree($ident);
     }
 
-    if( $part->guess_type eq 'message/rfc822' )
+    if ( $part->guess_type eq 'message/rfc822' )
     {
-        if( my $body_part = $part->body_part )
+        if ( my $body_part = $part->body_part )
         {
 #            debug "  body_part";
             $msg .= $body_part->viewtree($ident);
@@ -2089,21 +2089,21 @@ sub match
 
     my $qx = qr/$qx_in/;
 
-    if( $part_html and ${$part_html->body} =~ $qx )
+    if ( $part_html and ${$part_html->body} =~ $qx )
     {
-	debug "match in html part";
-	return 1;
+        debug "match in html part";
+        return 1;
     }
-    elsif( $part_plain and ${$part_plain->body} =~ $qx )
+    elsif ( $part_plain and ${$part_plain->body} =~ $qx )
     {
-	debug "match in plain part";
-	return 1;
+        debug "match in plain part";
+        return 1;
     }
-    elsif( $part->effective_type =~ /^text\// and
-           ${$part->body} =~ $qx )
+    elsif ( $part->effective_type =~ /^text\// and
+            ${$part->body} =~ $qx )
     {
         debug "match in only part";
-	return 1;
+        return 1;
     }
 
     debug "No match in html or plain";
@@ -2158,45 +2158,45 @@ sub attachments_as_html
 
     my $msg = "";
 
-    if( keys %$atts )
+    if ( keys %$atts )
     {
         my $nid = $part->email->id;
 
-	$msg .= "<ol>\n";
+        $msg .= "<ol>\n";
 
-	foreach my $att ( sort values %$atts )
-	{
-	    my $name = $att->filename || $att->generate_name;
-	    my $desc = $att->description;
+        foreach my $att ( sort values %$atts )
+        {
+            my $name = $att->filename || $att->generate_name;
+            my $desc = $att->description;
 
-	    my $name_enc = CGI->escapeHTML($name);
-	    my $desc_enc = CGI->escapeHTML($desc);
+            my $name_enc = CGI->escapeHTML($name);
+            my $desc_enc = CGI->escapeHTML($desc);
 
-	    my $type = $att->effective_type;
-	    my $size_human = $att->size_human;
+            my $type = $att->effective_type;
+            my $size_human = $att->size_human;
 
-	    my $url_path = $att->url_path($name);
-	    my $path = $att->path;
+            my $url_path = $att->url_path($name);
+            my $path = $att->path;
 
-	    my $mouse_over =
-	      "onmouseover=\"TagToTip('email_file_$nid/$path',DELAY,1000,OFFSETY,20,DURATION,10000)\"";
+            my $mouse_over =
+              "onmouseover=\"TagToTip('email_file_$nid/$path',DELAY,1000,OFFSETY,20,DURATION,10000)\"";
 
-	    my $desig = "<a href=\"$url_path\">$name_enc</a>";
-	    if( $desc and (lc($desc) ne lc($name) ) )
-	    {
-		$desig .= "<br>\n$desc";
-	    }
+            my $desig = "<a href=\"$url_path\">$name_enc</a>";
+            if ( $desc and (lc($desc) ne lc($name) ) )
+            {
+                $desig .= "<br>\n$desc";
+            }
 
-	    $msg .= "<li $mouse_over>$desig</li>\n";
+            $msg .= "<li $mouse_over>$desig</li>\n";
 
-	    ## Adding tooltip
-	    $msg .= "<span id=\"email_file_$nid/$path\" style=\"display: none\">";
-	    $msg .= "$name_enc<br>\n";
-	    $msg .= "Type: $type<br>\n";
-	    $msg .= "Size: $size_human<br>\n";
-	    $msg .= "</span>";
-	}
-	$msg .= "</ol>\n";
+            ## Adding tooltip
+            $msg .= "<span id=\"email_file_$nid/$path\" style=\"display: none\">";
+            $msg .= "$name_enc<br>\n";
+            $msg .= "Type: $type<br>\n";
+            $msg .= "Size: $size_human<br>\n";
+            $msg .= "</span>";
+        }
+        $msg .= "</ol>\n";
     }
 
     return $msg;
@@ -2227,7 +2227,7 @@ sub footer_remove
               | Mvh\s*
               | Med.vänliga.hälsningar
               | Vänligen\h*\v
-	      | Trevlig.fortsättning
+              | Trevlig.fortsättning
               | \/\/\s*\w\w+
               ).*//soxi;
 
@@ -2264,7 +2264,7 @@ sub footer_remove
 sub classified
 {
     my( $part ) = @_;
-    return $part->{'classified'} ||=
+    return $part->{'classified'} =
       RDF::Base::Email::Classifier->new( $part->top );
 }
 
