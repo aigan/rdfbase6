@@ -1404,8 +1404,25 @@ http://www.w3.org/ns/auth/acl#Write",
                     admin_comment => "The only agent that uses this domain. Engough to derive connections for web- and email- addresses.",
                    },$args);
 
+        $R->find_set({label => 'underspecified'},$args)
+          ->update({
+                    scof => $C->get('class'),
+                    admin_comment => "See related cyc node UnderspecifiedCollectionType",
+                   },$args);
 
-#        $rb->update({ has_version => 11 },$args);
+        $R->find_set({label => 'email'},$args)
+          ->update({
+                    has_cyc_id => 'EMailMessage',
+                   },$args);
+
+        $R->find_set({label => 'email_spam'},$args)
+          ->update({
+                    has_cyc_id => 'Spam-UnsolicitedEMail',
+                    has_wikipedia_id => 'Email_spam',
+                    scof => $C->get('email'),
+                   },$args);
+
+        $rb->update({ has_version => 11 },$args);
         $res->autocommit;
         $req->done;
     }

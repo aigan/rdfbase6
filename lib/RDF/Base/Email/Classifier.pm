@@ -39,7 +39,7 @@ use RDF::Base::Utils qw( is_undef );
 our $DEBUG = 0;
 
 my $RETURNED_MESSAGE_BELOW = qr/(
-                                    (?:original|returned) \s message \s (?:follows|below)
+                                    (?:original|returned) \s message \s (?:follows|below|--+)
                                 | (?: this \s is \s a \s copy \s of
                                     | below \s this \s line \s is \s a \s copy
                                     ) .{0,100} \s message
@@ -47,6 +47,7 @@ my $RETURNED_MESSAGE_BELOW = qr/(
                                 | ^ (?:return-path|received|from):
                                 | ^ original \s mail \s header:
                                 | ^ included \s is \s a \s copy \s of \s the \s message \s header:
+                                | Message-ID:
                                 )/sixm;
 
 
@@ -462,7 +463,7 @@ sub analyze_newsletter
     return if $c->is_dsn;
 
     $newsletter ++ if $c->is_computer_generated;
-    $newsletter ++ if ($o->header('Precedence')||'') =~ /junk|bulk|list/;
+    $newsletter ++ if $o->header('Precedence') =~ /junk|bulk|list/;
     $newsletter ++ if $o->header('List-Unsubscribe');
 
     my $news_address_rx = qr/newsletter|nyhetsbrev|info/;
@@ -635,8 +636,8 @@ sub analyze_computer_generated
     foreach my $h ( keys %$hwc )
     {
         my $r = $hwc->{$h};
-#        debug "  Looking at $h ".($o->header($h)||'');
-        if ( ($o->header($h)||'') =~ $r )
+#        debug "  Looking at $h ".$o->header($h);
+        if ( $o->header($h) =~ $r )
         {
 #            debug "Found header $h indicating computer_generated";
             $c->{is}{computer_generated} = 1;
@@ -686,7 +687,7 @@ sub analyze_auto_reply
     my $o = $c->email_obj;
     debug "Analyzing for Auto-reply" if $DEBUG;
 
-    if ( ($o->header('Return-path')//'') =~ /<(mailer-daemon\@.*)?>/ )
+    if ( $o->header('Return-path') =~ /<(mailer-daemon\@.*)?>/ )
     {
         $c->{is}{auto_reply} ++;
         return;
@@ -720,8 +721,8 @@ sub analyze_auto_reply
     foreach my $h ( keys %$hwc )
     {
         my $r = $hwc->{$h};
-#        debug "  Looking at $h ".($o->header($h)||'');
-        if ( ($o->header($h)||'') =~ $r )
+#        debug "  Looking at $h ".$o->header($h);
+        if ( $o->header($h) =~ $r )
         {
 #            debug "Found header $h indicating DSN";
             $c->{is}{auto_reply} ++;
@@ -920,7 +921,7 @@ sub analyze_vacation
 
     $vacation ++ if $subject =~ $outrx;
 
-    if ( ($o->header('X-Loop')||'') =~ /vacation/ ) # Postfix
+    if ( $o->header('X-Loop') =~ /vacation/ ) # Postfix
     {
         $vacation ++;
     }
@@ -1354,7 +1355,7 @@ sub analyze_multipart_report
         # indicating success; others send RFC1892/RFC3464 delivery
         # status notifications for transient failures.
 
-        if ( my $action = lc($report_in->header('Action')||''))
+        if ( my $action = lc $report_in->header('Action'))
         {
             if ( $action =~ s/^\s*([a-z]+)\b.*/$1/s )
             {
@@ -1427,7 +1428,7 @@ sub analyze_multipart_report
         warn "Parsing for recipient: $rcpt\n" if $DEBUG;
 
         # Diagnostic-Code: smtp; 550 5.1.1 User unknown
-        my $diag = $report_in->header("diagnostic-code") || '';
+        my $diag = $report_in->header("diagnostic-code");
 
         if ( my $reason = $diag )
         {
@@ -1695,15 +1696,21 @@ sub _bounce_guess_subpart
         debug "Matching RETURNED_MESSAGE_BELOW" if $DEBUG;
         $c->{is}{dsn}; # Probably transient or bounce
         my ($stuff_before, $stuff_splitted, $stuff_after) =
-          split $RETURNED_MESSAGE_BELOW, $body, 3;
+          split( $RETURNED_MESSAGE_BELOW, $body, 2);
 
-        push @{$c->{reports}}, $c->_extract_reports($stuff_before);
+#        debug "Splitted $stuff_splitted";
+#        debug "Looking for reciepeient in ".$stuff_after;
+#        debug "From the body ".$body;
+
+        # Find original recipient from returned message
+        my $recipient;
+        if( $stuff_after =~ /(?:for|To:)\s*$EMAIL_ADDR_REGEX/ )
+        {
+            $recipient = $1;
+        }
+
+        push @{$c->{reports}}, $c->_extract_reports($stuff_before, $recipient);
         # TODO: Set up $c->{'orig_message'}
-    }
-    elsif ( $body =~ /(.+)\n\n(.+?Message-ID:.+)/is )
-    {
-        debug "Matching Message-ID string" if $DEBUG;
-        push @{$c->{reports}}, $c->_extract_reports($1);
     }
     else
     {
@@ -2125,7 +2132,7 @@ sub analyze_personal
 
 sub _extract_reports
 {
-    my( $c, $text ) = @_;
+    my( $c, $text, $recipient ) = @_;
 
     my %by_email;
 
@@ -2248,6 +2255,20 @@ sub _extract_reports
          std_reason => $std_reason || '',
         };
     }
+
+    # Try again with supplied recipient
+    if( $recipient and not keys %by_email )
+    {
+#        debug "Parsing reason for dsn for $recipient";
+        my $std_reason = _std_reason($text);
+        $by_email{$recipient} =
+        {
+         email => $recipient,
+         raw   => $text,
+         std_reason => $std_reason || 'unknown',
+        };
+    }
+
 
 
 #    debug "reports to generate:\n".datadump(\%by_email);
@@ -2386,7 +2407,8 @@ sub _std_reason
     }
 
     if (
-        /\b#?5\.7\.(0|1)\b/
+        /\b#?5\.7\.(0|1)\b/ or
+        /permission to post/
        )
     {
         return "denied";
