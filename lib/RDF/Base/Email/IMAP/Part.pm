@@ -215,6 +215,12 @@ sub charset
       || ($s->{parts} && @{$s->{parts}} && $s->{parts}[0] && $s->{parts}[0]->charset)
         || undef;   # please oh please, no '' or '0' charsets
 
+    # IMAP uses us-ascii as the default charset. Take that as "don't
+    # know" and let other parts decide.
+    $c = ''  if lc($c) eq 'us-ascii';
+
+#    debug "IMAP::Part charset returns $c";
+
     return lc( $c||'');
 }
 

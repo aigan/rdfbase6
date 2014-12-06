@@ -90,6 +90,7 @@ our $CONTACTINFO_REGEX = qr{(?: Istället.kan.du.vända.dig.till
                             |   Fråga.efter
                             |   Behöver.(?:ni|du)
                             |   Vid.brådskande.ärenden
+                            |   Vid.frågor.som.rör
                             |   Vänlig(?:en)?.kontakta
                             |   Det.går.även.bra.att
                             |   If.you.need.to.get.in.contact
@@ -294,13 +295,30 @@ sub analyze_delivered
     ### Subject
     #
     my $subject = trim $o->head->parsed_subject->plain;
-    if ( $subject =~ /^Thank you for your email\b|the message has been delivered|Tack för ditt mejl|Vi har mottagit ditt meddelande|Din förfrågan är mottagen/i )
+#    debug "Looking at subject $subject";
+    if ( $subject =~ m/   ^Thank.you.for.your.email\b
+                      |   the.message.has.been.delivered
+                      |   Tack.för.ditt.(mejl|mail|meddelande)
+                      |   Vi.har.mottagit.ditt.meddelande
+                      |   Din.förfrågan.är.mottagen
+                      /xi )
     {
         $c->{is}{delivered} = 1;
+#        debug "  matched";
         return;
     }
 
-    return unless $c->is_computer_generated;
+    # Outlook and exchange are BAD BAD BAD.
+    # Keep processing if the email comes from a retarded system
+    my $underspecified = 0;
+    if ( $o->header('Thread-Index') )
+    {
+        $underspecified = 1;
+    }
+
+    return unless $c->is_computer_generated or
+      ( $c->is_reply and $underspecified );
+
     return if $o->effective_type eq 'multipart/report';
 
     my $cpart = $o->guess_content_part;
@@ -317,8 +335,10 @@ sub analyze_delivered
                    |   Vi.har.tagit.emot.eran.förfrågan
                    |   Vi.hör.av.oss.till.er.så.snart.som.möjligt
                    |   Vi.återkommer.inom
-                   |   Tack.för.din.e-post.till
-                   |   Vi.kommer.att.besvara.det.så.snart.vi.kan
+                   |   Tack.för.(din.e-post|ditt.mail)
+                   |   Tack.för.att.du.(valt.att.kontakta|kontaktar)
+                   |   (kommer|ser.fram.emot).att.besvara.
+                       (det|din.fråga).så.snart
                    |   Ditt.meddelande.är.mottaget
                    |   Vi.svarar.inom
                    |   har.kommit.fram
@@ -372,18 +392,39 @@ sub analyze_ticket
     my $o = $c->email_obj;
     debug "Analyzing for Ticket" if $DEBUG;
 
-    return unless $c->is_computer_generated;
-
-#    debug "  Parse subject: ".$o->head->parsed_subject->plain;
-
     my $subject = trim $o->head->parsed_subject->plain;
 
-    $c->{is}{ticket} = 1 
-      if $subject =~ /^(?:Re:\s*)?\[[^\]]*#[^\]]+\]/;
+    state $subj_rx = qr/   ticket.*\#
+                       |   \[[^\]]*\#[^\]]+\]
+                       |   ^Request.received:
+                       /xi;
 
+    if( $subject =~ $subj_rx )
+    {
+        return $c->{is}{ticket} = 1;
+    }
 
-    $c->{is}{ticket} = 1
-      if $subject =~ /^Request received:/i;
+    my $cpart = $o->guess_content_part;
+    my( $bodyr, $ct_source ) = $cpart->body_as_text;
+    return unless $ct_source;
+    my $body = trim $bodyr;
+
+    state $body_rx = qr/ Ditt ärende har nummer
+                       /xi;
+    if ( $body =~ $body_rx )
+    {
+        $c->{is}{delivered} = 1;
+        return;
+    }
+
+#    my $ticket = 0;
+#    $ticket ++ if $c->is_computer_generated;
+#    $ticket ++ if $c->is_delivered;
+#    debug "Ticket points: $ticket";
+#    if ( $ticket >= 2 )
+#    {
+#        $c->{is}{ticket} = $ticket;
+#    }
 
     return 1;
 }
@@ -446,7 +487,9 @@ sub analyze_newsletter
         my $body = ${$html_part->body_as_text};
         foreach my $rx (
                         qr/Se det här brevet på webben/i,
+                        qr/problem med att läsa detta email/i,
                         qr/Webbversion/i,
+                        qr/webbaserad version/i,
                         qr/prenumeration/,
                         qr/nyhetsbrev/,
                        )
@@ -582,11 +625,12 @@ sub analyze_computer_generated
     state $hwc =
     {
      'Auto-Submitted'      => qr/^auto-/,
-     'X-Mailer'           => qr/
+     'X-Mailer'            => qr/
                                    ^StarScan |
                                    Internet[ ]Agent |
                                    OTRS
                                /xi,
+     'From'                => qr/mailer-daemon|postmaster|noreply/i,
     };
     foreach my $h ( keys %$hwc )
     {
@@ -642,7 +686,7 @@ sub analyze_auto_reply
     my $o = $c->email_obj;
     debug "Analyzing for Auto-reply" if $DEBUG;
 
-    if ( ($o->header('Return-path')//'') =~ /<mailer-daemon\@.*>/ )
+    if ( ($o->header('Return-path')//'') =~ /<(mailer-daemon\@.*)?>/ )
     {
         $c->{is}{auto_reply} ++;
         return;
@@ -754,6 +798,12 @@ sub analyze_reply
     my $o = $c->email_obj;
     debug "Analyzing for Reply" if $DEBUG;
 
+    if ( $o->head->parsed_subject =~ /^(Re|Sv|Ang):/i )
+    {
+        $c->{is}{reply} = 1;
+        return;
+    }
+
     if ( $c->is_auto_reply )
     {
         $c->{is}{reply} = 1;
@@ -774,12 +824,6 @@ sub analyze_reply
     }
 
     if ( $o->first_part_with_type("message/rfc822") )
-    {
-        $c->{is}{reply} = 1;
-        return;
-    }
-
-    if ( $o->head->parsed_subject =~ /^(Re|Sv):/i )
     {
         $c->{is}{reply} = 1;
         return;
@@ -836,7 +880,7 @@ sub analyze_vacation
 
     # Unambigous vacation subjects
     #
-    my $outrx = qr/ ^Fr.{1,2}nvaro\b
+    my $outrx = qr/ ^Frånvaro\b
                 |    borta.från.kontoret
                 |    är.inte.på.kontoret
                 |    Är.på.resande.fot
@@ -893,7 +937,7 @@ sub analyze_vacation
     my $string = trim $bodyr;
     return if length($string) > 10000;
 
-#    debug "v4";
+#    debug "v4 $ct_source";
 
     # Outlook and exchange are BAD BAD BAD.
     # Keep processing if the email comes from a retarded system
@@ -907,12 +951,13 @@ sub analyze_vacation
     #
     unless( $vacation or
             $c->is_computer_generated or
-            ( $c->is_reply and $underspecified ) )
+            $c->is_reply )
     {
         return;
     }
 
-#    debug "  Parse $string";
+#    debug "String: $string ".validate_utf8(\$string);
+#    debug lc Encode::Detect::Detector::detect($string);
 
     $vacation ++ if $subject =~ $outrx2;
     $vacation ++ if $string =~ $outrx;
@@ -1005,10 +1050,10 @@ sub analyze_vacation
         return;
     }
 
+#    debug "Vacation points: ".$vacation;
     if ( $c->is_computer_generated or
          $vacation >= 3 )
     {
-        debug "Vacation points: ".$vacation;
         $c->{is}{vacation} = $vacation;
     }
 
@@ -1539,6 +1584,7 @@ sub analyze_bounce_guess
     if ( my $report = $o->first_part_with_type('multipart/report') )
     {
         $o = $report;
+        $c->{is}{dsn} = 1; # transient or bounce
     }
 
 
@@ -1552,8 +1598,9 @@ sub analyze_bounce_guess
                             /ix;
     my $subject = trim $o->head->parsed_subject->plain;
     return unless( $c->is_computer_generated or
-                   $o->header('From') =~ /mailer-daemon|postmaster/i or
-                   $subject =~ $common_subjects );
+                   $subject =~ $common_subjects or
+                   $c->{is}{dsn}
+                 );
 
 
 
@@ -1646,21 +1693,22 @@ sub _bounce_guess_subpart
     if ( $body =~ $RETURNED_MESSAGE_BELOW )
     {
         debug "Matching RETURNED_MESSAGE_BELOW" if $DEBUG;
+        $c->{is}{dsn}; # Probably transient or bounce
         my ($stuff_before, $stuff_splitted, $stuff_after) =
           split $RETURNED_MESSAGE_BELOW, $body, 3;
 
-        push @{$c->{reports}}, _extract_reports($stuff_before);
+        push @{$c->{reports}}, $c->_extract_reports($stuff_before);
         # TODO: Set up $c->{'orig_message'}
     }
     elsif ( $body =~ /(.+)\n\n(.+?Message-ID:.+)/is )
     {
         debug "Matching Message-ID string" if $DEBUG;
-        push @{$c->{reports}}, _extract_reports($1);
+        push @{$c->{reports}}, $c->_extract_reports($1);
     }
     else
     {
         debug "looking at the whole part" if $DEBUG;
-        push @{$c->{reports}}, _extract_reports($body);
+        push @{$c->{reports}}, $c->_extract_reports($body);
     }
 
     return;
@@ -1706,7 +1754,10 @@ sub analyze_quit_work
     $subject =~ s/^(Re:)?\s*$AUTO_REGEX\s*[:\-]?\s*//i;
 #    debug "Subject: $subject";
 
-    if ( $subject =~ /^I'm not longer employed at|Jag har gått i pension|Jag har slutat/i )
+    if ( $subject =~ m/   ^I'm.not.longer.employed.at
+                      |   Jag.har.gått.i.pension
+                      |   Jag.har.slutat
+                      /xi )
     {
         $quit ++;
     }
@@ -1718,14 +1769,15 @@ sub analyze_quit_work
     my $underspecified = 0;
     if ( $o->header('Thread-Index') )
     {
-        $underspecified = 1;
+        $underspecified ++;
     }
+
+#    debug "detected reply? ".$c->is_reply;
 
 
     ### Keep processing?
     #
-    return unless $quit or $c->is_computer_generated or
-      ( $c->is_reply and $underspecified );
+    return unless $quit or $c->is_computer_generated or $c->is_reply;
 
 
     my $leave_rx = qr{   The.person.you.are.looking.for.has.left
@@ -1741,6 +1793,7 @@ sub analyze_quit_work
                          (på|hos|inom|som)
                      |	 avslutad.anställning
                      |   slutade.jag.min.anställning
+                     |   har.nu.avslutat.mitt.arbete
                      |	 employment.terminated
                      |   will.leave
                      |   no.longer.employed
@@ -1774,9 +1827,10 @@ sub analyze_quit_work
     if ( $c->is_computer_generated or
          $quit >= 2 )
     {
-        debug "Quit points: ".$quit;
         $c->{is}{quit_work} = $quit;
     }
+
+    debug "Quit points: ".$quit;
 
     return;
 }
@@ -2023,14 +2077,17 @@ sub analyze_personal
     my $o = $c->email_obj;
 
     return if $c->is_ticket;
-
+#debug "a";
     if ( $c->is_delivered or $c->is_vacation )
     {
         $c->{is}{personal} = 1;
+#debug "b";
     }
+#debug "c";
 
     if ( $c->is_quit_work )
     {
+#debug "d";
         my $body = trim $o->guess_content_part->body_as_text;
 
         ### Not personal
@@ -2050,12 +2107,14 @@ sub analyze_personal
                       /ix )
         {
             $c->{is}{personal} = 1;
+#debug "e";
             return;
         }
     }
 
     return if $c->is_auto_reply;
 
+#debug "f";
     $c->{is}{personal} = 1 if $c->is_reply;
 
     return;
@@ -2066,7 +2125,7 @@ sub analyze_personal
 
 sub _extract_reports
 {
-    my( $text ) = @_;
+    my( $c, $text ) = @_;
 
     my %by_email;
 
@@ -2092,12 +2151,51 @@ sub _extract_reports
 
 
     ### Remove emails not being the recipient
+    $text =~ s/Från\s*:\s*${EMAIL_ADDR_REGEX}//ig;
     $text =~ s/From\s*:\s*${EMAIL_ADDR_REGEX}//ig;
     $text =~ s/Message-ID:\s*${EMAIL_ADDR_REGEX}//ig;
     $text =~ s/mail address has changed to${EMAIL_ADDR_REGEX}//ig;
 
     #### Remove contact information
     $text =~ s/${CONTACTINFO_REGEX}.*//s;
+
+
+    ##### Special handling for specific senders
+    my $o = $c->email_obj;
+    if( $o->header('X-Mailer') =~ /^FirstClass/ )
+    {
+        debug "Special handling of FirstClass" if $DEBUG;
+
+        if( $text =~ /([\w ]+,[\w\.]+) \(The name was not found/ )
+        {
+            my $ea = $1;
+            my $orig = $ea;
+            $ea =~ s/ /\./g;
+            $ea =~ s/,/\@/;
+            $ea = lc $ea;
+
+            unless( $ea =~ /@[a-z\-_\.]+\.[a-z]{2,6}$/ )
+            {
+                debug "Non-complete domain";
+                my( $ea_domain ) =  $ea =~ /@([a-z\-_\.]+)/;
+                my( $sender_domain ) = $c->sender_email_address
+                  =~ /@([a-z\-_\.]+)/;
+#                debug "ea domain: $ea_domain";
+#                debug "sender domain: $sender_domain";
+                if( $ea_domain and $sender_domain and
+                    $sender_domain =~ /$ea_domain/ )
+                {
+                    $ea =~ s/$ea_domain/$sender_domain/;
+                }
+            }
+
+
+#            debug "Replaced $orig with $ea";
+
+            $text =~ s/$orig/$ea/;
+        }
+    }
+
 
     debug "AFTER CLEANUP\n$text\n---------\n" if $DEBUG > 1;
 
@@ -2152,8 +2250,7 @@ sub _extract_reports
     }
 
 
-#    warn "reports to generate:";
-#    warn datadump(\%by_email);
+#    debug "reports to generate:\n".datadump(\%by_email);
 
     # Try again for reports of malformed addresses
     unless( keys %by_email )
@@ -2281,7 +2378,8 @@ sub _std_reason
         /\b#?5\.4\.\d\b/ or
         /\b#?5\.1\.2\b/ or
         /\snon-existent hosts\s/ or
-        /Cannot find OUTBOUND MX Records for domain/
+        /Cannot find OUTBOUND MX Records for domain/ or
+        /connect\sto\sthe\srecipients\smail\sserver/
        )
     {
         return "domain_error";
@@ -2710,12 +2808,13 @@ sub as_html
                           address_changed
                           quit_work
                           spam
-                          delivered
                           unsubscribe
                           newsletter
+                          ticket
                        ))
     {
         my $call = 'is_'.$test;
+#        debug " ** Check $test";
         if ( $c->$call )
         {
             $found ++;
@@ -2727,20 +2826,24 @@ sub as_html
     {
         if ( ($c->dsn_std_reason||'unknown') ne 'unknown' )
         {
+#            debug "found reason";
             return $c->dsn_std_reason;
         }
 
-        foreach my $test (qw( dsn
+        foreach my $test (qw( delivered
+                              dsn
                               auto_reply
                               computer_generated
                               reply
                            ))
         {
             my $call = 'is_'.$test;
+#            debug " * test $call";
             if ( $c->$call )
             {
                 $found ++;
                 $out .= $test;
+#                debug "   got $call";
                 last;
             }
         }
