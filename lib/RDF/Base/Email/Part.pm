@@ -690,7 +690,8 @@ sub head
 
   $part->header( $name )
 
-Returns in scalar context: The first header of $name
+Returns in scalar context: The first header of $name, or the empty
+string if not existing.
 
 Retuns in list context: A list of all $name headers
 
@@ -746,7 +747,7 @@ sub header
     #
     my $str = $_[0]->head->
       header($_[1]);
-    return undef unless $str;
+    return '' unless $str;
 
     $str =~ s/;\s+(.*?)\s*$//;
 
@@ -1087,6 +1088,7 @@ sub select_renderer
              [ qr{text/}                 => '_render_textplain'  ],
              [ qr{message/delivery-status}=>'_render_delivery_status' ],
              [ qr{message/disposition-notification}=>'_render_delivery_status' ],
+             [ qr{application/pdf}       => '_render_pdf'      ],
             )
     {
         $type =~ $_->[0]
@@ -1503,6 +1505,35 @@ sub _render_image
 #    debug "  rendering image - done";
 
     return "<img alt=\"$desig_out\" src=\"$url_path\"><br clear=\"all\">\n";
+}
+
+
+##############################################################################
+
+sub _render_pdf
+{
+    my( $part ) = @_;
+
+    debug "  rendering PDF - ".$part->path;
+
+    my $url_path = $part->url_path;
+
+    $url_path .= '?format=png';
+
+    my $desig = $part->filename || "image";
+    if ( my $desc = $part->description )
+    {
+        $desig .= " - $desc";
+    }
+
+    my $desig_out = CGI->escapeHTML($desig);
+
+    $part->top->{'attachemnts'} ||= {};
+    $part->top->{'attachemnts'}{$part->path} = $part;
+
+#    debug "  rendering image - done";
+
+    return "<img alt=\"$desig_out\" class=\"wide\" src=\"$url_path\"><br clear=\"all\">\n";
 }
 
 

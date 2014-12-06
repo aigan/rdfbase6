@@ -221,6 +221,21 @@ sub render_output
         #    debug "bodypart_string: ".validate_utf8( \$data );
     }
 
+
+
+    #### Convert to requested format
+    if( my $format = $resp->req->q->param('format') )
+    {
+        ($data,$type) = convert_data($data,
+                                     {
+                                      type => $type,
+                                      name => $name,
+                                      format => $format,
+                                     });
+    }
+
+
+
     $part ||= $top;
     $rend->{'content_type'} = $type;
 #    $rend->{'charset'} = $part->charset_guess;
@@ -311,6 +326,59 @@ sub set_ctype
 
 ##############################################################################
 
+sub convert_data
+{
+    my( $data, $args ) = @_;
+
+    my $type = $args->{type};
+    my $format = $args->{format};
+    my $name = $args->{name};
+
+    return( $data, $type ) unless $format eq 'png';
+    return( $data, $type ) unless $type eq 'application/pdf';
+    debug "from type $type";
+
+#    ### Using temporary files
+#
+#    my $tmpdir = Para::Frame::Dir->
+#      new_possible_sysfile($Para::Frame::CFG->{'dir_var'}.'/imap');
+#    debug "tmpdir ".$tmpdir->sysdesig;
+#    my $f = $tmpdir->get_virtual($$.'-'.$name);
+#    $f->set_content($data);
+#    debug "Saved pdf in ".$f->sys_path;
+#
+#    my $converted_name = $name;
+#    $converted_name =~ s/(\.pdf)?$/.png/i;
+#    my $f2 = $tmpdir->get_virtual($$.'-'.$converted_name);
+#
+#    use Image::Magick;
+#
+#    my $image = Image::Magick->new;
+#    $image->Set(density=>150);
+#    $image->Read($f->sys_path);
+#    debug "Width ".$image->Get('width');
+#    $image->Write(filename => $f2->sys_path, density=>150);
+#    $data = $f2->contentref;
+
+
+    ### In-memory conversion
+
+    use Image::Magick;
+
+    my $image = Image::Magick->new;
+    $image->Set(density=>150); # Maby 100 is enough...
+    $image->BlobToImage($$data);
+    debug "Width ".$image->Get('width');
+    my $blob = $image->ImageToBlob(magick=>'png');
+    $data = \ $blob;
+
+    $type = 'image/png';
+
+    return( $data, $type );
+}
+
+
+##############################################################################
 
 
 1;
