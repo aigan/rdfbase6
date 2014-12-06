@@ -1694,7 +1694,7 @@ sub _bounce_guess_subpart
     if ( $body =~ $RETURNED_MESSAGE_BELOW )
     {
         debug "Matching RETURNED_MESSAGE_BELOW" if $DEBUG;
-        $c->{is}{dsn}; # Probably transient or bounce
+        $c->{is}{dsn} = 1; # Probably transient or bounce
         my ($stuff_before, $stuff_splitted, $stuff_after) =
           split( $RETURNED_MESSAGE_BELOW, $body, 2);
 
