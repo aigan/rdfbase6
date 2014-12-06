@@ -16,6 +16,8 @@ use 5.010;
 use strict;
 use warnings;
 
+use Para::Frame::Utils qw( debug throw );
+
 use RDF::Base::Search;
 
 =head1 DESCRIPTION
