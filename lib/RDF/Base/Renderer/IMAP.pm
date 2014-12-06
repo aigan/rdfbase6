@@ -25,7 +25,7 @@ use strict;
 use warnings;
 use base qw( Para::Frame::Renderer::Custom );
 
-use Encode; # encode decode
+use Encode;                     # encode decode
 use Carp qw( croak confess cluck );
 use MIME::Base64 qw( decode_base64 );
 use MIME::QuotedPrint qw(decode_qp);
@@ -61,35 +61,35 @@ sub render_output
     my $req = $rend->req;
 
     my( $nid, $search, $head, $tt );
-    if( $path =~ /\/(\d+)(?:\/([^\/]*?)(?:\.(head|tt))?)$/ )
+    if ( $path =~ /\/(\d+)(?:\/([^\/]*?)(?:\.(head|tt))?)$/ )
     {
 #	debug "$1 - $2 - $3 - $4";
 
-	$nid = $1;
-	$search = $2;
+        $nid = $1;
+        $search = $2;
         my $arg = $3 || '';
 
-	if( $arg eq 'head' )
-	{
-	    $head = 1; # Show the headers
-	}
-        elsif( $arg eq 'tt' )
+        if ( $arg eq 'head' )
         {
-            $tt = 1; # Compile TT template
+            $head = 1;          # Show the headers
+        }
+        elsif ( $arg eq 'tt' )
+        {
+            $tt = 1;            # Compile TT template
             debug "Render TT";
         }
     }
     else
     {
-	debug "Path in invalid format: $path";
-	return undef;
+        debug "Path in invalid format: $path";
+        return undef;
     }
 
     my $lookup = $req->session->{'email_imap'}{$nid};
     unless( $lookup )
     {
-	debug "Node not registred in session";
-	return undef;
+        debug "Node not registred in session";
+        return undef;
     }
 
     my $email = RDF::Base::Resource->get($nid);
@@ -98,52 +98,52 @@ sub render_output
 
     my( $imap_path, $part, $type, $encoding );
 
-    if( $search )
+    if ( $search )
     {
-	if( $search =~ /^[\d\.]+$/ )
-	{
-	    $imap_path = $search;
-	}
-	else
-	{
-	    $search =~ s/%20/ /g;
-	    $imap_path = $lookup->{$search};
-	}
+        if ( $search =~ /^[\d\.]+$/ )
+        {
+            $imap_path = $search;
+        }
+        else
+        {
+            $search =~ s/%20/ /g;
+            $imap_path = $lookup->{$search};
+        }
 
-	if( not $imap_path )
-	{
-	    debug "file '$search' not found as a part of message";
-	    my $s = $req->session;
-	    debug "Session ($s) :\n".
-	      datadump($s->{'email_imap'});
-	    return undef;
-	}
-	elsif( $imap_path eq '-' )
-	{
-	    $imap_path = undef;
-	}
+        if ( not $imap_path )
+        {
+            debug "file '$search' not found as a part of message";
+            my $s = $req->session;
+            debug "Session ($s) :\n".
+              datadump($s->{'email_imap'});
+            return undef;
+        }
+        elsif ( $imap_path eq '-' )
+        {
+            $imap_path = undef;
+        }
 
 
 #	debug "Search is $search";
 
-	if( $search =~ /\.html$/ )
-	{
-	    $type = 'text/html';
-	    debug "Setting type based on search extenstion";
-	}
+        if ( $search =~ /\.html$/ )
+        {
+            $type = 'text/html';
+            debug "Setting type based on search extenstion";
+        }
     }
 
-    if( $imap_path )
+    if ( $imap_path )
     {
-	$part = $top->new_by_path($imap_path);
+        $part = $top->new_by_path($imap_path);
 
-	$type = $part->type || '';
+        $type = $part->type || '';
 
-	$encoding = $part->encoding;
+        $encoding = $part->encoding;
     }
     else
     {
-	$encoding = $top->encoding;
+        $encoding = $top->encoding;
     }
 
     my $updated = $email->first_arc('has_imap_url')->updated;
@@ -160,33 +160,33 @@ sub render_output
 
     $resp->set_http_status(200);
 
-    if( my $client_time = $req->http_if_modified_since )
+    if ( my $client_time = $req->http_if_modified_since )
     {
-	if( $updated <= $client_time )
-	{
-	    debug "Not modified";
-	    $resp->set_http_status(304);
-	    $req->set_header_only(1);
-	}
-	else
-	{
-	    debug "Modified recently";
-	}
+        if ( $updated <= $client_time )
+        {
+            debug "Not modified";
+            $resp->set_http_status(304);
+            $req->set_header_only(1);
+        }
+        else
+        {
+            debug "Modified recently";
+        }
     }
 
     $resp->{'encoding'} = 'raw';
 
-    if( $head )
+    if ( $head )
     {
-	$part ||= $top;
+        $part ||= $top;
 
-	$rend->{'content_type'} = "text/html";
-	$rend->{'charset'} = "UTF-8";
+        $rend->{'content_type'} = "text/html";
+        $rend->{'charset'} = "UTF-8";
 
-	my $head = $part->head_complete;
+        my $head = $part->head_complete;
 
-	my $data = $head->as_html;
-	return \$data;
+        my $data = $head->as_html;
+        return \$data;
     }
 
 
@@ -198,27 +198,27 @@ sub render_output
 
 
     my( $data, $charset );
-    if( not $imap_path )
+    if ( not $imap_path )
     {
-	if( $type eq "text/html" )
-	{
-	    ($data,$charset) = $top->body_with_sensible_charset;
-	}
-	else
-	{
+        if ( $type eq "text/html" )
+        {
+            ($data,$charset) = $top->body_with_sensible_charset;
+        }
+        else
+        {
 #            debug "Returning the whole message (no imap_path)";
 
-	    $type = "message/rfc822";
-	    return $top->raw;
-	}
+            $type = "message/rfc822";
+            return $top->raw;
+        }
     }
     else
     {
 #	debug "Getting bodypart ".$top->uid." $imap_path";
-	($data,$charset) = $part->body_with_sensible_charset;
+        ($data,$charset) = $part->body_with_sensible_charset;
 #        debug "Sensible Charset set to $charset";
 #	$data = $folder->imap_cmd('bodypart_string', $uid, $imap_path);
-	#    debug "bodypart_string: ".validate_utf8( \$data );
+        #    debug "bodypart_string: ".validate_utf8( \$data );
     }
 
     $part ||= $top;
@@ -228,14 +228,14 @@ sub render_output
 #    debug "Charset set to ".$rend->{'charset'};
 
 
-    if( $type eq 'text/html' )
+    if ( $type eq 'text/html' )
     {
-	use bytes; # Don't touch original encoding!
+        use bytes;              # Don't touch original encoding!
 
-	my $email_path = $top->email->url_path;
-	$$data =~ s/(=|")\s*cid:([^> "]+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
+        my $email_path = $top->email->url_path;
+        $$data =~ s/(=|")\s*cid:([^> "]+?)("|\s|>)/$1$email_path$lookup->{$2}$3/gi;
 
-        if( $tt )
+        if ( $tt )
         {
             my $tt_params =
             {
@@ -259,9 +259,9 @@ sub render_output
         }
 
 
-	unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
-	{
-	    my $subject;
+        unless( $$data =~ s/<body(.*?)>/<body onLoad="parent.onLoadPage();"$1>/is )
+        {
+            my $subject;
             eval
             {
                 $subject = encode( $top->charset_guess, $email->subject );
@@ -272,23 +272,23 @@ sub render_output
 
 
 #	    debug "Subject '$subject': ".validate_utf8(\$subject);
-	    my $subject_out = CGI->escapeHTML($subject);
+            my $subject_out = CGI->escapeHTML($subject);
 
-	    my $header = "<html><title>$subject_out</title>";
-	    $header .= "<body onLoad=\"parent.onLoadPage()\">\n";
-	    my $footer = "</body></html>\n";
+            my $header = "<html><title>$subject_out</title>";
+            $header .= "<body onLoad=\"parent.onLoadPage()\">\n";
+            my $footer = "</body></html>\n";
 
 #            debug "BODY ".validate_utf8($data);
 
-	    $$data = $header . $$data . $footer;
-	}
+            $$data = $header . $$data . $footer;
+        }
     }
 
 
     debug "Body is ".length($$data)." chars long";
-    if( $type =~ /^test\// )
+    if ( $type =~ /^test\// )
     {
-	debug "  ".validate_utf8($data);
+        debug "  ".validate_utf8($data);
     }
 
 #    debug $data;
