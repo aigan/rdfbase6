@@ -1625,6 +1625,11 @@ sub add_note
     }
     debug $node->desig($args).">> $note";
     $node->add({'note' => $note}, {%$args, activate_new_arcs=>1});
+
+    if ( $Para::Frame::REQ )
+    {
+        $Para::Frame::REQ->result_message($note);
+    }
 }
 
 
