@@ -6147,6 +6147,7 @@ sub unlock
     if ( $cnt < 0 )
     {
         debug "Unlock called without previous lock";
+        $RDF::Base::Arc::lock_check = $cnt = 0;
     }
 
     my $DEBUG = 0;
