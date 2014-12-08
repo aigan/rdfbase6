@@ -1625,9 +1625,8 @@ sub add_note
     }
     my $changes = $res->changes;
     $node->add({'note' => $note}, {%$args, activate_new_arcs=>1});
-    my $changes = $res->changes - $changes;
 
-    if( $changes )
+    if( $res->changes - $changes )
     {
         if ( $Para::Frame::REQ )
         {
