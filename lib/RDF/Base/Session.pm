@@ -54,6 +54,38 @@ sub search_collection
 
 ###########################################################################
 
+=head2 search_new
+
+=cut
+
+sub search_new
+{
+    my( $s ) = @_;
+
+    my $col = $s->{'search_collection'};
+    if( $col and $col->label )
+    {
+        debug "Active 1 col is $col";
+
+        $col = $col->new; # Get a new object;
+        $s->search_collection( $col ); # Seitch t new object
+
+        debug "Active 2 col is $col";
+    }
+    elsif( $col )
+    {
+        $col->reset;
+    }
+    else
+    {
+        $col = RDF::Base->Search_Collection->new();
+    }
+
+    return $col;
+}
+
+###########################################################################
+
 =head2 search_save
 
   $s->search_save( $collection, $label );
