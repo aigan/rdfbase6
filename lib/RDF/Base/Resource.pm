@@ -4936,6 +4936,18 @@ sub vacuum_node
 
     foreach my $sc (@classlist)
     {
+        debug "  Vacuum_first ${$n}{id} via $sc" if $DEBUG;
+        if ( my $method = $sc->can("vacuum_facet_first") )
+        {
+            next if $methods{$method}++;
+            next unless $n->isa($sc); # Might have changed
+            debug "  found $method" if $DEBUG;
+            &{$method}($n, $args);
+        }
+    }
+
+    foreach my $sc (@classlist)
+    {
         debug "  Vacuum ${$n}{id} via $sc" if $DEBUG;
         if ( my $method = $sc->can("vacuum_facet") )
         {
@@ -8263,7 +8275,7 @@ sub node_rec_exist
 
 sub mark_unsaved
 {
-#    confess "Would mark as unsaved $_[0]->{'id'}";
+#    cluck "Would mark as unsaved $_[0]->{'id'}";
     $UNSAVED{$_[0]->{'id'}} = $_[0];
 #    debug "Node $_[0]->{id} marked as unsaved now";
 }
