@@ -1616,19 +1616,27 @@ Supported args are:
 sub add_note
 {
     my( $node, $note, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $args, $arclim, $res ) = parse_propargs($args_in);
 
     $note =~ s/\n+$//;          # trim
     unless( length $note )
     {
         confess "No note given";
     }
-    debug $node->desig($args).">> $note";
+    my $changes = $res->changes;
     $node->add({'note' => $note}, {%$args, activate_new_arcs=>1});
+    my $changes = $res->changes - $changes;
 
-    if ( $Para::Frame::REQ )
+    if( $changes )
     {
-        $Para::Frame::REQ->result_message($note);
+        if ( $Para::Frame::REQ )
+        {
+            $Para::Frame::REQ->result_message($note);
+        }
+        else
+        {
+            debug $node->desig($args).">> $note";
+        }
     }
 }
 
