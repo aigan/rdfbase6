@@ -41,11 +41,11 @@ sub handler
 
     my( $args, $arclim, $res ) = parse_propargs( 'solid' );
 
-    $l->reset; # if used before...
-    while( my $n = $l->get_next_nos )
+    $l->reset;                  # if used before...
+    while ( my $n = $l->get_next_nos )
     {
-	unless( $l->count % 10 )
-	{
+        unless( $l->count % 10 )
+        {
             unless( $l->count % 100 )
             {
                 $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
@@ -58,13 +58,13 @@ sub handler
         $n->vacuum_node( $args );
     }
 
-    if( $res->changes )
+    if ( $res->changes )
     {
-	return loc("Changes saved");
+        return loc("Changes saved");
     }
     else
     {
-	return loc("No changes");
+        return loc("No changes");
     }
 }
 
