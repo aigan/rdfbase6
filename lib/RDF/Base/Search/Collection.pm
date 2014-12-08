@@ -189,6 +189,7 @@ sub reset
 
     foreach my $key ( keys %$search )
     {
+        next if $key eq 'label';
         delete $search->{$key};
     }
 

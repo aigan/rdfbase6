@@ -41,22 +41,38 @@ sub handler
 
     my( $args, $arclim, $res ) = parse_propargs( 'solid' );
 
-    $l->reset;                  # if used before...
-    while ( my $n = $l->get_next_nos )
-    {
-        unless( $l->count % 10 )
-        {
-            unless( $l->count % 100 )
-            {
-                $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
-            }
-            die "cancelled" if $req->cancelled;
-            $res->autocommit;
-            $req->may_yield;
-        }
+    my $s = $req->session;
+    $res->{'vacuumed'} = $s->{'vacuumed'};
+    my $n; #current node
 
-        $n->vacuum_node( $args );
-    }
+    $l->reset;                  # if used before...
+    eval
+    {
+        while ( $n = $l->get_next_nos )
+        {
+            next if $res->{'vacuumed'}{$n->{'id'}};
+#            debug "* ".$l->count;
+
+            unless( $l->count % 10 )
+            {
+                unless( $l->count % 100 )
+                {
+                    $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
+                }
+                die "cancelled" if $req->cancelled;
+                $req->may_yield;
+            }
+
+            $n->vacuum_node( $args );
+
+            $res->autocommit;
+        }
+    };
+
+    $res->{'vacuumed'}{$n->{'id'}} = 0;
+    $s->{'vacuumed'} = $res->{'vacuumed'};
+
+    die $@ if $@;
 
     if ( $res->changes )
     {
