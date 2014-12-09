@@ -4902,9 +4902,11 @@ sub vacuum
 
 =head2 vacuum_node
 
-  $n->vacuum_node()
+  $n->vacuum_node( \%args )
 
-Calls L</vacuum_facet> for all classes
+Calls L</vacuum_facet_first> for all classes and after that, calls
+L</vacuum_facet> for all classes, starting with the most general class
+(Resource).
 
 =cut
 

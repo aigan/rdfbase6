@@ -51,7 +51,7 @@ sub handler
         while ( $n = $l->get_next_nos )
         {
             next if $res->{'vacuumed'}{$n->{'id'}};
-#            debug "* ".$l->count;
+#            debug "* ".$l->count." : ".$n->{'id'};
 
             unless( $l->count % 10 )
             {
