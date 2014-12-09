@@ -39,10 +39,11 @@ use RDF::Base::Literal::String; # Needed by RB::Utils
 use RDF::Base::Class;
 use RDF::Base::Setup;
 use RDF::Base::Plugins;
+use RDF::Base::Domain;
 use IMAP::BodyStructure 1.02;
 
 
-our $VERSION = "6.71";
+our $VERSION = "6.72";
 
 
 =head1 NAME
