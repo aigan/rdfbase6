@@ -74,32 +74,32 @@ sub parse
 
     my $date;
 
-    if( ref $val eq 'SCALAR' )
+    if ( ref $val eq 'SCALAR' )
     {
-	$date = $class->new($$val, $valtype);
+        $date = $class->new($$val, $valtype);
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::Time" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::Time" )
     {
-	if( $valtype->equals( $val->this_valtype ) )
-	{
-	    $date = $val;
-	}
-	else
-	{
-	    $date = $class->new($val->plain, $valtype);
-	}
+        if ( $valtype->equals( $val->this_valtype ) )
+        {
+            $date = $val;
+        }
+        else
+        {
+            $date = $class->new($val->plain, $valtype);
+        }
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
     {
-	$date = $class->new($val->plain, $valtype);
+        $date = $class->new($val->plain, $valtype);
     }
-    elsif( UNIVERSAL::isa $val, "RDF::Base::Undef" )
+    elsif ( UNIVERSAL::isa $val, "RDF::Base::Undef" )
     {
-	$date = $class->new(undef, $valtype);
+        $date = $class->new(undef, $valtype);
     }
     else
     {
-	confess "Can't parse $val";
+        confess "Can't parse $val";
     }
 
 #    debug "Returning date ".$date->sysdesig;
@@ -107,9 +107,9 @@ sub parse
 
     # For dates beyond this, use RB::Literal::Time::Historic
     #
-    if( $date->year > 2020 or $date->year < 1900 )
+    if ( $date->year > 2020 or $date->year < 1900 )
     {
-	throw 'validation', loc "Date [_1] out of range", $date;
+        throw 'validation', loc "Date [_1] out of range", $date;
     }
 
     return $date;
@@ -138,10 +138,10 @@ sub new_from_db
     }
 
     my $tz = undef;
-    if( $time->year > 2100 or $time->year < 1900 )
+    if ( $time->year > 2100 or $time->year < 1900 )
     {
-	debug "Using floating for historical ".$time->sysdesig;
-	$tz = 'floating';
+        debug "Using floating for historical ".$time->sysdesig;
+        $tz = 'floating';
     }
 
     $time->init($tz);
@@ -166,14 +166,14 @@ sub new
     my $this = shift;
 
     my( $time, $valtype);
-    if( scalar @_ > 2 )
+    if ( scalar @_ > 2 )
     {
-	$time = $this->SUPER::new(@_);
+        $time = $this->SUPER::new(@_);
     }
     else
     {
-	$time = $this->SUPER::get($_[0]);
-	$valtype = $_[1];
+        $time = $this->SUPER::get($_[0]);
+        $valtype = $_[1];
     }
 
     unless( defined $time )
@@ -181,8 +181,8 @@ sub new
 #	$time = DateTime::Incomplete->new();
 #	my $class = ref $this || $this;
 #	bless($time, $class)->init;
-	use RDF::Base::Undef;
-	return RDF::Base::Undef->new(); ### FIXME!
+        use RDF::Base::Undef;
+        return RDF::Base::Undef->new(); ### FIXME!
     }
 
     $time->{'valtype'} = $valtype;
@@ -241,13 +241,13 @@ sub now
 sub date
 {
     my $time = Para::Frame::Time->get(@_);
-    if( $time )
+    if ( $time )
     {
-	return bless($time,'RDF::Base::Literal::Time');
+        return bless($time,'RDF::Base::Literal::Time');
     }
     else
     {
-	return RDF::Base::Literal::Time->new(undef);
+        return RDF::Base::Literal::Time->new(undef);
     }
 }
 
@@ -291,10 +291,10 @@ sub wuirc
     my %cal_args;
     foreach my $key (qw( size class onUpdate showsTime style ))
     {
-	next unless defined $args->{$key};
-	next unless length $args->{$key};
+        next unless defined $args->{$key};
+        next unless length $args->{$key};
 
-	$cal_args{$key} = $args->{$key};
+        $cal_args{$key} = $args->{$key};
     }
 
 
@@ -305,35 +305,35 @@ sub wuirc
     my $subj_id = $subj->id;
 
     my $predname;
-    if( ref $pred )
+    if ( ref $pred )
     {
-	$predname = $pred->label;
+        $predname = $pred->label;
     }
     else
     {
-	$predname = $pred;
-	# Only handles pred nodes
-	$pred = RDF::Base::Pred->get_by_label($predname);
+        $predname = $pred;
+        # Only handles pred nodes
+        $pred = RDF::Base::Pred->get_by_label($predname);
     }
     debug 2, "Predname in date wuirc: $predname";
 
 
     my $fieldname_default = "arc___pred_${predname}__subj_${subj_id}";
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if ( ($args->{'disabled'}||'') eq 'disabled' )
     {
-	my $arclist = $subj->arc_list($pred, undef, $args);
+        my $arclist = $subj->arc_list($pred, undef, $args);
 
-        if( $arclist->size == 0 )
+        if ( $arclist->size == 0 )
         {
             return RDF::Base::Literal::Time->new(undef, $_[0])->as_html;
         }
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= ( $arc->value_as_html($args) || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
-	}
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= ( $arc->value_as_html($args) || $args->{'default_value'} ).'&nbsp;'. $arc->edit_link_html .'<br/>';
+        }
     }
-    elsif( $subj->empty )
+    elsif ( $subj->empty )
     {
 #	# TODO: Make the default date work
 #	# Setting a default date and time to the calendar
@@ -347,36 +347,36 @@ sub wuirc
 #		  );
 #	$cal_args{'date'} = $date;
 
-	my $fieldname = build_field_key({
+        my $fieldname = build_field_key({
                                          arc => '',
                                          pred => $predname,
                                          subj => $subj_id,
                                          if => $if,
                                         });
 
-	$id ||= $fieldname;
-	$out .= &calendar($fieldname,  $args->{'default_value'} || '',
-			  {
-			   %cal_args,
-			   id => $id,
-			  });
-	$out .= $arc->edit_link_html
-	  if( $arc );
+        $id ||= $fieldname;
+        $out .= &calendar($fieldname,  $args->{'default_value'} || '',
+                          {
+                           %cal_args,
+                           id => $id,
+                          });
+        $out .= $arc->edit_link_html
+          if ( $arc );
     }
-    elsif( $subj->list($pred)->size > 1 )
+    elsif ( $subj->list($pred)->size > 1 )
     {
-	$out .= "<ul>";
+        $out .= "<ul>";
 
-	foreach my $arc ( $subj->arc_list($pred) )
-	{
-	    if( $arc->objtype )
-	    {
-		$out .= "<li><em>This is not a date!!</em> ".
-		  $arc->edit_link_html ."</li>";
-	    }
-	    else
-	    {
-		$out .= "<li>";
+        foreach my $arc ( $subj->arc_list($pred) )
+        {
+            if ( $arc->objtype )
+            {
+                $out .= "<li><em>This is not a date!!</em> ".
+                  $arc->edit_link_html ."</li>";
+            }
+            else
+            {
+                $out .= "<li>";
 
                 my $fieldname = build_field_key({
                                                  arc => $arc->id,
@@ -385,33 +385,33 @@ sub wuirc
                                                  if => $if,
                                                 });
 
-		$id ||= $fieldname;
-		my $value_new = $q->param($fieldname_default) ||
-		  $arc->value->desig($args) || $args->{'default_value'};
-		$out .= &calendar($fieldname, $value_new,
-				  {
-				   %cal_args,
-				   id => $fieldname,
-				  });
-		$out .= $arc->edit_link_html
-		  if( $arc );
-		$out .= "</li>";
-	    }
-	}
+                $id ||= $fieldname;
+                my $value_new = $q->param($fieldname_default) ||
+                  $arc->value->desig($args) || $args->{'default_value'};
+                $out .= &calendar($fieldname, $value_new,
+                                  {
+                                   %cal_args,
+                                   id => $fieldname,
+                                  });
+                $out .= $arc->edit_link_html
+                  if ( $arc );
+                $out .= "</li>";
+            }
+        }
 
-	$out .= "</ul>";
+        $out .= "</ul>";
     }
     else
     {
-	my $arc = $subj->first_arc($pred);
-	if( $arc->objtype )
-	{
-	    $out .= "<em>This is not a date!</em>";
-	}
-	else
-	{
-	    my $arc_id = ( $arc_type eq 'singular' ?
-			   'singular' : $arc ? $arc->id : '' );
+        my $arc = $subj->first_arc($pred);
+        if ( $arc->objtype )
+        {
+            $out .= "<em>This is not a date!</em>";
+        }
+        else
+        {
+            my $arc_id = ( $arc_type eq 'singular' ?
+                           'singular' : $arc ? $arc->id : '' );
 
             my $fieldname = build_field_key({
                                              arc => $arc_id,
@@ -420,18 +420,18 @@ sub wuirc
                                              if => $if,
                                             });
 
-	    $id ||= $fieldname;
-	    my $value_new = $q->param($fieldname_default)
-	      || $subj->prop($pred)->desig($args) || $args->{'default_value'};
+            $id ||= $fieldname;
+            my $value_new = $q->param($fieldname_default)
+              || $subj->prop($pred)->desig($args) || $args->{'default_value'};
 
-	    $out .= &calendar($fieldname, $value_new,
-			      {
-			       %cal_args,
-			       id => $id,
-			      });
-	    $out .= $arc->edit_link_html
-	      if( $arc );
-	}
+            $out .= &calendar($fieldname, $value_new,
+                              {
+                               %cal_args,
+                               id => $id,
+                              });
+            $out .= $arc->edit_link_html
+              if ( $arc );
+        }
     }
 
     return $out;
