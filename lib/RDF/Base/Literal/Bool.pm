@@ -57,58 +57,58 @@ sub wuirc
     my $req = $Para::Frame::REQ;
 
     my $predname;
-    if( ref $pred )
+    if ( ref $pred )
     {
-	$predname = $pred->label;
+        $predname = $pred->label;
     }
     else
     {
-	$predname = $pred;
-	# Only handles pred nodes
-	$pred = RDF::Base::Pred->get_by_label($predname);
+        $predname = $pred;
+        # Only handles pred nodes
+        $pred = RDF::Base::Pred->get_by_label($predname);
     }
 
     my $key = "arc_singular__pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
     $args->{'id'} ||= $key;
 
-    if( ($args->{'label'}||'') eq '1' )
+    if ( ($args->{'label'}||'') eq '1' )
     {
 #        debug "Args label is ".$args->{'label'};
         $args->{'label'} = $pred;
     }
 
-    if( ($args->{'tdlabel'}||'') eq '1' )
+    if ( ($args->{'tdlabel'}||'') eq '1' )
     {
 #        debug "Args label is ".$args->{'label'};
         $args->{'tdlabel'} = $pred;
     }
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if ( ($args->{'disabled'}||'') eq 'disabled' )
     {
-	my $arclist = $subj->arc_list($predname, undef, $args);
+        my $arclist = $subj->arc_list($predname, undef, $args);
 
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= 'X';
-	}
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= 'X';
+        }
     }
-    elsif( $subj->count($predname) )
+    elsif ( $subj->count($predname) )
     {
-	my $arclist = $subj->arc_list($predname, undef, $args);
+        my $arclist = $subj->arc_list($predname, undef, $args);
 
 
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= hidden('check_arc_'. $arc->id, $arc->value->plain);
-	    $out .= checkbox($key, 1, $arc->value->plain, $args) .
-	      $arc->edit_link_html;
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= hidden('check_arc_'. $arc->id, $arc->value->plain);
+            $out .= checkbox($key, 1, $arc->value->plain, $args) .
+              $arc->edit_link_html;
 
-	}
+        }
     }
     else
     {
-	my $val = $args->{'default_value'} || 0;
-	$out .= checkbox($key, 1, $val, $args);
+        my $val = $args->{'default_value'} || 0;
+        $out .= checkbox($key, 1, $val, $args);
     }
 
     return $out;
@@ -130,7 +130,7 @@ sub as_html
 
     # Maby use ☑ and ☒
     return( $lit->plain ? '<span style="color: green;font-size:150%;padding:0;margin:0">☑</span>' :
-	    '<span style="color: red">☒</span>' );
+            '<span style="color: red">☒</span>' );
 }
 
 
@@ -150,24 +150,24 @@ sub some_kind_of_as_html
     my $req = $Para::Frame::REQ;
 
     my $predname;
-    if( ref $pred )
+    if ( ref $pred )
     {
-	$predname = $pred->label;
+        $predname = $pred->label;
     }
     else
     {
-	$predname = $pred;
-	# Only handles pred nodes
-	$pred = RDF::Base::Pred->get_by_label($predname);
+        $predname = $pred;
+        # Only handles pred nodes
+        $pred = RDF::Base::Pred->get_by_label($predname);
     }
 
     my $arclist = $subj->arc_list($predname, undef, $args);
 
-    while( my $arc = $arclist->get_next_nos )
+    while ( my $arc = $arclist->get_next_nos )
     {
-	# Maby use ☑ and ☒
-	$out .= ( $arc->value->desig ? '<span style="color: green">V</span>' :
-		  '<span style="color: red">X</span>' );
+        # Maby use ☑ and ☒
+        $out .= ( $arc->value->desig ? '<span style="color: green">V</span>' :
+                  '<span style="color: red">X</span>' );
     }
 
     return $out;
