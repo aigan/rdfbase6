@@ -1185,6 +1185,7 @@ sub wuirc
                          id => $args->{'id'},
                          onchange => $onchange,
                         },
+                        id => $args->{'id'},
                         maxw => $maxw,
                         maxh => $maxh,
                         image_url => $args->{'image_url'},

@@ -55,6 +55,7 @@ sub wuirc
     my $out = "";
     my $R = RDF::Base->Resource;
     my $req = $Para::Frame::REQ;
+    my $tag_attr = $args->{tag_attr} ||= {};
 
     my $predname;
     if ( ref $pred )
@@ -69,7 +70,9 @@ sub wuirc
     }
 
     my $key = "arc_singular__pred_${predname}__subj_". $subj->id ."__row_".$req->{'rb_wu_row'};
-    $args->{'id'} ||= $key;
+
+
+    $args->{id} = $tag_attr->{'id'} ||= $key;
 
     if ( ($args->{'label'}||'') eq '1' )
     {

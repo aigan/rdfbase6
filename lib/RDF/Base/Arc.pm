@@ -2540,8 +2540,10 @@ sub table_row
                 {
 #                    $out .= ( $is_rev ? $check_subj->wu_jump :
 #                              $item->wu_jump );
-                    $out .= ( $is_rev ? $check_subj->as_thml :
-                              $item->as_html );
+                    my $val_obj = $is_rev ? $check_subj : $item;
+                    $out .= CGI->escapeHTML($val_obj->plain);
+#                    $out .= ( $is_rev ? $check_subj->as_thml :
+#                              $item->as_html );
                 }
                 else
                 {
@@ -2561,6 +2563,7 @@ sub table_row
                     $tag_attr->{rows} = $args->{'rows'};
                     $tag_attr->{maxlength} = $args->{'maxlength'};
                     $tag_attr->{onchange} = $args->{'onchange'};
+                    $tag_attr->{id} = $args->{'id'};
 
                     my $fargs =
                     {
