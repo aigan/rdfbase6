@@ -276,11 +276,13 @@ sub wuirc
     my $q = $Para::Frame::REQ->q;
 
     my $newsubj = $args->{'newsubj'};
-    my $tdlabel = $args->{'tdlabel'};
-    my $label = $args->{'label'};
+#    my $tdlabel = $args->{'tdlabel'};
+#    my $label = $args->{'label'};
     my $arc = $args->{'arc'};
     my $arc_type = $args->{'arc_type'} || 'singular';
     my $if = $args->{'if'};
+
+    $args->{tag_attr} ||= {};
 
     my $id = $args->{'id'};
 
@@ -420,14 +422,16 @@ sub wuirc
                                              if => $if,
                                             });
 
-            $id ||= $fieldname;
+            # Store fieldname in  $args->{id}
+            $cal_args{id} = $args->{id} = $args->{tag_attr}{'id'} ||= $fieldname;
+            $cal_args{tag_attr} = $args->{tag_attr};
+
             my $value_new = $q->param($fieldname_default)
               || $subj->prop($pred)->desig($args) || $args->{'default_value'};
 
             $out .= &calendar($fieldname, $value_new,
                               {
                                %cal_args,
-                               id => $id,
                               });
             $out .= $arc->edit_link_html
               if ( $arc );
