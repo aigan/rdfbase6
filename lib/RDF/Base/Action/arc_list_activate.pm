@@ -42,31 +42,31 @@ sub handler
     foreach my $param ( $q->param )
     {
 #	my $value = $q->param($param);
-	next unless $param =~ /^arc_(\d+)$/;
-	push @arc_id_list, $1;
+        next unless $param =~ /^arc_(\d+)$/;
+        push @arc_id_list, $1;
     }
 
     arc_lock();
 
     foreach my $aid ( sort @arc_id_list )
     {
-	debug "Handling arc $aid";
-	my $arc = RDF::Base::Resource->get( $aid );
+        debug "Handling arc $aid";
+        my $arc = RDF::Base::Resource->get( $aid );
 
-	next unless $arc->is_arc;
+        next unless $arc->is_arc;
 
-	if( $arc->is_new )
-	{
-	    $arc->submit($args);
-	}
+        if ( $arc->is_new )
+        {
+            $arc->submit($args);
+        }
 
-	if( $arc->submitted ) # May have changed during process
-	{
-	    if( $arc->activate($args) )
-	    {
-		$cnt ++;
-	    }
-	}
+        if ( $arc->submitted )  # May have changed during process
+        {
+            if ( $arc->activate($args) )
+            {
+                $cnt ++;
+            }
+        }
     }
 
     arc_unlock();
