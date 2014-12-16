@@ -47,9 +47,12 @@ sub handler
     }
 
     arc_lock();
+    my $cnt = 0;
 
     foreach my $aid ( sort @arc_id_list )
     {
+        $Para::Frame::REQ->may_yield unless ++ $cnt % 100;
+
         debug "Handling arc $aid";
         my $arc = RDF::Base::Resource->get( $aid );
 

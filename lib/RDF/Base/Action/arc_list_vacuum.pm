@@ -33,9 +33,11 @@ sub handler
 
     my $q = $req->q;
     my $res = RDF::Base::Resource::Change->new;
+    my $cnt = 0;
 
     foreach my $param ( $q->param )
     {
+        $Para::Frame::REQ->may_yield unless ++ $cnt % 100;
 #	my $value = $q->param($param);
         next unless $param =~ /^arc_(\d+)$/;
         my $aid = $1;

@@ -43,10 +43,13 @@ sub handler
     }
 
     my $res = RDF::Base::Resource::Change->new;
+    my $cnt = 0;
 
     foreach my $arc_id ( reverse sort @arc_id_list )
     {
-        my $arc = RDF::Base::Resource->get( $arc_id );
+       $Para::Frame::REQ->may_yield unless ++ $cnt % 100;
+
+       my $arc = RDF::Base::Resource->get( $arc_id );
         if ( $arc->is_arc )
         {
             $arc->remove( { res => $res } );
