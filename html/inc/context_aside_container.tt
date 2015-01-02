@@ -1,0 +1,21 @@
+[%
+UNLESS node;
+   id = q.param('id');
+   IF id;
+      node = get(id);
+      meta_title = "Meta: " _ node.desig;
+   END;
+END;
+DEFAULT menu_node = node;
+%]
+<aside id="context_aside">
+[%
+PROCESS context_aside.tt;
+PROCESS node_meta.tt;
+IF searchobj.has_criterions;
+   PROCESS search_box_small.tt;
+   PROCESS search_result_aside.tt;
+END;
+alocppg('context_aside_bottom');
+%]
+</aside>

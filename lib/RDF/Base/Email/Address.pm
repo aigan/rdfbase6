@@ -82,10 +82,9 @@ Will B<not> throw an exception if email address is faulty
 
 sub new
 {
-    my( $class, $in_value, $args ) = @_;
+    my( $class, $in_value, $args_in ) = @_;
 
     my $a = LEA->parse($in_value);
-
 
     my $code_in = $a->address;
     unless( $code_in )
@@ -99,6 +98,9 @@ sub new
     # The search will not find EAs not yet comitted. Since they are
     # supposed to be unique, we can cache the keys here, in order to
     # avoid duplicates.
+    #
+    # But that cache must be purged in case of rollbacks. That is done
+    # in /rollback
     #
     my $an = $EA_CACHE{$code};
 
@@ -118,11 +120,20 @@ sub new
                                            }, $an_args);
     }
 
+    my $args = solid_propargs($args_in);
+
     if( $a->name and not $an->name->loc )
     {
         $an->update({ea_original => $a}, $args);
         $an->update({name => $a->name}, $args);
     }
+    elsif( not $an->first_prop('ea_original') )
+    {
+        $an->update({ea_original => $a}, $args);
+    }
+
+    $an->update({in_internet_domain => $a->host}, $args);
+
 
 #    cluck "Name changed to ".$a->name if $a->name;
 #    cluck "Created ".$an->sysdesig;
@@ -172,7 +183,7 @@ sub wuirc
     return RDF::Base::Literal::String::wuirc(@_);
 }
 
-sub wuirc_disabled
+sub wuirc_disabled # Not used anymore
 {
     my( $class, $subj, $pred, $args_in ) = @_;
     my( $args ) = parse_propargs($args_in);
@@ -347,6 +358,22 @@ sub find_by_string
 
 
     return RDF::Base::Email::Address->new( $value, $args );
+}
+
+##############################################################################
+
+=head2 parse_to_list
+
+=cut
+
+sub parse_to_list
+{
+    if( my $node = shift->parse(@_) )
+    {
+        return RDF::Base::List->new([$node]);
+    }
+
+    return RDF::Base::List->new_empty();
 }
 
 ##############################################################################
@@ -531,10 +558,10 @@ sub shortdesig
 
 ##############################################################################
 
-#sub sysdesig
-#{
-#    return shift->first_prop('ea_original')->sysdesig();
-#}
+sub sysdesig
+{
+    return $_[0]->id . ': '. $_[0]->code->plain;
+}
 
 ##############################################################################
 
@@ -1017,7 +1044,7 @@ sub vacuum_facet
     my( $ea, $args ) = @_;
 
     my $a = $ea->first_prop('ea_original', undef, $args);
-    delete $EA_CACHE{$a->code->plain};
+    delete $EA_CACHE{$ea->code->plain};
 
     unless( $a )
     {
@@ -1051,7 +1078,23 @@ sub vacuum_facet
                            });
     }
 
+    $ea->update({in_internet_domain => $a->host}, $args);
+
     return $EA_CACHE{$code} = $node;
+}
+
+
+##############################################################################
+
+=head2 rollback
+
+Hooked by RDF::Base/init
+
+=cut
+
+sub rollback
+{
+    %EA_CACHE = ();
 }
 
 

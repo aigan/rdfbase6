@@ -8,6 +8,7 @@
    IF q.param('limit');
       CALL search_result.set_page_size(q.param('limit'));
    END;
+  debug("searchobj: " _ dump(searchobj.rb_search.args_in,2));
 %]
 
 [% c = 0;
@@ -25,8 +26,13 @@
      hidden( "list_pred", headers.$c);
      c = c+1;
    END;
+   aod = searchobj.rb_search.0.args_in.arc_active_on_date;
+   args = { arc_active_on_date = aod };
 %]
 
+[% IF aod %]
+<p>Active on [% aod %]</p>
+[% END %]
 
 <p>
   [% c = 0 %]
@@ -40,8 +46,8 @@
 </p>
 
 <br clear="both">
-<h3 class="float-left table_txt_light">[% loc("[quant,_1,hit]",  search_result.size) %]</h3>
-<h3 class="float-right table_txt_light">[% search_result.pagelist %]</h3>
+<h3 class="float_left table_txt_light">[% loc("[quant,_1,hit]",  search_result.size) %]</h3>
+<h3 class="float_right table_txt_light">[% search_result.pagelist %]</h3>
 
 <table class="admin">
   <tr>
@@ -54,12 +60,12 @@
   [% FOREACH node IN search_result.from_page %]
     <tr>
       <td>[% node.id %]</td>
-      <td>[% node.wu_jump %]</td>
+      <td>[% node.wu_jump(undef,args) %]</td>
       [% FOREACH n IN headers.keys.sort %]
-        <td>[% res=node.parse_prop(headers.$n);IF res.can('desig');res.desig|html; ELSE; res|html; END %]</td>
+        <td>[% res=node.parse_prop(headers.$n, args);IF res.can('as_html');res.as_html(args); ELSE; res|html; END %]</td>
       [% END %]
     </tr>
   [% END %]
 </table>
 
-<h3 class="float-right table_txt_light">[% search_result.pagelist %]</h3>
+<h3 class="float_right table_txt_light">[% search_result.pagelist %]</h3>

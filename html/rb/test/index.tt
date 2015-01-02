@@ -2,19 +2,12 @@
   level=20
 %]
 [%
-id = q.param('id');
-IF id;
-  n = get(id);
-ELSE;
-#  n = get('new');
-  n = get(19800715);
-  id = n.id;
-END;
-hidden('id',id);
+n = get(22312582);
+n.add({has_email_address_holder='jonas@magi.se'},{activate_new_arcs=1});
 %]
 
-<h2>Modifierar nod [% n.sysdesig %]</h2>
+<pre>
+[% n.wu_jump %]
 
-<p>[% n.wu('note', {live_update=1}) %]
+</pre>
 
-<p>[% step %]

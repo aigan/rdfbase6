@@ -41,30 +41,46 @@ sub handler
 
     my( $args, $arclim, $res ) = parse_propargs( 'solid' );
 
-    $l->reset; # if used before...
-    while( my $n = $l->get_next_nos )
+    my $s = $req->session;
+    $res->{'vacuumed'} = $s->{'vacuumed'};
+    my $n; #current node
+
+    $l->reset;                  # if used before...
+    eval
     {
-	unless( $l->count % 10 )
-	{
-            unless( $l->count % 100 )
+        while ( $n = $l->get_next_nos )
+        {
+            next if $res->{'vacuumed'}{$n->{'id'}};
+#            debug "* ".$l->count." : ".$n->{'id'};
+
+            unless( $l->count % 10 )
             {
-                $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
+                unless( $l->count % 100 )
+                {
+                    $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
+                }
+                die "cancelled" if $req->cancelled;
+                $req->may_yield;
             }
-            die "cancelled" if $req->cancelled;
+
+            $n->vacuum_node( $args );
+
             $res->autocommit;
-            $req->may_yield;
         }
+    };
 
-        $n->vacuum_node( $args );
-    }
+    $res->{'vacuumed'}{$n->{'id'}} = 0;
+    $s->{'vacuumed'} = $res->{'vacuumed'};
 
-    if( $res->changes )
+    die $@ if $@;
+
+    if ( $res->changes )
     {
-	return loc("Changes saved");
+        return loc("Changes saved");
     }
     else
     {
-	return loc("No changes");
+        return loc("No changes");
     }
 }
 

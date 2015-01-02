@@ -1,0 +1,22 @@
+<h2>Definition</h2>
+<style>
+dt { clear:left; float:left; width: 15em; font-weight:bold; }
+</style>
+<dl>
+<dt>search <dd>row ( '\n' row )*
+<dt>row <dd>key value proplim_section ? arclim_section ?
+<dt>key <dd> order_by | maxlimit | searchkey | arclim | arc_active_on_date
+<dt>searchkey <dd> ( rev_ )? predicate ( _arclim )? ( _clean )? ( _comp )? ( _prio ? )
+<dt> proplim_section <dd> '{' key value ( ',' key value )* '}'
+<dt> arclim_section <dd> See RDF::Base::Arc::Lim/parse_string
+<dt> arclim <dd>[% rb.Arc_Lim.names.join(' | ') %]
+<dt> comp <dd> eq | like | nlike | begins | gt | lt | ne | exist | undef
+</dl>
+
+
+<h2>Exempel</h2>
+
+<p><pre>name_clean hotel {language swedish, weight 1} [not_old]
+private_ne 1
+arclim ['not_old']
+</pre>

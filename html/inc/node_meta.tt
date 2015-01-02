@@ -1,0 +1,24 @@
+[% IF node and req.session.advanced_mode %]
+<section>
+<h1>Nod [% node.id %]</h1>
+<nav>
+  <ul>
+	<li>[% node.wu_jump(label="Formulär") +%]</li>
+	<li>[%+ node.wun_jump(label="Nod") +%]</li>
+	<li>[% jump('Reparera', me, run='vacuum', id=node.id) +%]</li>
+	<li>[% jump('Slå samman med', "$home/rb/node/merge.tt", id=node.id) %]</li>
+	[% TRY; PROCESS meta_nav.tt; CATCH file; END %]
+  </ul>
+</nav>
+
+[% IF node.node_rec_exist %]
+<span class="bold">Skapad</span><br>
+[% node.created.ymd +%] | [% node.created.strftime('%H.%M') +%]<br>
+<span class="p_small">Av [% node.created_by.as_html %]</span>
+<br>
+<span class="bold">Uppdaterad</span><br>
+[% node.updated.ymd %] | [% node.updated.strftime('%H.%M') %]<br>
+<span class="p_small">Av [% node.updated_by.as_html %]</span>
+[% END %]
+</section>
+[% END %]

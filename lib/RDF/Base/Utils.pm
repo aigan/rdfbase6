@@ -21,7 +21,7 @@ RDF::Base::Utils - Utility functions for RDFBase
 use 5.010;
 use strict;
 use warnings;
-use utf8; # This module has utf8 chars!
+use utf8;                       # This module has utf8 chars!
 
 use Carp qw( cluck confess carp croak );
 use UNIVERSAL;
@@ -29,12 +29,12 @@ use UNIVERSAL;
 use base qw( Exporter );
 our @EXPORT_OK
   = qw( cache_clear valclean format_phone format_zip parse_query_props
-	parse_form_field_prop parse_arc_add_box is_undef arc_lock
-	arc_unlock truncstring string html parse_query_pred
-	parse_query_value parse_query_prop
-	convert_query_prop_for_creation name2url query_desig
-	send_cache_update parse_propargs solid_propargs aais alphanum_to_id
-	proplim_to_arclim range_pred );
+        parse_form_field_prop parse_arc_add_box is_undef arc_lock
+        arc_unlock truncstring string html parse_query_pred
+        parse_query_value parse_query_prop
+        convert_query_prop_for_creation name2url query_desig
+        send_cache_update parse_propargs solid_propargs aais alphanum_to_id
+        proplim_to_arclim range_pred );
 
 
 use Para::Frame::Utils qw( throw trim chmod_file debug datadump deunicode validate_utf8 );
@@ -130,9 +130,9 @@ sub valclean
     $value = $$origvalue if ref $origvalue eq 'SCALAR';
 
     # Make sure that $value is an object and not a class name
-    if( ref($value) and UNIVERSAL::can $value, 'plain' )
+    if ( ref($value) and UNIVERSAL::can $value, 'plain' )
     {
-	$value = $value->plain;
+        $value = $value->plain;
     }
 
     return undef unless defined $value;
@@ -182,7 +182,7 @@ Converts a name to a reasonable string to use in an url
 sub name2url
 {
     my( $name ) = deunicode( @_ );
-    utf8::upgrade($name); # As utf8 but only with Latin1 chars
+    utf8::upgrade($name);       # As utf8 but only with Latin1 chars
 
     use locale;
     use POSIX qw(locale_h);
@@ -191,7 +191,7 @@ sub name2url
     my $url = lc($name);
 
     $url =~ tr[àáâäãåæéèêëíìïîóòöôõøúùüûýÿðþß]
-	      [aaaaaaaeeeeiiiioooooouuuuyydps];
+              [aaaaaaaeeeeiiiioooooouuuuyydps];
     $url =~ s/[^\w\s\-~]//g;
     $url =~ s/\s+/_/g;
     $url =~ s/( ^_+ | _+$ )//gx;
@@ -282,10 +282,13 @@ sub parse_query_props
     trim(\$prop_text);
     foreach my $pair ( split /\s*\r?\n\s*/, $prop_text )
     {
-	my($prop_name, $value) = split(/\s+/, $pair, 2);
-	trim(\$prop_name);
-	$props->{$prop_name} = parse_query_value($value);
+        my($prop_name, $value) = split(/\s+/, $pair, 2);
+        trim(\$prop_name);
+        $props->{$prop_name} = parse_query_value($value);
     }
+
+#    debug " parse_query_props gave:\n".query_desig($props);
+
     return $props;
 }
 
@@ -296,6 +299,13 @@ sub parse_query_props
 
 used by parse_query_props
 
+Format: 
+
+In list context, returns ( $value, $arclim )
+
+In scalar context, returns either $value or $arclim. (Throws exception
+if both are provided.)
+
 =cut
 
 
@@ -303,53 +313,62 @@ sub parse_query_value
 {
     my( $val_in ) = @_;
 
-    my $val = $val_in;
     my $arclim;
-    if( $val_in =~ /^\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
+
+    unless( $val_in =~ /^\s*(.*?)\s*(?:\{\s*(.+?)\s*\})?\s*(?:\[(.+?)\])?\s*$/ )
     {
-#        debug "Creating subcriterion from $val_in";
-        my $pairs = $1;
-        my $alim_in = $2;
-        my %sub;
+        confess "Failed to parse query value $val_in";
+    }
+
+    my $val = $1;
+    my $pairs = $2;
+    my $alim_in = $3;
+    my %sub;
 
 #        debug "query proplims $pairs" if $pairs;
 #        debug "query arclims $alim_in" if $alim_in;
 
-        if( $pairs )
+    if ( $pairs )
+    {
+        foreach my $part ( split /\s*,\s*/, $pairs )
         {
-            foreach my $part ( split /\s*,\s*/, $pairs )
-            {
-#            debug "  Processing $part";
-                my( $skey, $svalue ) = split(/\s+/, $part, 2);
-#            debug "  $skey = $svalue";
-                $sub{ $skey } = parse_query_value($svalue);
-            }
+            #            debug "  Processing $part";
+            my( $skey, $svalue ) = split(/\s+/, $part, 2);
+            #            debug "  $skey = $svalue";
+            $sub{ $skey } = parse_query_value($svalue);
         }
-        $val = \%sub;
 
-        if( $alim_in )
+        if( length($val) )
         {
-#            debug "Parsing alim $alim_in";
-            $arclim = RDF::Base::Arc::Lim->parse_string("[$alim_in]");
+            throw('validation', "Both value and subquery not supported: $val_in");
         }
+
+        $val = \%sub;
+    }
+
+    if ( $alim_in )
+    {
+#            debug "Parsing alim $alim_in";
+        $arclim = RDF::Base::Arc::Lim->parse_string("[$alim_in]");
+    }
 
 #        debug "Got ".query_desig($val);
-    }
+
 #    elsif( length $val )
 #    {
 #        confess "Failed to parse query value $val";
 #    }
 
 
-    if( wantarray )
+    if ( wantarray )
     {
         return( $val, $arclim );
     }
-    elsif( $arclim and keys %$val )
+    elsif ( $arclim and $val )
     {
-        throw("Both subquery and arclim: $val_in");
+        throw('validation', "Both subquery and arclim: $val_in");
     }
-    elsif( $arclim )
+    elsif ( $arclim )
     {
         return $arclim;
     }
@@ -407,24 +426,24 @@ sub parse_form_field_prop
     my %arg;
     foreach my $part ( split /___?/, $string )
     {
-	my( $key, $val ) = $part =~ /^([^_]+)_?(.*)/
-	    or die "Malformed part: $part\n";
+        my( $key, $val ) = $part =~ /^([^_]+)_?(.*)/
+          or die "Malformed part: $part\n";
 
-	if( exists $arg{$key} )
-	{
-	    if( (defined $arg{$key}) and (ref $arg{$key} eq 'ARRAY') )
-	    {
-		push @{$arg{$key}}, $val;
-	    }
-	    else
-	    {
-		$arg{$key} = [ $arg{$key}, $val ];
-	    }
-	}
-	else
-	{
-	    $arg{$key} = $val;
-	}
+        if ( exists $arg{$key} )
+        {
+            if ( (defined $arg{$key}) and (ref $arg{$key} eq 'ARRAY') )
+            {
+                push @{$arg{$key}}, $val;
+            }
+            else
+            {
+                $arg{$key} = [ $arg{$key}, $val ];
+            }
+        }
+        else
+        {
+            $arg{$key} = $val;
+        }
     }
     return \%arg;
 }
@@ -487,35 +506,35 @@ sub parse_arc_add_box
 
     foreach my $row ( split /\r?\n/, $query )
     {
-	trim( \$row );
-	next unless length $row;
+        trim( \$row );
+        next unless length $row;
 
-	debug "Row: $row\n" if $DEBUG;
+        debug "Row: $row\n" if $DEBUG;
 
-	my( $pred_name, $value ) = split(/\s+/, $row, 2);
+        my( $pred_name, $value ) = split(/\s+/, $row, 2);
 
-	## Support adding value nodes "$name -> $props"
-	if( $value =~ /^\s*(.*?)\s*->\s*(.*)$/ )
-	{
-	    my $sprops = parse_query_props( $2, $args );
-	    my $pred = RDF::Base::Pred->get_by_anything( $pred_name, $args );
-	    my $value = $pred->valtype->instance_class->parse($1, $args);
-	    $value->add($sprops, $args);
-	}
+        ## Support adding value nodes "$name -> $props"
+        if ( $value =~ /^\s*(.*?)\s*->\s*(.*)$/ )
+        {
+            my $sprops = parse_query_props( $2, $args );
+            my $pred = RDF::Base::Pred->get_by_anything( $pred_name, $args );
+            my $value = $pred->valtype->instance_class->parse($1, $args);
+            $value->add($sprops, $args);
+        }
 
-	unless( ref $value )
-	{
-	    my $valtype = RDF::Base::Pred->get($pred_name)->valtype;
-	    $value = RDF::Base::Resource->
-	      get_by_anything( $value,
-			       {
-				%$args,
-				valtype => $valtype,
-			       });
-	}
+        unless( ref $value )
+        {
+            my $valtype = RDF::Base::Pred->get($pred_name)->valtype;
+            $value = RDF::Base::Resource->
+              get_by_anything( $value,
+                               {
+                                %$args,
+                                valtype => $valtype,
+                               });
+        }
 
-	debug "  $pred_name: ".$value->sysdesig."\n" if $DEBUG;
-	push @{ $props->{$pred_name} }, $value;
+        debug "  $pred_name: ".$value->sysdesig."\n" if $DEBUG;
+        push @{ $props->{$pred_name} }, $value;
     }
 
     return $props;
@@ -541,76 +560,76 @@ sub parse_query_pred
     my $private = $args->{'private'} || 0;
     my $subj = $args->{'subj'};
 
-    if( $val =~ m/^(rev_)?(.*?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x )
+    if ( $val =~ m/^(rev_)?(.*?)(?:_(direct|indirect|explicit|implicit))?(?:_(clean))?(?:_(eq|like|begins|gt|lt|ne|exist)(?:_(\d+))?)?$/x )
     {
-	my $rev    = $1;
-	my $pred   = $2;
-	my $type;
-	my $arclim = $3;
-	my $clean  = $4 || $args->{'clean'} || 0;
-	my $match  = $5 || 'eq';
-	my $prio   = $6; #Low prio first (default later)
-	my $find   = undef;
+        my $rev    = $1;
+        my $pred   = $2;
+        my $type;
+        my $arclim = $3;
+        my $clean  = $4 || $args->{'clean'} || 0;
+        my $match  = $5 || 'eq';
+        my $prio   = $6;        #Low prio first (default later)
+        my $find   = undef;
 
-	if( $pred =~ m/^(subj|pred|obj|coltype|label)$/ )
-	{
-	    # Special case !!!!!!!
+        if ( $pred =~ m/^(subj|pred|obj|coltype|label)$/ )
+        {
+            # Special case !!!!!!!
 
-	    # TODO: Resolce conflict between pred obj and other
-	    # resource obj
+            # TODO: Resolce conflict between pred obj and other
+            # resource obj
 
-	    $type = 2;  # valfloat
-	}
-	elsif( $pred =~ s/^predor_// )
-	{
-	    my( @prednames ) = split /_-_/, $pred;
-	    my( @preds ) = map RDF::Base::Pred->get($_), @prednames;
-	    $pred = \@preds;
+            $type = 2;          # valfloat
+        }
+        elsif ( $pred =~ s/^predor_// )
+        {
+            my( @prednames ) = split /_-_/, $pred;
+            my( @preds ) = map RDF::Base::Pred->get($_), @prednames;
+            $pred = \@preds;
 
-	    # Assume no type mismatch between alternative preds
-	    $type = $preds[0]->coltype;
-	}
-	else
-	{
-	    if( $pred =~ /^count_pred_(.*)/ )
-	    {
-		$find = 'count_pred';
-		$pred = $1;
-	    }
+            # Assume no type mismatch between alternative preds
+            $type = $preds[0]->coltype;
+        }
+        else
+        {
+            if ( $pred =~ /^count_pred_(.*)/ )
+            {
+                $find = 'count_pred';
+                $pred = $1;
+            }
 
 #	    debug "pred is $pred";
-	    $pred = RDF::Base::Pred->get( $pred );
+            $pred = RDF::Base::Pred->get( $pred );
 #	    debug "now pred is $pred";
-	    $type = $pred->coltype;
-	}
+            $type = $pred->coltype;
+        }
 
-	if( $type eq 'valtext' )
-	{
-	    if( $clean )
-	    {
-		$type = 'valclean';
-	    }
-	}
-	elsif( $type eq 'obj' )
-	{
-	    if( $rev )
-	    {
-		$type = 'subj';
-	    }
-	}
+        if ( $type eq 'valtext' )
+        {
+            if ( $clean )
+            {
+                $type = 'valclean';
+            }
+        }
+        elsif ( $type eq 'obj' )
+        {
+            if ( $rev )
+            {
+                $type = 'subj';
+            }
+        }
 
-	return
-	{
-	 rev => $rev,
-	 pred => $pred,
-	 type => $type,
-	 arclim => $arclim,
-	 clean => $clean,
-	 match => $match,
-	 prio => $prio,
-	 find => $find,
-	 private => $private,
-	};
+        return
+        {
+         rev => $rev,
+         pred => $pred,
+         type => $type,
+         arclim => $arclim,
+         clean => $clean,
+         match => $match,
+         prio => $prio,
+         find => $find,
+         private => $private,
+        };
     }
     return undef;
 }
@@ -632,88 +651,88 @@ sub parse_query_prop
     my %res;
     foreach my $predpart ( keys %$props )
     {
-	my $valref = $props->{$predpart};
-	my @values;
-	if( ref $valref eq 'ARRAY' )
-	{
-	    @values = @$valref;
-	}
-	elsif( ref $valref eq 'RDF::Base::List' )
-	{
-	    @values = $valref->nodes;
-	}
-	else
-	{
-	    @values = ($valref);
-	}
+        my $valref = $props->{$predpart};
+        my @values;
+        if ( ref $valref eq 'ARRAY' )
+        {
+            @values = @$valref;
+        }
+        elsif ( ref $valref eq 'RDF::Base::List' )
+        {
+            @values = $valref->nodes;
+        }
+        else
+        {
+            @values = ($valref);
+        }
 
-	foreach( @values )
-	{
-	    if( ref $_ and UNIVERSAL::isa($_, 'RDF::Base::Resource') )
-	    {
-		# Getting node id
-		$_ = $_->id;
-	    }
-	    elsif( ref $_ eq 'HASH' )
-	    {
-		if( $_->{'id'} )
-		{
-		    $_ = $_->{'id'};
-		}
-		else
-		{
-		    # Sub-request
-		    $_ = RDF::Base::Resource->get_id( $_ );
-		}
-	    }
-	}
+        foreach ( @values )
+        {
+            if ( ref $_ and UNIVERSAL::isa($_, 'RDF::Base::Resource') )
+            {
+                # Getting node id
+                $_ = $_->id;
+            }
+            elsif ( ref $_ eq 'HASH' )
+            {
+                if ( $_->{'id'} )
+                {
+                    $_ = $_->{'id'};
+                }
+                else
+                {
+                    # Sub-request
+                    $_ = RDF::Base::Resource->get_id( $_ );
+                }
+            }
+        }
 
 
-	my $rec =  parse_query_pred( $predpart, $args );
+        my $rec =  parse_query_pred( $predpart, $args );
 
-	if( $values[0] eq '*' )
-	{
-	    $rec->{'match'} = 'exist';
-	}
-	elsif( $rec->{'type'} eq 'obj' )
-	{
-	    # The obj part can be specified in several ways
-	    #
-	    my @new;
-	    foreach my $val ( @values )
-	    {
-		if( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Object' ) )
-		{
-		    unless( $val->defined )
-		    {
-			$val = undef;
-		    }
-		}
+        if ( $values[0] eq '*' )
+        {
+            $rec->{'match'} = 'exist';
+        }
+        elsif ( $rec->{'type'} eq 'obj' )
+        {
+            # The obj part can be specified in several ways
+            #
+            my @new;
+            foreach my $val ( @values )
+            {
+                if ( ref $val and UNIVERSAL::isa( $val, 'RDF::Base::Object' ) )
+                {
+                    unless( $val->defined )
+                    {
+                        $val = undef;
+                    }
+                }
 
-		if( defined $val and length $val )
-		{
-		    push @new, RDF::Base::Resource->get( $val )->id;
-		}
-		else
-		{
-		    push @new, undef;
-		}
-	    }
-	    @values = @new;
-	}
+                if ( defined $val and length $val )
+                {
+                    push @new, RDF::Base::Resource->get( $val )->id;
+                }
+                else
+                {
+                    push @new, undef;
+                }
+            }
+            @values = @new;
+        }
 
-	if( $rec->{'match'} eq 'exist' )
-	{
-	    @values = ();
-	}
-	elsif( not @values )
-	{
-	    throw('incomplete', longmess("Values missing: ".datadump $rec->{'value'}));
-	}
+        if ( $rec->{'match'} eq 'exist' )
+        {
+            @values = ();
+        }
+        elsif ( not @values )
+        {
+            throw('incomplete', longmess("Values missing: ".datadump $rec->{'value'}));
+        }
 
-	$rec->{'values'} = \@values;
+        $rec->{'values'} = \@values;
 
-	$res{$predpart} = $rec;
+        $res{$predpart} = $rec;
     }
 
     return \%res;
@@ -742,50 +761,50 @@ sub convert_query_prop_for_creation
 
     foreach my $predpart (keys %$proprec)
     {
-	my $rec = $proprec->{$predpart};
+        my $rec = $proprec->{$predpart};
 
-	if( $rec->{'arclim'} )
-	{
-	    confess "arclim not valid here";
-	}
+        if ( $rec->{'arclim'} )
+        {
+            confess "arclim not valid here";
+        }
 
-	if( $rec->{'match'} ne 'eq' )
-	{
-	    confess "Only matchtype eq valid here";
-	}
+        if ( $rec->{'match'} ne 'eq' )
+        {
+            confess "Only matchtype eq valid here";
+        }
 
-	my $pred_name;
-	my $pred = $rec->{'pred'};
+        my $pred_name;
+        my $pred = $rec->{'pred'};
 
-	unless( ref $pred ) ### SPECIAL CASE - TEMP SOLUTION
-	{
-	    if( $pred =~ /^(subj|pred|obj|value|coltype|label)$/ )
-	    {
-		$pred_name = $pred;
-	    }
-	    else
-	    {
-		confess "Invalid pred: $pred";
-	    }
-	}
-	else
-	{
-	    unless( UNIVERSAL::isa($pred, 'RDF::Base::Pred') )
-	    {
-		confess "No predor valid here: ".datadump($pred);
-	    }
+        unless( ref $pred )     ### SPECIAL CASE - TEMP SOLUTION
+        {
+            if ( $pred =~ /^(subj|pred|obj|value|coltype|label)$/ )
+            {
+                $pred_name = $pred;
+            }
+            else
+            {
+                confess "Invalid pred: $pred";
+            }
+        }
+        else
+        {
+            unless( UNIVERSAL::isa($pred, 'RDF::Base::Pred') )
+            {
+                confess "No predor valid here: ".datadump($pred);
+            }
 
-	    if( $rec->{'rev'} )
-	    {
-		$pred_name = 'rev_' . $pred->plain;
-	    }
-	    else
-	    {
-		$pred_name = $pred->plain;
-	    }
-	}
+            if ( $rec->{'rev'} )
+            {
+                $pred_name = 'rev_' . $pred->plain;
+            }
+            else
+            {
+                $pred_name = $pred->plain;
+            }
+        }
 
-	$props{$pred_name} = $rec->{'values'};
+        $props{$pred_name} = $rec->{'values'};
     }
 
     return \%props;
@@ -871,35 +890,35 @@ sub truncstring
 
     $str = $$str if ref $str eq 'REF';
 
-    if( ref $str )
+    if ( ref $str )
     {
-	if( ref $str eq 'RDF::Base::List' )
-	{
-	    $str = $str->literal;
-	}
+        if ( ref $str eq 'RDF::Base::List' )
+        {
+            $str = $str->literal;
+        }
 
-	if( UNIVERSAL::can $str, "plain" )
-	{
-	    $str = $str->plain;
-	}
-	elsif( ref $str eq 'SCALAR' )
-	{
-	    if( length $$str > $len )
-	    {
-		return substr($$str, 0, ($len - 3)) . '...';
-	    }
-	    return $$str;
-	}
-	else
-	{
-	    #	warn "2 str = $str and of type ".ref($str)."\n";
-	    confess "Wrong format of string: $str\n";
-	}
+        if ( UNIVERSAL::can $str, "plain" )
+        {
+            $str = $str->plain;
+        }
+        elsif ( ref $str eq 'SCALAR' )
+        {
+            if ( length $$str > $len )
+            {
+                return substr($$str, 0, ($len - 3)) . '...';
+            }
+            return $$str;
+        }
+        else
+        {
+            #	warn "2 str = $str and of type ".ref($str)."\n";
+            confess "Wrong format of string: $str\n";
+        }
     }
 
-    if( length $str > $len )
+    if ( length $str > $len )
     {
-	return substr($str, 0, ($len - 3)) . '...';
+        return substr($str, 0, ($len - 3)) . '...';
     }
     return $str;
 }
@@ -962,123 +981,126 @@ sub query_desig_block
 
     $ident ||= 0;
     $query //= '<undef>';
-    unless( length $query ){ $query='<empty>' }
+    unless ( length $query )
+    {
+        $query='<empty>';
+    }
     my $out = "";
 #    warn "query_desig on level $ident for ".datadump($query,1);
 
-    if( ref $query )
+    if ( ref $query )
     {
-	if( UNIVERSAL::can($query, 'sysdesig') )
-	{
-	    warn "  sysdesig $query\n" if $DEBUG > 1;
-	    my $val = $query->sysdesig( $args, $ident );
-	    warn "  sysdesig gave '$val'\n" if $DEBUG > 1;
-	    if( $val =~ /\n.*?\n/s )
-	    {
-		warn "g\n" if $DEBUG;
-		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-	    }
-	    else
-	    {
-		warn "h\n" if $DEBUG;
-		$val =~ s/\n*$/\n/;
-		$val =~ s/\s+/ /g;
-		$val =~ s/^\s+//g;
-		$out .= '  'x$ident . $val."\n";
-	    }
-	}
-	elsif( UNIVERSAL::isa($query,'HASH') )
-	{
-	    foreach my $key ( keys %$query )
-	    {
-		warn "  hash elem $key\n" if $DEBUG > 1;
-		my $val = query_desig_block($query->{$key}, $args, $ident+1);
-		warn "  hash elem gave '$val'\n" if $DEBUG > 1;
-		$val =~ s/^\n//;
-		$val =~ s/\n$//;
-		if( $val =~ /\n.*?\n/s )
-		{
-		    warn "a\n" if $DEBUG;
-		    $out .= '  'x$ident . "$key:\n";
-		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-		    $out .= "\n";
-		}
-		else
-		{
-		    warn "b\n" if $DEBUG;
-		    $val =~ s/\n*$/\n/;
-		    $val =~ s/\s+/ /g;
-		    $val =~ s/^\s+//g;
-		    $out .= '  'x$ident . "$key: $val\n";
-		}
-	    }
-	}
-	elsif( UNIVERSAL::isa($query,'ARRAY') )
-	{
-	    foreach my $val ( @$query )
-	    {
-		warn "  array elem $val\n" if $DEBUG > 1;
-		my $val = query_desig_block($val, $args, $ident+1);
-		warn "  array elem gave '$val'\n" if $DEBUG > 1;
-		$val =~ s/^\n//;
-		$val =~ s/\n$//;
-		if( $val =~ /\n.*?\n/s )
-		{
-		    warn "c\n" if $DEBUG;
-		    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-		    $out .= "\n";
-		}
-		else
-		{
-		    warn "d\n" if $DEBUG;
-		    $val =~ s/\n*$/\n/;
-		    $val =~ s/\s+/ /g;
-		    $val =~ s/^\s+//g;
-		    $out .= '  'x$ident . $val."\n";
-		}
-	    }
-	}
-	elsif( UNIVERSAL::isa($query, 'SCALAR') )
-	{
-	    warn "  scalar $query\n" if $DEBUG > 1;
-	    my $val = query_desig_block($$query, $args, $ident+1);
-	    warn "  gave   '$val'\n" if $DEBUG > 1;
-	    if( $val =~ /\n.*?\n/s )
-	    {
-		warn "e\n" if $DEBUG;
-		$out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
-	    }
-	    else
-	    {
-		warn "f\n" if $DEBUG;
-		$val =~ s/\n*$/\n/;
-		$val =~ s/\s+/ /g;
-		$val =~ s/^\s+//g;
-		$out .= '  'x$ident . $val."\n";
-	    }
-	}
-	else
-	{
-	    warn "i\n" if $DEBUG;
-	    $out .= '  'x$ident . $query;
-	}
+        if ( UNIVERSAL::can($query, 'sysdesig') )
+        {
+            warn "  sysdesig $query\n" if $DEBUG > 1;
+            my $val = $query->sysdesig( $args, $ident );
+            warn "  sysdesig gave '$val'\n" if $DEBUG > 1;
+            if ( $val =~ /\n.*?\n/s )
+            {
+                warn "g\n" if $DEBUG;
+                $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+            }
+            else
+            {
+                warn "h\n" if $DEBUG;
+                $val =~ s/\n*$/\n/;
+                $val =~ s/\s+/ /g;
+                $val =~ s/^\s+//g;
+                $out .= '  'x$ident . $val."\n";
+            }
+        }
+        elsif ( UNIVERSAL::isa($query,'HASH') )
+        {
+            foreach my $key ( keys %$query )
+            {
+                warn "  hash elem $key\n" if $DEBUG > 1;
+                my $val = query_desig_block($query->{$key}, $args, $ident+1);
+                warn "  hash elem gave '$val'\n" if $DEBUG > 1;
+                $val =~ s/^\n//;
+                $val =~ s/\n$//;
+                if ( $val =~ /\n.*?\n/s )
+                {
+                    warn "a\n" if $DEBUG;
+                    $out .= '  'x$ident . "$key:\n";
+                    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+                    $out .= "\n";
+                }
+                else
+                {
+                    warn "b\n" if $DEBUG;
+                    $val =~ s/\n*$/\n/;
+                    $val =~ s/\s+/ /g;
+                    $val =~ s/^\s+//g;
+                    $out .= '  'x$ident . "$key: $val\n";
+                }
+            }
+        }
+        elsif ( UNIVERSAL::isa($query,'ARRAY') )
+        {
+            foreach my $val ( @$query )
+            {
+                warn "  array elem $val\n" if $DEBUG > 1;
+                my $val = query_desig_block($val, $args, $ident+1);
+                warn "  array elem gave '$val'\n" if $DEBUG > 1;
+                $val =~ s/^\n//;
+                $val =~ s/\n$//;
+                if ( $val =~ /\n.*?\n/s )
+                {
+                    warn "c\n" if $DEBUG;
+                    $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+                    $out .= "\n";
+                }
+                else
+                {
+                    warn "d\n" if $DEBUG;
+                    $val =~ s/\n*$/\n/;
+                    $val =~ s/\s+/ /g;
+                    $val =~ s/^\s+//g;
+                    $out .= '  'x$ident . $val."\n";
+                }
+            }
+        }
+        elsif ( UNIVERSAL::isa($query, 'SCALAR') )
+        {
+            warn "  scalar $query\n" if $DEBUG > 1;
+            my $val = query_desig_block($$query, $args, $ident+1);
+            warn "  gave   '$val'\n" if $DEBUG > 1;
+            if ( $val =~ /\n.*?\n/s )
+            {
+                warn "e\n" if $DEBUG;
+                $out .= join "\n", map '  'x$ident.$_, split /\n/, $val;
+            }
+            else
+            {
+                warn "f\n" if $DEBUG;
+                $val =~ s/\n*$/\n/;
+                $val =~ s/\s+/ /g;
+                $val =~ s/^\s+//g;
+                $out .= '  'x$ident . $val."\n";
+            }
+        }
+        else
+        {
+            warn "i\n" if $DEBUG;
+            $out .= '  'x$ident . $query;
+        }
     }
     else
     {
-	warn "  plain '$query'\n" if $DEBUG > 1;
-	if( $query =~ /\n.*?\n/s )
-	{
-	    warn "j\n" if $DEBUG;
-	    $out .= join "\n", map '  'x$ident.$_, split /\n/, $query;
-	}
-	else
-	{
-	    warn "k\n" if $DEBUG;
-	    $out =~ s/\n*$/\n/;
-	    $query =~ s/\s+/ /g;
-	    $query =~ s/^\s+//g;
-	    $out .= '  'x$ident . $query."\n";
-	}
+        warn "  plain '$query'\n" if $DEBUG > 1;
+        if ( $query =~ /\n.*?\n/s )
+        {
+            warn "j\n" if $DEBUG;
+            $out .= join "\n", map '  'x$ident.$_, split /\n/, $query;
+        }
+        else
+        {
+            warn "k\n" if $DEBUG;
+            $out =~ s/\n*$/\n/;
+            $query =~ s/\s+/ /g;
+            $query =~ s/^\s+//g;
+            $out .= '  'x$ident . $query."\n";
+        }
     }
 
     warn "Returning:$out<-\n" if $DEBUG;
@@ -1150,117 +1172,117 @@ sub parse_propargs
     my( $arg ) = @_;
 
     my $def_args;
-    if( $Para::Frame::U and
-	UNIVERSAL::can($Para::Frame::U, 'default_propargs') )
+    if ( $Para::Frame::U and
+         UNIVERSAL::can($Para::Frame::U, 'default_propargs') )
     {
-	if( $def_args = $Para::Frame::U->default_propargs )
-	{
-	    unless( $arg )
-	    {
-		$arg = $def_args;
-		$def_args = undef;
-	    }
-	}
+        if ( $def_args = $Para::Frame::U->default_propargs )
+        {
+            unless( $arg )
+            {
+                $arg = $def_args;
+                $def_args = undef;
+            }
+        }
     }
 
     my $arclim;
 
-    if( ref $arg and ref $arg eq 'HASH' )
+    if ( ref $arg and ref $arg eq 'HASH' )
     {
-	$arclim = $arg->{'arclim'};
+        $arclim = $arg->{'arclim'};
     }
-    elsif( ref $arg )
+    elsif ( ref $arg )
     {
-	$arclim = $arg;
-	$arg = { arclim => $arclim };
+        $arclim = $arg;
+        $arg = { arclim => $arclim };
 #	debug "parse_propargs ".datadump(\@_,3);
     }
-    elsif( defined $arg )
+    elsif ( defined $arg )
     {
-	my $unique;
-	if( $arg eq 'auto' )
-	{
-	    if( $Para::Frame::U and $Para::Frame::U->has_root_access )
-	    {
-		$arclim = [8192]; # not_old
-		$unique = [1024, 256, 1]; # new, submitted, active
-	    }
-	    else # relative
-	    {
-		# active or (not_old and created_by_me)
-		$arclim = [1, 8192+16384];
-		$unique = [1024, 256, 1]; # new, submitted, active
-	    }
-	}
-	elsif( $arg eq 'relative' )
-	{
-	    # active or (not_old and created_by_me)
-	    $arclim = [1, 8192+16384];
-	    $unique = [1024, 256, 1]; # new, submitted, active
-	}
-	elsif( $arg eq 'solid' )
-	{
-	    $arclim = [1+128]; # active, not_disregarded
-	    $unique = [1]; # active
-	}
-	elsif( $arg eq 'all' )
-	{
-	    # active or inactive
-	    $arclim = [1, 2];
-	    $unique = [1]; # active
-	}
-	else
-	{
-	    $arclim = [$arg]
-	}
+        my $unique;
+        if ( $arg eq 'auto' )
+        {
+            if ( $Para::Frame::U and $Para::Frame::U->has_root_access )
+            {
+                $arclim = [8192]; # not_old
+                $unique = [1024, 256, 1]; # new, submitted, active
+            }
+            else                # relative
+            {
+                # active or (not_old and created_by_me)
+                $arclim = [1, 8192+16384];
+                $unique = [1024, 256, 1]; # new, submitted, active
+            }
+        }
+        elsif ( $arg eq 'relative' )
+        {
+            # active or (not_old and created_by_me)
+            $arclim = [1, 8192+16384];
+            $unique = [1024, 256, 1]; # new, submitted, active
+        }
+        elsif ( $arg eq 'solid' )
+        {
+            $arclim = [1+128];  # active, not_disregarded
+            $unique = [1];      # active
+        }
+        elsif ( $arg eq 'all' )
+        {
+            # active or inactive
+            $arclim = [1, 2];
+            $unique = [1];      # active
+        }
+        else
+        {
+            $arclim = [$arg]
+        }
 
-	$arg = { arclim => $arclim };
+        $arg = { arclim => $arclim };
 
-	if( $unique )
-	{
-	    $arg->{unique_arcs_prio} = $unique;
-	}
+        if ( $unique )
+        {
+            $arg->{unique_arcs_prio} = $unique;
+        }
     }
     else
     {
-	$arclim = RDF::Base::Arc::Lim->parse([]);
-	$arg = { arclim => $arclim };
+        $arclim = RDF::Base::Arc::Lim->parse([]);
+        $arg = { arclim => $arclim };
     }
 
     unless( UNIVERSAL::isa( $arclim, 'RDF::Base::Arc::Lim') )
     {
-	$arg->{'arclim'} = $arclim =
-	  RDF::Base::Arc::Lim->parse( $arclim );
+        $arg->{'arclim'} = $arclim =
+          RDF::Base::Arc::Lim->parse( $arclim );
     }
 
     my $res = $arg->{'res'} ||= RDF::Base::Resource::Change->new;
 
-    if( $def_args )
+    if ( $def_args )
     {
-	foreach my $key (keys %$def_args)
-	{
-	    unless( exists $arg->{$key} )
-	    {
-		$arg->{$key} = $def_args->{$key};
-	    }
-	}
+        foreach my $key (keys %$def_args)
+        {
+            unless ( exists $arg->{$key} )
+            {
+                $arg->{$key} = $def_args->{$key};
+            }
+        }
     }
 
-    if( $arg->{arc_active_on_date} )
+    if ( $arg->{arc_active_on_date} )
     {
-	$arg->{'arclim'} = $arclim =
-	  RDF::Base::Arc::Lim->parse([1,4096]); # active or old
-	delete $arg->{unique_arcs_prio};
+        $arg->{'arclim'} = $arclim =
+          RDF::Base::Arc::Lim->parse([1,4096]); # active or old
+        delete $arg->{unique_arcs_prio};
     }
 
 
-    if( wantarray )
+    if ( wantarray )
     {
-	return( $arg, $arclim, $res );
+        return( $arg, $arclim, $res );
     }
     else
     {
-	return $arg;
+        return $arg;
     }
 }
 
@@ -1308,15 +1330,15 @@ sub proplim_to_arclim
     return undef unless $proplim;
 
     my $prefix = 'obj';
-    if( $is_rev )
+    if ( $is_rev )
     {
-	$prefix = 'subj';
+        $prefix = 'subj';
     }
 
     my %new;
     foreach my $crit ( keys %$proplim )
     {
-	$new{ $prefix .'.'. $crit } = $proplim->{$crit};
+        $new{ $prefix .'.'. $crit } = $proplim->{$crit};
     }
 
     return \%new;
@@ -1362,9 +1384,9 @@ sub alphanum_to_id
     my @map = ((0..9),('A'..'Z'));
     my $pow = scalar(@map);
     my %num;
-    for(my$i=0;$i<=$#map;$i++)
+    for (my$i=0;$i<=$#map;$i++)
     {
-	$num{$map[$i]}=$i;
+        $num{$map[$i]}=$i;
     }
 
     my $chkchar = substr $alphanum,-1,1,'';
@@ -1373,31 +1395,31 @@ sub alphanum_to_id
     my $id = 0;
     my $len = length($alphanum)-1;
 
-    for(my $i=$len;$i>=0;$i--)
+    for (my $i=$len;$i>=0;$i--)
     {
-	my $val = $num{substr($alphanum, $i, 1)};
-	$chksum += $val;
-	my $pos = $len-$i;
+        my $val = $num{substr($alphanum, $i, 1)};
+        $chksum += $val;
+        my $pos = $len-$i;
 #	print "  Pos $pos, pow $pow, val $val\n";
-	my $inc = $val * ($pow ** $pos);
+        my $inc = $val * ($pow ** $pos);
 #	print "  --> $inc\n";
-	$id += $inc;
+        $id += $inc;
     }
 
-    if( $id > 2147483647 ) # Max int size in DB
+    if ( $id > 2147483647 )     # Max int size in DB
     {
-	return undef;
+        return undef;
     }
 
-    if( $map[$chksum%$pow] eq $chkchar )
+    if ( $map[$chksum%$pow] eq $chkchar )
     {
-	return $id;
+        return $id;
     }
     else
     {
-	debug "Checksum mismatch for alphanum $alphanum; id=$id; checksum = ".$map[$chksum%$pow];
+        debug "Checksum mismatch for alphanum $alphanum; id=$id; checksum = ".$map[$chksum%$pow];
 
-	return undef;
+        return undef;
     }
 }
 
@@ -1411,18 +1433,18 @@ sub alphanum_to_id
 
 sub range_pred
 {
-    if( my $range = $_[0]->{'range'} )
+    if ( my $range = $_[0]->{'range'} )
     {
 #        debug "Found range in args: ".$range->sysdesig;
         return( $range, 'is' );
     }
 
-    while( my($key,$val) = each %{$_[0]} )
+    while ( my($key,$val) = each %{$_[0]} )
     {
 #        debug "Looking for range in $key -> $val";
-        if( $key =~ /^range_(.*)/ )
+        if ( $key =~ /^range_(.*)/ )
         {
-            keys %{$_[0]}; # reset 'each' iterator
+            keys %{$_[0]};      # reset 'each' iterator
             return( $val, $1 );
         }
     }

@@ -46,6 +46,7 @@ use RDF::Base::List;
 use RDF::Base::Utils qw( is_undef valclean truncstring parse_propargs
                          convert_query_prop_for_creation query_desig );
 
+our $ID;                 # Node id (used in RDF::Base::Literal::Class)
 
 =head1 DESCRIPTION
 
@@ -109,7 +110,9 @@ Identifies the format and makes the apropriate literal object of it.
 
 =cut
 
-  sub new
+  ;
+
+sub new
 {
     my( $this, $val_in, $valtype_in ) = @_;
 
@@ -1801,6 +1804,35 @@ sub update_by_query_arc
     return $arc;
 }
 
+
+##############################################################################
+
+=head2 on_startup
+
+=cut
+
+sub on_startup
+{
+    # Needed for bootstrap. RDF::Base::Literal::Class/instance_class
+    # needs literal id before constants init.
+
+    my $sth = $RDF::dbix->dbh->
+      prepare("select node from node where label=?");
+    $sth->execute( 'literal' );
+    $ID = $sth->fetchrow_array; # Store in GLOBAL id
+    $sth->finish;
+
+    unless( $ID )
+    {
+        die "Failed to initiate literal constant";
+    }
+
+    $RDF::Base::Constants::Label{'literal'} =
+      $RDF::Base::Cache::Resource{ $ID } ||=
+        RDF::Base::Resource->new($ID)->init();
+
+#    debug "literal ID set to $ID";
+}
 
 ##############################################################################
 

@@ -36,9 +36,9 @@ use Para::Frame::Utils qw( debug datadump catch );
 use RDF::Base;
 use RDF::Base::Utils qw( is_undef );
 
-our %Label; # The initiated constants
+our %Label;                     # The initiated constants
 our $AUTOLOAD;
-our @Initlist; # Constants to export when the DB is online
+our @Initlist;             # Constants to export when the DB is online
 
 ##############################################################################
 
@@ -55,34 +55,34 @@ sub import
     my $class = shift;
 
     my $callpkg = caller();
-    no strict 'refs'; # Symbolic refs
+    no strict 'refs';           # Symbolic refs
 
 #    my $temp = bless{NOT_INITIALIZED=>1};
 
     my $updating_db = 0;
-    if( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
+    if ( $ARGV[0] and ($ARGV[0] eq 'upgrade') )
     {
-	$updating_db = 1;
+        $updating_db = 1;
     }
 
     foreach my $const ( @_ )
     {
-	$const =~ /^\$C_(\w+)/ or croak "malformed constant: $const";
-	debug 2, "Package $callpkg imports $1";
+        $const =~ /^\$C_(\w+)/ or croak "malformed constant: $const";
+        debug 2, "Package $callpkg imports $1";
 
-	if( $RDF::dbix and not $updating_db  )
-	{
-	    my $obj = $class->get($1);
-	    *{"$callpkg\::C_$1"} = \ $obj;
-	}
-	else
-	{
-	    push @Initlist, ["$callpkg\::C_$1", $1];
+        if ( $RDF::dbix and not $updating_db  )
+        {
+            my $obj = $class->get($1);
+            *{"$callpkg\::C_$1"} = \ $obj;
+        }
+        else
+        {
+            push @Initlist, ["$callpkg\::C_$1", $1];
 
-	    # Temporary placeholder
+            # Temporary placeholder
             my $temp = bless{label=>$1,NOT_INITIALIZED=>1};
-	    *{"$callpkg\::C_$1"} = \ $temp;
-	}
+            *{"$callpkg\::C_$1"} = \ $temp;
+        }
     }
 }
 
@@ -97,26 +97,36 @@ sub on_startup
 {
     my( $class ) = @_;
 
+    debug "Initiating key nodes";
+    $class->get('class')->initiate_rel;
+
+
     debug "Initiating constants";
 
     eval
     {
-	no strict 'refs'; # Symbolic refs
-	foreach my $export (@Initlist)
-	{
-	    debug 2, " * $export->[1]";
-	    my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
-	    *{$export->[0]} = \ $obj;
-	}
+        no strict 'refs';       # Symbolic refs
+        foreach my $export (@Initlist)
+        {
+            debug 2, " * $export->[1]";
+            my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
+            *{$export->[0]} = \ $obj;
+        }
+
+#        while( my $node = shift @RDF::Base::Resource::STARTUP_NODES )
+#        {
+#            debug "prosponed init of ".$node->{id};
+#            $node->first_bless->init;
+#        }
     };
-    if( $@ )
+    if ( $@ )
     {
-	debug $@;
-	debug "Continuing without constants";
+        debug $@;
+        debug "Continuing without constants";
     }
 
-    debug "Initiating key nodes";
-    $class->get('class')->initiate_rel;
+#    debug "Initiating key nodes";
+#    $class->get('class')->initiate_rel;
 }
 
 
@@ -161,7 +171,7 @@ sub find
 
     unless( UNIVERSAL::isa $query, 'HASH' )
     {
-	confess "Query must be a hashref";
+        confess "Query must be a hashref";
     }
 
     $query->{'label_exist'} = 1;
@@ -188,11 +198,11 @@ sub get_set
     my $node;
     eval
     {
-	$node = $this->get( $label );
+        $node = $this->get( $label );
     };
-    if( my $err = catch(['notfound']) )
+    if ( my $err = catch(['notfound']) )
     {
-	$node = RDF::Base::Resource->create({label=>$label});
+        $node = RDF::Base::Resource->create({label=>$label});
     }
 
     return $node;
@@ -216,13 +226,13 @@ sub get_by_id
 {
     my( $this, $id ) = @_;
     my $node = RDF::Base::Resource->get_by_id($id) or return undef;
-    if( $node->label )
+    if ( $node->label )
     {
-	return $node;
+        return $node;
     }
     else
     {
-	confess "Node $id not a constant";
+        confess "Node $id not a constant";
     }
 }
 
@@ -268,11 +278,12 @@ AUTOLOAD
 
 ##############################################################################
 
-1;
-
 =head1 SEE ALSO
 
-L<Para::Frame>,
-L<RDF::Base>
+  L<Para::Frame>,
+  L<RDF::Base>
 
 =cut
+
+  ;
+1;

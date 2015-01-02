@@ -159,7 +159,7 @@ This is an <strong>active</strong> version.
 <tr>
    [% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
       <td colspan="2">[% arc.valtype.wu_jump %]:<br>
-         [% textarea('val', arc.value) %]
+         [% textarea('val', arc.value, tag_attr={class='wide'}) %]
       </td>
    [% ELSE %]
       <td>[% arc.valtype.wu_jump %]</td>

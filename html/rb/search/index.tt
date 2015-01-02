@@ -1,5 +1,5 @@
 [% META title="Sök nod"
-   next_template = 'list.tt'
+   next_template = '~$home/rb/node/list.tt'
    next_action = 'node_search'
    focus = 'query'
    level = 20
@@ -7,11 +7,9 @@
 
 [% CALL searchobj.first_rb_part.query_setup %]
 
-<h1>Deprecated. Move to /rb/search/</h1>
-
 [% textarea('query', undef, tag_attr={rows=10,class='wide'}) %]
 
 <p>[% submit('Sök') %]
 Resultat per sida [% input('limit',50, tag_attr={size=5}) %]
 
-[%# PROCESS rb_search_example.tt %]
+[% PROCESS rb_search_example.tt %]

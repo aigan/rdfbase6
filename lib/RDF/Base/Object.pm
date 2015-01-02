@@ -912,6 +912,24 @@ sub has_pred
 
 ##############################################################################
 
+=head2 has_allowed
+
+  $obj->has_allowed( $u, $access )
+
+Should be subclassed by classes giving access to users
+
+Returns: false
+
+=cut
+
+sub has_allowed
+{
+    return 0;
+}
+
+
+##############################################################################
+
 =head2 contains_any_of
 
   $obj->contains_any_of( $node, \%args )

@@ -1,0 +1,12 @@
+[% IF title %]
+<h1 class="page_title">
+[%
+id = q.param('id');
+IF id;
+   node = get(id);
+   node.as_html; ': ';
+END;
+loc(title) | html;
+%]
+</h1>
+[% END %]

@@ -1029,7 +1029,8 @@ sub process_for_deliverability
     # Use the sender if the email's not a DSN
     if( not $ea and not $c->is_dsn )
     {
-        $ea = EA->new( $c->sender_email_address );
+        $ea = EA->new( $c->sender_email_address )
+          if $c->sender_email_address;
     }
 
     if( $ea )

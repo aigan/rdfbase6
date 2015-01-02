@@ -78,6 +78,7 @@ our %UNSAVED;                   # The node table
 our %CHILD_CHANGED;             # For triggering on_child_changed
 our %TRANSACTION;               # The arc table
 our $ID;
+#our @STARTUP_NODES;
 
 
 =head1 DESCRIPTION
@@ -280,6 +281,13 @@ sub get
         $node->initiate_rel;
     }
 
+#    if( $RDF::Base::IN_STARTUP )
+#    {
+#        debug "first_bless for $id prosponed";
+#        push @STARTUP_NODES, $node;
+#        return $node;
+#    }
+
     $node->first_bless(undef,$args_in->{'class_clue'})->init();
 
 #    $Para::Frame::REQ->{RBSTAT}{get_new} += Time::HiRes::time() - $ts;
@@ -475,10 +483,7 @@ sub find_by_anything
     if ( debug > 1 )
     {
         debug "find_by_anything: $val ($coltype)";
-        if ( $valtype )
-        {
-            debug "  valtype ".$valtype->sysdesig;
-        }
+        debug "  valtype ".$valtype->sysdesig;
     }
 
     # 1a. obj as object
@@ -1072,14 +1077,20 @@ sub find_simple
 
 =head2 find_one
 
-  $n->find_one( $query )
+  $class->find_one( $query )
 
-  $n->find_one( $query, \%args )
+  $class->find_one( $query, \%args )
+
+  $node->find_one()
+
+  $node->find_one( $query, \%args )
 
 Does a L</find>, but excpect to fins just one.
 
 If more than one match is found, tries one more time to find exact
 matchas.
+
+If called as a node, thecks that that node matches the query if given.
 
 Supported args are:
 
@@ -1107,7 +1118,24 @@ sub find_one
     my( $this, $query, $args_in ) = @_;
 
     my( $args ) = parse_propargs($args_in);
-    my $nodes = $this->find( $query, $args );
+    my $nodes;
+
+    if( $query )
+    {
+        $nodes = $this->find( $query, $args );
+    }
+    else
+    {
+        if( ref $this ) # Assume its an object
+        {
+            $nodes = RDF::Base::List->new([$this]);
+        }
+        else
+        {
+            $nodes = RDF::Base::List->new_empty();
+        }
+    }
+
 
     if ( $nodes->size > 1 )
     {
@@ -1753,6 +1781,7 @@ The unique node id as a plain string.
 
 sub id
 {
+    confess unless ref $_[0];
     return $_[0]->{'id'};
 }
 
@@ -2095,7 +2124,7 @@ sub list
     my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
 #    my $ts = Time::HiRes::time();
     my( $args, $arclim ) = parse_propargs($args_in);
-    croak "Too many args" if $extra;
+    confess "Too many args" if $extra;
 
     unless( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
     {
@@ -2317,7 +2346,7 @@ sub revlist
 {
     my( $node, $pred_in, $proplim, $args_in, $extra ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
-    croak "Too many args" if $extra;
+    confess "Too many args" if $extra;
 
     if ( $pred_in )
     {
@@ -3543,7 +3572,7 @@ sub sysdesig
 {
     my( $node, $args ) = @_;
 
-    my $desig = $node->desig( $args );
+    my $desig = $node->label || $node->desig( $args );
 
 #    debug "Sysdesig for $node->{id}: $desig";
 
@@ -4873,9 +4902,11 @@ sub vacuum
 
 =head2 vacuum_node
 
-  $n->vacuum_node()
+  $n->vacuum_node( \%args )
 
-Calls L</vacuum_facet> for all classes
+Calls L</vacuum_facet_first> for all classes and after that, calls
+L</vacuum_facet> for all classes, starting with the most general class
+(Resource).
 
 =cut
 
@@ -4903,6 +4934,18 @@ sub vacuum_node
     if ( my $rc = $Para::Frame::CFG->{'resource_class'} )
     {
         unshift @classlist, $rc;
+    }
+
+    foreach my $sc (@classlist)
+    {
+        debug "  Vacuum_first ${$n}{id} via $sc" if $DEBUG;
+        if ( my $method = $sc->can("vacuum_facet_first") )
+        {
+            next if $methods{$method}++;
+            next unless $n->isa($sc); # Might have changed
+            debug "  found $method" if $DEBUG;
+            &{$method}($n, $args);
+        }
     }
 
     foreach my $sc (@classlist)
@@ -5177,17 +5220,26 @@ relevant versions, used for chosing version to activate/deactivate.
 
 sub arcversions
 {
-    my( $node, $predname, $proplim ) = @_;
+    my( $node, $predname, $proplim, $args ) = @_;
 
 #    debug "In arcversions for $predname for ".$node->sysdesig;
 
     return                      #probably new...
       unless( UNIVERSAL::isa($node, 'RDF::Base::Resource') );
 
+    $args ||= {};
 
     #debug "Got request for prop_versions for ". $node->sysdesig ." with pred ". $predname;
 
-    my $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    my $arcs;
+    if( $args->{rev} )
+    {
+        $arcs = $node->revarc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    }
+    else
+    {
+        $arcs = $node->arc_list( $predname, $proplim, ['submitted','active'] )->unique_arcs_prio(['active','submitted']);
+    }
 
     my %arcversions;
 
@@ -5207,6 +5259,29 @@ sub arcversions
     #debug datadump( \%arcversions, 2 );
 
     return \%arcversions;
+}
+
+
+##############################################################################
+
+=head2 rev_arcversions
+
+  $n->arcversions( $pred, $proplim, \%args )
+
+Produces a list of all relevant common-arcs, with lists of their
+relevant versions, used for chosing version to activate/deactivate.
+
+  language (if applicable)
+    arc-list...
+
+=cut
+
+sub rev_arcversions
+{
+    my( $node, $predname, $proplim, $args ) = @_;
+
+    $args ||= {}; $args->{rev} = 1;
+    return $node->arcversions( $predname, $proplim, $args );
 }
 
 
@@ -5581,6 +5656,7 @@ Supported args are
   ajax
   from_ajax
   divid
+  divstyle
   label
   tdlabel
   separator
@@ -5628,6 +5704,8 @@ sub wu
         $args->{'format'} ||= $format;
     }
 
+#    debug "Range $range, Rangepred $range_pred";
+
     if ( $range )
     {
         $range = $R->get($range) unless ref $range;
@@ -5650,6 +5728,10 @@ sub wu
         $range_is = $pred->valtype;
         $range_scof = $pred->first_prop('range_scof',undef,['active']);
     }
+
+#    debug "Range_is ".$range_is->sysdesig if $range_is;
+#    debug "Range_scof ".$range_scof->sysdesig if $range_scof;
+
 
     unless( $range_pred )
     {
@@ -5674,6 +5756,8 @@ sub wu
         $range_class = 'RDF::Base::Resource';
     }
 
+#    debug "range class ".$range_class;
+
     my $range_key = 'range_'.$range_pred;
     $range_key =~ s/^range_is$/range/;
 
@@ -5687,6 +5771,7 @@ sub wu
     my $from_ajax = $args->{'from_ajax'} || 0;
     my $divid = $args->{'divid'} ||=
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
+    my $divstyle = $args->{'divstyle'} // 'position: relative';
 
     # Will update $args with context properties
     #
@@ -5700,7 +5785,7 @@ sub wu
     if ( $divid and not $from_ajax )
     {
 #	$out .= "(>$divid)";
-        $out .= '<div id="'. $divid .'" style="position: relative;">';
+        $out .= sprintf '<div id="%s" style="%s">', $divid, $divstyle;
     }
 
     # widget for updating subclass of range class
@@ -6854,7 +6939,7 @@ sub find_class
         {
             # This pre-caching may be a litle slower in some cases,
             # but seems to be a litle faster over all
-            $class->initiate_rel; ### PRE-CACH!
+            $class->initiate_rel; ### PRE-CACHE!
         }
 
         my $p_chbpm = RDF::Base::Pred->
@@ -6958,7 +7043,7 @@ sub find_class
             my $classname = $class->first_prop($p_code,undef,['active'])->plain;
             unless( $classname )
             {
-                debug datadump($class,2);
+                debug datadump($class,3);
                 confess "No classname found for class $class->{id}";
             }
 
@@ -6988,9 +7073,16 @@ sub find_class
         elsif ( $classnames[0] ) # Single inheritance
         {
             my $classname = $classnames[0];
-            $package = "RDF::Base::Metaclass::$classname";
+            if( $classname eq 'RDF::Base::Pred' )
+            {
+                $package = $classname;
+            }
+            else
+            {
+                $package = "RDF::Base::Metaclass::$classname";
 #	    debug "Creating b package $package";
-            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+                @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            }
 #	    $valtype = $pmodules_sorted[0][1];
             $valtype = $RDF::Base::Constants::Label{'resource'};
         }
@@ -7115,7 +7207,15 @@ sub first_bless
 
 #    confess "HERE" if grep{$node->{'id'}==$_}(5863813);
 
-#    debug "Initiated $node->{id} as a ".ref($node);
+#    if( ref($node) =~ /Metaclass/ )
+#    {
+#        debug "Initiated $node->{id} as a ".ref($node);
+#    }
+
+    if( $node->can('on_first_bless') )
+    {
+        $node->on_first_bless();
+    }
 
     return $node;
 }
@@ -7829,7 +7929,7 @@ sub get_by_label
         {
             unless( UNIVERSAL::isa $obj, $class )
             {
-                confess "Constant $label is not a $class";
+                confess "Constant $label ($obj) is not a $class";
             }
 
             return $obj;
@@ -8177,7 +8277,7 @@ sub node_rec_exist
 
 sub mark_unsaved
 {
-#    confess "Would mark as unsaved $_[0]->{'id'}";
+#    cluck "Would mark as unsaved $_[0]->{'id'}";
     $UNSAVED{$_[0]->{'id'}} = $_[0];
 #    debug "Node $_[0]->{id} marked as unsaved now";
 }
@@ -9282,11 +9382,19 @@ sub instance_class
             my $classname = $class_node->first_prop($p_code,undef,['active'])->plain
               or confess "No classname found for class $class_node->{id}";
 
-            require(package_to_module($classname));
 
-            $package = "RDF::Base::Metaclass::$classname";
-            no strict "refs";
-            @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            if( $classname eq 'RDF::Base::Pred' )
+            {
+                $package = $classname;
+            }
+            else
+            {
+                require(package_to_module($classname));
+                $package = "RDF::Base::Metaclass::$classname";
+                no strict "refs";
+                @{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
+            }
+
             $RDF::Base::Cache::Class{ $key } = $package;
             $RDF::Base::Cache::Valtype{ $key } = $_[0];
 #	    debug "Setting_ic valtype for $key to $_[0]->{id}";
@@ -9558,9 +9666,23 @@ sub on_startup
         die "Failed to initiate resource constant";
     }
 
-    $RDF::Base::Constants::Label{'resource'} =
+    my $r = $RDF::Base::Constants::Label{'resource'} =
       $RDF::Base::Cache::Resource{ $ID } ||=
         RDF::Base::Resource->new($ID)->init();
+
+
+#    ### Built-in classes that should not be placed under
+#    ### RDF::Base::Metaclass
+#
+#    $sth->execute( 'predicate' );
+#    my $pred_id = $sth->fetchrow_array; # Store in GLOBAL id
+#    $sth->finish;
+#
+#    $RDF::Base::Cache::Class{ $pred_id } = 'RDF::Base::Pred';
+#    $RDF::Base::Cache::Valtype{ $pred_id } = $r;
+#
+
+
 }
 
 

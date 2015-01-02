@@ -1,3 +1,14 @@
+
+url_holder has_url avisita.com
+
+internet_domain scof url_holder
+
+in_internet_domain range internet_domain
+
+uses_domain range internet_domain
+
+---------------------------------------
+
 Hojs.
 
 För att kunna använda de fina formulär-funktionerna i rb, så behöver vi

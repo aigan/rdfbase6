@@ -1,10 +1,8 @@
 [% META title="Sök nod"
-   next_template = 'list.tt'
+   next_template = '~$home/rb/node/list.tt'
    next_action = 'search_modify'
    level = 20
 %]
-
-<h1>Deprecated. Move to /rb/search/parts.tt</h1>
 
 [% FOREACH searchpart IN searchobj.rb_parts %]
 [% IF loop.first %]

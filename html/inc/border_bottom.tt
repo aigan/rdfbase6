@@ -4,7 +4,7 @@
 [% PROCESS menu_bottom.tt %]
 <div class="paraframe_menu_admin">
 RDFbase:
-[%+ go('Sökning', "$home/rb/node/search.tt", mark ) %]
+[%+ go('Sökning', "$home/rb/search/", mark ) %]
 [%+ go('Skapa', "$home/rb/node/arc/add.tt", mark) %]
 [%+ go('Preds', "$home/rb/node/pred/list.tt", mark) %]
 [%+ go('Härledning', "$home/rb/node/rule/list.tt", mark) %]

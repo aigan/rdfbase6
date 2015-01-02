@@ -36,12 +36,14 @@ use RDF::Base::Widget;
 use RDF::Base::Search::Collection;
 use RDF::Base::Search::Result;
 use RDF::Base::Literal::String; # Needed by RB::Utils
+use RDF::Base::Class;
 use RDF::Base::Setup;
 use RDF::Base::Plugins;
+use RDF::Base::Domain;
 use IMAP::BodyStructure 1.02;
 
 
-our $VERSION = "6.70";
+our $VERSION = "6.72";
 
 
 =head1 NAME
@@ -59,13 +61,13 @@ See L<RDF::Base::Object> for the baseclass for most classes.
 
 # Used in RDF::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
-    (
-     'RDF::Base::Resource'   => 1,
-     'RDF::Base::User::Meta' => 1,
-    );
+  (
+   'RDF::Base::Resource'   => 1,
+   'RDF::Base::User::Meta' => 1,
+  );
 
-our  $IN_STARTUP = 1; # Set to 0 after db init
-our  $VACUUM_ALL = 0; # Only for initialization and repair
+our  $IN_STARTUP = 1;           # Set to 0 after db init
+our  $VACUUM_ALL = 0;           # Only for initialization and repair
 
 #########################################################################
 
@@ -93,13 +95,13 @@ sub init
 
     # Just in case we temporarily switched to root and got an exception
     Para::Frame->add_hook('on_error_detect', sub
-			  {
-			      RDF::Base::User->revert_from_temporary_user();
-			      if( $Para::Frame::U )
-			      {
-				  $Para::Frame::U->set_default_propargs(undef);
-			      }
-			  });
+                          {
+                              RDF::Base::User->revert_from_temporary_user();
+                              if ( $Para::Frame::U )
+                              {
+                                  $Para::Frame::U->set_default_propargs(undef);
+                              }
+                          });
 
     Para::Frame->add_hook('on_startup', \&init_on_startup);
 
@@ -113,10 +115,12 @@ sub init
 #			  });
 
     Para::Frame->add_hook('after_db_rollback', sub
-			  {
-			      RDF::Base::Resource->rollback();
-			      RDF::Base::Arc->rollback();
-			  });
+                          {
+                              RDF::Base::Resource->rollback();
+                              RDF::Base::Arc->rollback();
+                              RDF::Base::Email::Address->rollback();
+                              RDF::Base::Domain->rollback();
+                          });
 
     Para::Frame->add_hook('done', \&on_done);
 
@@ -173,17 +177,25 @@ sub init
 
 =head2 init_on_startup
 
+Sets up db if first run.
+
+Calls on_startup() for a series of RB classes.
+
+Calls L<RDF::Base::Setup/upgrade_db>.
+
+Runs hook "on_rdfbase_ready" after init.
+
 =cut
 
 sub init_on_startup
 {
 #    warn "init_on_startup\n";
 
-    if( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
-	  and $ARGV[1] and $ARGV[1] eq 'clear' )
-	or not $RDF::dbix->table('arc') )
+    if ( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
+           and $ARGV[1] and $ARGV[1] eq 'clear' )
+         or not $RDF::dbix->table('arc') )
     {
-	RDF::Base::Setup->setup_db();
+        RDF::Base::Setup->setup_db();
     }
 
     ### Special namespace change from ritbase to rdfspace
@@ -191,7 +203,7 @@ sub init_on_startup
         my $dbh = $RDF::dbix->dbh;
 
         my( $ritbase_id ) = $dbh->selectrow_array("select node from node where label='ritbase'");
-        if( $ritbase_id )
+        if ( $ritbase_id )
         {
             $dbh->do("update node set label='rdfbase' where label='ritbase'");
             $dbh->do("update arc set valtext=regexp_replace(valtext, '^Rit::Base', 'RDF::Base') where valtext like 'Rit::Base%'");
@@ -202,6 +214,7 @@ sub init_on_startup
 
     RDF::Base::Resource->on_startup();
 #    warn "init_on_startup 2\n";
+    RDF::Base::Literal->on_startup();
     RDF::Base::Literal::Class->on_startup();
 #    warn "init_on_startup 3\n";
     RDF::Base::Constants->on_startup();
@@ -216,15 +229,18 @@ sub init_on_startup
     foreach my $key (qw(rb_default_source rb_default_read_access
                         rb_default_write_access))
     {
-	my $val = $cfg->{$key};
-	unless( ref $val )
-	{
-	    $cfg->{$key} = RDF::Base::Resource->get_by_label($val);
-	}
+        my $val = $cfg->{$key};
+        unless( ref $val )
+        {
+            $cfg->{$key} = RDF::Base::Resource->get_by_label($val);
+        }
     }
 
 
     RDF::Base::Setup->upgrade_db();
+
+    RDF::Base::Class->on_startup();
+
 
 #    warn "init_on_startup 5\n";
 
@@ -327,6 +343,21 @@ sub Literal ()
 
 ######################################################################
 
+=head2 Search_Collection
+
+Returns class object for L<RDF::Base::Search::Colletion> or what was
+specified by $Para::Frame::CFG->{'search_collection_class'}
+
+=cut
+
+sub Search_Collection ()
+{
+    return $Para::Frame::CFG->{'search_collection_class'};
+}
+
+
+######################################################################
+
 =head2 on_done
 
   Runs after each request
@@ -354,11 +385,11 @@ sub add_background_jobs
     my( $delta, $sysload ) = @_;
 
 #    debug "*******================************ May send_cache_change";
-    if( keys %RDF::Base::Cache::Changes::Added or
-	keys %RDF::Base::Cache::Changes::Updated or
-	keys %RDF::Base::Cache::Changes::Removed )
+    if ( keys %RDF::Base::Cache::Changes::Added or
+         keys %RDF::Base::Cache::Changes::Updated or
+         keys %RDF::Base::Cache::Changes::Removed )
     {
-	send_cache_change(undef);
+        send_cache_change(undef);
 #	debug "  prepending job";
 #	$Para::Frame::REQ->prepend_background_job('send_cache_change',
 #						  \&send_cache_change);
@@ -386,9 +417,9 @@ sub send_cache_change
     my @updated;
     foreach my $id ( keys %RDF::Base::Cache::Changes::Updated )
     {
-	next if $RDF::Base::Cache::Changes::Added{$id};
-	next if $RDF::Base::Cache::Changes::Removed{$id};
-	push @updated, $id;
+        next if $RDF::Base::Cache::Changes::Added{$id};
+        next if $RDF::Base::Cache::Changes::Removed{$id};
+        push @updated, $id;
     }
 
     %RDF::Base::Cache::Changes::Added = ();
@@ -396,55 +427,55 @@ sub send_cache_change
     %RDF::Base::Cache::Changes::Removed = ();
 
     my $fork = $req->create_fork;
-    if( $fork->in_child )
+    if ( $fork->in_child )
     {
-	my @daemons = @{$Para::Frame::CFG->{'daemons'}};
+        my @daemons = @{$Para::Frame::CFG->{'daemons'}};
 
-	my @params;
-	if( @added )
-	{
-	    push @params, 'added='.join(',',@added);
-	}
+        my @params;
+        if ( @added )
+        {
+            push @params, 'added='.join(',',@added);
+        }
 
-	if( @updated )
-	{
-	    push @params, 'updated='.join(',',@updated);
-	}
+        if ( @updated )
+        {
+            push @params, 'updated='.join(',',@updated);
+        }
 
-	if( @removed )
-	{
-	    push @params, 'removed='.join(',',@removed);
-	}
+        if ( @removed )
+        {
+            push @params, 'removed='.join(',',@removed);
+        }
 
-	my $request = "update_cache?" . join('&', @params);
+        my $request = "update_cache?" . join('&', @params);
 
-	foreach my $site (@daemons)
-	{
-	    my $daemon = $site->{'daemon'};
-	    debug "Sending update to $site->{site}";
+        foreach my $site (@daemons)
+        {
+            my $daemon = $site->{'daemon'};
+            debug "Sending update to $site->{site}";
 
-	    ### TODO: check if port and IP is the same
-	    #
-	    if( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
-	    {
-		debug "  Skipping this site";
-		next;
-	    }
+            ### TODO: check if port and IP is the same
+            #
+            if ( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
+            {
+                debug "  Skipping this site";
+                next;
+            }
 
-	    debug "Sending update_cache to $daemon";
+            debug "Sending update_cache to $daemon";
 
-	    eval
-	    {
-		$req->send_to_daemon( $daemon, 'RUN_ACTION',
-				      \$request );
-	    }
-		or do
-		{
-		    debug(0,"failed send_cache_change to $site->{site}: $@");
-		};
-	}
+            eval
+            {
+                $req->send_to_daemon( $daemon, 'RUN_ACTION',
+                                      \$request );
+            }
+              or do
+              {
+                  debug(0,"failed send_cache_change to $site->{site}: $@");
+              };
+        }
 
-	$fork->return();
+        $fork->return();
     }
 }
 

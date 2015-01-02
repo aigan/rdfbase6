@@ -70,11 +70,11 @@ sub on_arc_add
 
     foreach my $sc (@{"${class}::ISA"})
     {
-	next if $sc eq __PACKAGE__;
-	if( my $method = $sc->can("on_arc_add") )
-	{
-	    &{$method}($n, @_);
-	}
+        next if $sc eq __PACKAGE__;
+        if ( my $method = $sc->can("on_arc_add") )
+        {
+            &{$method}($n, @_);
+        }
 #	$n->("${sc}::on_arc_add")(@_);
     }
 
@@ -105,11 +105,11 @@ sub on_revarc_add
 
     foreach my $sc (@{"${class}::ISA"})
     {
-	next if $sc eq __PACKAGE__;
-	if( my $method = $sc->can("on_revarc_add") )
-	{
-	    &{$method}($n, @_);
-	}
+        next if $sc eq __PACKAGE__;
+        if ( my $method = $sc->can("on_revarc_add") )
+        {
+            &{$method}($n, @_);
+        }
 #	$n->("${sc}::on_arc_add")(@_);
     }
 
@@ -140,11 +140,11 @@ sub on_arc_del
 
     foreach my $sc (@{"${class}::ISA"})
     {
-	next if $sc eq __PACKAGE__;
-	if( my $method = $sc->can("on_arc_del") )
-	{
-	    &{$method}($n, @_);
-	}
+        next if $sc eq __PACKAGE__;
+        if ( my $method = $sc->can("on_arc_del") )
+        {
+            &{$method}($n, @_);
+        }
 #	$n->("${sc}::on_revarc_del")(@_);
     }
 
@@ -175,11 +175,11 @@ sub on_revarc_del
 
     foreach my $sc (@{"${class}::ISA"})
     {
-	next if $sc eq __PACKAGE__;
-	if( my $method = $sc->can("on_revarc_del") )
-	{
-	    &{$method}($n, @_);
-	}
+        next if $sc eq __PACKAGE__;
+        if ( my $method = $sc->can("on_revarc_del") )
+        {
+            &{$method}($n, @_);
+        }
 #	$n->("${sc}::on_revarc_del")(@_);
     }
 
@@ -208,11 +208,11 @@ sub on_child_changed
 
     foreach my $sc (@{"${class}::ISA"})
     {
-	next if $sc eq __PACKAGE__;
-	if( my $method = $sc->can("on_child_changed") )
-	{
-	    &{$method}($n, @_);
-	}
+        next if $sc eq __PACKAGE__;
+        if ( my $method = $sc->can("on_child_changed") )
+        {
+            &{$method}($n, @_);
+        }
     }
 
     return;

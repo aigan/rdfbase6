@@ -2538,13 +2538,22 @@ sub table_row
             {
                 if ( $disabled )
                 {
-                    $out .= ( $is_rev ? $check_subj->wu_jump :
-                              $item->wu_jump );
+#                    $out .= ( $is_rev ? $check_subj->wu_jump :
+#                              $item->wu_jump );
+                    $out .= ( $is_rev ? $check_subj->as_thml :
+                              $item->as_html );
                 }
                 else
                 {
-                    my $field = $arc->build_field_key();
+                    my $field_keys = {};
+                    if( $is_rev )
+                    {
+                        $field_keys->{revpred} = $arc->pred->label;
+                    }
+                    my $field = $arc->build_field_key($field_keys);
                     my $tagid = $field;
+
+#                    debug "Fieldkey: $field";
 
                     my $tag_attr = $args->{tag_attr} || {};
                     $tag_attr->{class}= $args->{'class'};
@@ -2565,9 +2574,11 @@ sub table_row
                         $field = '-'.$field; # Don't read content
                     }
 
+                    my $val = $is_rev ? $arc->subj : $arc->value;
+
                     my $inputtype = $args->{'inputtype'} || 'input';
                     no strict 'refs';           # For &{$inputtype} below
-                    $out .= &{$inputtype}($field, $arc->value->plain, $fargs);
+                    $out .= &{$inputtype}($field, $val->plain, $fargs);
                 }
             }
 
@@ -2708,10 +2719,17 @@ node.
 sub coltype
 {
     # The arc value may be undefined.
-    # Assume that all valtypes not in the COLTYPE hash are objs
+    # Assume that all valtypes not in the COLTYPE hash are objs.
 
-#    debug "Getting coltype for $_[0]->{id}";
-    return RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj( $_[0]->{'valtype'} );
+    my $valtype = $_[0]->{'valtype'};
+
+    # Removal arcs has undef valtypes.
+    unless( $valtype )
+    {
+#        debug "Getting coltype for $_[0]->{id} with undef valtype";
+        return  $_[0]->pred->coltype;
+    }
+    return RDF::Base::Literal::Class->coltype_by_valtype_id_or_obj( $valtype );
 }
 
 
@@ -2938,7 +2956,7 @@ sub vacuum_facet
 
     my $DEBUG = 0;
 
-    return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
+#    return 1 if $res->{'vacuumed'}{$arc->{'id'}} ++;
     debug "vacuum ".$arc->sysdesig if $DEBUG;
 
     $arc->remove_duplicates( $args );
@@ -6129,6 +6147,7 @@ sub unlock
     if ( $cnt < 0 )
     {
         debug "Unlock called without previous lock";
+        $RDF::Base::Arc::lock_check = $cnt = 0;
     }
 
     my $DEBUG = 0;
@@ -6770,7 +6789,7 @@ sub edit_link_html
                   fallback => $arc->info_updated_html($args),
                   html     => 'true',
 #                  live     => 'true',
-                  delayOut => 2000,
+#                  delayOut => 2000,
                  })
        . "  );"
        . "</script>"

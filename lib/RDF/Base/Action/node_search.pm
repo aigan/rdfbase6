@@ -19,6 +19,7 @@ use warnings;
 use Para::Frame::Utils qw( throw trim debug datadump );
 
 use RDF::Base::Utils qw( query_desig parse_query_props );
+use RDF::Base::Literal::Time;
 use RDF::Base::Search;
 
 =head1 DESCRIPTION
@@ -31,8 +32,22 @@ sub handler
 {
     my( $req ) = @_;
 
-    my $search_col = $req->session->search_collection;
-    $search_col->reset;
+    my $s = $req->session;
+    my $col = $s->search_collection;
+
+    if( $col->label )
+    {
+        debug "Active 1 col is $col";
+
+        $col = $col->new; # Get a new object;
+        $s->search_collection( $col ); # Seitch t new object
+
+        debug "Active 2 col is $col";
+    }
+    else
+    {
+        $col->reset;
+    }
 
     my $query = $req->q->param('query');
     $query .= "\n" . join("\n", $req->q->param('query_row') );
@@ -41,9 +56,16 @@ sub handler
     my $props = parse_query_props( $query );
 
     my $args = {};
-    if( my $arclim_in = delete $props->{'arclim'} )
+    if ( my $arclim_in = delete $props->{'arclim'} )
     {
         $args->{'arclim'} = $arclim_in;
+    }
+
+    if ( my $aod_in = delete $props->{'arc_active_on_date'} )
+    {
+        my $aod = RDF::Base::Literal::Time->parse( $aod_in );
+        $args->{'arc_active_on_date'} = $aod;
+#        debug datadump($aod,1);
     }
 
 
@@ -55,19 +77,19 @@ sub handler
 #    debug "Search result contains";
 #    debug datadump($search->{'result'},2);
 
-    $search_col->add($search);
+    $col->add($search);
 #    debug "Search_col now contains";
-#    debug datadump($search_col,2);
+#    debug datadump($col,2);
 
 
-    if( my $result_url = $req->q->param('search_result') )
+    if ( my $result_url = $req->q->param('search_result') )
     {
-	$search_col->result_url( $result_url );
+        $col->result_url( $result_url );
     }
 
-    if( my $form_url = $req->q->param('search_form') )
+    if ( my $form_url = $req->q->param('search_form') )
     {
-	$search_col->form_url( $form_url );
+        $col->form_url( $form_url );
     }
 
     return "";
