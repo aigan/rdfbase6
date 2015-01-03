@@ -17,6 +17,7 @@ use strict;
 use warnings;
 
 use JSON;
+use IMAP::BodyStructure 1.02;
 
 use Para::Frame 1.22;
 use Para::Frame::Utils qw( debug );
@@ -40,7 +41,8 @@ use RDF::Base::Class;
 use RDF::Base::Setup;
 use RDF::Base::Plugins;
 use RDF::Base::Domain;
-use IMAP::BodyStructure 1.02;
+use RDF::Base::Email::Address;
+
 
 
 our $VERSION = "6.72";

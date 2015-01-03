@@ -469,6 +469,9 @@ sub as_array
 
 =head2 list
 
+Equals to L<RDF::Base::Resource/list>.
+Do not confuse with L</as_listobj>.
+
 =cut
 
 sub list
