@@ -5,7 +5,7 @@ package RDF::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1304,11 +1304,19 @@ sub solid_propargs
     }
 
     my %args = %$args_in;
-    $args{'activate_new_arcs'} = 1;
-    $args{'arclim'} = RDF::Base::Arc::Lim->parse([1+128]);
+    $args{activate_new_arcs} = 1;
+    $args{arclim} = RDF::Base::Arc::Lim->parse([1+128]);
     $args{unique_arcs_prio} = [1]; # active
+    $args{res} = RDF::Base::Resource::Change->new;
 
-    return \%args;
+    if ( wantarray )
+    {
+        return( \%args, $args{arclim}, $args{res} );
+    }
+    else
+    {
+        return \%args;
+    }
 }
 
 
