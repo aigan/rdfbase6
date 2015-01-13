@@ -1551,7 +1551,7 @@ sub create
 
     confess "invalid props: $props" unless ref $props;
 
-    my %s; #special             
+    my %s; #special
       foreach my $pred_name (qw( created created_by update updated_by ))
       {
           $s{ $pred_name } = Para::Frame::List->
@@ -5893,8 +5893,7 @@ sub register_ajax_pagepart
 
     my $home = $Para::Frame::REQ->site->home_url_path;
     $out .=
-      "<script type=\"text/javascript\">
-        <!--
+      "<script>
             new PagePart('$divid', '$home/rb/ajax/wu',
             { params: { subj: '". $node->id ."',
                         params: '". to_json( $params ) ."'";
@@ -5925,7 +5924,7 @@ sub register_ajax_pagepart
 #	debug "Depends on now: ". $depends_on;
         $out .= ", depends_on: [ $depends_on ]";
     }
-    $out .= "}); //--> </script>";
+    $out .= "}); </script>";
 
 #    $out .= "($divid)";
 
@@ -6178,10 +6177,8 @@ sub wuirc
             $out .= "
               <input type=\"button\" id=\"$divid-button\" class=\"btn btn-primary wuirc-add\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
             $out .= sprintf(q{
-<script type="text/javascript">
-<!--
+<script>
   new RBInputPopup(%s);
-//-->
 </script>
 },
                             to_json({

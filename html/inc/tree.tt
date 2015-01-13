@@ -59,7 +59,7 @@
 
 --></style>
 
-<script language="javascript">
+<script>
   [* tsw = 'RDFbase_tsw' +*]
   function rdfbase_selected_item()
   {
