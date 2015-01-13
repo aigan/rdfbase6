@@ -30,7 +30,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 use Para::Frame::Widget qw( checkbox hidden );
 
-use RDF::Base::Utils qw( parse_propargs );
+use RDF::Base::Utils qw( parse_propargs query_desig );
 
 
 =head1 DESCRIPTION
@@ -86,6 +86,9 @@ sub wuirc
         $args->{'tdlabel'} = $pred;
     }
 
+    my %render_args = %$args;
+    delete $render_args{label};
+
     if ( ($args->{'disabled'}||'') eq 'disabled' )
     {
         my $arclist = $subj->arc_list($predname, undef, $args);
@@ -103,7 +106,7 @@ sub wuirc
         while ( my $arc = $arclist->get_next_nos )
         {
             $out .= hidden('check_arc_'. $arc->id, $arc->value->plain);
-            $out .= checkbox($key, 1, $arc->value->plain, $args) .
+            $out .= checkbox($key, 1, $arc->value->plain, \%render_args) .
               $arc->edit_link_html;
 
         }
@@ -111,7 +114,7 @@ sub wuirc
     else
     {
         my $val = $args->{'default_value'} || 0;
-        $out .= checkbox($key, 1, $val, $args);
+        $out .= checkbox($key, 1, $val, \%render_args);
     }
 
     return $out;
