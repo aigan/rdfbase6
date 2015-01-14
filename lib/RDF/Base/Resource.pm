@@ -5095,12 +5095,15 @@ sub merge_node
         {
             debug sprintf "  Moving %s", $arc->sysdesig;
 
-            RDF::Base::Arc->create({
-                                    subj => $node2,
-                                    pred => $pred_name,
-                                    value => $obj,
-                                    replaces => $arc->version_id,
-                                   }, $args);
+            unless( $node2->prop($pred_name, $obj, $args ) )
+            {
+                RDF::Base::Arc->create({
+                                        subj => $node2,
+                                        pred => $pred_name,
+                                        value => $obj,
+                                        replaces => $arc->version_id,
+                                       }, $args);
+            }
 
 #	    $node2->add({ $pred_name => $obj }, {%$args, replaces => } );
 #            if( $obj->is_value_node )

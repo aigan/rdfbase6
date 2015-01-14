@@ -19,7 +19,7 @@ use warnings;
 use Para::Frame::L10N qw( loc );
 
 use RDF::Base::Resource;
-use RDF::Base::Utils qw( parse_propargs );
+use RDF::Base::Utils qw( solid_propargs );
 
 =head1 DESCRIPTION
 
@@ -33,7 +33,7 @@ sub handler
 
     my $q = $req->q;
     my $id = $q->param('id');
-    my( $args, $arclim, $res ) = parse_propargs('solid');
+    my( $args, $arclim, $res ) = solid_propargs({activate_new_arcs=>1});
 
     my $node = RDF::Base::Resource->get( $id );
     $node->reset_cache(undef, $args );
