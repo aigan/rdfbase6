@@ -5113,8 +5113,14 @@ sub merge_node
         }
         elsif ( $move_literals )
         {
-            debug sprintf "  Moving %s", $arc->sysdesig($args);
-            $node2->add({$pred_name => $arc->value}, $args );
+            my $pred_cnt = $node2->list($pred_name,undef,$args)->size;
+            my $pred_max = RDF::Base::Pred->get($pred_name)->
+              first_prop('range_card_max')->plain;
+            if( not $pred_max or $pred_max > $pred_cnt )
+            {
+                debug sprintf "  Moving %s", $arc->sysdesig($args);
+                $node2->add({$pred_name => $arc->value}, $args );
+            }
         }
         $arc->remove( $args );
     }
