@@ -5,7 +5,7 @@ package RDF::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -962,7 +962,7 @@ sub create
 
 
     debug "Created arc id ".$arc->sysdesig;
-
+#    confess datadump([$props,$args],3) unless $arc->active;
 
     ####### Has not been done by get_by_rec.
     #
@@ -6490,7 +6490,9 @@ sub remove_check
 
   $a->notify_change( \%args )
 
-Will mark dependant nodes as updated unless for
+Will mark dependant nodes as updated unless for arcs regarding updated.
+
+Will not mark if C<$args->{no_notification}>.
 
 =cut
 
@@ -6498,6 +6500,7 @@ sub notify_change
 {
     my( $arc, $args ) = @_;
 
+    return if $args->{no_notification};
     my $pred_name = $arc->pred->plain;
 
     return if $pred_name =~ /^(un)?seen_by$/;

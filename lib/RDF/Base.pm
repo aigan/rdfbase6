@@ -5,7 +5,7 @@ package RDF::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -45,7 +45,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.72";
+our $VERSION = "6.73";
 
 
 =head1 NAME
