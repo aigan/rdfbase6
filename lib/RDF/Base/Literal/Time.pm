@@ -5,7 +5,7 @@ package RDF::Base::Literal::Time;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -426,8 +426,18 @@ sub wuirc
             $cal_args{id} = $args->{id} = $args->{tag_attr}{'id'} ||= $fieldname;
             $cal_args{tag_attr} = $args->{tag_attr};
 
+            my $value_old = $subj->prop($pred)->desig($args);
             my $value_new = $q->param($fieldname_default)
-              || $subj->prop($pred)->desig($args) || $args->{'default_value'};
+              || $value_old || $args->{'default_value'};
+
+            if( $value_old and $value_old eq $value_new )
+            {
+                $q->delete( $fieldname_default );
+                $q->delete( $fieldname );
+            }
+
+#            debug "Old date: ".$value_old;
+#            debug "New date: ".$value_new;
 
             $out .= &calendar($fieldname, $value_new,
                               {
