@@ -4961,7 +4961,7 @@ sub vacuum_node
     }
 
     ### Clear som special caches
-    delete $node1->{'merging'};
+    delete $n->{'merging'};
 
     return $n;
 }
