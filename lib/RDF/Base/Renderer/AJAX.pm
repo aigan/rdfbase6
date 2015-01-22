@@ -18,12 +18,12 @@ use warnings;
 use utf8;
 use base 'Para::Frame::Renderer::Custom';
 
-use JSON; # to_json from_json
+use JSON;                       # to_json from_json
 #use Carp qw( cluck );
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
-			   trim package_to_module compile );
+                           trim package_to_module compile );
 use Para::Frame::L10N qw( loc );
 
 use RDF::Base::AJAX;
@@ -46,11 +46,11 @@ sub render_output
     $rend->{'ctype'} = 'html';
 
     my $params;
-    if( my $params_in = $q->param('params') )
+    if ( my $params_in = $q->param('params') )
     {
         debug "Parsing params $params_in";
         $params = from_json( $params_in );
-	debug "Got params data: ". datadump($params);
+        debug "Got params data: ". datadump($params);
     }
 
     foreach my $key ( $q->param )
@@ -68,108 +68,110 @@ sub render_output
 
     debug "AJAX 'file': $file";
 
-    if( $file eq 'wu' )
+    if ( $file eq 'wu' )
     {
-	$req->require_root_access;
+        $req->require_root_access;
 
-	$out .= RDF::Base::AJAX->wu( $params );
+        $out .= RDF::Base::AJAX->wu( $params );
     }
-    elsif( $file =~ /action\/(.*)/ )
+    elsif ( $file =~ /action\/(.*)/ )
     {
-	$req->require_root_access;
-	my $action = $1;
+        $req->require_root_access;
+        my $action = $1;
 
-	if( $action eq 'add_direct' )
-	{
-	    my $subj = $R->get($q->param('subj'));
-	    my $pred_name = $q->param('pred_name');
-	    my $obj = $R->get($q->param('obj'));
-	    my $rev = $q->param('rev');
+        if ( $action eq 'add_direct' )
+        {
+            my $subj = $R->get($q->param('subj'));
+            my $pred_name = $q->param('pred_name');
+            my $obj = $R->get($q->param('obj'));
+            my $rev = $q->param('rev');
 
             my $on_arc_add_json = $q->param('on_arc_add');
-	    my $on_arc_add;
-	    if( $on_arc_add_json and $on_arc_add_json ne 'null')
-	    {
-		$on_arc_add = from_json($on_arc_add_json);
-	    }
+            my $on_arc_add;
+            if ( $on_arc_add_json and $on_arc_add_json ne 'null')
+            {
+                $on_arc_add = from_json($on_arc_add_json);
+            }
 
-	    my $args =
-	    {
-		activate_new_arcs => 1,
-	    };
+            my $args =
+            {
+             activate_new_arcs => 1,
+            };
 
-	    arc_lock();
+            arc_lock();
 
-	    my $arc;
-	    if( $rev )
-	    {
-		$arc = $obj->add_arc({ $pred_name => $subj }, $args );
-	    }
-	    else
-	    {
-		$arc = $subj->add_arc({ $pred_name => $obj }, $args );
-	    }
+            my $arc;
+            if ( $rev )
+            {
+                $arc = $obj->add_arc({ $pred_name => $subj }, $args );
+            }
+            else
+            {
+                $arc = $subj->add_arc({ $pred_name => $obj }, $args );
+            }
 
-	    if( $on_arc_add )
-	    {
-		# on_arc_add can be constructed by the client. IT IS
-		# NOT SAFE!
-		#
-		$req->require_root_access;
+            if ( $on_arc_add )
+            {
+                # on_arc_add can be constructed by the client. IT IS
+                # NOT SAFE!
+                #
+                $req->require_root_access;
 
-		foreach my $meth ( keys %$on_arc_add )
-		{
-		    $subj->$meth( $on_arc_add->{$meth}, $args );
-		}
-	    }
+                foreach my $meth ( keys %$on_arc_add )
+                {
+                    $subj->$meth( $on_arc_add->{$meth}, $args );
+                }
+            }
 
-	    arc_unlock();
-
-
-	    $out = $obj->wu_jump .'&nbsp;'. $arc->edit_link_html;
-
-	    debug "Returning: $out";
-	}
-	elsif( $action eq 'remove_arc' )
-	{
-	    $req->require_root_access;
-	    my $arc = $R->get($q->param('arc'));
-
-	    $arc->remove({ activate_new_arcs => 1 });
-
-	    $out = 'done';
-	}
-	elsif( $action eq 'create_new' )
-	{
-	    $req->require_root_access;
-	    my $rev = $q->param('rev');
-	    my $name = $q->param('name')
-	      or throw('incomplete', "Didn't get name");
-
-	    my $obj = $R->create({
-				  name => $name,
-				  %$params,
-				 }, { activate_new_arcs => 1 });
-
-	    my $subj = $R->get($q->param('subj'));
-	    my $pred_name = $q->param('pred_name');
+            arc_unlock();
 
 
-	    my $arc;
-	    if( $rev )
-	    {
-		$arc = $obj->add_arc({ $pred_name => $subj },
-				     { activate_new_arcs => 1 });
-	    }
-	    else
-	    {
-		$arc = $subj->add_arc({ $pred_name => $obj },
-				      { activate_new_arcs => 1 });
-	    }
+            $out = $obj->wu_jump .'&nbsp;'. $arc->edit_link_html;
 
-	    $out = $obj->wu_jump .'&nbsp;'. $arc->edit_link_html;
-	}
-        elsif( $action eq 'update' )
+            debug "Returning: $out";
+        }
+        elsif ( $action eq 'remove_arc' )
+        {
+            $req->require_root_access;
+            my $arc = $R->get($q->param('arc'));
+
+            $arc->remove({ activate_new_arcs => 1 });
+
+            $out = 'done';
+        }
+        elsif ( $action eq 'create_new' )
+        {
+            $req->require_root_access;
+            my $rev = $q->param('rev');
+            my $name = $q->param('name')
+              or throw('incomplete', "Didn't get name");
+
+            my $obj = $R->create({
+                                  name => $name,
+                                  %$params,
+                                 }, { activate_new_arcs => 1 });
+
+            my $subj = $R->get($q->param('subj'));
+            my $pred_name = $q->param('pred_name');
+
+
+            my $arc;
+            if ( $rev )
+            {
+                $arc = $obj->add_arc({ $pred_name => $subj },
+                                     {
+                                      activate_new_arcs => 1 });
+            }
+            else
+            {
+                $arc = $subj->add_arc({ $pred_name => $obj },
+                                      {
+                                       activate_new_arcs => 1 });
+            }
+
+            $out = $obj->wu_jump .'&nbsp;'. $arc->edit_link_html;
+        }
+        elsif ( $action eq 'update' )
         {
             my $subj = $R->get($params->{'subj'})
               or throw('missing','Node missing');
@@ -190,84 +192,84 @@ sub render_output
             $q->param($jsup->{'id'}, $val);
             $q->param('id', $params->{'subj'});
 
-	    my $args =
-	    {
-		activate_new_arcs => 1,
+            my $args =
+            {
+             activate_new_arcs => 1,
              node => $subj,
-	    };
+            };
 
             RDF::Base::Widget::Handler->update_by_query($args);
 
             $out .= RDF::Base::AJAX->wu( $params );
         }
-	else
-	{
-	    die("Unknown action $action");
-	}
+        else
+        {
+            die("Unknown action $action");
+        }
     }
-    elsif( $file eq 'lookup' )
+    elsif ( $file eq 'lookup' )
     {
-	$req->require_root_access;
-	$rend->{'ctype'} = 'json';
-	my $lookup_preds = from_json($q->param('search_type'));
-	my $lookup_value = $q->param('search_value');
-	trim( \$lookup_value );
+        $req->require_root_access;
+        $rend->{'ctype'} = 'json';
+        my $lookup_preds = from_json($q->param('search_type'));
+        my $lookup_value = $q->param('search_value');
+        trim( \$lookup_value );
 
-	unless( length $lookup_value )
-	{
-	    $out = to_json([{
-			     id => 0,
-			     name => loc("Invalid search"),
-			    }]);
-	    return \$out;
-	}
+        unless( length $lookup_value )
+        {
+            $out = to_json([{
+                             id => 0,
+                             name => loc("Invalid search"),
+                            }]);
+            return \$out;
+        }
 
-	my $result;
-	foreach my $lookup_pred (@$lookup_preds)
-	{
-	    if( $lookup_pred =~ /_like$/ )
-	    {
-		if( length($lookup_value) < 3 )
-		{
-		    debug "removing _like from short search param";
-		    $lookup_pred =~ s/_like$//;
+        my $result;
+        foreach my $lookup_pred (@$lookup_preds)
+        {
+            if ( $lookup_pred =~ /_like$/ )
+            {
+                if ( length($lookup_value) < 3 )
+                {
+                    debug "removing _like from short search param";
+                    $lookup_pred =~ s/_like$//;
 
 #		    $out = to_json([{
 #				     id => 0,
 #				     name => "Invalid search"
 #				    }]);
 #		    return \$out;
-		}
-	    }
+                }
+            }
 
-	    debug "  looking up $lookup_pred";
-	    my $params_lookup =
-	    {
-	     %$params,
-	     $lookup_pred => $lookup_value,
-	    };
+            debug "  looking up $lookup_pred";
+            my $params_lookup =
+            {
+             %$params,
+             $lookup_pred => $lookup_value,
+            };
 
-	    $result = $R->find($params_lookup)->sorted('name');
-	    last if $result->size;
-	}
+            $result = $R->find($params_lookup)->sorted('name');
+            last if $result->size;
+        }
 
         my @list;
-	if( $result )
-	{
-	    $result->reset;
+        if ( $result )
+        {
+            $result->reset;
 
             my @result_properties = $q->param('result_properties')
               || qw( form_url tooltip_html );
 
-	    while( my $node = $result->get_next_nos )
-	    {
+            while ( my $node = $result->get_next_nos )
+            {
                 my $item =
                 {
                  id => $node->id,
                  name => $node->longdesig,
                 };
 
-                foreach( @result_properties )
+                foreach ( @result_properties )
                 {
                     when("tooltip_html")
                     {
@@ -277,7 +279,7 @@ sub render_output
                     when($node->can($_))
                     {
                         my $res = $node->$_;
-                        if( $res->can('as_string') )
+                        if ( $res->can('as_string') )
                         {
                             $res = $res->as_string;
                         }
@@ -288,15 +290,15 @@ sub render_output
                         my @l;
                         foreach my $v ( $node->list($_)->as_array )
                         {
-                            if( $v->is_literal )
+                            if ( $v->is_literal )
                             {
                                 $v = $v->plain;
                             }
-                            elsif( $v->is_resource )
+                            elsif ( $v->is_resource )
                             {
                                 $v = $v->id;
                             }
-                            elsif( not $v->defined )
+                            elsif ( not $v->defined )
                             {
                                 $v = undef;
                             }
@@ -320,9 +322,9 @@ sub render_output
 #                 form_url => $node->form_url->as_string,
 #                };
             }
-	}
-	else
-	{
+        }
+        else
+        {
             unless( $q->param('hide_no_hits') )
             {
                 push @list,
@@ -331,23 +333,23 @@ sub render_output
                  name => loc("No hits"),
                 };
             }
-	}
+        }
 
         $out = to_json( \@list );
     }
-    elsif( $file =~ /app\/(.*)/ )
+    elsif ( $file =~ /app\/(.*)/ )
     {
-	my $appbase = $Para::Frame::CFG->{'appbase'};
-	my $app = $appbase .'::AJAX::'. $1;
+        my $appbase = $Para::Frame::CFG->{'appbase'};
+        my $app = $appbase .'::AJAX::'. $1;
 
-	eval
-	{
-	    compile(package_to_module($app));
-	    require(package_to_module($app));
-	};
-	if( $@ )
-	{
-	    debug "AJAX couldn't find: ". package_to_module($app);
+        eval
+        {
+            compile(package_to_module($app));
+            require(package_to_module($app));
+        };
+        if ( $@ )
+        {
+            debug "AJAX couldn't find: ". package_to_module($app);
             debug "Error: ". datadump( $@ );
 
             $appbase = 'RDF::Base';
@@ -358,13 +360,13 @@ sub render_output
                 compile(package_to_module($app));
                 require(package_to_module($app));
             };
-            if( $@ )
+            if ( $@ )
             {
                 debug "AJAX couldn't find: ". package_to_module($app);
                 debug "Error: ". datadump( $@ );
                 return;
             }
-	}
+        }
 
         debug "AJAX App is $app";
 
@@ -374,9 +376,9 @@ sub render_output
     }
 
 
-    if( $q->param('seen_node') )
+    if ( $q->param('seen_node') )
     {
-	$R->get($q->param('seen_node'))->update_seen_by;
+        $R->get($q->param('seen_node'))->update_seen_by;
     }
 
     return \$out;
@@ -394,13 +396,13 @@ sub set_ctype
         die "No ctype given to set";
     }
 
-    if( $rend->{'ctype'} eq 'json' )
+    if ( $rend->{'ctype'} eq 'json' )
     {
-	$ctype->set("application/json; charset=UTF-8");
+        $ctype->set("application/json; charset=UTF-8");
     }
-    else #if( $rend->{'ctype'} eq 'html' )
+    else                        #if( $rend->{'ctype'} eq 'html' )
     {
-	$ctype->set("text/html; charset=UTF-8");
+        $ctype->set("text/html; charset=UTF-8");
     }
 }
 
