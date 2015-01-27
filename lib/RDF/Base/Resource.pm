@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1551,7 +1551,7 @@ sub create
 
     confess "invalid props: $props" unless ref $props;
 
-    my %s; #special             
+    my %s; #special
       foreach my $pred_name (qw( created created_by update updated_by ))
       {
           $s{ $pred_name } = Para::Frame::List->
@@ -4960,6 +4960,9 @@ sub vacuum_node
         }
     }
 
+    ### Clear som special caches
+    delete $n->{'merging'};
+
     return $n;
 }
 
@@ -5095,12 +5098,15 @@ sub merge_node
         {
             debug sprintf "  Moving %s", $arc->sysdesig;
 
-            RDF::Base::Arc->create({
-                                    subj => $node2,
-                                    pred => $pred_name,
-                                    value => $obj,
-                                    replaces => $arc->version_id,
-                                   }, $args);
+            unless( $node2->prop($pred_name, $obj, $args ) )
+            {
+                RDF::Base::Arc->create({
+                                        subj => $node2,
+                                        pred => $pred_name,
+                                        value => $obj,
+                                        replaces => $arc->version_id,
+                                       }, $args);
+            }
 
 #	    $node2->add({ $pred_name => $obj }, {%$args, replaces => } );
 #            if( $obj->is_value_node )
@@ -5110,8 +5116,14 @@ sub merge_node
         }
         elsif ( $move_literals )
         {
-            debug sprintf "  Moving %s", $arc->sysdesig($args);
-            $node2->add({$pred_name => $arc->value}, $args );
+            my $pred_cnt = $node2->list($pred_name,undef,$args)->size;
+            my $pred_max = RDF::Base::Pred->get($pred_name)->
+              first_prop('range_card_max')->plain;
+            if( not $pred_max or $pred_max > $pred_cnt )
+            {
+                debug sprintf "  Moving %s", $arc->sysdesig($args);
+                $node2->add({$pred_name => $arc->value}, $args );
+            }
         }
         $arc->remove( $args );
     }
@@ -5893,8 +5905,7 @@ sub register_ajax_pagepart
 
     my $home = $Para::Frame::REQ->site->home_url_path;
     $out .=
-      "<script type=\"text/javascript\">
-        <!--
+      "<script>
             new PagePart('$divid', '$home/rb/ajax/wu',
             { params: { subj: '". $node->id ."',
                         params: '". to_json( $params ) ."'";
@@ -5925,7 +5936,7 @@ sub register_ajax_pagepart
 #	debug "Depends on now: ". $depends_on;
         $out .= ", depends_on: [ $depends_on ]";
     }
-    $out .= "}); //--> </script>";
+    $out .= "}); </script>";
 
 #    $out .= "($divid)";
 
@@ -6178,10 +6189,8 @@ sub wuirc
             $out .= "
               <input type=\"button\" id=\"$divid-button\" class=\"btn btn-primary wuirc-add\" value=\"". Para::Frame::L10N::loc('Add') ."\"/>";
             $out .= sprintf(q{
-<script type="text/javascript">
-<!--
+<script>
   new RBInputPopup(%s);
-//-->
 </script>
 },
                             to_json({

@@ -2,12 +2,19 @@
   level=20
 %]
 [%
-n = get(22312582);
-n.add({has_email_address_holder='jonas@magi.se'},{activate_new_arcs=1});
+#n = get(2651938);
+#d = n.rev_exclusive_domain_holder;
 %]
 
+<h1>[%# n.as_html %]</h1>
+
+<p>[% jump('SMS',me,run='sms_send') %]</p>
+
 <pre>
-[% n.wu_jump %]
+[%
+#  d.as_html;
+#  n.classified.is_newsletter;
+#  n.obj.classified.is_newsletter;
 
+%]
 </pre>
-

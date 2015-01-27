@@ -33,17 +33,19 @@ sub handler
 
     my $q = $req->q;
     my $res = RDF::Base::Resource::Change->new;
+    my $cnt = 0;
 
     foreach my $param ( $q->param )
     {
+        $Para::Frame::REQ->may_yield unless ++ $cnt % 100;
 #	my $value = $q->param($param);
-	next unless $param =~ /^arc_(\d+)$/;
-	my $aid = $1;
+        next unless $param =~ /^arc_(\d+)$/;
+        my $aid = $1;
 
-	debug "Vacuum arc $aid";
-	my $arc = RDF::Base::Resource->get( $aid );
+        debug "Vacuum arc $aid";
+        my $arc = RDF::Base::Resource->get( $aid );
 
-	$arc->vacuum_node( { res => $res } );
+        $arc->vacuum_node( { res => $res } );
     }
 
     my $changes = $res->changes;

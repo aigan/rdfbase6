@@ -5,7 +5,7 @@ package RDF::Base::Renderer::Email::From_email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -187,7 +187,7 @@ sub set_burner_by_type
 {
     return $_[0]->{'burner'} =
       Para::Frame::Burner->get_by_type($_[1])
-	  or die "Burner type $_[1] not found";
+        || die "Burner type $_[1] not found";
 }
 
 

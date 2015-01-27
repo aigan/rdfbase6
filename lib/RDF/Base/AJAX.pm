@@ -151,9 +151,9 @@ sub register_page_part
     $update_url ||= "$home/ajax/";
     $params = to_json( $params || {} );
 
-    return "<script><!--
+    return "<script>
                 new PagePart('$divid', '$update_url', $params);
-            //--></script>";
+            </script>";
 }
 
 

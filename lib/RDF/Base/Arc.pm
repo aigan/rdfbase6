@@ -5,7 +5,7 @@ package RDF::Base::Arc;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -962,7 +962,7 @@ sub create
 
 
     debug "Created arc id ".$arc->sysdesig;
-
+#    confess datadump([$props,$args],3) unless $arc->active;
 
     ####### Has not been done by get_by_rec.
     #
@@ -2540,8 +2540,10 @@ sub table_row
                 {
 #                    $out .= ( $is_rev ? $check_subj->wu_jump :
 #                              $item->wu_jump );
-                    $out .= ( $is_rev ? $check_subj->as_thml :
-                              $item->as_html );
+                    my $val_obj = $is_rev ? $check_subj : $item;
+                    $out .= CGI->escapeHTML($val_obj->plain);
+#                    $out .= ( $is_rev ? $check_subj->as_thml :
+#                              $item->as_html );
                 }
                 else
                 {
@@ -2561,6 +2563,7 @@ sub table_row
                     $tag_attr->{rows} = $args->{'rows'};
                     $tag_attr->{maxlength} = $args->{'maxlength'};
                     $tag_attr->{onchange} = $args->{'onchange'};
+                    $tag_attr->{id} = $args->{'id'};
 
                     my $fargs =
                     {
@@ -6487,7 +6490,9 @@ sub remove_check
 
   $a->notify_change( \%args )
 
-Will mark dependant nodes as updated unless for
+Will mark dependant nodes as updated unless for arcs regarding updated.
+
+Will not mark if C<$args->{no_notification}>.
 
 =cut
 
@@ -6495,6 +6500,7 @@ sub notify_change
 {
     my( $arc, $args ) = @_;
 
+    return if $args->{no_notification};
     my $pred_name = $arc->pred->plain;
 
     return if $pred_name =~ /^(un)?seen_by$/;
@@ -6783,7 +6789,7 @@ sub edit_link_html
       (
        "<a id=\"$a_id\" href=\"$home/rb/node/arc/update.tt?"
        . "id=$arc_id\" class=\"edit_arc_link\"><i class=\"fa fa-pencil-square-o\"></i></a>"
-       . "<script type=\"text/javascript\">\n"
+       . "<script>\n"
        . "  \$('#$a_id').tipsy("
        . to_json({
                   fallback => $arc->info_updated_html($args),

@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -455,7 +455,7 @@ sub body_head
 
 sub struct
 {
-    return $_[0]->{'struct'} or die "Struct not given";
+    return $_[0]->{'struct'} || die "Struct not given";
 }
 
 

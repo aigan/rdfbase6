@@ -21,7 +21,7 @@ RDF::Base::Literal::String
 use 5.010;
 use strict;
 use warnings;
-#no warnings 'experimental::smartmatch'; # Not working before 5.18
+no if $] >= 5.018, warnings => "experimental";
 use utf8;
 use base qw( RDF::Base::Literal );
 use overload
@@ -801,6 +801,17 @@ sub wuirc
     my $tb = $C_textbox;
     my $tl = $C_text_large;
 
+    $args->{tag_attr} ||= {};
+    $args->{'class'} ||= $args->{tag_attr}{class} ||= '';
+    my $size = $args->{'size'} ||"";
+    my $wide_class = $size ? '' : ' wide';
+    if( $args->{'class'} =~ /\bwide\b/ )
+    {
+        $wide_class = ' wide';
+        $args->{'class'} =~ s/\s*wide\s*/ /;
+    }
+    $args->{'class'} .= $wide_class;
+
     if (	not defined $args->{'class'} and
             ( $range->equals($C_text_html) or
               $range->scof($C_text_html) ))
@@ -821,7 +832,6 @@ sub wuirc
         }
         $args->{'inputtype'} = 'textarea';
         $args->{'rows'} ||= 3;
-        $args->{'class'} ||= 'wide';
     }
 
     unless( $range->coltype eq 'valbin' )
@@ -833,7 +843,6 @@ sub wuirc
     # Subj is used also for reverse arcs in the input key
     my $src = $rev ? 'obj' : 'subj';
 
-    my $size = $args->{'size'} ||"";
 
     my $inputtype = $args->{'inputtype'} || 'input';
 
@@ -909,8 +918,6 @@ sub wuirc
     $args->{'source'} = $node;
 
     debug "Columns set to @$columns" if $DEBUG;
-
-    my $wide_class = $size ? '' : ' wide';
 
 
 
@@ -1178,6 +1185,7 @@ sub wuirc
                          id => $args->{'id'},
                          onchange => $onchange,
                         },
+                        id => $args->{'id'},
                         maxw => $maxw,
                         maxh => $maxh,
                         image_url => $args->{'image_url'},

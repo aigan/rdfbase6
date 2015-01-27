@@ -1109,7 +1109,7 @@ sub loc
     my $DEBUG = 0;
 
 
-#    Para::Frame::Logging->this_level(4);
+    Para::Frame::Logging->this_level(4) if $DEBUG;
 
     my %alts;
     my $default;
@@ -1195,6 +1195,8 @@ sub loc
         @alternatives = ('c');
     }
 
+#    debug datadump(\%alts,2);
+
     foreach my $lang ( @alternatives )
     {
         debug 3, "Checking lang $lang" if $DEBUG;
@@ -1210,7 +1212,7 @@ sub loc
 
         # Order by highest weight
         my %list;
-        foreach ( @{$alts{$lang}} )
+        foreach ( sort @{$alts{$lang}} )
         {
             my $weight =
               ($_->is_literal ? $_->arc_weight : undef)
@@ -1221,7 +1223,7 @@ sub loc
                 debug 4, "  $_ has weight $weight" if $weight;
             }
             ;
-            $list{ $weight } = $_;
+            $list{ $weight } //= $_;
         }
 
 #	debug 1,"Returning (one) literal with highest weight";
