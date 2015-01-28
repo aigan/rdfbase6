@@ -3371,6 +3371,76 @@ sub revcount
 
 ##############################################################################
 
+=head2 props_as_json
+
+=cut
+
+sub props_as_json
+{
+    my( $n ) = @_;
+
+    my $o = {
+             id => $n->id,
+             desig => $n->desig,
+            };
+
+    foreach my $pred ( $n->list_preds->as_array )
+    {
+        my @val;
+        foreach my $val ( $n->list($pred)->as_array )
+        {
+            if( $val->is_resource )
+            {
+                push @val, $val->id;
+            }
+            else
+            {
+                push @val, $val->as_string;
+            }
+        }
+        $o->{$pred->label} = \@val;
+    }
+
+    return $o;
+}
+
+
+##############################################################################
+
+=head2 revprops_as_json
+
+=cut
+
+sub revprops_as_json
+{
+    my( $n ) = @_;
+
+    my $o = {
+            };
+
+    foreach my $pred ( $n->revlist_preds->as_array )
+    {
+        my @val;
+        foreach my $val ( $n->revlist($pred)->as_array )
+        {
+            if( $val->is_resource )
+            {
+                push @val, $val->id;
+            }
+            else
+            {
+                push @val, $val->as_string;
+            }
+        }
+        $o->{$pred->label} = \@val;
+    }
+
+    return $o;
+}
+
+
+##############################################################################
+
 =head2 label
 
   $n->label()

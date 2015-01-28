@@ -5,16 +5,124 @@
 #n = get(2651938);
 #d = n.rev_exclusive_domain_holder;
 %]
-
 <h1>[%# n.as_html %]</h1>
+<p>[%# jump('SMS',me,run='sms_send') %]</p>
+<script src="[%home%]/pf/pkg/carhartl-jquery-cookie-1.4.0/jquery.cookie.js"></script>
+<script>
 
-<p>[% jump('SMS',me,run='sms_send') %]</p>
+RDF || (RDF = {});
+RDF.Base || (RDF.Base = {});
+;(function( RB ) {
 
+    var ajax_url = "http://joli.ls1.se:7788";
+    var cred = { username: \$.cookie("username"), password: \$.cookie("password") };
+
+
+    RB.hello = function() {
+        log("Howdy");
+    };
+
+    var Node = function(id){
+        var props = { "id": id };
+        var revprops = {};
+        
+        this.props = function() {
+            if( props.deferred ) { // Loading under way
+                return props.deferred.promise();
+            }
+
+            props.deferred = \$.Deferred();
+
+            if(! props.cached )
+            {
+                \$.getJSON( ajax_url+'/'+ props.id+'/', {
+                    cred: cred,
+                }).done(function( res ) {
+                    props.data = res.data[0];
+                    props.cached = new Date();
+                    props.deferred.resolve(props.data);
+                });
+            } else {
+                props.deferred.resolve(props.data);
+            }            
+
+            return props.deferred.promise();
+        }
+    
+        this.revprops = function() {
+            if( revprops.deferred ) { // Loading under way
+                return revprops.deferred.promise();
+            }
+
+            revprops.deferred = \$.Deferred();
+
+            if(! revprops.cached )
+            {
+                \$.getJSON( ajax_url+'/'+ props.id+'/revprops', {
+                    cred: cred,
+                }).done(function( res ) {
+                    revprops.data = res.data[0];
+                    revprops.cached = new Date();
+                    revprops.deferred.resolve(revprops.data);
+                });
+            } else {
+                revprops.deferred.resolve(revprops.data);
+            }            
+
+            return revprops.deferred.promise();
+        }
+
+        this.get = function(pred) {
+            
+        }
+    };
+    
+    RB.get = function(id) {
+        return new Node(id);
+    };
+
+})(RDF.Base);
+
+  
+jQuery(document).ready(function(){test_ready()});
+
+function test_ready(){
+
+    log("Hello");
+    RDF.Base.hello();
+
+    var nils = RDF.Base.get(23691202);
+    nils.props().then( log );
+    nils.revprops().then( log );
+    nils.get('is').then( log );
+    
+    /*
+    nils.props().then(
+        function(n){
+            log( n.desig + " still has id " + n.id);
+        });
+
+    setTimeout(function() {
+        nils.props().then(
+            function(n){
+                log( n.desig + " still still has id " + n.id);
+            });
+    }, 3000 );
+*/
+}
+
+
+
+
+</script>
 <pre>
 [%
 #  d.as_html;
 #  n.classified.is_newsletter;
 #  n.obj.classified.is_newsletter;
 
+#   n = get(55754);
+#   n.name.loc();
 %]
 </pre>
+

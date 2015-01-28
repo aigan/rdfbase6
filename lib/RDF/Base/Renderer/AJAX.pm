@@ -27,7 +27,7 @@ use JSON;                       # to_json from_json
 use Carp qw( cluck );
 
 use Para::Frame::Reload;
-use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
+use Para::Frame::Utils qw( debug timediff validate_utf8 throw catch datadump
                            trim package_to_module compile );
 use Para::Frame::L10N qw( loc );
 
@@ -61,42 +61,57 @@ sub render_output
     debug "Rendering AJAX response";
 
     $rend->{'ctype'} = 'html'; # Set to json if appropriate
-
-    if( $rend->url_path =~ /\/(\d+)\/(.*?)$/ )
-    {
-        return $rend->render_node( $1, $2 );
-    }
-
-    my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
-    unless( $file )
-    {
-        die "AJAX renerer only handles the /ajax/ path";
-    }
-
-    debug "AJAX 'file': $file";
-
     my $out = "";
-    if ( $file eq 'wu' ) # used by rb.js PagePart
-    {
-        $out .= $rend->render_wu();
-    }
-    elsif ( $file =~ /action\/(.*)/ ) # used by rb.js
-    {
-        $out .= $rend->render_action($1);
-    }
-    elsif ( $file eq 'lookup' ) # used by rb.js
-    {
-        $out .= $rend->render_lookup();
-    }
-    elsif ( $file =~ /app\/(.*)/ ) # custom code api
-    {
-        $out .= $rend->render_app( $1 );
-    }
 
-    my $q = $rend->req->q;
-    if ( $q->param('seen_node') )
+    eval
     {
-        R->get($q->param('seen_node'))->update_seen_by;
+        if ( $rend->url_path =~ /\/(\d+)\/(.*?)$/ )
+        {
+            $out = $rend->render_node( $1, $2 );
+            return;
+        }
+
+        my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
+        unless( $file )
+        {
+            die "AJAX renerer only handles the /ajax/ path";
+        }
+
+        debug "AJAX 'file': $file";
+
+        if ( $file eq 'wu' )    # used by rb.js PagePart
+        {
+            $out = $rend->render_wu();
+        }
+        elsif ( $file =~ /action\/(.*)/ ) # used by rb.js
+        {
+            $out = $rend->render_action($1);
+        }
+        elsif ( $file eq 'lookup' ) # used by rb.js
+        {
+            $out = $rend->render_lookup();
+        }
+        elsif ( $file =~ /app\/(.*)/ ) # custom code api
+        {
+            $out = $rend->render_app( $1 );
+        }
+
+        my $q = $rend->req->q;
+        if ( $q->param('seen_node') )
+        {
+            R->get($q->param('seen_node'))->update_seen_by;
+        }
+    };
+
+    if( my $err = catch($@) )
+    {
+        $out = to_json({
+                        error =>
+                        {
+                         type => $err->type,
+                         info => $err->info,
+                        }
+                       });
     }
 
     return \$out;
@@ -465,34 +480,29 @@ sub render_node
 {
     my( $rend, $id, $path ) = @_;
 
-#    $rend->req->require_root_access;  ### simpler testing...
 
     my $n = R->get( $id );
     $rend->{'ctype'} = 'json';
+    $path ||= 'props';
 
-    my $o = {
-             id => $id,
-             desig => $n->desig,
-            };
+    my $o;
 
-    foreach my $pred ( $n->list_preds->as_array )
+    # $rend->req->require_root_access;  ### simpler testing...
+
+    if( $path eq 'props' )
     {
-        my @val;
-        foreach my $val ( $n->list($pred)->as_array )
-        {
-            if( $val->is_resource )
-            {
-                push @val, $val->id;
-            }
-            else
-            {
-                push @val, $val->as_string;
-            }
-        }
-        $o->{$pred->label} = \@val;
+        $o = $n->props_as_json();
+    }
+    elsif( $path eq 'revprops' )
+    {
+        $o = $n->revprops_as_json();
+    }
+    else
+    {
+        die "Path $path not supported";
     }
 
-    return \ to_json({data=>[$o]});
+    return to_json({data=>[$o]});
 }
 
 ##############################################################################
