@@ -33,7 +33,7 @@ use Para::Frame::L10N qw( loc );
 
 use RDF::Base::AJAX;
 use RDF::Base::Widget::Handler;
-use RDF::Base::Utils qw( arc_lock arc_unlock );
+use RDF::Base::Utils qw( arc_lock arc_unlock query_desig );
 
 ##############################################################################
 
@@ -112,6 +112,7 @@ sub render_output
                          info => $err->info,
                         }
                        });
+        debug 0,"$err";
     }
 
     return \$out;
@@ -378,12 +379,16 @@ sub render_lookup
             }
         }
 
-        debug "  looking up $lookup_pred";
+        debug "*  looking up $lookup_pred";
+
+        $params ||= {};
         my $params_lookup =
         {
          %$params,
          $lookup_pred => $lookup_value,
         };
+
+#        debug "Lookup ".query_desig($params_lookup);
 
         $result = R->find($params_lookup)->sorted('name');
         last if $result->size;
@@ -394,19 +399,36 @@ sub render_lookup
     {
         $result->reset;
 
-        my @result_properties = $q->param('result_properties')
-          || qw( form_url tooltip_html );
+        my @result_properties =
+          $q->param('result_properties') ||
+          $q->param('result_properties[]') ||
+          qw( form_url tooltip_html );
+
+        my %allowed = map{$_=>1}
+          qw(
+                form_url
+                longdesig
+                mobile_phone
+           );
+
+        my $name_method = $q->param('name_method') || 'longdesig';
+        push @result_properties, $name_method;
 
         while ( my $node = $result->get_next_nos )
         {
             my $item =
             {
              id => $node->id,
-             name => $node->longdesig,
             };
 
             foreach ( @result_properties )
             {
+                my $key = $_;
+                if( $key eq $name_method )
+                {
+                    $key = 'name';
+                }
+
                 when("tooltip_html")
                 {
                     $item->{'tooltip_html'} =
@@ -414,12 +436,13 @@ sub render_lookup
                 }
                 when($node->can($_))
                 {
+                    die "not allowed: $_" unless $allowed{$_};
                     my $res = $node->$_;
                     if ( $res->can('as_string') )
                     {
                         $res = $res->as_string;
                     }
-                    $item->{$_} = $res;
+                    $item->{$key} = $res;
                 }
                 default
                 {
@@ -445,7 +468,14 @@ sub render_lookup
                         push @l, $v;
                     }
 
-                    $item->{$_} = \@l;
+                    if( $key eq 'name' )
+                    {
+                        $item->{$key} = $l[0];
+                    }
+                    else
+                    {
+                        $item->{$key} = \@l;
+                    }
                 }
             }
 
@@ -485,24 +515,40 @@ sub render_node
     $rend->{'ctype'} = 'json';
     $path ||= 'props';
 
-    my $o;
+    my @l;
 
     # $rend->req->require_root_access;  ### simpler testing...
 
     if( $path eq 'props' )
     {
-        $o = $n->props_as_json();
+        @l = $n->props_as_json();
     }
     elsif( $path eq 'revprops' )
     {
-        $o = $n->revprops_as_json();
+        @l = $n->revprops_as_json();
+    }
+    elsif( $path =~ /^get\/(\w+)/ )
+    {
+        my $pnlist = $n->list($1);
+        while( my $pn = $pnlist->get_next_nos )
+        {
+            push @l, $pn->props_as_json();
+        }
+    }
+    elsif( $path =~ /^revget\/(\w+)/ )
+    {
+        my $pnlist = $n->revlist($1);
+        while( my $pn = $pnlist->get_next_nos )
+        {
+            push @l, $pn->props_as_json();
+        }
     }
     else
     {
         die "Path $path not supported";
     }
 
-    return to_json({data=>[$o]});
+    return to_json({data=>[@l]});
 }
 
 ##############################################################################

@@ -16,23 +16,38 @@ RDF.Base || (RDF.Base = {});
 
     var ajax_url = "http://joli.ls1.se:7788";
     var cred = { username: \$.cookie("username"), password: \$.cookie("password") };
-
-
-    RB.hello = function() {
-        log("Howdy");
-    };
+    var nodes = {};
+    var cnt = 1; // Counter of loaded nodes
 
     var Node = function(id){
         var props = { "id": id };
         var revprops = {};
+        var obj = {};
+        var revobj = {};
+        this.cnt = cnt++;
         
-        this.props = function() {
+        nodes[id] = this;
+        
+        this.init = function(data) {
             if( props.deferred ) { // Loading under way
-                return props.deferred.promise();
+                return;
+            }
+
+            props.data = data;
+            props.cached = new Date();
+            return;
+        }
+    
+        this.props = function() {
+            if( props.promis ) { // Loading under way
+                return props.promise;
             }
 
             props.deferred = \$.Deferred();
-
+            props.promise = props.deferred.promise({
+            });
+            
+            
             if(! props.cached )
             {
                 \$.getJSON( ajax_url+'/'+ props.id+'/', {
@@ -46,15 +61,17 @@ RDF.Base || (RDF.Base = {});
                 props.deferred.resolve(props.data);
             }            
 
-            return props.deferred.promise();
+            return props.promise;
         }
     
         this.revprops = function() {
-            if( revprops.deferred ) { // Loading under way
-                return revprops.deferred.promise();
+            if( revprops.promise ) { // Loading under way
+                return revprops.promise;
             }
 
             revprops.deferred = \$.Deferred();
+            revprops.promise = revprops.deferred.promise({
+            });
 
             if(! revprops.cached )
             {
@@ -69,16 +86,87 @@ RDF.Base || (RDF.Base = {});
                 revprops.deferred.resolve(revprops.data);
             }            
 
-            return revprops.deferred.promise();
+            return revprops.promise;
         }
 
         this.get = function(pred) {
-            
+            obj[pred] = obj[pred] || {};
+
+            if( obj[pred].promise ) { // Loading under way
+                return obj[pred].promise;
+            }
+
+            obj[pred].deferred = \$.Deferred();
+            obj[pred].promise = obj[pred].deferred.promise({
+/*
+                props: function(){
+                    log('in props');
+                }
+*/
+            });
+
+            if(! obj[pred].cached )
+            {
+                var cached = new Date();
+
+                \$.getJSON( ajax_url+'/'+ props.id+'/get/'+pred, {
+                    cred: cred,
+                }).done(function( res ) {
+                    var data = [];
+                    for( i in res.data ) {
+                        var n = RB.get(res.data[i].id);
+                        n.init(res.data[i]);
+                        data.push( n );
+                    };
+                    obj[pred].data = data;
+                    obj[pred].cached = cached;
+                    obj[pred].deferred.resolve(obj[pred].data);
+                });
+            } else {
+                obj[pred].deferred.resolve(obj[pred].data);
+            }            
+
+            return obj[pred].promise;
+        }
+
+        this.revget = function(pred) {
+            revobj[pred] = revobj[pred] || {};
+
+            if( revobj[pred].promise ) { // Loading under way
+                return revobj[pred].promise;
+            }
+
+            revobj[pred].deferred = \$.Deferred();
+            revobj[pred].promise = revobj[pred].deferred.promise({
+            });
+
+            if(! revobj[pred].cached )
+            {
+                var cached = new Date();
+
+                \$.getJSON( ajax_url+'/'+ props.id+'/revget/'+pred, {
+                    cred: cred,
+                }).done(function( res ) {
+                    var data = [];
+                    for( i in res.data ) {
+                        var n = RB.get(res.data[i].id);
+                        n.init(res.data[i]);
+                        data.push( n );
+                    };
+                    revobj[pred].data = data;
+                    revobj[pred].cached = cached;
+                    revobj[pred].deferred.resolve(revobj[pred].data);
+                });
+            } else {
+                revobj[pred].deferred.resolve(revobj[pred].data);
+            }            
+
+            return revobj[pred].promise;
         }
     };
     
     RB.get = function(id) {
-        return new Node(id);
+        return nodes[id] || new Node(id);
     };
 
 })(RDF.Base);
@@ -88,13 +176,17 @@ jQuery(document).ready(function(){test_ready()});
 
 function test_ready(){
 
-    log("Hello");
-    RDF.Base.hello();
-
     var nils = RDF.Base.get(23691202);
     nils.props().then( log );
     nils.revprops().then( log );
-    nils.get('is').then( log );
+//    log(nils.cnt);
+//    nils.get('is').then(function(l){l[0].props().then(log)});
+
+
+//    nils.revget('is_persona_of').then(log);
+//    nils.revget('is_persona_of').props().then(log);
+    log( nils.revget('is_persona_of') );
+
     
     /*
     nils.props().then(
