@@ -409,6 +409,7 @@ sub render_lookup
                 form_url
                 longdesig
                 mobile_phone
+                address
            );
 
         my $name_method = $q->param('name_method') || 'longdesig';
