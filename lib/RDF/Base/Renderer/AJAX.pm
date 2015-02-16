@@ -5,7 +5,7 @@ package RDF::Base::Renderer::AJAX;
 #   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -65,19 +65,32 @@ sub render_output
 
     eval
     {
-        if ( $rend->url_path =~ /\/(\d+)\/(.*?)$/ )
-        {
-            $out = $rend->render_node( $1, $2 );
-            return;
-        }
-
-        my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
+        my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*)/ );
         unless( $file )
         {
             die "AJAX renerer only handles the /ajax/ path";
         }
 
-        debug "AJAX 'file': $file";
+        debug "AJAX path: $file";
+
+        ### Versioned, next generation ajax api
+        #
+        if ( $file =~ /(\d+)\/(.*)/ )
+        {
+            die "Version $1 not supported " unless $1 == 1;
+
+            my $path = $2;
+            if( $path =~ /(\d+)\/(.*)/ )
+            {
+                $out = $rend->render_node( $1, $2 );
+                return;
+            }
+            elsif( $path =~ /tt\/(.*)/ )
+            {
+                $out = $rend->render_tt($1);
+                return;
+            }
+        }
 
         if ( $file eq 'wu' )    # used by rb.js PagePart
         {
@@ -518,7 +531,7 @@ sub render_node
 
     my @l;
 
-    # $rend->req->require_root_access;  ### simpler testing...
+    $rend->req->require_root_access;
 
     if( $path eq 'props' )
     {
@@ -550,6 +563,26 @@ sub render_node
     }
 
     return to_json({data=>[@l]});
+}
+
+##############################################################################
+
+sub render_tt
+{
+    my( $rend, $path ) = @_;
+
+    my $req = $rend->req;
+    # $req->require_root_access;  ### simpler testing...
+    my $q = $req->{'q'};
+
+    my $props = $q->param('props');
+
+    debug datadump($props);
+
+    
+    my $out = "<pre>Nothing here</pre>";
+
+    return $out;
 }
 
 ##############################################################################
