@@ -108,6 +108,10 @@ sub render_output
         {
             $out = $rend->render_app( $1 );
         }
+        else
+        {
+            die "Ajax path $file not supported";
+        }
 
         my $q = $rend->req->q;
         if ( $q->param('seen_node') )
@@ -575,14 +579,43 @@ sub render_tt
     # $req->require_root_access;  ### simpler testing...
     my $q = $req->{'q'};
 
-    my $props = $q->param('props');
+    my $params_in = from_json( $q->param('params') );
+    my $template = $q->param('template');
 
-    debug datadump($props);
+    debug datadump([$template,$params_in]);
 
-    
+    my $params = {%$Para::Frame::PARAMS, %$params_in};
+
+    # Based on Para::Frame::Burner/burn
+    #
+    my $burner = Para::Frame::Burner->get_by_type('html');
+    my $th = $burner->th();
+
+    # Clean out previous variables from stash
+    $th->{ SERVICE }{ CONTEXT }{ STASH } = Template::Stash::XS->new();
+
+    my $out = "";
+    my $res = $th->process( \ $template, $params, \ $out, {binmode=>':utf8'});
+    if ( $res )
+    {
+        debug "Got out: ".$out;
+        return to_json({data=>[$out]});
+    }
+    else
+    {
+        my $err = $th->error();
+        debug "Got err: ".$err;
+        return to_json({
+                        error =>
+                        {
+                         type => $err->type,
+                         info => $err->info,
+                        }
+                       });
+    }
+
     my $out = "<pre>Nothing here</pre>";
 
-    return $out;
 }
 
 ##############################################################################
