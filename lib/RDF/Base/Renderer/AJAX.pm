@@ -438,7 +438,7 @@ sub render_lookup
                 {
                     die "not allowed: $_" unless $allowed{$_};
                     my $res = $node->$_;
-                    if ( $res->can('as_string') )
+                    if ( UNIVERSAL::can( $res, 'as_string') )
                     {
                         $res = $res->as_string;
                     }
