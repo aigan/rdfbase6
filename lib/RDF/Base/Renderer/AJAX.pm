@@ -5,7 +5,7 @@ package RDF::Base::Renderer::AJAX;
 #   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -65,19 +65,32 @@ sub render_output
 
     eval
     {
-        if ( $rend->url_path =~ /\/(\d+)\/(.*?)$/ )
-        {
-            $out = $rend->render_node( $1, $2 );
-            return;
-        }
-
-        my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*?)$/ );
+        my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*)/ );
         unless( $file )
         {
             die "AJAX renerer only handles the /ajax/ path";
         }
 
-        debug "AJAX 'file': $file";
+        debug "AJAX path: $file";
+
+        ### Versioned, next generation ajax api
+        #
+        if ( $file =~ /(\d+)\/(.*)/ )
+        {
+            die "Version $1 not supported " unless $1 == 1;
+
+            my $path = $2;
+            if( $path =~ /(\d+)\/(.*)/ )
+            {
+                $out = $rend->render_node( $1, $2 );
+                return;
+            }
+            elsif( $path =~ /tt\/(.*)/ )
+            {
+                $out = $rend->render_tt($1);
+                return;
+            }
+        }
 
         if ( $file eq 'wu' )    # used by rb.js PagePart
         {
@@ -94,6 +107,10 @@ sub render_output
         elsif ( $file =~ /app\/(.*)/ ) # custom code api
         {
             $out = $rend->render_app( $1 );
+        }
+        else
+        {
+            die "Ajax path $file not supported";
         }
 
         my $q = $rend->req->q;
@@ -409,6 +426,7 @@ sub render_lookup
                 form_url
                 longdesig
                 mobile_phone
+                address
            );
 
         my $name_method = $q->param('name_method') || 'longdesig';
@@ -517,7 +535,7 @@ sub render_node
 
     my @l;
 
-    # $rend->req->require_root_access;  ### simpler testing...
+    $rend->req->require_root_access;
 
     if( $path eq 'props' )
     {
@@ -549,6 +567,55 @@ sub render_node
     }
 
     return to_json({data=>[@l]});
+}
+
+##############################################################################
+
+sub render_tt
+{
+    my( $rend, $path ) = @_;
+
+    my $req = $rend->req;
+    # $req->require_root_access;  ### simpler testing...
+    my $q = $req->{'q'};
+
+    my $params_in = from_json( $q->param('params') );
+    my $template = $q->param('template');
+
+    debug datadump([$template,$params_in]);
+
+    my $params = {%$Para::Frame::PARAMS, %$params_in};
+
+    # Based on Para::Frame::Burner/burn
+    #
+    my $burner = Para::Frame::Burner->get_by_type('html');
+    my $th = $burner->th();
+
+    # Clean out previous variables from stash
+    $th->{ SERVICE }{ CONTEXT }{ STASH } = Template::Stash::XS->new();
+
+    my $out = "";
+    my $res = $th->process( \ $template, $params, \ $out, {binmode=>':utf8'});
+    if ( $res )
+    {
+        debug "Got out: ".$out;
+        return to_json({data=>[$out]});
+    }
+    else
+    {
+        my $err = $th->error();
+        debug "Got err: ".$err;
+        return to_json({
+                        error =>
+                        {
+                         type => $err->type,
+                         info => $err->info,
+                        }
+                       });
+    }
+
+    my $out = "<pre>Nothing here</pre>";
+
 }
 
 ##############################################################################
