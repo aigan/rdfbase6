@@ -66,7 +66,7 @@ use RDF::Base::Utils qw( valclean parse_query_props
                          parse_form_field_prop is_undef arc_lock
                          arc_unlock truncstring query_desig
                          convert_query_prop_for_creation
-                         parse_propargs aais range_pred );
+                         parse_propargs aais range_pred aais );
 
 
 
@@ -4732,7 +4732,7 @@ hash with pairs of predicates and values.
     an arc will be created
 
   - If the node has a property with a predicate, and that predicate
-    exists in a property given to update, and the value fo the two
+    exists in a property given to update, and the value for the two
     properties is not the same; that existing property will be removed
     and a new arc created.
 
@@ -4771,11 +4771,15 @@ sub update
 
     my @arcs_old = ();
 
+    my $arclim = aais( $args, 'explicit');
+#    debug "Using arclim ".datadump($arclim,2);
+
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
         next if $pred_name eq 'label';
-        my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
+        my $old = $node->arc_list( $pred_name, undef, $arclim );
+#        debug "Old arcs: ".$old->sysdesig;
         push @arcs_old, $old->as_array;
     }
 
@@ -6482,6 +6486,7 @@ args:
   select_optgroup
   desig
   alternatives
+  rev
 
 =cut
 
@@ -6500,7 +6505,7 @@ sub wu_select
         confess "type missing: ".datadump($type,2);
     }
 
-    my $rev = $args->{'is_rev'} || '';
+    my $rev = $args->{'rev'} || '';
     my $header = $args->{'header'};
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
