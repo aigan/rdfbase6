@@ -5,7 +5,7 @@ package RDF::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1423,6 +1423,27 @@ http://www.w3.org/ns/auth/acl#Write",
                    },$args);
 
         $rb->update({ has_version => 11 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+    if( $ver < 12 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        $R->find_set({label => 'has_custom_data'},$args)
+          ->update({
+                    range => $C->get('text_large'),
+                    is => $C->get('predicate'),
+                    admin_comment => "Unsearchable custom data outside the node graph",
+                   },$args);
+
+        $R->find_set({label => 'json_data'},$args)
+          ->update({
+                    scof => $C->get('text_large'),
+                   },$args);
+
+        $rb->update({ has_version => 12 },$args);
         $res->autocommit;
         $req->done;
     }
