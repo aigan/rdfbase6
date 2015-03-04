@@ -1,5 +1,5 @@
 ﻿// Our namespace!
-RDF || (RDF = {});
+window.RDF || (window.RDF = {});
 RDF.Base || (RDF.Base = {});
 
 /// 2015 version code
@@ -10,7 +10,7 @@ RDF.Base || (RDF.Base = {});
     // Set RB.url to something like "http://joli.ls1.se:7788/ajax/"
     //var RB.url = "http://joli.ls1.se:7788/ajax/";
 
-    var cred = { username: \$.cookie("username"), password: \$.cookie("password") };
+    var cred = { username: $.cookie("username"), password: $.cookie("password") };
     var nodes = {};
     var cnt = 1; // Counter of loaded nodes
 
@@ -39,14 +39,14 @@ RDF.Base || (RDF.Base = {});
                 return props.promise;
             }
 
-            props.deferred = \$.Deferred();
+            props.deferred = $.Deferred();
             props.promise = props.deferred.promise({
             });
             
             
             if(! props.cached )
             {
-                \$.getJSON( RB.url+'1/'+ props.id+'/', {
+                $.getJSON( RB.url+'1/'+ props.id+'/', {
                     cred: cred,
                 }).done(function( res ) {
                     props.data = res.data[0];
@@ -65,13 +65,13 @@ RDF.Base || (RDF.Base = {});
                 return revprops.promise;
             }
 
-            revprops.deferred = \$.Deferred();
+            revprops.deferred = $.Deferred();
             revprops.promise = revprops.deferred.promise({
             });
 
             if(! revprops.cached )
             {
-                \$.getJSON( RB.url+'1/'+ props.id+'/revprops', {
+                $.getJSON( RB.url+'1/'+ props.id+'/revprops', {
                     cred: cred,
                 }).done(function( res ) {
                     revprops.data = res.data[0];
@@ -92,7 +92,7 @@ RDF.Base || (RDF.Base = {});
                 return obj[pred].promise;
             }
 
-            obj[pred].deferred = \$.Deferred();
+            obj[pred].deferred = $.Deferred();
             obj[pred].promise = obj[pred].deferred.promise({
                 get: promise_get,
                 revget: promise_revget,
@@ -105,7 +105,7 @@ RDF.Base || (RDF.Base = {});
 
                 log("Get "+props.id+" "+pred);
                 
-                \$.getJSON( RB.url+'1/'+ props.id+'/get/'+pred, {
+                $.getJSON( RB.url+'1/'+ props.id+'/get/'+pred, {
                     cred: cred,
                 }).done(function( res ) {
                     var data = [];
@@ -132,7 +132,7 @@ RDF.Base || (RDF.Base = {});
                 return revobj[pred].promise;
             }
 
-            revobj[pred].deferred = \$.Deferred();
+            revobj[pred].deferred = $.Deferred();
             revobj[pred].promise = revobj[pred].deferred.promise({
                 get: promise_get,
                 revget: promise_revget,
@@ -143,7 +143,7 @@ RDF.Base || (RDF.Base = {});
             {
                 var cached = new Date();
 
-                \$.getJSON( RB.url+'1/'+ props.id+'/revget/'+pred, {
+                $.getJSON( RB.url+'1/'+ props.id+'/revget/'+pred, {
                     cred: cred,
                 }).done(function( res ) {
                     var data = [];
@@ -167,7 +167,7 @@ RDF.Base || (RDF.Base = {});
         {
             var promise = this;
 
-            var sub_deferred = \$.Deferred();
+            var sub_deferred = $.Deferred();
             var sub_promise = sub_deferred.promise({
                 get: promise_get,
                 revget: promise_revget,
@@ -182,7 +182,7 @@ RDF.Base || (RDF.Base = {});
                 {
                     list_promise.push(data[i].get(pred));
                 }
-                \$.when.apply(this,list_promise).then(function(){
+                $.when.apply(this,list_promise).then(function(){
                     var uniq = {};
                     var list = [];
                     for( i in arguments )
@@ -206,7 +206,7 @@ RDF.Base || (RDF.Base = {});
             var promise = this;
 //            log("This is the promised revget for "+pred);
 
-            var sub_deferred = \$.Deferred();
+            var sub_deferred = $.Deferred();
             var sub_promise = sub_deferred.promise({
                 get: promise_get,
                 revget: promise_revget,
@@ -224,7 +224,7 @@ RDF.Base || (RDF.Base = {});
                 }
 //                log("List of promises");
 //                log( list_promise );
-                \$.when.apply(this,list_promise).then(function(){
+                $.when.apply(this,list_promise).then(function(){
 //                    log('Sub-promises fulfilled');
                     var uniq = {};
                     var list = [];
@@ -249,7 +249,7 @@ RDF.Base || (RDF.Base = {});
             var promise = this;
 //            log("This is the promised revget for "+pred);
 
-            var sub_deferred = \$.Deferred();
+            var sub_deferred = $.Deferred();
             var sub_promise = sub_deferred.promise({
             });
             
@@ -259,7 +259,7 @@ RDF.Base || (RDF.Base = {});
                 {
                     list_promise.push(data[i].props());
                 }
-                \$.when.apply(this,list_promise).then(function(){
+                $.when.apply(this,list_promise).then(function(){
                     var list = [];
                     for( i in arguments )
                     {
@@ -278,7 +278,7 @@ RDF.Base || (RDF.Base = {});
     };
 
     RB.tt = function(template, params) {
-        var deferred = \$.Deferred();
+        var deferred = $.Deferred();
         var promise = deferred.promise({
         });
 
@@ -286,7 +286,7 @@ RDF.Base || (RDF.Base = {});
         log(template);
         log(params);
         
-        \$.ajax({
+        $.ajax({
             dataType: "json",
             type: "POST",
             url: RB.url+'1/tt/',
@@ -294,7 +294,7 @@ RDF.Base || (RDF.Base = {});
             {
                 cred: cred,
                 template: template,
-                params: \$.toJSON(params),
+                params: $.toJSON(params),
             },
         }).done(function( res ) {
             deferred.resolve(res.data[0]);
@@ -304,24 +304,6 @@ RDF.Base || (RDF.Base = {});
         return promise;
     };
 
-    RB.agent_context = function(id) {
-        var deferred = \$.Deferred();
-        var promise = deferred.promise({
-        });
-        
-        \$.getJSON( RB.url + 'app/agent_context',
-                    {
-                        cred: cred,
-                        id: id
-                    }
-                  ).done(function( res ) {
-                      deferred.resolve(res.data[0]);
-                  });
-
-        log("After agent_context ajax");
-        return promise;
-    };
-    
     
 })(RDF.Base);
 

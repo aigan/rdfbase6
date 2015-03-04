@@ -1448,6 +1448,26 @@ http://www.w3.org/ns/auth/acl#Write",
         $req->done;
     }
 
+    if( $ver < 13 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        my $class_module =
+          $R->find_set({
+                        code => 'RDF::Base::Literal::JSON',
+                        is   => 'class_perl_module',
+                       }, $args);
+
+        $R->find_set({label => 'json_data'},$args)
+          ->update({
+                    class_handled_by_perl_module => $class_module,
+                   },$args);
+
+        $rb->update({ has_version => 13 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
 
 
 
