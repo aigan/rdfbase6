@@ -5,7 +5,7 @@ package RDF::Base::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -342,7 +342,7 @@ sub action_icon
     }
     else
     {
-        return sprintf '<a href="%s" title="%s">@</a>',
+        return sprintf '<a href="mailto:%s" title="%s">@</a>',
           escapeHTML($ea->format), escapeHTML(locnl('Send email'));
     }
 }
