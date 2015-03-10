@@ -671,8 +671,8 @@ sub create
 #		    $value = $value_obj->literal;
 
                     # Changed from literal() to plain() since
-                    # literal() fro email address objects, do not
-                    # stringify to the original strin
+                    # literal() from email address objects, do not
+                    # stringify to the original string
                     #
                     $value = $value_obj->plain;
 
@@ -692,7 +692,10 @@ sub create
                     }
                     elsif ( $coltype eq 'valfloat' )
                     {
-                        confess "No number  $value" unless looks_like_number($value);
+                        if( length $value and not looks_like_number($value) )
+                        {
+                            confess "No number '$value'";
+                        }
                     }
                 }
 

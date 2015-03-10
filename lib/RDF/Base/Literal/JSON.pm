@@ -25,6 +25,7 @@ use base qw(  RDF::Base::Literal );
 
 use Carp qw( cluck carp confess );
 use JSON; # to_json from_json
+use Digest::MD5 qw( md5_base64 ); #);
 
 use Para::Frame::Utils qw( throw debug datadump );
 use Para::Frame::Reload;
@@ -78,7 +79,7 @@ sub parse
         confess "Can't parse $val";
     }
 
-    return bless( {sruct=>$struct}, $class );
+    return bless( {sruct=>$struct, value=>$val}, $class );
 }
 
 ##############################################################################
@@ -94,7 +95,7 @@ sub new_from_db
     debug "parsing from db ".$_[1];
 
     my $struct = from_json($_[1]);
-    return bless( {struct=>$struct}, $_[0] );
+    return bless( {struct=>$struct, value=>$_[1]}, $_[0] );
 }
 
 ##############################################################################
@@ -138,6 +139,60 @@ sub get
 sub literal
 {
     return $_[0];
+}
+
+##############################################################################
+
+=head2 as_string
+
+=cut
+
+sub as_string
+{
+    return $_[0]->{value};
+}
+
+##############################################################################
+
+=head2 plain
+
+=cut
+
+sub plain
+{
+    return $_[0]->{value};
+}
+
+##############################################################################
+
+=head2 syskey
+
+=cut
+
+sub syskey
+{
+    # Copy of RDF::Base::Literal::String/syskey
+
+    if ( defined $_[0]->{'value'} )
+    {
+        # There might not be any wide characters even if the utf8 flag
+        # is turned on. Threfore it might be exactly the same string
+        # as a non-utf8-flagged string.
+
+        if ( utf8::is_utf8( $_[0]->{'value'} ) )
+        {
+            my $encoded = $_[0]->{'value'};
+            # Convert to bytes
+            utf8::encode( $encoded );
+            return sprintf("lit:%s", md5_base64($encoded));
+        }
+        return sprintf("lit:%s", md5_base64(shift->{'value'}));
+    }
+    else
+    {
+        return "lit:undef";
+    }
+
 }
 
 ##############################################################################

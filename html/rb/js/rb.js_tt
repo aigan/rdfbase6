@@ -34,7 +34,21 @@ RDF.Base || (RDF.Base = {});
             return;
         }
     
-        this.props = function() {
+        this.props = function( args ) {
+
+            // No cache if args used
+            if( args ) {
+                var deferred = $.Deferred();
+                $.getJSON( RB.url+'1/'+ props.id+'/', {
+                    cred: cred,
+                    args: $.toJSON(args),
+                }).done(function( res ) {
+                    deferred.resolve( res.data[0] );
+                });
+                return deferred.promise();
+            }
+
+            
             if( props.promis ) { // Loading under way
                 return props.promise;
             }

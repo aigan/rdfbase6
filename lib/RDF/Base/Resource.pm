@@ -3377,17 +3377,18 @@ sub revcount
 
 sub props_as_json
 {
-    my( $n ) = @_;
+    my( $n, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $o = {
              id => $n->id,
              desig => $n->desig,
             };
 
-    foreach my $pred ( $n->list_preds->as_array )
+    foreach my $pred ( $n->list_preds(undef,$args)->as_array )
     {
         my @val;
-        foreach my $val ( $n->list($pred)->as_array )
+        foreach my $val ( $n->list($pred,undef,$args)->as_array )
         {
             if( $val->is_resource )
             {
@@ -3413,15 +3414,16 @@ sub props_as_json
 
 sub revprops_as_json
 {
-    my( $n ) = @_;
+    my( $n, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $o = {
             };
 
-    foreach my $pred ( $n->revlist_preds->as_array )
+    foreach my $pred ( $n->revlist_preds(undef,$args)->as_array )
     {
         my @val;
-        foreach my $val ( $n->revlist($pred)->as_array )
+        foreach my $val ( $n->revlist($pred,undef,$args)->as_array )
         {
             if( $val->is_resource )
             {
