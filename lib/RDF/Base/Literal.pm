@@ -130,6 +130,11 @@ sub new
 
     my $class_name = $valtype->instance_class;
 
+    if( $class_name->can('new') eq RDF::Base::Literal->can('new') )
+    {
+        die "Implement new for $class_name";
+    }
+
     return $class_name->new( $val_in, $valtype );
 }
 
@@ -167,6 +172,11 @@ sub new_from_db
     }
 
     my $class_name = $valtype->instance_class;
+
+    if( $class_name->can('new') eq RDF::Base::Literal->can('new') )
+    {
+        die "Implement new_from_db for $class_name";
+    }
 
     return $class_name->new_from_db( $val_in, $valtype );
 }
