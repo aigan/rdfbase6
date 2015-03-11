@@ -4759,7 +4759,7 @@ See L</replace>
 sub update
 {
     my( $node, $props, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args ) = parse_propargs($args_in);
 
     # Update specified props to their values
 
