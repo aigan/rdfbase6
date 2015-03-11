@@ -1149,6 +1149,10 @@ sub replace
                 {
                     debug "Updating value of existing new arc";
                     $new = $arc->set_value( $value, $args );
+
+#                    debug "New arc: ".$new->sysdesig;
+#                    debug "New val_in: ".datadump($value,1);
+#                    debug "New val_out: ".datadump($new->value,1);
                 }
                 else
                 {

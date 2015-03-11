@@ -342,20 +342,20 @@ sub meets_arclim
 
     unless( @$arclim )
     {
-	return $l;
+        return $l;
     }
 
     my @arcs;
 
     my( $arc, $error ) = $l->get_first;
-    while(! $error )
+    while (! $error )
     {
-	if( $arc->meets_arclim( $arclim ) )
-	{
-	    CORE::push @arcs, $arc;
-	}
+        if ( $arc->meets_arclim( $arclim ) )
+        {
+            CORE::push @arcs, $arc;
+        }
 
-	( $arc, $error ) = $l->get_next;
+        ( $arc, $error ) = $l->get_next;
     }
 
     return $l->new(\@arcs);
@@ -391,24 +391,25 @@ sub unique_arcs_prio
     my %points;
 
     my( $arc, $error ) = $list->get_first;
-    while(! $error )
+    while (! $error )
     {
-	unless( $arc->is_arc ) # Might have been recently removed
-	{
-	    debug "Not arc in unique_arcs_prio - ".$arc->sysdesig;
-	    next;
-	}
+        unless( $arc->is_arc )  # Might have been recently removed
+        {
+            debug "Not arc in unique_arcs_prio - ".$arc->sysdesig;
+            next;
+        }
 
 #	my $cid = $arc->common_id;
 #	my $sor = $sortargs->sortorder($arc);
 #	debug "Sort $sor: ".$arc->sysdesig;
 #	$points{ $cid }[ $sor ] = $arc;
-	$points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
+        $points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
     }
     continue
     {
-	( $arc, $error ) = $list->get_next;
-    };
+        ( $arc, $error ) = $list->get_next;
+    }
+    ;
 
 #    debug "unique_arcs_prio";
 #    debug query_desig(\%points);
@@ -417,14 +418,14 @@ sub unique_arcs_prio
     my @arcs;
     foreach my $group ( values %points )
     {
-	foreach my $arc (@$group)
-	{
-	    if( $arc )
-	    {
-		CORE::push @arcs, $arc;
-		last;
-	    }
-	}
+        foreach my $arc (@$group)
+        {
+            if ( $arc )
+            {
+                CORE::push @arcs, $arc;
+                last;
+            }
+        }
     }
 
     return RDF::Base::Arc::List->new( \@arcs );
@@ -454,22 +455,23 @@ sub arc_active_on_date
     my @arcs;
 
     my( $arc, $error ) = $list->get_first;
-    while(! $error )
+    while (! $error )
     {
-	next unless $arc->activated <= $date;
-	if( $arc->deactivated )
-	{
-	    next unless $arc->deactivated > $date;
-	}
-	next if $arc->is_removal;
+        next unless $arc->activated <= $date;
+        if ( $arc->deactivated )
+        {
+            next unless $arc->deactivated > $date;
+        }
+        next if $arc->is_removal;
 
 #	debug "Found an arc active on $date: ".$arc->sysdesig;
-	push @arcs, $arc;
+        push @arcs, $arc;
     }
     continue
     {
-	( $arc, $error ) = $list->get_next;
-    };
+        ( $arc, $error ) = $list->get_next;
+    }
+    ;
 
     return RDF::Base::Arc::List->new(\@arcs);
 }
@@ -491,7 +493,7 @@ sub as_rdf
     my $out = "";
     my $predl = $l->get_first_nos->pred->label;
 
-    if( $use_bags )
+    if ( $use_bags )
     {
         $out .= "<rb:$predl>\n";
         $out .= "<rdf:Bag>\n";
@@ -500,13 +502,13 @@ sub as_rdf
         {
             #debug "  + ".$arc->sysdesig;
             my $val = $arc->value;
-            if( $val->is_literal )
+            if ( $val->is_literal )
             {
                 my $type = $val->this_valtype;
                 my $val_out = CGI->escapeHTML($val);
                 my $type_label = $type->label || $type->id;
 
-                if( my $vnode = $arc->value_node )
+                if ( my $vnode = $arc->value_node )
                 {
                     my $res_out = $vnode->label || $vnode->id;
                     $out .= qq(<rdf:li rdf:resource="$res_out" rdf:datatype="$type_label">$val_out</rdf:li>\n);
@@ -532,13 +534,13 @@ sub as_rdf
         {
             #debug "  + ".$arc->sysdesig;
             my $val = $arc->value;
-            if( $val->is_literal )
+            if ( $val->is_literal )
             {
                 my $type = $val->this_valtype;
                 my $val_out = CGI->escapeHTML($val);
                 my $type_label = $type->label || $type->id;
 
-                if( my $vnode = $arc->value_node )
+                if ( my $vnode = $arc->value_node )
                 {
                     my $res_out = $vnode->label || $vnode->id;
                     $out .= qq(<rb:$predl rdf:resource="$res_out" rdf:datatype="$type_label">$val_out</rb:$predl>\n);
