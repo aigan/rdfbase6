@@ -4,6 +4,11 @@ Installation instructions for a new clean install
 
  * Setup the database. See DATABASE below
 
+ * If needed, replace system installed IMAP::BodyStructure with
+   BodyStructure.pm found in this doc dir. (Or use the diff)
+   Search path for module location is given by:
+   perl -le"print for @INC"
+
  * Check the dependencies for this package by doing
    + perl Makefile.PL
    + make test
@@ -11,9 +16,6 @@ Installation instructions for a new clean install
  * You may want to install the documentation as man or HTML. That's
    not handled by the makefile. You can also use perldoc on the actual
    files.
-
- * If needed, replace system installed IMAP::BodyStructure with
-   BodyStructure.pm found in this doc dir. (Or use the diff)
 
  * Configure demo/site.conf and initialize database content with
    demo/rb-demo-server setup_db
