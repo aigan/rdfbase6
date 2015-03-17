@@ -95,7 +95,7 @@ sub new_from_db
     # Should always be in UTF8
     unless( utf8::is_utf8(  $_[1] ) )
     {
-        utf8::decode( $_[1] ) or die "Failed to utf8-decode string ".$_[1];
+        utf8::decode( $_[1] ) or cluck "Failed to utf8-decode string ".$_[1];
     }
 
 #    debug "parsing from db ".$_[1];

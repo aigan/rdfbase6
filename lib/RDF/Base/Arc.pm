@@ -4371,9 +4371,11 @@ sub set_value
         my $dbix        = $RDF::dbix;
         my $dbh         = $dbix->dbh;
         my $value_db;
+        my $value_type;
 
         my @dbvalues;
         my @dbparts;
+        my @bindtype; # index from 0
 
         if ( $objtype_old )
         {
@@ -4414,6 +4416,7 @@ sub set_value
             elsif ( $coltype_new eq 'valbin' )
             {
                 $value_db = $value_new;
+                $value_type = PG_BYTEA;
             }
             else
             {
@@ -4428,6 +4431,11 @@ sub set_value
         utf8::upgrade( $value_db ) if defined $value_db; # May be undef
 
         my $now_db = $dbix->format_datetime($now);
+
+        if( $value_type )
+        {
+            $bindtype[$#dbvalues+1] = $value_type;
+        }
 
         push( @dbparts,
               "$coltype_new=?",
@@ -4491,6 +4499,15 @@ sub set_value
         my $sql_set = join ",",@dbparts;
         my $st = "update arc set $sql_set where ver=?";
         my $sth = $dbh->prepare($st);
+
+        ### Binding SQL datatypes to values
+        for (my$i=0;$i<=$#bindtype;$i++)
+        {
+            next unless $bindtype[$i];
+            $sth->bind_param($i+1, undef, { pg_type => $bindtype[$i] } );
+        }
+
+
         $sth->execute(@dbvalues, $arc_id);
         $RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
