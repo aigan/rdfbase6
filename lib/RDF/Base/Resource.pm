@@ -6365,7 +6365,7 @@ sub wu_select_tree
 
     my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $rev = $args->{'is_rev'} || '';
+    my $rev =  ( $args->{'is_rev'} ? 'rev' : '' );
     my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
     my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
