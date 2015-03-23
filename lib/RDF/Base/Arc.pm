@@ -4801,6 +4801,8 @@ sub activate
         }
     }
 
+    return 1 if $arc->active;
+
     my $updated = $args->{'updated'} || now();
     my $activated_by = $Para::Frame::REQ->user;
 

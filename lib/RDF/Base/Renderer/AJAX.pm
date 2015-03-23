@@ -576,7 +576,7 @@ sub render_node
         die "Path $path not supported";
     }
 
-    debug "Returning data: ".datadump(\@l,3);
+#    debug "Returning data: ".datadump(\@l,3);
 
     return to_json({data=>[@l]});
 }
