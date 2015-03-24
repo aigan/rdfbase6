@@ -40,7 +40,7 @@ use Scalar::Util qw( refaddr blessed looks_like_number );
 use DBD::Pg qw(:pg_types);
 use JSON;                       # to_json
 
-use Para::Frame::Utils qw( throw debug datadump package_to_module );
+use Para::Frame::Utils qw( throw debug datadump package_to_module validate_utf8 );
 use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
@@ -707,13 +707,16 @@ sub create
 
             }
 
+            if ( $coltype eq 'valbin' )
+            {
+                utf8::encode( $value );
+                $bindtype[$#values+1] = PG_BYTEA;
+                #debug "value '$value' ".validate_utf8(\$value);
+            }
+
             $rec->{$coltype} = $value;
             push @fields, $coltype;
             push @values, $rec->{$coltype};
-            if ( $coltype eq 'valbin' )
-            {
-                $bindtype[$#values] = PG_BYTEA;
-            }
 
             debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
         }
@@ -4396,6 +4399,9 @@ sub set_value
             elsif ( $coltype_new eq 'valfloat' )
             {
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
                 confess "No number $value_db" unless looks_like_number($value_db);
             }
             elsif ( $coltype_new eq 'valtext' )
@@ -4406,6 +4412,11 @@ sub set_value
                 }
 
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
+
+                utf8::upgrade( $value_db ) if defined $value_db; # May be undef
                 my $clean = $value_new->clean_plain;
 
                 push @dbparts, "valclean=?";
@@ -4416,19 +4427,22 @@ sub set_value
             elsif ( $coltype_new eq 'valbin' )
             {
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
+                utf8::encode( $value_db );
                 $value_type = PG_BYTEA;
             }
             else
             {
                 debug 3, "We do not specificaly handle coltype $coltype_new\n";
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
             }
         }
 
-        # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
-        $value_db = $value_db->plain if ref $value_db;
-        # Assume that ->plain() always returns charstring
-        utf8::upgrade( $value_db ) if defined $value_db; # May be undef
 
         my $now_db = $dbix->format_datetime($now);
 

@@ -94,17 +94,17 @@ sub new_from_db
 {
     # Should always be in UTF8
 
-    utf8::upgrade( $_[1] );
+#    utf8::upgrade( $_[1] );
 
-#    unless( utf8::is_utf8(  $_[1] ) )
-#    {
-#        utf8::decode( $_[1] ) or cluck "Failed to utf8-decode string ".$_[1];
-#    }
+    unless( utf8::is_utf8(  $_[1] ) )
+    {
+        utf8::decode( $_[1] ) or cluck "Failed to utf8-decode string ".$_[1];
+    }
 
 #    debug "parsing from db ".$_[1];
 #    debug validate_utf8(\ $_[1] );
 
-    my $struct = from_json($_[1]);
+    my $struct = eval{ from_json($_[1]) } or confess($@);
     return bless( {struct=>$struct, value=>$_[1]}, $_[0] );
 }
 
