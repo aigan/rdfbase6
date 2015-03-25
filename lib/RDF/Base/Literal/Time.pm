@@ -86,12 +86,12 @@ sub parse
         }
         else
         {
-            $date = $class->new($val->plain, $valtype);
+            $date = $class->new($val->iso8601, $valtype);
         }
     }
     elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal::String" )
     {
-        $date = $class->new($val->plain, $valtype);
+        $date = $class->new($val->iso8601, $valtype);
     }
     elsif ( UNIVERSAL::isa $val, "RDF::Base::Undef" )
     {

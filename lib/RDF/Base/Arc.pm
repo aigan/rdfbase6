@@ -6462,8 +6462,8 @@ sub remove_check
     $arc->{'in_remove_check'} ++;
 
     # Don't make arc disregarded, because it's used in inference?
-    $arc->{'disregard'} ++;
-    warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+#    $arc->{'disregard'} ++;
+#    warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 
     my $pred      = $arc->pred;
 
@@ -6515,8 +6515,8 @@ sub remove_check
 #    }
 
     $arc->{'in_remove_check'} --;
-    $arc->{'disregard'} --;
-    warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+#    $arc->{'disregard'} --;
+#    warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 }
 
 
