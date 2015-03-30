@@ -29,6 +29,10 @@ use constant CLUE_VALUENODE => 4;   # literal resource
 use constant CLUE_NOVALUENODE => 8; # no literal resource
 use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
+use constant R => 'RDF::Base::Resource';
+use constant P => 'RDF::Base::Pred';
+
+
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
@@ -5433,13 +5437,16 @@ sub select_tooltip_html
 {
     my( $n, $args ) = @_;
 
-    my $is_str = CGI->escapeHTML($n->is_direct->desig);
-    my $name_str = CGI->escapeHTML($n->desig);
-    my $id_str = $n->id;
     my $out = "<table>";
-    $out .= "<tr><td>Name</td><td>$name_str</td></tr>";
-    $out .= "<tr><td>is</td><td>$is_str</td></tr>";
-    $out .= "<tr><td>id</td><td>$id_str</td></tr>";
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('name')->as_html,
+                     $n->as_html,
+                   );
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('is')->as_html,
+                     $n->is_direct->as_html,
+                   );
+    $out .= sprintf "<tr><td>ID</td><td>%s</td></tr>", $n->id;
     $out .= "</table>";
     return $out;
 }
