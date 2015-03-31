@@ -406,7 +406,7 @@ sub render_lookup
             }
         }
 
-        debug "*  looking up $lookup_pred";
+        debug "*  looking up $lookup_pred '$lookup_value'";
 
         $params ||= {};
         my $params_lookup =
