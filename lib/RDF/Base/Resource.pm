@@ -29,6 +29,10 @@ use constant CLUE_VALUENODE => 4;   # literal resource
 use constant CLUE_NOVALUENODE => 8; # no literal resource
 use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
+use constant R => 'RDF::Base::Resource';
+use constant P => 'RDF::Base::Pred';
+
+
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
@@ -66,7 +70,7 @@ use RDF::Base::Utils qw( valclean parse_query_props
                          parse_form_field_prop is_undef arc_lock
                          arc_unlock truncstring query_desig
                          convert_query_prop_for_creation
-                         parse_propargs aais range_pred );
+                         parse_propargs aais range_pred aais );
 
 
 
@@ -1704,6 +1708,12 @@ sub form_url
     {
 #	warn "  is an ARC\n";
         $path = 'rb/node/arc/update.tt';
+    }
+    elsif( my $path_node = $n->first_prop('class_list_url') ||
+           $n->list('scof',{class_list_url_exist=>1})->first_prop('class_list_url') )
+    {
+        $path = $path_node->plain;
+        debug "class_list_url ".$path;
     }
     else
     {
@@ -3377,17 +3387,18 @@ sub revcount
 
 sub props_as_json
 {
-    my( $n ) = @_;
+    my( $n, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $o = {
              id => $n->id,
              desig => $n->desig,
             };
 
-    foreach my $pred ( $n->list_preds->as_array )
+    foreach my $pred ( $n->list_preds(undef,$args)->as_array )
     {
         my @val;
-        foreach my $val ( $n->list($pred)->as_array )
+        foreach my $val ( $n->list($pred,undef,$args)->as_array )
         {
             if( $val->is_resource )
             {
@@ -3413,15 +3424,16 @@ sub props_as_json
 
 sub revprops_as_json
 {
-    my( $n ) = @_;
+    my( $n, $args_in ) = @_;
+    my( $args, $arclim ) = parse_propargs($args_in);
 
     my $o = {
             };
 
-    foreach my $pred ( $n->revlist_preds->as_array )
+    foreach my $pred ( $n->revlist_preds(undef,$args)->as_array )
     {
         my @val;
-        foreach my $val ( $n->revlist($pred)->as_array )
+        foreach my $val ( $n->revlist($pred,undef,$args)->as_array )
         {
             if( $val->is_resource )
             {
@@ -4732,7 +4744,7 @@ hash with pairs of predicates and values.
     an arc will be created
 
   - If the node has a property with a predicate, and that predicate
-    exists in a property given to update, and the value fo the two
+    exists in a property given to update, and the value for the two
     properties is not the same; that existing property will be removed
     and a new arc created.
 
@@ -4759,7 +4771,7 @@ See L</replace>
 sub update
 {
     my( $node, $props, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args ) = parse_propargs($args_in);
 
     # Update specified props to their values
 
@@ -4771,11 +4783,15 @@ sub update
 
     my @arcs_old = ();
 
+    my $arclim = aais( $args, 'explicit');
+#    debug "Using arclim ".datadump($arclim,2);
+
     # Start by listing all old values for removal
     foreach my $pred_name ( keys %$props )
     {
         next if $pred_name eq 'label';
-        my $old = $node->arc_list( $pred_name, undef, ['active','explicit'] );
+        my $old = $node->arc_list( $pred_name, undef, $arclim );
+#        debug "Old arcs: ".$old->sysdesig;
         push @arcs_old, $old->as_array;
     }
 
@@ -5421,13 +5437,16 @@ sub select_tooltip_html
 {
     my( $n, $args ) = @_;
 
-    my $is_str = CGI->escapeHTML($n->is_direct->desig);
-    my $name_str = CGI->escapeHTML($n->desig);
-    my $id_str = $n->id;
     my $out = "<table>";
-    $out .= "<tr><td>Name</td><td>$name_str</td></tr>";
-    $out .= "<tr><td>is</td><td>$is_str</td></tr>";
-    $out .= "<tr><td>id</td><td>$id_str</td></tr>";
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('name')->as_html,
+                     $n->as_html,
+                   );
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('is')->as_html,
+                     $n->is_direct->as_html,
+                   );
+    $out .= sprintf "<tr><td>ID</td><td>%s</td></tr>", $n->id;
     $out .= "</table>";
     return $out;
 }
@@ -6359,7 +6378,7 @@ sub wu_select_tree
 
     my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $rev = $args->{'is_rev'} || '';
+    my $rev =  ( $args->{'is_rev'} ? 'rev' : '' );
     my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
     my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
@@ -6482,6 +6501,7 @@ args:
   select_optgroup
   desig
   alternatives
+  rev
 
 =cut
 
@@ -6500,7 +6520,7 @@ sub wu_select
         confess "type missing: ".datadump($type,2);
     }
 
-    my $rev = $args->{'is_rev'} || '';
+    my $rev = $args->{'rev'} || '';
     my $header = $args->{'header'};
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||

@@ -1,0 +1,61 @@
+--- BodyStructure.pm.orig	2014-10-07 16:03:21.195801873 +0200
++++ BodyStructure.pm	2014-10-07 18:11:46.535800953 +0200
+@@ -61,6 +61,7 @@
+ sub _get_npairs(\$);
+ sub _get_ndisp(\$);
+ sub _get_nstring(\$);
++sub _get_body_fld_lang(\$);
+ 
+ =head2 METHODS
+ 
+@@ -363,7 +364,7 @@
+         $bs->{type}      .= lc(_get_nstring($$str));
+         $bs->{params}     = _get_npairs($$str);
+         $bs->{disp}       = _get_ndisp($$str);
+-        $bs->{lang}       = _get_nstring($$str);
++        $bs->{lang}       = _get_body_fld_lang($$str);
+         $bs->{loc}        = _get_nstring($$str);
+     } else {
+         $bs->{type}       = lc (_get_nstring($$str) . '/' . _get_nstring($$str));
+@@ -387,7 +388,7 @@
+ 
+         $bs->{md5}  = _get_nstring($$str);
+         $bs->{disp} = _get_ndisp($$str);
+-        $bs->{lang} = _get_nstring($$str);
++        $bs->{lang} = _get_body_fld_lang($$str);
+         $bs->{loc}  = _get_nstring($$str);
+     }
+ 
+@@ -472,6 +471,32 @@
+     return 0;
+ }
+ 
++sub _get_body_fld_lang(\$) {
++    my $str = $_[0];
++
++    # body-fld-lang   = nstring / "(" string *(SP string) ")"
++
++    if ($$str =~ m/\G\s*\(/gc) {
++        my @a;
++        while ('fareva') {
++            my $data = _get_nstring($$str);
++            $data or last;
++
++            push @a, $data;
++        }
++
++        $$str =~ m/\G\s*\)/gc;
++        return \@a;
++    }
++
++    if ( my $data = _get_nstring($$str) )
++    {
++	return [ $data ];
++    }
++
++    return [];
++}
++
+ sub _unescape {
+     my $str = shift;
+ 

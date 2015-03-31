@@ -62,9 +62,19 @@ sub render_output
 
     $rend->{'ctype'} = 'html'; # Set to json if appropriate
     my $out = "";
+    my $args;
+    my $args_in = $rend->req->q->param('args');
 
     eval
     {
+
+        if( $args_in )
+        {
+            $args =  from_json( $args_in );
+            debug("args = " . query_desig($args));
+        }
+
+
         my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*)/ );
         unless( $file )
         {
@@ -82,12 +92,12 @@ sub render_output
             my $path = $2;
             if( $path =~ /(\d+)\/(.*)/ )
             {
-                $out = $rend->render_node( $1, $2 );
+                $out = $rend->render_node( $1, $2, $args );
                 return;
             }
             elsif( $path =~ /tt\/(.*)/ )
             {
-                $out = $rend->render_tt($1);
+                $out = $rend->render_tt($1, $args);
                 return;
             }
         }
@@ -107,6 +117,10 @@ sub render_output
         elsif ( $file =~ /app\/(.*)/ ) # custom code api
         {
             $out = $rend->render_app( $1 );
+        }
+        else
+        {
+            die "Ajax path $file not supported";
         }
 
         my $q = $rend->req->q;
@@ -522,7 +536,7 @@ sub render_lookup
 
 sub render_node
 {
-    my( $rend, $id, $path ) = @_;
+    my( $rend, $id, $path, $args ) = @_;
 
 
     my $n = R->get( $id );
@@ -535,32 +549,34 @@ sub render_node
 
     if( $path eq 'props' )
     {
-        @l = $n->props_as_json();
+        @l = $n->props_as_json($args);
     }
     elsif( $path eq 'revprops' )
     {
-        @l = $n->revprops_as_json();
+        @l = $n->revprops_as_json($args);
     }
     elsif( $path =~ /^get\/(\w+)/ )
     {
-        my $pnlist = $n->list($1);
+        my $pnlist = $n->list($1,undef,$args);
         while( my $pn = $pnlist->get_next_nos )
         {
-            push @l, $pn->props_as_json();
+            push @l, $pn->props_as_json($args);
         }
     }
     elsif( $path =~ /^revget\/(\w+)/ )
     {
-        my $pnlist = $n->revlist($1);
+        my $pnlist = $n->revlist($1, undef, $args);
         while( my $pn = $pnlist->get_next_nos )
         {
-            push @l, $pn->props_as_json();
+            push @l, $pn->props_as_json($args);
         }
     }
     else
     {
         die "Path $path not supported";
     }
+
+#    debug "Returning data: ".datadump(\@l,3);
 
     return to_json({data=>[@l]});
 }
@@ -569,20 +585,46 @@ sub render_node
 
 sub render_tt
 {
-    my( $rend, $path ) = @_;
+    my( $rend, $path, $args ) = @_;
 
     my $req = $rend->req;
     # $req->require_root_access;  ### simpler testing...
     my $q = $req->{'q'};
 
-    my $props = $q->param('props');
+    my $params_in = from_json( $q->param('params') );
+    my $template = $q->param('template');
 
-    debug datadump($props);
+    debug datadump([$template,$params_in]);
 
-    
-    my $out = "<pre>Nothing here</pre>";
+    my $params = {%$Para::Frame::PARAMS, %$params_in};
 
-    return $out;
+    # Based on Para::Frame::Burner/burn
+    #
+    my $burner = Para::Frame::Burner->get_by_type('html');
+    my $th = $burner->th();
+
+    # Clean out previous variables from stash
+    $th->{ SERVICE }{ CONTEXT }{ STASH } = Template::Stash::XS->new();
+
+    my $out = "";
+    my $res = $th->process( \ $template, $params, \ $out, {binmode=>':utf8'});
+    if ( $res )
+    {
+        debug "Got out: ".$out;
+        return to_json({data=>[$out]});
+    }
+    else
+    {
+        my $err = $th->error();
+        debug "Got err: ".$err;
+        return to_json({
+                        error =>
+                        {
+                         type => $err->type,
+                         info => $err->info,
+                        }
+                       });
+    }
 }
 
 ##############################################################################

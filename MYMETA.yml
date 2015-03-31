@@ -33,4 +33,4 @@ requires:
   Para::Frame: '1.21'
   Text::WordDiff: '0.04'
   URI::imap: '1.01'
-version: '6.72'
+version: '6.74'

@@ -5,7 +5,7 @@ package RDF::Base::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -312,6 +312,28 @@ sub wuirc_disabled # Not used anymore
 
 ##############################################################################
 
+
+=head2 select_tooltip_html
+
+=cut
+
+sub select_tooltip_html
+{
+    my( $ea, $args ) = @_;
+
+    my $ea_str = $ea->as_html({method=>'address'});
+    my $id_str = $ea->id;
+    my $out = "<table>";
+    $out .= "<tr><td>E-post</td><td>$ea_str</td></tr>";
+    $out .= sprintf "<tr><td>Namn</td><td>%s</td></tr>", CGI->escapeHTML($ea->user);
+    $out .= "<tr><td>ID</td><td>$id_str</td></tr>";
+    $out .= "</table>";
+    return $out;
+}
+
+
+##############################################################################
+
 =head2 table_columns
 
   $n->table_columns()
@@ -342,7 +364,7 @@ sub action_icon
     }
     else
     {
-        return sprintf '<a href="%s" title="%s">@</a>',
+        return sprintf '<a href="mailto:%s" title="%s">@</a>',
           escapeHTML($ea->format), escapeHTML(locnl('Send email'));
     }
 }

@@ -19,7 +19,7 @@ use warnings;
 use JSON;
 use IMAP::BodyStructure 1.02;
 
-use Para::Frame 1.22;
+use Para::Frame 1.33;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 
@@ -45,7 +45,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.73";
+our $VERSION = "6.74";
 
 
 =head1 NAME

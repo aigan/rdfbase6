@@ -5,7 +5,7 @@ package RDF::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1141,30 +1141,43 @@ sub replace
                 # the new arc be a replacement of the old arc.
 
                 my $arc = $del_pred{$pred_name};
+                my $new;
 
-
-                my $new = RDF::Base::Arc->
-                  create({
-                          subj        => $arc->subj->id,
-                          pred        => $arc->pred->id,
-                          value       => $value,
-                          active      => 0, # Activate later
-                         }, {
-                             %$args,
-                             ignore_card_check => 1,
-                            } );
-
-
-                debug 3, "  should we replace $arc->{id}?";
-                if ( $arc->direct and $new->is_new )
+                # If old arc is new, update it in place
+                #
+                if( $arc->is_new )
                 {
-                    debug 3, "    yes!";
-                    $new->set_replaces( $arc, $args );
-                    debug 3, $arc->sysdesig;
+                    debug "Updating value of existing new arc";
+                    $new = $arc->set_value( $value, $args );
+
+#                    debug "New arc: ".$new->sysdesig;
+#                    debug "New val_in: ".datadump($value,1);
+#                    debug "New val_out: ".datadump($new->value,1);
                 }
                 else
                 {
-                    debug 3, "    no!";
+                    $new = RDF::Base::Arc->
+                      create({
+                              subj        => $arc->subj->id,
+                              pred        => $arc->pred->id,
+                              value       => $value,
+                              active      => 0, # Activate later
+                             }, {
+                                 %$args,
+                                 ignore_card_check => 1,
+                                } );
+
+                    debug 3, "  should we replace $arc->{id}?";
+                    if ( $arc->direct and $new->is_new )
+                    {
+                        debug 3, "    yes!";
+                        $new->set_replaces( $arc, $args );
+                        debug 3, $arc->sysdesig;
+                    }
+                    else
+                    {
+                        debug 3, "    no!";
+                    }
                 }
 
                 if ( $args->{'activate_new_arcs'} )

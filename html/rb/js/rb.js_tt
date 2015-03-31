@@ -1,6 +1,334 @@
 ﻿// Our namespace!
-if (typeof RDF      === 'undefined') var RDF  = {};
-if (typeof RDF.Base === 'undefined') RDF.Base = {};
+window.RDF || (window.RDF = {});
+RDF.Base || (RDF.Base = {});
+
+/// 2015 version code
+///
+
+;(function( RB ) {
+
+    // Set RB.url to something like "http://joli.ls1.se:7788/ajax/"
+    //var RB.url = "http://joli.ls1.se:7788/ajax/";
+
+    var cred = { username: $.cookie("username"), password: $.cookie("password") };
+    var nodes = {};
+    var cnt = 1; // Counter of loaded nodes
+
+    var Node = function(id){
+        var props = { "id": id };
+        var revprops = {};
+        var obj = {};
+        var revobj = {};
+        this.cnt = cnt++;
+        this.id = id;
+        
+        nodes[id] = this;
+        
+        this.init = function(data) {
+            if( props.deferred ) { // Loading under way
+                return;
+            }
+
+            props.data = data;
+            props.cached = new Date();
+            return;
+        }
+    
+        this.props = function( args ) {
+
+            // No cache if args used
+            if( args ) {
+                var deferred = $.Deferred();
+                $.getJSON( RB.url+'1/'+ props.id+'/', {
+                    cred: cred,
+                    args: $.toJSON(args),
+                }).done(function( res ) {
+                    deferred.resolve( res.data[0] );
+                });
+                return deferred.promise();
+            }
+
+            
+            if( props.promis ) { // Loading under way
+                return props.promise;
+            }
+
+            props.deferred = $.Deferred();
+            props.promise = props.deferred.promise({
+            });
+            
+            
+            if(! props.cached )
+            {
+                $.getJSON( RB.url+'1/'+ props.id+'/', {
+                    cred: cred,
+                }).done(function( res ) {
+                    props.data = res.data[0];
+                    props.cached = new Date();
+                    props.deferred.resolve(props.data);
+                });
+            } else {
+                props.deferred.resolve(props.data);
+            }            
+
+            return props.promise;
+        }
+    
+        this.revprops = function() {
+            if( revprops.promise ) { // Loading under way
+                return revprops.promise;
+            }
+
+            revprops.deferred = $.Deferred();
+            revprops.promise = revprops.deferred.promise({
+            });
+
+            if(! revprops.cached )
+            {
+                $.getJSON( RB.url+'1/'+ props.id+'/revprops', {
+                    cred: cred,
+                }).done(function( res ) {
+                    revprops.data = res.data[0];
+                    revprops.cached = new Date();
+                    revprops.deferred.resolve(revprops.data);
+                });
+            } else {
+                revprops.deferred.resolve(revprops.data);
+            }            
+
+            return revprops.promise;
+        }
+
+        this.get = function(pred) {
+            obj[pred] = obj[pred] || {};
+
+            if( obj[pred].promise ) { // Loading under way
+                return obj[pred].promise;
+            }
+
+            obj[pred].deferred = $.Deferred();
+            obj[pred].promise = obj[pred].deferred.promise({
+                get: promise_get,
+                revget: promise_revget,
+                props: promise_props,
+            });
+
+            if(! obj[pred].cached )
+            {
+                var cached = new Date();
+
+                log("Get "+props.id+" "+pred);
+                
+                $.getJSON( RB.url+'1/'+ props.id+'/get/'+pred, {
+                    cred: cred,
+                }).done(function( res ) {
+                    var data = [];
+                    for( i in res.data ) {
+                        var n = RB.get(res.data[i].id);
+                        n.init(res.data[i]);
+                        data.push( n );
+                    };
+                    obj[pred].data = data;
+                    obj[pred].cached = cached;
+                    obj[pred].deferred.resolve(obj[pred].data);
+                });
+            } else {
+                obj[pred].deferred.resolve(obj[pred].data);
+            }            
+
+            return obj[pred].promise;
+        }
+
+        this.revget = function(pred) {
+            revobj[pred] = revobj[pred] || {};
+
+            if( revobj[pred].promise ) { // Loading under way
+                return revobj[pred].promise;
+            }
+
+            revobj[pred].deferred = $.Deferred();
+            revobj[pred].promise = revobj[pred].deferred.promise({
+                get: promise_get,
+                revget: promise_revget,
+                props: promise_props,
+            });
+
+            if(! revobj[pred].cached )
+            {
+                var cached = new Date();
+
+                $.getJSON( RB.url+'1/'+ props.id+'/revget/'+pred, {
+                    cred: cred,
+                }).done(function( res ) {
+                    var data = [];
+                    for( i in res.data ) {
+                        var n = RB.get(res.data[i].id);
+                        n.init(res.data[i]);
+                        data.push( n );
+                    };
+                    revobj[pred].data = data;
+                    revobj[pred].cached = cached;
+                    revobj[pred].deferred.resolve(revobj[pred].data);
+                });
+            } else {
+                revobj[pred].deferred.resolve(revobj[pred].data);
+            }            
+
+            return revobj[pred].promise;
+        }
+
+        function promise_get( pred )
+        {
+            var promise = this;
+
+            var sub_deferred = $.Deferred();
+            var sub_promise = sub_deferred.promise({
+                get: promise_get,
+                revget: promise_revget,
+                props: promise_props,
+            });
+            
+            log("Promise Get "+pred);
+
+            promise.then(function(data){
+                var list_promise = [];
+                for( i in data )
+                {
+                    list_promise.push(data[i].get(pred));
+                }
+                $.when.apply(this,list_promise).then(function(){
+                    var uniq = {};
+                    var list = [];
+                    for( i in arguments )
+                    {
+                        for( j in arguments[i] )
+                        {
+                            var item = arguments[i][j];
+                            if(! uniq[item.id] )
+                                list.push(item);
+                            uniq[item.id] = item;
+                        }
+                    }
+                    sub_deferred.resolve(list);
+                });
+            });
+            return sub_promise;
+        }
+
+        function promise_revget( pred )
+        {
+            var promise = this;
+//            log("This is the promised revget for "+pred);
+
+            var sub_deferred = $.Deferred();
+            var sub_promise = sub_deferred.promise({
+                get: promise_get,
+                revget: promise_revget,
+                props: promise_props,
+            });
+            
+            promise.then(function(data){
+                var list_promise = [];
+//                log("items in data");
+                for( i in data )
+                {
+//                    log(data[i]);
+//                    data[i].props().then(function(d){log("item "+i);log(d)});
+                    list_promise.push(data[i].revget(pred));
+                }
+//                log("List of promises");
+//                log( list_promise );
+                $.when.apply(this,list_promise).then(function(){
+//                    log('Sub-promises fulfilled');
+                    var uniq = {};
+                    var list = [];
+                    for( i in arguments )
+                    {
+                        for( j in arguments[i] )
+                        {
+                            var item = arguments[i][j];
+                            if(! uniq[item.id] )
+                                list.push(item);
+                            uniq[item.id] = item;
+                        }
+                    }
+//                    log(list);
+                    sub_deferred.resolve(list);
+                });
+            });
+            return sub_promise;
+        }
+
+        function promise_props() {
+            var promise = this;
+//            log("This is the promised revget for "+pred);
+
+            var sub_deferred = $.Deferred();
+            var sub_promise = sub_deferred.promise({
+            });
+            
+            promise.then(function(data){
+                var list_promise = [];
+                for( i in data )
+                {
+                    list_promise.push(data[i].props());
+                }
+                $.when.apply(this,list_promise).then(function(){
+                    var list = [];
+                    for( i in arguments )
+                    {
+                        list.push(arguments[i]);
+                    }
+                    sub_deferred.resolve(list);
+                });
+            });
+            return sub_promise;
+        }
+    
+    };
+    
+    RB.get = function(id) {
+        return nodes[id] || new Node(id);
+    };
+
+    RB.tt = function(template, params) {
+        var deferred = $.Deferred();
+        var promise = deferred.promise({
+        });
+
+        log("Before tt ajax");
+        log(template);
+        log(params);
+        
+        $.ajax({
+            dataType: "json",
+            type: "POST",
+            url: RB.url+'1/tt/',
+            data:
+            {
+                cred: cred,
+                template: template,
+                params: $.toJSON(params),
+            },
+        }).done(function( res ) {
+            deferred.resolve(res.data[0]);
+        });
+
+        log("After tt ajax");
+        return promise;
+    };
+
+    
+})(RDF.Base);
+
+
+
+//////////////////////////////////////////////////////////////////
+/// 2011 version code
+///
+
+// if (typeof RDF      === 'undefined') var RDF  = {};
+// if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
 (function($) {
    RDF.Base.$load_indicator
