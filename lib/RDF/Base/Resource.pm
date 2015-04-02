@@ -5675,7 +5675,7 @@ sub wdirc
       or confess "Range missing";
 
     my $out = '';
-    my $is_rev = $args->{'rev'} || '';
+    my $is_rev = $args->{'rev'} ? 1 : 0;
     my $list = ( $is_rev ?
                  $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
                  : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
@@ -5785,12 +5785,12 @@ sub wu
 # }
 
     my $R = RDF::Base->Resource;
-    my $rev = $args->{'rev'} || 0;
+    my $is_rev = $args->{'rev'} ? 1 : 0;
 
     if ( $pred_name =~ /^rev_(.*)$/ )
     {
         $pred_name = $1;
-        $rev = 1;
+        $is_rev = 1;
         $args->{'rev'} = 1;
     }
 
@@ -5816,7 +5816,7 @@ sub wu
             when('scof'){ $range_scof = $range }
         }
     }
-    elsif ( $rev )
+    elsif ( $is_rev )
     {
         $range_is = $pred->first_prop('domain',undef,['active'])
           || $C_resource;
@@ -6137,7 +6137,9 @@ sub wuirc
     my $q = $req->q;
     my $out = '';
     my $is_scof = $args->{'range_scof'};
-    my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
+    my $is_rev = $args->{'rev'} ? 1 : 0;
+    my $revprefix = $is_rev ? 'rev' : '';
+
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
@@ -6302,7 +6304,7 @@ sub wuirc
 
             my $fkeys =
             {
-             $is_rev.'pred' => $pred,
+             $revprefix.'pred' => $pred,
             };
             $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
@@ -6378,7 +6380,8 @@ sub wu_select_tree
 
     my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $rev =  ( $args->{'is_rev'} ? 'rev' : '' );
+    my $is_rev =  $args->{'is_rev'} ? 1 : 0;
+    my $revprefix =  $is_rev ? 'rev' : '';
     my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
     my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
@@ -6418,7 +6421,7 @@ sub wu_select_tree
 
     my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
       sorted(['name_short', 'desig']);
-    my $val_stripped = 'arc___'. $rev .'pred_'. $pred_name;
+    my $val_stripped = 'arc___'. $revprefix .'pred_'. $pred_name;
     my $q = $Para::Frame::REQ->q;
     my $val_query = $q->param($val_stripped);
 
@@ -6434,7 +6437,7 @@ sub wu_select_tree
     {
         $out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
-        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $revprefix
           .'pred_'. $pred_name .'='. $subtype->id;
 
         unless( $subtype->rev_scof )
@@ -6520,7 +6523,8 @@ sub wu_select
         confess "type missing: ".datadump($type,2);
     }
 
-    my $rev = $args->{'rev'} || '';
+    my $is_rev = $args->{'rev'} ? 1 : 0;
+    my $revprefix = $is_rev ? 'rev' : '';
     my $header = $args->{'header'};
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
@@ -6561,7 +6565,7 @@ sub wu_select
 
 #    debug 1, "Building select widget for ".$subj->desig." $pred_name";
 
-    my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+    my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $revprefix
       .'pred_'. $pred_name . $if;
     $args->{id} = $key;
 
