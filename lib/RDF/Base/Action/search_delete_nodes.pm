@@ -41,7 +41,7 @@ sub handler
 
     my $l = $search_col->result;
 
-    if( $l->size > 1000 )
+    if( $l->size > 10000 )
     {
         throw 'validation', "Not removing more than 1000 nodes";
     }
@@ -51,7 +51,9 @@ sub handler
     # Removes both new, submitted and active
     my( $args, $arclim, $res ) = parse_propargs( 'auto' );
 
-    $args->{created} = now();
+    my $timestamp = now();
+    $args->{created} = $timestamp;
+    $args->{updated} = $timestamp;
 
     my $arcs_cnt = 0;
 
@@ -97,7 +99,7 @@ sub handler
 
                 $a->remove($args);
             }
-            $res->autocommit;
+            $res->autocommit($args);
         }
     };
 

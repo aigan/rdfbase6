@@ -4122,6 +4122,7 @@ sub create_removal
                                            pred        => $arc->{'pred'},
                                            value       => is_undef,
                                            valtype     => 0,
+                                           created     => $args->{created},
                                           }, $args);
 #    debug "Created removal arc ".$arc->sysdesig;
     return $arc_out;
