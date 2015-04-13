@@ -6322,10 +6322,7 @@ sub wuirc
         {
             debug "wuirc 5" if $DEBUG;
 
-            my $header = $args->{'header'} ||
-              ( $args->{'default_value'} ? '' :
-                Para::Frame::L10N::loc('Select') );
-            $args->{header} = $header;
+            $args->{header} ||= Para::Frame::L10N::loc('Select');
             $out .= $subj->wu_select( $pred->label, $range, $args);
         }
         elsif ( $inputtype eq 'select_tree' )
@@ -6572,13 +6569,16 @@ sub wu_select
     $out .= "<select id=\"$key\" name=\"$key\"$extra>";
 
     my $default_value;
-    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
-    {
-        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
-    }
+    ### Should not set default value without also setting the header
+#    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
+#    {
+#        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
+#    }
+#    debug "wu_select $pred_name default = ".$default_value;
     $default_value ||= $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if ( $header );
+#    debug "  header $header";
 
     my( $range, $range_pred ) = range_pred($args);
     $range_pred ||= 'is';
