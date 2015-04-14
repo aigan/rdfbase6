@@ -6837,8 +6837,7 @@ sub wu_select_tree_multiple
         $out .= "(function(\$) {
 \$('#${tid}-tree .click').click(function(){ 
 \$('#${tid}-tree').append(' <i class=\"fa fa-circle-o-notch fa-spin\"></i>')  ; 
-\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}).done(function(){  
-}); tt_Init();});
+\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
 })(jQuery);";
         $out .= "</script>\n";
     }
