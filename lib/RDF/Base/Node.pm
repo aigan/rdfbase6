@@ -520,6 +520,8 @@ This also implements meets_proplim for arcs!!!
 
 Also implements the form mypred1{is this}.that
 
+... implements not => { ... }
+
 Returns: boolean
 
 =cut
