@@ -3318,6 +3318,8 @@ sub count
         }
     }
 
+    confess "No pred" unless $tmpl;
+
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
 
 
