@@ -6766,8 +6766,10 @@ sub wu_select_tree_multiple
 
     if ( $args->{header} )
     {
-        $out .= "<p class='left'>";
-        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+        $out .= "<p class='left'><b>";
+#        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+		$out .= $type->wu_jump ."</b><br>";
+		$out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) .":<br>";
         $out .= $node->list($pred_name, {scof=>$type},'active')->as_html;
         $out .= "</p>";
     }
@@ -6816,11 +6818,14 @@ sub wu_select_tree_multiple
         my $nid = $node->id;
         my $tid = $type->id;
         $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary click\">";
-        $out .= locnl('Chose').' '.$type->as_html;
+        $out .= locnl('Chose');
         $out .= '</p></div>';
         $out .= "<script>\n";
         $out .= "(function(\$) {
-\$('#${tid}-tree .click').click(function(){\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
+\$('#${tid}-tree .click').click(function(){ 
+\$('#${tid}-tree').append(' <i class=\"fa fa-circle-o-notch fa-spin\"></i>')  ; 
+\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}).done(function(){  
+}); tt_Init();});
 })(jQuery);";
         $out .= "</script>\n";
     }
