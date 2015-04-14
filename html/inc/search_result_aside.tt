@@ -15,7 +15,8 @@
 		<li><i class="fa fa-table"></i> [% jump('Resultattabell', "$home/rb/node/list.tt") %]</li>
 		<li><i class="fa fa-magic"></i> [% jump('Transformera', "$home/rb/node/list/transform.tt") %]</li>
 		<li><i class="fa fa-filter"></i> [% jump('Filtrera', "$home/rb/node/list/filter.tt") %]</li>
-		<li><i class="fa fa-bomb"></i> [% jump('Vacuum', "$home/rb/node/list.tt?run=search_vacuum") %]</li>
+		<li><i class="fa fa-fire-extinguisher"></i> [% jump('Vacuum', "$home/rb/node/list.tt?run=search_vacuum") %]</li>
+		<li><i class="fa fa-bomb"></i> [% jump('Delete nodes', "$home/rb/search/?run=search_delete_nodes") %]</li>
 	[% END %]
 [% ELSE %]
 	[% UNLESS me == "$home/search/result.tt" %]

@@ -312,6 +312,28 @@ sub wuirc_disabled # Not used anymore
 
 ##############################################################################
 
+
+=head2 select_tooltip_html
+
+=cut
+
+sub select_tooltip_html
+{
+    my( $ea, $args ) = @_;
+
+    my $ea_str = $ea->as_html({method=>'address'});
+    my $id_str = $ea->id;
+    my $out = "<table>";
+    $out .= "<tr><td>E-post</td><td>$ea_str</td></tr>";
+    $out .= sprintf "<tr><td>Namn</td><td>%s</td></tr>", CGI->escapeHTML($ea->user);
+    $out .= "<tr><td>ID</td><td>$id_str</td></tr>";
+    $out .= "</table>";
+    return $out;
+}
+
+
+##############################################################################
+
 =head2 table_columns
 
   $n->table_columns()

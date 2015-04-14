@@ -359,7 +359,7 @@ If the current user has root access; All submitted arcs will be activated.
 Supported args:
 
   activate - tries to activate all arcs
-  update - the time of the update
+  updated - the time of the update
 
 Returns: The number of new arcs processed
 
