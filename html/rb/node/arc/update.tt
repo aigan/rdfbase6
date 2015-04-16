@@ -12,7 +12,7 @@
 [% arc = get(arc_id) %]
 [% node = arc %]
 
-<h1>Arc [% arc.sysdesig | html %]</h1>
+<h2>Arc [% arc.sysdesig | html %]</h2>
 
 [% IF arc.is_arc %]
 
@@ -27,7 +27,10 @@
 </table>
 [% END %]
 [% END %]
-<p>
+
+<br>
+<table class="admin">
+<tr class="header"><th colspan="2">
 [% IF arc.inactive %]
    [% IF arc.deactivated %]
       This arc is <strong>old</strong>.
@@ -42,9 +45,7 @@
 [% ELSE %]
 This is an <strong>active</strong> version.
 [% END %]
-</p>
-
-<table class="admin">
+</th></tr>
 <tr><td>Common</td><td>
 <span style="float: right">ID: <strong>[% arc.id %]</strong></span>
                        [% arc.common_id %]</td></tr>
@@ -106,7 +107,7 @@ This is an <strong>active</strong> version.
 [% ELSE %]
 <tr>
    <td colspan="2">
-      Add arcs to the literal:<br>
+      Add arcs to the literal<br>
       [% textarea('literal_arcs','', tag_attr={rows=3,class="wide"} ) %]
    </td>
 </tr>
@@ -175,7 +176,7 @@ This is an <strong>active</strong> version.
 [% ELSE %]
 <tr>
    <td colspan="2">
-      Add arcs to the literal:<br>
+      Add arcs to the literal<br>
       [% textarea('literal_arcs','', tag_attr={class="wide",rows=3} ) %]
    </td>
 </tr>
@@ -221,19 +222,19 @@ This is an <strong>active</strong> version.
 
 <tr><td>Unsubmitted</td><td>[% arc.unsubmitted %]</td></tr>
 
-<tr><td>Flags   </td><td>[% INCLUDE flags %]
+<tr><td>Flags</td><td>[% INCLUDE flags %]
 
 </table>
 
-<p>
+
 [% hidden('remove',0) %]
 [% IF u.has_root_access %]
    [% hidden('force',0) %]
-   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1, tag_attr={class="alert",style="float:right"}) %]
+   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1, tag_attr={class="btn-danger",style="float:right"}) %]
 [% END %]
 [% IF arc.inactive %]
    [% UNLESS arc.deactivated %]
-      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="alert",style="float:right"}) %]
+      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
    [% END %]
    [% IF arc.submitted %]
       [% go("Activate", me, "arc_activate") %]
@@ -257,10 +258,10 @@ This is an <strong>active</strong> version.
       [% step("Save") %]
    [% END %]
 [% ELSE %]
-   <span style="float: right">[% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="alert"}) %]</span>
+   [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
    [% step("Save as a new version") %]
 [% END %]
-</p>
+
 
 [% IF arc.indirect %]
   <h2>This arc is infered</h2>
@@ -275,9 +276,9 @@ This is an <strong>active</strong> version.
   </dl>
 [% END %]
 
-<h2>History</h2>
-<table class='admin'>
-<tr><td>Version</td><td>Created</td><td>Action</td></tr>
+<table class="admin">
+<tr class="header"><th colspan="3">History</th></tr>
+<tr class="subheader"><th>Version</th><th>Created</th><th>Action</th></tr>
 [% FOREACH varc IN arc.versions %]
 <tr>
   <td>

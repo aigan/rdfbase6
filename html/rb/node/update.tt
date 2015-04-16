@@ -20,24 +20,19 @@
    show_pred = q.param('show_pred');
 %]
 
-<h2>[% node.sysdesig | html %]</h2>
+<p><strong>Visa &auml;ven:&nbsp;</strong>
+[% IF include_inactive %]
+   <i class="fa fa-angle-double-right"></i>[% jump('Inaktiva', me, keep_params=keep, tag_attr={class='selected'}, include_inactive=0) %]
+[% ELSE %]
+   <i class="fa fa-angle-double-right"></i>[% jump('Inaktiva', me, keep_params=keep, tag_attr={class=''}, include_inactive=1) %]
+[% END %]
+&nbsp;|&nbsp;
+[% IF include_indirect %]
+   <i class="fa fa-angle-double-right"></i>[% jump('Indirekta', me, keep_params=keep, tag_attr={class='selected'}, include_indirect=0) %]
+[% ELSE %]
+  <i class="fa fa-angle-double-right"></i>[% jump('Indirekta', me, keep_params=keep, tag_attr={class=''}, include_indirect=1) %]
+[% END %]</p>
 
-<p>Also show
-[ 
-[%
-IF include_inactive;
-   jump('*inactive*', me, keep_params=keep, tag_attr={class='selected'}, include_inactive=0);
-ELSE;
-   jump('inactive', me, keep_params=keep, tag_attr={class=''}, include_inactive=1);
-END;
-' | ';
-IF include_indirect;
-   jump('*indirect*', me, keep_params=keep, tag_attr={class='selected'}, include_indirect=0);
-ELSE;
-   jump('indirect', me, keep_params=keep, tag_attr={class=''}, include_indirect=1);
-END;
-+%]
-]</p>
 
 
 [% BLOCK superclass %]
@@ -69,8 +64,9 @@ END;
 </table>
 [% END %]
 [% END %]
-
-<table class="admin" style="margin-top:2em">
+<div style="height:10px;"></div>
+<table class="admin">
+<tr class="header"><th colspan="5">[% node.sysdesig | html %]</th></tr>
 <tr class="subheader"><th>Do</th><th>Property</th> <th>Value</th> <th>Flags</th> <th>Updated</th> </tr>
 
 <tr>
