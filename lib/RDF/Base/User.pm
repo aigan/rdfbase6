@@ -284,7 +284,7 @@ sub verify_password
 
     $password_encrypted ||= '';
 
-#    debug "Retrieving password for $u->{id}";
+#    debug 1, "Retrieving password for $u->{id}";
     my @pwlist = $u->list('has_password',undef,['active'])->as_array;
 
     unless(scalar @pwlist)
@@ -306,7 +306,7 @@ sub verify_password
         }
     }
 
-    debug "Verifying password failed:\n".datadump(\%ENV);
+#    debug "Verifying password failed:\n".datadump(\%ENV);
     return 0;
 }
 
