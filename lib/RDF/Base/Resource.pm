@@ -29,6 +29,10 @@ use constant CLUE_VALUENODE => 4;   # literal resource
 use constant CLUE_NOVALUENODE => 8; # no literal resource
 use constant CLUE_ANYTHING  => 128; # for overriding any other default
 
+use constant R => 'RDF::Base::Resource';
+use constant P => 'RDF::Base::Pred';
+
+
 use Carp qw( cluck confess croak carp shortmess );
 use vars qw($AUTOLOAD);
 use Time::HiRes qw( time );
@@ -1705,6 +1709,12 @@ sub form_url
 #	warn "  is an ARC\n";
         $path = 'rb/node/arc/update.tt';
     }
+    elsif( my $path_node = $n->first_prop('class_list_url') ||
+           $n->list('scof',{class_list_url_exist=>1})->first_prop('class_list_url') )
+    {
+        $path = $path_node->plain;
+        debug "class_list_url ".$path;
+    }
     else
     {
 
@@ -3307,6 +3317,8 @@ sub count
             return $node->$tmpl->size;
         }
     }
+
+    confess "No pred" unless $tmpl;
 
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
 
@@ -5427,13 +5439,16 @@ sub select_tooltip_html
 {
     my( $n, $args ) = @_;
 
-    my $is_str = CGI->escapeHTML($n->is_direct->desig);
-    my $name_str = CGI->escapeHTML($n->desig);
-    my $id_str = $n->id;
     my $out = "<table>";
-    $out .= "<tr><td>Name</td><td>$name_str</td></tr>";
-    $out .= "<tr><td>is</td><td>$is_str</td></tr>";
-    $out .= "<tr><td>id</td><td>$id_str</td></tr>";
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('name')->as_html,
+                     $n->as_html,
+                   );
+    $out .= sprintf( "<tr><td>%s</td><td>%s</td></tr>",
+                     P->get_by_label('is')->as_html,
+                     $n->is_direct->as_html,
+                   );
+    $out .= sprintf "<tr><td>ID</td><td>%s</td></tr>", $n->id;
     $out .= "</table>";
     return $out;
 }
@@ -5662,7 +5677,7 @@ sub wdirc
       or confess "Range missing";
 
     my $out = '';
-    my $is_rev = $args->{'rev'} || '';
+    my $is_rev = $args->{'rev'} ? 1 : 0;
     my $list = ( $is_rev ?
                  $subj->revarc_list( $pred->label, undef, aais($args,'explicit') )
                  : $subj->arc_list( $pred->label, undef, aais($args,'explicit') ) );
@@ -5772,12 +5787,12 @@ sub wu
 # }
 
     my $R = RDF::Base->Resource;
-    my $rev = $args->{'rev'} || 0;
+    my $is_rev = $args->{'rev'} ? 1 : 0;
 
     if ( $pred_name =~ /^rev_(.*)$/ )
     {
         $pred_name = $1;
-        $rev = 1;
+        $is_rev = 1;
         $args->{'rev'} = 1;
     }
 
@@ -5803,7 +5818,7 @@ sub wu
             when('scof'){ $range_scof = $range }
         }
     }
-    elsif ( $rev )
+    elsif ( $is_rev )
     {
         $range_is = $pred->first_prop('domain',undef,['active'])
           || $C_resource;
@@ -6124,7 +6139,9 @@ sub wuirc
     my $q = $req->q;
     my $out = '';
     my $is_scof = $args->{'range_scof'};
-    my $is_rev = ( $args->{'rev'} ? 'rev' : '' );
+    my $is_rev = $args->{'rev'} ? 1 : 0;
+    my $revprefix = $is_rev ? 'rev' : '';
+
     my $ajax = ( defined $args->{'ajax'} ? $args->{'ajax'} : 1 );
     my $divid = $args->{'divid'};
     my $disabled = $args->{'disabled'} || 0;
@@ -6289,7 +6306,7 @@ sub wuirc
 
             my $fkeys =
             {
-             $is_rev.'pred' => $pred,
+             $revprefix.'pred' => $pred,
             };
             $fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
@@ -6307,10 +6324,7 @@ sub wuirc
         {
             debug "wuirc 5" if $DEBUG;
 
-            my $header = $args->{'header'} ||
-              ( $args->{'default_value'} ? '' :
-                Para::Frame::L10N::loc('Select') );
-            $args->{header} = $header;
+            $args->{header} ||= Para::Frame::L10N::loc('Select');
             $out .= $subj->wu_select( $pred->label, $range, $args);
         }
         elsif ( $inputtype eq 'select_tree' )
@@ -6365,7 +6379,8 @@ sub wu_select_tree
 
     my $arc_type = $args->{'arc_type'} || $args->{'arc_id'} || '';
     my $singular = (($arc_type||'') eq 'singular') ? 1 : undef;
-    my $rev = $args->{'is_rev'} || '';
+    my $is_rev =  $args->{'is_rev'} ? 1 : 0;
+    my $revprefix =  $is_rev ? 'rev' : '';
     my $arc_id = $args->{'arc_id'} || ( $singular ? 'singular' : '' );
     my $disabled = $args->{'disabled'} ? 1 : 0;
     my $arc;
@@ -6405,7 +6420,7 @@ sub wu_select_tree
 
     my $subtypes = $type->revlist('scof', undef, aais($args,'direct'))->
       sorted(['name_short', 'desig']);
-    my $val_stripped = 'arc___'. $rev .'pred_'. $pred_name;
+    my $val_stripped = 'arc___'. $revprefix .'pred_'. $pred_name;
     my $q = $Para::Frame::REQ->q;
     my $val_query = $q->param($val_stripped);
 
@@ -6421,7 +6436,7 @@ sub wu_select_tree
     {
         $out .= '<option rel="'. $subtype->id .'-'. $subj->id .'"';
 
-        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+        my $value = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $revprefix
           .'pred_'. $pred_name .'='. $subtype->id;
 
         unless( $subtype->rev_scof )
@@ -6507,7 +6522,8 @@ sub wu_select
         confess "type missing: ".datadump($type,2);
     }
 
-    my $rev = $args->{'rev'} || '';
+    my $is_rev = $args->{'rev'} ? 1 : 0;
+    my $revprefix = $is_rev ? 'rev' : '';
     my $header = $args->{'header'};
     my $singular = (($args->{'arc_type'}||'') eq 'singular') ? 1 : undef;
     my $arc_id = $args->{'arc_id'} ||
@@ -6548,20 +6564,23 @@ sub wu_select
 
 #    debug 1, "Building select widget for ".$subj->desig." $pred_name";
 
-    my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $rev
+    my $key = 'arc_'. $arc_id .'__subj_'. $subj->id .'__'. $revprefix
       .'pred_'. $pred_name . $if;
     $args->{id} = $key;
 
     $out .= "<select id=\"$key\" name=\"$key\"$extra>";
 
     my $default_value;
-    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
-    {
-        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
-    }
+    ### Should not set default value without also setting the header
+#    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
+#    {
+#        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
+#    }
+#    debug "wu_select $pred_name default = ".$default_value;
     $default_value ||= $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if ( $header );
+#    debug "  header $header";
 
     my( $range, $range_pred ) = range_pred($args);
     $range_pred ||= 'is';
@@ -6760,8 +6779,10 @@ sub wu_select_tree_multiple
 
     if ( $args->{header} )
     {
-        $out .= "<p class='left'>";
-        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+        $out .= "<p class='left'><b>";
+#        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+		$out .= $type->wu_jump ."</b><br>";
+		$out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) .":<br>";
         $out .= $node->list($pred_name, {scof=>$type},'active')->as_html;
         $out .= "</p>";
     }
@@ -6810,11 +6831,13 @@ sub wu_select_tree_multiple
         my $nid = $node->id;
         my $tid = $type->id;
         $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary click\">";
-        $out .= locnl('Chose').' '.$type->as_html;
+        $out .= locnl('Chose');
         $out .= '</p></div>';
         $out .= "<script>\n";
         $out .= "(function(\$) {
-\$('#${tid}-tree .click').click(function(){\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
+\$('#${tid}-tree .click').click(function(){ 
+\$('#${tid}-tree').append(' <i class=\"fa fa-circle-o-notch fa-spin\"></i>')  ; 
+\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
 })(jQuery);";
         $out .= "</script>\n";
     }

@@ -3,27 +3,28 @@
    next_action = 'search_modify'
    level = 20
 %]
-
+<table class="admin">
+<tr class="header"><th colspan="4">
 [% FOREACH searchpart IN searchobj.rb_parts %]
 [% IF loop.first %]
-<h2>[% loc('Show results that') %]:</h2>
+[% loc('Show results that') %]:
 [% ELSE %]
-<div align="center">[% loc('or') %]</div>
+[% loc('or') %]
 [% END %]
-
+</th></tr>
 [% crits = searchpart.criterions(private=1) %]
 [% IF crits %]
 
-<table width="100%">
+
 [% FOREACH ckey IN crits.keys %]
    [%# NEXT IF ckey == 'inactive' %]
    [% crit = crits.$ckey %]
    [% IF crit.group %]
-<tr bgcolor="#EFEFEF"><td valign="top"><i>[% loc(ckey) %]</i></td>
+<tr><td valign="top"><i>[% loc(ckey) %]</i></td>
 <td valign="top">
       [% FOREACH groupname IN crit.group.keys %]
          [% UNLESS loop.first %]
-            <tr bgcolor="#EFEFEF"><td valign="top"></td><td valign="top">
+            <tr><td valign="top"></td><td valign="top">
          [% END %]
 
          [% group = get(groupname) %]
@@ -37,9 +38,10 @@
             [% END %]
          [% END %]
 
-            </td><td align="right" valign="top"><nobr>[% jump(loc('remove'), "$home/search/modify.tt",
+            </td><td align="right" valign="top">[% jump(loc('remove'), "$home/search/modify.tt",
                         remove="group_$groupname",
-                        run='search_modify') %]</nobr>
+						tag_attr={class='btn btn-default'},
+                        run='search_modify') %]
 
          [% UNLESS loop.last %]
             </td></tr>

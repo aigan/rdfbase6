@@ -172,7 +172,7 @@ or 0. It will call L</contains> for all cases where the first
 parameter is not a hashref.
 
 The third form finds the elements in the list that meets the given
-proplim, using L<RDF::Base::Resource/meets_proplim> and returns a new
+proplim, using L<RDF::Base::Node/meets_proplim> and returns a new
 L<Para::Frame::List> with those elements.
 
 For the last form, the same list object will be returned if the first

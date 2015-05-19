@@ -33,7 +33,7 @@ use Para::Frame::L10N qw( loc );
 
 use RDF::Base::AJAX;
 use RDF::Base::Widget::Handler;
-use RDF::Base::Utils qw( arc_lock arc_unlock query_desig );
+use RDF::Base::Utils qw( arc_lock arc_unlock query_desig valclean );
 
 ##############################################################################
 
@@ -397,16 +397,18 @@ sub render_lookup
     my $result;
     foreach my $lookup_pred (@$lookup_preds)
     {
-        if ( $lookup_pred =~ /_like$/ )
+        if ( $lookup_pred =~ /_(like|begins)$/ )
         {
-            if ( length($lookup_value) < 3 )
+            if ( length(valclean($lookup_value)) < 3 )
             {
                 debug "removing _like from short search param";
                 $lookup_pred =~ s/_like$//;
             }
         }
 
-        debug "*  looking up $lookup_pred";
+        next unless length(valclean($lookup_value));
+
+        debug "*  looking up $lookup_pred '$lookup_value'";
 
         $params ||= {};
         my $params_lookup =
@@ -576,7 +578,7 @@ sub render_node
         die "Path $path not supported";
     }
 
-    debug "Returning data: ".datadump(\@l,3);
+#    debug "Returning data: ".datadump(\@l,3);
 
     return to_json({data=>[@l]});
 }

@@ -5,7 +5,7 @@ package RDF::Base::Arc::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -373,7 +373,8 @@ Example:
 
 Returns:
 
-A List object with arc duplicates filtered out
+A List object with arc duplicates filtered out.
+Using the latest version if multiple arcs with same priority.
 
 =cut
 
@@ -386,12 +387,12 @@ sub unique_arcs_prio
     # $points->{ $commin_id }->[ $passed_order ] = $arc
 
 #    debug "Sorting out duplicate arcs";
+#    debug $list->sysdesig;
 
 
     my %points;
 
-    my( $arc, $error ) = $list->get_first;
-    while (! $error )
+    foreach my $arc ( sort { $b->id <=> $a->id } $list->as_array )
     {
         unless( $arc->is_arc )  # Might have been recently removed
         {
@@ -399,17 +400,9 @@ sub unique_arcs_prio
             next;
         }
 
-#	my $cid = $arc->common_id;
-#	my $sor = $sortargs->sortorder($arc);
-#	debug "Sort $sor: ".$arc->sysdesig;
-#	$points{ $cid }[ $sor ] = $arc;
-        $points{ $arc->common_id }[ $sortargs->sortorder($arc) ] = $arc;
+#        debug "Sort ". $sortargs->sortorder($arc)." : ".$arc->sysdesig;
+        $points{ $arc->common_id }[ $sortargs->sortorder($arc) ] ||= $arc;
     }
-    continue
-    {
-        ( $arc, $error ) = $list->get_next;
-    }
-    ;
 
 #    debug "unique_arcs_prio";
 #    debug query_desig(\%points);

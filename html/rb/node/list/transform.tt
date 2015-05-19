@@ -6,12 +6,13 @@
  focus='transform'
 %]
 
-[% input('transform', '', class='wide') %]<br/>
-[% step('Transform') %]
-
-&nbsp; List has [% searchobj.result.size %] elements
-
-
+<div class="info" style="clear:both">
 <h2>Instruktion</h2>
 <p>För att transformera en lista med anläggningar till en lista över personas kopplade till anläggningar kan man skriva: <code>has_contact.role_held_by</code>.
 </p>
+</div>
+[% input('transform', '', class='wide') %]<br/>
+[% step('Transform') %]
+
+Listan har [% searchobj.result.size %] element
+

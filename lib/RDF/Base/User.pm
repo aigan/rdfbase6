@@ -75,11 +75,11 @@ sub get
 #    debug "Getting RDF::Base user $_[1]";
     my $u = eval
     {
-	$_[0]->RDF::Base::Resource::get($_[1]);
+        $_[0]->RDF::Base::Resource::get($_[1]);
     };
-    if( catch(['notfound']) )
+    if ( catch(['notfound']) )
     {
-	return undef;
+        return undef;
     }
 
 #    debug "Got $u";
@@ -171,24 +171,24 @@ Returns: The level
 
 sub level
 {
-    unless( $_[0]->{'level'} )
+    unless ( $_[0]->{'level'} )
     {
-	my $node = $_[0];
-	## See $apphome/doc/notes.txt
-	my $level;
-	if( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
-	{
-	    $level = 40;
-	}
-	elsif( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
-	{
-	    $level = 0;
-	}
-	else
-	{
-	    $level = 10;
-	}
-	$node->{'level'} = $level;
+        my $node = $_[0];
+        ## See $apphome/doc/notes.txt
+        my $level;
+        if ( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
+        {
+            $level = 40;
+        }
+        elsif ( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
+        {
+            $level = 0;
+        }
+        else
+        {
+            $level = 10;
+        }
+        $node->{'level'} = $level;
     }
 
     return $_[0]->{'level'};
@@ -217,7 +217,7 @@ sub find_by_anything
 
     unless( ref $val )
     {
-	trim(\$val);
+        trim(\$val);
     }
 
     my( @new );
@@ -226,42 +226,42 @@ sub find_by_anything
 
     # obj is guest
     #
-    if( $val eq 'guest' )
+    if ( $val eq 'guest' )
     {
-	debug 2, "  as guest";
+        debug 2, "  as guest";
 #	warn datadump($C_guest_access, 2);
-	my $class = ref($_[0]) || $_[0];
-	@new = RDF::Base::Resource->get_by_label('guest');
+        my $class = ref($_[0]) || $_[0];
+        @new = RDF::Base::Resource->get_by_label('guest');
     }
-    elsif( $val !~ /^\d+$/ )
+    elsif ( $val !~ /^\d+$/ )
     {
-	debug 2, "  as non-number, from name_short";
-	# TODO: Handle empty $val
+        debug 2, "  as non-number, from name_short";
+        # TODO: Handle empty $val
 
-	my $class = ref($_[0]) || $_[0];
-	@new = @{ $class->find
-	    ({
-	      'name_short' => $val,
-	      is           => $C_login_account,
-	     }, $args)};
+        my $class = ref($_[0]) || $_[0];
+        @new = @{ $class->find
+                    ({
+                      'name_short' => $val,
+                      is           => $C_login_account,
+                     }, $args)};
 
-	unless(@new)
-	{
-	    debug 2, "  as non-number, from name";
-	    @new = @{ $class->find
-		({
-		  'name' => $val,
-		  is     => $C_login_account,
-		 }, $args)};
-	}
+        unless(@new)
+        {
+            debug 2, "  as non-number, from name";
+            @new = @{ $class->find
+                        ({
+                          'name' => $val,
+                          is     => $C_login_account,
+                         }, $args)};
+        }
     }
     #
     # obj as obj id
     #
     else
     {
-	debug 2, "  as id";
-	push @new, $this->get_by_id( $val );
+        debug 2, "  as id";
+        push @new, $this->get_by_id( $val );
     }
 
     debug 3, "Returning ($new[0])";
@@ -284,29 +284,29 @@ sub verify_password
 
     $password_encrypted ||= '';
 
-#    debug "Retrieving password for $u->{id}";
+#    debug 1, "Retrieving password for $u->{id}";
     my @pwlist = $u->list('has_password',undef,['active'])->as_array;
 
     unless(scalar @pwlist)
     {
-	my $uname = $u->desig;
-	confess "No desig for user" unless $uname;
-	debug("$uname has no password");
-	cluck "no password";
-	return 0;
+        my $uname = $u->desig;
+        confess "No desig for user" unless $uname;
+        debug("$uname has no password");
+        cluck "no password";
+        return 0;
     }
 
     foreach my $pwd (@pwlist)
     {
-	# Validating password
-	#
-	if( $password_encrypted eq passwd_crypt($pwd) )
-	{
-	    return 1;
-	}
+        # Validating password
+        #
+        if ( $password_encrypted eq passwd_crypt($pwd) )
+        {
+            return 1;
+        }
     }
 
-    debug "Verifying password failed:\n".datadump(\%ENV);
+#    debug "Verifying password failed:\n".datadump(\%ENV);
     return 0;
 }
 
@@ -318,13 +318,13 @@ sub verify_password
 
 sub has_root_access
 {
-    if( $_[0]->prop('has_access_right',undef,['active'])->equals($C_full_access) )
+    if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_full_access) )
     {
-	return 1;
+        return 1;
     }
     else
     {
-	return 0;
+        return 0;
     }
 }
 
@@ -342,19 +342,19 @@ sub set_default_propargs
     # Since subrequests from the same user may interlace with this
     # request, it must be set for the request
 
-    if( $Para::Frame::REQ )
+    if ( $Para::Frame::REQ )
     {
-	$Para::Frame::REQ->{'rb_default_propargs'} = undef;
+        $Para::Frame::REQ->{'rb_default_propargs'} = undef;
 
-	if( $_[1] )
-	{
-	    my $args = parse_propargs( $_[1] );
-	    return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
-	}
+        if ( $_[1] )
+        {
+            my $args = parse_propargs( $_[1] );
+            return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+        }
     }
     else
     {
-	debug "set_default_propargs without an active REQ";
+        debug "set_default_propargs without an active REQ";
     }
 
     return undef;
@@ -370,9 +370,9 @@ For the current request
 
 sub default_propargs
 {
-    if( $Para::Frame::REQ )
+    if ( $Para::Frame::REQ )
     {
-	return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
+        return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
     }
     return undef;
 }
@@ -388,9 +388,9 @@ sub on_arc_add
 {
     my( $u, $arc, $pred_name, $args_in ) = @_;
 
-    if( $pred_name eq 'name_short' )
+    if ( $pred_name eq 'name_short' )
     {
-	delete $u->{username};
+        delete $u->{username};
     }
 
     $u->clear_caches;

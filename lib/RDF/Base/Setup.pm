@@ -1471,6 +1471,23 @@ http://www.w3.org/ns/auth/acl#Write",
     {
         my $req = Para::Frame::Request->new_bgrequest();
 
+        $R->find_set({label => 'class_list_url'},$args)
+          ->update({
+                    range => $C->get('url'),
+                    is => $C->get('predicate'),
+                    admin_comment => "URL from relative site root for the list of nodes of this class",
+                   },$args);
+
+
+        $rb->update({ has_version => 14 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+    if( $ver < 15 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
         my $C_predicate = $C->get('predicate');
 
         my $authorization = $R->find_set({label => 'acl_authorization'},$args)
@@ -1505,14 +1522,10 @@ http://www.w3.org/ns/auth/acl#Write",
                    },$args);
 
 
-#        $rb->update({ has_version => 14 },$args);
+#        $rb->update({ has_version => 15 },$args);
         $res->autocommit;
         $req->done;
     }
-
-
-
-
 
 
 

@@ -9,18 +9,18 @@
 
 <p>( 1 --A--> 2 ) and ( 2 --B--> 3 ) ==> ( 1 --C--> 3 )</p>
 
-<table>
+<table class="admin">
 <tr><th>[% sort('ID','id') %]
-    <th>[% sort('A', 'a.desig') %]
-    <th>[% sort('B', 'b.desig') %]
-    <th>[% sort('C', 'c.desig') %]
+    <th>[% sort('A', 'a.label') %]
+    <th>[% sort('B', 'b.label') %]
+    <th>[% sort('C', 'c.label') %]
 
 [% FOREACH rule IN find(is=C.syllogism).sorted(order, direction) %]
    [% tr2 %]
       <td>[% jump(rule.id, rule.form_url) %]</td>
-      <td>[% rule.a.desig %]</td>
-      <td>[% rule.b.desig %]</td>
-      <td>[% rule.c.desig %]</td>
+      <td>[% rule.a.label %]</td>
+      <td>[% rule.b.label %]</td>
+      <td>[% rule.c.label %]</td>
    </td></tr>
 [% END %]
 </table>

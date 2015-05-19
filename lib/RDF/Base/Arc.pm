@@ -40,7 +40,7 @@ use Scalar::Util qw( refaddr blessed looks_like_number );
 use DBD::Pg qw(:pg_types);
 use JSON;                       # to_json
 
-use Para::Frame::Utils qw( throw debug datadump package_to_module );
+use Para::Frame::Utils qw( throw debug datadump package_to_module validate_utf8 );
 use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
@@ -707,13 +707,16 @@ sub create
 
             }
 
+            if ( $coltype eq 'valbin' )
+            {
+                utf8::encode( $value );
+                $bindtype[$#values+1] = PG_BYTEA;
+                #debug "value '$value' ".validate_utf8(\$value);
+            }
+
             $rec->{$coltype} = $value;
             push @fields, $coltype;
             push @values, $rec->{$coltype};
-            if ( $coltype eq 'valbin' )
-            {
-                $bindtype[$#values] = PG_BYTEA;
-            }
 
             debug "Create arc $pred_name($rec->{'subj'}, $rec->{$coltype})" if $DEBUG;
         }
@@ -4119,6 +4122,7 @@ sub create_removal
                                            pred        => $arc->{'pred'},
                                            value       => is_undef,
                                            valtype     => 0,
+                                           created     => $args->{created},
                                           }, $args);
 #    debug "Created removal arc ".$arc->sysdesig;
     return $arc_out;
@@ -4371,9 +4375,11 @@ sub set_value
         my $dbix        = $RDF::dbix;
         my $dbh         = $dbix->dbh;
         my $value_db;
+        my $value_type;
 
         my @dbvalues;
         my @dbparts;
+        my @bindtype; # index from 0
 
         if ( $objtype_old )
         {
@@ -4394,6 +4400,9 @@ sub set_value
             elsif ( $coltype_new eq 'valfloat' )
             {
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
                 confess "No number $value_db" unless looks_like_number($value_db);
             }
             elsif ( $coltype_new eq 'valtext' )
@@ -4404,6 +4413,11 @@ sub set_value
                 }
 
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
+
+                utf8::upgrade( $value_db ) if defined $value_db; # May be undef
                 my $clean = $value_new->clean_plain;
 
                 push @dbparts, "valclean=?";
@@ -4414,20 +4428,29 @@ sub set_value
             elsif ( $coltype_new eq 'valbin' )
             {
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
+                utf8::encode( $value_db );
+                $value_type = PG_BYTEA;
             }
             else
             {
                 debug 3, "We do not specificaly handle coltype $coltype_new\n";
                 $value_db = $value_new;
+                # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
+                $value_db = $value_db->plain if ref $value_db;
+                # Assume that ->plain() always returns charstring
             }
         }
 
-        # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
-        $value_db = $value_db->plain if ref $value_db;
-        # Assume that ->plain() always returns charstring
-        utf8::upgrade( $value_db ) if defined $value_db; # May be undef
 
         my $now_db = $dbix->format_datetime($now);
+
+        if( $value_type )
+        {
+            $bindtype[$#dbvalues+1] = $value_type;
+        }
 
         push( @dbparts,
               "$coltype_new=?",
@@ -4491,6 +4514,15 @@ sub set_value
         my $sql_set = join ",",@dbparts;
         my $st = "update arc set $sql_set where ver=?";
         my $sth = $dbh->prepare($st);
+
+        ### Binding SQL datatypes to values
+        for (my$i=0;$i<=$#bindtype;$i++)
+        {
+            next unless $bindtype[$i];
+            $sth->bind_param($i+1, undef, { pg_type => $bindtype[$i] } );
+        }
+
+
         $sth->execute(@dbvalues, $arc_id);
         $RDF::Base::Resource::TRANSACTION{ $arc_id } = $Para::Frame::REQ;
 
@@ -4783,6 +4815,8 @@ sub activate
             throw('validation', "Arc $aid is not yet submitted");
         }
     }
+
+    return 1 if $arc->active;
 
     my $updated = $args->{'updated'} || now();
     my $activated_by = $Para::Frame::REQ->user;
@@ -6429,8 +6463,8 @@ sub remove_check
     $arc->{'in_remove_check'} ++;
 
     # Don't make arc disregarded, because it's used in inference?
-    $arc->{'disregard'} ++;
-    warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+#    $arc->{'disregard'} ++;
+#    warn "Set disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 
     my $pred      = $arc->pred;
 
@@ -6482,8 +6516,8 @@ sub remove_check
 #    }
 
     $arc->{'in_remove_check'} --;
-    $arc->{'disregard'} --;
-    warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
+#    $arc->{'disregard'} --;
+#    warn "Unset disregard arc $arc->{id} #$arc->{ioid} (now $arc->{'disregard'})\n" if $DEBUG;
 }
 
 
