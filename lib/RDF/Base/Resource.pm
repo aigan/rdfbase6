@@ -2528,6 +2528,9 @@ C<$pred_name> or C<undef> if none found.
 unique_arcs_prio filter is applied BEFORE proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
+C<arclim2>, if existing, is used instead of arclim in the proplim
+filtering.
+
 =cut
 
 sub first_prop
@@ -2535,6 +2538,17 @@ sub first_prop
     my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my $args2 = $args;
+    my $arclim2 = $arclim;
+    if ( $args->{'arclim2'} )
+    {
+        $arclim2 = $args->{'arclim2'};
+
+        $args2 = {%$args};
+        $args2->{'arclim'} = $arclim2;
+        delete $args2->{'arclim2'};
+    }
 
     my( $pred, $name );
     if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
@@ -2593,7 +2607,7 @@ sub first_prop
         {
             my $arc = $arcs->[$i];
             if ( $arc->meets_arclim($arclim) and
-                 $arc->value_meets_proplim($proplim, $args) )
+                 $arc->value_meets_proplim($proplim, $args2) )
             {
                 $best_arc = $arc;
                 $best_arc_cid = $arc->common_id;
@@ -2609,7 +2623,7 @@ sub first_prop
             my $arc = $arcs->[$i];
             unless( ($arc->common_id == $best_arc_cid) and
                     $arc->meets_arclim($arclim) and
-                    $arc->value_meets_proplim($proplim, $args)
+                    $arc->value_meets_proplim($proplim, $args2)
                   )
             {
                 next;
@@ -2646,7 +2660,7 @@ sub first_prop
             foreach my $arc (@{$node->{'relarc'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->value_meets_proplim($proplim, $args) )
+                     $arc->value_meets_proplim($proplim, $args2) )
                 {
                     return $arc->value;
                 }
@@ -2661,7 +2675,7 @@ sub first_prop
             foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->value_meets_proplim($proplim, $args) )
+                     $arc->value_meets_proplim($proplim, $args2) )
                 {
                     return $arc->value;
                 }
@@ -2685,6 +2699,9 @@ predicate C<$pred_name>
 unique_arcs_prio filter is applied BEFORE proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
+C<arclim2>, if existing, is used instead of arclim in the proplim
+filtering.
+
 =cut
 
 sub first_revprop
@@ -2692,6 +2709,17 @@ sub first_revprop
     my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my $args2 = $args;
+    my $arclim2 = $arclim;
+    if ( $args->{'arclim2'} )
+    {
+        $arclim2 = $args->{'arclim2'};
+
+        $args2 = {%$args};
+        $args2->{'arclim'} = $arclim2;
+        delete $args2->{'arclim2'};
+    }
 
     my( $pred, $name );
     if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
@@ -2749,7 +2777,7 @@ sub first_revprop
         {
             my $arc = $arcs->[$i];
             if ( $arc->meets_arclim($arclim) and
-                 $arc->subj->meets_proplim($proplim, $args) )
+                 $arc->subj->meets_proplim($proplim, $args2) )
             {
                 $best_arc = $arc;
                 $best_arc_cid = $arc->common_id;
@@ -2765,7 +2793,7 @@ sub first_revprop
             my $arc = $arcs->[$i];
             unless( ($arc->common_id == $best_arc_cid) and
                     $arc->meets_arclim($arclim) and
-                    $arc->subj->meets_proplim($proplim, $args)
+                    $arc->subj->meets_proplim($proplim, $args2)
                   )
             {
                 next;
@@ -2802,7 +2830,7 @@ sub first_revprop
             foreach my $arc (@{$node->{'revarc'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->subj->meets_proplim($proplim, $args) )
+                     $arc->subj->meets_proplim($proplim, $args2) )
                 {
                     return $arc->subj;
                 }
@@ -2817,7 +2845,7 @@ sub first_revprop
             foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->subj->meets_proplim($proplim, $args) )
+                     $arc->subj->meets_proplim($proplim, $args2) )
                 {
                     return $arc->subj;
                 }
