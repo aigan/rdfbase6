@@ -39,7 +39,10 @@ sub handler
 
     my $l = $search_col->result;
 
-    my( $args, $arclim, $res ) = parse_propargs( 'solid' );
+    my( $args, $arclim, $res ) = solid_propargs({
+                                                 activate_new_arcs => 1,
+                                                 no_notification => 1,
+                                                });
 
     my $s = $req->session;
     $res->{'vacuumed'} = $s->{'vacuumed'};

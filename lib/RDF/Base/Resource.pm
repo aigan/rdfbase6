@@ -4480,6 +4480,9 @@ sub update_seen_by
     my( $node, $user, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
     $user ||= $Para::Frame::U;
+
+    debug sprintf "update_seen_by for %s by %s", $node->desig, $user->desig;
+
     return $user if $user->id == $C_root->id;
 
     $node->add({'seen_by'=>$user},
@@ -4833,6 +4836,38 @@ sub update
 
 ##############################################################################
 
+=head2 revupdate
+
+  $n->revupdate( \%props, \%args )
+
+Reverse of L</update>
+
+=cut
+
+sub revupdate
+{
+    my( $node, $revprops, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my @arcs_old = ();
+
+    my $arclim = aais( $args, 'explicit');
+
+    foreach my $pred_name ( keys %$revprops )
+    {
+        next if $pred_name eq 'label';
+        my $old = $node->revarc_list( $pred_name, undef, $arclim );
+        push @arcs_old, $old->as_array;
+    }
+
+    $node->revreplace(\@arcs_old, $revprops, $args);
+
+    return $node;
+}
+
+
+##############################################################################
+
 =head2 equals
 
   1. $n->equals( $node2, \%args )
@@ -5114,6 +5149,14 @@ sub vacuum_facet
 
     $node->vacuum_range_card_max( $args );
 
+    foreach my $unseen_arc ( $node->arc_list('unseen_by')->as_array )
+    {
+        if( $unseen_arc->value->equals($unseen_arc->created_by) )
+        {
+            $unseen_arc->remove({%$args,activate_new_arcs => 1});
+        }
+    }
+
     return $node;
 }
 
@@ -5392,9 +5435,9 @@ sub arcversions
 
 ##############################################################################
 
-=head2 rev_arcversions
+=head2 revarcversions
 
-  $n->arcversions( $pred, $proplim, \%args )
+  $n->revarcversions( $pred, $proplim, \%args )
 
 Produces a list of all relevant common-arcs, with lists of their
 relevant versions, used for chosing version to activate/deactivate.
@@ -5404,7 +5447,7 @@ relevant versions, used for chosing version to activate/deactivate.
 
 =cut
 
-sub rev_arcversions
+sub revarcversions
 {
     my( $node, $predname, $proplim, $args ) = @_;
 
@@ -6641,6 +6684,12 @@ sub wu_select
           if ( $alts->size > 500 );
 
         $alts->reset;
+
+        my $using_default;
+        unless( $subj->prop( $pred_name, undef, 'adirect' ) )
+        {
+            $using_default = $default_value;
+        }
         while ( my $item = $alts->get_next_nos )
         {
             unless( $alts->count % 100 )
@@ -6656,7 +6705,7 @@ sub wu_select
             if ( $set_value )
             {
                 $out .= ' selected="selected"'
-                  if ( $default_value eq $item->id or
+                  if ( $using_default eq $item->id or
                        $subj->prop( $pred_name, $item, 'adirect' ) );
             }
 
@@ -8424,7 +8473,11 @@ sub mark_unsaved
 
 =head2 commit
 
-Called by L<RDF::Base/on_done>
+Called by L<RDF::Base/on_done>.
+
+This is ONLY for saving changes of node metadata to the DB. It will
+loop through %UNSAVED and save the nodes, adding notifications for
+watchers.
 
 THIS WILL NOT CALL $RDF::dbix->commit() for you
 
@@ -8498,8 +8551,9 @@ sub commit
 #    debug sprintf "UNSAVED now at %d", scalar(keys %UNSAVED);
 #    debug sprintf "CC now at %d", scalar(keys %CHILD_CHANGED);
 
-    # DB synced with arc changes in cache
-    %TRANSACTION = ();
+#    # DB synced with arc changes in cache
+#    %TRANSACTION = ();
+
     $in_commit = 0;
 }
 
@@ -9618,6 +9672,7 @@ sub update_unseen_by
         if ( my $seen_arc = $node->first_arc('seen_by', $watcher) )
         {
             next if $seen_arc->updated >= $updated;
+            next if $seen_arc->updated_by->equals( $watcher );
         }
 
         $node->add({unseen_by => $watcher},

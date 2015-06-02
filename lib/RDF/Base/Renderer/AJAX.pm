@@ -78,7 +78,7 @@ sub render_output
         my( $file ) = ( $rend->url_path =~ /\/ajax\/(.*)/ );
         unless( $file )
         {
-            die "AJAX renerer only handles the /ajax/ path";
+            die "AJAX renderer only handles the /ajax/ path";
         }
 
         debug "AJAX path: $file";
