@@ -1713,7 +1713,7 @@ sub form_url
            $n->list('scof',{class_list_url_exist=>1})->first_prop('class_list_url') )
     {
         $path = $path_node->plain;
-        debug "class_list_url ".$path;
+#        debug "class_list_url ".$path;
     }
     else
     {

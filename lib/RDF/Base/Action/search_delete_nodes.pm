@@ -99,6 +99,9 @@ sub handler
 
                 $a->remove($args);
             }
+
+            $arcs_cnt += $n->remove($args);
+
             $res->autocommit($args);
         }
     };
