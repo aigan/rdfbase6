@@ -264,7 +264,7 @@ sub wuirc_disabled # Not used anymore
             $out .= "<table class=\"wuirc\">\n";
             $out .= $arc->table_row( $args );
 
-#            $out .= $arc->value->as_html({method=>'address'});
+#            $out .= $arc->value->as_html({display_method=>'address'});
         }
         else
         {
@@ -321,7 +321,7 @@ sub select_tooltip_html
 {
     my( $ea, $args ) = @_;
 
-    my $ea_str = $ea->as_html({method=>'address'});
+    my $ea_str = $ea->as_html({display_method=>'address'});
     my $id_str = $ea->id;
     my $out = "<table>";
     $out .= "<tr><td>E-post</td><td>$ea_str</td></tr>";

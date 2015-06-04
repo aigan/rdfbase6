@@ -468,7 +468,7 @@ sub find_by_anything
     my( $this, $val, $args_in ) = @_;
     return is_undef unless defined $val;
 
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args, $arclim, $res, $targs ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(3);
 
@@ -519,7 +519,7 @@ sub find_by_anything
     {
         debug 3, "  obj as subquery";
         debug "    query: ".query_desig($val) if debug > 3;
-        my $objs = $this->find($val, $args);
+        my $objs = $this->find($val, $targs);
         unless( $objs->size )
         {
             return is_undef;
@@ -546,8 +546,8 @@ sub find_by_anything
 
         $valtype ||= $this->get_by_label( $coltype );
 
-#	debug "Parsing literal using valtype ".$valtype->sysdesig;
-#	debug query_desig $valref;
+#	debug 1, "Parsing literal using valtype ".$valtype->id;
+#	debug 1, "value ".query_desig($valref);
 
         $val = $valtype->instance_class->parse( $valref,
                                                 {
@@ -612,7 +612,7 @@ sub find_by_anything
         if ( $spec !~ /\s/ )    # just one word
         {
             debug 3, "    Finding nodes with $spec = $name";
-            $objs = $this->find({$spec => $name}, $args);
+            $objs = $this->find({$spec => $name}, $targs);
         }
         else
         {
@@ -620,7 +620,7 @@ sub find_by_anything
             $props->{'predor_name_-_code_-_name_short_clean'} = $name;
             debug "    Constructing props for find: ".query_desig($props)
               if debug > 3;
-            $objs = $this->find($props, $args);
+            $objs = $this->find($props, $targs);
         }
 
         unless( $objs->size )
@@ -695,7 +695,7 @@ sub find_by_anything
         @new = $valtype->instance_class->
           parse_to_list( $valref,
                          {
-                          %$args,
+                          %$targs,
                           aclim => 'active',
                          }
                        )->as_array;
@@ -5947,9 +5947,15 @@ sub wu
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
     my $divstyle = $args->{'divstyle'} // 'position: relative';
 
+
+
     # Will update $args with context properties
+    ##############
+    ############## THE ACTUAL WIDGET HERE
     #
     my $out_wuirc = $range_class->wuirc($node, $pred, $args);
+
+
 
     my $label_out = $pred->label_from_params($args);
     $out .= $label_out;

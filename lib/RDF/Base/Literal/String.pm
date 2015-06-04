@@ -279,6 +279,7 @@ sub parse
     {
         unless( length($val_mod||'') )
         {
+            debug "returning undef value";
             return $class->new( undef, $valtype );
         }
 
@@ -331,7 +332,7 @@ sub parse
     }
     elsif ( $coltype eq 'valfloat' )
     {
-        if ( $val_mod )
+        if ( defined $val_mod )
         {
             trim($val_mod);
             $val_mod =~ s/,/./; # Handling swedish numerical format...
@@ -353,6 +354,8 @@ sub parse
     {
         confess "coltype $coltype not handled by this class";
     }
+
+#    debug "Setting value to $val_mod";
 
     # Always return the incoming object. This may MODIFY the object
     #
@@ -739,8 +742,8 @@ sub wuirc
     my( $args ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(5);
-#    my $DEBUG = Para::Frame::Logging->at_level(3);
-    my $DEBUG = 0;
+    my $DEBUG = Para::Frame::Logging->at_level(3);
+#    my $DEBUG = 0;
 
     no strict 'refs';           # For &{$inputtype} below
     my $out = "";

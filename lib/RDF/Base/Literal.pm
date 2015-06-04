@@ -738,7 +738,9 @@ Returns: The list ( $retval, $coltype, $valtype, $args )
 sub extract_string
 {
     my( $class, $val_in, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
+    my( $args, $arclim, $res, $targs ) = parse_propargs($args_in);
+
+#    debug "Extract strings with args ".query_desig($args);
 
     my $valtype = $args->{'valtype'} || $class->default_valtype;
     my $coltype = $valtype->coltype;
@@ -755,6 +757,8 @@ sub extract_string
 
     if ( ref $val eq 'SCALAR' )
     {
+#        debug "String $val coltype $coltype";
+
         return( $val, $coltype, $valtype, $args );
     }
     elsif ( UNIVERSAL::isa $val, "RDF::Base::Literal" )
@@ -798,6 +802,10 @@ sub extract_string
     }
     else
     {
+        if( ref $val and $val->can('sysdesig') )
+        {
+            debug "During parsing of ".$val->sysdesig;
+        }
         confess "Can't parse $val";
     }
 
