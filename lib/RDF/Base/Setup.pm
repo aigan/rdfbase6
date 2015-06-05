@@ -1332,7 +1332,6 @@ sub upgrade_db
         $req->done;
     }
 
-
     if( $ver < 10 )
     {
         my $req = Para::Frame::Request->new_bgrequest();
@@ -1485,8 +1484,48 @@ http://www.w3.org/ns/auth/acl#Write",
         $req->done;
     }
 
+    if( $ver < 15 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        my $C_predicate = $C->get('predicate');
+
+        my $authorization = $R->find_set({label => 'acl_authorization'},$args)
+          ->update({
+                    is => $C->get('class'),
+                    admin_comment => "An element of access control,
+    allowing agent to agents access of some kind to resources or classes of resources. See http://www.w3.org/ns/auth/acl#Authorization",
+                   },$args);
+
+        $R->find_set({label => 'acl_access_to'},$args)
+          ->update({
+                    domain => $authorization,
+                    range => $C->get('resource'),
+                    is => $C_predicate,
+                    admin_comment => "The information resource to which access is being granted. See http://www.w3.org/ns/auth/acl#accessTo",
+                   },$args);
+
+        $R->find_set({label => 'acl_mode'},$args)
+          ->update({
+                    domain => $authorization,
+                    range => $C->get('acl_access'),
+                    is => $C_predicate,
+                    admin_comment => "A mode of access such as read or write. See http://www.w3.org/ns/auth/acl#mode",
+                   },$args);
+
+        $R->find_set({label => 'acl_agent'},$args)
+          ->update({
+                    domain => $authorization,
+                    range => $C->get('intelligent_agent'),
+                    is => $C_predicate,
+                    admin_comment => "A person or social entity to being given the right. See http://www.w3.org/ns/auth/acl#agent",
+                   },$args);
 
 
+#        $rb->update({ has_version => 15 },$args);
+        $res->autocommit;
+        $req->done;
+    }
 
 
 

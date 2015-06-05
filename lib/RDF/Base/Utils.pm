@@ -1275,10 +1275,22 @@ sub parse_propargs
         delete $arg->{unique_arcs_prio};
     }
 
+    ### TRANSITIVE ARGS
+    #
+    my $targs =
+    {
+     arclim => $arg->{arclim},
+     unique_arcs_prio => $arg->{unique_arcs_prio},
+     res => $arg->{'res'},
+     arc_active_on_date => $arg->{arc_active_on_date},
+     activate_new_arcs => $arg->{activate_new_arcs},
+     submit_new_arcs => $arg->{submit_new_arcs},
+     updated => $arg->{updated},
+    };
 
     if ( wantarray )
     {
-        return( $arg, $arclim, $res );
+        return( $arg, $arclim, $res, $targs );
     }
     else
     {

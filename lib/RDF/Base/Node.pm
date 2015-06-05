@@ -520,6 +520,8 @@ This also implements meets_proplim for arcs!!!
 
 Also implements the form mypred1{is this}.that
 
+... implements not => { ... }
+
 Returns: boolean
 
 =cut
@@ -1228,6 +1230,152 @@ sub replace
 
 ##############################################################################
 
+=head2 revreplace
+
+  $n->revreplace( \@arclist, \%props, \%args )
+
+Reverse of L</replace>
+
+
+=cut
+
+sub revreplace
+{
+    my( $node, $oldarcs, $revprops, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my( %add, %del, %del_pred );
+
+    my $res = $args->{'res'} ||= RDF::Base::Resource::Change->new;
+    my $changes_prev = $res->changes;
+
+    $oldarcs = $node->find_revarcs($oldarcs, $args);
+    $revprops   = $node->construct_proplist($revprops, $args);
+
+    foreach my $arc ( $oldarcs->as_array )
+    {
+        my $subj_key = $arc->subj->syskey;
+        $del{$arc->pred->plain}{$subj_key} = $arc;
+    }
+
+    # go through the new values and remove existing values from the
+    # remove list and add nonexisting values to the add list
+
+    my( $pred );
+    foreach my $pred_name ( keys %$revprops )
+    {
+        my $pred = RDF::Base::Pred->get_by_label( $pred_name );
+
+        foreach my $subj_in ( @{$revprops->{$pred_name}} )
+        {
+            my $subj  = RDF::Base::Resource->get_by_anything( $subj_in, $args );
+
+            my $subj_key = $subj->syskey;
+
+            if ( $del{$pred_name}{$subj_key} )
+            {
+                delete $del{$pred_name}{$subj_key};
+            }
+            elsif ( $subj_key ne 'undef' )
+            {
+                $add{$pred_name}{$subj_key} = $subj;
+            }
+        }
+    }
+
+    foreach my $pred_name ( keys %del )
+    {
+        foreach my $subj_key ( keys %{$del{$pred_name}} )
+        {
+            my $arc = $del{$pred_name}{$subj_key};
+            $del_pred{$pred_name} ||= [];
+
+            push @{$del_pred{$pred_name}}, $subj_key;
+        }
+    }
+
+    foreach my $pred_name (keys %del_pred)
+    {
+        if ( @{$del_pred{$pred_name}} > 1 )
+        {
+            delete $del_pred{$pred_name};
+        }
+        else
+        {
+            my $subj_key = $del_pred{$pred_name}[0];
+            $del_pred{$pred_name} = delete $del{$pred_name}{$subj_key};
+        }
+    }
+
+    arc_lock();
+
+    foreach my $pred_name ( keys %add )
+    {
+        foreach my $key ( keys %{$add{$pred_name}} )
+        {
+            my $subj = $add{$pred_name}{$key};
+
+            if ( $del_pred{$pred_name} )
+            {
+                my $arc = $del_pred{$pred_name};
+                my $new = RDF::Base::Arc->
+                  create({
+                          subj        => $subj,
+                          pred        => $arc->pred->id,
+                          value       => $arc->obj->id,
+                          active      => 0, # Activate later
+                         }, {
+                             %$args,
+                             ignore_card_check => 1,
+                            } );
+
+                # Allowing changed subj in versions
+                #
+                if ( $arc->direct and $new->is_new )
+                {
+                    $new->set_replaces( $arc, $args );
+                }
+
+                if ( $args->{'activate_new_arcs'} )
+                {
+                    $new->submit($args) unless $new->submitted;
+                    $new->activate( $args ) unless $new->active;
+                }
+
+                delete $del_pred{$pred_name};
+            }
+            else
+            {
+                RDF::Base::Arc->create({
+                                        subj => $subj,
+                                        pred => $pred_name,
+                                        value => $node,
+                                       }, $args );
+            }
+        }
+    }
+
+    foreach my $pred_name ( keys %del )
+    {
+        foreach my $key ( keys %{$del{$pred_name}} )
+        {
+            $del{$pred_name}{$key}->remove( $args );
+        }
+    }
+
+    foreach my $pred_name ( keys %del_pred )
+    {
+        $del_pred{$pred_name}->remove( $args );
+    }
+
+    arc_unlock();
+
+    return $res->changes - $changes_prev;
+}
+
+
+##############################################################################
+
 =head2 remove
 
   $n->remove( $args )
@@ -1476,6 +1624,60 @@ sub find_arcs
         foreach my $arc (@$arcs)
         {
             debug "  ".$arc->sysdesig($args);
+        }
+    }
+
+    return RDF::Base::Arc::List->new($arcs);
+}
+
+
+##############################################################################
+
+=head2 find_revarcs
+
+  $n->find_revarcs( [ @crits ], \%args )
+
+  $n->find_revarcs( $query, \%args )
+
+See L</find_arcs>
+
+=cut
+
+sub find_revarcs
+{
+    my( $node, $props, $args ) = @_;
+
+    unless( ref $props and (ref $props eq 'ARRAY' or
+                            ref $props eq 'RDF::Base::List' )
+          )
+    {
+        $props = [$props];
+    }
+
+    my $arcs = [];
+
+    foreach my $crit ( @$props )
+    {
+        if ( ref $crit and UNIVERSAL::isa($crit, 'RDF::Base::Arc') )
+        {
+            push @$arcs, $crit;
+        }
+        elsif ( ref($crit) eq 'HASH' )
+        {
+            foreach my $pred ( keys %$crit )
+            {
+                my $val = $crit->{$pred};
+                my $found = $node->revarc_list($pred,undef,$args)->find({subj=>$val}, $args);
+                push @$arcs, $found->as_array if $found->size;
+            }
+        }
+        elsif ( $crit =~ /^\d+$/ )
+        {
+            push @$arcs, RDF::Base::Arc->get($crit);
+        }
+        else
+        {
+            confess "not implemented".query_desig($props);
         }
     }
 

@@ -22,7 +22,7 @@ use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug datadump );
 use Para::Frame::L10N qw( loc );
 
-use RDF::Base::Utils qw( query_desig parse_propargs );
+use RDF::Base::Utils qw( query_desig parse_propargs solid_propargs );
 
 =head1 DESCRIPTION
 
@@ -39,7 +39,10 @@ sub handler
 
     my $l = $search_col->result;
 
-    my( $args, $arclim, $res ) = parse_propargs( 'solid' );
+    my( $args, $arclim, $res ) = solid_propargs({
+                                                 activate_new_arcs => 1,
+                                                 no_notification => 1,
+                                                });
 
     my $s = $req->session;
     $res->{'vacuumed'} = $s->{'vacuumed'};

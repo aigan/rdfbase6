@@ -645,8 +645,8 @@ sub create_infere_rev
                                     implicit => 1,
                                    },
                                    {
+                                    %$args,
                                     activate_new_arcs => 1, # Activate directly
-                                    res => $args->{'res'},
                                    });
         }
         elsif ( $arc3_list->size > 1 ) # cleanup
@@ -736,8 +736,8 @@ sub create_infere_rel
                                     implicit => 1,
                                    },
                                    {
+                                    %$args,
                                     activate_new_arcs => 1, # Activate directly
-                                    res => $args->{'res'},
                                    });
         }
         elsif ( $arc3_list->size > 1 ) # cleanup

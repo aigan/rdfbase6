@@ -468,7 +468,7 @@ sub find_by_anything
     my( $this, $val, $args_in ) = @_;
     return is_undef unless defined $val;
 
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args, $arclim, $res, $targs ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(3);
 
@@ -519,7 +519,7 @@ sub find_by_anything
     {
         debug 3, "  obj as subquery";
         debug "    query: ".query_desig($val) if debug > 3;
-        my $objs = $this->find($val, $args);
+        my $objs = $this->find($val, $targs);
         unless( $objs->size )
         {
             return is_undef;
@@ -546,8 +546,8 @@ sub find_by_anything
 
         $valtype ||= $this->get_by_label( $coltype );
 
-#	debug "Parsing literal using valtype ".$valtype->sysdesig;
-#	debug query_desig $valref;
+#	debug 1, "Parsing literal using valtype ".$valtype->id;
+#	debug 1, "value ".query_desig($valref);
 
         $val = $valtype->instance_class->parse( $valref,
                                                 {
@@ -612,7 +612,7 @@ sub find_by_anything
         if ( $spec !~ /\s/ )    # just one word
         {
             debug 3, "    Finding nodes with $spec = $name";
-            $objs = $this->find({$spec => $name}, $args);
+            $objs = $this->find({$spec => $name}, $targs);
         }
         else
         {
@@ -620,7 +620,7 @@ sub find_by_anything
             $props->{'predor_name_-_code_-_name_short_clean'} = $name;
             debug "    Constructing props for find: ".query_desig($props)
               if debug > 3;
-            $objs = $this->find($props, $args);
+            $objs = $this->find($props, $targs);
         }
 
         unless( $objs->size )
@@ -695,7 +695,7 @@ sub find_by_anything
         @new = $valtype->instance_class->
           parse_to_list( $valref,
                          {
-                          %$args,
+                          %$targs,
                           aclim => 'active',
                          }
                        )->as_array;
@@ -1713,7 +1713,7 @@ sub form_url
            $n->list('scof',{class_list_url_exist=>1})->first_prop('class_list_url') )
     {
         $path = $path_node->plain;
-        debug "class_list_url ".$path;
+#        debug "class_list_url ".$path;
     }
     else
     {
@@ -2528,6 +2528,9 @@ C<$pred_name> or C<undef> if none found.
 unique_arcs_prio filter is applied BEFORE proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
+C<arclim2>, if existing, is used instead of arclim in the proplim
+filtering.
+
 =cut
 
 sub first_prop
@@ -2535,6 +2538,17 @@ sub first_prop
     my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my $args2 = $args;
+    my $arclim2 = $arclim;
+    if ( $args->{'arclim2'} )
+    {
+        $arclim2 = $args->{'arclim2'};
+
+        $args2 = {%$args};
+        $args2->{'arclim'} = $arclim2;
+        delete $args2->{'arclim2'};
+    }
 
     my( $pred, $name );
     if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
@@ -2593,7 +2607,7 @@ sub first_prop
         {
             my $arc = $arcs->[$i];
             if ( $arc->meets_arclim($arclim) and
-                 $arc->value_meets_proplim($proplim, $args) )
+                 $arc->value_meets_proplim($proplim, $args2) )
             {
                 $best_arc = $arc;
                 $best_arc_cid = $arc->common_id;
@@ -2609,7 +2623,7 @@ sub first_prop
             my $arc = $arcs->[$i];
             unless( ($arc->common_id == $best_arc_cid) and
                     $arc->meets_arclim($arclim) and
-                    $arc->value_meets_proplim($proplim, $args)
+                    $arc->value_meets_proplim($proplim, $args2)
                   )
             {
                 next;
@@ -2646,7 +2660,7 @@ sub first_prop
             foreach my $arc (@{$node->{'relarc'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->value_meets_proplim($proplim, $args) )
+                     $arc->value_meets_proplim($proplim, $args2) )
                 {
                     return $arc->value;
                 }
@@ -2661,7 +2675,7 @@ sub first_prop
             foreach my $arc (@{$node->{'relarc_inactive'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->value_meets_proplim($proplim, $args) )
+                     $arc->value_meets_proplim($proplim, $args2) )
                 {
                     return $arc->value;
                 }
@@ -2685,6 +2699,9 @@ predicate C<$pred_name>
 unique_arcs_prio filter is applied BEFORE proplim. That means that we
 choose among the versions that meets the proplim (and arclim).
 
+C<arclim2>, if existing, is used instead of arclim in the proplim
+filtering.
+
 =cut
 
 sub first_revprop
@@ -2692,6 +2709,17 @@ sub first_revprop
     my( $node, $pred_in, $proplim, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
     my( $active, $inactive ) = $arclim->incl_act;
+
+    my $args2 = $args;
+    my $arclim2 = $arclim;
+    if ( $args->{'arclim2'} )
+    {
+        $arclim2 = $args->{'arclim2'};
+
+        $args2 = {%$args};
+        $args2->{'arclim'} = $arclim2;
+        delete $args2->{'arclim2'};
+    }
 
     my( $pred, $name );
     if ( UNIVERSAL::isa($pred_in,'RDF::Base::Pred') )
@@ -2749,7 +2777,7 @@ sub first_revprop
         {
             my $arc = $arcs->[$i];
             if ( $arc->meets_arclim($arclim) and
-                 $arc->subj->meets_proplim($proplim, $args) )
+                 $arc->subj->meets_proplim($proplim, $args2) )
             {
                 $best_arc = $arc;
                 $best_arc_cid = $arc->common_id;
@@ -2765,7 +2793,7 @@ sub first_revprop
             my $arc = $arcs->[$i];
             unless( ($arc->common_id == $best_arc_cid) and
                     $arc->meets_arclim($arclim) and
-                    $arc->subj->meets_proplim($proplim, $args)
+                    $arc->subj->meets_proplim($proplim, $args2)
                   )
             {
                 next;
@@ -2802,7 +2830,7 @@ sub first_revprop
             foreach my $arc (@{$node->{'revarc'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->subj->meets_proplim($proplim, $args) )
+                     $arc->subj->meets_proplim($proplim, $args2) )
                 {
                     return $arc->subj;
                 }
@@ -2817,7 +2845,7 @@ sub first_revprop
             foreach my $arc (@{$node->{'revarc_inactive'}{$name}})
             {
                 if ( $arc->meets_arclim($arclim) and
-                     $arc->subj->meets_proplim($proplim, $args) )
+                     $arc->subj->meets_proplim($proplim, $args2) )
                 {
                     return $arc->subj;
                 }
@@ -3317,6 +3345,8 @@ sub count
             return $node->$tmpl->size;
         }
     }
+
+    confess "No pred" unless $tmpl;
 
     my $pred_id = RDF::Base::Pred->get( $tmpl )->id;
 
@@ -4450,6 +4480,9 @@ sub update_seen_by
     my( $node, $user, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
     $user ||= $Para::Frame::U;
+
+    debug sprintf "update_seen_by for %s by %s", $node->desig, $user->desig;
+
     return $user if $user->id == $C_root->id;
 
     $node->add({'seen_by'=>$user},
@@ -4803,6 +4836,38 @@ sub update
 
 ##############################################################################
 
+=head2 revupdate
+
+  $n->revupdate( \%props, \%args )
+
+Reverse of L</update>
+
+=cut
+
+sub revupdate
+{
+    my( $node, $revprops, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my @arcs_old = ();
+
+    my $arclim = aais( $args, 'explicit');
+
+    foreach my $pred_name ( keys %$revprops )
+    {
+        next if $pred_name eq 'label';
+        my $old = $node->revarc_list( $pred_name, undef, $arclim );
+        push @arcs_old, $old->as_array;
+    }
+
+    $node->revreplace(\@arcs_old, $revprops, $args);
+
+    return $node;
+}
+
+
+##############################################################################
+
 =head2 equals
 
   1. $n->equals( $node2, \%args )
@@ -5084,6 +5149,14 @@ sub vacuum_facet
 
     $node->vacuum_range_card_max( $args );
 
+    foreach my $unseen_arc ( $node->arc_list('unseen_by')->as_array )
+    {
+        if( $unseen_arc->value->equals($unseen_arc->created_by) )
+        {
+            $unseen_arc->remove({%$args,activate_new_arcs => 1});
+        }
+    }
+
     return $node;
 }
 
@@ -5362,9 +5435,9 @@ sub arcversions
 
 ##############################################################################
 
-=head2 rev_arcversions
+=head2 revarcversions
 
-  $n->arcversions( $pred, $proplim, \%args )
+  $n->revarcversions( $pred, $proplim, \%args )
 
 Produces a list of all relevant common-arcs, with lists of their
 relevant versions, used for chosing version to activate/deactivate.
@@ -5374,7 +5447,7 @@ relevant versions, used for chosing version to activate/deactivate.
 
 =cut
 
-sub rev_arcversions
+sub revarcversions
 {
     my( $node, $predname, $proplim, $args ) = @_;
 
@@ -5874,9 +5947,15 @@ sub wu
       ( $ajax ? RDF::Base::AJAX->new_form_id() : undef );
     my $divstyle = $args->{'divstyle'} // 'position: relative';
 
+
+
     # Will update $args with context properties
+    ##############
+    ############## THE ACTUAL WIDGET HERE
     #
     my $out_wuirc = $range_class->wuirc($node, $pred, $args);
+
+
 
     my $label_out = $pred->label_from_params($args);
     $out .= $label_out;
@@ -6322,10 +6401,7 @@ sub wuirc
         {
             debug "wuirc 5" if $DEBUG;
 
-            my $header = $args->{'header'} ||
-              ( $args->{'default_value'} ? '' :
-                Para::Frame::L10N::loc('Select') );
-            $args->{header} = $header;
+            $args->{header} ||= Para::Frame::L10N::loc('Select');
             $out .= $subj->wu_select( $pred->label, $range, $args);
         }
         elsif ( $inputtype eq 'select_tree' )
@@ -6572,13 +6648,16 @@ sub wu_select
     $out .= "<select id=\"$key\" name=\"$key\"$extra>";
 
     my $default_value;
-    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
-    {
-        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
-    }
+    ### Should not set default value without also setting the header
+#    if ( $subj->list( $pred_name, undef, 'adirect' )->size == 1 )
+#    {
+#        $default_value = $subj->first_prop( $pred_name, undef, 'adirect' )->id;
+#    }
+#    debug "wu_select $pred_name default = ".$default_value;
     $default_value ||= $args->{'default_value'} || '';
     $out .= '<option value="'. $default_value .'">'. $header .'</option>'
       if ( $header );
+#    debug "  header $header";
 
     my( $range, $range_pred ) = range_pred($args);
     $range_pred ||= 'is';
@@ -6611,6 +6690,12 @@ sub wu_select
           if ( $alts->size > 500 );
 
         $alts->reset;
+
+        my $using_default;
+        unless( $subj->prop( $pred_name, undef, 'adirect' ) )
+        {
+            $using_default = $default_value;
+        }
         while ( my $item = $alts->get_next_nos )
         {
             unless( $alts->count % 100 )
@@ -6626,7 +6711,7 @@ sub wu_select
             if ( $set_value )
             {
                 $out .= ' selected="selected"'
-                  if ( $default_value eq $item->id or
+                  if ( $using_default eq $item->id or
                        $subj->prop( $pred_name, $item, 'adirect' ) );
             }
 
@@ -6777,8 +6862,10 @@ sub wu_select_tree_multiple
 
     if ( $args->{header} )
     {
-        $out .= "<p class='left'>";
-        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+        $out .= "<p class='left'><b>";
+#        $out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) ." ". $type->wu_jump .":<br>";
+		$out .= $type->wu_jump ."</b><br>";
+		$out .= ucfirst(RDF::Base::Resource->get_by_label($pred_name)->as_html) .":<br>";
         $out .= $node->list($pred_name, {scof=>$type},'active')->as_html;
         $out .= "</p>";
     }
@@ -6827,11 +6914,13 @@ sub wu_select_tree_multiple
         my $nid = $node->id;
         my $tid = $type->id;
         $out .= "<div id=\"${tid}-tree\"><p class=\"btn btn-primary click\">";
-        $out .= locnl('Chose').' '.$type->as_html;
+        $out .= locnl('Chose');
         $out .= '</p></div>';
         $out .= "<script>\n";
         $out .= "(function(\$) {
-\$('#${tid}-tree .click').click(function(){\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
+\$('#${tid}-tree .click').click(function(){ 
+\$('#${tid}-tree').append(' <i class=\"fa fa-circle-o-notch fa-spin\"></i>')  ; 
+\$('#${tid}-tree').load('$home/clean/prop_tree.tt', {'id':$nid, 'type_id':$tid, 'pred':'$pred_name'}); tt_Init();});
 })(jQuery);";
         $out .= "</script>\n";
     }
@@ -8390,7 +8479,11 @@ sub mark_unsaved
 
 =head2 commit
 
-Called by L<RDF::Base/on_done>
+Called by L<RDF::Base/on_done>.
+
+This is ONLY for saving changes of node metadata to the DB. It will
+loop through %UNSAVED and save the nodes, adding notifications for
+watchers.
 
 THIS WILL NOT CALL $RDF::dbix->commit() for you
 
@@ -8464,8 +8557,9 @@ sub commit
 #    debug sprintf "UNSAVED now at %d", scalar(keys %UNSAVED);
 #    debug sprintf "CC now at %d", scalar(keys %CHILD_CHANGED);
 
-    # DB synced with arc changes in cache
-    %TRANSACTION = ();
+#    # DB synced with arc changes in cache
+#    %TRANSACTION = ();
+
     $in_commit = 0;
 }
 
@@ -9584,6 +9678,7 @@ sub update_unseen_by
         if ( my $seen_arc = $node->first_arc('seen_by', $watcher) )
         {
             next if $seen_arc->updated >= $updated;
+            next if $seen_arc->updated_by->equals( $watcher );
         }
 
         $node->add({unseen_by => $watcher},

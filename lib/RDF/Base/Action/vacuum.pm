@@ -33,7 +33,10 @@ sub handler
 
     my $q = $req->q;
     my $id = $q->param('id');
-    my( $args, $arclim, $res ) = solid_propargs({activate_new_arcs=>1});
+    my( $args, $arclim, $res ) = solid_propargs({
+                                                 activate_new_arcs => 1,
+                                                 no_notification => 1,
+                                                });
 
     my $node = RDF::Base::Resource->get( $id );
     $node->reset_cache(undef, $args );

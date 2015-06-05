@@ -9,12 +9,13 @@
 [% hidden('id', id) %]
 
 [% node = get(id) %]
-<h2>Delete [% node.sysdesig | html %]</h2>
+<h2></h2>
 
-<p>Removes the selected arcs that has this node as it's subject</p>
+<p class="info">Removes the selected arcs that has this node as it's subject</p>
 
-<table class='admin'>
-<tr><th>Del</th><th>Property</th> <th>Value</th> <th>Status</th></tr>
+<table class="admin">
+<tr class="header"><th colspan="4">Delete [% node.sysdesig | html %]</th></tr>
+<tr class="subheader"><th>Del</th><th>Property</th> <th>Value</th> <th>Status</th></tr>
 
 [% FOREACH pred = node.list_preds(undef, [['not_old','explicit']]).sorted %]
    [% FOREACH arc = node.arc_list(pred,undef,[['not_old','explicit']]) %]
@@ -39,9 +40,9 @@
 [% END %]
 </table>
 
-
+<br>
 <table class="admin">
-<tr><th>Del</th><th>Value</th> <th>Property</th> <th>Status</th></tr>
+<tr class="subheader"><th>Del</th><th>Value</th> <th>Property</th> <th>Status</th></tr>
 
 [% FOREACH pred = node.revlist_preds(undef, [['not_old','explicit']]).sorted %]
    [% FOREACH arc = node.revarc_list(pred, undef, [['not_old','explicit']]) %]
@@ -67,7 +68,6 @@
 </table>
 
 
-<p>[% hidden('force',0) %]
-[% go("HARD Delete", me, 'arc_delete', force=1, tag_attr={class="alert",style="float:right"}) %]
-[% step('Delete') %]
-</p>
+[% hidden('force',0) %]
+[% go("HARD Delete", me, 'arc_delete', force=1, tag_attr={class="btn btn-default btn-danger"}) %]
+[% step('Delete', tag_attr={class="btn btn-default btn-danger"}) %]

@@ -4122,6 +4122,7 @@ sub create_removal
                                            pred        => $arc->{'pred'},
                                            value       => is_undef,
                                            valtype     => 0,
+                                           created     => $args->{created},
                                           }, $args);
 #    debug "Created removal arc ".$arc->sysdesig;
     return $arc_out;
@@ -4200,7 +4201,7 @@ Returns: the arc changed, or the same arc
 sub set_value
 {
     my( $arc, $value_new_in, $args_in ) = @_;
-    my( $args, $arclim, $res ) = parse_propargs($args_in);
+    my( $args, $arclim, $res, $targs ) = parse_propargs($args_in);
 
 #    Para::Frame::Logging->this_level(4);
 
@@ -4233,7 +4234,7 @@ sub set_value
         my $value_new_list = RDF::Base::Resource->find_by_anything
           ( $value_new_in,
             {
-             %$args,
+             %$targs,
              valtype => $valtype,
              arc     => $arc,
             });
@@ -4351,7 +4352,7 @@ sub set_value
                                               pred        => $arc->{'pred'},
                                               value       => $value_new,
                                               value_node  => $vnode_new,
-                                             }, $args );
+                                             }, $targs );
             return $new;
         }
 
@@ -4402,7 +4403,10 @@ sub set_value
                 # Turn to plain value if it's an object. (Works for both Literal, Undef and others)
                 $value_db = $value_db->plain if ref $value_db;
                 # Assume that ->plain() always returns charstring
-                confess "No number $value_db" unless looks_like_number($value_db);
+                if( defined $value_db and not looks_like_number($value_db) )
+                {
+                    confess "No number '$value_db'";
+                }
             }
             elsif ( $coltype_new eq 'valtext' )
             {
@@ -4546,7 +4550,7 @@ sub set_value
         $value_old->set_arc(undef);
         $value_new->set_arc($arc);
 
-        $arc->schedule_check_create( $args );
+        $arc->schedule_check_create( $targs );
         $RDF::Base::Cache::Changes::Updated{$arc->id} ++;
         if ( $value_old->is_resource )
         {

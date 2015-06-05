@@ -178,10 +178,10 @@ sub new_from_db
 
 Supported args are:
 
-  method
+  display_method
   tag_*
 
-C<method> defaults to C<format>
+C<display_method> defaults to C<format>
 
 =cut
 
@@ -190,7 +190,7 @@ sub as_html
     my( $a, $args_in ) = @_;
 
     my( $args ) = parse_propargs($args_in);
-    my $method = $args->{'method'} || 'format';
+    my $method = $args->{'display_method'} || 'format';
 
     my $label;
     if ( $method and $a->can($method) )
