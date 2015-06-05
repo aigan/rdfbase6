@@ -1917,7 +1917,7 @@ sub handle_query_check_prop
     my $q = $req->q;
 
     my $pred = RDF::Base::Pred->get( $pred_in );
-    my $pred_name = $pred->name;
+    my $pred_name = $pred->label;
     my $pred_id = $pred->id;
     my $coltype = $pred->coltype;
 #    my $valtype = $pred->valtype;
