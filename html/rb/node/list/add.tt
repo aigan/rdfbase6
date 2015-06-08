@@ -1,0 +1,18 @@
+[% META title="Multi-add arcs"
+   default_template = '~$home/rb/node/list.tt'
+   next_action = 'search_arc_add'
+   focus = 'query'
+   level=20
+%]
+
+[% UNLESS searchobj and searchobj.size %]
+<p>Do a search first</p>
+[% STOP; END %]
+
+<h2>Add arcs to [% searchobj.size %] nodes</h2>
+
+[% textarea('query', undef,tag_attr={class='wide'}) %]
+
+[% hidden("id", node.id) %]
+
+<p>[% step('Add arcs') %]

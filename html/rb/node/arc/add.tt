@@ -1,7 +1,7 @@
 [% META title="Add arcs"
    default_template = '../update.tt'
    next_action = 'arc_add'
-   focus = 'query_row'
+   focus = 'query'
    level=20
 %]
 
@@ -13,9 +13,6 @@
    <p>About a new node</p>
 [% END %]
 
-[% IF node %]
-   [% input('query_row','',tag_attr={class='wide'}) %]<br>
-[% END %]
 [% textarea('query', undef,tag_attr={class='wide'}) %]
 
 [% hidden("id", node.id) %]

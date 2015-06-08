@@ -37,29 +37,28 @@ sub handler
     my $subj_id = $q->param('id');
 
     my $query = $q->param('query');
-    $query .= "\n" . join("\n", $req->q->param('query_row') );
 
-    if( $subj_id )
+    if ( $subj_id )
     {
-	my $subj = RDF::Base::Resource->get( $subj_id ); # Arc or node
-	$args->{'subj_new'} = $subj;
-	my $props = parse_arc_add_box( $query, $args );
+        my $subj = RDF::Base::Resource->get( $subj_id ); # Arc or node
+        $args->{'subj_new'} = $subj;
+        my $props = parse_arc_add_box( $query, $args );
 
-	$subj->add( $props, $args );
-	$subj->session_history_add('updated');
-	$res->autocommit;
-	return "Updated node $subj_id" if $res->changes;
-	return "No changes to node $subj_id";
+        $subj->add( $props, $args );
+        $subj->session_history_add('updated');
+        $res->autocommit;
+        return "Updated node $subj_id" if $res->changes;
+        return "No changes to node $subj_id";
     }
     else
     {
-	my $props = parse_arc_add_box( $query, $args );
-	my $subj = RDF::Base::Resource->create( $props, $args );
-	$subj->session_history_add('updated');
-	$q->param('id', $subj->id);
-	$res->autocommit;
+        my $props = parse_arc_add_box( $query, $args );
+        my $subj = RDF::Base::Resource->create( $props, $args );
+        $subj->session_history_add('updated');
+        $q->param('id', $subj->id);
+        $res->autocommit;
 
-	return sprintf("Created node %d", $subj->id);
+        return sprintf("Created node %d", $subj->id);
     }
 }
 
