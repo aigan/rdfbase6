@@ -54,6 +54,7 @@ sub handler
     my $timestamp = now();
     $args->{created} = $timestamp;
     $args->{updated} = $timestamp;
+    $args->{'activate_new_arcs'} = 1;
 
     my $arcs_cnt = 0;
 
