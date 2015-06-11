@@ -65,6 +65,8 @@ our $special_id =
  distance => -21,
  arc_weight => -22,
  size => -23,
+ shortdesig => -24,
+ longdesig => -25,
 };
 
 our $special_label = { reverse %$special_id };
