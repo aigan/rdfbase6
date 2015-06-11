@@ -24,14 +24,16 @@ use warnings;
 use base qw( RDF::Base::Node );
 use vars qw($AUTOLOAD);
 use overload
-    '""'   => sub{""},
-    'bool' => sub{0},
-    '0+'   => sub{0},
-    'cmp'  => 'cmp_string',
-    '='    => sub{undef},
-    '<=>'  => 'cmp_numeric',
-    '+'    => sub{0},
-    '@{}'  => sub{[]};
+  '""'   => sub{""},
+  'bool' => sub{0},
+  '0+'   => sub{0},
+  'cmp'  => 'cmp_string',
+  '='    => sub{undef},
+  '<=>'  => 'cmp_numeric',
+  '+'    => sub{0},
+  '-'    => sub{0},
+  '@{}'  => sub{[]},
+  ;
 
 use Carp qw( cluck );
 use Scalar::Util qw( looks_like_number );

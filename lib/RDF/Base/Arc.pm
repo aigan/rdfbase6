@@ -943,14 +943,21 @@ sub create
     }
 
     # If the arc was requested to be cerated active, but wasn't
-    # becasue it was replacing another arc, we will activate it now
-
+    # becasue it was replacing another arc, we will activate it now.
+    # This arc may be a removal arc.
+    #
     if ( $props->{'active'} and not $arc->active )
     {
         # Arc should have been submitted instead. But it might have
         # been deactivated during a resort or other operation.
         #
         $arc->activate({%$args, updated=>$updated}) if $arc->submitted;
+
+        if( $arc->disregard )
+        {
+            debug "  Created arc now disregarded";
+            return $arc;
+        }
     }
 
 
