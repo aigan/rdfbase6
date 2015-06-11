@@ -426,7 +426,7 @@ sub find_by_anything
                                             pred_coltype => 2, # valfloat
                                            });
     }
-    elsif ( $label =~ /^(desig|id_alphanum|loc|plain|label)$/ )
+    elsif ( $label =~ /^(desig|id_alphanum|loc|plain|label|shortdesig|longdesig)$/ )
     {
         push @new, $class->get_by_node_rec({
                                             label   => $1,
