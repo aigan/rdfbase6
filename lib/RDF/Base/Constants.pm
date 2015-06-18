@@ -39,6 +39,7 @@ use RDF::Base::Utils qw( is_undef );
 our %Label;                     # The initiated constants
 our $AUTOLOAD;
 our @Initlist;             # Constants to export when the DB is online
+our $On_startup;
 
 ##############################################################################
 
@@ -70,7 +71,7 @@ sub import
         $const =~ /^\$C_(\w+)/ or croak "malformed constant: $const";
         debug 2, "Package $callpkg imports $1";
 
-        if ( $RDF::dbix and not $updating_db  )
+        if ( $RDF::dbix and not $updating_db and not $On_startup  )
         {
             my $obj = $class->get($1);
             *{"$callpkg\::C_$1"} = \ $obj;
@@ -83,6 +84,8 @@ sub import
             my $temp = bless{label=>$1,NOT_INITIALIZED=>1};
             *{"$callpkg\::C_$1"} = \ $temp;
         }
+
+#        cluck "--> ".${"$callpkg\::"}{"C_$1"};
     }
 }
 
@@ -103,10 +106,12 @@ sub on_startup
 
     debug "Initiating constants";
 
+    $On_startup = 1;
+
     eval
     {
         no strict 'refs';       # Symbolic refs
-        foreach my $export (@Initlist)
+        while( my $export = shift @Initlist )
         {
             debug 2, " * $export->[1]";
             my $obj = $class->get($export->[1],{nonfatal=>1}) or next;
@@ -124,6 +129,8 @@ sub on_startup
         debug $@;
         debug "Continuing without constants";
     }
+
+    $On_startup = 0;
 
 #    debug "Initiating key nodes";
 #    $class->get('class')->initiate_rel;

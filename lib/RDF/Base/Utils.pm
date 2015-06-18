@@ -150,13 +150,32 @@ sub valclean
     $value =~ s/(æ|ae)/ä/g;
     $value =~ s/(ø|oe)/ö/g;
 #    $value =~ s/_/ /g;  ############### FIXME
-    $value =~ tr[àáâäãåéèêëíìïîóòöôõúùüûýÿðþß]
-                [aaaaaaeeeeiiiiooooouuuuyydps];
+    $value =~ tr[àáâãéèêëíìïîóòôõúùüûýÿðþß]
+                [aaaaeeeeiiiioooouuuuyydps];
     $value =~ tr/`'/'/;
-    $value =~ tr/qwz/kvs/;
     $value =~ s/\b(och|and|o|o\.|og)\b/&/g;
     $value =~ s/\s\'n\b/&/g;
     $value =~ s/hote(ls|ller|lli|llin|llit|ll|l)/hotel/g;
+
+    # Common name variants
+    $value =~ s/c/k/g;
+    $value =~ s/hr\b/r/g;
+    $value =~ s/([tkaoå])h/$1/g;
+    $value =~ s/\bpär\b/per/g;
+
+    $value =~ s/h\b//g;
+    $value =~ s/ie\b/y/g;
+    $value =~ s/i\b/y/g;
+    $value =~ s/af/av/g;
+    $value =~ s/fv/v/g;
+    $value =~ s/oine/ojne/g;
+    $value =~ s/oyne/ojne/g;
+    $value =~ s/qui/kvi/g;
+
+    $value =~ s/([a-zåäö])\1/$1/g;
+
+    $value =~ tr[åäöqwz]
+                [aaokvs];
 
     $value =~ s/[^\w&]//g;
 

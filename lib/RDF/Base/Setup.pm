@@ -785,6 +785,15 @@ sub dbconnect
 
 
 ##############################################################################
+
+#
+# Set $ARGV[0] to 'upgrade' for upgrading constants. See RDF::Base::Constants
+#
+# Set $ARGV[0] to 'vacuum_text' for valtext arcs
+#
+# Set $ARGV[0] to 'vacuum_all' for vacuuming all nodes
+#
+
 sub upgrade_db
 {
     my $C = RDF::Base->Constants;
@@ -1543,8 +1552,189 @@ http://www.w3.org/ns/auth/acl#Write",
         $req->done;
     }
 
+
+    if ( $ARGV[0] eq 'vacuum_all' )
+    {
+        vacuum_all();
+    }
+
+    if ( $ARGV[0] eq 'vacuum_text' )
+    {
+        vacuum_text();
+    }
+
 }
 
+
+##############################################################################
+
+sub vacuum_all
+{
+    debug "\n\nVACUUMING ALL NODES\n\n";
+
+    my $dbh =  $RDF::dbix->dbh;
+    my $A = RDF::Base->Arc;
+    my $R = RDF::Base->Resource;
+
+    my $req = Para::Frame::Request->new_bgrequest();
+    my( $args, $arclim, $res ) = parse_propargs('solid');
+    $req->user->set_default_propargs({
+                                      %$args,
+                                      activate_new_arcs => 1,
+                                     });
+
+    $RDF::Base::VACUUM_ALL = 1;
+
+    my $start = $ARGV[1] || 0;
+    my $vnodes_sth = $dbh->prepare("select distinct subj from arc where active is true and subj >= $start order by subj asc");
+    $vnodes_sth->execute;
+
+    my $obj_node_total = $vnodes_sth->rows;
+    debug sprintf "Vacuuming %d nodes", $obj_node_total;
+    my $obj_node_cnt = 0;
+    my $time = time();
+    while ( my $rec = $vnodes_sth->fetchrow_hashref )
+    {
+        ++$obj_node_cnt;
+        my $node = $R->get($rec->{subj});
+        eval
+        {
+            # Giving id for traceback debugging
+            $node->vacuum_node($args,$node->id);
+        };
+        if ( my $err = catch($@) )
+        {
+            my $part = $req->result->error($err);
+            $part->prefix_message( "During vacuum of ".$node->id );
+            debug $part->as_string;
+        }
+
+        if ( $time+5 < time() )
+        {
+            $time = time();
+            $R->commit;
+            $RDF::dbix->commit;
+            debug sprintf "%6d / %6d VACUUMED %d",$obj_node_cnt, $obj_node_total, $node->id;
+        }
+
+#        die; # TEST
+    }
+
+    # To clean by hand:
+    # 5922849: Eva Södervall som...
+
+
+    $RDF::Base::VACUUM_ALL = 0;
+
+    $res->autocommit;
+    $Para::Frame::REQ->done;
+    $req->user->set_default_propargs(undef);
+}
+
+##############################################################################
+
+sub vacuum_text
+{
+    debug "Cleaning up texts";
+
+    my $dbix = $RDF::dbix;
+    my $dbh = $dbix->dbh;
+
+    my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
+
+    my $text_sth = $dbh->prepare("select ver, valtext, valclean from arc where valtext is not null");
+    $text_sth->execute;
+    my $cleaned = 0;
+    my $text_cnt = 0;
+    debug $text_sth->rows." records";
+    while ( my $rec = $text_sth->fetchrow_hashref )
+    {
+        unless( ++$text_cnt % 10000 )
+        {
+            debug sprintf "%7d Total cleaned %7d", $text_cnt, $cleaned;
+        }
+
+        my $ver = $rec->{'ver'};
+
+        my $valtext = $rec->{'valtext'};
+        my $valclean = $rec->{'valclean'};
+        my $decoded = $valtext;
+
+
+#        # Cleaning up UTF8...
+#        if ( $valtext =~ /Ã./ )
+#        {
+#            my $res;
+#            while ( length $decoded )
+#            {
+#                $res .= decode("UTF-8", $decoded, Encode::FB_QUIET);
+#                $res .= substr($decoded, 0, 1, "") if length $decoded;
+#            }
+#            $decoded = $res;
+#        }
+#        else
+#        {
+#            utf8::upgrade( $decoded );
+#        }
+
+        # Repair chars in CP 1252 text,
+        # incorrectly imported as ISO 8859-1.
+        # For example x96 (SPA) and x97 (EPA)
+        # are only used by text termianls.
+        $decoded =~ s/\x{0080}/\x{20AC}/g; # Euro sign
+        $decoded =~ s/\x{0085}/\x{2026}/g; # Horizontal ellipses
+        $decoded =~ s/\x{0091}/\x{2018}/g; # Left single quotation mark
+        $decoded =~ s/\x{0092}/\x{2019}/g; # Right single quotation mark
+        $decoded =~ s/\x{0093}/\x{201C}/g; # Left double quotation mark
+        $decoded =~ s/\x{0094}/\x{201D}/g; # Right double quotation mark
+        $decoded =~ s/\x{0095}/\x{2022}/g; # bullet
+        $decoded =~ s/\x{0096}/\x{2013}/g; # en dash
+        $decoded =~ s/\x{0097}/\x{2014}/g; # em dash
+
+
+        # Remove Unicode 'REPLACEMENT CHARACTER'
+        $decoded =~ s/\x{fffd}//g;
+
+        # Replace Space separator chars
+        $decoded =~ s/\p{Zs}/ /g;
+
+        # Replace Line separator chars
+        $decoded =~ s/\p{Zl}/\n/g;
+
+        # Replace Paragraph separator chars
+        $decoded =~ s/\p{Zp}/\n\n/g;
+
+        $decoded =~ s/[ \t]*\r?\n/\n/g; # CR and whitespace at end of line
+        $decoded =~ s/^\s*\n//;         # Leading empty lines
+        $decoded =~ s/\n\s+$/\n/;       # Trailing empty lines
+
+        # Remove invisible characters, other than LF
+        $decoded =~ s/(?!\n)\p{Other}//g;
+
+        my $newclean = valclean($decoded);
+
+        if ( ($valtext ne $decoded) or ($valclean ne $newclean))
+        {
+            $cleaned++;
+
+#            if($valtext ne $decoded)
+#            {
+#                debug "Text '$valtext' ---> '$decoded'";
+#            }
+#            else
+#            {
+#                debug "Clean '$valclean' ---> '$newclean'";
+#            }
+#            next;
+
+            $update_text_sth->execute($decoded, $newclean, $ver);
+        }
+    }
+
+    $text_sth-> finish;
+
+    debug "Cleaned $cleaned arcs";
+}
 
 ##############################################################################
 
