@@ -450,6 +450,12 @@ sub modify_from_query
 
 #	debug "Parsing $param";
 
+        if( $param eq 'order_by' )
+        {
+            $props{order_by} = \@vals;
+            next;
+        }
+
         my $arg = parse_form_field_prop($param);
 
 #	debug "got: ".query_desig( $arg );
