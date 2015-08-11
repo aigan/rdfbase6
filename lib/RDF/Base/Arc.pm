@@ -5520,7 +5520,10 @@ sub init
             {
                 debug "Arc $id does not exist in DB ";
                 $arc->subj->reset_cache;
-                $arc->value->reset_cache(undef);
+                if( my $val = $arc->value )
+                {
+                    $val->reset_cache(undef);
+                }
                 $arc->{disregard} ++;
                 delete $RDF::Base::Cache::Resource{ $id };
                 return $arc;
