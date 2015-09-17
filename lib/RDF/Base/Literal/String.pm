@@ -545,7 +545,7 @@ sub cmp_numeric
 
   $lit->loc(@args)
 
-Uses the args in L<Para::Frame::L10N/compile>.
+Uses the args in L<Para::Frame::L10N/compute>.
 
 Returns: the value as a plain string
 

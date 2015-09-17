@@ -100,6 +100,11 @@ sub render_output
                 $out = $rend->render_tt($1, $args);
                 return;
             }
+            elsif( $path =~ /ttget\/(.*)/ )
+            {
+                $out = $rend->render_ttget($1, $args);
+                return;
+            }
         }
 
         if ( $file eq 'wu' )    # used by rb.js PagePart
@@ -551,18 +556,18 @@ sub render_node
 
     if( $path eq 'props' )
     {
-        @l = $n->props_as_json($args);
+        @l = $n->props_as_json_ref($args);
     }
     elsif( $path eq 'revprops' )
     {
-        @l = $n->revprops_as_json($args);
+        @l = $n->revprops_as_json_ref($args);
     }
     elsif( $path =~ /^get\/(\w+)/ )
     {
         my $pnlist = $n->list($1,undef,$args);
         while( my $pn = $pnlist->get_next_nos )
         {
-            push @l, $pn->props_as_json($args);
+            push @l, $pn->props_as_json_ref($args);
         }
     }
     elsif( $path =~ /^revget\/(\w+)/ )
@@ -570,7 +575,7 @@ sub render_node
         my $pnlist = $n->revlist($1, undef, $args);
         while( my $pn = $pnlist->get_next_nos )
         {
-            push @l, $pn->props_as_json($args);
+            push @l, $pn->props_as_json_ref($args);
         }
     }
     else
@@ -590,7 +595,7 @@ sub render_tt
     my( $rend, $path, $args ) = @_;
 
     my $req = $rend->req;
-    # $req->require_root_access;  ### simpler testing...
+    $req->require_root_access;
     my $q = $req->{'q'};
 
     my $params_in = from_json( $q->param('params') );
@@ -602,7 +607,7 @@ sub render_tt
 
     # Based on Para::Frame::Burner/burn
     #
-    my $burner = Para::Frame::Burner->get_by_type('html');
+    my $burner = Para::Frame::Burner->get_by_type('plain');
     my $th = $burner->th();
 
     # Clean out previous variables from stash
@@ -614,6 +619,87 @@ sub render_tt
     {
         debug "Got out: ".$out;
         return to_json({data=>[$out]});
+    }
+    else
+    {
+        my $err = $th->error();
+        debug "Got err: ".$err;
+        return to_json({
+                        error =>
+                        {
+                         type => $err->type,
+                         info => $err->info,
+                        }
+                       });
+    }
+}
+
+##############################################################################
+
+sub render_ttget
+{
+    my( $rend, $path, $args ) = @_;
+
+    my $req = $rend->req;
+    $req->require_root_access;
+    $req->user->set_default_propargs({activate_new_arcs => 1 });
+
+    my $q = $req->{'q'};
+    my $params_in = from_json( $q->param('params')||'{}' );
+
+    my $expr = $q->param('expr');
+    my $template = '[% '.$expr.' %]';
+
+    debug datadump([$template,$params_in]);
+
+    my $params = {%$Para::Frame::PARAMS, %$params_in};
+
+    # Based on Para::Frame::Burner/burn
+    #
+    my $burner = Para::Frame::Burner->get_by_type('plain');
+    my $th = $burner->th();
+
+    # Clean out previous variables from stash
+    $th->{ SERVICE }{ CONTEXT }{ STASH } = Template::Stash::XS->new();
+
+    #######################################
+#    # Tried to get down to the actual parsed result
+#    #
+#    my $service = $th->{ SERVICE };
+#    my $context = $service->{ CONTEXT };
+#    $params->{ template } = \$template;
+#    $context->localise($params);
+#    my $provider = $context->{ LOAD_TEMPLATES }[0];
+##    my $parser = Template::Config->parser($provider->{PARAMS});
+##    my $tokens = $parser->split_text($template);
+##    my $code = $parser->_parse($tokens, {});
+#    my( $compiled, $compile_err) = $provider->fetch(\$template);
+#    $context->{ STASH }->update($params);
+#    my $stash = $context->{ STASH };
+#    my $test = $compiled->process($context);
+    #######################################
+
+    ### Fails to fail on undefined function/method
+
+    my $out = "";
+    my $res = $th->process( \ $template, $params, \ $out, {binmode=>':utf8'});
+    if ( $res )
+    {
+        debug "Got out: ".datadump($out);
+
+        if( my $err = $th->error )
+        {
+            debug "Got err: ".$err;
+            return to_json({
+                            error =>
+                            {
+                             type => $err->type,
+                             info => $err->info,
+                            }
+                           });
+        }
+
+        return $out;
     }
     else
     {

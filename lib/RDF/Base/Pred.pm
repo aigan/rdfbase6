@@ -77,6 +77,34 @@ Represents preds.
 
 Inherits from L<RDF::Base::Resource>.
 
+=head1 Dynamic predicates
+
+ id
+ score
+ random
+ desig
+ loc
+ plain
+ subj
+ pred
+ obj
+ coltype
+ label
+ created
+ updated
+ owned_by
+ read_access
+ write_access
+ created_by
+ updated_by
+ id_alphanum
+ direct
+ distance
+ arc_weight
+ size
+ shortdesig
+ longdesig
+
 =cut
 
 

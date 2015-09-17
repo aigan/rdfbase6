@@ -118,8 +118,8 @@
    <tr>
       <td>is DOMAIN for predicate</td>
       <td>
-      [% FOREACH arc IN domains.sorted('subj.desig') %]
-      [% arc.subj.wu_jump %]
+      [% FOREACH arc IN domains.sorted('subj.label') %]
+      [% arc.subj.wu_jump(label=arc.subj.label) %]
       [% ', ' UNLESS loop.last %]
       [% END %]
       </td>
@@ -131,8 +131,8 @@
    <tr>
       <td>is RANGE for predicate</td>
       <td>
-      [% FOREACH arc IN ranges.sorted('subj.desig') %]
-      [% arc.subj.wu_jump %]
+      [% FOREACH arc IN ranges.sorted('subj.label') %]
+      [% arc.subj.wu_jump(label=arc.subj.label) %]
       [% ', ' UNLESS loop.last %]
       [% END %]
       </td>

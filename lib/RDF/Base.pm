@@ -145,6 +145,7 @@ sub init
      rb              => bless( {}, 'RDF::Base'),
      find            => sub{ RDF::Base::Resource->find(@_) },
      get             => sub{ RDF::Base::Resource->get(@_) },
+     create          => sub{ RDF::Base::Resource->create(@_) },
      set_one         => sub{ RDF::Base::Resource->set_one(@_) },
      find_set        => sub{ RDF::Base::Resource->find_set(@_) },
      new_search      => sub{ RDF::Base::Search->new(@_) },

@@ -387,7 +387,7 @@ Similar to L</desig>, but will choose the most suitible name if there are
 more than one to choose from. It will pick a name based on language or
 priority.
 
-Uses the args in L<Para::Frame::L10N/compile>.
+Uses the args in L<Para::Frame::L10N/compute>.
 
 =cut
 
@@ -1071,6 +1071,17 @@ sub per_node
     return $res;
 }
 
+
+##############################################################################
+
+=head2 as_json
+
+=cut
+
+sub as_json
+{
+    die "implement this";
+}
 
 ######################################################################
 

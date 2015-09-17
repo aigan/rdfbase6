@@ -3411,11 +3411,11 @@ sub revcount
 
 ##############################################################################
 
-=head2 props_as_json
+=head2 props_as_json_ref
 
 =cut
 
-sub props_as_json
+sub props_as_json_ref
 {
     my( $n, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -3448,11 +3448,11 @@ sub props_as_json
 
 ##############################################################################
 
-=head2 revprops_as_json
+=head2 revprops_as_json_ref
 
 =cut
 
-sub revprops_as_json
+sub revprops_as_json_ref
 {
     my( $n, $args_in ) = @_;
     my( $args, $arclim ) = parse_propargs($args_in);
@@ -3478,6 +3478,48 @@ sub revprops_as_json
     }
 
     return $o;
+}
+
+
+##############################################################################
+
+=head2 as_json
+
+=cut
+
+sub as_json
+{
+    my( $n, $params, $args_in ) = @_;
+
+    my $row = {};
+    if( $params )
+    {
+        my $preds = [];
+        my $as = {};
+
+        if( ref $params eq 'ARRAY' )
+        {
+            $preds = $params;
+        }
+        elsif( ref $params eq 'HASH' )
+        {
+            $preds = $params->{return} ||= ['id'];
+            $as = $params->{as} ||= {};
+        }
+
+        foreach my $pred ( @$preds )
+        {
+            my $val = $n->$pred;
+            my $key = $as->{$pred} || $pred;
+            $row->{$key} = "$val"; # Force stringify
+        }
+    }
+    else
+    {
+        $row = $n->id;
+    }
+
+    return to_json({data=>[$row]});
 }
 
 
