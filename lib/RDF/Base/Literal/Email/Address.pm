@@ -425,7 +425,7 @@ sub vacuum_facet
 
     if ( $orig ne $addr )
     {
-        debug "  Cleaning to $addr";
+        debug 2, "  Cleaning to $addr";
 
         my $a_new = $class->new($addr, $a->this_valtype);
 

@@ -3194,12 +3194,22 @@ sub check_valtype
         {
             debug 3, "Setting literal";
             debug 2, "Pred range instance class is ".$pred_valtype->instance_class;
-            my $val = $pred_valtype->instance_class->
-              parse($old_val, {
-                               arc => $arc,
-                               valtype => $pred_valtype,
-                              });
-            $arc->set_value( $val, $newargs );
+            eval
+            {
+                my $val = $pred_valtype->instance_class->
+                  parse($old_val, {
+                                   arc => $arc,
+                                   valtype => $pred_valtype,
+                                  });
+                $arc->set_value( $val, $newargs );
+            };
+            if( $@ )
+            {
+                debug "Faild valtype check for ".$arc->sysdesig;
+                debug $@;
+                undef $@;
+                return 0;
+            }
         }
     }
 

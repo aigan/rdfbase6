@@ -109,6 +109,7 @@ sub parse
     #
     if ( $date->year > 2020 or $date->year < 1900 )
     {
+        cluck "Strange date $date";
         throw 'validation', loc "Date [_1] out of range", $date;
     }
 
