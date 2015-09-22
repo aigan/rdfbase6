@@ -1124,6 +1124,83 @@ sub as_json
 
 ##############################################################################
 
+=head2 as_json_value
+
+=cut
+
+sub as_json_value
+{
+    my( $list, $params, $args_in ) = @_;
+    my( $args ) = parse_propargs( $args_in );
+    my @part;
+
+    debug "IN LIST AS_JSON_VALUE";
+
+    my $index = $list->index;
+    my( $elem, $error ) = $list->get_first;
+    while (! $error )
+    {
+        if ( ref $elem )
+        {
+            if ( UNIVERSAL::isa $elem, 'RDF::Base::Resource' )
+            {
+                if( $params )
+                {
+                    my $preds = [];
+                    my $as = {};
+
+                    if( ref $params eq 'ARRAY' )
+                    {
+                        $preds = $params;
+                    }
+                    elsif( ref $params eq 'HASH' )
+                    {
+                        $preds = $params->{return} ||= ['id'];
+                        $as = $params->{as} ||= {};
+                    }
+
+
+                    my $row = {};
+                    foreach my $pred ( @$preds )
+                    {
+                        my $val = $elem->$pred;
+                        my $key = $as->{$pred} || $pred;
+                        $row->{$key} = "$val"; # Force stringify
+                    }
+                    CORE::push @part, $row;
+                }
+                else
+                {
+                    CORE::push @part, $elem->id;
+                }
+            }
+            elsif ( UNIVERSAL::isa $elem, 'RDF::Base::List' )
+            {
+                die "implement this";
+            }
+            else
+            {
+                CORE::push @part, "$elem"; # stringify
+            }
+        }
+        else
+        {
+            CORE::push @part, "$elem"; # stringify
+        }
+    }
+    continue
+    {
+        ( $elem, $error ) = $list->get_next;
+    }
+    ;
+    $list->set_index( $index );
+
+    return to_json([@part]);
+}
+
+
+##############################################################################
+
 =head2 literal
 
   $l->literal

@@ -29,6 +29,7 @@ use overload
 
 use Carp qw( cluck confess carp croak shortmess longmess );
 use Scalar::Util qw( refaddr blessed );
+use JSON;                       # to_json
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( throw debug datadump );
@@ -266,6 +267,31 @@ The same as the auto-stringification.
 =cut
 
 sub as_string
+{
+    return $_[0]->literal;
+}
+
+##############################################################################
+
+=head2 as_json
+
+=cut
+
+sub as_json
+{
+    return to_json({data=>[$_[0]->literal]});
+}
+
+##############################################################################
+
+=head2 as_json_value
+
+Returns value as a plain string.
+The same as the auto-stringification.
+
+=cut
+
+sub as_json_value
 {
     return $_[0]->literal;
 }
