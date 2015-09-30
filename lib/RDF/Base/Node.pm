@@ -24,7 +24,7 @@ use warnings;
 use vars qw($AUTOLOAD);
 use base qw( RDF::Base::Object );
 
-use Carp qw( cluck confess croak carp );
+use Carp qw( cluck confess croak carp longmess );
 
 use Para::Frame::Utils qw( throw catch debug datadump trim );
 use Para::Frame::Reload;
@@ -1466,7 +1466,7 @@ sub remove
         }
     }
 
-
+    debug "Returning number ".($res->changes - $changes_prev);
 
     return $res->changes - $changes_prev;
 }
@@ -2118,16 +2118,17 @@ AUTOLOAD
 
     if ( $@ )
     {
-        my $err;
+#        debug "error in: ".datadump $@;
+        my $part;
         if ( $Para::Frame::REQ )
         {
-            $err = $Para::Frame::REQ->result->exception;
+            $part = $Para::Frame::REQ->result->exception;
         }
         else
         {
-            $err = $@;
+            $part = $@;
         }
-        debug datadump $err;
+        my $err = $part->error;
         my $desc = "";
         if ( ref $node and UNIVERSAL::isa $node, 'RDF::Base::Resource' )
         {
@@ -2146,16 +2147,20 @@ AUTOLOAD
             $desc .= "Arc lock not in effect\n";
         }
 
+        my $context;
         if ( $node->defined )
         {
-            confess sprintf "While calling %s for %s (%s):\n%s\n%s",
-              $method, $node->id, $node->code_class_desig, $desc, $err;
+            $context = sprintf "While calling %s for %s (%s):\n%s",
+              $method, $node->id, $node->code_class_desig, $desc;
         }
         else
         {
-            confess sprintf "While calling %s for <undef>:\n%s\n%s",
-              $method, $desc, $err;
+            $context = sprintf "While calling %s for <undef>:\n%s",
+              $method, $desc;
         }
+        $err->text(\ $context );
+
+        die $err;
     }
     else
     {

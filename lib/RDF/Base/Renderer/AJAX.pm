@@ -710,6 +710,7 @@ sub render_ttget
                         {
                          type => $err->type,
                          info => $err->info,
+                         context => $err->text,
                         }
                        });
     }
