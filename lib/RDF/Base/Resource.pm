@@ -6752,6 +6752,7 @@ sub wu_select
         {
             $using_default = $default_value;
         }
+
         while ( my $item = $alts->get_next_nos )
         {
             unless( $alts->count % 100 )
@@ -6798,6 +6799,12 @@ sub wu_select
         my $args_direct = aais($args,'direct');
         my $cur_optgroup = '';
 
+        my $using_default;
+        unless( $subj->prop( $pred_name, undef, 'adirect' ) )
+        {
+            $using_default = $default_value;
+        }
+
         $ais->reset;
         while ( my $ai = $ais->get_next_nos )
         {
@@ -6832,7 +6839,7 @@ sub wu_select
             if ( $set_value )
             {
                 $out .= ' selected="selected"'
-                  if ( $default_value eq $item->id or
+                  if ( $using_default eq $item->id or
                        $subj->prop( $pred_name, $item, 'adirect' ) );
             }
 
