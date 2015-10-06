@@ -2064,6 +2064,7 @@ AUTOLOAD
 
     if ( $method =~ /(.*?)\.(.*)/ )
     {
+#        debug "Calling ".$node->id."->$1->$2";
         return $node->$1->$2;
     }
 
@@ -2109,6 +2110,7 @@ AUTOLOAD
 	    }
 	    else
 	    {
+#            debug "Calling ".$node->id."->prop($method)";
             return $node->prop($method, @_);
 	    }
     };

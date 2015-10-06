@@ -3509,9 +3509,26 @@ sub as_json
 
         foreach my $pred ( @$preds )
         {
-            my $val = $n->$pred;
+            my $val = $n->$pred || '';
             my $key = $as->{$pred} || $pred;
-            $row->{$key} = "$val"; # Force stringify
+
+            if( ref $val )
+            {
+                if ( UNIVERSAL::isa $val, 'RDF::Base::Resource' )
+                {
+                    $val = $val->id;
+                }
+                elsif ( UNIVERSAL::isa $val, 'RDF::Base::List' )
+                {
+                    $val = $val->as_json_data;
+                }
+                else
+                {
+                    $val = "$val"; # Force stringify
+                }
+            }
+
+            $row->{$key} = $val;
         }
     }
     else
@@ -3530,6 +3547,20 @@ sub as_json
 =cut
 
 sub as_json_value
+{
+    my( $n, $params, $args_in ) = @_;
+
+    return $n->id;
+}
+
+
+##############################################################################
+
+=head2 as_json_data
+
+=cut
+
+sub as_json_data
 {
     my( $n, $params, $args_in ) = @_;
 

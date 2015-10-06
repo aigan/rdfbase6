@@ -1086,7 +1086,7 @@ sub as_json
                     my $row = {};
                     foreach my $pred ( @$preds )
                     {
-                        my $val = $elem->$pred;
+                        my $val = $elem->$pred || '';
                         my $key = $as->{$pred} || $pred;
                         $row->{$key} = "$val"; # Force stringify
                     }
@@ -1130,11 +1130,26 @@ sub as_json
 
 sub as_json_value
 {
+#    debug "IN LIST AS_JSON_VALUE";
+    my( $list, $params, $args_in ) = @_;
+    my $parts = $list->as_json_data( $params, $args_in );
+    return to_json($parts);
+}
+
+
+##############################################################################
+
+=head2 as_json_data
+
+=cut
+
+sub as_json_data
+{
     my( $list, $params, $args_in ) = @_;
     my( $args ) = parse_propargs( $args_in );
     my @part;
 
-    debug "IN LIST AS_JSON_VALUE";
+#    debug "IN LIST AS_JSON_DATA";
 
     my $index = $list->index;
     my( $elem, $error ) = $list->get_first;
@@ -1163,8 +1178,9 @@ sub as_json_value
                     my $row = {};
                     foreach my $pred ( @$preds )
                     {
-                        my $val = $elem->$pred;
+                        my $val = $elem->$pred || '';
                         my $key = $as->{$pred} || $pred;
+#                        debug "Force stringify of $key: $val";
                         $row->{$key} = "$val"; # Force stringify
                     }
                     CORE::push @part, $row;
@@ -1180,11 +1196,13 @@ sub as_json_value
             }
             else
             {
+#                debug "Force stringify of $elem";
                 CORE::push @part, "$elem"; # stringify
             }
         }
         else
         {
+#            debug "Force stringify2 of $elem";
             CORE::push @part, "$elem"; # stringify
         }
     }
@@ -1195,7 +1213,8 @@ sub as_json_value
     ;
     $list->set_index( $index );
 
-    return to_json([@part]);
+#    debug "Returning parts ".datadump(\@part);
+    return(\@part);
 }
 
 
