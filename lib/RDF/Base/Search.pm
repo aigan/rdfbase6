@@ -3030,15 +3030,20 @@ sub elements_props
         else
         {
 #	    debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
+            my $pred = $preds->get_first_nos;
 
-            if ( BINDVALS )
+            if ( $pred->plain eq 'id' )
             {
-                @pred_ids = $preds->get_first_nos->id;
+                # Id search handled below
+            }
+            elsif ( BINDVALS )
+            {
+                @pred_ids = $pred->id;
                 $pred_part = "pred=?";
             }
             else
             {
-                $pred_part = "pred=".$preds->get_first_nos->id;
+                $pred_part = "pred=".$pred->id;
             }
         }
 
@@ -3078,14 +3083,16 @@ sub elements_props
                 throw('dbi',"Undef id given to search");
             }
 
+            my $matchpart = matchpart( $match );
+
             if ( BINDVALS )
             {
-                $where = join(" or ", map "subj = ?", @ivs);
+                $where = join(" or ", map "subj $matchpart ?", @ivs);
                 @outvalues = @ivs; # value should be numeric
             }
             else
             {
-                $where = join(" or ", map "subj = $_", @ivs);
+                $where = join(" or ", map "subj $matchpart $_", @ivs);
             }
             $where .= " " . $arclim_sql;
             $prio = 1;

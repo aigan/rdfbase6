@@ -1088,7 +1088,24 @@ sub as_json
                     {
                         my $val = $elem->$pred || '';
                         my $key = $as->{$pred} || $pred;
-                        $row->{$key} = "$val"; # Force stringify
+
+                        if( ref $val )
+                        {
+                            if ( UNIVERSAL::isa $val, 'RDF::Base::Resource' )
+                            {
+                                $val = $val->id;
+                            }
+                            elsif ( UNIVERSAL::isa $val, 'RDF::Base::List' )
+                            {
+                                $val = $val->as_json_data;
+                            }
+                            else
+                            {
+                                $val = "$val"; # Force stringify
+                            }
+                        }
+
+                        $row->{$key} = $val;
                     }
                     CORE::push @part, $row;
                 }
@@ -1194,16 +1211,24 @@ sub as_json_data
             {
                 die "implement this";
             }
-            else
+            elsif( defined $elem )
             {
 #                debug "Force stringify of $elem";
                 CORE::push @part, "$elem"; # stringify
             }
+            else
+            {
+                CORE::push @part, undef;
+            }
+        }
+        elsif( defined $elem )
+        {
+            #                debug "Force stringify of $elem";
+            CORE::push @part, "$elem"; # stringify
         }
         else
         {
-#            debug "Force stringify2 of $elem";
-            CORE::push @part, "$elem"; # stringify
+            CORE::push @part, undef;
         }
     }
     continue

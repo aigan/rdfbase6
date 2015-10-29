@@ -45,7 +45,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.75";
+our $VERSION = "6.76";
 
 
 =head1 NAME

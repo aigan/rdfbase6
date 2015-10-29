@@ -58,7 +58,7 @@ sub render_output
 {
     my( $rend ) = @_;
 
-    debug "Rendering AJAX response";
+#    debug "Rendering AJAX response";
 
     $rend->{'ctype'} = 'html'; # Set to json if appropriate
     my $out = "";
@@ -650,7 +650,7 @@ sub render_ttget
     my $expr = $q->param('expr');
     my $template = '[% '.$expr.' %]';
 
-    debug datadump([$template,$params_in]);
+#    debug datadump([$template,$params_in]);
 
     my $params = {%$Para::Frame::PARAMS, %$params_in};
 
@@ -685,7 +685,7 @@ sub render_ttget
     my $res = $th->process( \ $template, $params, \ $out, {binmode=>':utf8'});
     if ( $res )
     {
-        debug "Got out: ".datadump($out);
+#        debug "Got out: ".datadump($out);
 
         if( my $err = $th->error )
         {
