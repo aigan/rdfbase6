@@ -3100,7 +3100,7 @@ sub check_valtype
 
     if ( debug > 1)
     {
-        debug "TRANSLATION OF VALTYPE";
+        debug "TRANSLATION OF VALTYPE (1)";
         debug "  for ".$arc->sysdesig;
         debug " from ".$arc_valtype->sysdesig;
         debug "   to ".$new_valtype->sysdesig;
@@ -3143,7 +3143,7 @@ sub check_valtype
             }
             elsif ( $arc_valtype->equals($c_resource) )
             {
-                debug "TRANSLATION OF VALTYPE";
+                debug "TRANSLATION OF VALTYPE (2)";
                 debug "  for ".$arc->sysdesig;
                 debug " from ".$arc_valtype->sysdesig;
                 debug "   to ".$new_valtype->sysdesig;
@@ -3154,7 +3154,7 @@ sub check_valtype
             }
             else
             {
-                debug "TRANSLATION OF VALTYPE";
+                debug "TRANSLATION OF VALTYPE (3)";
                 debug "  for ".$arc->sysdesig;
                 debug " from ".$arc_valtype->sysdesig;
                 debug "   to ".$new_valtype->sysdesig;
@@ -4316,12 +4316,16 @@ sub set_value
     # Falling back on old coltype/valtype in case of an Undef value
     my $coltype_new = $value_new->this_coltype || $coltype_old;
     my $valtype_old = $arc->valtype;
-    my $valtype_new;
+    my $valtype_new = $args->{'valtype'};
     my $objtype_old = ($coltype_old eq 'obj')? 1 : 0;
     my $objtype_new = ($coltype_new eq 'obj')? 1 : 0;
 
     # Tries to mimic valtype algorithm in /create
-    if ( RDF::Base::Constants->get('resource')->equals($valtype_old) )
+    if( $valtype_new ) # Wanted valtype specified for us
+    {
+        # Trust and keep this
+    }
+    elsif( RDF::Base::Constants->get('resource')->equals($valtype_old) )
     {
         $valtype_new = $valtype_old;
     }

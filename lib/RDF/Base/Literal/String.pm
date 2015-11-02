@@ -1291,8 +1291,8 @@ sub wul
 
 sub action_icon
 {
-    confess "who called me";
-    return "";
+#    confess "who called me";
+    return ""; # Maby called for undef value
 }
 
 
