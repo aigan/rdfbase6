@@ -1531,11 +1531,28 @@ http://www.w3.org/ns/auth/acl#Write",
                    },$args);
 
 
-#        $rb->update({ has_version => 15 },$args);
+        $rb->update({ has_version => 15 },$args);
         $res->autocommit;
         $req->done;
     }
 
+
+    if ( $ver < 16)
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        $R->find_set({label => 'working_on'},$args)
+          ->update({
+                    domain => $C->get('login_account'),
+                    range => $C->get('resource'),
+                    is => 'predicate',
+                   },$args);
+
+
+#        $rb->update({ has_version => 16 },$args);
+        $res->autocommit;
+        $req->done;
+    }
 
 
     if ( 0 )                    ### Depencency problems

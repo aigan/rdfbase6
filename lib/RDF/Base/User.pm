@@ -31,8 +31,10 @@ use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
 use Para::Frame::Reload;
 
-use RDF::Base::Utils qw( is_undef parse_propargs query_desig );
+use RDF::Base::Utils qw( is_undef parse_propargs query_desig solid_propargs );
 use RDF::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
+
+use constant R => 'RDF::Base::Resource';
 
 
 =head1 DESCRIPTION
@@ -231,7 +233,7 @@ sub find_by_anything
         debug 2, "  as guest";
 #	warn datadump($C_guest_access, 2);
         my $class = ref($_[0]) || $_[0];
-        @new = RDF::Base::Resource->get_by_label('guest');
+        @new = R->get_by_label('guest');
     }
     elsif ( $val !~ /^\d+$/ )
     {
@@ -416,6 +418,42 @@ sub on_arc_del
 sub clear_caches
 {
     delete  $_[0]->{'level'};
+}
+
+##############################################################################
+
+=head2 set_working_on
+
+=cut
+
+sub set_working_on
+{
+    my( $u, $node_in ) = @_;
+    my( $args ) = solid_propargs();
+
+    my $n = R->get($node_in);
+
+    return 0 if $n->revprop('working_on');
+    return $u->add({working_on => $n}, $args);
+}
+
+##############################################################################
+
+=head2 remove_working_on
+
+=cut
+
+sub remove_working_on
+{
+    my( $u, $node_in ) = @_;
+    my( $args ) = solid_propargs();
+
+    my $n = R->get($node_in);
+
+#    debug "Remove arc for ".$n->sysdesig;
+#    debug "List is ". $u->arc_list('working_on', $n, $args)->sysdesig;
+
+    return $u->arc_list('working_on', $n, $args)->remove($args);
 }
 
 ##############################################################################
