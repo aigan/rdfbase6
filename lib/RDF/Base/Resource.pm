@@ -1284,7 +1284,7 @@ sub find_set
 
 #    debug "find_set:\n".datadump($query,2);
 
-    my $nodes = $this->find( $query, $args )->as_arrayref;
+    my $nodes = $this->find( $query, $args );
 
     if ( $nodes->[1] )
     {
@@ -1328,7 +1328,7 @@ sub find_set
             $req->set_error_response_path("/alternatives.tt");
 
             my $result = $Para::Frame::REQ->result;
-            $result->{'info'}{'alternatives'}{'alts'} = $nodes;
+            $result->{'info'}{'alternatives'}{'alts'} = $nodes->as_arrayref;
             $result->{'info'}{'alternatives'}{'trace'} = Carp::longmess;
             $result->{'info'}{'alternatives'}{'query'} = $query;
             $result->{'info'}{'alternatives'}{'args'} = $args;
