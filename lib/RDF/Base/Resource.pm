@@ -8681,6 +8681,7 @@ sub rollback
 
     foreach my $aid ( keys %TRANSACTION )
     {
+        next unless  $RDF::Base::Cache::Resource{ $aid };
         RDF::Base::Arc->get( $aid )->reset_cache;
     }
     %TRANSACTION = ();

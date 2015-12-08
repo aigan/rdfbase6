@@ -1570,6 +1570,7 @@ http://www.w3.org/ns/auth/acl#Write",
     }
 
 
+    $ARGV[0] //= '';
     if ( $ARGV[0] eq 'vacuum_all' )
     {
         vacuum_all();
