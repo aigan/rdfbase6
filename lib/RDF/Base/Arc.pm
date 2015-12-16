@@ -2442,6 +2442,10 @@ Special columns:
 
  -.$method  = methods for use both on node and class
 
+Special args:
+
+  name_method (passed to wu_jump)
+
 =cut
 
 sub table_row
@@ -2533,18 +2537,8 @@ sub table_row
 
             when('desig')
             {
-                if ( $disabled )
-                {
-                    $out .= ( $is_rev ? $check_subj->wu_jump :
-                              $item->wu_jump );
-#		    $out .= ( $is_rev ? $check_subj->desig($args) :
-#			      $item->desig($args) );
-                }
-                else
-                {
-                    $out .= ( $is_rev ? $check_subj->wu_jump :
-                              $item->wu_jump );
-                }
+                $out .= ( $is_rev ? $check_subj->wu_jump({},$args) :
+                          $item->wu_jump({},$args) );
             }
 
             when('input')

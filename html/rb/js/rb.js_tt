@@ -359,7 +359,8 @@ RDF.Base || (RDF.Base = {});
      // hide_create_button
      // default_value     Default value in the search field
      // on_arc_add        forwards ...
-
+     // name_method       defaults to longdesig
+       
      var $this = this; // Hiding from jQuerys comfort...
      //var args = $.evalJSON(args_in);
 
@@ -374,6 +375,7 @@ RDF.Base || (RDF.Base = {});
      $this.hide_create_button = args['hide_create_button'];
      $this.default_value      = args['default_value'] || "";
      $this.on_arc_add         = args['on_arc_add'];
+     $this.name_method        = args['name_method'];  
 
      $this.openPopup = function()
      {
@@ -447,7 +449,8 @@ RDF.Base || (RDF.Base = {});
          {
            params       : $.toJSON($this.search_crit),
            search_type  : $.toJSON($this.search_type),
-           search_value : value
+           search_value : value,
+           name_method  : $this.name_method
          },
          function(data, textStatus)
          {

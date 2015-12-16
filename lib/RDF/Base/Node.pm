@@ -1877,19 +1877,34 @@ sub set_arc
 
 Attrs are the L<Para::Frame::Widget/jump> attributes
 
+Special args:
+
+  name_method
+
 Returns: a HTML link to a form form updating the node
 
 =cut
 
 sub wu_jump
 {
-    my( $node, $attrs, $args_in ) = @_;
+    my( $node, $attrs, $args ) = @_;
 
     $attrs ||= {};
-    my $label = delete($attrs->{'label'}) || $node->desig($args_in);
+    $args ||= {};
+
+    my $label = delete($attrs->{'label'});
+    unless( $label )
+    {
+        if( my $name_method = $args->{'name_method'} )
+        {
+            $label = $node->$name_method(undef,$args);
+        }
+    }
+
+    $label ||= $node->desig($args);
 
     return Para::Frame::Widget::jump($label,
-                                     $node->form_url($args_in),
+                                     $node->form_url($args),
                                      $attrs,
                                     );
 }

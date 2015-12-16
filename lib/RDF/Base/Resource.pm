@@ -6277,6 +6277,8 @@ Args details:
     Coonsider using
       ['customer_id_clean','name_clean_like','name_short_clean']
 
+  name_method => longdesig
+
   on_arc_add => { ... }
 
 =cut
@@ -6294,10 +6296,10 @@ sub wuirc
     }
 
     my $DEBUG = 0;
-    debug "WUIRC ".$pred->label." ".$subj->desig if $DEBUG;
 
     my( $range, $range_pred ) = range_pred($args)
       or confess "Range missing ".datadump($args,1);
+    debug "WUIRC ".$pred->label." ".$subj->desig if $DEBUG;
 
     my $req = $Para::Frame::REQ;
     my $q = $req->q;
@@ -6312,6 +6314,7 @@ sub wuirc
     my $subj_id = $subj->id;
     my $hide_create_button = $args->{'hide_create_button'} || 0;
 
+    my $name_method = $args->{'name_method'} || '';
     my $lookup_pred = $args->{'lookup_pred'} || 'name_clean_like';
     unless( UNIVERSAL::isa( $lookup_pred, 'ARRAY' ) )
     {
@@ -6360,6 +6363,7 @@ sub wuirc
         debug "arc_type ".($arc_type//'undef');
         debug "singular ".($singular//'undef');
         debug "inputtype ".$inputtype;
+        debug "name_method ".$name_method;
     }
 
     # Sort out arcs on range...
@@ -6462,6 +6466,7 @@ sub wuirc
                                      hide_create_button => $hide_create_button,
                                      default_value => $default,
                                      on_arc_add => $on_arc_add,
+                                     name_method => $name_method,
                                     }));
         }
         elsif ( $inputtype eq 'text' and not $disabled )

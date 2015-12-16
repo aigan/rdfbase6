@@ -505,7 +505,7 @@ sub render_lookup
 
                     if( $key eq 'name' )
                     {
-                        $item->{$key} = $l[0];
+                        $item->{$key} = $l[0] || $node->desig;
                     }
                     else
                     {
