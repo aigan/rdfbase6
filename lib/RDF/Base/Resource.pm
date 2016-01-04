@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #   Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -5387,7 +5387,7 @@ sub merge_node
 
     RDF::Base::Arc->unlock;     ### Complete merge before triggers
 
-    $node2->vacuum_node;
+    $node2->vacuum_node($args_in);
 
     return $node2;
 }

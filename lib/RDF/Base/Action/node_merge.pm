@@ -5,7 +5,7 @@ package RDF::Base::Action::node_merge;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -77,6 +77,7 @@ sub handler
 
     my( $args, $arclim, $res ) = parse_propargs();
     $args->{'move_literals'} = $move_literals;
+    $args->{'activate_new_arcs'} = 1;
 
     $node1->merge_node( $node2, $args );
 
