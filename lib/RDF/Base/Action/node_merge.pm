@@ -38,41 +38,41 @@ sub handler
 
     my $node1 = RDF::Base::Resource->get( $id );
     my $node2;
-    if( my $id2 = $q->param('id2') )
+    if ( my $id2 = $q->param('id2') )
     {
-	$node2 = RDF::Base::Resource->get( $id2 );
+        $node2 = RDF::Base::Resource->get( $id2 );
     }
     else
     {
-	my $result = $Para::Frame::REQ->result;
-	my $desig2 = $q->param('node2_desig') or
-	    throw('incomplete', "Ange nod add slå samman med");
+        my $result = $Para::Frame::REQ->result;
+        my $desig2 = $q->param('node2_desig') or
+          throw('incomplete', "Ange nod add slå samman med");
 
-	my $node_list = RDF::Base::Resource->find({
-	    'predor_name_-_code_-_name_short_clean' => $desig2,
-	});
+        my $node_list = RDF::Base::Resource->find({
+                                                   'predor_name_-_code_-_name_short_clean' => $desig2,
+                                                  });
 
 
-	unless( $node_list->size )
-	{
-	    $node_list = RDF::Base::Resource->find_by_anything($desig2);
-	}
+        unless( $node_list->size )
+        {
+            $node_list = RDF::Base::Resource->find_by_anything($desig2);
+        }
 
-	# Remove itself
-	my @node_list_out = grep not( $node1->equals($_) ), @$node_list;
+        # Remove itself
+        my @node_list_out = grep not( $node1->equals($_) ), @$node_list;
 #	my @node_list_out = @$node_list;
 
-	if( @node_list_out )
-	{
-	    $result->{'info'}{'alternatives'}{'alts'} = \@node_list_out;
-	    $req->set_page($req->referer_path);
-	    throw('alternatives', "välj nod att slå samman med");
-	}
-	else
-	{
-	    debug datadump $result->{'info'};
-	    throw('validation', "No nodes matches the given name");
-	}
+        if ( @node_list_out )
+        {
+            $result->{'info'}{'alternatives'}{'alts'} = \@node_list_out;
+            $req->set_page($req->referer_path);
+            throw('alternatives', "välj nod att slå samman med");
+        }
+        else
+        {
+            debug datadump $result->{'info'};
+            throw('validation', "No nodes matches the given name");
+        }
     }
 
     my( $args, $arclim, $res ) = parse_propargs();
@@ -86,13 +86,13 @@ sub handler
 
     $q->param('id', $node2->id );
 
-    if( $res->changes )
+    if ( $res->changes )
     {
-	return loc("Resources merged");
+        return loc("Resources merged");
     }
     else
     {
-	return loc("No changes");
+        return loc("No changes");
     }
 }
 
