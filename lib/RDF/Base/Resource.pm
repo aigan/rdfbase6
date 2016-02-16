@@ -4955,6 +4955,43 @@ sub revupdate
 
 ##############################################################################
 
+=head2 relrevupdate
+
+  $n->relrevupdate( \%props, \%args )
+
+Handles both rel and rev update, with rev prefixes
+
+=cut
+
+sub relrevupdate
+{
+    my( $node, $props, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
+
+    my $relprops = {};
+    my $revprops = {};
+
+    foreach my $pred ( keys %$props )
+    {
+        if( $pred =~ /^rev_/ )
+        {
+            my $cleanpred = $pred;
+            $cleanpred =~ s/^rev_//;
+            $revprops->{$cleanpred} = $props->{$pred};
+        }
+        else
+        {
+            $relprops->{pred} = $props->{$pred};
+        }
+    }
+
+    $node->update($relprops,$args);
+    return $node->revupdate($revprops,$args);
+}
+
+
+##############################################################################
+
 =head2 equals
 
   1. $n->equals( $node2, \%args )

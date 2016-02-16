@@ -5,7 +5,7 @@ package RDF::Base::Node;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1250,7 +1250,7 @@ sub revreplace
     my $changes_prev = $res->changes;
 
     $oldarcs = $node->find_revarcs($oldarcs, $args);
-    $revprops   = $node->construct_proplist($revprops, $args);
+    #$revprops   = $node->construct_proplist($revprops, $args);
 
     foreach my $arc ( $oldarcs->as_array )
     {
@@ -1265,8 +1265,9 @@ sub revreplace
     foreach my $pred_name ( keys %$revprops )
     {
         my $pred = RDF::Base::Pred->get_by_label( $pred_name );
+        my $vals = Para::Frame::List->new_any( $revprops->{$pred_name} );
 
-        foreach my $subj_in ( @{$revprops->{$pred_name}} )
+        foreach my $subj_in ( @$vals )
         {
             my $subj  = RDF::Base::Resource->get_by_anything( $subj_in, $args );
 
