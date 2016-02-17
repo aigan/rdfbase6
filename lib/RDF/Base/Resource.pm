@@ -8230,12 +8230,12 @@ sub get_by_label
 
         unless( $id )
         {
-            cluck "Constant not found";
             if ( $args->{'nonfatal'} )
             {
                 debug "!!!! Constant $label doesn't exist";
                 return undef;
             }
+            cluck "Constant not found";
             throw('notfound', "Constant $label doesn't exist");
         }
 
