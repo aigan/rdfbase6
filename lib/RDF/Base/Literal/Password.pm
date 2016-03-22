@@ -97,7 +97,7 @@ sub wuirc
 
 #    Para::Frame::Logging->this_level(5);
 
-    no strict 'refs'; # For &{$inputtype} below
+    no strict 'refs';           # For &{$inputtype} below
     my $out = "";
     my $R = RDF::Base->Resource;
     my $req = $Para::Frame::REQ;
@@ -106,24 +106,24 @@ sub wuirc
 
     my $size = $args->{'size'} || 15;
     my $smallestsize = $size - 10;
-    if( $smallestsize < 3 )
+    if ( $smallestsize < 3 )
     {
-	$smallestsize = 8;
+        $smallestsize = 8;
     }
 
     my $predname;
-    if( ref $pred )
+    if ( ref $pred )
     {
-	$predname = $pred->label;
+        $predname = $pred->label;
 
-	debug 2, "String wuirc for $predname";
-	debug 2, "$predname class is ". $pred->range->instance_class;
+        debug 2, "String wuirc for $predname";
+        debug 2, "$predname class is ". $pred->range->instance_class;
     }
     else
     {
-	$predname = $pred;
-	# Only handles pred nodes
-	$pred = RDF::Base::Pred->get_by_label($predname);
+        $predname = $pred;
+        # Only handles pred nodes
+        $pred = RDF::Base::Pred->get_by_label($predname);
     }
 
 
@@ -132,9 +132,9 @@ sub wuirc
     my $newsubj = $args->{'newsubj'};
 
     $args->{'id'} ||= build_field_key({
-				       pred => $predname,
-				       subj => $subj,
-				      });
+                                       pred => $predname,
+                                       subj => $subj,
+                                      });
 
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];
@@ -142,60 +142,60 @@ sub wuirc
 #    debug "Using proplim ".query_desig($proplim); # DEBUG
 
 
-    if( ($args->{'disabled'}||'') eq 'disabled' )
+    if ( ($args->{'disabled'}||'') eq 'disabled' )
     {
-	my $arclist = $subj->arc_list($predname, $proplim, $args);
+        my $arclist = $subj->arc_list($predname, $proplim, $args);
 
-	while( my $arc = $arclist->get_next_nos )
-	{
-	    $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
-	}
+        while ( my $arc = $arclist->get_next_nos )
+        {
+            $out .= $arc->value->desig .'&nbsp;'. $arc->edit_link_html .'<br/>';
+        }
     }
-    elsif( $subj->list($predname,$proplim,$arclim)->is_true )
+    elsif ( $subj->list($predname,$proplim,$arclim)->is_true )
     {
-	my $subj_id = $subj->id;
+        my $subj_id = $subj->id;
 
-	my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
-	my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
+        my $arcversions =  $subj->arcversions($predname, proplim_to_arclim($proplim));
+        my @arcs = map RDF::Base::Arc->get($_), keys %$arcversions;
 
 #	debug "Arcs list: @arcs";
-	my $list_weight = 0;
+        my $list_weight = 0;
 
-	foreach my $arc ( $subj->arc_list($predname,$proplim,$arclim)->as_array )
-	{
-	    my $arc_id = $arc->id;
+        foreach my $arc ( $subj->arc_list($predname,$proplim,$arclim)->as_array )
+        {
+            my $arc_id = $arc->id;
 #	    debug $arc_id;
 
-	    my $field = build_field_key({arc => $arc});
-	    my $fargs =
-	    {
-	     class => $args->{'class'},
-	     size => $size,
-	     maxlength => $args->{'maxlength'},
-	     id => $args->{'id'},
-	     arc => $arc->id,
-	    };
+            my $field = build_field_key({arc => $arc});
+            my $fargs =
+            {
+             class => $args->{'class'},
+             size => $size,
+             maxlength => $args->{'maxlength'},
+             id => $args->{'id'},
+             arc => $arc->id,
+            };
 
-	    $out .= password($field, undef, $fargs);
-	    $out .= $arc->edit_link_html;
-	}
+            $out .= password($field, undef, $fargs);
+            $out .= $arc->edit_link_html;
+        }
     }
-    else # no arc
+    else                        # no arc
     {
-	my $props =
-	{
-	 pred => $predname,
-	 subj => $subj,
-	};
+        my $props =
+        {
+         pred => $predname,
+         subj => $subj,
+        };
 
-	$out .= password(build_field_key($props),
-			 undef,
-			 {
-			  class => $args->{'class'},
-			  size => $size,
-			  maxlength => $args->{'maxlength'},
-			  id => $args->{'id'},
-			 });
+        $out .= password(build_field_key($props),
+                         undef,
+                         {
+                          class => $args->{'class'},
+                          size => $size,
+                          maxlength => $args->{'maxlength'},
+                          id => $args->{'id'},
+                         });
     }
 
     return $out;
@@ -217,42 +217,42 @@ sub update_by_query_arc
     my $pred = $props->{'pred'} || $arc->pred;
     my $res = $args->{'res'};
 
-    if( ref $value )
+    if ( ref $value )
     {
-	my $coltype = $pred->coltype;
-	die "This must be an object. But coltype is set to $coltype: $value";
+        my $coltype = $pred->coltype;
+        die "This must be an object. But coltype is set to $coltype: $value";
     }
-    elsif( length $value )
+    elsif ( length $value )
     {
-	# Give the valtype of the pred. We want to use the
-	# current valtype rather than the previous one that
-	# maight not be the same.  ... unless for value
-	# nodes. But take care of that in set_value()
+        # Give the valtype of the pred. We want to use the
+        # current valtype rather than the previous one that
+        # maight not be the same.  ... unless for value
+        # nodes. But take care of that in set_value()
 
-	my $valtype = $pred->valtype;
-	if( $valtype->equals('literal') )
-	{
-	    debug "arc is $arc->{id}";
-	    debug "valtype is ".$valtype->desig;
-	    debug "pred is ".$pred->desig;
-	    debug "setting value to $value"
-	}
+        my $valtype = $pred->valtype;
+        if ( $valtype->equals('literal') )
+        {
+            debug "arc is $arc->{id}";
+            debug "valtype is ".$valtype->desig;
+            debug "pred is ".$pred->desig;
+            debug "setting value to $value"
+        }
 
 
-	$arc = $arc->set_value( $value,
-				{
-				 %$args,
-				 valtype => $valtype,
-				});
+        $arc = $arc->set_value( $value,
+                                {
+                                 %$args,
+                                 valtype => $valtype,
+                                });
     }
     else
     {
 
-	# NOT adding arc to deathrow. We will not allow removing
-	# password simply because the input field is empty. It will
-	# often be empty as a securite measure
+        # NOT adding arc to deathrow. We will not allow removing
+        # password simply because the input field is empty. It will
+        # often be empty as a securite measure
 
-	# $res->add_to_deathrow( $arc );
+        # $res->add_to_deathrow( $arc );
     }
 
     return $arc;
