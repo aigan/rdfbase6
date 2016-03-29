@@ -5,7 +5,7 @@ package RDF::Base::User;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -26,6 +26,8 @@ use base qw(Para::Frame::User);
 use DBI;
 use Carp qw( confess cluck carp );
 use Time::HiRes qw( time );
+use Crypt::PRNG;
+use Crypt::Digest::SHA512;
 
 use Para::Frame::Utils qw( debug passwd_crypt trim datadump catch throw );
 use Para::Frame::User;
@@ -454,6 +456,64 @@ sub remove_working_on
 #    debug "List is ". $u->arc_list('working_on', $n, $args)->sysdesig;
 
     return $u->arc_list('working_on', $n, $args)->remove($args);
+}
+
+##############################################################################
+
+=head2 set_password_hash
+
+=cut
+
+sub set_password_hash
+{
+    my( $u, $password_plain, $args_in ) = @_;
+    my( $args ) = solid_propargs( $args_in );
+
+    debug "About to set password to $password_plain";
+
+    my $server_salt = $Para::Frame::CFG->{server_salt}
+      or die "Server salt not configured";
+
+    my $personal_salt = $u->secret($args);
+
+    # Could have used Crypt::KeyDerivation::pbkdf2, for slowing down
+    # dictionary attacks in cases where salts and hashes are known.
+    # Should migrate to Argon2 when easily availible.
+
+    my $d = Crypt::Digest::SHA512->new;
+    $d->add($server_salt, $personal_salt, $password_plain);
+
+    ### Store password with a prefix SIMILAR to glibc crypt. This is
+    ### for attaching the hashing method used.
+
+    # $6$$ == SHA512 b64u
+
+    my $password_hash = '$6$$' . $d->b64udigest;
+
+     $u->update({has_password_hash=>$password_hash},$args);
+
+    return $password_hash;
+}
+
+##############################################################################
+
+=head2 secret
+
+=cut
+
+sub secret
+{
+    my( $u, $args ) = @_;
+
+    my $secret = $u->first_prop('has_secret',undef,$args);
+    unless( $secret )
+    {
+        my $prng = Crypt::PRNG->new;
+        $secret = $prng->bytes_b64u(64); # represented by 86 bytes
+        $u->update({has_secret=>$secret},$args);
+    }
+
+    return $secret;
 }
 
 ##############################################################################

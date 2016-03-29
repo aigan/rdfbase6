@@ -5,7 +5,7 @@ package RDF::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1549,7 +1549,50 @@ http://www.w3.org/ns/auth/acl#Write",
                    },$args);
 
 
-#        $rb->update({ has_version => 16 },$args);
+        $rb->update({ has_version => 16 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+    if ( $ver < 17)
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+        my $c_password = $R->get_by_label('password',{nonfatal=>1});
+        unless( $c_password )
+        {
+            $c_password = $R->find_one({name=>'password',
+                                        scof => $C->get('valtext')});
+
+            my $pw_module =
+              $R->find_set({
+                            code => 'RDF::Base::Literal::Password',
+                            is   => 'class_perl_module',
+                           }, $args);
+            $c_password->update({label => 'password',
+                                 'class_handled_by_perl_module' => $pw_module,
+                                }, $args);
+        }
+
+        # ... don't bother about older insecure passwords...
+#        $C->get('has_password')->update({range_card_max => 1},$args);
+
+        $R->find_set({label => 'has_secret'},$args)
+          ->update({
+                    is    => 'predicate',
+                    range => $c_password,
+                    range_card_max => 1,
+                   }, $args);
+
+        $R->find_set({label => 'has_password_hash'},$args)
+          ->update({
+                    is    => 'predicate',
+                    domain => $C->get('login_account'),
+                    range => $c_password,
+                    range_card_max => 1,
+                   }, $args);
+
+#        $rb->update({ has_version => 17 },$args);
         $res->autocommit;
         $req->done;
     }

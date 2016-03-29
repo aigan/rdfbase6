@@ -19,6 +19,7 @@ no_index:
     - inc
 requires:
   Clone: '0.18'
+  CryptX: '0.028'
   DBD::Pg: '1.49'
   DateTime::Incomplete: '0.02'
   Email::MIME: '1.902'
@@ -33,4 +34,4 @@ requires:
   Para::Frame: '1.21'
   Text::WordDiff: '0.04'
   URI::imap: '1.01'
-version: '6.74'
+version: '6.76'

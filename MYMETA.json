@@ -33,6 +33,7 @@
       "runtime" : {
          "requires" : {
             "Clone" : "0.18",
+            "CryptX" : "0.028",
             "DBD::Pg" : "1.49",
             "DateTime::Incomplete" : "0.02",
             "Email::MIME" : "1.902",
@@ -51,5 +52,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "6.74"
+   "version" : "6.76"
 }

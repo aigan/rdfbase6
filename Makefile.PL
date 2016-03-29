@@ -147,7 +147,8 @@ WriteMakefile(
 	          'IMAP::BodyStructure'        => 1.02,
 	          'Mail::IMAPClient'           => 3.25,
 	          'URI::imap'                  => 1.01,
-                  'MIME::Types'                => 1.30,
+           'MIME::Types'                => 1.30,
+           'CryptX'                     => 0.028,
 	      },
 	      'dist'          =>
 	      {
