@@ -280,6 +280,12 @@ sub find_by_anything
 
 =head2 verify_password
 
+  $u->verify_password( $password_iphashed )
+
+For secure hashed stored passwords, the supplied password should be
+the value from has_password_hash, additionally iphashed with
+passwd_crypt()
+
 =cut
 
 sub verify_password
@@ -289,9 +295,10 @@ sub verify_password
     $password_encrypted ||= '';
 
 #    debug 1, "Retrieving password for $u->{id}";
+    my $pwhash = $u->first_prop('has_password_hash',undef,['active']);
     my @pwlist = $u->list('has_password',undef,['active'])->as_array;
 
-    unless(scalar @pwlist)
+    unless( $pwhash or @pwlist)
     {
         my $uname = $u->desig;
         confess "No desig for user" unless $uname;
@@ -300,11 +307,25 @@ sub verify_password
         return 0;
     }
 
+    if( $pwhash ) # Do not use unhashed passwords if hashed exist
+    {
+        debug "Should do pw hash comparison";
+
+        # Validating password
+        #
+        if( $password_encrypted eq passwd_crypt( $pwhash) )
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
     foreach my $pwd (@pwlist)
     {
         # Validating password
         #
-        if ( $password_encrypted eq passwd_crypt($pwd) )
+        if( $password_encrypted eq passwd_crypt($pwd) )
         {
             return 1;
         }
@@ -460,16 +481,18 @@ sub remove_working_on
 
 ##############################################################################
 
-=head2 set_password_hash
+=head2 password_hash
+
+Random documents of interest..:
+https://crackstation.net/hashing-security.htm
+https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet
 
 =cut
 
-sub set_password_hash
+sub password_hash
 {
-    my( $u, $password_plain, $args_in ) = @_;
-    my( $args ) = solid_propargs( $args_in );
-
-    debug "About to set password to $password_plain";
+    my( $u, $password_plain ) = @_;
+    my( $args ) = solid_propargs();
 
     my $server_salt = $Para::Frame::CFG->{server_salt}
       or die "Server salt not configured";
@@ -478,7 +501,7 @@ sub set_password_hash
 
     # Could have used Crypt::KeyDerivation::pbkdf2, for slowing down
     # dictionary attacks in cases where salts and hashes are known.
-    # Should migrate to Argon2 when easily availible.
+    # Should migrate to Argon2 when easily availible. (not argon2i)
 
     my $d = Crypt::Digest::SHA512->new;
     $d->add($server_salt, $personal_salt, $password_plain);
@@ -490,7 +513,43 @@ sub set_password_hash
 
     my $password_hash = '$6$$' . $d->b64udigest;
 
-     $u->update({has_password_hash=>$password_hash},$args);
+    return $password_hash;
+}
+
+##############################################################################
+
+=head2 password_token
+
+=cut
+
+sub password_token
+{
+    my( $u, $password_plain ) = @_;
+    my( $args ) = solid_propargs();
+
+    if( $u->has_pred('has_password_hash',undef,$args) )
+    {
+        return $u->password_hash($password_plain);
+    }
+
+    return $password_plain;
+}
+
+##############################################################################
+
+=head2 set_password_hash
+
+=cut
+
+sub set_password_hash
+{
+    my( $u, $password_plain, $args_in ) = @_;
+    my( $args ) = solid_propargs( $args_in );
+
+    debug "About to set password to $password_plain";
+
+    my $password_hash = $u->password_hash( $password_plain );
+    $u->update({has_password_hash=>$password_hash},$args);
 
     return $password_hash;
 }
