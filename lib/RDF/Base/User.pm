@@ -546,7 +546,7 @@ sub set_password_hash
     my( $u, $password_plain, $args_in ) = @_;
     my( $args ) = solid_propargs( $args_in );
 
-    debug "About to set password to $password_plain";
+#    debug "About to set password to $password_plain"; ### SECRET
 
     my $password_hash = $u->password_hash( $password_plain );
     $u->update({has_password_hash=>$password_hash},$args);
