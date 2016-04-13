@@ -35,10 +35,10 @@ sub handler
     my $search_col = $req->session->search_collection or die "No search obj";
     $search_col->reset_result;
 
-    if( $req->user->level < 20 )
+    if ( $req->user->level < 20 )
     {
-	# Store search stats
-	$search_col->add_stats(1);
+        # Store search stats
+        $search_col->add_stats(1);
     }
 
 #    $search_col->order_default(['score desc', 'random()']);
@@ -49,14 +49,14 @@ sub handler
     debug sprintf("Execute: %2.2f\n", $took);
 
 
-    if( my $result_url = $req->q->param('search_result') )
+    if ( my $result_url = $req->q->param('search_result') )
     {
-	$search_col->result_url( $result_url );
+        $search_col->result_url( $result_url );
     }
 
-    if( my $form_url = $req->q->param('search_form') )
+    if ( my $form_url = $req->q->param('search_form') )
     {
-	$search_col->form_url( $form_url );
+        $search_col->form_url( $form_url );
     }
 
     return "";
