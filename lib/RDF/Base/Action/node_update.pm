@@ -42,44 +42,44 @@ sub handler
     my $id = $q->param('id');
     unless( $id )
     {
-	throw('incomplete', "Id missing");
+        throw('incomplete', "Id missing");
     }
 
     my $node = RDF::Base::Resource->get($id);
 
     unless( $req->session->user->has_root_access
-	    or $node->is_owned_by( $req->session->user )
-	  )
+            or $node->is_owned_by( $req->session->user )
+          )
     {
-	throw('denied', "Access denied");
+        throw('denied', "Access denied");
     }
 
-    if( $q->param('prop_label') )
+    if ( $q->param('prop_label') )
     {
-	$node->set_label( $q->param('prop_label') );
-	$q->delete('prop_label');
+        $node->set_label( $q->param('prop_label') );
+        $q->delete('prop_label');
     }
 
     $node->update_by_query($args);
 
-    if( $res->changes )
+    if ( $res->changes )
     {
-	unless( $node->has_node_record )
-	{
-	    $node->create_rec;
-	}
+        unless( $node->has_node_record )
+        {
+            $node->create_rec;
+        }
     }
 
     $res->autocommit;
 
 
-    if( $res->changes )
+    if ( $res->changes )
     {
-	return loc("Changes saved");
+        return loc("Changes saved");
     }
     else
     {
-	return loc("No changes");
+        return loc("No changes");
     }
 }
 
