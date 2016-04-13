@@ -1971,6 +1971,26 @@ sub owned_by
 
 ##############################################################################
 
+=head2 set_owned_by
+
+  $n->set_ownde_by
+
+Returns: L<RDF::Base::Resource> object
+
+=cut
+
+sub set_owned_by
+{
+    my( $n, $owned_by_in ) = @_;
+
+    $n->initiate_node;
+    $n->mark_unsaved;
+    return $n->{'owned_by_obj'} = R->get( $owned_by_in );
+}
+
+
+##############################################################################
+
 =head2 is_owned_by
 
   $n->is_ownde_by
@@ -2024,6 +2044,26 @@ sub read_access
 
 ########################################################################
 
+=head2 set_read_access
+
+  $n->set_read_access
+
+Returns: L<RDF::Base::Resource> object
+
+=cut
+
+sub set_read_access
+{
+    my( $n, $read_access_in ) = @_;
+
+    $n->initiate_node;
+    $n->mark_unsaved;
+    return $n->{'read_access_obj'} = R->get( $read_access_in );
+}
+
+
+########################################################################
+
 =head2 write_access
 
   $n->write_access
@@ -2036,6 +2076,26 @@ sub write_access
 {
     return $_[0]->{'write_access_obj'} ||=
       RDF::Base::Resource->get( $_[0]->initiate_node->{'write_access'} );
+}
+
+
+########################################################################
+
+=head2 set_write_access
+
+  $n->set_write_access
+
+Returns: L<RDF::Base::Resource> object
+
+=cut
+
+sub set_write_access
+{
+    my( $n, $write_access_in ) = @_;
+
+    $n->initiate_node;
+    $n->mark_unsaved;
+    return $n->{'write_access_obj'} = R->get( $write_access_in );
 }
 
 
@@ -8755,10 +8815,20 @@ sub save
     my $uid = $u->id;
     my $now = now();
     my $public = RDF::Base::Constants->get('public');
-    my $sysadmin_group = RDF::Base::Constants->get('sysadmin_group');
+    my $contentadmin_group = RDF::Base::Constants->get('contentadmin_group');
 
+    if( $node->{'read_access_obj'} )
+    {
+        $node->{'read_access'}   = $node->{'read_access_obj'}->id;
+    }
     $node->{'read_access'}    ||= $public->id;
-    $node->{'write_access'}   ||= $sysadmin_group->id;
+
+    if( $node->{'write_access_obj'} )
+    {
+        $node->{'write_access'}   = $node->{'write_access_obj'}->id;
+    }
+    $node->{'write_access'}   ||= $contentadmin_group->id;
+
     $node->{'created_obj'}    ||= $node->created || $now;
     delete $node->{'created'};
 

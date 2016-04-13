@@ -5,7 +5,7 @@ package RDF::Base::Action::rule_add;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -35,7 +35,7 @@ sub handler
 
     die "implement me";
 
-    throw('denied', "Nope") unless $req->user->level >= 20;
+    throw('denied', "Nope") unless $req->user->has_root_access;
 
     my $DEBUG = 0;
 

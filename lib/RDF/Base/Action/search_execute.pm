@@ -5,7 +5,7 @@ package RDF::Base::Action::search_execute;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -35,7 +35,7 @@ sub handler
     my $search_col = $req->session->search_collection or die "No search obj";
     $search_col->reset_result;
 
-    if ( $req->user->level < 20 )
+    if ( $req->user->has_cm_access )
     {
         # Store search stats
         $search_col->add_stats(1);

@@ -83,7 +83,7 @@ sub handler
       unless( $blog );
 
     # Check that blog -has_member->$u
-    unless( $blog->has_member( $u ) or $u->level >= 20 )
+    unless( $blog->has_member( $u ) or $u->has_cm_access )
     {
 	debug $u->sysdesig ." is not a member of ". $blog->sysdesig;
 	throw('denied', "Access denied");

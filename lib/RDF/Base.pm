@@ -5,7 +5,7 @@ package RDF::Base;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -45,7 +45,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.76";
+our $VERSION = "6.77";
 
 
 =head1 NAME
@@ -201,33 +201,17 @@ sub init_on_startup
         RDF::Base::Setup->setup_db();
     }
 
-    ### Special namespace change from ritbase to rdfspace
-    {
-        my $dbh = $RDF::dbix->dbh;
-
-        my( $ritbase_id ) = $dbh->selectrow_array("select node from node where label='ritbase'");
-        if ( $ritbase_id )
-        {
-            $dbh->do("update node set label='rdfbase' where label='ritbase'");
-            $dbh->do("update arc set valtext=regexp_replace(valtext, '^Rit::Base', 'RDF::Base') where valtext like 'Rit::Base%'");
-            $dbh->commit;
-        }
-    }
-
-
+    RDF::Base::Setup->upgrade_tables();
     RDF::Base::Resource->on_startup();
-#    warn "init_on_startup 2\n";
     RDF::Base::Literal->on_startup();
     RDF::Base::Literal::Class->on_startup();
-#    warn "init_on_startup 3\n";
     RDF::Base::Constants->on_startup();
-#    warn "init_on_startup 4\n";
 
     my $cfg = $Para::Frame::CFG;
 
     $cfg->{'rb_default_source'} ||= 'rdfbase';
     $cfg->{'rb_default_read_access'} ||= 'public';
-    $cfg->{'rb_default_write_access'} ||= 'sysadmin_group';
+    $cfg->{'rb_default_write_access'} ||= 'contentadmin_group';
 
     foreach my $key (qw(rb_default_source rb_default_read_access
                         rb_default_write_access))
@@ -244,17 +228,12 @@ sub init_on_startup
 
     RDF::Base::Class->on_startup();
 
-
-#    warn "init_on_startup 5\n";
-
     $RDF::Base::IN_STARTUP = 0;
     $RDF::Base::IN_SETUP_DB = 0;
 
     ########################################
 
-#    warn "calling on_rdfbase_ready\n";
     Para::Frame->run_hook( $Para::Frame::REQ, 'on_rdfbase_ready');
-#    warn "done init_on_startup\n";
 }
 
 

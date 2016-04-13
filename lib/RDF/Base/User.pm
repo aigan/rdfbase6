@@ -34,7 +34,7 @@ use Para::Frame::User;
 use Para::Frame::Reload;
 
 use RDF::Base::Utils qw( is_undef parse_propargs query_desig solid_propargs );
-use RDF::Base::Constants qw( $C_login_account $C_full_access $C_guest_access );
+use RDF::Base::Constants qw( $C_login_account $C_full_access $C_content_management_access $C_guest_access $C_sysadmin_group );
 
 use constant R => 'RDF::Base::Resource';
 
@@ -183,6 +183,10 @@ sub level
         if ( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
         {
             $level = 40;
+        }
+        elsif ( $node->has_value({ 'has_access_right' => $C_content_management_access },['active']) )
+        {
+            $level = 20;
         }
         elsif ( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
         {
@@ -355,6 +359,22 @@ sub has_root_access
 
 ##############################################################################
 
+=head2 has_cm_access
+
+=cut
+
+sub has_cm_access
+{
+    if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_content_management_access) )
+    {
+        return 1;
+    }
+
+    return $_[0]->has_root_access;
+}
+
+##############################################################################
+
 =head2 set_default_propargs
 
 For the current request
@@ -413,9 +433,17 @@ sub on_arc_add
 {
     my( $u, $arc, $pred_name, $args_in ) = @_;
 
-    if ( $pred_name eq 'name_short' )
+#    debug "In RB::User on_arc_add $pred_name";
+
+    if( $pred_name eq 'name_short' )
     {
+        $Para::Frame::REQ->require_root_access; #Protect login name
         delete $u->{username};
+    }
+    elsif( $pred_name eq 'has_access_right' )
+    {
+        $Para::Frame::REQ->require_root_access; #Protect access rights
+        $u->set_write_access( $C_sysadmin_group );
     }
 
     $u->clear_caches;

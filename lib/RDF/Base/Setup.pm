@@ -255,7 +255,7 @@ sub setup_db
     debug "Adding arcs";
     my $source = $NODE{'rdfbase'}{'node'};
     my $read_access = $NODE{'public'}{'node'};
-    my $write_access = $NODE{'sysadmin_group'}{'node'};
+    my $write_access = $NODE{'contentadmin_group'}{'node'};
     my $sth_arc = $dbh->prepare("insert into arc (id,ver,subj,pred,source,active,indirect,implicit,submitted,read_access,write_access,created,created_by,updated,activated,activated_by,valtype,obj,valtext,valclean,valbin,valfloat) values (?,?,?,?,?,'t','f','f','f',?,?,?,?,?,?,?,?,?,?,?,?,?)") or die;
     foreach my $rec ( @ARC )
     {
@@ -826,7 +826,7 @@ sub upgrade_db
     }
 
     my $ver = $rb->has_version->literal || 0;
-    debug "RDF-Base DB version is ".$ver;
+    debug "RDF-Base Upgrade";
 
     if ( $ver < 1 )
     {
@@ -1592,22 +1592,46 @@ http://www.w3.org/ns/auth/acl#Write",
                     range_card_max => 1,
                    }, $args);
 
-#        $rb->update({ has_version => 17 },$args);
+        $rb->update({ has_version => 17 },$args);
         $res->autocommit;
         $req->done;
     }
 
-
-    if ( 0 )                    ### Depencency problems
+    if ( $ver < 18)
     {
         my $req = Para::Frame::Request->new_bgrequest();
 
-        $C->get('unseen_by')->
-          update({range=>$C->get('intelligent_agent')},$args);
-        $C->get('seen_by')->
-          update({range=>$C->get('intelligent_agent')},$args);
+        my $cma = $R->find_set({label => 'content_management_access'},$args)
+          ->update({
+                    is => $C->get('system_access_right'),
+                   },$args);
 
-        $rb->update({ has_version => 5 },$args);
+        $R->find_set({label => 'sysadmin_group'},$args);
+
+        my $users = $R->find({has_access_right_exist=>1});
+        while( my $user = $users->get_next_nos )
+        {
+            $user->vacuum_node;
+        }
+
+
+#        $rb->update({ has_version => 18 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+    if ( $ver < 19)
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+#        my $users = $C->get('full_access')->revlist('has_access_right');
+#        while( my $user = $users->get_next_nos )
+#        {
+#            next if $user->equals($C->get('root'));
+#            $user->update({has_access_right=>$cma},$args);
+#        }
+
+#        $rb->update({ has_version => 19 },$args);
         $res->autocommit;
         $req->done;
     }
@@ -1622,6 +1646,38 @@ http://www.w3.org/ns/auth/acl#Write",
     if ( $ARGV[0] eq 'vacuum_text' )
     {
         vacuum_text();
+    }
+
+}
+
+
+##############################################################################
+
+sub upgrade_tables
+{
+    my $dbix = $RDF::dbix;
+    my $dbh = $dbix->dbh;
+
+    my $ver = $dbix->select_record("from arc where active is true and subj=(select node from node where label='rdfbase')")->{valfloat};
+
+    debug "RDF-Base DB version $ver";
+
+    if( $ver < 13 )
+    {
+        ### Special namespace change from ritbase to rdfspace
+        my( $ritbase_id ) = $dbh->selectrow_array("select node from node where label='ritbase'");
+        if ( $ritbase_id )
+        {
+            $dbh->do("update node set label='rdfbase' where label='ritbase'");
+            $dbh->do("update arc set valtext=regexp_replace(valtext, '^Rit::Base', 'RDF::Base') where valtext like 'Rit::Base%'");
+            $dbh->commit;
+        }
+    }
+
+    if ( $ver < 18)
+    {
+        my $sth = $dbh->do("update node set label='contentadmin_group' where node=(select write_access from node where label='full_access')");
+        $dbh->commit;
     }
 
 }

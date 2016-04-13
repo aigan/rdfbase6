@@ -388,7 +388,7 @@ sub autocommit
         }
         else
         {
-            $activate = $u->has_root_access;
+            $activate = $u->has_cm_access;
         }
 
         if ( $activate )

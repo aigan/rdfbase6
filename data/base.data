@@ -11,7 +11,7 @@ is_of_language	1
 code	5
 note	5
 rdfbase	
-sysadmin_group	
+contentadmin_group	
 public	
 arc
 domain	1

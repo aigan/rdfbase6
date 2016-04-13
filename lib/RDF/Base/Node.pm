@@ -1039,7 +1039,7 @@ sub replace
         if ( $pred_name eq 'label' )
         {
             my $val = $props->{'label'}->get_first_nos;
-            $add{'label'}{$val} = $val;
+            $node->set_label( $val );
             next;
         }
 
@@ -1190,10 +1190,6 @@ sub replace
                 }
 
                 delete $del_pred{$pred_name};
-            }
-            elsif ( $pred_name eq 'label' )
-            {
-                $node->set_label( $value );
             }
             else
             {

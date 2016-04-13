@@ -58,7 +58,7 @@ owned_by
 
 ---
 
-default owned_by is sysadmin_group
+default owned_by is contentadmin_group
 
 a node can have a owned_by property
 
@@ -90,7 +90,7 @@ Access properties can only be changed by owner.
 Created arcs will inherit the access properties from nodes with
 defined access properties. If both ends of a new arc has diffrent
 read_access or diffred write_access, it will default to
-sysadmin_group.
+contentadmin_group.
 
 The arc will not change the access properties even if the nodes
 change. Except by the owner.
