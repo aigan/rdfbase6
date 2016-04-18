@@ -1615,7 +1615,7 @@ http://www.w3.org/ns/auth/acl#Write",
         }
 
 
-#        $rb->update({ has_version => 18 },$args);
+        $rb->update({ has_version => 18 },$args);
         $res->autocommit;
         $req->done;
     }

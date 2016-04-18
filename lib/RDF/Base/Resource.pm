@@ -7004,11 +7004,12 @@ sub wu_select
 
 sub wu_hiearchy
 {
-    my( $node, $args ) = @_;
+    my( $node, $args_in ) = @_;
+    my( $args ) = parse_propargs($args_in);
 
     my $top = $node->relative_top($args);
 
-    my $out = $top->wu_hiearchy_children;
+    my $out = $top->wu_hiearchy_children( $args );
 
     if ( $out )
     {
@@ -7029,6 +7030,12 @@ sub wu_hiearchy_children
 {
     my( $node, $args ) = @_;
 
+    if( $args->{wu_hiearchy_seen}{$node->id} )
+    {
+        return "<p class='alert'>Error: Cyclic parent_org</p>";
+    }
+
+    $args->{wu_hiearchy_seen}{$node->id} ++;
     my $out = "";
 
     foreach my $child ( $node->revlist('parent_org',undef,$args)->as_array )
@@ -7134,6 +7141,13 @@ sub wu_select_tree_multiple
 sub relative_top
 {
     my( $node, $args ) = @_;
+
+    if( $args->{wu_hiearchy_seen}{$node->id} )
+    {
+        $Para::Frame::REQ->note("Error: Cyclic parent_org ".$node->id);
+        return $node;
+    }
+    $args->{wu_hiearchy_seen}{$node->id} ++;
 
     my $parent = $node->first_prop('parent_org',undef,$args);
     if ( $parent )
