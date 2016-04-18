@@ -1608,12 +1608,6 @@ http://www.w3.org/ns/auth/acl#Write",
 
         $R->find_set({label => 'sysadmin_group'},$args);
 
-        my $users = $R->find({has_access_right_exist=>1});
-        while( my $user = $users->get_next_nos )
-        {
-            $user->vacuum_node;
-        }
-
 
         $rb->update({ has_version => 18 },$args);
         $res->autocommit;
@@ -1623,6 +1617,12 @@ http://www.w3.org/ns/auth/acl#Write",
     if ( $ver < 19)
     {
         my $req = Para::Frame::Request->new_bgrequest();
+
+        my $users = $R->find({has_access_right_exist=>1});
+        while( my $user = $users->get_next_nos )
+        {
+            $user->vacuum_node;
+        }
 
 #        my $users = $C->get('full_access')->revlist('has_access_right');
 #        while( my $user = $users->get_next_nos )
