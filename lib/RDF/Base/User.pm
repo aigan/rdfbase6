@@ -365,6 +365,11 @@ sub has_root_access
 
 sub has_cm_access
 {
+    if( R->get_by_label('rdfbase')->has_version->literal < 18 )
+    {
+        return $_[0]->has_root_access;
+    }
+
     if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_content_management_access) )
     {
         return 1;
