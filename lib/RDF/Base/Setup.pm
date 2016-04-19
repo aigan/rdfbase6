@@ -1624,17 +1624,27 @@ http://www.w3.org/ns/auth/acl#Write",
             $user->vacuum_node;
         }
 
+        $rb->update({ has_version => 19 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
+#    if ( $ver < 20 )
+#    {
+#        my $req = Para::Frame::Request->new_bgrequest();
+#
+#        my $cma = $C->get('content_management_access');
 #        my $users = $C->get('full_access')->revlist('has_access_right');
 #        while( my $user = $users->get_next_nos )
 #        {
 #            next if $user->equals($C->get('root'));
 #            $user->update({has_access_right=>$cma},$args);
 #        }
-
-#        $rb->update({ has_version => 19 },$args);
-        $res->autocommit;
-        $req->done;
-    }
+#
+##        $rb->update({ has_version => 20 },$args);
+#        $res->autocommit;
+#        $req->done;
+#    }
 
 
     $ARGV[0] //= '';

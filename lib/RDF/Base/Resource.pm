@@ -6998,61 +6998,6 @@ sub wu_select
 
 ##############################################################################
 
-=head2 wu_hiearchy
-
-=cut
-
-sub wu_hiearchy
-{
-    my( $node, $args_in ) = @_;
-    my( $args ) = parse_propargs($args_in);
-
-    my $top = $node->relative_top($args);
-
-    my $out = $top->wu_hiearchy_children( $args );
-
-    if ( $out )
-    {
-        return  '<span class="main_url">' . $top->wu_jump . '</span>'. $out; 
-    }
-
-    return "";
-}
-
-
-##############################################################################
-
-=head2 wu_hiearchy_children
-
-=cut
-
-sub wu_hiearchy_children
-{
-    my( $node, $args ) = @_;
-
-    if( $args->{wu_hiearchy_seen}{$node->id} )
-    {
-        return "<p class='alert'>Error: Cyclic parent_org</p>";
-    }
-
-    $args->{wu_hiearchy_seen}{$node->id} ++;
-    my $out = "";
-
-    foreach my $child ( $node->revlist('parent_org',undef,$args)->as_array )
-    {
-        $out .= '<li>' . $child->wu_jump( $args );
-        $out .= $child->wu_hiearchy_children( $args );
-        $out .= '</li>';
-    }
-
-
-    return '<ul>'.$out.'</ul>' if $out;
-    return "";
-}
-
-
-##############################################################################
-
 =head2 wu_select_tree_multiple
 
 =cut
@@ -7129,33 +7074,6 @@ sub wu_select_tree_multiple
     }
 
     return $out;
-}
-
-
-##############################################################################
-
-=head2 relative_top
-
-=cut
-
-sub relative_top
-{
-    my( $node, $args ) = @_;
-
-    if( $args->{wu_hiearchy_seen}{$node->id} )
-    {
-        $Para::Frame::REQ->note("Error: Cyclic parent_org ".$node->id);
-        return $node;
-    }
-    $args->{wu_hiearchy_seen}{$node->id} ++;
-
-    my $parent = $node->first_prop('parent_org',undef,$args);
-    if ( $parent )
-    {
-        return $parent->relative_top( $args );
-    }
-
-    return $node;
 }
 
 

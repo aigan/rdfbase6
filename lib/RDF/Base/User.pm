@@ -430,6 +430,23 @@ sub default_propargs
 
 ##############################################################################
 
+=head2 on_bless
+
+=cut
+
+sub on_bless
+{
+    my( $u ) = @_;
+
+    if( $u->has_pred('name_short') or $u->has_pred('has_access_right') )
+    {
+        $Para::Frame::REQ->require_root_access; #Protect access rights
+    }
+}
+
+
+##############################################################################
+
 =head2 on_arc_add
 
 =cut
@@ -583,6 +600,7 @@ sub set_password_hash
 
     my $password_hash = $u->password_hash( $password_plain );
     $u->update({has_password_hash=>$password_hash},$args);
+    $u->arc_list('has_password',undef,$args)->remove($args);
 
     return $password_hash;
 }
