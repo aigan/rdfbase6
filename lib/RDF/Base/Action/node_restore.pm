@@ -5,7 +5,7 @@ package RDF::Base::Action::node_restore;
 #   Jonas Liljegren   <jonas@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2013 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2013-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -31,7 +31,7 @@ RDFbase Action for restoring nodes.
 sub handler
 {
     my( $req ) = @_;
-    $req->require_root_access;
+    $req->require_cm_access;
 
     my( $args, $arclim, $res ) = parse_propargs('auto');
     $args->{'updated'} = now();

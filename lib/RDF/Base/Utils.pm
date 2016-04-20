@@ -1221,7 +1221,7 @@ sub parse_propargs
         my $unique;
         if ( $arg eq 'auto' )
         {
-            if ( $Para::Frame::U and $Para::Frame::U->has_root_access )
+            if ( $Para::Frame::U and $Para::Frame::U->has_cm_access )
             {
                 $arclim = [8192]; # not_old
                 $unique = [1024, 256, 1]; # new, submitted, active

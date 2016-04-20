@@ -30,7 +30,7 @@ RDFbase Action for merging nodes
 sub handler
 {
     my( $req ) = @_;
-    $req->require_root_access;
+    $req->require_cm_access;
 
     my $q = $req->q;
     my $id = $q->param('id');

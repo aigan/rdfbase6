@@ -5,7 +5,7 @@ package RDF::Base::Search::Result;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -109,7 +109,7 @@ sub init
 
     ### Restrict based on root access
     #
-    if( $Para::Frame::U and not $Para::Frame::U->has_root_access )
+    if( $Para::Frame::U and not $Para::Frame::U->has_cm_access )
     {
 	$res->{'page_size'} = List::Util::min( $res->{'page_size'}, PAGE_SIZE_MAX );
 #	debug "page_size set to ".$res->{'page_size'} ." * ".PAGE_SIZE_MAX;

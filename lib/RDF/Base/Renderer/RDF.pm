@@ -5,7 +5,7 @@ package RDF::Base::Renderer::RDF;
 #   Jonas Liljegren   <jonas@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2011-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -54,7 +54,7 @@ sub render_output
     $out .= qq(<rdf:RDF xmlns:rdf="$rdfns"\n);
     $out .= qq(xmlns:rb="$rbns">\n);
 
-    if( $req->user->has_root_access )
+    if( $req->user->has_cm_access )
     {
 	my $n = $R->get($file);
 	foreach my $pred ( $n->list_preds->as_array )

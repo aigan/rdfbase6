@@ -3,35 +3,35 @@ abstract: 'The ultimate database'
 author:
   - 'Jonas Liljegren <jonas@paranormal.se>'
 build_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 configure_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 0
-generated_by: 'ExtUtils::MakeMaker version 7.04, CPAN::Meta::Converter version 2.120351'
+generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.142690'
 license: unknown
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: RDF-Base
 no_index:
   directory:
     - t
     - inc
 requires:
-  Clone: 0.18
-  CryptX: 0.028
-  DBD::Pg: 1.49
-  DateTime::Incomplete: 0.02
-  Email::MIME: 1.902
-  File::MMagic::XS: 0.09
-  GraphViz: 2.02
-  HTML::FormatText: 2.04
-  IMAP::BodyStructure: 1.02
-  JSON: 2.04
-  List::Util: 1.18
-  MIME::Types: 1.3
-  Mail::IMAPClient: 3.25
-  Para::Frame: 1.21
-  Text::WordDiff: 0.04
-  URI::imap: 1.01
-version: 6.77
+  Clone: '0.18'
+  CryptX: '0.028'
+  DBD::Pg: '1.49'
+  DateTime::Incomplete: '0.02'
+  Email::MIME: '1.902'
+  File::MMagic::XS: '0.09'
+  GraphViz: '2.02'
+  HTML::FormatText: '2.04'
+  IMAP::BodyStructure: '1.02'
+  JSON: '2.04'
+  List::Util: '1.18'
+  MIME::Types: '1.3'
+  Mail::IMAPClient: '3.25'
+  Para::Frame: '1.21'
+  Text::WordDiff: '0.04'
+  URI::imap: '1.01'
+version: '6.77'

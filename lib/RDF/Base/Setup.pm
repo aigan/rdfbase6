@@ -1614,9 +1614,15 @@ http://www.w3.org/ns/auth/acl#Write",
         $req->done;
     }
 
-    if ( $ver < 19)
+
+    ### Moved 19 to 20 for redoing user vacuum
+
+    if ( $ver < 20)
     {
         my $req = Para::Frame::Request->new_bgrequest();
+
+        my $sag = $C->get('sysadmin_group');
+        $sag->set_write_access( $sag );
 
         my $users = $R->find({has_access_right_exist=>1});
         while( my $user = $users->get_next_nos )
@@ -1624,10 +1630,21 @@ http://www.w3.org/ns/auth/acl#Write",
             $user->vacuum_node;
         }
 
-        $rb->update({ has_version => 19 },$args);
+        $rb->update({ has_version => 20 },$args);
         $res->autocommit;
         $req->done;
     }
+
+    if ( $ver < 21 )
+    {
+        my $req = Para::Frame::Request->new_bgrequest();
+
+
+#        $rb->update({ has_version => 21 },$args);
+        $res->autocommit;
+        $req->done;
+    }
+
 
 #    if ( $ver < 20 )
 #    {

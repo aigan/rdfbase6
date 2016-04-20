@@ -58,7 +58,7 @@
 
 </table>
 
-[% IF u.has_root_access %]
+[% IF u.has_cm_access %]
   <table class="admin">
     <caption>[% aloc("Change") %]</caption>
     <tr><td>[% input('prop_label', node.label || default_label, tdlabel=loc('Label')) %]</td></tr>

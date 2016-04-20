@@ -5,7 +5,7 @@ package RDF::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -749,9 +749,8 @@ sub wuirc
     my $out = "";
     my $R = RDF::Base->Resource;
     my $req = $Para::Frame::REQ;
-    my $root_access = $req->user->has_root_access; # BOOL
 
-    unless( $req->user->has_root_access )
+    unless( $req->user->has_cm_access )
     {                    ### FIXME: Not ready to use for non-admins...
         $args =
           parse_propargs({

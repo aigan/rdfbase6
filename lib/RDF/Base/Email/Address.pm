@@ -5,7 +5,7 @@ package RDF::Base::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -239,7 +239,7 @@ sub wuirc_disabled # Not used anymore
 
         # Maby show weight
 
-        if ( $Para::Frame::U->has_root_access and
+        if ( $Para::Frame::U->has_cm_access and
              ( (@{$arcversions->{$arc_id}} > 1) or
                $arcversions->{$arc_id}[0]->submitted ) )
         {

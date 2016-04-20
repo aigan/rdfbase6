@@ -380,6 +380,34 @@ sub has_cm_access
 
 ##############################################################################
 
+=head2 require_write_access_to
+
+=cut
+
+sub require_write_access_to
+{
+    return if $_[0]->has_write_access_to( $_[1] );
+    throw( 'denied', "You do not have access to modify ".$_[1]->desig );
+}
+
+##############################################################################
+
+=head2 has_write_access_to
+
+=cut
+
+sub has_write_access_to
+{
+    my( $u, $n ) = @_;
+
+    return 1 if $u->has_root_access;
+    return 1 if $n->is_owned_by( $u );
+    return 0 if $C_sysadmin_group->equals($n->write_access);
+    return 1;
+}
+
+##############################################################################
+
 =head2 set_default_propargs
 
 For the current request
@@ -447,6 +475,23 @@ sub on_bless
 
 ##############################################################################
 
+=head2 on_unbless
+
+=cut
+
+sub on_unbless
+{
+    my( $u ) = @_;
+
+    if( $C_sysadmin_group->equals($u->write_access) )
+    {
+        $Para::Frame::REQ->require_root_access; #Protect access rights
+    }
+}
+
+
+##############################################################################
+
 =head2 on_arc_add
 
 =cut
@@ -466,6 +511,15 @@ sub on_arc_add
     {
         $Para::Frame::REQ->require_root_access; #Protect access rights
         $u->set_write_access( $C_sysadmin_group );
+        $u->set_owned_by( $u );
+    }
+
+    if( $C_sysadmin_group->equals($u->write_access) )
+    {
+        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+        {
+            $Para::Frame::REQ->user->require_write_access_to( $u );
+        }
     }
 
     $u->clear_caches;
@@ -479,7 +533,21 @@ sub on_arc_add
 
 sub on_arc_del
 {
-    shift->clear_caches(@_);
+    my( $u, $arc, $pred_name, $args_in ) = @_;
+
+    if( $C_sysadmin_group->equals($u->write_access) )
+    {
+        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+        {
+            $Para::Frame::REQ->user->require_write_access_to( $u );
+        }
+        elsif( $pred_name ~~ [qw(name_short has_access_right )] )
+        {
+            $Para::Frame::REQ->require_root_access;
+        }
+    }
+
+    $u->clear_caches(@_);
 }
 
 ##############################################################################

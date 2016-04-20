@@ -3,7 +3,7 @@
 
 [%#### A search result exists with one or more hits ####%]
   <ul>
-[% IF u.has_root_access %]
+[% IF u.has_cm_access %]
     [% IF searchobj.result_url; %]<li><i class="fa fa-list-ul"></i> [% jump('Resultatlista', searchobj.result_url); %]</li>[% END %]   
     [% IF searchobj.form_url; %]<li><i class="fa fa-columns"></i> [% jump('Sökformulär', searchobj.form_url); %]</li>[% END %]			
 		[% IF searchobj.is_rb_search %]

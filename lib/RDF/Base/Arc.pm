@@ -743,6 +743,11 @@ sub create
     }
 
 
+    ## Check write_access ... Still too complicated!
+    ##
+    #$updated_by->require_write_access_to( $subj );
+
+
     # Do not create duplicate arcs.  Check if arc with subj, pred, val
     # already exists. This checks if the arc already is existing. It
     # doesn't match on other properties. ( TODO: Also consider the
@@ -6228,11 +6233,15 @@ sub unlock
     if ( $cnt == 0 )
     {
         $RDF::Base::Arc::lock_check_active = 1;
+
+        my @touched; ### Remember in case of rollback
+
         eval
         {
             while ( my $params = shift @RDF::Base::Arc::queue_check_remove )
             {
                 my( $arc, $args ) = @$params;
+                push @touched, $arc;
                 $arc->remove_check( $args );
             }
 
@@ -6251,6 +6260,7 @@ sub unlock
             while ( my $params = shift @RDF::Base::Arc::queue_check_add )
             {
                 my( $arc, $args ) = @$params;
+                push @touched, $arc;
                 $arc->create_check( $args );
             }
 
@@ -6260,7 +6270,17 @@ sub unlock
             # corresponding place for then arc_lock isn not active.
         };
         $RDF::Base::Arc::lock_check_active = 0;
-        die $@ if $@;
+        if( $@ )
+        {
+            debug "Error during arc_unlock";
+
+            foreach my $arc ( @touched )
+            {
+                debug " * ".$arc->sysdesig;
+                $arc->mark_unsaved;
+            }
+            die $@;
+        }
     }
 }
 
@@ -6836,7 +6856,7 @@ sub edit_link_html
     my( $arc, $args ) = @_;
     my $req = $Para::Frame::REQ;
 
-    return '' unless $req->user->has_root_access;
+    return '' unless $req->user->has_cm_access;
     return '' unless $req->session->{'advanced_mode'};
 
     my $home   = $req->site->home_url_path;

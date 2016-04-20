@@ -28,7 +28,7 @@
   [% counter = counter + 1 %]
   [%# debug( 1, counter ) %]
   <div class="blog_comments">
-    [% IF u.has_root_access %]
+    [% IF u.has_cm_access %]
       ([% jump("Edit", comment.form_url) %])<br/>
     [% END %]
     <strong>Datum:</strong> [% comment.has_date #.strftime("%Y-%m-%d, %H.%M") %]<br/>

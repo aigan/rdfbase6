@@ -5,7 +5,7 @@ package RDF::Base::Action::arc_list_activate;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -30,7 +30,7 @@ RDFbase Action for activating a list of arcs
 sub handler
 {
     my( $req ) = @_;
-    $req->require_root_access;
+    $req->require_cm_access;
 
     my $q = $req->q;
     my $cnt = 0;

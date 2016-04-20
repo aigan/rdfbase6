@@ -5,7 +5,7 @@ package RDF::Base::Renderer::AJAX;
 #   Fredrik Liljegren   <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -157,7 +157,7 @@ sub render_wu
 {
     my( $rend ) = @_;
 
-    $rend->req->require_root_access;
+    $rend->req->require_cm_access;
     my $q = $rend->req->q;
     my $params;
     if ( my $params_in = $q->param('params') )
@@ -225,7 +225,7 @@ sub render_action
     my $q = $req->{'q'};
     my $out = "";
 
-    $req->require_root_access;
+    $req->require_cm_access;
 
     my $params;
     if ( my $params_in = $q->param('params') )
@@ -271,7 +271,7 @@ sub render_action
             # on_arc_add can be constructed by the client. IT IS
             # NOT SAFE!
             #
-            $req->require_root_access;
+            $req->require_cm_access;
 
             foreach my $meth ( keys %$on_arc_add )
             {
@@ -288,7 +288,7 @@ sub render_action
     }
     elsif ( $action eq 'remove_arc' )
     {
-        $req->require_root_access;
+        $req->require_cm_access;
         my $arc = R->get($q->param('arc'));
 
         $arc->remove({ activate_new_arcs => 1 });
@@ -297,7 +297,7 @@ sub render_action
     }
     elsif ( $action eq 'create_new' )
     {
-        $req->require_root_access;
+        $req->require_cm_access;
         my $rev = $q->param('rev');
         my $name = $q->param('name')
           or throw('incomplete', "Didn't get name");
@@ -331,7 +331,7 @@ sub render_action
     {
         my $subj = R->get($params->{'subj'})
           or throw('missing','Node missing');
-        unless( $req->session->user->has_root_access
+        unless( $req->session->user->has_cm_access
                 or $subj->is_owned_by( $req->session->user )
               )
         {
@@ -376,7 +376,7 @@ sub render_lookup
     my $req = $rend->req;
     my $q = $req->{'q'};
 
-    $req->require_root_access;
+    $req->require_cm_access;
 
     my $params;
     if ( my $params_in = $q->param('params') )
@@ -552,7 +552,7 @@ sub render_node
 
     my @l;
 
-    $rend->req->require_root_access;
+    $rend->req->require_cm_access;
 
     if( $path eq 'props' )
     {
@@ -595,7 +595,7 @@ sub render_tt
     my( $rend, $path, $args ) = @_;
 
     my $req = $rend->req;
-    $req->require_root_access;
+    $req->require_cm_access;
     my $q = $req->{'q'};
 
     my $params_in = from_json( $q->param('params') );
@@ -641,7 +641,7 @@ sub render_ttget
     my( $rend, $path, $args ) = @_;
 
     my $req = $rend->req;
-    $req->require_root_access;
+    $req->require_cm_access;
     $req->user->set_default_propargs({activate_new_arcs => 1 });
 
     my $q = $req->{'q'};
