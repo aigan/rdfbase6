@@ -696,4 +696,36 @@ sub secret
 
 ##############################################################################
 
+=head2 check_security
+
+throws ececption if unsecure
+
+=cut
+
+sub check_security
+{
+    my( $u, $args ) = @_;
+
+    unless( length( $u->first_prop('name_short',undef,$args)->plain) > 2 )
+    {
+        throw 'validation', "name_short missing";
+    }
+    unless( $u->prop('is',$C_login_account,$args) )
+    {
+        throw 'validation', "Not a login account";
+    }
+    unless( $C_sysadmin_group->equals($u->write_access) )
+    {
+        throw 'validation', "Account no secure";
+    }
+    unless( $u->is_owned_by( $u ) )
+    {
+        throw 'validation', "Account no secure";
+    }
+
+    return 1;
+}
+
+##############################################################################
+
 1;
