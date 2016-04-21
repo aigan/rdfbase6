@@ -743,9 +743,12 @@ sub create
     }
 
 
-    ## Check write_access ... Still too complicated!
-    ##
-    #$updated_by->require_write_access_to( $subj );
+    # Check allowans with subj. TODO: also with obj
+    #
+    unless( $subj->allows_arc_create(undef, $rec, $args ) )
+    {
+        throw('denied', "You do not have access to modify ".$subj->desig);
+    }
 
 
     # Do not create duplicate arcs.  Check if arc with subj, pred, val

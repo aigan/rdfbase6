@@ -2101,6 +2101,48 @@ sub set_write_access
 
 ########################################################################
 
+=head2 allows_arc_create
+
+  $n->allows_arc_create( $user, $rec, $args )
+
+$user defaults to current request user.
+$rec contains properties as set in A->create()
+
+Called by RDF::Base::Arc->create() before actual creation.
+
+Defaults to yes. Reimplement in subclasses to disallow.
+
+=cut
+
+sub allows_arc_create
+{
+    return 1;
+}
+
+
+########################################################################
+
+=head2 allows_arc_modify
+
+  $n->allows_arc_modify( $user, $arc, $args )
+
+$user defaults to current request user.
+
+Includes removal.
+Defaults to yes. Reimplement in subclasses to disallow.
+
+For now, just use allow_arc_create. Even removal will create a removal arc.
+
+=cut
+
+sub allows_arc_modify
+{
+    return 1;
+}
+
+
+########################################################################
+
 =head2 created_by
 
   $n->created_by

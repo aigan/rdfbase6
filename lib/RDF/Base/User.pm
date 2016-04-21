@@ -492,6 +492,35 @@ sub on_unbless
 
 ##############################################################################
 
+=head2 allows_arc_create
+
+=cut
+
+sub allows_arc_create
+{
+    my( $u, $user, $rec, $args ) = @_;
+
+    $user ||= $Para::Frame::REQ->user;
+
+    my $pred = R->get($rec->{pred});
+    my $pred_name = $pred->label;
+
+    if( $pred_name ~~ [qw(name_short has_access_right is)] )
+    {
+        return  $user->has_root_access;
+    }
+
+    if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+    {
+        return $user->has_write_access_to( $u );
+    }
+
+    return 1;
+}
+
+
+##############################################################################
+
 =head2 on_arc_add
 
 =cut
@@ -504,23 +533,23 @@ sub on_arc_add
 
     if( $pred_name eq 'name_short' )
     {
-        $Para::Frame::REQ->require_root_access; #Protect login name
+#        $Para::Frame::REQ->require_root_access; #Protect login name
         delete $u->{username};
     }
     elsif( $pred_name eq 'has_access_right' )
     {
-        $Para::Frame::REQ->require_root_access; #Protect access rights
+#        $Para::Frame::REQ->require_root_access; #Protect access rights
         $u->set_write_access( $C_sysadmin_group );
         $u->set_owned_by( $u );
     }
 
-    if( $C_sysadmin_group->equals($u->write_access) )
-    {
-        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
-        {
-            $Para::Frame::REQ->user->require_write_access_to( $u );
-        }
-    }
+#    if( $C_sysadmin_group->equals($u->write_access) )
+#    {
+#        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+#        {
+#            $Para::Frame::REQ->user->require_write_access_to( $u );
+#        }
+#    }
 
     $u->clear_caches;
 }
@@ -535,17 +564,17 @@ sub on_arc_del
 {
     my( $u, $arc, $pred_name, $args_in ) = @_;
 
-    if( $C_sysadmin_group->equals($u->write_access) )
-    {
-        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
-        {
-            $Para::Frame::REQ->user->require_write_access_to( $u );
-        }
-        elsif( $pred_name ~~ [qw(name_short has_access_right )] )
-        {
-            $Para::Frame::REQ->require_root_access;
-        }
-    }
+#    if( $C_sysadmin_group->equals($u->write_access) )
+#    {
+#        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+#        {
+#            $Para::Frame::REQ->user->require_write_access_to( $u );
+#        }
+#        elsif( $pred_name ~~ [qw(name_short has_access_right )] )
+#        {
+#            $Para::Frame::REQ->require_root_access;
+#        }
+#    }
 
     $u->clear_caches(@_);
 }
