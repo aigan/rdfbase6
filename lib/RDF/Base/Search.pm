@@ -5,7 +5,7 @@ package RDF::Base::Search;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -3029,7 +3029,7 @@ sub elements_props
         }
         else
         {
-#	    debug( 2, sprintf "Prio for %s is $prio", $pred->desig);
+#	    debug( 2, sprintf "Prio for %s is $prio", $preds->desig);
             my $pred = $preds->get_first_nos;
 
             if ( $pred->plain eq 'id' )
@@ -3138,13 +3138,28 @@ sub elements_props
 
         if ( $search->add_stats )
         {
-#	    debug sprintf("--> add stats for props search? (type $type, pred %s, vals %s)\n",
-#			 $pred->name, join '-', map $_, @$invalues);
-            if ( $type =~ /^(obj|subj|id)$/ )
+#            debug sprintf("--> add stats for props search? (type $type, pred %s, match %s, vals %s)\n",
+#                          join('/', map $_->label, @$preds), $match, join '-', map $_, @$invalues);
+            if ( $type =~ /^(obj|subj|id)$/ and $match =~ /^(eq|ne)$/ )
             {
                 foreach my $node_id ( @$invalues )
                 {
-                    RDF::Base::Resource->get($node_id)->log_search;
+                    my $node = RDF::Base::Resource->get($node_id);
+                    unless( $node )
+                    {
+                        debug "Node $node_id (type $type) does not exist";
+#                        debug query_desig( $props );
+                        next;
+                    }
+
+                    if( $node->can('log_search') )
+                    {
+                        $node->log_search;
+                    }
+                    else
+                    {
+                        debug "Node $node_id can't do log_search";
+                    }
                 }
             }
         }
