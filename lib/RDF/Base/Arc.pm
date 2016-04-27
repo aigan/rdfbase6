@@ -4281,8 +4281,21 @@ sub set_value
     my $value_old = $arc->value;
 
     debug 4, "got new value ".$value_new->sysdesig;
-    if ( $value_new_in and not $value_new )
+    if ( $value_new_in and not defined $value_new )
     {
+        debug "  value_old: ".$value_old->sysdesig();
+        debug "    new raw: ".$value_new;
+        eval
+        {
+            if( ref $value_new )
+            {
+                debug "  value_new: ".$value_new->sysdesig;
+                debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
+                debug "   type new: ".$args->{'valtype'}->sysdesig;
+                debug "coltype new: ".$value_new->this_coltype;
+            }
+        };
+
         confess "We should have got a value";
     }
 
