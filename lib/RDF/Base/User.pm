@@ -505,7 +505,7 @@ sub allows_arc_create
     my $pred = R->get($rec->{pred});
     my $pred_name = $pred->label;
 
-    if( $pred_name ~~ [qw(name_short has_access_right is)] )
+    if( $pred_name ~~ [qw(name_short has_access_right)] )
     {
         return  $user->has_root_access;
     }
