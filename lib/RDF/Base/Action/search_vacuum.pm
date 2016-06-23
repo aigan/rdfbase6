@@ -37,54 +37,37 @@ sub handler
     my $search_col = $req->session->search_collection
       or die "No search obj";
 
+    my( $args_in ) = solid_propargs({
+                                  activate_new_arcs => 1,
+                                  no_notification => 1,
+                                 });
+
     my $l = $search_col->result;
 
-    my( $args, $arclim, $res ) = solid_propargs({
-                                                 activate_new_arcs => 1,
-                                                 no_notification => 1,
-                                                });
+    $req->add_background_job( 'background_vacuum',
+                              \&do_next, $l, $l->get_first_nos, $args_in );
 
-    my $s = $req->session;
-    $res->{'vacuumed'} = $s->{'vacuumed'};
-    my $n; #current node
-
-    $l->reset;                  # if used before...
-    eval
+    sub do_next
     {
-        while ( $n = $l->get_next_nos )
+        my( $req, $l, $n, $args ) = @_;
+
+        debug sprintf "Vacuum % 5d of % 5d: %s", $l->count, $l->size, $n->sysdesig;
+
+        $n->vacuum_node( $args );
+
+        if( $l->last )
         {
-            next if $res->{'vacuumed'}{$n->{'id'}};
-#            debug "* ".$l->count." : ".$n->{'id'};
-
-            unless( $l->count % 10 )
-            {
-                unless( $l->count % 100 )
-                {
-                    $req->note(sprintf "Vacuum % 5d of % 5d", $l->count, $l->size);
-                }
-                die "cancelled" if $req->cancelled;
-                $req->may_yield;
-            }
-
-            $n->vacuum_node( $args );
-
-            $res->autocommit;
+            debug "Vacuum DONE";
         }
-    };
-
-    $res->{'vacuumed'}{$n->{'id'}} = 0;
-    $s->{'vacuumed'} = $res->{'vacuumed'};
-
-    die $@ if $@;
-
-    if ( $res->changes )
-    {
-        return loc("Changes saved");
+        else
+        {
+            $req->add_background_job( 'background_vacuum',
+                                      \&do_next, $l, $l->get_next_nos, $args );
+        }
     }
-    else
-    {
-        return loc("No changes");
-    }
+
+
+    return("Doing vacuum in background");
 }
 
 
