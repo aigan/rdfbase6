@@ -18,6 +18,7 @@ use warnings;
 
 use JSON;
 use IMAP::BodyStructure 1.02;
+use LWP::UserAgent;
 
 use Para::Frame 2.03;
 use Para::Frame::Utils qw( debug );
@@ -429,12 +430,11 @@ sub send_cache_change
             push @params, 'removed='.join(',',@removed);
         }
 
-        my $request = "update_cache?" . join('&', @params);
+        my $params_joined = join('&', @params);
 
         foreach my $site (@daemons)
         {
             my $daemon = $site->{'daemon'};
-            debug "Sending update to $site->{site}";
 
             ### TODO: check if port and IP is the same
             #
@@ -446,15 +446,26 @@ sub send_cache_change
 
             debug "Sending update_cache to $daemon";
 
-            eval
+            if( my $rest = $site->{'rest'} )
             {
-                $req->send_to_daemon( $daemon, 'RUN_ACTION',
-                                      \$request );
+                my $url = "http://".$daemon.$rest.'/update_cache';
+                my $ua = LWP::UserAgent->new;
+                my $res = $ua->post($url, Content => $params_joined);
+                debug($res->content);
             }
-              or do
+            else
+            {
+                eval
+                {
+                    my $request = "update_cache?" . $params_joined;
+                    $req->send_to_daemon( $daemon, 'RUN_ACTION',
+                                          \$request );
+                }
+                or do
               {
                   debug(0,"failed send_cache_change to $site->{site}: $@");
               };
+            }
         }
 
         $fork->return();

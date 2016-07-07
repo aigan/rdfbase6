@@ -49,7 +49,7 @@ RDF.Base || (RDF.Base = {});
             }
 
             
-            if( props.promis ) { // Loading under way
+            if( props.promise ) { // Loading under way
                 return props.promise;
             }
 
