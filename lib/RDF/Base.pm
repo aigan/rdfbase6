@@ -23,6 +23,7 @@ use LWP::UserAgent;
 use Para::Frame 2.03;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
+use Para::Frame::Site;
 
 use RDF::Base::Utils;
 use RDF::Base::Object;
@@ -46,7 +47,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.78";
+our $VERSION = "6.79";
 
 
 =head1 NAME
@@ -429,6 +430,11 @@ sub send_cache_change
         {
             push @params, 'removed='.join(',',@removed);
         }
+
+				my $server = sprintf("%s:%d",
+														 Para::Frame::Site->get('default')->host,
+														 $Para::Frame::CFG->{'port'});
+				push @params, 'callback='.$server;
 
         my $params_joined = join('&', @params);
 
