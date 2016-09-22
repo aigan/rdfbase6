@@ -507,20 +507,6 @@ sub create
     }
 
 
-    ##################### range_card_max_check
-    unless ( $props->{'replaces'} or $args->{'ignore_card_check'} )
-    {
-        if ( my $rcm = $pred->first_prop('range_card_max')->plain )
-        {
-            my $cnt = $subj->count($pred,'solid');
-            if ( $cnt >= $rcm )
-            {
-                throw('validation', sprintf 'Cardinality check of arc failed. %s already has %d arcs with pred %s', $subj->sysdesig, $cnt, $pred->desig)
-            }
-        }
-    }
-
-
     ##################### submitted
     push @fields, 'submitted';
     if ( $props->{'submitted'} )
@@ -883,6 +869,20 @@ sub create
             }
         }
     }
+
+    ##################### range_card_max_check
+    unless ( $props->{'replaces'} or $args->{'ignore_card_check'} )
+    {
+        if ( my $rcm = $pred->first_prop('range_card_max')->plain )
+        {
+            my $cnt = $subj->count($pred,'solid');
+            if ( $cnt >= $rcm )
+            {
+                throw('validation', sprintf 'Cardinality check of arc failed. %s already has %d arcs with pred %s', $subj->sysdesig, $cnt, $pred->desig)
+            }
+        }
+    }
+
 
     # Don't allow arcs where subj and obj is the same node:
     #
