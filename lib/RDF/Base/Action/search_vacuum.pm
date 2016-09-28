@@ -42,7 +42,8 @@ sub handler
                                   no_notification => 1,
                                  });
 
-    my $l = $search_col->result;
+    my $l_in = $search_col->result;
+		my $l = $l_in->new([$l_in->as_array]); # Ensure its not modified by others
 
     $req->add_background_job( 'background_vacuum',
                               \&do_next, $l, $l->get_first_nos, $args_in );
