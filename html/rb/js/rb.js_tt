@@ -7,318 +7,318 @@ RDF.Base || (RDF.Base = {});
 
 ;(function( RB ) {
 
-    // Set RB.url to something like "http://joli.ls1.se:7788/ajax/"
-    //var RB.url = "http://joli.ls1.se:7788/ajax/";
+	// Set RB.url to something like "http://joli.ls1.se:7788/ajax/"
+	//var RB.url = "http://joli.ls1.se:7788/ajax/";
 
-    var cred = { username: $.cookie("username"), password: $.cookie("password") };
-    var nodes = {};
-    var cnt = 1; // Counter of loaded nodes
+	var cred = { username: $.cookie("username"), password: $.cookie("password") };
+	var nodes = {};
+	var cnt = 1; // Counter of loaded nodes
 
-    var Node = function(id){
-        var props = { "id": id };
-        var revprops = {};
-        var obj = {};
-        var revobj = {};
-        this.cnt = cnt++;
-        this.id = id;
-        
-        nodes[id] = this;
-        
-        this.init = function(data) {
-            if( props.deferred ) { // Loading under way
-                return;
-            }
+	var Node = function(id){
+		var props = { "id": id };
+		var revprops = {};
+		var obj = {};
+		var revobj = {};
+		this.cnt = cnt++;
+		this.id = id;
+		
+		nodes[id] = this;
+		
+		this.init = function(data) {
+			if( props.deferred ) { // Loading under way
+				return;
+			}
 
-            props.data = data;
-            props.cached = new Date();
-            return;
-        }
-    
-        this.props = function( args ) {
+			props.data = data;
+			props.cached = new Date();
+			return;
+		}
+		
+		this.props = function( args ) {
 
-            // No cache if args used
-            if( args ) {
-                var deferred = $.Deferred();
-                $.getJSON( RB.url+'1/'+ props.id+'/', {
-                    cred: cred,
-                    args: $.toJSON(args),
-                }).done(function( res ) {
-                    deferred.resolve( res.data[0] );
-                });
-                return deferred.promise();
-            }
+			// No cache if args used
+			if( args ) {
+				var deferred = $.Deferred();
+				$.getJSON( RB.url+'1/'+ props.id+'/', {
+					cred: cred,
+					args: $.toJSON(args),
+				}).done(function( res ) {
+					deferred.resolve( res.data[0] );
+				});
+				return deferred.promise();
+			}
 
-            
-            if( props.promise ) { // Loading under way
-                return props.promise;
-            }
+			
+			if( props.promise ) { // Loading under way
+				return props.promise;
+			}
 
-            props.deferred = $.Deferred();
-            props.promise = props.deferred.promise({
-            });
-            
-            
-            if(! props.cached )
-            {
-                $.getJSON( RB.url+'1/'+ props.id+'/', {
-                    cred: cred,
-                }).done(function( res ) {
-                    props.data = res.data[0];
-                    props.cached = new Date();
-                    props.deferred.resolve(props.data);
-                });
-            } else {
-                props.deferred.resolve(props.data);
-            }            
+			props.deferred = $.Deferred();
+			props.promise = props.deferred.promise({
+			});
+			
+			
+			if(! props.cached )
+			{
+				$.getJSON( RB.url+'1/'+ props.id+'/', {
+					cred: cred,
+				}).done(function( res ) {
+					props.data = res.data[0];
+					props.cached = new Date();
+					props.deferred.resolve(props.data);
+				});
+			} else {
+				props.deferred.resolve(props.data);
+			}						 
 
-            return props.promise;
-        }
-    
-        this.revprops = function() {
-            if( revprops.promise ) { // Loading under way
-                return revprops.promise;
-            }
+			return props.promise;
+		}
+		
+		this.revprops = function() {
+			if( revprops.promise ) { // Loading under way
+				return revprops.promise;
+			}
 
-            revprops.deferred = $.Deferred();
-            revprops.promise = revprops.deferred.promise({
-            });
+			revprops.deferred = $.Deferred();
+			revprops.promise = revprops.deferred.promise({
+			});
 
-            if(! revprops.cached )
-            {
-                $.getJSON( RB.url+'1/'+ props.id+'/revprops', {
-                    cred: cred,
-                }).done(function( res ) {
-                    revprops.data = res.data[0];
-                    revprops.cached = new Date();
-                    revprops.deferred.resolve(revprops.data);
-                });
-            } else {
-                revprops.deferred.resolve(revprops.data);
-            }            
+			if(! revprops.cached )
+			{
+				$.getJSON( RB.url+'1/'+ props.id+'/revprops', {
+					cred: cred,
+				}).done(function( res ) {
+					revprops.data = res.data[0];
+					revprops.cached = new Date();
+					revprops.deferred.resolve(revprops.data);
+				});
+			} else {
+				revprops.deferred.resolve(revprops.data);
+			}						 
 
-            return revprops.promise;
-        }
+			return revprops.promise;
+		}
 
-        this.get = function(pred) {
-            obj[pred] = obj[pred] || {};
+		this.get = function(pred) {
+			obj[pred] = obj[pred] || {};
 
-            if( obj[pred].promise ) { // Loading under way
-                return obj[pred].promise;
-            }
+			if( obj[pred].promise ) { // Loading under way
+				return obj[pred].promise;
+			}
 
-            obj[pred].deferred = $.Deferred();
-            obj[pred].promise = obj[pred].deferred.promise({
-                get: promise_get,
-                revget: promise_revget,
-                props: promise_props,
-            });
+			obj[pred].deferred = $.Deferred();
+			obj[pred].promise = obj[pred].deferred.promise({
+				get: promise_get,
+				revget: promise_revget,
+				props: promise_props,
+			});
 
-            if(! obj[pred].cached )
-            {
-                var cached = new Date();
+			if(! obj[pred].cached )
+			{
+				var cached = new Date();
 
-                log("Get "+props.id+" "+pred);
-                
-                $.getJSON( RB.url+'1/'+ props.id+'/get/'+pred, {
-                    cred: cred,
-                }).done(function( res ) {
-                    var data = [];
-                    for( i in res.data ) {
-                        var n = RB.get(res.data[i].id);
-                        n.init(res.data[i]);
-                        data.push( n );
-                    };
-                    obj[pred].data = data;
-                    obj[pred].cached = cached;
-                    obj[pred].deferred.resolve(obj[pred].data);
-                });
-            } else {
-                obj[pred].deferred.resolve(obj[pred].data);
-            }            
+				log("Get "+props.id+" "+pred);
+				
+				$.getJSON( RB.url+'1/'+ props.id+'/get/'+pred, {
+					cred: cred,
+				}).done(function( res ) {
+					var data = [];
+					for( i in res.data ) {
+						var n = RB.get(res.data[i].id);
+						n.init(res.data[i]);
+						data.push( n );
+					};
+					obj[pred].data = data;
+					obj[pred].cached = cached;
+					obj[pred].deferred.resolve(obj[pred].data);
+				});
+			} else {
+				obj[pred].deferred.resolve(obj[pred].data);
+			}						 
 
-            return obj[pred].promise;
-        }
+			return obj[pred].promise;
+		}
 
-        this.revget = function(pred) {
-            revobj[pred] = revobj[pred] || {};
+		this.revget = function(pred) {
+			revobj[pred] = revobj[pred] || {};
 
-            if( revobj[pred].promise ) { // Loading under way
-                return revobj[pred].promise;
-            }
+			if( revobj[pred].promise ) { // Loading under way
+				return revobj[pred].promise;
+			}
 
-            revobj[pred].deferred = $.Deferred();
-            revobj[pred].promise = revobj[pred].deferred.promise({
-                get: promise_get,
-                revget: promise_revget,
-                props: promise_props,
-            });
+			revobj[pred].deferred = $.Deferred();
+			revobj[pred].promise = revobj[pred].deferred.promise({
+				get: promise_get,
+				revget: promise_revget,
+				props: promise_props,
+			});
 
-            if(! revobj[pred].cached )
-            {
-                var cached = new Date();
+			if(! revobj[pred].cached )
+			{
+				var cached = new Date();
 
-                $.getJSON( RB.url+'1/'+ props.id+'/revget/'+pred, {
-                    cred: cred,
-                }).done(function( res ) {
-                    var data = [];
-                    for( i in res.data ) {
-                        var n = RB.get(res.data[i].id);
-                        n.init(res.data[i]);
-                        data.push( n );
-                    };
-                    revobj[pred].data = data;
-                    revobj[pred].cached = cached;
-                    revobj[pred].deferred.resolve(revobj[pred].data);
-                });
-            } else {
-                revobj[pred].deferred.resolve(revobj[pred].data);
-            }            
+				$.getJSON( RB.url+'1/'+ props.id+'/revget/'+pred, {
+					cred: cred,
+				}).done(function( res ) {
+					var data = [];
+					for( i in res.data ) {
+						var n = RB.get(res.data[i].id);
+						n.init(res.data[i]);
+						data.push( n );
+					};
+					revobj[pred].data = data;
+					revobj[pred].cached = cached;
+					revobj[pred].deferred.resolve(revobj[pred].data);
+				});
+			} else {
+				revobj[pred].deferred.resolve(revobj[pred].data);
+			}						 
 
-            return revobj[pred].promise;
-        }
+			return revobj[pred].promise;
+		}
 
-        function promise_get( pred )
-        {
-            var promise = this;
+		function promise_get( pred )
+		{
+			var promise = this;
 
-            var sub_deferred = $.Deferred();
-            var sub_promise = sub_deferred.promise({
-                get: promise_get,
-                revget: promise_revget,
-                props: promise_props,
-            });
-            
-            log("Promise Get "+pred);
+			var sub_deferred = $.Deferred();
+			var sub_promise = sub_deferred.promise({
+				get: promise_get,
+				revget: promise_revget,
+				props: promise_props,
+			});
+			
+			log("Promise Get "+pred);
 
-            promise.then(function(data){
-                var list_promise = [];
-                for( i in data )
-                {
-                    list_promise.push(data[i].get(pred));
-                }
-                $.when.apply(this,list_promise).then(function(){
-                    var uniq = {};
-                    var list = [];
-                    for( i in arguments )
-                    {
-                        for( j in arguments[i] )
-                        {
-                            var item = arguments[i][j];
-                            if(! uniq[item.id] )
-                                list.push(item);
-                            uniq[item.id] = item;
-                        }
-                    }
-                    sub_deferred.resolve(list);
-                });
-            });
-            return sub_promise;
-        }
+			promise.then(function(data){
+				var list_promise = [];
+				for( i in data )
+				{
+					list_promise.push(data[i].get(pred));
+				}
+				$.when.apply(this,list_promise).then(function(){
+					var uniq = {};
+					var list = [];
+					for( i in arguments )
+					{
+						for( j in arguments[i] )
+						{
+							var item = arguments[i][j];
+							if(! uniq[item.id] )
+								list.push(item);
+							uniq[item.id] = item;
+						}
+					}
+					sub_deferred.resolve(list);
+				});
+			});
+			return sub_promise;
+		}
 
-        function promise_revget( pred )
-        {
-            var promise = this;
-//            log("This is the promised revget for "+pred);
+		function promise_revget( pred )
+		{
+			var promise = this;
+			//						log("This is the promised revget for "+pred);
 
-            var sub_deferred = $.Deferred();
-            var sub_promise = sub_deferred.promise({
-                get: promise_get,
-                revget: promise_revget,
-                props: promise_props,
-            });
-            
-            promise.then(function(data){
-                var list_promise = [];
-//                log("items in data");
-                for( i in data )
-                {
-//                    log(data[i]);
-//                    data[i].props().then(function(d){log("item "+i);log(d)});
-                    list_promise.push(data[i].revget(pred));
-                }
-//                log("List of promises");
-//                log( list_promise );
-                $.when.apply(this,list_promise).then(function(){
-//                    log('Sub-promises fulfilled');
-                    var uniq = {};
-                    var list = [];
-                    for( i in arguments )
-                    {
-                        for( j in arguments[i] )
-                        {
-                            var item = arguments[i][j];
-                            if(! uniq[item.id] )
-                                list.push(item);
-                            uniq[item.id] = item;
-                        }
-                    }
-//                    log(list);
-                    sub_deferred.resolve(list);
-                });
-            });
-            return sub_promise;
-        }
+			var sub_deferred = $.Deferred();
+			var sub_promise = sub_deferred.promise({
+				get: promise_get,
+				revget: promise_revget,
+				props: promise_props,
+			});
+			
+			promise.then(function(data){
+				var list_promise = [];
+				//								log("items in data");
+				for( i in data )
+				{
+					//										log(data[i]);
+					//										data[i].props().then(function(d){log("item "+i);log(d)});
+					list_promise.push(data[i].revget(pred));
+				}
+				//								log("List of promises");
+				//								log( list_promise );
+				$.when.apply(this,list_promise).then(function(){
+					//										log('Sub-promises fulfilled');
+					var uniq = {};
+					var list = [];
+					for( i in arguments )
+					{
+						for( j in arguments[i] )
+						{
+							var item = arguments[i][j];
+							if(! uniq[item.id] )
+								list.push(item);
+							uniq[item.id] = item;
+						}
+					}
+					//										log(list);
+					sub_deferred.resolve(list);
+				});
+			});
+			return sub_promise;
+		}
 
-        function promise_props() {
-            var promise = this;
-//            log("This is the promised revget for "+pred);
+		function promise_props() {
+			var promise = this;
+			//						log("This is the promised revget for "+pred);
 
-            var sub_deferred = $.Deferred();
-            var sub_promise = sub_deferred.promise({
-            });
-            
-            promise.then(function(data){
-                var list_promise = [];
-                for( i in data )
-                {
-                    list_promise.push(data[i].props());
-                }
-                $.when.apply(this,list_promise).then(function(){
-                    var list = [];
-                    for( i in arguments )
-                    {
-                        list.push(arguments[i]);
-                    }
-                    sub_deferred.resolve(list);
-                });
-            });
-            return sub_promise;
-        }
-    
-    };
-    
-    RB.get = function(id) {
-        return nodes[id] || new Node(id);
-    };
+			var sub_deferred = $.Deferred();
+			var sub_promise = sub_deferred.promise({
+			});
+			
+			promise.then(function(data){
+				var list_promise = [];
+				for( i in data )
+				{
+					list_promise.push(data[i].props());
+				}
+				$.when.apply(this,list_promise).then(function(){
+					var list = [];
+					for( i in arguments )
+					{
+						list.push(arguments[i]);
+					}
+					sub_deferred.resolve(list);
+				});
+			});
+			return sub_promise;
+		}
+		
+	};
+	
+	RB.get = function(id) {
+		return nodes[id] || new Node(id);
+	};
 
-    RB.tt = function(template, params) {
-        var deferred = $.Deferred();
-        var promise = deferred.promise({
-        });
+	RB.tt = function(template, params) {
+		var deferred = $.Deferred();
+		var promise = deferred.promise({
+		});
 
-        log("Before tt ajax");
-        log(template);
-        log(params);
-        
-        $.ajax({
-            dataType: "json",
-            type: "POST",
-            url: RB.url+'1/tt/',
-            data:
-            {
-                cred: cred,
-                template: template,
-                params: $.toJSON(params),
-            },
-        }).done(function( res ) {
-            deferred.resolve(res.data[0]);
-        });
+		log("Before tt ajax");
+		log(template);
+		log(params);
+		
+		$.ajax({
+			dataType: "json",
+			type: "POST",
+			url: RB.url+'1/tt/',
+			data:
+			{
+				cred: cred,
+				template: template,
+				params: $.toJSON(params),
+			},
+		}).done(function( res ) {
+			deferred.resolve(res.data[0]);
+		});
 
-        log("After tt ajax");
-        return promise;
-    };
+		log("After tt ajax");
+		return promise;
+	};
 
-    
+	
 })(RDF.Base);
 
 
@@ -327,485 +327,485 @@ RDF.Base || (RDF.Base = {});
 /// 2011 version code
 ///
 
-// if (typeof RDF      === 'undefined') var RDF  = {};
+// if (typeof RDF			 === 'undefined') var RDF	 = {};
 // if (typeof RDF.Base === 'undefined') RDF.Base = {};
 
 (function($) {
-   RDF.Base.$load_indicator
-     = $('<img />')
-   //.css('display', 'none')
-     .css('position', 'absolute')
-     .css('top', '45%')
-     .css('left', '45%')
-     .attr('src', '[%home%]/rb/img/loading.gif')
-     .appendTo($('body'))
-     .ajaxStart(
-       function() {
-         alert(this);
-       }
-     );
+	RDF.Base.$load_indicator
+		= $('<img />')
+	//.css('display', 'none')
+		.css('position', 'absolute')
+		.css('top', '45%')
+		.css('left', '45%')
+		.attr('src', '[%home%]/rb/img/loading.gif')
+		.appendTo($('body'))
+		.ajaxStart(
+			function() {
+				alert(this);
+			}
+		);
 
 
-   window.RBInputPopup = function(args)
-   {
-     // button:           id of calling element
-     // divid:            the element that should have it's contents replaced after selection
-     // search_crit:      passed to $R->find; already as json
-     // search_type:      what is inputted ('name_clean_like')
-     // pred_name:        pred for added arc
-     // subj:             subj for added arc
-     // rev:              if added arc is reverse
-     // seen_node         add a seen_node param to ajax action
-     // hide_create_button
-     // default_value     Default value in the search field
-     // on_arc_add        forwards ...
-     // name_method       defaults to longdesig
-       
-     var $this = this; // Hiding from jQuerys comfort...
-     //var args = $.evalJSON(args_in);
+	window.RBInputPopup = function(args)
+	{
+		// button:						id of calling element
+		// divid:						the element that should have it's contents replaced after selection
+		// search_crit:			passed to $R->find; already as json
+		// search_type:			what is inputted ('name_clean_like')
+		// pred_name:				pred for added arc
+		// subj:							subj for added arc
+		// rev:							if added arc is reverse
+		// seen_node					add a seen_node param to ajax action
+		// hide_create_button
+		// default_value			Default value in the search field
+		// on_arc_add				forwards ...
+		// name_method				defaults to longdesig
+		
+		var $this = this; // Hiding from jQuerys comfort...
+		//var args = $.evalJSON(args_in);
 
-     $this.button             = $('#'+ args['button']);
-     $this.divid              = args['divid'];
-     $this.search_crit        = args['search_crit'];
-     $this.search_type        = args['search_type'];
-     $this.pred_name          = args['pred_name'];
-     $this.subj               = args['subj'];
-     $this.rev                = args['rev'];
-     $this.seen_node          = args['seen_node'];
-     $this.hide_create_button = args['hide_create_button'];
-     $this.default_value      = args['default_value'] || "";
-     $this.on_arc_add         = args['on_arc_add'];
-     $this.name_method        = args['name_method'];  
+		$this.button							= $('#'+ args['button']);
+		$this.divid							= args['divid'];
+		$this.search_crit				= args['search_crit'];
+		$this.search_type				= args['search_type'];
+		$this.pred_name					= args['pred_name'];
+		$this.subj								= args['subj'];
+		$this.rev								= args['rev'];
+		$this.seen_node					= args['seen_node'];
+		$this.hide_create_button = args['hide_create_button'];
+		$this.default_value			= args['default_value'] || "";
+		$this.on_arc_add					= args['on_arc_add'];
+		$this.name_method				= args['name_method'];	
 
-     $this.openPopup = function()
-     {
+		$this.openPopup = function()
+		{
 
-//       log('openPopup');
-       $popup_id = 'rb_input_popup'+$this.divid;        
-       if( $('#'+$popup_id).length ) return;
+			//			 log('openPopup');
+			$popup_id = 'rb_input_popup'+$this.divid;				
+			if( $('#'+$popup_id).length ) return;
 
-       $this.popup
-         = $('<div/>')
-         .attr('id', 'rb_input_popup'+$this.divid)
-         .css('border',          '1px solid #95b079')
-         .css('display',         'none'           )
-         .css('position',        'absolute'       )
-         .css('padding',         '.5em'           )
-         .css('backgroundColor', '#e0e0e0'         )
-         .css('zIndex',          '5'              );
+			$this.popup
+				= $('<div/>')
+				.attr('id', 'rb_input_popup'+$this.divid)
+				.css('border',					 '1px solid #95b079')
+				.css('display',				 'none'						)
+				.css('position',				 'absolute'				)
+				.css('padding',				 '.5em'						)
+				.css('backgroundColor', '#e0e0e0'				 )
+				.css('zIndex',					 '5'							);
 
-       $this.form
-         = $('<form/>')
-         .attr('id', 'rb_input_form'+$this.divid)
-         .submit($this.lookup)
-         .appendTo($this.popup);
+			$this.form
+				= $('<form/>')
+				.attr('id', 'rb_input_form'+$this.divid)
+				.submit($this.lookup)
+				.appendTo($this.popup);
 
-       $this.input
-         = $('<input/>')
-         .attr('id', 'rb_input'+$this.divid)
-         .val($this.default_value)
-         .appendTo($this.form);
+			$this.input
+				= $('<input/>')
+				.attr('id', 'rb_input'+$this.divid)
+				.val($this.default_value)
+				.appendTo($this.form);
 
-       $this.submit
-         = $('<input/>')
-         .attr('id', 'rb_input_button'+$this.divid)
-         .val("[% loc('Lookup') %]")
-         .attr('type', 'submit')
-		 .attr('class', 'btn btn-default')
-         .appendTo($this.form);
+			$this.submit
+				= $('<input/>')
+				.attr('id', 'rb_input_button'+$this.divid)
+				.val("[% loc('Lookup') %]")
+				.attr('type', 'submit')
+				.attr('class', 'btn btn-default')
+				.appendTo($this.form);
 
-       $this.cancel
-         = $('<input/>')
-         .attr('type', 'button')
-         .val("[% loc('Cancel') %]")
-         .click($this.close)
-		 .attr('class', 'btn btn-default')
-         .appendTo($this.form);
+			$this.cancel
+				= $('<input/>')
+				.attr('type', 'button')
+				.val("[% loc('Cancel') %]")
+				.click($this.close)
+				.attr('class', 'btn btn-default')
+				.appendTo($this.form);
 
-       
-       $this.button.after($this.popup);
-       $this.popup.show();
-       setTimeout(function(){$this.input.focus();}, 500);
-     };
-     $this.button.click($this.openPopup);
-
-
-     $this.close = function()
-     {
-       $this.popup.hide();
-       $this.popup.remove();
-//       delete( $this );
-     };
-
-     $this.lookup = function()
-     {
-       //event.stop();
-       var value = $('#rb_input'+ $this.divid).val();
-
-       //var search = $this.search_crit.merge({});
-
-       $.getJSON(
-         '[%home%]/rb/ajax/lookup',
-         {
-           params       : $.toJSON($this.search_crit),
-           search_type  : $.toJSON($this.search_type),
-           search_value : value,
-           name_method  : $this.name_method
-         },
-         function(data, textStatus)
-         {
-           $this.show_result(data);
-         }
-       );
-       return false;
-     };
-
-     // result should be  an array with hashes, each hash can include:
-     //  form_url
-     //  id
-     //  is
-     //  name
-     $this.show_result = function(result)
-     {
-       var old_list = $this.popup_li;
-
-       $this.popup_li =
-         $('<ul/>')
-         .css('display',       'none')
-         .css('listStyleType', 'none')
-         .css('margin',        '0')
-         .css('padding',       '0')
-         .css('whiteSpace',    'nowrap')
-         .appendTo($this.popup);
-       $this.result = result;
-
-       if( result[0]['id'] == 0 ) {
-         var line = $('<li/>').addClass('clear')
-             .html(result[0]['name']);
-         $this.popup_li.append(line);
-       }
-       else {
-         for( var i in result ) {
-           var node = result[i];
-           var name = node['name'];
-           var line = $('<li/>').addClass('clear');
-           var select_button = $('<input/>');
-
-           select_button.val('Select');
-           select_button.attr('type', 'button' )
-		   	.attr('class', 'btn btn-default')
-           select_button.data('rb_id',node['id']);
-           select_button.click($this.select);
-           select_button.appendTo(line);
-           
-           var tip_text = node.tooltip_html;
-           var more_info = $('<a href="'+ node['form_url'] +'"'
-                                  + ' target="_new">'+ name +'</a>');
-           more_info.appendTo(line);
-           line.appendTo($this.popup_li);
-
-             more_info.tipsy({fallback : tip_text,
-                              html     : 'true',
-                              gravity  : 'w',
-                             });
-
-         }
-       }
-
-       if( !$this.hide_create_button ) {
-         var line = $('<li/>');
-         var value = $('#rb_input'+$this.divid).val();
-         var create_new_button = $('<input class="btn btn-primary" value="Create a new '+ value +'" type="button" />');
-         create_new_button.click(function(){$this.createNew(value);});
-         create_new_button.appendTo(line);
-         line.appendTo($this.popup_li);
-       }
-
-       if( old_list ) {
-         old_list.hide();
-         $this.popup_li.show();
-       }
-       else {
-         $this.popup_li.show();
-       }
-     };
-
-       $this.select = function(event)
-     {
-       $.get(
-         '[%home%]/rb/ajax/action/add_direct',
-         {
-           subj       : $this.subj,
-           pred_name  : $this.pred_name,
-           obj        : $(event.target).data('rb_id'),
-           rev        : $this.rev,
-           seen_node  : $this.seen_node,
-           on_arc_add : $.toJSON($this.on_arc_add)
-         },
-         function() {
-           pps[$this.divid].update();
-         }
-       );
-     };
-
-     $this.addToList = function(result)
-     {
-       $this.popup.hide();
-       var line = document.createElement($this.result_type);
-       line.style.display = 'none';
-       line.innerHTML = result;
-       $this.result_container.append(line);
-       line.show();
-     },
-
-     $this.createNew = function(value)
-     {
-       $.get(
-         '[%home%]/rb/ajax/action/create_new', 
-         {
-           name      : value,
-           params    : $.toJSON($this.search_crit),
-           subj      : $this.subj,
-           pred_name : $this.pred_name,
-           seen_node : $this.seen_node,
-           rev       : $this.rev
-         },
-         function() {
-           pps[$this.divid].update();
-           $this.close();
-         }
-       );
-       
-     };
-   };
+			
+			$this.button.after($this.popup);
+			$this.popup.show();
+			setTimeout(function(){$this.input.focus();}, 500);
+		};
+		$this.button.click($this.openPopup);
 
 
-   window.rb_remove_arc = function(divid, arc, seen_node)
-   {
-     if( confirm("[% loc('Really remove arc?') %]") ) {
-       $.get(
-         '[%home%]/rb/ajax/action/remove_arc',
-         {
-           arc: arc,
-           seen_node: seen_node
-         },
-         function() {
-           pps[divid].update();
-         }
-       );
-     }
-   };
+		$this.close = function()
+		{
+			$this.popup.hide();
+			$this.popup.remove();
+			//			 delete( $this );
+		};
+
+		$this.lookup = function()
+		{
+			//event.stop();
+			var value = $('#rb_input'+ $this.divid).val();
+
+			//var search = $this.search_crit.merge({});
+
+			$.getJSON(
+				'[%home%]/rb/ajax/lookup',
+				{
+					params				: $.toJSON($this.search_crit),
+					search_type	: $.toJSON($this.search_type),
+					search_value : value,
+					name_method	: $this.name_method
+				},
+				function(data, textStatus)
+				{
+					$this.show_result(data);
+				}
+			);
+			return false;
+		};
+
+		// result should be	an array with hashes, each hash can include:
+		//	 form_url
+		//	 id
+		//	 is
+		//	 name
+		$this.show_result = function(result)
+		{
+			var old_list = $this.popup_li;
+
+			$this.popup_li =
+				$('<ul/>')
+				.css('display',			 'none')
+				.css('listStyleType', 'none')
+				.css('margin',				 '0')
+				.css('padding',			 '0')
+				.css('whiteSpace',		 'nowrap')
+				.appendTo($this.popup);
+			$this.result = result;
+
+			if( result[0]['id'] == 0 ) {
+				var line = $('<li/>').addClass('clear')
+						.html(result[0]['name']);
+				$this.popup_li.append(line);
+			}
+			else {
+				for( var i in result ) {
+					var node = result[i];
+					var name = node['name'];
+					var line = $('<li/>').addClass('clear');
+					var select_button = $('<input/>');
+
+					select_button.val('Select');
+					select_button.attr('type', 'button' )
+						.attr('class', 'btn btn-default')
+					select_button.data('rb_id',node['id']);
+					select_button.click($this.select);
+					select_button.appendTo(line);
+					
+					var tip_text = node.tooltip_html;
+					var more_info = $('<a href="'+ node['form_url'] +'"'
+														+ ' target="_new">'+ name +'</a>');
+					more_info.appendTo(line);
+					line.appendTo($this.popup_li);
+
+					more_info.tipsy({fallback : tip_text,
+													 html		 : 'true',
+													 gravity	 : 'w',
+													});
+
+				}
+			}
+
+			if( !$this.hide_create_button ) {
+				var line = $('<li/>');
+				var value = $('#rb_input'+$this.divid).val();
+				var create_new_button = $('<input class="btn btn-primary" value="Create a new '+ value +'" type="button" />');
+				create_new_button.click(function(){$this.createNew(value);});
+				create_new_button.appendTo(line);
+				line.appendTo($this.popup_li);
+			}
+
+			if( old_list ) {
+				old_list.hide();
+				$this.popup_li.show();
+			}
+			else {
+				$this.popup_li.show();
+			}
+		};
+
+		$this.select = function(event)
+		{
+			$.get(
+				'[%home%]/rb/ajax/action/add_direct',
+				{
+					subj				: $this.subj,
+					pred_name	: $this.pred_name,
+					obj				: $(event.target).data('rb_id'),
+					rev				: $this.rev,
+					seen_node	: $this.seen_node,
+					on_arc_add : $.toJSON($this.on_arc_add)
+				},
+				function() {
+					pps[$this.divid].update();
+				}
+			);
+		};
+
+		$this.addToList = function(result)
+		{
+			$this.popup.hide();
+			var line = document.createElement($this.result_type);
+			line.style.display = 'none';
+			line.innerHTML = result;
+			$this.result_container.append(line);
+			line.show();
+		},
+
+		$this.createNew = function(value)
+		{
+			$.get(
+				'[%home%]/rb/ajax/action/create_new', 
+				{
+					name			 : value,
+					params		 : $.toJSON($this.search_crit),
+					subj			 : $this.subj,
+					pred_name : $this.pred_name,
+					seen_node : $this.seen_node,
+					rev			 : $this.rev
+				},
+				function() {
+					pps[$this.divid].update();
+					$this.close();
+				}
+			);
+			
+		};
+	};
 
 
-   // Registered PagePart objects
-   RDF.Base.pageparts = {};
-
-   // Local short alias
-   var pps      = RDF.Base.pageparts;
-
-   var pps_deps = {};
-
-   window.PagePart = function(element, update_url, params)
-   {
-     var $this = this;
-     $this.element = element;
-     $this.update_url = update_url;
-     $this.update_params = params['params'];
-
-     if( params['depends_on'] ) {
-       $this.depends_on = params['depends_on'];
-
-       for (var i in params.depends_on) {
-         var depo = params.depends_on[i];
-         if (typeof pps_deps[depo] === 'undefined') pps_deps[depo] = [];
-         pps_deps[depo].push($this);
-       }
-     }
-     if (params.update_button) {
-       $this.registerUpdateButton($(params['update_button']));
-     }
-
-     pps[element] = $this;
-
-     $this.registerUpdateButton = function(button)
-     {
-       $this.update_button = $(button);
-       Event.observe($this.update_button, 'click', $this.update.bind($this));
-     };
-
-     $this.update = function()
-     {
-       var $element = $('#' + $this.element);
-       $this.update_params['divid'] = $this.element;
-       $element.load(
-         $this.update_url,
-         { params: $.toJSON($this.update_params) },
-         function() {
-           $this.updateOthers();
-         }
-       );
-     };
-
-     $this.updateOthers = function()
-     {
-       if (pps_deps[$this.element]) {
-         for (var i in pps_deps[$this.element]) {
-           var pp = pps_deps[$this.element][i];
-           pp.update();
-         }
-       }
-     };
-
-     $this.performAction = function( action, extra_params )
-     {
-       var form;
-       if( extra_params.form ) {
-         form = $( extra_params.form );
-       }
-       else {
-         form = $( '#f' );
-       }
-
-       if( extra_params.confirm ) {
-         if( !confirm( extra_params.confirm ) ) {
-           return(false);
-         }
-       }
-
-//       log( form );
-//       log( form.serializeArray());
-
-//       var formData = $H(form.serialize(true)).merge({ run: action });
-         var formData = $.extend({},
-                                 form.toObj(),
-                                 extra_params,
-                                 { run: action }
-                                ); 
-
-         var $element = $('#' + $this.element);
-
-//         log(formData);
-//         log($element);
-
-// NOTE! This will add the [] suffix to repeated query params unless
-// we pass true to $.param()
-
-       $element.load(
-         '[%home%]/rb/clean/update_button_answer.tt',
-           $.param(formData,true),
-//         formData,
-         function() {
-           $this.updateOthers();
-         }
-       );
-
-//        alert("Check log");
-       return(true);
-     };
-       
-     $this.insert_wu = function(after, args_json) {
-       var $after = $('#' + after);
-       $.get(
-         '[%home%]/rb/ajax/wu',
-         { params: args_json },
-         function(data) {
-           $after.after(data);
-           var new_part = $after.next();
-           prepareForm();
-           new_part.show();
-         }
-       );
-     };
+	window.rb_remove_arc = function(divid, arc, seen_node)
+	{
+		if( confirm("[% loc('Really remove arc?') %]") ) {
+			$.get(
+				'[%home%]/rb/ajax/action/remove_arc',
+				{
+					arc: arc,
+					seen_node: seen_node
+				},
+				function() {
+					pps[divid].update();
+				}
+			);
+		}
+	};
 
 
-       $this.node_update = function() {
+	// Registered PagePart objects
+	RDF.Base.pageparts = {};
 
-           var $element = $('#' + $this.element);
-           var $input = $element.children().first();
+	// Local short alias
+	var pps			= RDF.Base.pageparts;
 
-//           var $formData = $.extend({},
-//                                    $this.update_params,
-//                                    {val: $input.val()});
+	var pps_deps = {};
 
-           var $formData = {
-             params: $.toJSON($this.update_params),
-               val: $input.val()
-           };
+	window.PagePart = function(element, update_url, params)
+	{
+		var $this = this;
+		$this.element = element;
+		$this.update_url = update_url;
+		$this.update_params = params['params'];
 
-//           log($formData);
+		if( params['depends_on'] ) {
+			$this.depends_on = params['depends_on'];
 
-           $this.update_params['divid'] = $this.element;
-           $element.load(
-               '[%home%]/rb/ajax/action/update',
-               $formData,
-               function() {
-                   $this.updateOthers();
-               }
-           );
+			for (var i in params.depends_on) {
+				var depo = params.depends_on[i];
+				if (typeof pps_deps[depo] === 'undefined') pps_deps[depo] = [];
+				pps_deps[depo].push($this);
+			}
+		}
+		if (params.update_button) {
+			$this.registerUpdateButton($(params['update_button']));
+		}
+
+		pps[element] = $this;
+
+		$this.registerUpdateButton = function(button)
+		{
+			$this.update_button = $(button);
+			Event.observe($this.update_button, 'click', $this.update.bind($this));
+		};
+
+		$this.update = function()
+		{
+			var $element = $('#' + $this.element);
+			$this.update_params['divid'] = $this.element;
+			$element.load(
+				$this.update_url,
+				{ params: $.toJSON($this.update_params) },
+				function() {
+					$this.updateOthers();
+				}
+			);
+		};
+
+		$this.updateOthers = function()
+		{
+			if (pps_deps[$this.element]) {
+				for (var i in pps_deps[$this.element]) {
+					var pp = pps_deps[$this.element][i];
+					pp.update();
+				}
+			}
+		};
+
+		$this.performAction = function( action, extra_params )
+		{
+			var form;
+			if( extra_params.form ) {
+				form = $( extra_params.form );
+			}
+			else {
+				form = $( '#f' );
+			}
+
+			if( extra_params.confirm ) {
+				if( !confirm( extra_params.confirm ) ) {
+					return(false);
+				}
+			}
+
+			//			 log( form );
+			//			 log( form.serializeArray());
+
+			//			 var formData = $H(form.serialize(true)).merge({ run: action });
+			var formData = $.extend({},
+															form.toObj(),
+															extra_params,
+															{ run: action }
+														 ); 
+
+			var $element = $('#' + $this.element);
+
+			//				 log(formData);
+			//				 log($element);
+
+			// NOTE! This will add the [] suffix to repeated query params unless
+			// we pass true to $.param()
+
+			$element.load(
+				'[%home%]/rb/clean/update_button_answer.tt',
+				$.param(formData,true),
+				//				 formData,
+				function() {
+					$this.updateOthers();
+				}
+			);
+
+			//				alert("Check log");
+			return(true);
+		};
+		
+		$this.insert_wu = function(after, args_json) {
+			var $after = $('#' + after);
+			$.get(
+				'[%home%]/rb/ajax/wu',
+				{ params: args_json },
+				function(data) {
+					$after.after(data);
+					var new_part = $after.next();
+					prepareForm();
+					new_part.show();
+				}
+			);
+		};
 
 
-       /****************************************
-           $.get(
-               '/~joli/hg/rb/ajax/action/update',
-               { params: args_json },
-               function(data) {
-                   $after.after(data);
-                   var new_part = $after.next();
-                   prepareForm();
-                   new_part.show();
-               }
-           );
-        *****************************/
-       };
+		$this.node_update = function() {
 
-   };
+			var $element = $('#' + $this.element);
+			var $input = $element.children().first();
+
+			//					 var $formData = $.extend({},
+			//																		$this.update_params,
+			//																		{val: $input.val()});
+
+			var $formData = {
+				params: $.toJSON($this.update_params),
+				val: $input.val()
+			};
+
+			//					 log($formData);
+
+			$this.update_params['divid'] = $this.element;
+			$element.load(
+				'[%home%]/rb/ajax/action/update',
+				$formData,
+				function() {
+					$this.updateOthers();
+				}
+			);
 
 
-   // check_pattern(pattern, text, errmsg)
-   //
-   // Used from onchange on text-inputs, with a pattern to be checked...
-   //   pattern - regexp pattern (make sure to escape it properly!
-   //   text    - preferrably this.value
-   //   errmsg  - The message to show if pattern is NOT matched.
-   //   debug   - Alert's more info.
-   //
-   window.check_pattern = function(pattern, text, errmsg, debug)
-   {
-     if(debug)
-       alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
-     if(typeof text == "string" && text.length > 0){
-       if (text.search(pattern) == -1){
-         alert(errmsg);
-         return false;
-       }
-       else {
-         //alert("We have a match!  Pattern gave: "+ text.search(pattern));
-         return true;
-       }
-     }
-     //alert("Winning by default - no string!");
-     return true;
-   };
+			/****************************************
+					 $.get(
+							 '/~joli/hg/rb/ajax/action/update',
+							 { params: args_json },
+							 function(data) {
+									 $after.after(data);
+									 var new_part = $after.next();
+									 prepareForm();
+									 new_part.show();
+							 }
+					 );
+			*****************************/
+		};
 
-    $.fn.toObj=function()
-    {
-        var myobj = {};
-        jQuery.map($(this).serializeArray(), function(n, i){
-            if( typeof myobj[n['name']] === 'undefined' )
-            {
- 	        myobj[n['name']] = n['value'];
-            }
-            else if( typeof myobj[n['name']] === 'object' )
-            {
-                myobj[n['name']].push(n['value']);
-            }
-            else
-            {
- 	        myobj[n['name']] = [myobj[n['name']], n['value']];
-            }
-        });
-        return myobj;
-    };
+	};
 
- }
+
+	// check_pattern(pattern, text, errmsg)
+	//
+	// Used from onchange on text-inputs, with a pattern to be checked...
+	//		pattern - regexp pattern (make sure to escape it properly!
+	//		text		- preferrably this.value
+	//		errmsg	- The message to show if pattern is NOT matched.
+	//		debug		- Alert's more info.
+	//
+	window.check_pattern = function(pattern, text, errmsg, debug)
+	{
+		if(debug)
+			alert("Checking pattern '"+ pattern +"' =~ '"+ text +"'" + " ..typeof text: "+ typeof text +" .. size: "+ text.length);
+		if(typeof text == "string" && text.length > 0){
+			if (text.search(pattern) == -1){
+				alert(errmsg);
+				return false;
+			}
+			else {
+				//alert("We have a match!	Pattern gave: "+ text.search(pattern));
+				return true;
+			}
+		}
+		//alert("Winning by default - no string!");
+		return true;
+	};
+
+	$.fn.toObj=function()
+	{
+		var myobj = {};
+		jQuery.map($(this).serializeArray(), function(n, i){
+			if( typeof myobj[n['name']] === 'undefined' )
+			{
+				myobj[n['name']] = n['value'];
+			}
+			else if( typeof myobj[n['name']] === 'object' )
+			{
+				myobj[n['name']].push(n['value']);
+			}
+			else
+			{
+				myobj[n['name']] = [myobj[n['name']], n['value']];
+			}
+		});
+		return myobj;
+	};
+
+}
 )(jQuery);
