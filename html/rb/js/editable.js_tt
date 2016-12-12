@@ -75,7 +75,9 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        }
      );
 
-     $('.editable').editable(
+
+		 // ### PROBABLY NOT WORKING!!!!
+		 $('.editable').editable(
        '[%home%]/ajax/app/arc_update',
        {
          type      : 'wysiwyg',
@@ -87,6 +89,7 @@ if (typeof RDF.Base === 'undefined') RDF.Base = {};
        }
      );
 
+		 // ### PROBABLY NOT WORKING!!!!
      $('.new_arc').editable(
        '[%home%]/ajax/app/arc_create', {
          type      : 'wysiwyg',

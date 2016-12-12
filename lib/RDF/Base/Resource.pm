@@ -42,7 +42,7 @@ use Para::Frame::Reload;
 use Para::Frame::Code::Class;
 use Para::Frame::Widget qw( hidden radio );
 use Para::Frame::Utils qw( throw catch create_file trim excerpt debug datadump
-                           package_to_module timediff compile );
+                           package_to_module timediff compile escape_js );
 
 use RDF::Base::Node;
 use RDF::Base::Search;
@@ -6298,11 +6298,12 @@ sub register_ajax_pagepart
     }
 
     my $home = $Para::Frame::REQ->site->home_url_path;
+		### Why did we nest params params params ?! :(
     $out .=
       "<script>
             new PagePart('$divid', '$home/rb/ajax/wu',
             { params: { subj: '". $node->id ."',
-                        params: '". to_json( $params ) ."'";
+                        params: '". escape_js(to_json( $params )) ."'";
 
     if ( my $pred_name = $args->{'pred_name'} )
     {

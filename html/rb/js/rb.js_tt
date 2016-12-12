@@ -621,12 +621,18 @@ RDF.Base || (RDF.Base = {});
 				pps_deps[depo].push($this);
 			}
 		}
+
 		if (params.update_button) {
 			$this.registerUpdateButton($(params['update_button']));
 		}
 
 		pps[element] = $this;
 
+		//log("*** PagePart");
+		//log( $this.update_params.params );
+		//log( params.params.params );
+
+		
 		$this.registerUpdateButton = function(button)
 		{
 			$this.update_button = $(button);
@@ -718,21 +724,26 @@ RDF.Base || (RDF.Base = {});
 		};
 
 
+		// Updated 2016-12-12 by joli
 		$this.node_update = function() {
 
 			var $element = $('#' + $this.element);
-			var $input = $element.children().first();
 
-			//					 var $formData = $.extend({},
-			//																		$this.update_params,
-			//																		{val: $input.val()});
+			//log("node_update PARAMS");
+			
+			var $jsup = JSON.parse($this.update_params.params);
+			//log($jsup);
+			var $fieldKey = $jsup.id;
+
+			var $input = $('#' + $fieldKey);
 
 			var $formData = {
 				params: $.toJSON($this.update_params),
+				key: $fieldKey,
 				val: $input.val()
 			};
 
-			//					 log($formData);
+			//log($formData);
 
 			$this.update_params['divid'] = $this.element;
 			$element.load(
@@ -743,19 +754,6 @@ RDF.Base || (RDF.Base = {});
 				}
 			);
 
-
-			/****************************************
-					 $.get(
-							 '/~joli/hg/rb/ajax/action/update',
-							 { params: args_json },
-							 function(data) {
-									 $after.after(data);
-									 var new_part = $after.next();
-									 prepareForm();
-									 new_part.show();
-							 }
-					 );
-			*****************************/
 		};
 
 	};

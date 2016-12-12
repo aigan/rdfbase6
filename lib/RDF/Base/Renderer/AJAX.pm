@@ -162,15 +162,15 @@ sub render_wu
 	my $params;
 	if ( my $params_in = $q->param('params') )
 	{
-		debug "Parsing params $params_in";
+		#debug "Parsing params $params_in";
 		$params = from_json( $params_in );
-		debug "Got params data: ". datadump($params);
+		#debug "Got params data: ". datadump($params);
 	}
 
-	foreach my $key ( $q->param )
-	{
-		debug " param $key = ".$q->param($key);
-	}
+	#foreach my $key ( $q->param )
+	#{
+	#	debug " param $key = ".$q->param($key);
+	#}
 
 	return RDF::Base::AJAX->wu( $params );
 }
@@ -230,9 +230,9 @@ sub render_action
 	my $params;
 	if ( my $params_in = $q->param('params') )
 	{
-		debug "Parsing params $params_in";
+		#debug "Parsing params $params_in";
 		$params = from_json( $params_in );
-		debug "Got params data: ". datadump($params);
+		#debug "Got params data: ". datadump($params);
 	}
 
 	if ( $action eq 'add_direct' )
@@ -329,6 +329,8 @@ sub render_action
 	}
 	elsif ( $action eq 'update' )
 	{
+		#debug("AJAX action UPDATE");
+
 		my $subj = R->get($params->{'subj'})
 			or throw('missing','Node missing');
 		unless( $req->session->user->has_cm_access
@@ -339,14 +341,22 @@ sub render_action
 		}
 
 		my $pred_name = $params->{'pred_name'};
-		my $val = $q->param('val');
-#						 debug(datadump($q));
-#						 debug(datadump($params));
+		my $field_val = $q->param('val');
+		my $field_key = $q->param('key');
+		$q->delete('key','val');
 
-		my $jsup = from_json( $params->{'params'} );
+		unless( $field_key =~ /^arc_/ )
+		{
+			throw('validation', "Malformatted field key: $field_key");
+		}
 
-		$q->param($jsup->{'id'}, $val);
+		#debug(datadump($jsup));
+
+		$q->param($field_key, $field_val);
 		$q->param('id', $params->{'subj'});
+
+		#debug(datadump($q));
+		#	debug(datadump($params));
 
 		my $args =
 		{
@@ -381,9 +391,9 @@ sub render_lookup
 	my $params;
 	if ( my $params_in = $q->param('params') )
 	{
-		debug "Parsing params $params_in";
+		#debug "Parsing params $params_in";
 		$params = from_json( $params_in );
-		debug "Got params data: ". datadump($params);
+		#debug "Got params data: ". datadump($params);
 	}
 
 	$rend->{'ctype'} = 'json';

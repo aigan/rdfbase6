@@ -20,7 +20,7 @@ use JSON;
 use IMAP::BodyStructure 1.02;
 use LWP::UserAgent;
 
-use Para::Frame 2.03;
+use Para::Frame 2.04;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 use Para::Frame::Site;
@@ -47,7 +47,7 @@ use RDF::Base::Email::Address;
 
 
 
-our $VERSION = "6.79";
+our $VERSION = "6.80";
 
 
 =head1 NAME
