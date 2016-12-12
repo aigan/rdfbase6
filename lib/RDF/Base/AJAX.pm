@@ -2,13 +2,13 @@ package RDF::Base::AJAX;
 #=============================================================================
 #
 # AUTHOR
-#   Fredrik Liljegren   <fredrik@paranormal.se>
+#		Fredrik Liljegren		<fredrik@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2014 Avisita AB.  All Rights Reserved.
+#		Copyright (C) 2005-2014 Avisita AB.	 All Rights Reserved.
 #
-#   This module is free software; you can redistribute it and/or
-#   modify it under the same terms as Perl itself.
+#		This module is free software; you can redistribute it and/or
+#		modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -28,11 +28,11 @@ use 5.010;
 use strict;
 use warnings;
 
-use JSON; # to_json from_json
+use JSON;												# to_json from_json
 
 use Para::Frame::Reload;
 use Para::Frame::Utils qw( debug timediff validate_utf8 throw datadump
-			   package_to_module );
+													 package_to_module );
 use Para::Frame::L10N qw( loc );
 
 our $ajax_formcount = 0;
@@ -42,10 +42,10 @@ our $ajax_formcount = 0;
 
 sub new
 {
-    my( $class, $args ) = @_;
-    my $self = bless {}, $class;
+	my( $class, $args ) = @_;
+	my $self = bless {}, $class;
 
-    return $self;
+	return $self;
 }
 
 
@@ -53,7 +53,7 @@ sub new
 
 =head2 wu
 
-  [% ajax->wu({ subj => node.id, pred_name => 'has_visitor', args... }) %]
+	[% ajax->wu({ subj => node.id, pred_name => 'has_visitor', args... }) %]
 
 Get a widget for updating from subj->wu( pred_name, $args )
 
@@ -61,49 +61,49 @@ Get a widget for updating from subj->wu( pred_name, $args )
 
 sub wu
 {
-    my( $ajax, $args ) = @_;
+	my( $ajax, $args ) = @_;
 
-    if( $args->{'params'} )
-    {
-	$args = {
-		 %$args,
-		 %{from_json($args->{'params'})},
-		 params => ''};
-    }
+	if ( $args->{'params'} )
+	{
+		$args = {
+						 %$args,
+						 %{from_json($args->{'params'})},
+						 params => ''};
+	}
 
-#    debug "AJAX wus: ". datadump($args);
+#		 debug "AJAX wus: ". datadump($args);
 
-    my $R = RDF::Base->Resource;
-    my $out;
+	my $R = RDF::Base->Resource;
+	my $out;
 
-    my $subj = $R->get($args->{'subj'});
-#    debug "Subj: ". $subj;
+	my $subj = $R->get($args->{'subj'});
+#		 debug "Subj: ". $subj;
 
-    if( my $pred_name = $args->{'pred_name'} )
-    {
+	if ( my $pred_name = $args->{'pred_name'} )
+	{
 #	debug " -> wu $pred_name";
-	$out =  $subj->wu($pred_name,
-			  {
-			      %$args,
-			      ajax => 1,
-			      from_ajax => 1,
-			  });
-    }
-    elsif( my $view = $args->{'view'} )
-    {
+		$out =	$subj->wu($pred_name,
+											{
+											 %$args,
+											 ajax => 1,
+											 from_ajax => 1,
+											});
+	}
+	elsif ( my $view = $args->{'view'} )
+	{
 #	debug " -> wn $view";
-	$out = $subj->wn({
-	    %$args,
-	    ajax => 1,
-	    from_ajax => 1,
-			 });
-    }
-    else
-    {
-	throw('incomplete', "Didn't get pred_name");
-    }
+		$out = $subj->wn({
+											%$args,
+											ajax => 1,
+											from_ajax => 1,
+										 });
+	}
+	else
+	{
+		throw('incomplete', "Didn't get pred_name");
+	}
 
-    return $out;
+	return $out;
 }
 
 
@@ -115,7 +115,7 @@ sub wu
 
 sub pagepart_reload_button
 {
-    my( $ajax, $divid )
+	my( $ajax, $divid )
 }
 
 
@@ -123,7 +123,7 @@ sub pagepart_reload_button
 
 =head2 new_form_id
 
-  RDF::Base::AJAX->new_form_id()
+	RDF::Base::AJAX->new_form_id()
 
 Gives you a unique id to use for tying html/javascript/rb together.
 
@@ -131,7 +131,7 @@ Gives you a unique id to use for tying html/javascript/rb together.
 
 sub new_form_id
 {
-    return 'ajax_formcount_'. $ajax_formcount++;
+	return 'ajax_formcount_'. $ajax_formcount++;
 }
 
 
@@ -139,21 +139,21 @@ sub new_form_id
 
 =head2 register_page_part
 
-  [% ajax.register_page_part( divid, update_url, params ) %]
+	[% ajax.register_page_part( divid, update_url, params ) %]
 
 =cut
 
 sub register_page_part
 {
-    my( $ajax, $divid, $update_url, $params ) = @_;
+	my( $ajax, $divid, $update_url, $params ) = @_;
 
-    my $home = $Para::Frame::REQ->site->home_url_path;
-    $update_url ||= "$home/ajax/";
-    $params = to_json( $params || {} );
+	my $home = $Para::Frame::REQ->site->home_url_path;
+	$update_url ||= "$home/ajax/";
+	$params = to_json( $params || {} );
 
-    return "<script>
-                new PagePart('$divid', '$update_url', $params);
-            </script>";
+	return "<script>
+								new PagePart('$divid', '$update_url', $params);
+						</script>";
 }
 
 
@@ -161,30 +161,30 @@ sub register_page_part
 
 sub form
 {
-    my( $ajax, $module, $part, $args ) = @_;
+	my( $ajax, $module, $part, $args ) = @_;
 
-    $module = "Rit::Guides::AJAX::Form::$module";
-    #$module = 'Rit::Guides::Action::booking_invoice';
+	$module = "Rit::Guides::AJAX::Form::$module";
+	#$module = 'Rit::Guides::Action::booking_invoice';
 
-    $part ||= 'all';
+	$part ||= 'all';
 
-    debug "Attempting to get form html from $module->$part with args:";
-    debug datadump( $args );
+	debug "Attempting to get form html from $module->$part with args:";
+	debug datadump( $args );
 
-    eval
-    {
-	require(package_to_module($module));
-    };
-    if( $@ )
-    {
-	debug $@;
-    }
-    else
-    {
-	return $module->$part( $args );
-    }
+	eval
+	{
+		require(package_to_module($module));
+	};
+	if ( $@ )
+	{
+		debug $@;
+	}
+	else
+	{
+		return $module->$part( $args );
+	}
 
-    return "$@";
+	return "$@";
 }
 
 
@@ -193,7 +193,7 @@ sub form
 
 =head1 Widgets
 
-  AJAX-widgets to use from tt or perl.
+	AJAX-widgets to use from tt or perl.
 
 =cut
 
@@ -201,12 +201,12 @@ sub form
 
 =head2 switchingDivs
 
-  Rit::Guides::AJAX->switching_divs( $content_1, $content_2 );
+	Rit::Guides::AJAX->switching_divs( $content_1, $content_2 );
 
-  [% ajax->switching_divs('This is a little, click me to see more.',
-                          'This is much more! Bla bla bla.... !') %]
+	[% ajax->switching_divs('This is a little, click me to see more.',
+													'This is much more! Bla bla bla.... !') %]
 
-Makes two div's, the first shown and the second hidden.  When the
+Makes two div's, the first shown and the second hidden.	 When the
 first is clicked, it is changed to the second instead (with a nifty
 scriptaculous shrink/grow).
 
@@ -214,22 +214,22 @@ scriptaculous shrink/grow).
 
 sub switching_divs
 {
-    my( $ajax, $div1, $div2 ) = @_;
+	my( $ajax, $div1, $div2 ) = @_;
 
-    my $req = $Para::Frame::REQ;
-    my $q = $req->q;
-    my $out = "";
+	my $req = $Para::Frame::REQ;
+	my $q = $req->q;
+	my $out = "";
 
-    my $fid = $ajax->new_form_id;
+	my $fid = $ajax->new_form_id;
 
-    $out .= $q->a({ id      => $fid .'-shown',
-		    href    => "javascript:switchDivs('$fid')",
-		  }, $div1);
-    $out .= $q->div({ id => $fid .'-hid',
-		      style => 'display: none',
-		    }, $div2);
+	$out .= $q->a({ id			=> $fid .'-shown',
+									href		=> "javascript:switchDivs('$fid')",
+								}, $div1);
+	$out .= $q->div({ id => $fid .'-hid',
+										style => 'display: none',
+									}, $div2);
 
-    return $out;
+	return $out;
 }
 
 
@@ -237,18 +237,18 @@ sub switching_divs
 
 =head2 action_button
 
-  [% ajax.action_button( label, divid, action, args ) %]
+	[% ajax.action_button( label, divid, action, args ) %]
 
 =cut
 
 sub action_button
 {
-    my( $ajax, $label, $divid, $action, $args ) = @_;
+	my( $ajax, $label, $divid, $action, $args ) = @_;
 
-    $args = to_json( $args || {} );
-    $args =~ s/"/'/g;
+	$args = to_json( $args || {} );
+	$args =~ s/"/'/g;
 
-    return qq{<input type="button" class="btn btn-primary" value="$label" onclick="RDF.Base.pageparts['$divid'].performAction('$action', $args)">};
+	return qq{<input type="button" class="btn btn-primary" value="$label" onclick="RDF.Base.pageparts['$divid'].performAction('$action', $args)">};
 }
 
 ##############################################################################
