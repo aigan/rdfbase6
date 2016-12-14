@@ -2,13 +2,13 @@ package RDF::Base::User;
 #=============================================================================
 #
 # AUTHOR
-#   Jonas Liljegren   <jonas@paranormal.se>
+#		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
+#		Copyright (C) 2005-2016 Avisita AB.	 All Rights Reserved.
 #
-#   This module is free software; you can redistribute it and/or
-#   modify it under the same terms as Perl itself.
+#		This module is free software; you can redistribute it and/or
+#		modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -54,7 +54,7 @@ that inherits from this class and from L<RDF::Base::Resource>.
 
 The L<RDF::Base::User::Meta> is used during startup. It is listed in
 C<%RDF::Base::LOOKUP_CLASS_FOR> to make it be reblessd in the right
-metaclass based on the nodes other possible classes.  See
+metaclass based on the nodes other possible classes.	See
 L<RDF::Base::Resource/get>.
 
 For subclassing, create both the subclass (L<RDF::Guides::User>) and
@@ -76,18 +76,18 @@ This will call back to L<RDF::Base::Resource/get>.
 
 sub get
 {
-#    debug "Getting RDF::Base user $_[1]";
-    my $u = eval
-    {
-        $_[0]->RDF::Base::Resource::get($_[1]);
-    };
-    if ( catch(['notfound']) )
-    {
-        return undef;
-    }
+#		 debug "Getting RDF::Base user $_[1]";
+	my $u = eval
+	{
+		$_[0]->RDF::Base::Resource::get($_[1]);
+	};
+	if ( catch(['notfound']) )
+	{
+		return undef;
+	}
 
-#    debug "Got $u";
-    return $u;
+#		 debug "Got $u";
+	return $u;
 }
 
 ##############################################################################
@@ -100,12 +100,12 @@ This is first run *before* constants initialized.
 
 sub init
 {
-    my( $node ) = @_;
+	my( $node ) = @_;
 
-    my $uid = $node->id;
-    $node->{'uid'} = $uid;
+	my $uid = $node->id;
+	$node->{'uid'} = $uid;
 
-    return $node;
+	return $node;
 }
 
 ##############################################################################
@@ -116,14 +116,14 @@ sub init
 
 sub username
 {
-#    debug "in User username: ".datadump($_[0],2);
-#    debug "cached ".$_[0]->{username};
-#    debug "label ".$_[0]->label;
-#    debug "short ".$_[0]->name_short->loc;
-#    debug "name ".$_[0]->name->loc;
-#    debug "cid ".$_[0]->customer_id;
+#		 debug "in User username: ".datadump($_[0],2);
+#		 debug "cached ".$_[0]->{username};
+#		 debug "label ".$_[0]->label;
+#		 debug "short ".$_[0]->name_short->loc;
+#		 debug "name ".$_[0]->name->loc;
+#		 debug "cid ".$_[0]->customer_id;
 
-    return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc;
+	return $_[0]->{username} ||= $_[0]->label || $_[0]->name_short->loc;
 }
 
 ##############################################################################
@@ -134,8 +134,8 @@ sub username
 
 sub id ($)
 {
-    confess( $_[0]||'<undef>' ) unless ref $_[0];
-    return $_[0]->RDF::Base::Resource::id();
+	confess( $_[0]||'<undef>' ) unless ref $_[0];
+	return $_[0]->RDF::Base::Resource::id();
 }
 
 ##############################################################################
@@ -146,7 +146,7 @@ sub id ($)
 
 sub name
 {
-    return $_[0]->RDF::Base::Resource::name;
+	return $_[0]->RDF::Base::Resource::name;
 }
 
 ##############################################################################
@@ -157,15 +157,15 @@ sub name
 
 sub node
 {
-    carp "----------- TEMPORARY! FIXME";
-    return $_[0];
+	carp "----------- TEMPORARY! FIXME";
+	return $_[0];
 }
 
 ##############################################################################
 
 =head2 level
 
-  $node->level
+	$node->level
 
 See L<Para::Frame::User/level>
 
@@ -175,31 +175,31 @@ Returns: The level
 
 sub level
 {
-    unless ( $_[0]->{'level'} )
-    {
-        my $node = $_[0];
-        ## See $apphome/doc/notes.txt
-        my $level;
-        if ( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
-        {
-            $level = 40;
-        }
-        elsif ( $node->has_value({ 'has_access_right' => $C_content_management_access },['active']) )
-        {
-            $level = 20;
-        }
-        elsif ( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
-        {
-            $level = 0;
-        }
-        else
-        {
-            $level = 10;
-        }
-        $node->{'level'} = $level;
-    }
+	unless ( $_[0]->{'level'} )
+	{
+		my $node = $_[0];
+		## See $apphome/doc/notes.txt
+		my $level;
+		if ( $node->has_value({ 'has_access_right' => $C_full_access },['active']) )
+		{
+			$level = 40;
+		}
+		elsif ( $node->has_value({ 'has_access_right' => $C_content_management_access },['active']) )
+		{
+			$level = 20;
+		}
+		elsif ( $node->has_value({ 'has_access_right' => $C_guest_access },['active']) )
+		{
+			$level = 0;
+		}
+		else
+		{
+			$level = 10;
+		}
+		$node->{'level'} = $level;
+	}
 
-    return $_[0]->{'level'};
+	return $_[0]->{'level'};
 }
 
 
@@ -212,71 +212,71 @@ L<Para::Frame::User/identify_user>.
 
 Supported args are:
 
-  arclim
+	arclim
 
 =cut
 
 sub find_by_anything
 {
-    my( $this, $val, $args ) = @_;
-    return is_undef unless defined $val;
+	my( $this, $val, $args ) = @_;
+	return is_undef unless defined $val;
 
-#    Para::Frame::Logging->this_level(3);
+#		 Para::Frame::Logging->this_level(3);
 
-    unless( ref $val )
-    {
-        trim(\$val);
-    }
+	unless( ref $val )
+	{
+		trim(\$val);
+	}
 
-    my( @new );
+	my( @new );
 
-    debug 2, "find user by label: $val";
+	debug 2, "find user by label: $val";
 
-    # obj is guest
-    #
-    if ( $val eq 'guest' )
-    {
-        debug 2, "  as guest";
+	# obj is guest
+	#
+	if ( $val eq 'guest' )
+	{
+		debug 2, "	as guest";
 #	warn datadump($C_guest_access, 2);
-        my $class = ref($_[0]) || $_[0];
-        @new = R->get_by_label('guest');
-    }
-    elsif ( $val !~ /^\d+$/ )
-    {
-        debug 2, "  as non-number, from name_short";
-        # TODO: Handle empty $val
+		my $class = ref($_[0]) || $_[0];
+		@new = R->get_by_label('guest');
+	}
+	elsif ( $val !~ /^\d+$/ )
+	{
+		debug 2, "	as non-number, from name_short";
+		# TODO: Handle empty $val
 
-        my $class = ref($_[0]) || $_[0];
-        @new = @{ $class->find
-                    ({
-                      'name_short' => $val,
-                      is           => $C_login_account,
-                     }, $args)};
+		my $class = ref($_[0]) || $_[0];
+		@new = @{ $class->find
+								({
+									'name_short' => $val,
+									is					 => $C_login_account,
+								 }, $args)};
 
-        unless(@new)
-        {
-            debug 2, "  as non-number, from name";
-            @new = @{ $class->find
-                        ({
-                          'name' => $val,
-                          is     => $C_login_account,
-                         }, $args)};
-        }
-    }
-    #
-    # obj as obj id
-    #
-    else
-    {
-        debug 2, "  as id";
-        push @new, $this->get_by_id( $val );
-    }
+		unless(@new)
+		{
+			debug 2, "	as non-number, from name";
+			@new = @{ $class->find
+									({
+										'name' => $val,
+										is		 => $C_login_account,
+									 }, $args)};
+		}
+	}
+	#
+	# obj as obj id
+	#
+	else
+	{
+		debug 2, "	as id";
+		push @new, $this->get_by_id( $val );
+	}
 
-    debug 3, "Returning ($new[0])";
+	debug 3, "Returning ($new[0])";
 
-#    warn "  returning @new\n";
+#		 warn "	 returning @new\n";
 
-    return RDF::Base::List->new(\@new);
+	return RDF::Base::List->new(\@new);
 
 }
 
@@ -284,7 +284,7 @@ sub find_by_anything
 
 =head2 verify_password
 
-  $u->verify_password( $password_iphashed )
+	$u->verify_password( $password_iphashed )
 
 For secure hashed stored passwords, the supplied password should be
 the value from has_password_hash, additionally iphashed with
@@ -294,49 +294,49 @@ passwd_crypt()
 
 sub verify_password
 {
-    my( $u, $password_encrypted ) = @_;
+	my( $u, $password_encrypted ) = @_;
 
-    $password_encrypted ||= '';
+	$password_encrypted ||= '';
 
-#    debug 1, "Retrieving password for $u->{id}";
-    my $pwhash = $u->first_prop('has_password_hash',undef,['active']);
-    my @pwlist = $u->list('has_password',undef,['active'])->as_array;
+#		 debug 1, "Retrieving password for $u->{id}";
+	my $pwhash = $u->first_prop('has_password_hash',undef,['active']);
+	my @pwlist = $u->list('has_password',undef,['active'])->as_array;
 
-    unless( $pwhash or @pwlist)
-    {
-        my $uname = $u->desig;
-        confess "No desig for user" unless $uname;
-        debug("$uname has no password");
-        cluck "no password";
-        return 0;
-    }
+	unless( $pwhash or @pwlist)
+	{
+		my $uname = $u->desig;
+		confess "No desig for user" unless $uname;
+		debug("$uname has no password");
+		cluck "no password";
+		return 0;
+	}
 
-    if( $pwhash ) # Do not use unhashed passwords if hashed exist
-    {
-        debug "Should do pw hash comparison";
+	if ( $pwhash )			 # Do not use unhashed passwords if hashed exist
+	{
+		debug "Should do pw hash comparison";
 
-        # Validating password
-        #
-        if( $password_encrypted eq passwd_crypt( $pwhash) )
-        {
-            return 1;
-        }
+		# Validating password
+		#
+		if ( $password_encrypted eq passwd_crypt( $pwhash) )
+		{
+			return 1;
+		}
 
-        return 0;
-    }
+		return 0;
+	}
 
-    foreach my $pwd (@pwlist)
-    {
-        # Validating password
-        #
-        if( $password_encrypted eq passwd_crypt($pwd) )
-        {
-            return 1;
-        }
-    }
+	foreach my $pwd (@pwlist)
+	{
+		# Validating password
+		#
+		if ( $password_encrypted eq passwd_crypt($pwd) )
+		{
+			return 1;
+		}
+	}
 
-#    debug "Verifying password failed:\n".datadump(\%ENV);
-    return 0;
+#		 debug "Verifying password failed:\n".datadump(\%ENV);
+	return 0;
 }
 
 ##############################################################################
@@ -347,14 +347,14 @@ sub verify_password
 
 sub has_root_access
 {
-    if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_full_access) )
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+	if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_full_access) )
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
 }
 
 ##############################################################################
@@ -365,17 +365,17 @@ sub has_root_access
 
 sub has_cm_access
 {
-    if( R->get_by_label('rdfbase')->has_version->literal < 18 )
-    {
-        return $_[0]->has_root_access;
-    }
+	if ( R->get_by_label('rdfbase')->has_version->literal < 18 )
+	{
+		return $_[0]->has_root_access;
+	}
 
-    if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_content_management_access) )
-    {
-        return 1;
-    }
+	if ( $_[0]->prop('has_access_right',undef,['active'])->equals($C_content_management_access) )
+	{
+		return 1;
+	}
 
-    return $_[0]->has_root_access;
+	return $_[0]->has_root_access;
 }
 
 ##############################################################################
@@ -386,8 +386,8 @@ sub has_cm_access
 
 sub require_write_access_to
 {
-    return if $_[0]->has_write_access_to( $_[1] );
-    throw( 'denied', "You do not have access to modify ".$_[1]->desig );
+	return if $_[0]->has_write_access_to( $_[1] );
+	throw( 'denied', "You do not have access to modify ".$_[1]->desig );
 }
 
 ##############################################################################
@@ -398,12 +398,12 @@ sub require_write_access_to
 
 sub has_write_access_to
 {
-    my( $u, $n ) = @_;
+	my( $u, $n ) = @_;
 
-    return 1 if $u->has_root_access;
-    return 1 if $n->is_owned_by( $u );
-    return 0 if $C_sysadmin_group->equals($n->write_access);
-    return 1;
+	return 1 if $u->has_root_access;
+	return 1 if $n->is_owned_by( $u );
+	return 0 if $C_sysadmin_group->equals($n->write_access);
+	return 1;
 }
 
 ##############################################################################
@@ -417,25 +417,25 @@ For the current request
 sub set_default_propargs
 {
 
-    # Since subrequests from the same user may interlace with this
-    # request, it must be set for the request
+	# Since subrequests from the same user may interlace with this
+	# request, it must be set for the request
 
-    if ( $Para::Frame::REQ )
-    {
-        $Para::Frame::REQ->{'rb_default_propargs'} = undef;
+	if ( $Para::Frame::REQ )
+	{
+		$Para::Frame::REQ->{'rb_default_propargs'} = undef;
 
-        if ( $_[1] )
-        {
-            my $args = parse_propargs( $_[1] );
-            return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
-        }
-    }
-    else
-    {
-        debug "set_default_propargs without an active REQ";
-    }
+		if ( $_[1] )
+		{
+			my $args = parse_propargs( $_[1] );
+			return $Para::Frame::REQ->{'rb_default_propargs'} = $args;
+		}
+	}
+	else
+	{
+		debug "set_default_propargs without an active REQ";
+	}
 
-    return undef;
+	return undef;
 }
 
 ##############################################################################
@@ -448,11 +448,11 @@ For the current request
 
 sub default_propargs
 {
-    if ( $Para::Frame::REQ )
-    {
-        return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
-    }
-    return undef;
+	if ( $Para::Frame::REQ )
+	{
+		return $Para::Frame::REQ->{'rb_default_propargs'} || undef;
+	}
+	return undef;
 }
 
 
@@ -464,12 +464,12 @@ sub default_propargs
 
 sub on_bless
 {
-    my( $u ) = @_;
+	my( $u ) = @_;
 
-    if( $u->has_pred('name_short') or $u->has_pred('has_access_right') )
-    {
-        $Para::Frame::REQ->require_root_access; #Protect access rights
-    }
+	if ( $u->has_pred('name_short') or $u->has_pred('has_access_right') )
+	{
+		$Para::Frame::REQ->require_root_access; #Protect access rights
+	}
 }
 
 
@@ -481,12 +481,12 @@ sub on_bless
 
 sub on_unbless
 {
-    my( $u ) = @_;
+	my( $u ) = @_;
 
-    if( $C_sysadmin_group->equals($u->write_access) )
-    {
-        $Para::Frame::REQ->require_root_access; #Protect access rights
-    }
+	if ( $C_sysadmin_group->equals($u->write_access) )
+	{
+		$Para::Frame::REQ->require_root_access; #Protect access rights
+	}
 }
 
 
@@ -498,24 +498,24 @@ sub on_unbless
 
 sub allows_arc_create
 {
-    my( $u, $user, $rec, $args ) = @_;
+	my( $u, $user, $rec, $args ) = @_;
 
-    $user ||= $Para::Frame::REQ->user;
+	$user ||= $Para::Frame::REQ->user;
 
-    my $pred = R->get($rec->{pred});
-    my $pred_name = $pred->label;
+	my $pred = R->get($rec->{pred});
+	my $pred_name = $pred->label;
 
-    if( $pred_name ~~ [qw(name_short has_access_right)] )
-    {
-        return  $user->has_root_access;
-    }
+	if ( $pred_name ~~ [qw(name_short has_access_right)] )
+	{
+		return	$user->has_root_access;
+	}
 
-    if( $pred_name ~~ [qw(has_secret has_password_hash )] )
-    {
-        return $user->has_write_access_to( $u );
-    }
+	if ( $pred_name ~~ [qw(has_secret has_password_hash )] )
+	{
+		return $user->has_write_access_to( $u );
+	}
 
-    return 1;
+	return 1;
 }
 
 
@@ -527,31 +527,31 @@ sub allows_arc_create
 
 sub on_arc_add
 {
-    my( $u, $arc, $pred_name, $args_in ) = @_;
+	my( $u, $arc, $pred_name, $args_in ) = @_;
 
-#    debug "In RB::User on_arc_add $pred_name";
+#		 debug "In RB::User on_arc_add $pred_name";
 
-    if( $pred_name eq 'name_short' )
-    {
-#        $Para::Frame::REQ->require_root_access; #Protect login name
-        delete $u->{username};
-    }
-    elsif( $pred_name eq 'has_access_right' )
-    {
-#        $Para::Frame::REQ->require_root_access; #Protect access rights
-        $u->set_write_access( $C_sysadmin_group );
-        $u->set_owned_by( $u );
-    }
+	if ( $pred_name eq 'name_short' )
+	{
+#				 $Para::Frame::REQ->require_root_access; #Protect login name
+		delete $u->{username};
+	}
+	elsif ( $pred_name eq 'has_access_right' )
+	{
+#				 $Para::Frame::REQ->require_root_access; #Protect access rights
+		$u->set_write_access( $C_sysadmin_group );
+		$u->set_owned_by( $u );
+	}
 
-#    if( $C_sysadmin_group->equals($u->write_access) )
-#    {
-#        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
-#        {
-#            $Para::Frame::REQ->user->require_write_access_to( $u );
-#        }
-#    }
+#		 if( $C_sysadmin_group->equals($u->write_access) )
+#		 {
+#				 if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+#				 {
+#						 $Para::Frame::REQ->user->require_write_access_to( $u );
+#				 }
+#		 }
 
-    $u->clear_caches;
+	$u->clear_caches;
 }
 
 ##############################################################################
@@ -562,21 +562,21 @@ sub on_arc_add
 
 sub on_arc_del
 {
-    my( $u, $arc, $pred_name, $args_in ) = @_;
+	my( $u, $arc, $pred_name, $args_in ) = @_;
 
-#    if( $C_sysadmin_group->equals($u->write_access) )
-#    {
-#        if( $pred_name ~~ [qw(has_secret has_password_hash )] )
-#        {
-#            $Para::Frame::REQ->user->require_write_access_to( $u );
-#        }
-#        elsif( $pred_name ~~ [qw(name_short has_access_right )] )
-#        {
-#            $Para::Frame::REQ->require_root_access;
-#        }
-#    }
+#		 if( $C_sysadmin_group->equals($u->write_access) )
+#		 {
+#				 if( $pred_name ~~ [qw(has_secret has_password_hash )] )
+#				 {
+#						 $Para::Frame::REQ->user->require_write_access_to( $u );
+#				 }
+#				 elsif( $pred_name ~~ [qw(name_short has_access_right )] )
+#				 {
+#						 $Para::Frame::REQ->require_root_access;
+#				 }
+#		 }
 
-    $u->clear_caches(@_);
+	$u->clear_caches(@_);
 }
 
 ##############################################################################
@@ -587,7 +587,7 @@ sub on_arc_del
 
 sub clear_caches
 {
-    delete  $_[0]->{'level'};
+	delete	$_[0]->{'level'};
 }
 
 ##############################################################################
@@ -598,13 +598,13 @@ sub clear_caches
 
 sub set_working_on
 {
-    my( $u, $node_in ) = @_;
-    my( $args ) = solid_propargs();
+	my( $u, $node_in ) = @_;
+	my( $args ) = solid_propargs();
 
-    my $n = R->get($node_in);
+	my $n = R->get($node_in);
 
-    return 0 if $n->revprop('working_on');
-    return $u->add({working_on => $n}, $args);
+	return 0 if $n->revprop('working_on');
+	return $u->add({working_on => $n}, $args);
 }
 
 ##############################################################################
@@ -615,15 +615,15 @@ sub set_working_on
 
 sub remove_working_on
 {
-    my( $u, $node_in ) = @_;
-    my( $args ) = solid_propargs();
+	my( $u, $node_in ) = @_;
+	my( $args ) = solid_propargs();
 
-    my $n = R->get($node_in);
+	my $n = R->get($node_in);
 
-#    debug "Remove arc for ".$n->sysdesig;
-#    debug "List is ". $u->arc_list('working_on', $n, $args)->sysdesig;
+#		 debug "Remove arc for ".$n->sysdesig;
+#		 debug "List is ". $u->arc_list('working_on', $n, $args)->sysdesig;
 
-    return $u->arc_list('working_on', $n, $args)->remove($args);
+	return $u->arc_list('working_on', $n, $args)->remove($args);
 }
 
 ##############################################################################
@@ -638,29 +638,29 @@ https://www.owasp.org/index.php/Password_Storage_Cheat_Sheet
 
 sub password_hash
 {
-    my( $u, $password_plain ) = @_;
-    my( $args ) = solid_propargs();
+	my( $u, $password_plain ) = @_;
+	my( $args ) = solid_propargs();
 
-    my $server_salt = $Para::Frame::CFG->{server_salt}
-      or die "Server salt not configured";
+	my $server_salt = $Para::Frame::CFG->{server_salt}
+		or die "Server salt not configured";
 
-    my $personal_salt = $u->secret($args);
+	my $personal_salt = $u->secret($args);
 
-    # Could have used Crypt::KeyDerivation::pbkdf2, for slowing down
-    # dictionary attacks in cases where salts and hashes are known.
-    # Should migrate to Argon2 when easily availible. (not argon2i)
+	# Could have used Crypt::KeyDerivation::pbkdf2, for slowing down
+	# dictionary attacks in cases where salts and hashes are known.
+	# Should migrate to Argon2 when easily availible. (not argon2i)
 
-    my $d = Crypt::Digest::SHA512->new;
-    $d->add($server_salt, $personal_salt, $password_plain);
+	my $d = Crypt::Digest::SHA512->new;
+	$d->add($server_salt, $personal_salt, $password_plain);
 
-    ### Store password with a prefix SIMILAR to glibc crypt. This is
-    ### for attaching the hashing method used.
+	### Store password with a prefix SIMILAR to glibc crypt. This is
+	### for attaching the hashing method used.
 
-    # $6$$ == SHA512 b64u
+	# $6$$ == SHA512 b64u
 
-    my $password_hash = '$6$$' . $d->b64udigest;
+	my $password_hash = '$6$$' . $d->b64udigest;
 
-    return $password_hash;
+	return $password_hash;
 }
 
 ##############################################################################
@@ -671,15 +671,15 @@ sub password_hash
 
 sub password_token
 {
-    my( $u, $password_plain ) = @_;
-    my( $args ) = solid_propargs();
+	my( $u, $password_plain ) = @_;
+	my( $args ) = solid_propargs();
 
-    if( $u->has_pred('has_password_hash',undef,$args) )
-    {
-        return $u->password_hash($password_plain);
-    }
+	if ( $u->has_pred('has_password_hash',undef,$args) )
+	{
+		return $u->password_hash($password_plain);
+	}
 
-    return $password_plain;
+	return $password_plain;
 }
 
 ##############################################################################
@@ -690,16 +690,16 @@ sub password_token
 
 sub set_password_hash
 {
-    my( $u, $password_plain, $args_in ) = @_;
-    my( $args ) = solid_propargs( $args_in );
+	my( $u, $password_plain, $args_in ) = @_;
+	my( $args ) = solid_propargs( $args_in );
 
-#    debug "About to set password to $password_plain"; ### SECRET
+#		 debug "About to set password to $password_plain"; ### SECRET
 
-    my $password_hash = $u->password_hash( $password_plain );
-    $u->update({has_password_hash=>$password_hash},$args);
-    $u->arc_list('has_password',undef,$args)->remove($args);
+	my $password_hash = $u->password_hash( $password_plain );
+	$u->update({has_password_hash=>$password_hash},$args);
+	$u->arc_list('has_password',undef,$args)->remove($args);
 
-    return $password_hash;
+	return $password_hash;
 }
 
 ##############################################################################
@@ -710,17 +710,17 @@ sub set_password_hash
 
 sub secret
 {
-    my( $u, $args ) = @_;
+	my( $u, $args ) = @_;
 
-    my $secret = $u->first_prop('has_secret',undef,$args);
-    unless( $secret )
-    {
-        my $prng = Crypt::PRNG->new;
-        $secret = $prng->bytes_b64u(64); # represented by 86 bytes
-        $u->update({has_secret=>$secret},$args);
-    }
+	my $secret = $u->first_prop('has_secret',undef,$args);
+	unless( $secret )
+	{
+		my $prng = Crypt::PRNG->new;
+		$secret = $prng->bytes_b64u(64); # represented by 86 bytes
+		$u->update({has_secret=>$secret},$args);
+	}
 
-    return $secret;
+	return $secret;
 }
 
 ##############################################################################
@@ -733,26 +733,26 @@ throws ececption if unsecure
 
 sub check_security
 {
-    my( $u, $args ) = @_;
+	my( $u, $args ) = @_;
 
-    unless( length( $u->first_prop('name_short',undef,$args)->plain) > 2 )
-    {
-        throw 'validation', "name_short missing";
-    }
-    unless( $u->prop('is',$C_login_account,$args) )
-    {
-        throw 'validation', "Not a login account";
-    }
-    unless( $C_sysadmin_group->equals($u->write_access) )
-    {
-        throw 'validation', "Account no secure";
-    }
-    unless( $u->is_owned_by( $u ) )
-    {
-        throw 'validation', "Account no secure";
-    }
+	unless( length( $u->first_prop('name_short',undef,$args)->plain) > 2 )
+	{
+		throw 'validation', "name_short missing";
+	}
+	unless( $u->prop('is',$C_login_account,$args) )
+	{
+		throw 'validation', "Not a login account";
+	}
+	unless( $C_sysadmin_group->equals($u->write_access) )
+	{
+		throw 'validation', "Account no secure";
+	}
+	unless( $u->is_owned_by( $u ) )
+	{
+		throw 'validation', "Account no secure";
+	}
 
-    return 1;
+	return 1;
 }
 
 ##############################################################################
