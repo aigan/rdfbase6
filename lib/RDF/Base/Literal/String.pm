@@ -880,10 +880,12 @@ sub wuirc
     my $maxw = $args->{'maxw'};
     my $maxh = $args->{'maxh'};
 
-    $args->{'id'} ||= build_field_key({
-                                       ($rev?'rev':'').pred => $predname,
-                                       subj => $node,
-                                      });
+		my $field_key = build_field_key({
+																		 ($rev?'rev':'').pred => $predname,
+																		 subj => $node,
+																		});
+		$args->{'id'} ||= $field_key;
+		$args->{'fields'}{$field_key} ++;
 
 #    debug "Fieldkey ".$args->{'id'};
 

@@ -1889,11 +1889,14 @@ sub wu_jump
 	$attrs ||= {};
 	$args ||= {};
 
+	#debug("wu_jump for ".$node->id);
+
 	my $label = delete($attrs->{'label'});
 	unless( $label )
 	{
 		if ( my $name_method = $args->{'name_method'} )
 		{
+			#debug("wu_jump name_method $name_method");
 			$label = $node->$name_method(undef,$args);
 		}
 	}

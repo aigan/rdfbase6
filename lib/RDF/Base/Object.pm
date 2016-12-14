@@ -293,7 +293,9 @@ May give a longer name of the object. Defaults to L</desig>
 sub longdesig
 {
     my( $node, $args ) = @_;
-    $args ||= {};
+
+		#debug("longdesig for ".$node->id);
+		$args ||= {};
     $args->{desig_length_max} ||= 250;
     return $node->desig($args);
 }

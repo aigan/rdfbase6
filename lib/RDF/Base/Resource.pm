@@ -6265,7 +6265,7 @@ sub register_ajax_pagepart
 {
 	my( $node, $divid, $args ) = @_;
 
-#		 cluck "register_ajax_pagepart $divid with ".datadump($args,2);
+	#cluck "register_ajax_pagepart $divid with ".datadump($args,2);
 
 	my $out = "";
 	my $params = {
@@ -6331,9 +6331,16 @@ sub register_ajax_pagepart
 #	debug "Depends on now: ". $depends_on;
 		$out .= ", depends_on: [ $depends_on ]";
 	}
+
+	if( my $fields = $args->{'fields'} )
+	{
+		$out .= ", fields: ".to_json( $fields );
+	}
+
 	$out .= "}); </script>";
 
 #		 $out .= "($divid)";
+#	debug( $out );
 
 	return $out;
 }
@@ -6620,6 +6627,7 @@ sub wuirc
 			$fkeys->{$is_scof ? 'scof' : 'type'} = $range->label;
 
 			my $input_id = $subj->build_field_key($fkeys);
+			$args->{'fields'}{$input_id} ++;
 			$args->{id} = $input_id;
 
 			$out .=

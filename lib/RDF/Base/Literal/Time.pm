@@ -356,6 +356,7 @@ sub wuirc
                                          subj => $subj_id,
                                          if => $if,
                                         });
+				$args->{'fields'}{$fieldname} ++;
 
         $id ||= $fieldname;
         $out .= &calendar($fieldname,  $args->{'default_value'} || '',
@@ -387,6 +388,7 @@ sub wuirc
                                                  subj => $subj_id,
                                                  if => $if,
                                                 });
+								$args->{'fields'}{$fieldname} ++;
 
                 $id ||= $fieldname;
                 my $value_new = $q->param($fieldname_default) ||
@@ -422,6 +424,7 @@ sub wuirc
                                              subj => $subj_id,
                                              if => $if,
                                             });
+						$args->{'fields'}{$fieldname} ++;
 
             # Store fieldname in  $args->{id}
             $cal_args{id} = $args->{id} = $args->{tag_attr}{'id'} ||= $fieldname;

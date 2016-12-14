@@ -611,6 +611,7 @@ RDF.Base || (RDF.Base = {});
 		$this.element = element;
 		$this.update_url = update_url;
 		$this.update_params = params['params'];
+		$this.fields = params.fields;
 
 		if( params['depends_on'] ) {
 			$this.depends_on = params['depends_on'];
@@ -730,21 +731,20 @@ RDF.Base || (RDF.Base = {});
 			var $element = $('#' + $this.element);
 
 			//log("node_update PARAMS");
-			
-			var $jsup = JSON.parse($this.update_params.params);
-			//log($jsup);
-			var $fieldKey = $jsup.id;
-
-			var $input = $('#' + $fieldKey);
+			//log($this.fields);
 
 			var $formData = {
 				params: $.toJSON($this.update_params),
-				key: $fieldKey,
-				val: $input.val()
 			};
 
-			//log($formData);
+			for( let fieldkey of Object.keys( $this.fields ) ) {
+				let $input = $('#' + fieldkey);
+				$formData[ fieldkey ] = $input.val();
+				//log( "*" + fieldkey + " = " +  $formData[ fieldkey ]);
+			}
 
+			//log($formData);
+			
 			$this.update_params['divid'] = $this.element;
 			$element.load(
 				'[%home%]/rb/ajax/action/update',

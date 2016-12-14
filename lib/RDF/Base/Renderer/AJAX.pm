@@ -340,19 +340,6 @@ sub render_action
 			throw('denied', "Access denied");
 		}
 
-		my $pred_name = $params->{'pred_name'};
-		my $field_val = $q->param('val');
-		my $field_key = $q->param('key');
-		$q->delete('key','val');
-
-		unless( $field_key =~ /^arc_/ )
-		{
-			throw('validation', "Malformatted field key: $field_key");
-		}
-
-		#debug(datadump($jsup));
-
-		$q->param($field_key, $field_val);
 		$q->param('id', $params->{'subj'});
 
 		#debug(datadump($q));

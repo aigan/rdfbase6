@@ -130,10 +130,12 @@ sub wuirc
 
     my $newsubj = $args->{'newsubj'};
 
-    $args->{'id'} ||= build_field_key({
+		my $field_key = build_field_key({
                                        pred => $predname,
                                        subj => $subj,
-                                      });
+																		});
+    $args->{'id'} ||= $field_key;
+		$args->{'fields'}{$field_key} ++;
 
     my $proplim = $args->{'proplim'} || undef;
     my $arclim = $args->{'arclim'} || ['active','submitted'];

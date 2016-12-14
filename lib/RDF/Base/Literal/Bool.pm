@@ -73,6 +73,7 @@ sub wuirc
 
 
     $args->{id} = $tag_attr->{'id'} ||= $key;
+		$args->{'fields'}{$key} ++;
 
     if ( ($args->{'label'}||'') eq '1' )
     {

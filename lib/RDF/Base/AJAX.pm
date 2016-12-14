@@ -63,25 +63,28 @@ sub wu
 {
 	my( $ajax, $args ) = @_;
 
+	#debug "AJAX wu args in: ". datadump($args,2);
+
 	if ( $args->{'params'} )
 	{
 		$args = {
 						 %$args,
 						 %{from_json($args->{'params'})},
-						 params => ''};
+						 #params => '', # To keep or not to keep?
+						};
 	}
 
-#		 debug "AJAX wus: ". datadump($args);
+	#debug "AJAX wus: ". datadump($args,2);
 
 	my $R = RDF::Base->Resource;
 	my $out;
 
 	my $subj = $R->get($args->{'subj'});
-#		 debug "Subj: ". $subj;
+	#debug "Subj: ". $subj;
 
 	if ( my $pred_name = $args->{'pred_name'} )
 	{
-#	debug " -> wu $pred_name";
+		#debug " -> wu $pred_name";
 		$out =	$subj->wu($pred_name,
 											{
 											 %$args,
