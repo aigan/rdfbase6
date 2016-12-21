@@ -313,7 +313,7 @@ sub verify_password
 
 	if ( $pwhash )			 # Do not use unhashed passwords if hashed exist
 	{
-		debug "Should do pw hash comparison";
+		#debug "Should do pw hash comparison";
 
 		# Validating password
 		#
