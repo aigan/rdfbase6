@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP::Folder;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -196,7 +196,7 @@ sub connect
 
 	my $imap = $folder->{'imap'};
 
-	if ( $imap )
+	if ( $imap and eval( $imap->can('IsConnected') ) )
 	{
 		$imap->disconnect if $imap->IsConnected;
 		$folder->{'imap'} =
@@ -372,7 +372,10 @@ sub imap_cmd
 	my( $folder, $cmd ) = (shift, shift );
 
 	my $imap = $folder->{'imap'};
-	unless( $imap and $imap->IsConnected )
+
+	unless( $imap and
+					eval( $imap->can('IsConnected') ) and
+					$imap->IsConnected )
 	{
 		$folder->connect;
 	}
