@@ -46,32 +46,32 @@ our %FOLDERS;
 
 sub get
 {
-    my( $this, $args ) = @_;
+	my( $this, $args ) = @_;
 
-    $args ||= {};
+	$args ||= {};
 
-    unless( UNIVERSAL::isa $args, 'HASH' )
-    {
-	$args =
+	unless( UNIVERSAL::isa $args, 'HASH' )
 	{
-	 user => $args,
-	};
-    }
+		$args =
+		{
+		 user => $args,
+		};
+	}
 
-    my $server = $args->{'server'} ||
-      $Para::Frame::CFG->{'imap_access_default'}{'server'} ||
-	die "No default server given";
+	my $server = $args->{'server'} ||
+		$Para::Frame::CFG->{'imap_access_default'}{'server'} ||
+		die "No default server given";
 
-    my $user = $args->{'user'} ||
-      $Para::Frame::CFG->{'imap_access_default'}{'user'} ||
-	die "No default user given";
+	my $user = $args->{'user'} ||
+		$Para::Frame::CFG->{'imap_access_default'}{'user'} ||
+		die "No default user given";
 
-    my $foldername = $args->{'foldername'} || 'INBOX';
+	my $foldername = $args->{'foldername'} || 'INBOX';
 
-    # look out for reserved chars in user
-    my $url_str = "imap://$user\@$server/$foldername";
+	# look out for reserved chars in user
+	my $url_str = "imap://$user\@$server/$foldername";
 
-    return $this->get_by_url($url_str);
+	return $this->get_by_url($url_str);
 }
 
 
@@ -83,53 +83,53 @@ sub get
 
 sub get_by_url
 {
-    my( $this, $url_in ) = @_;
+	my( $this, $url_in ) = @_;
 
-    $url_in =~ s/\/;UID=.*//;
+	$url_in =~ s/\/;UID=.*//;
 
-    if( my $folder = $FOLDERS{$url_in} )
-    {
-	$folder->awake;
-	return $folder;
-    }
+	if ( my $folder = $FOLDERS{$url_in} )
+	{
+		$folder->awake;
+		return $folder;
+	}
 
-    my $url = URI->new( $url_in );
+	my $url = URI->new( $url_in );
 
-    my $foldername;
-    my $user = $url->userinfo;
-    my $server = $url->host;
-    if( $url->path =~ /\/(.*)/ )
-    {
-	$foldername = $1;
-    }
-    else
-    {
-	die "Could not extract foldername from $url_in";
-    }
+	my $foldername;
+	my $user = $url->userinfo;
+	my $server = $url->host;
+	if ( $url->path =~ /\/(.*)/ )
+	{
+		$foldername = $1;
+	}
+	else
+	{
+		die "Could not extract foldername from $url_in";
+	}
 
-    my $password = $Para::Frame::CFG->{imap_access}{$server}{$user};
-    unless( $password )
-    {
-        $Para::Frame::REQ->result_message("Password for $user\@$server not found");
-        return undef;
-    }
+	my $password = $Para::Frame::CFG->{imap_access}{$server}{$user};
+	unless( $password )
+	{
+		$Para::Frame::REQ->result_message("Password for $user\@$server not found");
+		return undef;
+	}
 #    cluck("No password") unless $password;
 #    $password or throw 'IMAP', "Password for $user\@$server not found";
 
-    my $folder = bless
-    {
-     server => $server,
-     user => $user,
-     password => $password,
-     foldername => $foldername,
-     url => $url,
-    }, $this;
+	my $folder = bless
+	{
+	 server => $server,
+	 user => $user,
+	 password => $password,
+	 foldername => $foldername,
+	 url => $url,
+	}, $this;
 
-    $folder->connect;
+	$folder->connect;
 
-    $FOLDERS{$url->as_string} = $folder;
+	$FOLDERS{$url->as_string} = $folder;
 
-    return $folder;
+	return $folder;
 }
 
 
@@ -143,37 +143,37 @@ Store a message in the folder
 
 sub create
 {
-    my( $folder, $args ) = @_;
+	my( $folder, $args ) = @_;
 
-    my $dataref = $args->{'dataref'};
+	my $dataref = $args->{'dataref'};
 
-    my $folder_name = $folder->foldername_enc_string;
+	my $folder_name = $folder->foldername_enc_string;
 
-    my $uid = $folder->imap_cmd('append',$folder_name, $$dataref);
+	my $uid = $folder->imap_cmd('append',$folder_name, $$dataref);
 
-    debug "Stored uid $uid in folder $folder_name";
+	debug "Stored uid $uid in folder $folder_name";
 
-    unless( $uid )
-    {
-	debug "Faild to store message in folder?";
-    }
+	unless( $uid )
+	{
+		debug "Faild to store message in folder?";
+	}
 
 
-    debug "Reconnecting...";
-    $folder->connect;
+	debug "Reconnecting...";
+	$folder->connect;
 
-    my $email = $Para::Frame::CFG->{'email_class'}->
-      get({
-	   uid => $uid,
-	   folder => $folder,
-	  });
+	my $email = $Para::Frame::CFG->{'email_class'}->
+		get({
+				 uid => $uid,
+				 folder => $folder,
+				});
 
-    unless( $Para::Frame::CFG->{'check_email'} )
-    {
-	$email->obj->unsee;
-    }
+	unless ( $Para::Frame::CFG->{'check_email'} )
+	{
+		$email->obj->unsee;
+	}
 
-    return $email;
+	return $email;
 }
 
 
@@ -185,63 +185,63 @@ sub create
 
 sub connect
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    debug "Connecting to ".$folder->sysdesig;
+	debug "Connecting to ".$folder->sysdesig;
 
-    my $server = $folder->{'server'};
-    my $user = $folder->{'user'};
-    my $password = $folder->{'password'};
-    my $foldername = $folder->{'foldername'};
+	my $server = $folder->{'server'};
+	my $user = $folder->{'user'};
+	my $password = $folder->{'password'};
+	my $foldername = $folder->{'foldername'};
 
-    my $imap = $folder->{'imap'};
+	my $imap = $folder->{'imap'};
 
-    if( $imap )
-    {
-	$imap->disconnect if $imap->IsConnected;
-	$folder->{'imap'} =
-	  $imap->connect or throw 'IMAP', "Could not reconnect: $@";
-    }
-    else
-    {
-	$folder->{'imap'} =
-	  $imap = Mail::IMAPClient->new(
-					Server => $server,
-					User    => $user,
-					Password=> $password,
-					Clear => 5,
-					Uid => 1,
-					Timeout => 3,
-				       )
-	    or throw 'IMAP', "Cannot connect to $server as $user: $@";
-    }
-
-    if( $imap->IsConnected )
-    {
-	if( $imap->IsAuthenticated )
+	if ( $imap )
 	{
-	    # All good
+		$imap->disconnect if $imap->IsConnected;
+		$folder->{'imap'} =
+			$imap->connect or throw 'IMAP', "Could not reconnect: $@";
 	}
 	else
 	{
+		$folder->{'imap'} =
+			$imap = Mail::IMAPClient->new(
+																		Server => $server,
+																		User    => $user,
+																		Password=> $password,
+																		Clear => 5,
+																		Uid => 1,
+																		Timeout => 3,
+																	 )
+	    or throw 'IMAP', "Cannot connect to $server as $user: $@";
+	}
+
+	if ( $imap->IsConnected )
+	{
+		if ( $imap->IsAuthenticated )
+		{
+	    # All good
+		}
+		else
+		{
 	    $imap->Showcredentials(1);
 	    $imap->login or
 	      throw 'IMAP', $folder->diag("Login failed for $user");
+		}
 	}
-    }
-    else
-    {
-	throw 'IMAP', $folder->diag("Connection failed for $server");
-    }
+	else
+	{
+		throw 'IMAP', $folder->diag("Connection failed for $server");
+	}
 
 #    debug "Selecting folder $foldername";
-    $imap->select($foldername)
-      or throw 'IMAP', $folder->diag("Could not select folder $foldername");
+	$imap->select($foldername)
+		or throw 'IMAP', $folder->diag("Could not select folder $foldername");
 
-    $folder->{'imap'} = $imap;
-    $folder->{'idle'} = undef;
+	$folder->{'imap'} = $imap;
+	$folder->{'idle'} = undef;
 
-    return $folder;
+	return $folder;
 }
 
 ##############################################################################
@@ -252,36 +252,36 @@ sub connect
 
 sub awake
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    my $imap = $folder->{'imap'};
+	my $imap = $folder->{'imap'};
 
-    if( my $idle = $folder->{'idle'} )
-    {
-	debug "Stops ideling ($idle)";
-	$folder->{'idle'} = undef;
-
-	if( $imap->IsUnconnected )
+	if ( my $idle = $folder->{'idle'} )
 	{
+		debug "Stops ideling ($idle)";
+		$folder->{'idle'} = undef;
+
+		if ( $imap->IsUnconnected )
+		{
 	    $folder->connect;
-	}
-	elsif(not $imap->done( $idle ) )
-	{
+		}
+		elsif (not $imap->done( $idle ) )
+		{
 	    debug "Couldn't stop ideling: $@";
-	    if( $imap->IsUnconnected )
+	    if ( $imap->IsUnconnected )
 	    {
-		$folder->connect;
+				$folder->connect;
 	    }
+		}
+
+		my $foldername = $folder->{'foldername'}
+			or throw 'IMAP', "Foldername missing from obj";
+#	debug "Reselecting folder. (Short server memory?)";
+		$imap->select($foldername)
+			or throw 'IMAP', $folder->diag("Could not select folder $foldername");
 	}
 
-	my $foldername = $folder->{'foldername'}
-	  or throw 'IMAP', "Foldername missing from obj";
-#	debug "Reselecting folder. (Short server memory?)";
-	$imap->select($foldername)
-	  or throw 'IMAP', $folder->diag("Could not select folder $foldername");
-    }
-
-    return $folder;
+	return $folder;
 }
 
 
@@ -293,48 +293,48 @@ sub awake
 
 sub idle
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return if $folder->{'idle'}; # Already in idle state
+	return if $folder->{'idle'};	# Already in idle state
 
-    # Check connection
-    my $imap = $folder->{'imap'};
-    if( $imap and $imap->IsConnected )
-    {
-	if( $folder->{'idle'} = $imap->idle )
+	# Check connection
+	my $imap = $folder->{'imap'};
+	if ( $imap and $imap->IsConnected )
 	{
+		if ( $folder->{'idle'} = $imap->idle )
+		{
 	    debug "Starts ideling ($folder->{'idle'})";
-	}
-	elsif( $imap->IsConnected ) # could change on $imap->idle
-	{
+		}
+		elsif ( $imap->IsConnected ) # could change on $imap->idle
+		{
 	    debug $folder->diag("Couldn't idle");
 	    debug "Disconnecting...";
 
 	    eval
 	    {
-		local $SIG{ALRM} = sub { die "timeout\n" };
-		alarm 2;
-		$imap->disconnect;
-		alarm 0;
+				local $SIG{ALRM} = sub { die "timeout\n" };
+				alarm 2;
+				$imap->disconnect;
+				alarm 0;
 	    };
-	    if( $@ )
+	    if ( $@ )
 	    {
-		debug $folder->diag($@);
+				debug $folder->diag($@);
 	    }
+		}
+		else
+		{
+	    debug "Lost connection to ".$folder->sysdesig;
+	    debug "But keeps it that way for now...";
+		}
 	}
 	else
 	{
-	    debug "Lost connection to ".$folder->sysdesig;
-	    debug "But keeps it that way for now...";
+		debug "Lost connection to ".$folder->sysdesig;
+		debug "But keeps it that way for now...";
 	}
-    }
-    else
-    {
-	debug "Lost connection to ".$folder->sysdesig;
-	debug "But keeps it that way for now...";
-    }
 
-    return $folder;
+	return $folder;
 }
 
 
@@ -346,18 +346,18 @@ sub idle
 
 sub imap
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    # Check connection
-    unless( $folder->{'imap'}->IsConnected )
-    {
-	debug "Lost connection to ".$folder->sysdesig;
-	$folder->connect;
-    }
+	# Check connection
+	unless ( $folder->{'imap'}->IsConnected )
+	{
+		debug "Lost connection to ".$folder->sysdesig;
+		$folder->connect;
+	}
 
 #    debug "IMAP connected. Returning obj $folder->{'imap'}";
 
-    return $folder->{'imap'};
+	return $folder->{'imap'};
 }
 
 
@@ -369,30 +369,30 @@ sub imap
 
 sub imap_cmd
 {
-    my( $folder, $cmd ) = (shift, shift );
+	my( $folder, $cmd ) = (shift, shift );
 
-    my $imap = $folder->{'imap'};
-    unless( $imap and $imap->IsConnected )
-    {
-	$folder->connect;
-    }
-
-    my $res = $imap->$cmd(@_);
-    unless( defined $res )
-    {
-	if( $imap->IsUnconnected )
+	my $imap = $folder->{'imap'};
+	unless( $imap and $imap->IsConnected )
 	{
-	    $res = $folder->connect->imap->$cmd(@_);
+		$folder->connect;
 	}
 
-	if( $@ )
+	my $res = $imap->$cmd(@_);
+	unless( defined $res )
 	{
+		if ( $imap->IsUnconnected )
+		{
+	    $res = $folder->connect->imap->$cmd(@_);
+		}
+
+		if ( $@ )
+		{
 	    confess $folder->diag("Failed to run cmd $cmd(@_)");
 #	    throw 'IMAP', $folder->diag("Failed to run cmd $cmd(@_)");
+		}
 	}
-    }
 
-    return $res;
+	return $res;
 }
 
 
@@ -404,7 +404,7 @@ sub imap_cmd
 
 sub unseen_count
 {
-    return $_[0]->imap_cmd('unseen_count');
+	return $_[0]->imap_cmd('unseen_count');
 }
 
 
@@ -420,28 +420,28 @@ Returns: A L<RDF::Base::List> of messages, in order
 
 sub unseen
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    my $unseen = $folder->imap_cmd('unseen');
-    my $mat =
-      sub
-      {
+	my $unseen = $folder->imap_cmd('unseen');
+	my $mat =
+		sub
+	{
 	  my $elem = $_[0]->{'_DATA'}[$_[1]];
 	  debug "Getting uid elem $elem";
 	  return $Para::Frame::CFG->{'email_class'}->
 	    get({
-		 uid => $elem,
-		 folder => $folder,
-		});
-      };
+					 uid => $elem,
+					 folder => $folder,
+					});
+	};
 
 
-    my $list = Para::Frame::List->new( $unseen,
-				     {
-				      materializer => $mat,
-				     });
+	my $list = Para::Frame::List->new( $unseen,
+																		 {
+																			materializer => $mat,
+																		 });
 
-    return $list;
+	return $list;
 }
 
 
@@ -453,7 +453,7 @@ sub unseen
 
 sub message_count
 {
-    return $_[0]->imap_cmd('message_count');
+	return $_[0]->imap_cmd('message_count');
 }
 
 
@@ -469,28 +469,28 @@ Returns: A L<RDF::Base::List> of messages, in order
 
 sub messages
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    my $messages = $folder->imap_cmd('messages');
-    my $mat =
-      sub
-      {
+	my $messages = $folder->imap_cmd('messages');
+	my $mat =
+		sub
+	{
 	  my $elem = $_[0]->{'_DATA'}[$_[1]];
 	  debug "Getting uid elem $elem";
 	  return $Para::Frame::CFG->{'email_class'}->
 	    get({
-		 uid => $elem,
-		 folder => $folder,
-		});
-      };
+					 uid => $elem,
+					 folder => $folder,
+					});
+	};
 
 
-    my $list = Para::Frame::List->new( $messages,
-				     {
-				      materializer => $mat,
-				     });
+	my $list = Para::Frame::List->new( $messages,
+																		 {
+																			materializer => $mat,
+																		 });
 
-    return $list;
+	return $list;
 }
 
 
@@ -504,9 +504,9 @@ sub messages
 
 sub user_string
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'user'};
+	return $folder->{'user'};
 }
 
 
@@ -520,9 +520,9 @@ sub user_string
 
 sub foldername_enc_string
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'foldername'};
+	return $folder->{'foldername'};
 }
 
 
@@ -536,9 +536,9 @@ Returns: imap url for the folder
 
 sub url
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'url'};
+	return $folder->{'url'};
 }
 
 
@@ -550,7 +550,7 @@ sub url
 
 sub sysdesig
 {
-    return $_[0]->{'url'}->as_string;
+	return $_[0]->{'url'}->as_string;
 }
 
 
@@ -562,7 +562,7 @@ sub sysdesig
 
 sub desig
 {
-    return $_[0]->{'url'}->as_string;
+	return $_[0]->{'url'}->as_string;
 }
 
 
@@ -576,20 +576,20 @@ Diagnostic message
 
 sub diag
 {
-    my( $folder, $msg ) = @_;
-    my $imap = $folder->{'imap'};
-    my $err = $@;
-    $msg ||= "";
-    $msg .= ": $err\n";
-    $msg .= "In folder ".$folder->sysdesig."\n";
-    if( $imap )
-    {
-	$err ||= $imap->LastError;
-	$msg .= "Last command: ".join("",$imap->Results)."\n";
-	$msg .= "State: ".$imap->State."\n";
-    }
+	my( $folder, $msg ) = @_;
+	my $imap = $folder->{'imap'};
+	my $err = $@;
+	$msg ||= "";
+	$msg .= ": $err\n";
+	$msg .= "In folder ".$folder->sysdesig."\n";
+	if ( $imap )
+	{
+		$err ||= $imap->LastError;
+		$msg .= "Last command: ".join("",$imap->Results)."\n";
+		$msg .= "State: ".$imap->State."\n";
+	}
 
-    return $msg;
+	return $msg;
 }
 
 
@@ -601,9 +601,9 @@ sub diag
 
 sub servername
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'server'};
+	return $folder->{'server'};
 }
 
 
@@ -615,9 +615,9 @@ sub servername
 
 sub username
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'user'};
+	return $folder->{'user'};
 }
 
 
@@ -629,9 +629,9 @@ sub username
 
 sub foldername
 {
-    my( $folder ) = @_;
+	my( $folder ) = @_;
 
-    return $folder->{'foldername'};
+	return $folder->{'foldername'};
 }
 
 
@@ -643,9 +643,9 @@ sub foldername
 
 sub equals
 {
-    my( $folder, $folder2 ) = @_;
+	my( $folder, $folder2 ) = @_;
 
-    return( $folder->url eq $folder2->url );
+	return( $folder->url eq $folder2->url );
 }
 
 
