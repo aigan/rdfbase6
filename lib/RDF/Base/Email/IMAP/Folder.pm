@@ -196,7 +196,7 @@ sub connect
 
     my $imap = $folder->{'imap'};
 
-    if( $imap )
+    if( $imap and eval( $imap->can('IsConnected') ) )
     {
 	$imap->disconnect if $imap->IsConnected;
 	$folder->{'imap'} =
@@ -372,7 +372,10 @@ sub imap_cmd
     my( $folder, $cmd ) = (shift, shift );
 
     my $imap = $folder->{'imap'};
-    unless( $imap and $imap->IsConnected )
+
+    unless( $imap and
+	    eval( $imap->can('IsConnected') ) and
+	    $imap->IsConnected )
     {
 	$folder->connect;
     }
