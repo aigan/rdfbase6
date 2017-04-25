@@ -22,6 +22,8 @@ use 5.010;
 use strict;
 use warnings;
 
+no warnings 'portable';
+
 use Carp qw( croak confess cluck );
 use Mail::IMAPClient;
 use URI;
@@ -212,6 +214,7 @@ sub connect
 																		Clear => 5,
 																		Uid => 1,
 																		Timeout => 3,
+																		Keepalive => 1,
 																	 )
 	    or throw 'IMAP', "Cannot connect to $server as $user: $@";
 	}
@@ -273,6 +276,8 @@ sub awake
 				$folder->connect;
 	    }
 		}
+
+		$imap = $folder->{'imap'};
 
 		my $foldername = $folder->{'foldername'}
 			or throw 'IMAP', "Foldername missing from obj";
@@ -373,10 +378,13 @@ sub imap_cmd
 
 	my $imap = $folder->{'imap'};
 
+	debug "imap_cmd $cmd " . join(' ', map((defined ? $_ : 'NUL'), @_));
+
 	unless( $imap and
-					eval( $imap->can('IsConnected') ) and
+					eval{ $imap->can('IsConnected') } and
 					$imap->IsConnected )
 	{
+		debug "Must reconnect";
 		$folder->connect;
 	}
 
@@ -385,6 +393,7 @@ sub imap_cmd
 	{
 		if ( $imap->IsUnconnected )
 		{
+			debug "Reconnecting and resending";
 	    $res = $folder->connect->imap->$cmd(@_);
 		}
 

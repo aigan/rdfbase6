@@ -5,7 +5,7 @@ package RDF::Base::Email::Classifier;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -2822,6 +2822,12 @@ sub _extract_from_reports
 sub as_html
 {
     my( $c ) = @_;
+
+		my $o = $c->email_obj;
+		if(! $o->exist )
+		{
+			return "missing";
+		}
 
     my $out = "";
 
