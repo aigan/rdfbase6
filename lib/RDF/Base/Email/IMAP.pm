@@ -2,13 +2,13 @@ package RDF::Base::Email::IMAP;
 #=============================================================================
 #
 # AUTHOR
-#   Jonas Liljegren   <jonas@paranormal.se>
+#		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2014 Avisita AB.  All Rights Reserved.
+#		Copyright (C) 2008-2014 Avisita AB.	 All Rights Reserved.
 #
-#   This module is free software; you can redistribute it and/or
-#   modify it under the same terms as Perl itself.
+#		This module is free software; you can redistribute it and/or
+#		modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -54,29 +54,29 @@ use RDF::Base::Email::Raw::Part;
 
 sub new_by_email
 {
-    my( $class, $email, $head ) = @_;
+	my( $class, $email, $head ) = @_;
 
-    my $imap_url = $email->first_prop('has_imap_url',undef,'not_removal')->plain;
-    unless( $imap_url )
-    {
-	confess "Faild to get has_imap_url from ".$email->id;
-    }
+	my $imap_url = $email->first_prop('has_imap_url',undef,'not_removal')->plain;
+	unless( $imap_url )
+	{
+		confess "Faild to get has_imap_url from ".$email->id;
+	}
 
 
-    $imap_url =~ /;UID=(\d+)/ or
-      die "Couldn't extract uid from url $imap_url";
-    my $uid = $1;
+	$imap_url =~ /;UID=(\d+)/ or
+		die "Couldn't extract uid from url $imap_url";
+	my $uid = $1;
 
-    my $part = bless
-    {
-     email => $email,
-     head => $head,       # may be undef
-     imap_url => $imap_url,
-     uid => $uid,
-    }, $class;
-    weaken( $part->{'email'} );
+	my $part = bless
+	{
+	 email => $email,
+	 head => $head,								# may be undef
+	 imap_url => $imap_url,
+	 uid => $uid,
+	}, $class;
+	weaken( $part->{'email'} );
 
-    return $part;
+	return $part;
 }
 
 
@@ -88,29 +88,29 @@ sub new_by_email
 
 sub new_by_imap_url
 {
-    die "calls to ->email still exists";
+	die "calls to ->email still exists";
 
-    my( $class, $imap_url, $head ) = @_;
+	my( $class, $imap_url, $head ) = @_;
 
-    unless( $imap_url )
-    {
-	confess "imap_url missing";
-    }
+	unless( $imap_url )
+	{
+		confess "imap_url missing";
+	}
 
 
-    $imap_url =~ /;UID=(\d+)/ or
-      die "Couldn't extract uid from url $imap_url";
-    my $uid = $1;
+	$imap_url =~ /;UID=(\d+)/ or
+		die "Couldn't extract uid from url $imap_url";
+	my $uid = $1;
 
-    my $part = bless
-    {
-     head => $head,       # may be undef
-     imap_url => $imap_url,
-     uid => $uid,
-    }, $class;
-    weaken( $part->{'email'} );
+	my $part = bless
+	{
+	 head => $head,								# may be undef
+	 imap_url => $imap_url,
+	 uid => $uid,
+	}, $class;
+	weaken( $part->{'email'} );
 
-    return $part;
+	return $part;
 }
 
 
@@ -122,9 +122,9 @@ sub new_by_imap_url
 
 sub head_complete
 {
-    return $_[0]->{'head'} ||=
-      RDF::Base::Email::IMAP::Head->
-	  new_by_uid( $_[0]->folder, $_[0]->uid );
+	return $_[0]->{'head'} ||=
+		RDF::Base::Email::IMAP::Head->
+			new_by_uid( $_[0]->folder, $_[0]->uid );
 }
 
 
@@ -136,13 +136,13 @@ sub head_complete
 
 sub folder
 {
-    if( my $url_plain = $_[0]->{'imap_url'} )
-    {
-	return RDF::Base::Email::IMAP::Folder->get_by_url($url_plain);
-    }
+	if ( my $url_plain = $_[0]->{'imap_url'} )
+	{
+		return RDF::Base::Email::IMAP::Folder->get_by_url($url_plain);
+	}
 
-    confess "IMAP email without URL";
-    return undef;
+	confess "IMAP email without URL";
+	return undef;
 }
 
 
@@ -156,29 +156,29 @@ Is the content of this email availible?
 
 sub exist
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    unless( defined $part->{'exist'} )
-    {
-	my $folder = $part->folder;
-        unless( $folder )
-        {
-            return $part->{'exist'} = 0;
-        }
-
-	my $uid = $part->{'uid'};
-	if( $folder->imap_cmd('message_uid',$uid) )
+	unless ( defined $part->{'exist'} )
 	{
-	    $part->{'exist'} = 1;
-	}
-	else
-	{
-	    debug "Doesn't message $uid exist? $@";
-	    $part->{'exist'} = 0;
-	}
-    }
+		my $folder = $part->folder;
+		unless( $folder )
+		{
+			return $part->{'exist'} = 0;
+		}
 
-    return $part->{'exist'};
+		my $uid = $part->{'uid'};
+		if ( $folder->imap_cmd('message_uid',$uid) )
+		{
+			$part->{'exist'} = 1;
+		}
+		else
+		{
+			debug "Doesn't message $uid exist?";
+			$part->{'exist'} = 0;
+		}
+	}
+
+	return $part->{'exist'};
 }
 
 
@@ -190,7 +190,7 @@ sub exist
 
 sub uid
 {
-    return $_[0]->{'uid'};
+	return $_[0]->{'uid'};
 }
 
 
@@ -202,7 +202,7 @@ sub uid
 
 sub top
 {
-    return $_[0];
+	return $_[0];
 }
 
 
@@ -210,7 +210,7 @@ sub top
 
 =head2 generate_name
 
-  $part->generate_name
+	$part->generate_name
 
 Generates a non-unique message name for use for attachemnts, et al
 
@@ -218,9 +218,9 @@ Generates a non-unique message name for use for attachemnts, et al
 
 sub generate_name
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    return  "email".$part->uid;
+	return	"email".$part->uid;
 }
 
 
@@ -228,9 +228,9 @@ sub generate_name
 
 =head2 url_path
 
-  $part->url_path
+	$part->url_path
 
-  $part->url_path( $name, $type )
+	$part->url_path( $name, $type )
 
 Default C<$type> is message/rfc822.
 
@@ -240,27 +240,27 @@ Default C<$name> is the subject
 
 sub url_path
 {
-    my( $part, $subject, $type_name ) = @_;
+	my( $part, $subject, $type_name ) = @_;
 
-    my $email = $part->email;
-    my $nid = $email->id;
+	my $email = $part->email;
+	my $nid = $email->id;
 
-    # Format subject as a filename
-    $subject ||= $part->body_head->parsed_subject->plain;
-    $subject ||= $part->head->parsed_subject->plain;
+	# Format subject as a filename
+	$subject ||= $part->body_head->parsed_subject->plain;
+	$subject ||= $part->head->parsed_subject->plain;
 
-    $subject =~ s/\// /g;
-    $subject =~ s/\.\s*/ /g;
-    $type_name ||= "message/rfc822";
-    my $safe = $part->filename_safe($subject,$type_name);
+	$subject =~ s/\// /g;
+	$subject =~ s/\.\s*/ /g;
+	$type_name ||= "message/rfc822";
+	my $safe = $part->filename_safe($subject,$type_name);
 
-    my $s = $Para::Frame::REQ->session
-      or die "Session not found";
-    $s->{'email_imap'}{$nid}{$safe} = '-';
-    my $path = $safe;
+	my $s = $Para::Frame::REQ->session
+		or die "Session not found";
+	$s->{'email_imap'}{$nid}{$safe} = '-';
+	my $path = $safe;
 
-    my $email_url = $email->url_path;
-    return $email_url . $path;
+	my $email_url = $email->url_path;
+	return $email_url . $path;
 }
 
 
@@ -272,52 +272,52 @@ sub url_path
 
 sub body_as_html
 {
-    my( $part, $args ) = @_;
+	my( $part, $args ) = @_;
 
-    return "<strong>not found</strong>" unless $part->exist;
-
-
-    my $bp = $part;
-
-    my $type = $bp->type;
-    my $renderer = $bp->select_renderer($type);
-    unless( $renderer )
-    {
-	debug "No renderer defined for $type";
-	return "<code>No renderer defined for <strong>$type</strong></code>";
-    }
+	return "<strong>not found</strong>" unless $part->exist;
 
 
-    # Register email in session
-    my $req = $Para::Frame::REQ;
-    my $s = $req->session
-      or die "Session not found";
-    my $nid = $part->email->id;
-    $s->{'email_imap'}{$nid} ||= {};
+	my $bp = $part;
 
-    $args ||= {};
-
-#    debug datadump( $part->struct, 20);
-#    debug $part->desig;
-
-    my $minimal = $args->{'minimal'} || 0;
+	my $type = $bp->type;
+	my $renderer = $bp->select_renderer($type);
+	unless( $renderer )
+	{
+		debug "No renderer defined for $type";
+		return "<code>No renderer defined for <strong>$type</strong></code>";
+	}
 
 
-    my $top_path = $part->url_path;
-    my $msg = "";
+	# Register email in session
+	my $req = $Para::Frame::REQ;
+	my $s = $req->session
+		or die "Session not found";
+	my $nid = $part->email->id;
+	$s->{'email_imap'}{$nid} ||= {};
 
-    unless( $minimal )
-    {
-        $msg .= "<a href=\"$top_path\">Download email</a>\n";
-        my $head_path = $part->email->url_path. ".head";
-        $msg .= "| <a href=\"$head_path\">View Headers</a>\n";
-    }
+	$args ||= {};
 
-    $msg .= $bp->$renderer($args);
+#		 debug datadump( $part->struct, 20);
+#		 debug $part->desig;
 
-    $msg .= $bp->attachments_as_html() unless $minimal;
+	my $minimal = $args->{'minimal'} || 0;
 
-    return $msg;
+
+	my $top_path = $part->url_path;
+	my $msg = "";
+
+	unless( $minimal )
+	{
+		$msg .= "<a href=\"$top_path\">Download email</a>\n";
+		my $head_path = $part->email->url_path. ".head";
+		$msg .= "| <a href=\"$head_path\">View Headers</a>\n";
+	}
+
+	$msg .= $bp->$renderer($args);
+
+	$msg .= $bp->attachments_as_html() unless $minimal;
+
+	return $msg;
 }
 
 
@@ -329,12 +329,12 @@ sub body_as_html
 
 sub body_raw
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $uid = $part->top->uid;
-    my $folder = $part->top->folder;
+	my $uid = $part->top->uid;
+	my $folder = $part->top->folder;
 
-    return \ $folder->imap_cmd('body_string', $uid);
+	return \ $folder->imap_cmd('body_string', $uid);
 }
 
 
@@ -346,12 +346,12 @@ sub body_raw
 
 sub raw
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $folder = $part->folder;
-    my $uid = $part->uid;
-    debug "Getting raw email from IMAP";
-    return \ $folder->imap_cmd('message_string', $uid);
+	my $folder = $part->folder;
+	my $uid = $part->uid;
+	debug "Getting raw email from IMAP";
+	return \ $folder->imap_cmd('message_string', $uid);
 }
 
 
@@ -363,7 +363,7 @@ sub raw
 
 sub raw_part
 {
-    return RDF::Base::Email::Raw::Part->new( $_[0]->raw );
+	return RDF::Base::Email::Raw::Part->new( $_[0]->raw );
 }
 
 
@@ -375,39 +375,39 @@ sub raw_part
 
 sub struct
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    if( $part->{'struct'} )
-    {
-	return $part->{'struct'};
-    }
+	if ( $part->{'struct'} )
+	{
+		return $part->{'struct'};
+	}
 
-    my $folder = $part->folder or confess "no folder";
-    my $uid = $part->uid;
+	my $folder = $part->folder or confess "no folder";
+	my $uid = $part->uid;
 
-    my $res = $folder->imap_cmd('fetch', $uid,"bodystructure");
+	my $res = $folder->imap_cmd('fetch', $uid,"bodystructure");
 
-#    debug "FETCHED:\n@$res\n---\n";
+#		 debug "FETCHED:\n@$res\n---\n";
 
-    do
-    {
-	shift @$res;
-	die "No BODYSTRUCTURE found in response" unless scalar(@$res);
-    } until( $res->[0] =~ /BODYSTRUCTURE/ );
-    pop @$res;
-    my $raw = join "", @$res;
-    $raw =~ s/^\* \d+ FETCH \(UID \d+ BODYSTRUCTURE/(BODYSTRUCTURE/;
-#    debug "Cleanded:\n$raw\n";
+	do
+	{
+		shift @$res;
+		die "No BODYSTRUCTURE found in response" unless scalar(@$res);
+	} until ( $res->[0] =~ /BODYSTRUCTURE/ );
+	pop @$res;
+	my $raw = join "", @$res;
+	$raw =~ s/^\* \d+ FETCH \(UID \d+ BODYSTRUCTURE/(BODYSTRUCTURE/;
+#		 debug "Cleanded:\n$raw\n";
 
-    my $struct = IMAP::BodyStructure->new( $raw );
-    unless( $struct )
-    {
-	die "No struct returned for\n$raw";
-    }
+	my $struct = IMAP::BodyStructure->new( $raw );
+	unless( $struct )
+	{
+		die "No struct returned for\n$raw";
+	}
 
-#    debug datadump($struct); ### DEBUG
+#		 debug datadump($struct); ### DEBUG
 
-    return $part->{'struct'} = $struct;
+	return $part->{'struct'} = $struct;
 }
 
 
@@ -419,13 +419,13 @@ sub struct
 
 sub see
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $uid = $part->uid;
-    my $folder = $part->folder;
+	my $uid = $part->uid;
+	my $folder = $part->folder;
 
-    debug "  Mark email $uid as seen";
-    $folder->imap_cmd('see', $uid);
+	debug "	 Mark email $uid as seen";
+	$folder->imap_cmd('see', $uid);
 }
 
 
@@ -437,15 +437,15 @@ sub see
 
 sub unsee
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $uid = $part->uid;
+	my $uid = $part->uid;
 
-    debug "Mark email as unseen";
-    my $folder = $part->folder;
+	debug "Mark email as unseen";
+	my $folder = $part->folder;
 
-    $folder->imap_cmd('unset_flag', "\\Seen", $uid);
-    return 1;
+	$folder->imap_cmd('unset_flag', "\\Seen", $uid);
+	return 1;
 }
 
 
@@ -457,23 +457,23 @@ sub unsee
 
 sub is_seen
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $uid = $part->uid;
+	my $uid = $part->uid;
 
-    my $folder = $part->folder;
-#    my $flags = $folder->imap->flags($uid)
-#      or confess $folder->diag("Could not get flags of email $uid");
-    my $flags = $folder->imap_cmd('flags', $uid);
-    foreach my $flag ( @$flags )
-    {
-	if( $flag eq '\\Seen' )
+	my $folder = $part->folder;
+#		 my $flags = $folder->imap->flags($uid)
+#			 or confess $folder->diag("Could not get flags of email $uid");
+	my $flags = $folder->imap_cmd('flags', $uid);
+	foreach my $flag ( @$flags )
 	{
-	    return 1;
+		if ( $flag eq '\\Seen' )
+		{
+			return 1;
+		}
 	}
-    }
 
-    return 0;
+	return 0;
 }
 
 
@@ -485,23 +485,23 @@ sub is_seen
 
 sub is_flagged
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    my $uid = $part->uid;
+	my $uid = $part->uid;
 
-    my $folder = $part->folder;
-#    my $flags = $folder->imap->flags($uid)
-#      or confess $folder->diag("Could not get flags of email $uid");
-    my $flags = $folder->imap_cmd('flags', $uid);
-    foreach my $flag ( @$flags )
-    {
-	if( $flag eq '\\Flagged' )
+	my $folder = $part->folder;
+#		 my $flags = $folder->imap->flags($uid)
+#			 or confess $folder->diag("Could not get flags of email $uid");
+	my $flags = $folder->imap_cmd('flags', $uid);
+	foreach my $flag ( @$flags )
 	{
-	    return 1;
+		if ( $flag eq '\\Flagged' )
+		{
+			return 1;
+		}
 	}
-    }
 
-    return 0;
+	return 0;
 }
 
 
@@ -513,11 +513,11 @@ sub is_flagged
 
 sub sysdesig
 {
-    my( $part ) = @_;
+	my( $part ) = @_;
 
-    return $part->SUPER::sysdesig() unless $part->folder;
-    return sprintf "(%d) %s", $part->uid,
-      ($part->head->parsed_subject->plain || '<no subject>');
+	return $part->SUPER::sysdesig() unless $part->folder;
+	return sprintf "(%d) %s", $part->uid,
+		($part->head->parsed_subject->plain || '<no subject>');
 }
 
 ##############################################################################
@@ -528,7 +528,7 @@ sub sysdesig
 
 sub parent
 {
-    return is_undef;
+	return is_undef;
 }
 
 
@@ -540,7 +540,7 @@ sub parent
 
 sub is_top
 {
-    return 1;
+	return 1;
 }
 
 
@@ -558,25 +558,32 @@ sub is_top
 package IMAP::BodyStructure;
 no warnings 'redefine';
 sub _get_nstring(\$) {
-#    warn "in patched _get_nstring";
+#		 warn "in patched _get_nstring";
 
-    my $str = $_[0];
-    $$str =~ /\G\s+/gc;
-    if ($$str =~ /\GNIL/gc) {
-        return undef;
-    } elsif ($$str =~ m/\G(\"(?>[^\\\"]*(?:\\.[^\\\"]*)*)\")/gc) {
-        return _unescape($1);
-    } elsif ($$str =~ /\G\{(\d+)\}\r\n/gc) {
-        my $pos = pos($$str);
-        my $data = substr $$str, $pos, $1;
-        pos($$str) = $pos + $1;
-        return $data;
-        ### Changed to accept spaces
-    } elsif ($$str =~ /\G([^"\(\)\{\%\*\"\\\x00-\x1F]+)/gc) {
-#    } elsif ($$str =~ /\G([^"\(\)\{ \%\*\"\\\x00-\x1F]+)/gc) {
-        return $1;
-    }
-    return 0;
+	my $str = $_[0];
+	$$str =~ /\G\s+/gc;
+	if ($$str =~ /\GNIL/gc)
+	{
+		return undef;
+	}
+	elsif ($$str =~ m/\G(\"(?>[^\\\"]*(?:\\.[^\\\"]*)*)\")/gc)
+	{
+		return _unescape($1);
+	}
+	elsif ($$str =~ /\G\{(\d+)\}\r\n/gc)
+	{
+		my $pos = pos($$str);
+		my $data = substr $$str, $pos, $1;
+		pos($$str) = $pos + $1;
+		return $data;
+		### Changed to accept spaces
+	}
+	elsif ($$str =~ /\G([^"\(\)\{\%\*\"\\\x00-\x1F]+)/gc)
+	{
+#		 } elsif ($$str =~ /\G([^"\(\)\{ \%\*\"\\\x00-\x1F]+)/gc) {
+		return $1;
+	}
+	return 0;
 }
 package IMAP::BodyStructure::Envelope;
 *_get_nstring = \&IMAP::BodyStructure::_get_nstring;
