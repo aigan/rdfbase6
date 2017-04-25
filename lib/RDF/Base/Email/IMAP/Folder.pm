@@ -378,7 +378,7 @@ sub imap_cmd
 
 	my $imap = $folder->{'imap'};
 
-	debug "imap_cmd $cmd " . join(' ', map((defined ? $_ : 'NUL'), @_));
+	debug "imap_cmd $cmd " . join(' ', map((defined $_ ? $_ : 'NUL'), @_));
 
 	unless( $imap and
 					eval{ $imap->can('IsConnected') } and
