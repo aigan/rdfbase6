@@ -12,8 +12,7 @@ package RDF::Base::Renderer::GraphViz;
 #
 #=============================================================================
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 use base 'Para::Frame::Renderer::Custom';
 

@@ -5,7 +5,7 @@ package RDF::Base::Translatable;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2011 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2011-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -18,8 +18,7 @@ RDF::Base::Translatable
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 
 use CGI;

@@ -5,15 +5,14 @@ package RDF::Base::Action::arc_activate;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2016 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 
 use RDF::Base::Utils qw( );

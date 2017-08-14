@@ -1,6 +1,20 @@
 package RDF::Base::Action::cms_page;
+#=============================================================================
+#
+# AUTHOR
+#   Fredrik Liljegren   <fredrik@paranormal.se>
+#
+# COPYRIGHT
+#   Copyright (C) 2017 Avisita AB.  All Rights Reserved.
+#
+#   This module is free software; you can redistribute it and/or
+#   modify it under the same terms as Perl itself.
+#
+#=============================================================================
 
-use strict;
+use 5.014;
+use warnings;
+
 use RDF::Base::Utils qw( string parse_propargs );
 
 sub handler

@@ -5,7 +5,7 @@ package RDF::Base::Renderer::Email::From_email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009-2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -18,8 +18,7 @@ RDF::Base::Renderer::Email::From_email - Renders an email for sending
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 use base qw( Para::Frame::Renderer::Email );
 

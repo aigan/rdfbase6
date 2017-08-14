@@ -6,14 +6,15 @@ package RDF::Base::Plugins;
 #   Fredrik Liljegren <fredrik@liljegren.org>
 #
 # COPYRIGHT
-#   Copyright (C) 2010 Fredrik Liljegren.
+#   Copyright (C) 2010-2017 Fredrik Liljegren.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
-use strict;
+use 5.014;
+use warnings;
 
 use File::stat;
 use Fcntl ':mode';

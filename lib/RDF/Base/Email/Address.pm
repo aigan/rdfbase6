@@ -5,7 +5,7 @@ package RDF::Base::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014-2016 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -18,8 +18,7 @@ RDF::Base::Email::Address
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 no if $] >= 5.018, warnings => "experimental";
 #use experimental qw(smartmatch); # Not working before 5.18

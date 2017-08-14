@@ -1,7 +1,7 @@
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-BEGIN { require 5.010 }
+BEGIN { require 5.014 }
 
 use strict;
 use warnings;
@@ -131,7 +131,7 @@ WriteMakefile(
 	      'AUTHOR'         => 'Jonas Liljegren <jonas@paranormal.se>',
  	      'PREREQ_PM'      =>
 	      {
-		  'Para::Frame'                => 1.21,
+		  'Para::Frame'                => 2.05,
 #	          'Template::PopupTreeSelect'  => 0.90,
 	          'Clone'                      => 0.18,
 	          'DBD::Pg'                    => 1.49,

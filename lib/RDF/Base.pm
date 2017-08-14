@@ -1,4 +1,4 @@
-package RDF::Base;
+package RDF::Base 6.82;
 #=============================================================================
 #
 # AUTHOR
@@ -12,15 +12,14 @@ package RDF::Base;
 #
 #=============================================================================
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 
 use JSON;
 use IMAP::BodyStructure 1.02;
 use LWP::UserAgent;
 
-use Para::Frame 2.04;
+use Para::Frame 2.05;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 use Para::Frame::Site;
@@ -44,10 +43,6 @@ use RDF::Base::Setup;
 use RDF::Base::Plugins;
 use RDF::Base::Domain;
 use RDF::Base::Email::Address;
-
-
-
-our $VERSION = "6.81";
 
 
 =head1 NAME

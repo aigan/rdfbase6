@@ -18,11 +18,10 @@ RDF::Base::Email::Classifier - Analyzes and classifies emails
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
-use feature "state";
 use utf8;
+
 use constant R => 'RDF::Base::Resource';
 use constant EA => 'RDF::Base::Email::Address';
 use constant LT => 'RDF::Base::Literal::Time';

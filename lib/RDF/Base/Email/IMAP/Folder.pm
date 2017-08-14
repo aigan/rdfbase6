@@ -18,8 +18,7 @@ RDF::Base::Email::IMAP::Folder
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 
 no warnings 'portable';

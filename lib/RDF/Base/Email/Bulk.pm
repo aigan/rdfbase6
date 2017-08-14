@@ -5,7 +5,7 @@ package RDF::Base::Email::Bulk;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2010-2014 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2010-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -20,8 +20,7 @@ RDF::Base::Email::Bulk
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 use utf8;
 

@@ -5,7 +5,7 @@ package RDF::Base::Action::node_multi;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2016 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2016-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -13,8 +13,7 @@ package RDF::Base::Action::node_multi;
 #=============================================================================
 
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 
 use Para::Frame;

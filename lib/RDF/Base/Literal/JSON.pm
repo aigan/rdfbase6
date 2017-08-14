@@ -5,7 +5,7 @@ package RDF::Base::Literal::JSON;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2015 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2015-2017 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -18,8 +18,7 @@ RDF::Base::Literal::JSON
 
 =cut
 
-use 5.010;
-use strict;
+use 5.014;
 use warnings;
 use base qw(  RDF::Base::Literal );
 
