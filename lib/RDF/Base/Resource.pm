@@ -6952,7 +6952,7 @@ sub wu_select
 			if ( $set_value )
 			{
 				$out .= ' selected="selected"'
-					if ( $using_default eq $item->id or
+					if ( ( $using_default and $using_default eq $item->id ) or
 							 $subj->prop( $pred_name, $item, 'adirect' ) );
 			}
 
@@ -7023,7 +7023,7 @@ sub wu_select
 			if ( $set_value )
 			{
 				$out .= ' selected="selected"'
-					if ( $using_default eq $item->id or
+					if ( ( $using_default and $using_default eq $item->id ) or
 							 $subj->prop( $pred_name, $item, 'adirect' ) );
 			}
 

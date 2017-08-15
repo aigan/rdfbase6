@@ -152,7 +152,8 @@ sub valclean
     $value =~ tr[àáâãéèêëíìïîóòôõúùüûýÿðþß]
                 [aaaaeeeeiiiioooouuuuyydps];
     $value =~ tr/`'/'/;
-    $value =~ s/\b(och|and|o|o\.|og)\b/&/g;
+    $value =~ s/\b(och|and|og|o\.)\b/&/g;
+    $value =~ s/\bo\b/&/g; # avoid strange unicode warnings
     $value =~ s/\s\'n\b/&/g;
     $value =~ s/hote(ls|ller|lli|llin|llit|ll|l)/hotel/g;
 

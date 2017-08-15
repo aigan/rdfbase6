@@ -21,7 +21,7 @@ RDF::Base::Literal::String
 use 5.014;
 use warnings;
 no if $] >= 5.018, warnings => "experimental";
-use utf8;
+
 use base qw( RDF::Base::Literal );
 use overload
   'cmp'  => 'cmp_string',
@@ -186,6 +186,8 @@ sub new_from_db
 	}
 	elsif ( defined $val )
 	{
+		utf8::upgrade( $val );
+
 		if ( $val =~ $Para::Frame::Utils::latin1_as_utf8 )
 		{
 #	    cluck "UNDECODED UTF8 in DB: $val)";
@@ -202,10 +204,6 @@ sub new_from_db
 #		$val = $res;
 #		debug "Conversion result: $val";
 #	    }
-		}
-		else
-		{
-			utf8::upgrade( $val );
 		}
 	}
 
