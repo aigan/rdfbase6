@@ -2622,7 +2622,7 @@ sub table_row
 			default
 			{
 				my $val = ( $is_rev ? $check_subj->$col() : $item->$col() ) // '';
-				$out .= $val;
+				$out .= CGI->escapeHTML( $val );
 			}
 		}
 		$out .= "</td>";
