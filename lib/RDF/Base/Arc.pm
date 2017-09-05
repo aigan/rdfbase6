@@ -2619,10 +2619,15 @@ sub table_row
 				$out .= $item->$meta() // '';
 			}
 
+			when($col eq 'desig')
+			{
+				$out .= $item->as_html;
+			}
+
 			default
 			{
 				my $val = ( $is_rev ? $check_subj->$col() : $item->$col() ) // '';
-				$out .= CGI->escapeHTML( $val );
+				$out .= $val;
 			}
 		}
 		$out .= "</td>";
