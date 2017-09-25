@@ -2,13 +2,13 @@ package RDF::Base 6.82;
 #=============================================================================
 #
 # AUTHOR
-#   Jonas Liljegren   <jonas@paranormal.se>
+#		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
+#		Copyright (C) 2005-2017 Avisita AB.	 All Rights Reserved.
 #
-#   This module is free software; you can redistribute it and/or
-#   modify it under the same terms as Perl itself.
+#		This module is free software; you can redistribute it and/or
+#		modify it under the same terms as Perl itself.
 #
 #=============================================================================
 
@@ -60,23 +60,23 @@ See L<RDF::Base::Object> for the baseclass for most classes.
 
 # Used in RDF::Base::Resource->first_bless()
 our %LOOKUP_CLASS_FOR =
-  (
-   'RDF::Base::Resource'   => 1,
-   'RDF::Base::User::Meta' => 1,
-  );
+	(
+	 'RDF::Base::Resource'	 => 1,
+	 'RDF::Base::User::Meta' => 1,
+	);
 
-our  $IN_STARTUP = 1;           # Set to 0 after db init
-our  $VACUUM_ALL = 0;           # Only for initialization and repair
+our	 $IN_STARTUP = 1;						# Set to 0 after db init
+our	 $VACUUM_ALL = 0;						# Only for initialization and repair
 
 #########################################################################
 
 BEGIN
 {
-    $Para::Frame::HOOK{'on_rdfbase_ready'} = [];
+	$Para::Frame::HOOK{'on_rdfbase_ready'} = [];
 }
 
 #########################################################################
-################################  Constructors  #########################
+################################	Constructors	#########################
 
 =head1 Constructors
 
@@ -88,88 +88,88 @@ These can be called with the class name
 
 sub init
 {
-    my( $this ) = @_;
+	my( $this ) = @_;
 
-    warn "Adding hooks for RDF::Base\n";
+	warn "Adding hooks for RDF::Base\n";
 
-    # Just in case we temporarily switched to root and got an exception
-    Para::Frame->add_hook('on_error_detect', sub
-                          {
-                              RDF::Base::User->revert_from_temporary_user();
-                              if ( $Para::Frame::U )
-                              {
-                                  $Para::Frame::U->set_default_propargs(undef);
-                              }
-                          });
+	# Just in case we temporarily switched to root and got an exception
+	Para::Frame->add_hook('on_error_detect', sub
+												{
+													RDF::Base::User->revert_from_temporary_user();
+													if ( $Para::Frame::U )
+													{
+														$Para::Frame::U->set_default_propargs(undef);
+													}
+												});
 
-    Para::Frame->add_hook('on_startup', \&init_on_startup);
+	Para::Frame->add_hook('on_startup', \&init_on_startup);
 
-    # Can't unlock all arcs in the middle of an operation. Wait until
-    # we are done. Also wait with resources...
-    #
-#    Para::Frame->add_hook('before_db_commit', sub
-#			  {
-#			      RDF::Base::Resource->commit();
-#			      RDF::Base::Arc->unlock_all();
-#			  });
+	# Can't unlock all arcs in the middle of an operation. Wait until
+	# we are done. Also wait with resources...
+	#
+#		 Para::Frame->add_hook('before_db_commit', sub
+#				{
+#						RDF::Base::Resource->commit();
+#						RDF::Base::Arc->unlock_all();
+#				});
 
-    Para::Frame->add_hook('after_db_rollback', sub
-                          {
-                              RDF::Base::Resource->rollback();
-                              RDF::Base::Arc->rollback();
-                              RDF::Base::Email::Address->rollback();
-                              RDF::Base::Domain->rollback();
-                          });
+	Para::Frame->add_hook('after_db_rollback', sub
+												{
+													RDF::Base::Resource->rollback();
+													RDF::Base::Arc->rollback();
+													RDF::Base::Email::Address->rollback();
+													RDF::Base::Domain->rollback();
+												});
 
-    Para::Frame->add_hook('done', \&on_done);
+	Para::Frame->add_hook('done', \&on_done);
 
-    Para::Frame->add_hook('busy_background_job', \&add_background_jobs);
+	Para::Frame->add_hook('busy_background_job', \&add_background_jobs);
 
-    $Para::Frame::CFG->{'search_collection_class'} ||=
-      'RDF::Base::Search::Collection';
-    $Para::Frame::CFG->{'search_result_class'} ||=
-      'RDF::Base::Search::Result';
-    $Para::Frame::CFG->{'email_subject_class'} ||=
-      'RDF::Base::Literal::Email::Subject';
-    $Para::Frame::CFG->{'email_class'} ||=
-      'RDF::Base::Email';
-    $Para::Frame::CFG->{'daemons'} ||= [];
-
-
-
-    my $global_params =
-    {
-     rb              => bless( {}, 'RDF::Base'),
-     find            => sub{ RDF::Base::Resource->find(@_) },
-     get             => sub{ RDF::Base::Resource->get(@_) },
-     create          => sub{ RDF::Base::Resource->create(@_) },
-     set_one         => sub{ RDF::Base::Resource->set_one(@_) },
-     find_set        => sub{ RDF::Base::Resource->find_set(@_) },
-     new_search      => sub{ RDF::Base::Search->new(@_) },
-     query_desig     => \&RDF::Base::Utils::query_desig,
-     C               => RDF::Base::Constants->new,
-     timediff        => \&Para::Frame::Utils::timediff,
-     timeobj         => sub{ RDF::Base::Literal::Time->get( @_ ) },
-     literal         => sub{ RDF::Base::Literal->new(@_) },
-     parse_query_props => \&RDF::Base::Utils::parse_query_props,
-     searchobj       => sub{ $Para::Frame::REQ->session->search_collection },
-     to_json         => \&JSON::to_json,
-     from_json       => \&JSON::from_json,
-     plugins         => sub{ RDF::Base::Plugins->new(@_) },
-    };
-    Para::Frame->add_global_tt_params( $global_params );
-
-    # Adds hanlding of .js files
-    #
-    my $burner_plain = Para::Frame::Burner->get_by_type('plain');
-    $burner_plain->add_ext('js');
+	$Para::Frame::CFG->{'search_collection_class'} ||=
+		'RDF::Base::Search::Collection';
+	$Para::Frame::CFG->{'search_result_class'} ||=
+		'RDF::Base::Search::Result';
+	$Para::Frame::CFG->{'email_subject_class'} ||=
+		'RDF::Base::Literal::Email::Subject';
+	$Para::Frame::CFG->{'email_class'} ||=
+		'RDF::Base::Email';
+	$Para::Frame::CFG->{'daemons'} ||= [];
 
 
-    RDF::Base::Widget->on_configure();
 
-#    warn "Done adding hooks for RDF::Base\n";
+	my $global_params =
+	{
+	 rb							 => bless( {}, 'RDF::Base'),
+	 find						 => sub{ RDF::Base::Resource->find(@_) },
+	 get						 => sub{ RDF::Base::Resource->get(@_) },
+	 create					 => sub{ RDF::Base::Resource->create(@_) },
+	 set_one				 => sub{ RDF::Base::Resource->set_one(@_) },
+	 find_set				 => sub{ RDF::Base::Resource->find_set(@_) },
+	 new_search			 => sub{ RDF::Base::Search->new(@_) },
+	 query_desig		 => \&RDF::Base::Utils::query_desig,
+	 C							 => RDF::Base::Constants->new,
+	 timediff				 => \&Para::Frame::Utils::timediff,
+	 timeobj				 => sub{ RDF::Base::Literal::Time->get( @_ ) },
+	 literal				 => sub{ RDF::Base::Literal->new(@_) },
+	 parse_query_props => \&RDF::Base::Utils::parse_query_props,
+	 searchobj			 => sub{ $Para::Frame::REQ->session->search_collection },
+	 to_json				 => \&JSON::to_json,
+	 from_json			 => \&JSON::from_json,
+	 plugins				 => sub{ RDF::Base::Plugins->new(@_) },
+	};
+	Para::Frame->add_global_tt_params( $global_params );
 
-    return 1;
+	# Adds hanlding of .js files
+	#
+	my $burner_plain = Para::Frame::Burner->get_by_type('plain');
+	$burner_plain->add_ext('js');
+
+
+	RDF::Base::Widget->on_configure();
+
+#		 warn "Done adding hooks for RDF::Base\n";
+
+	return 1;
 }
 
 
@@ -189,48 +189,48 @@ Runs hook "on_rdfbase_ready" after init.
 
 sub init_on_startup
 {
-#    warn "init_on_startup\n";
+#		 warn "init_on_startup\n";
 
-    if ( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
-           and $ARGV[1] and $ARGV[1] eq 'clear' )
-         or not $RDF::dbix->table('arc') )
-    {
-        RDF::Base::Setup->setup_db();
-    }
+	if ( ( $ARGV[0] and $ARGV[0] eq 'setup_db'
+				 and $ARGV[1] and $ARGV[1] eq 'clear' )
+			 or not $RDF::dbix->table('arc') )
+	{
+		RDF::Base::Setup->setup_db();
+	}
 
-    RDF::Base::Setup->upgrade_tables();
-    RDF::Base::Resource->on_startup();
-    RDF::Base::Literal->on_startup();
-    RDF::Base::Literal::Class->on_startup();
-    RDF::Base::Constants->on_startup();
+	RDF::Base::Setup->upgrade_tables();
+	RDF::Base::Resource->on_startup();
+	RDF::Base::Literal->on_startup();
+	RDF::Base::Literal::Class->on_startup();
+	RDF::Base::Constants->on_startup();
 
-    my $cfg = $Para::Frame::CFG;
+	my $cfg = $Para::Frame::CFG;
 
-    $cfg->{'rb_default_source'} ||= 'rdfbase';
-    $cfg->{'rb_default_read_access'} ||= 'public';
-    $cfg->{'rb_default_write_access'} ||= 'contentadmin_group';
+	$cfg->{'rb_default_source'} ||= 'rdfbase';
+	$cfg->{'rb_default_read_access'} ||= 'public';
+	$cfg->{'rb_default_write_access'} ||= 'contentadmin_group';
 
-    foreach my $key (qw(rb_default_source rb_default_read_access
-                        rb_default_write_access))
-    {
-        my $val = $cfg->{$key};
-        unless( ref $val )
-        {
-            $cfg->{$key} = RDF::Base::Resource->get_by_label($val);
-        }
-    }
+	foreach my $key (qw(rb_default_source rb_default_read_access
+											rb_default_write_access))
+	{
+		my $val = $cfg->{$key};
+		unless( ref $val )
+		{
+			$cfg->{$key} = RDF::Base::Resource->get_by_label($val);
+		}
+	}
 
 
-    RDF::Base::Setup->upgrade_db();
+	RDF::Base::Setup->upgrade_db();
 
-    RDF::Base::Class->on_startup();
+	RDF::Base::Class->on_startup();
 
-    $RDF::Base::IN_STARTUP = 0;
-    $RDF::Base::IN_SETUP_DB = 0;
+	$RDF::Base::IN_STARTUP = 0;
+	$RDF::Base::IN_SETUP_DB = 0;
 
-    ########################################
+	########################################
 
-    Para::Frame->run_hook( $Para::Frame::REQ, 'on_rdfbase_ready');
+	Para::Frame->run_hook( $Para::Frame::REQ, 'on_rdfbase_ready');
 }
 
 
@@ -244,7 +244,7 @@ Returns class object for L<RDF::Base::Resource>
 
 sub Resource ()
 {
-    return 'RDF::Base::Resource';
+	return 'RDF::Base::Resource';
 }
 
 
@@ -258,7 +258,7 @@ Returns class object for L<RDF::Base::Arc>
 
 sub Arc ()
 {
-    return 'RDF::Base::Arc';
+	return 'RDF::Base::Arc';
 }
 
 
@@ -272,7 +272,7 @@ Returns class object for L<RDF::Base::Arc::Lim>
 
 sub Arc_Lim ()
 {
-    return bless {}, 'RDF::Base::Arc::Lim';
+	return bless {}, 'RDF::Base::Arc::Lim';
 }
 
 
@@ -286,7 +286,7 @@ Returns class object for L<RDF::Base::Pred>
 
 sub Pred ()
 {
-    return 'RDF::Base::Pred';
+	return 'RDF::Base::Pred';
 }
 
 
@@ -300,7 +300,7 @@ Returns class object for L<RDF::Base::Constants>
 
 sub Constants ()
 {
-    return 'RDF::Base::Constants';
+	return 'RDF::Base::Constants';
 }
 
 
@@ -316,7 +316,7 @@ See also L<RDF::Base::Utils/string>
 
 sub Literal ()
 {
-    return 'RDF::Base::Literal';
+	return 'RDF::Base::Literal';
 }
 
 
@@ -331,7 +331,7 @@ specified by $Para::Frame::CFG->{'search_collection_class'}
 
 sub Search_Collection ()
 {
-    return $Para::Frame::CFG->{'search_collection_class'};
+	return $Para::Frame::CFG->{'search_collection_class'};
 }
 
 
@@ -339,15 +339,15 @@ sub Search_Collection ()
 
 =head2 on_done
 
-  Runs after each request
+	Runs after each request
 
 =cut
 
 sub on_done ()
 {
-    RDF::Base::Arc->unlock_all();
-    RDF::Base::Resource->commit();
-    $RDF::dbix->commit();
+	RDF::Base::Arc->unlock_all();
+	RDF::Base::Resource->commit();
+	$RDF::dbix->commit();
 }
 
 
@@ -355,24 +355,24 @@ sub on_done ()
 
 =head2 add_background_jobs
 
-  Runs after each request
+	Runs after each request
 
 =cut
 
 sub add_background_jobs
 {
-    my( $delta, $sysload ) = @_;
+	my( $delta, $sysload ) = @_;
 
-#    debug "*******================************ May send_cache_change";
-    if ( keys %RDF::Base::Cache::Changes::Added or
-         keys %RDF::Base::Cache::Changes::Updated or
-         keys %RDF::Base::Cache::Changes::Removed )
-    {
-        send_cache_change(undef);
-#	debug "  prepending job";
+#		 debug "*******================************ May send_cache_change";
+	if ( keys %RDF::Base::Cache::Changes::Added or
+			 keys %RDF::Base::Cache::Changes::Updated or
+			 keys %RDF::Base::Cache::Changes::Removed )
+	{
+		send_cache_change(undef);
+#	debug "	 prepending job";
 #	$Para::Frame::REQ->prepend_background_job('send_cache_change',
-#						  \&send_cache_change);
-    }
+#							\&send_cache_change);
+	}
 }
 
 
@@ -380,97 +380,97 @@ sub add_background_jobs
 
 =head2 send_cache_change
 
-  send_cache_change()
-  send_cache_change($req)
+	send_cache_change()
+	send_cache_change($req)
 
 =cut
 
 sub send_cache_change
 {
-    my( $req ) = @_;
+	my( $req ) = @_;
 
-    $req ||= $Para::Frame::REQ || Para::Frame::Request->new_bgrequest();
+	$req ||= $Para::Frame::REQ || Para::Frame::Request->new_bgrequest();
 
-    my @added = keys %RDF::Base::Cache::Changes::Added;
-    my @removed = keys %RDF::Base::Cache::Changes::Removed;
-    my @updated;
-    foreach my $id ( keys %RDF::Base::Cache::Changes::Updated )
-    {
-        next if $RDF::Base::Cache::Changes::Added{$id};
-        next if $RDF::Base::Cache::Changes::Removed{$id};
-        push @updated, $id;
-    }
+	my @added = keys %RDF::Base::Cache::Changes::Added;
+	my @removed = keys %RDF::Base::Cache::Changes::Removed;
+	my @updated;
+	foreach my $id ( keys %RDF::Base::Cache::Changes::Updated )
+	{
+		next if $RDF::Base::Cache::Changes::Added{$id};
+		next if $RDF::Base::Cache::Changes::Removed{$id};
+		push @updated, $id;
+	}
 
-    %RDF::Base::Cache::Changes::Added = ();
-    %RDF::Base::Cache::Changes::Updated = ();
-    %RDF::Base::Cache::Changes::Removed = ();
+	%RDF::Base::Cache::Changes::Added = ();
+	%RDF::Base::Cache::Changes::Updated = ();
+	%RDF::Base::Cache::Changes::Removed = ();
 
-    my $fork = $req->create_fork;
-    if ( $fork->in_child )
-    {
-        my @daemons = @{$Para::Frame::CFG->{'daemons'}};
+	my $fork = $req->create_fork;
+	if ( $fork->in_child )
+	{
+		my @daemons = @{$Para::Frame::CFG->{'daemons'}};
 
-        my @params;
-        if ( @added )
-        {
-            push @params, 'added='.join(',',@added);
-        }
+		my @params;
+		if ( @added )
+		{
+			push @params, 'added='.join(',',@added);
+		}
 
-        if ( @updated )
-        {
-            push @params, 'updated='.join(',',@updated);
-        }
+		if ( @updated )
+		{
+			push @params, 'updated='.join(',',@updated);
+		}
 
-        if ( @removed )
-        {
-            push @params, 'removed='.join(',',@removed);
-        }
+		if ( @removed )
+		{
+			push @params, 'removed='.join(',',@removed);
+		}
 
-				my $server = sprintf("%s:%d",
-														 Para::Frame::Site->get('default')->host,
-														 $Para::Frame::CFG->{'port'});
-				push @params, 'callback='.$server;
+		my $server = sprintf("%s:%d",
+												 Para::Frame::Site->get('default')->host,
+												 $Para::Frame::CFG->{'port'});
+		push @params, 'callback='.$server;
 
-        my $params_joined = join('&', @params);
+		my $params_joined = join('&', @params);
 
-        foreach my $site (@daemons)
-        {
-            my $daemon = $site->{'daemon'};
+		foreach my $site (@daemons)
+		{
+			my $daemon = $site->{'daemon'};
 
-            ### TODO: check if port and IP is the same
-            #
-            if ( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
-            {
-                debug "  Skipping this site";
-                next;
-            }
+			### TODO: check if port and IP is the same
+			#
+			if ( grep /$site->{'site'}/, keys %Para::Frame::Site::DATA )
+			{
+				debug "	 Skipping this site";
+				next;
+			}
 
-            debug "Sending update_cache to $daemon";
+			debug "Sending update_cache to $daemon";
 
-            if( my $rest = $site->{'rest'} )
-            {
-                my $url = "http://".$daemon.$rest.'/update_cache';
-                my $ua = LWP::UserAgent->new;
-                my $res = $ua->post($url, Content => $params_joined);
-                debug($res->content);
-            }
-            else
-            {
-                eval
-                {
-                    my $request = "update_cache?" . $params_joined;
-                    $req->send_to_daemon( $daemon, 'RUN_ACTION',
-                                          \$request );
-                }
-                or do
-              {
-                  debug(0,"failed send_cache_change to $site->{site}: $@");
-              };
-            }
-        }
+			if ( my $rest = $site->{'rest'} )
+			{
+				my $url = "http://".$daemon.$rest.'/update_cache';
+				my $ua = LWP::UserAgent->new;
+				my $res = $ua->post($url, Content => $params_joined);
+				debug($res->content);
+			}
+			else
+			{
+				eval
+				{
+					my $request = "update_cache?" . $params_joined;
+					$req->send_to_daemon( $daemon, 'RUN_ACTION',
+																\$request );
+				}
+				or do
+			{
+				debug(0,"failed send_cache_change to $site->{site}: $@");
+			};
+			}
+		}
 
-        $fork->return();
-    }
+		$fork->return();
+	}
 }
 
 
