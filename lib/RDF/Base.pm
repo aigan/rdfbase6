@@ -449,8 +449,10 @@ sub send_cache_change
 
 			if ( my $rest = $site->{'rest'} )
 			{
-				my $url = "http://".$daemon.$rest.'/update_cache';
+				my $protocol = $site->{'protocol'} || 'http';
+				my $url = "$protocol://$daemon$rest/update_cache";
 				my $ua = LWP::UserAgent->new;
+				$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode => 0x00 );
 				my $res = $ua->post($url, Content => $params_joined);
 				debug($res->content);
 			}
