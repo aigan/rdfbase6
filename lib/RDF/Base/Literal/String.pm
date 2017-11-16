@@ -928,7 +928,7 @@ sub wuirc
 	if ( $disabled )
 	{
 #        debug "disabled";
-		$out .= "<table class=\"wuirc\">\n";
+		$out .= "<table class=\"wuirc$wide_class\">\n";
 
 		my $arclist = $node->arc_list($predname, $proplim, $args);
 

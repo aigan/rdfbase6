@@ -45,7 +45,7 @@ use Para::Frame::Reload;
 use Para::Frame::Widget qw( jump );
 use Para::Frame::L10N qw( loc );
 use Para::Frame::Logging;
-use Para::Frame::Widget qw( input textarea htmlarea hidden radio input_image );
+use Para::Frame::Widget qw( input textarea htmlarea hidden radio input_image tag_extra_from_params );
 
 use RDF::Base::Widget;
 use RDF::Base::List;
@@ -2556,9 +2556,19 @@ sub table_row
 #										 $out .= ( $is_rev ? $check_subj->wu_jump :
 #															 $item->wu_jump );
 					my $val_obj = $is_rev ? $check_subj : $item;
-					$out .= CGI->escapeHTML($val_obj->plain);
+					my $txt = CGI->escapeHTML($val_obj->plain);
+					$txt =~ s/\n/<br>/g;
 #										 $out .= ( $is_rev ? $check_subj->as_thml :
-#															 $item->as_html );
+					#															 $item->as_html );
+
+					my $tag_attr = $args->{tag_attr} || {};
+					$tag_attr->{class}= $args->{'class'};
+
+					my $extra = tag_extra_from_params( $tag_attr );
+					#debug( datadump($tag_attr) );
+					#debug( '***** ' . $extra );
+					$out .= "<div $extra>$txt</div>";
+					
 				}
 				else
 				{
