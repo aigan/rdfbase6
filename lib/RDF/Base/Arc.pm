@@ -5,7 +5,7 @@ package RDF::Base::Arc;
 #		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2005-2017 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2005-2018 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -3118,9 +3118,9 @@ sub check_valtype
 	if ( debug > 1)
 	{
 		debug "TRANSLATION OF VALTYPE (1)";
-		debug "	 for ".$arc->sysdesig;
+		debug "  for ".$arc->sysdesig;
 		debug " from ".$arc_valtype->sysdesig;
-		debug "		to ".$new_valtype->sysdesig;
+		debug "   to ".$new_valtype->sysdesig;
 	}
 
 	my $newargs =
@@ -4298,15 +4298,15 @@ sub set_value
 	debug 4, "got new value ".$value_new->sysdesig;
 	if ( $value_new_in and not defined $value_new )
 	{
-		debug "	 value_old: ".$value_old->sysdesig();
-		debug "		 new raw: ".$value_new;
+		debug "   value_old: ".$value_old->sysdesig();
+		debug "     new raw: ".$value_new;
 		eval
 		{
 			if ( ref $value_new )
 			{
-				debug "	 value_new: ".$value_new->sysdesig;
+				debug "  value_new: ".$value_new->sysdesig;
 				debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
-				debug "		type new: ".$args->{'valtype'}->sysdesig;
+				debug "   type new: ".$args->{'valtype'}->sysdesig;
 				debug "coltype new: ".$value_new->this_coltype;
 			}
 		};
@@ -4354,31 +4354,35 @@ sub set_value
 	if ( $valtype_new )						# Wanted valtype specified for us
 	{
 		# Trust and keep this
+		debug "Keep submitted valtype " . $valtype_new->sysdesig;
 	}
 	elsif ( RDF::Base::Constants->get('resource')->equals($valtype_old) )
 	{
 		$valtype_new = $valtype_old;
+		debug "Keep old valtype as resource";
 	}
 	elsif ( $value_new->is_literal )
 	{
 		$valtype_new = $value_new->this_valtype;
+		debug "Set valtype from value";
 	}
 	else
 	{
 		$valtype_new = $arc->pred->valtype;
+		debug "Set valtype from pred range";
 	}
 
 
 	if ( debug > 1 )
 	{
-		debug "	 value_old: ".$value_old->sysdesig();
-		debug "		type old: ".$valtype_old->sysdesig;
-		debug "	 vnode old: ".$vnode_old->sysdesig;
+		debug "  value_old: ".$value_old->sysdesig();
+		debug "   type old: ".$valtype_old->sysdesig;
+		debug "  vnode old: ".$vnode_old->sysdesig;
 		debug "coltype old: ".$coltype_old;
-		debug "	 value_new: ".$value_new->sysdesig();
+		debug "  value_new: ".$value_new->sysdesig();
 		debug " forced val: ".($args->{'force_set_value'}?'Yes':'No');
-		debug "		type new: ".$valtype_new->sysdesig;
-		debug "	 vnode new: ".$vnode_new->sysdesig;
+		debug "   type new: ".$valtype_new->sysdesig;
+		debug "  vnode new: ".$vnode_new->sysdesig;
 		debug "coltype new: ".$coltype_new;
 	}
 

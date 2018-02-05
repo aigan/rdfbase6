@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #		Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2005-2017 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2005-2018 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -1405,6 +1405,8 @@ sub find_set
 
 Just as L</find_set>, but merges all found nodes to one, if more than
 one is found.
+
+Do not confuse with L</update>.
 
 If a merging occures, one node is selected.	 All
 L<explicit|RDF::Base::Arc/explicit> arcs going to and from
@@ -7195,7 +7197,7 @@ sub find_class
 	$clue ||= 0;
 	my $id = $node->{'id'};
 
-#		 my $DEBUG = 1;
+#	my $DEBUG = 1;
 	my $DEBUG = Para::Frame::Logging->at_level(2);
 
 	debug "Find class for $id (clue $clue)" if $DEBUG;
@@ -7454,8 +7456,13 @@ sub find_class
 #			debug "Creating b package $package";
 				@{"${package}::ISA"} = ($classname, "RDF::Base::Resource");
 			}
-#			$valtype = $pmodules_sorted[0][1];
-			$valtype = $RDF::Base::Constants::Label{'resource'};
+			$valtype = $pmodules_sorted[0][1];
+
+			# At some time in the past, the valtype was set to resource as a
+			# temporary bugfix. Is that bug still around?
+			
+			debug "SETTING VALTYPE OF $id to " . $pmodules_sorted[0][1]->id;
+#			$valtype = $RDF::Base::Constants::Label{'resource'};
 		}
 
 #	confess "BOGUS VALTYPE ".datadump($valtype) unless

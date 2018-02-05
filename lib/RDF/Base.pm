@@ -1,11 +1,11 @@
-package RDF::Base 6.83;
+package RDF::Base 6.84;
 #=============================================================================
 #
 # AUTHOR
 #		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2005-2017 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2005-2018 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -445,12 +445,12 @@ sub send_cache_change
 				next;
 			}
 
-			debug "Sending update_cache to $daemon";
-
 			if ( my $rest = $site->{'rest'} )
 			{
+				my $host = $site->{'site'};
 				my $protocol = $site->{'protocol'} || 'http';
-				my $url = "$protocol://$daemon$rest/update_cache";
+				my $url = "$protocol://$host$rest/update_cache";
+				debug "Sending update_cache to $url";
 				my $ua = LWP::UserAgent->new;
 				$ua->ssl_opts( verify_hostname => 0, SSL_verify_mode => 0x00 );
 				my $res = $ua->post($url, Content => $params_joined);
@@ -458,6 +458,7 @@ sub send_cache_change
 			}
 			else
 			{
+				debug "Sending update_cache to $daemon";
 				eval
 				{
 					my $request = "update_cache?" . $params_joined;

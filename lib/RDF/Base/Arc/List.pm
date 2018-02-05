@@ -5,7 +5,7 @@ package RDF::Base::Arc::List;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2018 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -273,7 +273,7 @@ Returns: A new list with the subjs
 
 sub subjs
 {
-    RDF::Base::List->new([map $_->subj, @{$_[0]}]);
+    RDF::Base::List->new([map $_->subj, @{$_[0]}])->uniq;
 }
 
 ##############################################################################
@@ -290,7 +290,7 @@ Returns: A new list with the values
 
 sub vals
 {
-    RDF::Base::List->new([map $_->value, @{$_[0]}]);
+    RDF::Base::List->new([map $_->value, @{$_[0]}])->uniq;
 }
 
 ##############################################################################
@@ -305,7 +305,7 @@ Returns: A new list with the preds
 
 sub preds
 {
-    RDF::Base::Pred::List->new([map $_->pred, @{$_[0]}]);
+    RDF::Base::Pred::List->new([map $_->pred, @{$_[0]}])->uniq;
 }
 
 ##############################################################################
