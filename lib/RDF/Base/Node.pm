@@ -245,8 +245,8 @@ sub parse_prop
 	$crit or confess "No name param given";
 	return	$node->id if $crit eq 'id';
 
-	my( $args, $arclim ) = parse_propargs($args_in);
-#		 debug "Parsing $crit";
+	my( $args ) = {%$args_in}; # Make a local copy
+	#debug "Parsing " . $node->sysdesig . " " . $crit;
 
 	my $step;
 	if ( $crit =~ s/\.(.*)// )
@@ -260,6 +260,8 @@ sub parse_prop
 	if ( $propargs )
 	{
 		($proplim, $arclim2) = parse_query_value($propargs);
+		#debug "proplim " . datadump( $proplim,1 );
+		#debug "arclim " . $arclim2;
 		if ( $arclim2 )
 		{
 			$args->{'arclim'} = $arclim2;
