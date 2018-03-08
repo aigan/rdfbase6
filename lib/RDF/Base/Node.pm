@@ -263,13 +263,14 @@ sub parse_prop
 	if( $first =~ s/\.(.*)// )
 	{
 		$step = $1 . $second . $third;
-		$crit = $first;
+		$crit =	trim( $first );
 	}
 	elsif( $third =~ s/\.(.*)// )
 	{
 		$step = $1;
-		$crit = $first . $second . $third;
+		$crit = trim( $first . $second . $third );
 	}
+
 
 	#debug "crit: $crit";
 	#debug "step: $step";
