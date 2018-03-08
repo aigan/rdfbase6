@@ -249,10 +249,29 @@ sub parse_prop
 	#debug "Parsing " . $node->sysdesig . " " . $crit;
 
 	my $step;
-	if ( $crit =~ s/\.(.*)// )
+	my( $first, $second, $third );
+	if( $crit =~ m/^(.*?)(\{.*\})(.*)/ ){
+		$first = $1;
+		$second = $2;
+		$third = $3;
+	} else {
+		$first = $crit;
+		$second = $third = "";
+	}
+
+	if( $first =~ s/\.(.*)// )
+	{
+		$step = $1 . $second . $third;
+		$crit = $first;
+	}
+	elsif( $third =~ s/\.(.*)// )
 	{
 		$step = $1;
+		$crit = $first . $second . $third;
 	}
+
+	#debug "crit: $crit";
+	#debug "step: $step";
 
 	my($prop_name, $propargs) = split(/\s+/, $crit, 2);
 	trim(\$prop_name);

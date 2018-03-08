@@ -20,6 +20,7 @@
    WHILE 1;
      IF q.param("header_$c");
        headers.$c = q.param("header_$c");
+	     labels.$c = q.param("label_$c");
      ELSE;
        LAST;
      END;
@@ -36,11 +37,17 @@
 
 <p>
   [% c = 0 %]
-  [% WHILE( c < 10 ) %]
-    [% input("header_$c", '', label=c) %]<br/>
+	<table class="form">
+		<tr><th>#</th><th>Criterion</th><th>Label</th></tr>
+		[% WHILE( c < 10 ) %]
+    <tr>
+			<td>[% input("header_$c", '', tdlabel=c+1, tag_attr={class='wide'}) %]</td>
+			<td class="narrow">[% input("label_$c", '') %]</td>
+		</tr>
     [% c = c+1 %]
   [% END %]
-  [% input('limit',search_result.page_size, label='Pagelimit',tag_attr={size=10}) %]<br/>
+	</table>
+  [% input('limit',search_result.page_size, label='Pagelimit',tag_attr={class='wide'}) %]<br/>
   [% submit(loc('Update')) %]
   [% go('Export to excel', me, 'search_to_excel') %]
 </p>
@@ -54,7 +61,13 @@
     <th>[% sort('id','id') %]</th>
     <th>[% sort('desig','desig') %]</th>
     [% FOREACH n IN headers.keys.sort %]
-      <th>[% sort(headers.$n, headers.$n) %]</th>
+      <th>[%
+				IF labels.$n;
+				  sort(labels.$n, lheaders.$n);
+				ELSE;
+				  sort(headers.$n, headers.$n);
+				END;
+				%]</th>
     [% END %]
   </tr>
   [% FOREACH node IN search_result.from_page %]
@@ -62,7 +75,9 @@
       <td>[% node.id %]</td>
       <td>[% node.wu_jump(undef,args) %]</td>
       [% FOREACH n IN headers.keys.sort %]
-        <td>[% res=node.parse_prop(headers.$n, args);IF res.can('as_html');res.as_html(args); ELSE; res|html; END %]</td>
+        <td>
+					[% res=node.parse_prop(headers.$n, args);IF res.can('as_html');res.as_html(args); ELSE; res|html; END %]
+				</td>
       [% END %]
     </tr>
   [% END %]
