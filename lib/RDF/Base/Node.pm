@@ -245,6 +245,7 @@ sub parse_prop
 	$crit or confess "No name param given";
 	return	$node->id if $crit eq 'id';
 
+	$args_in ||= {};
 	my( $args ) = {%$args_in}; # Make a local copy
 	#debug "Parsing " . $node->sysdesig . " " . $crit;
 

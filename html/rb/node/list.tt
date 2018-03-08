@@ -13,7 +13,9 @@
 
 [% c = 0;
    hidden( "list_pred", 'id');
+	 hidden( "list_pred_name", 'id');
    hidden( "list_pred", 'desig');
+	 hidden( "list_pred_name", 'desig');
    UNLESS q.param("header_0");
      CALL q.param("header_0",'is [adirect]');
    END;
@@ -25,6 +27,7 @@
        LAST;
      END;
      hidden( "list_pred", headers.$c);
+	   hidden( "list_pred_name", labels.$c || headers.$c );
      c = c+1;
    END;
    aod = searchobj.rb_search.0.args_in.arc_active_on_date;
@@ -63,7 +66,7 @@
     [% FOREACH n IN headers.keys.sort %]
       <th>[%
 				IF labels.$n;
-				  sort(labels.$n, lheaders.$n);
+				  sort(labels.$n, headers.$n);
 				ELSE;
 				  sort(headers.$n, headers.$n);
 				END;
