@@ -216,7 +216,7 @@ sub init_on_startup
 		my $val = $cfg->{$key};
 		unless( ref $val )
 		{
-			$cfg->{$key} = RDF::Base::Resource->get_by_label($val);
+			$cfg->{$key} = RDF::Base::Resource->get_by_label($val,{nonfatal => 1});
 		}
 	}
 

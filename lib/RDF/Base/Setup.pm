@@ -1702,8 +1702,9 @@ sub upgrade_tables
 
     if ( $ver < 18)
     {
-        my $sth = $dbh->do("update node set label='contentadmin_group' where node=(select write_access from node where label='full_access')");
-        $dbh->commit;
+			my $now = DateTime::Format::Pg->format_datetime(now);
+			$dbh->do("insert into node (node, label, owned_by, created, created_by, updated, updated_by) select nextval('node_seq'), 'contentadmin_group', owned_by, ?, created_by, ?, updated_by from node where label = 'full_access'", undef, $now, $now);
+			$dbh->commit;
     }
 
 }
