@@ -7318,7 +7318,7 @@ sub find_class
 		my $p_chbpm = RDF::Base::Pred->
 			get_by_label('class_handled_by_perl_module');
 
-		my $pmodule_node_list = $class->list($p_chbpm,undef,['active']);
+		my $pmodule_node_list = $class->list($p_chbpm,undef,['active'])->sorted({on=>'weight', dir=>'desc'});
 		my( $pmodule_node, $pmodule_node_list_error )
 			= $pmodule_node_list->get_first;
 		while (! $pmodule_node_list_error )
