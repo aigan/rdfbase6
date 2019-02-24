@@ -624,6 +624,10 @@ sub sorted
 			my $val = $item;
 			foreach my $part ( split /\./, $method )
 			{
+				if( UNIVERSAL::isa $val, "RDF::Base::Undef" )
+				{
+					last;
+				}
 				unless( UNIVERSAL::isa $val, "RDF::Base::Object" )
 				{
 					last;									# skipping undef values...
