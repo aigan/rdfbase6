@@ -694,13 +694,15 @@ RDF.Base || (RDF.Base = {});
 			//				 log(formData);
 			//				 log($element);
 
-			// NOTE! This will add the [] suffix to repeated query params unless
-			// we pass true to $.param()
+			// NOTE! This will add the [] suffix to repeated query params
+			// unless we pass true to $.param(). But pass formData directly
+			// as to use post instead of get, as to avoid size limit of
+			// query.
 
 			$element.load(
 				'[%home%]/rb/clean/update_button_answer.tt',
-				$.param(formData,true),
-				//				 formData,
+				//$.param(formData,true),
+				formData,
 				function() {
 					$this.updateOthers();
 				}
