@@ -5,7 +5,7 @@ package RDF::Base::Renderer::Email::From_email;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2019 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -54,7 +54,7 @@ sub render_body_from_template
 {
     my( $rend ) = @_;
 
-    debug "RB render_body_from_template";
+    debug 2, "RB render_body_from_template";
 
     # Important for not retrieving the template over IMAP multiple times
     #
@@ -107,10 +107,10 @@ sub render_part
 
     my $parser = $rend->burner->parser;
 
-    debug sprintf "%s %s", $part->path, $part->effective_type;
+    debug 2, sprintf "%s %s", $part->path, $part->effective_type;
     if( $part->type =~ /^text/ )
     {
-	debug "   Burning ".$part->path;
+	debug 2, "   Burning ".$part->path;
 	my $body = $part->body;
 
 	my $out = "";

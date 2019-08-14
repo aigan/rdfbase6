@@ -5,7 +5,7 @@ package RDF::Base::Renderer::IMAP;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2019 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -199,7 +199,7 @@ sub render_output
     my( $data, $charset );
     if ( not $imap_path )
     {
-        if ( $type eq "text/html" )
+        if ( $type && ($type eq "text/html") )
         {
             ($data,$charset) = $top->body_with_sensible_charset;
         }

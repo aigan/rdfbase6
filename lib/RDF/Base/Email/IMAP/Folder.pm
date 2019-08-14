@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP::Folder;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2008-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2008-2019 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -377,7 +377,7 @@ sub imap_cmd
 
 	my $imap = $folder->{'imap'};
 
-	debug "imap_cmd $cmd " . join(' ', map((defined $_ ? $_ : 'NUL'), @_));
+	debug 2, "imap_cmd $cmd " . join(' ', map((defined $_ ? $_ : 'NUL'), @_));
 
 	unless( $imap and
 					eval{ $imap->can('IsConnected') } and

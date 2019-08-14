@@ -5,7 +5,7 @@ package RDF::Base::Email::IMAP;
 #		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2008-2017 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2008-2019 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -349,7 +349,7 @@ sub raw
 
 	my $folder = $part->folder;
 	my $uid = $part->uid;
-	debug "Getting raw email from IMAP";
+	debug 2, "Getting raw email from IMAP";
 	return \ $folder->imap_cmd('message_string', $uid);
 }
 

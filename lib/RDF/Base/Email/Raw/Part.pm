@@ -5,7 +5,7 @@ package RDF::Base::Email::Raw::Part;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2009-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2009-2019 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -345,7 +345,7 @@ sub redraw
 
     if( $part->{'redraw'} )
     {
-	debug "BODY-RAW redraw";
+	debug 2, "BODY-RAW redraw";
 	$part->{'redraw'} = 0;
 
 #	debug $part->desig;
