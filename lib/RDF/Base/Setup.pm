@@ -1700,11 +1700,15 @@ sub upgrade_tables
         }
     }
 
-    if ( $ver < 18)
+    if( $ver < 18)
     {
-			my $now = DateTime::Format::Pg->format_datetime(now);
-			$dbh->do("insert into node (node, label, owned_by, created, created_by, updated, updated_by) select nextval('node_seq'), 'contentadmin_group', owned_by, ?, created_by, ?, updated_by from node where label = 'full_access'", undef, $now, $now);
-			$dbh->commit;
+			my( $cag ) = $dbh->selectrow_array("select node from node where label='contentadmin_group'");
+			if( !$cag )
+			{
+				my $now = DateTime::Format::Pg->format_datetime(now);
+				$dbh->do("insert into node (node, label, owned_by, created, created_by, updated, updated_by) select nextval('node_seq'), 'contentadmin_group', owned_by, ?, created_by, ?, updated_by from node where label = 'full_access'", undef, $now, $now);
+				$dbh->commit;
+			}
     }
 
 }
