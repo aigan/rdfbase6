@@ -5,7 +5,7 @@ package RDF::Base::Literal::Time;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2020 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -106,7 +106,7 @@ sub parse
 
     # For dates beyond this, use RB::Literal::Time::Historic
     #
-    if ( $date->year > 2020 or $date->year < 1900 )
+    if ( $date->year > 2050 or $date->year < 1900 )
     {
         cluck "Strange date $date";
         throw 'validation', loc "Date [_1] out of range", $date;
