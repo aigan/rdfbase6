@@ -33,7 +33,7 @@ sub render_output
 {
 	my( $rend ) = @_;
 
-	@handled = undef;
+	@handled = ();
 
 	my $req = $rend->req;
 	$req->require_root_access;
@@ -61,7 +61,7 @@ sub render_output
 
 	nodes_arcs( $q, $g, $node, \@expand );
 
-	debug $g->as_debug;
+	debug "GraphViz output " . $g->as_debug;
 
 	my $out = $g->as_svg;
 	$out =~ s/scale\(1.33333 1.33333\)//;
@@ -110,7 +110,7 @@ sub nodes_arcs
 				debug "uri:".  $q->url(-query => 1);
 				$g->add_node( $value->id,
 											label => $value->desig,
-											URL => uri( $q->url(-query => 1), { expand => $value->id }),
+											URL => $q->escapeHTML(uri( $q->url(-query => 1), { expand => $value->id })),
 										);
 	    }
 
