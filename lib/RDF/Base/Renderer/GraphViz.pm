@@ -31,93 +31,93 @@ our @handled;
 
 sub render_output
 {
-    my( $rend ) = @_;
+	my( $rend ) = @_;
 
-    @handled = undef;
+	@handled = undef;
 
-    my $req = $rend->req;
-    $req->require_root_access;
-    my $q = $req->q;
-    my $R = RDF::Base->Resource;
+	my $req = $rend->req;
+	$req->require_root_access;
+	my $q = $req->q;
+	my $R = RDF::Base->Resource;
 
-    my $layout = $q->param('layout') || 'dot';
+	my $layout = $q->param('layout') || 'dot';
 
-    my $g = GraphViz->new( layout => $layout,
-			   #overlap => 'false',
-			   edge => {
-				    #len => 3,
-				    fontsize => 10,
-				   },
-			   node => {
-				    shape => 'ellipse',
-				    style => 'filled',
-				   },
-			 );
+	my $g = GraphViz->new( layout => $layout,
+												 #overlap => 'false',
+												 edge => {
+																	#len => 3,
+																	fontsize => 10,
+																 },
+												 node => {
+																	shape => 'ellipse',
+																	style => 'filled',
+																 },
+											 );
 
-    my $id = $q->param('id') or throw('incomplete', "Saknar ID");
-    my $node = $R->get($id);
+	my $id = $q->param('id') or throw('incomplete', "Saknar ID");
+	my $node = $R->get($id);
 
-    my @expand = $q->param('expand');
+	my @expand = $q->param('expand');
 
-    nodes_arcs( $q, $g, $node, \@expand );
+	nodes_arcs( $q, $g, $node, \@expand );
 
-    debug $g->as_debug;
+	debug $g->as_debug;
 
-    my $out = $g->as_svg;
-    $out =~ s/scale\(1.33333 1.33333\)//;
+	my $out = $g->as_svg;
+	$out =~ s/scale\(1.33333 1.33333\)//;
 
 
-    return \$out;
+	return \$out;
 }
 
 
 sub nodes_arcs
 {
-    my( $q, $g, $node, $expand, $revs ) = @_;
+	my( $q, $g, $node, $expand, $revs ) = @_;
 
-    my $nodeid = $node->id;
-    return
-      if( grep(/$nodeid/, @handled) );
+	my $nodeid = $node->id;
+	return
+		if ( grep(/$nodeid/, @handled) );
 
-    push @handled, $node->id;
+	push @handled, $node->id;
 
-    debug "Getting arcs for ". $node->id;
-    debug "Expand is: ". join(', ', @$expand);
+	debug "Getting arcs for ". $node->id;
+	debug "Expand is: ". join(', ', @$expand);
 
-    my @labels;
+	my @labels;
 
-    push @labels, "-*- ". $node->sysdesig ." -*-";
+	push @labels, "-*- ". $node->sysdesig ." -*-";
 
-    $g->add_node( $node->id );
+	$g->add_node( $node->id );
 
-    my $arclist = $node->arc_list( undef, undef, [['active', 'direct']] );
+	my $arclist = $node->arc_list( undef, undef, [['active', 'direct']] );
 
-    while( my $arc = $arclist->get_next_nos )
-    {
-	next
-	  if( $arc->pred->plain eq 'name' );
-
-	my $value = $arc->value;
-	if ( $arc->coltype eq 'obj')
+	while ( my $arc = $arclist->get_next_nos )
 	{
+		next
+			if ( $arc->pred->plain eq 'name' );
+
+		my $value = $arc->value;
+		if ( $arc->coltype eq 'obj')
+		{
 	    my $valueid = $value->id;
-	    if( grep(/$valueid/, @$expand ) )
+	    if ( grep(/$valueid/, @$expand ) )
 	    {
-		nodes_arcs( $q, $g, $value, $expand, $revs );
+				nodes_arcs( $q, $g, $value, $expand, $revs );
 	    }
 	    else
 	    {
-		debug "uri:".  $q->url(-query => 1);
-		$g->add_node( $value->id,
-			      label => $value->desig,
-			      URL => uri( $q->url(-query => 1), { expand => $value->id }),
-			    );
+				debug "uri:".  $q->url(-query => 1);
+				$g->add_node( $value->id,
+											label => $value->desig,
+											URL => uri( $q->url(-query => 1), { expand => $value->id }),
+										);
 	    }
 
 	    $g->add_edge( $node->id, $value->id, label => $arc->pred->plain );
-	}
-	else
-	{
+		}
+		else
+		{
 	    push @labels, $arc->pred->plain ." --> ". truncstring($value->literal);
 	    #debug "Valtype is: ". $arc->valtype->desig;
 	    #$g->add_edge( $node->sysdesig, $value->plain, label => $arc->pred->plain );
@@ -132,10 +132,10 @@ sub nodes_arcs
 	    #	push @labels, $arc->pred->plain ." --> ". $value->literal;
 	    #	#$g->add_node( $value->plain, shape => 'box' );
 	    #}
+		}
 	}
-    }
 
-    $g->add_node( $node->id, label => join('\n', @labels) );
+	$g->add_node( $node->id, label => join('\n', @labels) );
 }
 
 
@@ -143,8 +143,8 @@ sub nodes_arcs
 
 sub set_ctype
 {
-    debug "setting ctype";
-    $_[1]->set("image/svg+xml");
+	debug "setting ctype";
+	$_[1]->set("image/svg+xml");
 }
 
 
