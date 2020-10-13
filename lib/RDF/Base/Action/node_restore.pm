@@ -29,54 +29,54 @@ RDFbase Action for restoring nodes.
 
 sub handler
 {
-    my( $req ) = @_;
-    $req->require_cm_access;
+	my( $req ) = @_;
+	$req->require_cm_access;
 
-    my( $args, $arclim, $res ) = parse_propargs('auto');
-    $args->{'updated'} = now();
+	my( $args, $arclim, $res ) = parse_propargs('auto');
+	$args->{'updated'} = now();
 
-    my $q = $req->q;
+	my $q = $req->q;
 
-    my $id = $q->param('id');
-    unless( $id )
-    {
-	throw('incomplete', "Id missing");
-    }
-    my $node = RDF::Base::Resource->get($id);
+	my $id = $q->param('id');
+	unless( $id )
+	{
+		throw('incomplete', "Id missing");
+	}
+	my $node = RDF::Base::Resource->get($id);
 
-    my $time = date( $q->param('time') );
-    unless( $time )
-    {
-	throw('incomplete', "Time missing");
-    }
+	my $time = date( $q->param('time') );
+	unless( $time )
+	{
+		throw('incomplete', "Time missing");
+	}
 
-    my $args_search = {arc_active_on_date => $time};
-
-
-    $req->note(sprintf "Restoring node %s to %s", $node->sysdesig($args_search), $time->sysdesig);
+	my $args_search = {arc_active_on_date => $time};
 
 
-    foreach my $arc ( $node->arc_list( undef, undef, $args_search )->as_array )
-    {
-        next if $arc->is_removal;
-        $arc->reactivate($args);
-    }
+	$req->note(sprintf "Restoring node %s to %s", $node->sysdesig($args_search), $time->sysdesig);
 
 
-    foreach my $arc ( $node->revarc_list( undef, undef, $args_search )->as_array )
-    {
-        next if $arc->is_removal;
-        $arc->reactivate($args);
-    }
+	foreach my $arc ( $node->arc_list( undef, undef, $args_search )->as_array )
+	{
+		next if $arc->is_removal;
+		$arc->reactivate($args);
+	}
 
-    if( $res->changes )
-    {
-        return "Restored node";
-    }
-    else
-    {
-        return "No changes";
-    }
+
+	foreach my $arc ( $node->revarc_list( undef, undef, $args_search )->as_array )
+	{
+		next if $arc->is_removal;
+		$arc->reactivate($args);
+	}
+
+	if ( $res->changes )
+	{
+		return "Restored node";
+	}
+	else
+	{
+		return "No changes";
+	}
 }
 
 
