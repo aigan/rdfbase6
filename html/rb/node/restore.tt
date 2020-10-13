@@ -16,6 +16,6 @@
 <tr><th>Time <th>Agent <th>Arcs <th>
 [% FOREACH point IN node.restore_points.reverse %]
 <tr><td>[% point.time.strftime('%Y-%m-%d %H.%M.%S') %]<td> [% point.by.wu_jump %] <td>[% point.count %]
-<td>[% jump('Restore','restore_point.tt',id=id,time=point.time.subtract(seconds=1).iso8601) %]
+<td>[% jump('Restore','restore_point.tt',id=id,time=point.time.clone.subtract(seconds=1).iso8601) %]
 [% END %]
 </table>

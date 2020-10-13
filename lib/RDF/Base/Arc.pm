@@ -1565,8 +1565,8 @@ sub deactivated_by
 		return $arc->{'arc_deactivated_by_obj'};
 	}
 
-	my $deactivated_by =
-		my $deactivated = $arc->deactivated;
+	#my $deactivated_by =
+	my $deactivated = $arc->deactivated;
 	unless( $deactivated )
 	{
 		debug "Returning undef deactivated_by obj";
@@ -4008,6 +4008,8 @@ sub remove
 
 	my $dbh = $RDF::dbix->dbh;
 
+	### Since the arc is deleted, we have to remove references to it
+	### from later versions.
 	debug "	 remove replaced by" if $DEBUG;
 	my $sth_repl = $dbh->prepare("update arc set replaces=null where replaces=?");
 	foreach my $repl ( $arc->replaced_by->nodes )
@@ -4879,6 +4881,7 @@ sub activate
 	my $updated = $args->{'updated'} || now();
 	my $activated_by = $Para::Frame::REQ->user;
 
+	# already checked if this arc is active.
 	my $aarc = $arc->active_version;
 
 
@@ -5009,43 +5012,57 @@ sub reactivate
 	my( $arc, $args ) = @_;
 
 	confess "args missing" unless $args;
-	my $rargs = {%$args, force=>1};
-	my $larcs = $arc->replaced_by->sorted( 'id', 'desc' );
+
+	return if !$arc->old;
+	if( $arc->active )
+	{
+		warn "Arc ".$arc->sysdesig." both active and old\n";
+	}
+
+	my $dbix = $RDF::dbix;
+	my $updated = $args->{'updated'} || now();
+	my $updated_db = $dbix->format_datetime($updated);
+	my $aid = $arc->id;
+	my $activated_by = $Para::Frame::REQ->user;
+	my $activated_by_id = $activated_by->id;
+
+	my $st = "update arc set updated=?, activated=?, activated_by=?, active='true', deactivated=null where ver=?";
+	my $sth = $dbix->dbh->prepare($st);
+	$sth->execute( $updated_db, $updated_db, $activated_by_id, $aid );
+	$RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+
+	$arc->{'arc_updated_obj'} = $updated;
+	$arc->{'arc_updated'} = $updated_db;
+	$arc->{'arc_activated_obj'} = $updated;
+	$arc->{'arc_activated'} = $updated_db;
+	$arc->{'activated_by'} = $activated_by_id;
+	$arc->{'activated_by_obj'} = $activated_by;
+	delete $arc->{'arc_deactivated_obj'};
+	delete $arc->{'arc_deactivated'};
+	$arc->{'active'} = 1;
+	$arc->{'submitted'} = 0;
+
+	my $larcs = $arc->versions;
 	foreach my $larc ( $larcs->nodes )
 	{
-		$larc->remove($rargs);
+		next if $arc == $larc;
+		next if not $larc->active;
+		$larc->deactivate( $arc, $args );
 	}
 
-	if ( $arc->old )
-	{
-		my $dbix = $RDF::dbix;
-		my $updated = $args->{'updated'} || now();
-		my $updated_db = $dbix->format_datetime($updated);
-		my $aid = $arc->id;
 
-		my $st = "update arc set updated=?, active='true', deactivated=null where ver=?";
-		my $sth = $dbix->dbh->prepare($st);
-		$sth->execute( $updated_db, $aid );
-		$RDF::Base::Resource::TRANSACTION{ $aid } = $Para::Frame::REQ;
+	# Reset caches
+	#
+	$arc->obj->reset_cache if $arc->obj;
+	$arc->subj->reset_cache;
 
-		$arc->{'arc_updated_obj'} = $updated_db;
-		delete $arc->{'arc_deactivated_obj'};
-		delete $arc->{'arc_deactivated'};
-		$arc->{'active'} = 1;
+	# Runs create_check AFTER deactivation of other arc version, since
+	# the new arc version may INFERE the old arc
+	#
+	$arc->schedule_check_create( $args );
+	$arc->notify_change( $args );
 
-		# Reset caches
-		#
-		$arc->obj->reset_cache if $arc->obj;
-		$arc->subj->reset_cache;
-
-		# Runs create_check AFTER deactivation of other arc version, since
-		# the new arc version may INFERE the old arc
-		#
-		$arc->schedule_check_create( $args );
-		$arc->notify_change( $args );
-
-		debug "Reactivated ".$arc->sysdesig;
-	}
+	debug "Reactivated ".$arc->sysdesig;
 
 	return $arc;
 }

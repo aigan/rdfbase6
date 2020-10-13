@@ -1,8 +1,8 @@
 [% META otitle="Arc edit"
-   	next_action = 'arc_edit'
-	default_template = 'update.tt'
-        level = 1
-#        level = 20
+   next_action = 'arc_edit'
+	 default_template = 'update.tt'
+   level = 1
+	 #        level = 20
 %]
 
 
@@ -16,357 +16,358 @@
 
 [% IF arc.is_arc %]
 
-[% subj = arc.subj %]
-[% hidden('id', subj.id) %]
-[% hidden('arc_id', arc.id)  %]
+	[% subj = arc.subj %]
+	[% hidden('id', subj.id) %]
+	[% hidden('arc_id', arc.id)  %]
 
-[% IF debug_level > 1 %]
-[% WRAPPER imgexpand label='Perl hashdump' %]
-<table>
-<tr><td><pre>[% dump(node,4) %]</pre></td></tr>
-</table>
-[% END %]
+	[% IF debug_level > 1 %]
+		[% WRAPPER imgexpand label='Perl hashdump' %]
+		<table>
+			<tr><td><pre>[% dump(node,4) %]</pre></td></tr>
+		</table>
+	[% END %]
 [% END %]
 
 <br>
 <table class="admin">
-<tr class="header"><th colspan="2">
-[% IF arc.inactive %]
-   [% IF arc.deactivated %]
-      This arc is <strong>old</strong>.
-   [% ELSE %]
-   This arc is <strong>inactive</strong>
-      [% IF arc.submitted %]
-         and <strong>submitted</strong>
-      [% ELSE %]
-         and <strong>not yet submitted</strong>
-      [% END %]
-   [% END %]
-[% ELSE %]
-This is an <strong>active</strong> version.
-[% END %]
-</th></tr>
-<tr><td>Common</td><td>
-<span style="float: right">ID: <strong>[% arc.id %]</strong></span>
-                       [% arc.common_id %]</td></tr>
+	<tr class="header"><th colspan="2">
+		[% IF arc.inactive %]
+			[% IF arc.deactivated %]
+				This arc is <strong>old</strong>.
+			[% ELSE %]
+				This arc is <strong>inactive</strong>
+				[% IF arc.submitted %]
+					and <strong>submitted</strong>
+				[% ELSE %]
+					and <strong>not yet submitted</strong>
+				[% END %]
+			[% END %]
+		[% ELSE %]
+			This is an <strong>active</strong> version.
+		[% END %]
+	</th></tr>
+	<tr><td>Common</td><td>
+		<span style="float: right">ID: <strong>[% arc.id %]</strong></span>
+    [% arc.common_id %]</td></tr>
 
-<tr>
-   <td>[% jump('Subj', '../update.tt', id=subj.id) %]
-</td>
+	<tr>
+		<td>[% jump('Subj', '../update.tt', id=subj.id) %]
+		</td>
 
-   <td><code>[% subj.wu_jump(label=subj.sysdesig) %]</code></td>
-</tr>
+		<td><code>[% subj.wu_jump(label=subj.sysdesig) %]</code></td>
+	</tr>
 
-[% IF arc.indirect %]
+	[% IF arc.indirect %]
 
-<tr>
-   <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
-   <td>[% arc.pred.label %]</td>
-</tr>
+		<tr>
+			<td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
+			<td>[% arc.pred.label %]</td>
+		</tr>
 
-[% IF arc.is_removal %]
-<tr>
-   <td>Value</td>
-   <td>
-      <span style="text-decoration:line-through; color:red">
-      [% oarc = arc.replaces %]
-      [% IF oarc.objtype %]
-         [% oarc.obj.sysdesig | html %]
-      [% ELSE %]
-         [% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-            [% oarc.value | html | html_br %]
-         [% ELSE %]
-            [% oarc.value | html %]</td>
-         [% END %]
-      [% END %]
-      </span>
-   </td>
-</tr>
-[% ELSIF arc.objtype %]
-<tr>
-   <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
-   <td>[% arc.obj.sysdesig | html %]</td>
-</tr>
-[% ELSE %]
-<tr>
-   [% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-      <td colspan="2">[% arc.valtype.wu_jump %]:<br>
-         [% arc.value | html | html_br %]
-      </td>
-   [% ELSE %]
-      <td>[% arc.valtype.wu_jump %]</td>
-      <td>[% arc.value | html %]</td>
-   [% END %]
-</tr>
-[% vnode = arc.value_node %]
-[% IF vnode %]
-<tr>
-   <td>Value node</td>
-   <td>[% vnode.wu_jump %]</td>
-</tr>
-[% ELSE %]
-<tr>
-   <td colspan="2">
-      Add arcs to the literal<br>
-      [% textarea('literal_arcs','', tag_attr={rows=3,class="wide"} ) %]
-   </td>
-</tr>
-[% END %]
-[% END %]
+		[% IF arc.is_removal %]
+			<tr>
+				<td>Value</td>
+				<td>
+					<span style="text-decoration:line-through; color:red">
+						[% oarc = arc.replaces %]
+						[% IF oarc.objtype %]
+							[% oarc.obj.sysdesig | html %]
+						[% ELSE %]
+							[% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
+								[% oarc.value | html | html_br %]
+							[% ELSE %]
+								[% oarc.value | html %]</td>
+							[% END %]
+						[% END %]
+					</span>
+			</td>
+			</tr>
+		[% ELSIF arc.objtype %]
+			<tr>
+				<td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
+				<td>[% arc.obj.sysdesig | html %]</td>
+			</tr>
+		[% ELSE %]
+			<tr>
+				[% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
+					<td colspan="2">[% arc.valtype.wu_jump %]:<br>
+						[% arc.value | html | html_br %]
+					</td>
+				[% ELSE %]
+					<td>[% arc.valtype.wu_jump %]</td>
+					<td>[% arc.value | html %]</td>
+				[% END %]
+			</tr>
+			[% vnode = arc.value_node %]
+			[% IF vnode %]
+				<tr>
+					<td>Value node</td>
+					<td>[% vnode.wu_jump %]</td>
+				</tr>
+			[% ELSE %]
+				<tr>
+					<td colspan="2">
+						Add arcs to the literal<br>
+						[% textarea('literal_arcs','', tag_attr={rows=3,class="wide"} ) %]
+					</td>
+				</tr>
+			[% END %]
+		[% END %]
 
-<tr>
-   <td>Explicit</td>
-   <td>[% checkbox("explicit", 1, arc.explicit)%]</td>
-   [% hidden("check_explicit", 1) %]
-</tr>
+		<tr>
+			<td>Explicit</td>
+			<td>[% checkbox("explicit", 1, arc.explicit)%]</td>
+			[% hidden("check_explicit", 1) %]
+		</tr>
 
-[% ELSE %]
+	[% ELSE %]
 
-<tr>
-   <td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
-   <td>
-   [% IF arc.is_removal %]
-      [% arc.pred.label %]
-   [% ELSE %]
-      [% input('pred', arc.pred.label, tag_attr={class='wide'}) %]
-   [% END %]
-   </td>
-</tr>
+		<tr>
+			<td>[% jump('Pred', '../update.tt', id=arc.pred.id) %]</td>
+			<td>
+				[% IF arc.is_removal %]
+					[% arc.pred.label %]
+				[% ELSE %]
+					[% input('pred', arc.pred.label, tag_attr={class='wide'}) %]
+				[% END %]
+			</td>
+		</tr>
 
-[% IF arc.is_removal %]
-<tr>
-   <td>Value</td>
-   <td>
-      <span style="text-decoration:line-through; color:red">
-      [% oarc = arc.replaces %]
-      [% IF oarc.objtype %]
-         [% oarc.obj.sysdesig | html %]
-      [% ELSE %]
-         [% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-            [% oarc.value | html | html_br %]
-         [% ELSE %]
-            [% oarc.value | html %]</td>
-         [% END %]
-      [% END %]
-      </span>
-   </td>
-</tr>
-[% ELSIF arc.objtype %]
-<tr>
-   <td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
-   <td>[% input('val', arc.obj.sysdesig, tag_attr={class='wide'}) %]</td>
-</tr>
-[% ELSE %]
-<tr>
-   [% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-      <td colspan="2">[% arc.valtype.wu_jump %]:<br>
-         [% textarea('val', arc.value, tag_attr={class='wide'}) %]
-      </td>
-   [% ELSE %]
-      <td>[% arc.valtype.wu_jump %]</td>
-      <td>[% input('val', arc.value.plain, tag_attr={class='wide'}) %]</td>
-   [% END %]
-</tr>
-[% vnode = arc.value_node %]
-[% IF vnode %]
-<tr>
-   <td>Value node</td>
-   <td>[% vnode.wu_jump %]</td>
-</tr>
-[% ELSE %]
-<tr>
-   <td colspan="2">
-      Add arcs to the literal<br>
-      [% textarea('literal_arcs','', tag_attr={class="wide",rows=3} ) %]
-   </td>
-</tr>
-[% END %]
-[% END %]
-[% END %]
+		[% IF arc.is_removal %]
+			<tr>
+				<td>Value</td>
+				<td>
+					<span style="text-decoration:line-through; color:red">
+						[% oarc = arc.replaces %]
+						[% IF oarc.objtype %]
+							[% oarc.obj.sysdesig | html %]
+						[% ELSE %]
+							[% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
+								[% oarc.value | html | html_br %]
+							[% ELSE %]
+								[% oarc.value | html %]</td>
+							[% END %]
+						[% END %]
+					</span>
+			</td>
+			</tr>
+		[% ELSIF arc.objtype %]
+			<tr>
+				<td>[% jump('Obj', '../update.tt', id=arc.obj.id) %]</td>
+				<td>[% input('val', arc.obj.sysdesig, tag_attr={class='wide'}) %]</td>
+			</tr>
+		[% ELSE %]
+			<tr>
+				[% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
+					<td colspan="2">[% arc.valtype.wu_jump %]:<br>
+						[% textarea('val', arc.value, tag_attr={class='wide'}) %]
+					</td>
+				[% ELSE %]
+					<td>[% arc.valtype.wu_jump %]</td>
+					<td>[% input('val', arc.value.plain, tag_attr={class='wide'}) %]</td>
+				[% END %]
+			</tr>
+			[% vnode = arc.value_node %]
+			[% IF vnode %]
+				<tr>
+					<td>Value node</td>
+					<td>[% vnode.wu_jump %]</td>
+				</tr>
+			[% ELSE %]
+				<tr>
+					<td colspan="2">
+						Add arcs to the literal<br>
+						[% textarea('literal_arcs','', tag_attr={class="wide",rows=3} ) %]
+					</td>
+				</tr>
+			[% END %]
+		[% END %]
+	[% END %]
 
-<tr><td>Weight</td><td>[% input('weight', arc.weight, tag_attr={class='wide'}) %]</td></tr>
+	<tr><td>Weight</td><td>[% input('weight', arc.weight, tag_attr={class='wide'}) %]</td></tr>
 
-<tr><td>Replaces</td><td>
-[% IF arc.replaces_id %]
-   [% jump(arc.replaces_id, me, id=arc.replaces_id) %]
-[% END %]
-</td></tr>
+	<tr><td>Replaces</td><td>
+		[% IF arc.replaces_id %]
+			[% jump(arc.replaces_id, me, id=arc.replaces_id) %]
+		[% END %]
+	</td></tr>
 
-<tr><td>Replaced by</td><td>
-[% FOREACH rarc IN arc.replaced_by %]
-   [% jump(rarc.id, me, id=rarc.id) %]<br>
-[% END %]
-</td></tr>
+	<tr><td>Replaced by</td><td>
+		[% FOREACH rarc IN arc.replaced_by %]
+			[% jump(rarc.id, me, id=rarc.id) %]<br>
+		[% END %]
+	</td></tr>
 
-<tr><td>Active version</td><td>
-[% IF arc.active %]
-   This version
-[% ELSIF arc.active_version %]
-   [% jump(arc.active_version.id, me, id=arc.active_version.id) %]
-[% END %]
-</td></tr>
+	<tr><td>Active version</td><td>
+		[% IF arc.active %]
+			This version
+		[% ELSIF arc.active_version %]
+			[% jump(arc.active_version.id, me, id=arc.active_version.id) %]
+		[% END %]
+	</td></tr>
 
-<tr><td>Source</td><td>[% arc.source.wu_jump %]</td></tr>
+	<tr><td>Source</td><td>[% arc.source.wu_jump %]</td></tr>
 
-<tr><td>Read access</td><td>[% arc.read_access.wu_jump %]</td></tr>
+	<tr><td>Read access</td><td>[% arc.read_access.wu_jump %]</td></tr>
 
-<tr><td>Write access</td><td>[% arc.write_access.wu_jump %]</td></tr>
+	<tr><td>Write access</td><td>[% arc.write_access.wu_jump %]</td></tr>
 
-<tr><td>Created</td><td>[% arc.created %] by [% arc.created_by.wu_jump %]</td></tr>
+	<tr><td>Created</td><td>[% arc.created %] by [% arc.created_by.wu_jump %]</td></tr>
 
-<tr><td>Updated</td><td>[% arc.updated %]</td></tr>
+	<tr><td>Updated</td><td>[% arc.updated %]</td></tr>
 
-<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% arc.activated_by.wu_jump; END %]</td></tr>
+	<tr><td>Activated</td><td>[% IF arc.activated; arc.activated %] by [% arc.activated_by.wu_jump; END %]</td></tr>
 
-<tr><td>Deactivated</td><td>[% arc.deactivated %]</td></tr>
+		<tr><td>Deactivated</td><td>[% arc.deactivated %]</td></tr>
 
-<tr><td>Unsubmitted</td><td>[% arc.unsubmitted %]</td></tr>
+		<tr><td>Unsubmitted</td><td>[% arc.unsubmitted %]</td></tr>
 
-<tr><td>Flags</td><td>[% INCLUDE flags %]
+		<tr><td>Flags</td><td>[% INCLUDE flags %]
 
 </table>
 
 
 [% hidden('remove',0) %]
 [% IF u.has_root_access %]
-   [% hidden('force',0) %]
-   [% go("HARD Delete", me, 'arc_edit', remove=1, force=1, tag_attr={class="btn-danger",style="float:right"}) %]
+  [% hidden('force',0) %]
+  [% go("HARD Delete", me, 'arc_edit', remove=1, force=1, tag_attr={class="btn-danger",style="float:right;margin-left:3em"}) %]
 [% END %]
 [% IF arc.inactive %]
-   [% UNLESS arc.deactivated %]
-      [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
-   [% END %]
-   [% IF arc.submitted %]
-      [% go("Activate", me, "arc_activate") %]
-      [% go("Unsubmit", me, "arc_unsubmit") %]
-      [% IF arc.is_removal %]
-         [% nostep %]
-      [% ELSE %]
-         [% step("Update submitted version") %]
-      [% END %]
-   [% ELSIF arc.is_removal %]
-      [% IF arc.deactivated %]
-         [% nostep %]
-      [% ELSE %]
-         [% go("Submit", me, "arc_submit") %]
-      [% END %]
-   [% ELSIF arc.deactivated %]
-      [% go("Re-submit as a new version", me, "arc_submit") %]
-      [% step("Save as a new version") %]
-   [% ELSE %]
+  [% UNLESS arc.deactivated %]
+    [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
+  [% END %]
+  [% IF arc.submitted %]
+    [% go("Activate", me, "arc_activate") %]
+    [% go("Unsubmit", me, "arc_unsubmit") %]
+    [% IF arc.is_removal %]
+      [% nostep %]
+    [% ELSE %]
+      [% step("Update submitted version") %]
+    [% END %]
+  [% ELSIF arc.is_removal %]
+    [% IF arc.deactivated %]
+      [% nostep %]
+    [% ELSE %]
       [% go("Submit", me, "arc_submit") %]
-      [% step("Save") %]
-   [% END %]
+    [% END %]
+  [% ELSIF arc.deactivated %]
+    [% go("Re-activate", me, "arc_reactivate") %]
+    [% go("Re-submit as a new version", me, "arc_submit") %]
+    [% step("Save as a new version") %]
+  [% ELSE %]
+    [% go("Submit", me, "arc_submit") %]
+    [% step("Save") %]
+  [% END %]
 [% ELSE %]
-   [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
-   [% step("Save as a new version") %]
+  [% go("Delete", subj.form_url, 'arc_edit', remove=1, tag_attr={class="btn-danger",style="float:right"}) %]
+  [% step("Save as a new version") %]
 [% END %]
 
 
 [% IF arc.indirect %]
   <h2>This arc is infered</h2>
   <dl>
-  [% FOREACH exp = arc.explain %]  
-     <dt>Using rule [% exp.rule.sysdesig %]</dt>
-     <dd>
+		[% FOREACH exp = arc.explain %]  
+			<dt>Using rule [% exp.rule.sysdesig %]</dt>
+			<dd>
         [% jump( exp.a.desig, "update.tt", id=exp.a.id ) %]<br>
         [% jump( exp.b.desig, "update.tt", id=exp.b.id ) %]<br>
-     </dd>
-  [% END %]
+			</dd>
+		[% END %]
   </dl>
 [% END %]
 
 <table class="admin">
-<tr class="header"><th colspan="3">History</th></tr>
-<tr class="subheader"><th>Version</th><th>Created</th><th>Action</th></tr>
-[% FOREACH varc IN arc.versions %]
-<tr>
-  <td>
-  [% IF varc.equals(arc) %]
-     <strong><em>
-     [% jump(varc.version_id, varc.form_url) %]</td>
-     </em></strong>
-  [% ELSE %]
-     [% jump(varc.version_id, varc.form_url) %]</td>
-  [% END %]
-  <td>
-     [% varc.created %] by
-     [%+ varc.created_by.wu_jump %]
-  </td>
-  <td>
-  [% IF varc.active %]
-     <strong>ACTIVE</strong><br>
-  [% END %]
+	<tr class="header"><th colspan="3">History</th></tr>
+	<tr class="subheader"><th>Version</th><th>Created</th><th>Action</th></tr>
+	[% FOREACH varc IN arc.versions %]
+		<tr>
+			<td>
+				[% IF varc.equals(arc) %]
+					<strong><em>
+						[% jump(varc.version_id, varc.form_url) %]</td>
+					</em></strong>
+				[% ELSE %]
+					[% jump(varc.version_id, varc.form_url) %]</td>
+				[% END %]
+				<td>
+					[% varc.created %] by
+					[%+ varc.created_by.wu_jump %]
+				</td>
+				<td>
+					[% IF varc.active %]
+						<strong>ACTIVE</strong><br>
+					[% END %]
 
-  [% IF varc.is_removal %]
-     REMOVAL of [% jump(varc.replaces.id, varc.replaces.form_url) %]
-     [% IF varc.activated %]
-         accepted
-        [%+ varc.activated %] by
-        [%+ varc.activated_by.wu_jump %]
-     [% ELSIF varc.submitted %]     
-        submitted
-        [%+ varc.updated %]
-     [% END %]
-  [% ELSIF varc.replaces %]
-     Replaced [% jump(varc.replaces.id, varc.replaces.form_url) %]
-  [% ELSE %]
-     New
-  [% END %]
-  <br>
+					[% IF varc.is_removal %]
+						REMOVAL of [% jump(varc.replaces.id, varc.replaces.form_url) %]
+						[% IF varc.activated %]
+							accepted
+							[%+ varc.activated %] by
+							[%+ varc.activated_by.wu_jump %]
+						[% ELSIF varc.submitted %]     
+							submitted
+							[%+ varc.updated %]
+						[% END %]
+					[% ELSIF varc.replaces %]
+						Replaced [% jump(varc.replaces.id, varc.replaces.form_url) %]
+					[% ELSE %]
+						New
+					[% END %]
+					<br>
 
-  [% UNLESS varc.is_removal %]
-  [% IF varc.activated %]
-     activated
-     [%+ varc.activated %] by
-     [%+ varc.activated_by.wu_jump %]
-  [% ELSIF varc.submitted %]     
-     submitted
-     [%+ varc.updated %]
-  [% END %]
-  <br>
+					[% UNLESS varc.is_removal %]
+						[% IF varc.activated %]
+							activated
+							[%+ varc.activated %] by
+							[%+ varc.activated_by.wu_jump %]
+						[% ELSIF varc.submitted %]     
+							submitted
+							[%+ varc.updated %]
+						[% END %]
+						<br>
 
-  [% IF varc.deactivated %]
-     deactivated
-     [%+ varc.deactivated %] by
-     [%+ varc.deactivated_by.wu_jump %]
-  [% END %]
-  [% END %]
+						[% IF varc.deactivated %]
+							deactivated
+							[%+ varc.deactivated %] by
+							[%+ varc.deactivated_by.wu_jump %]
+						[% END %]
+					[% END %]
 
-  </td>
-</tr>
-[% END %]
+				</td>
+		</tr>
+	[% END %]
 </table>
 
-[% ELSE %]
+	[% ELSE %]
 
 <p>This is <strong>not</strong> an arc!</p>
 
-[% END %]
+	[% END %]
 
 
-[%
-BLOCK flags;
-   IF arc.active;
-      GET 'Active';
-   ELSE;
-      GET 'Inactive';
-   END;
-   GET ', ';
-   IF arc.indirect;
-      GET 'indirect';
-   ELSE;
-      GET 'direct';
-   END;
-   GET ', ';
-   IF arc.implicit;
-      GET 'implicit';
-   ELSE;
-      GET 'explicit';
-   END;
-   GET ' and ';
-   IF arc.submitted;
-      GET 'submitted';
+	[%
+	BLOCK flags;
+  IF arc.active;
+  GET 'Active';
+  ELSE;
+  GET 'Inactive';
+  END;
+  GET ', ';
+  IF arc.indirect;
+  GET 'indirect';
+  ELSE;
+  GET 'direct';
+  END;
+  GET ', ';
+  IF arc.implicit;
+  GET 'implicit';
+  ELSE;
+  GET 'explicit';
+  END;
+  GET ' and ';
+  IF arc.submitted;
+  GET 'submitted';
    ELSE;
       GET 'not submitted';
    END;
