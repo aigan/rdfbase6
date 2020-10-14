@@ -1,0 +1,10 @@
+[% META title="Rollback" %]
+[%
+arc_id = q.param('arc_id');
+arc = get(arc_id);
+hidden("arc_id", arc.id);
+%]
+
+<p>Restore transaction [% arc.deactivated %] based of [% arc.sysdesig %]</p>
+
+<p>[% go("Do rollback", me, "rollback_removal" ) %]</p>

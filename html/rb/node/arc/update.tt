@@ -74,7 +74,7 @@
 							[% oarc.obj.sysdesig | html %]
 						[% ELSE %]
 							[% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-								[% oarc.value | html | html_br %]
+								[% oarc.value | html | html_line_break %]
 							[% ELSE %]
 								[% oarc.value | html %]</td>
 							[% END %]
@@ -91,7 +91,7 @@
 			<tr>
 				[% IF arc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
 					<td colspan="2">[% arc.valtype.wu_jump %]:<br>
-						[% arc.value | html | html_br %]
+						[% arc.value | html | html_line_break %]
 					</td>
 				[% ELSE %]
 					<td>[% arc.valtype.wu_jump %]</td>
@@ -143,7 +143,7 @@
 							[% oarc.obj.sysdesig | html %]
 						[% ELSE %]
 							[% IF oarc.valtype.equals(C.textbox) or arc.valtype.scof(C.textbox) %]
-								[% oarc.value | html | html_br %]
+								[% oarc.value | html | html_line_break %]
 							[% ELSE %]
 								[% oarc.value | html %]</td>
 							[% END %]
@@ -246,6 +246,7 @@
     [% END %]
   [% ELSIF arc.is_removal %]
     [% IF arc.deactivated %]
+			[% go("Rollback transaction", "../rollback.tt") %]
       [% nostep %]
     [% ELSE %]
       [% go("Submit", me, "arc_submit") %]
