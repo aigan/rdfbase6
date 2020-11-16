@@ -5,7 +5,7 @@ package RDF::Base::Email::Address;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2014-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2014-2020 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -39,7 +39,7 @@ use Para::Frame::Reload;
 use Para::Frame::Time qw( now );
 use Para::Frame::Utils qw( debug datadump catch );
 
-use RDF::Base::Utils qw( parse_propargs solid_propargs is_undef );
+use RDF::Base::Utils qw( parse_propargs solid_propargs is_undef string );
 use RDF::Base::Email::Classifier;
 use RDF::Base::Widget qw( aloc build_field_key locnl);
 
@@ -519,11 +519,28 @@ sub format_mime
 
 ##############################################################################
 
-sub format_human
+sub name
 {
     my( $ea ) = @_;
 
     my $name = $ea->first_prop('name');
+
+
+		if( not $name )
+		{
+			$name = $ea->revlist("has_email_address_holder")->list("is_persona_of")->flatten->name->get_first_nos;
+		}
+
+		return $name;
+}
+
+##############################################################################
+
+sub format_human
+{
+    my( $ea ) = @_;
+
+    my $name = $ea->name;
 
     if ( $name )
     {
