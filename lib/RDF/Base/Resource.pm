@@ -5085,7 +5085,7 @@ sub relrevupdate
 		}
 		else
 		{
-			$relprops->{pred} = $props->{$pred};
+			$relprops->{$pred} = $props->{$pred};
 		}
 	}
 
