@@ -5,7 +5,7 @@ package RDF::Base::Resource;
 #		Jonas Liljegren <jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2005-2018 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2005-2021 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -1557,7 +1557,7 @@ sub create
 
 	confess "invalid props: $props" unless ref $props;
 
-	my %s; #special								
+	my %s; #special
 		foreach my $pred_name (qw( created created_by update updated_by ))
 	{
 		$s{ $pred_name } = Para::Frame::List->
@@ -4720,7 +4720,8 @@ For not creating a node rec, consider using:
 
 	$node->mark_updated if $node->node_rec_exist;
 
-The changes will be saved after the request, or by calling L</commit>.
+The changes will be saved after the request (on_done), or by calling
+L</commit>.
 
 Returns: a time obj
 
@@ -4754,7 +4755,7 @@ sub mark_updated
 
 	$n->session_history_add('updated');
 
-#		 debug shortmess "Mark UPDATED for ".$n->desig;
+#	debug shortmess "Mark UPDATED for ".$n->sysdesig;
 
 	return $time;
 }
@@ -8519,6 +8520,7 @@ sub create_rec
 {
 	my( $n, $args ) = @_;
 
+#	debug("create_rec ".$n->sysdesig."  ".datadump($args,2));
 	return $n if $n->has_node_record;
 
 	$args ||= {};
@@ -8657,7 +8659,7 @@ sub mark_unsaved
 {
 #		 cluck "Would mark as unsaved $_[0]->{'id'}";
 	$UNSAVED{$_[0]->{'id'}} = $_[0];
-#		 debug "Node $_[0]->{id} marked as unsaved now";
+#	debug "Node $_[0]->{id} marked as unsaved now";
 }
 
 
@@ -8696,7 +8698,7 @@ sub commit
 	eval
 	{
 		my $cnt = 0;
-#				 debug sprintf "Comitting %d unsaved", scalar(@unsaved);
+#		debug sprintf "Comitting %d unsaved", scalar(@unsaved);
 		while ( my $node = shift @unsaved )
 		{
 			debug "Saving node ".$node->sysdesig;
@@ -8712,7 +8714,7 @@ sub commit
 			}
 		}
 
-#				 debug sprintf "Comitting %d cc", scalar(@child_changed);
+#		debug sprintf "Comitting %d cc", scalar(@child_changed);
 		while ( my $node = shift @child_changed )
 		{
 			$node->on_child_changed();
@@ -8793,7 +8795,7 @@ sub save
 
 	my $nid = $node->{'id'} or confess "No id in $node";
 
-#		 debug "Saving node $nid with label ".$node->label;
+#	debug "Saving node $nid with label ".$node->label;
 
 	# The field_obj variants are initiated on demand
 
@@ -8843,7 +8845,7 @@ sub save
 	}
 	$node->{'owned_by'}				||= $node->{'created_by'};
 
-#		 debug "	saving created ".$node->{'created_obj'};
+#	debug "	saving created ".$node->{'created_obj'};
 
 
 	my @values =
@@ -8874,7 +8876,7 @@ sub save
 																				updated_by=?
 																				where node=?");
 
-#	debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
+#		debug "Updating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
 		$sth->execute(@values) or die;
 	}
@@ -8887,7 +8889,7 @@ sub save
 																				updated_by, node)
 																				values (?,?,?,?,?,?,?,?,?,?)");
 
-#	debug "Creating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
+#		debug "Creating node with values ".join(', ',map{defined($_)?$_:'<undef>'} @values);
 
 		$sth->execute(@values) or die;
 		$node->{'initiated_node'} = 2;

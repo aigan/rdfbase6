@@ -1,11 +1,11 @@
-package RDF::Base 6.89;
+package RDF::Base 6.90;
 #=============================================================================
 #
 # AUTHOR
 #		Jonas Liljegren		<jonas@paranormal.se>
 #
 # COPYRIGHT
-#		Copyright (C) 2005-2020 Avisita AB.	 All Rights Reserved.
+#		Copyright (C) 2005-2021 Avisita AB.	 All Rights Reserved.
 #
 #		This module is free software; you can redistribute it and/or
 #		modify it under the same terms as Perl itself.
@@ -19,7 +19,7 @@ use JSON;
 use IMAP::BodyStructure 1.02;
 use LWP::UserAgent;
 
-use Para::Frame 2.08;
+use Para::Frame 2.09;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 use Para::Frame::Site;
