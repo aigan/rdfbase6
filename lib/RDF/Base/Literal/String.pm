@@ -5,7 +5,7 @@ package RDF::Base::Literal::String;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2021 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -1207,19 +1207,23 @@ sub wuirc
 				}
 			}
 
+
+			$row .= "</td>";
+		}
+
 			### OLDER CODE:
 			#
 			foreach my $key ( keys %$dc )
 			{
 				my $pred = RDF::Base::Pred->get($key);
 				#	    debug "  default cerate: $key";
-				#	    debug "    looking up ".$dc->{$key};
 				my $vallist = $R->find_by_anything($dc->{$key},
 																					 {
 																						valtype=>$pred->valtype});
+				#debug "    looking up ".$dc->{$key};
 				foreach my $val ( $vallist->as_array )
 				{
-					#		debug "    $val";
+					#debug "    $val";
 					if ( UNIVERSAL::isa( $val, "RDF::Base::Resource" ) )
 					{
 						my $field = build_field_key({
@@ -1244,8 +1248,6 @@ sub wuirc
 			#
 			### /older code
 
-			$row .= "</td>";
-		}
 
 		# Remove empty elements at the end of row
 		$row =~ s/(<td[^>]*><\/td>)+$//;
