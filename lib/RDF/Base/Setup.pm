@@ -5,7 +5,7 @@ package RDF::Base::Setup;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2007-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2007-2021 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -28,6 +28,7 @@ use DBI;
 use Carp qw( croak );
 use DateTime::Format::Pg;
 use Encode;                     # encode decode
+use POSIX qw(setlocale LC_ALL);
 
 use Para::Frame::Utils qw( debug datadump throw );
 use Para::Frame::Time qw( now );
@@ -1783,23 +1784,34 @@ sub vacuum_all
 
 sub vacuum_text
 {
-    debug "Cleaning up texts";
+    debug "\n\nCLEANING UP TEXTS\n";
 
     my $dbix = $RDF::dbix;
     my $dbh = $dbix->dbh;
+    my $R = RDF::Base->Resource;
 
-    my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
+		debug "locale " . setlocale(LC_ALL);
 
-    my $text_sth = $dbh->prepare("select ver, valtext, valclean from arc where valtext is not null");
+
+		my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
+
+    my $start = $ARGV[1] || 0;
+
+    my $text_sth = $dbh->prepare("select ver, valtext, valclean from arc where valtext is not null and active is true and subj >= $start order by subj asc");
     $text_sth->execute;
     my $cleaned = 0;
     my $text_cnt = 0;
-    debug $text_sth->rows." records";
+		my $total = $text_sth->rows;
+		my $time = time();
+		debug $total." records";
     while ( my $rec = $text_sth->fetchrow_hashref )
     {
-        unless( ++$text_cnt % 10000 )
+        if ( $time+5 < time() )
         {
-            debug sprintf "%7d Total cleaned %7d", $text_cnt, $cleaned;
+            $time = time();
+            $R->commit;
+            $RDF::dbix->commit;
+            debug sprintf "%7d / %7d at subj id %8d cleaned %5d",$text_cnt, $total, $rec->{ver}, $cleaned;
         }
 
         my $ver = $rec->{'ver'};
@@ -1807,7 +1819,7 @@ sub vacuum_text
         my $valtext = $rec->{'valtext'};
         my $valclean = $rec->{'valclean'};
         my $decoded = $valtext;
-
+				$text_cnt ++;
 
 #        # Cleaning up UTF8...
 #        if ( $valtext =~ /Ã./ )
@@ -1865,15 +1877,15 @@ sub vacuum_text
         {
             $cleaned++;
 
-#            if($valtext ne $decoded)
-#            {
-#                debug "Text '$valtext' ---> '$decoded'";
-#            }
-#            else
-#            {
+            if($valtext ne $decoded)
+            {
+                debug "Text '$valtext' ---> '$decoded'";
+            }
+            else
+            {
 #                debug "Clean '$valclean' ---> '$newclean'";
-#            }
-#            next;
+            }
+            #next;
 
             $update_text_sth->execute($decoded, $newclean, $ver);
         }

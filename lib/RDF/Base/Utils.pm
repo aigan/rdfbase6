@@ -5,7 +5,7 @@ package RDF::Base::Utils;
 #   Jonas Liljegren   <jonas@paranormal.se>
 #
 # COPYRIGHT
-#   Copyright (C) 2005-2017 Avisita AB.  All Rights Reserved.
+#   Copyright (C) 2005-2021 Avisita AB.  All Rights Reserved.
 #
 #   This module is free software; you can redistribute it and/or
 #   modify it under the same terms as Perl itself.
@@ -140,9 +140,10 @@ sub valclean
 
     # Don't change valclean algoritm wihout recleaning the whole DB!
     use locale;
+		use warnings FATAL => 'all';
     use POSIX qw(locale_h);
     my $oldlocale = setlocale(LC_ALL);
-    setlocale(LC_ALL, "sv_SE");
+    setlocale(LC_ALL, "sv_SE.UTF8");
 
     $value = lc($value);
     $value =~ s/(aa)/å/g;
