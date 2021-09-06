@@ -1790,14 +1790,14 @@ sub vacuum_text
     my $dbh = $dbix->dbh;
     my $R = RDF::Base->Resource;
 
-		debug "locale " . setlocale(LC_ALL);
+		#debug "locale " . setlocale(LC_ALL);
 
 
 		my $update_text_sth = $dbh->prepare("update arc set valtext=?, valclean=? where ver=?") or die;
 
     my $start = $ARGV[1] || 0;
 
-    my $text_sth = $dbh->prepare("select ver, valtext, valclean from arc where valtext is not null and active is true and subj >= $start order by subj asc");
+    my $text_sth = $dbh->prepare("select ver, valtext, valclean from arc where valtext is not null and active is true and ver >= $start order by ver asc");
     $text_sth->execute;
     my $cleaned = 0;
     my $text_cnt = 0;
@@ -1806,15 +1806,16 @@ sub vacuum_text
 		debug $total." records";
     while ( my $rec = $text_sth->fetchrow_hashref )
     {
+        my $ver = $rec->{'ver'};
+
         if ( $time+5 < time() )
         {
             $time = time();
             $R->commit;
             $RDF::dbix->commit;
-            debug sprintf "%7d / %7d at subj id %8d cleaned %5d",$text_cnt, $total, $rec->{ver}, $cleaned;
+            debug sprintf "%7d / %7d at subj id %8d cleaned %5d",$text_cnt, $total, $ver, $cleaned;
         }
 
-        my $ver = $rec->{'ver'};
 
         my $valtext = $rec->{'valtext'};
         my $valclean = $rec->{'valclean'};
