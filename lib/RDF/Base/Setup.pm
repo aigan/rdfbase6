@@ -1813,7 +1813,7 @@ sub vacuum_text
             $time = time();
             $R->commit;
             $RDF::dbix->commit;
-            debug sprintf "%7d / %7d at subj id %8d cleaned %5d",$text_cnt, $total, $ver, $cleaned;
+            debug sprintf "%7d / %7d at arc ver %8d cleaned %5d",$text_cnt, $total, $ver, $cleaned;
         }
 
 
