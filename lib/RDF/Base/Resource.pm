@@ -3618,6 +3618,7 @@ sub as_json
 
 			if ( ref $val )
 			{
+#				debug "val " . ref($val) . " " . datadump($val,1);
 				if ( UNIVERSAL::isa $val, 'RDF::Base::Resource' )
 				{
 					$val = $val->id;
@@ -3625,6 +3626,10 @@ sub as_json
 				elsif ( UNIVERSAL::isa $val, 'RDF::Base::List' )
 				{
 					$val = $val->as_json_data;
+				}
+				elsif ( ref $val eq "ARRAY" )
+				{
+					$val = RDF::Base::List->new( $val )->as_json_data;
 				}
 				else
 				{
