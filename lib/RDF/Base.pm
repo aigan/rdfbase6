@@ -1,4 +1,4 @@
-package RDF::Base 6.93;
+package RDF::Base 6.94;
 #=============================================================================
 #
 # AUTHOR
@@ -19,7 +19,7 @@ use JSON;
 use IMAP::BodyStructure 1.02;
 use LWP::UserAgent;
 
-use Para::Frame 2.11;
+use Para::Frame 2.12;
 use Para::Frame::Utils qw( debug );
 use Para::Frame::Reload;
 use Para::Frame::Site;
