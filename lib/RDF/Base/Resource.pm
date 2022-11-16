@@ -1701,7 +1701,7 @@ sub form_url
 {
 	my( $n ) = @_;
 
-	my $base = $Para::Frame::REQ->site->home->url;
+	my $base = $Para::Frame::REQ->site->home_url;
 	my $path;
 
 #		 warn "$n\n";
@@ -3595,6 +3595,8 @@ sub as_json
 {
 	my( $n, $params, $args_in ) = @_;
 
+	#debug("resource as_json " . datadump($params,1));
+
 	my $row = {};
 	if ( $params )
 	{
@@ -3613,12 +3615,19 @@ sub as_json
 
 		foreach my $pred ( @$preds )
 		{
-			my $val = $n->$pred || '';
+			my $val = '';
+			#debug "lookup " . $pred;
+			eval {
+				$val = $n->$pred || '';
+				$@ = undef;
+			};
+			warn $@ if $@;
+
 			my $key = $as->{$pred} || $pred;
 
 			if ( ref $val )
 			{
-#				debug "val " . ref($val) . " " . datadump($val,1);
+				#debug "val " . ref($val) . " " . datadump($val,1);
 				if ( UNIVERSAL::isa $val, 'RDF::Base::Resource' )
 				{
 					$val = $val->id;
