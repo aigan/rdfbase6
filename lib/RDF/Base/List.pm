@@ -1212,7 +1212,8 @@ sub as_json_data
 			}
 			elsif ( UNIVERSAL::isa $elem, 'RDF::Base::List' )
 			{
-				die "implement this";
+				CORE::push @part, $elem->as_json_data();
+#				die "implement this";
 			}
 			elsif ( defined $elem )
 			{

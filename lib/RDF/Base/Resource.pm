@@ -187,7 +187,10 @@ sub get
 	my $node;
 	my $id;
 
-#		 debug "Getting $val_in ($class)";
+	if( $class eq "RDF::Base::Resource" and $val_in eq "desig" ){
+		confess"Getting $val_in ($class)";
+	}
+	#debug "Getting $val_in ($class)";
 
 	# Get the resource id
 	#
@@ -7310,6 +7313,8 @@ sub find_class
 		debug "Looking at $id is $class->{id}" if $DEBUG;
 		unless ( $class->{'id'} )
 		{
+			next if ref $class eq 'RDF::Base::Undef';
+
 			cluck "Should not bee possible. Element must be a class! ".datadump($class,1);
 			die;
 			next;
