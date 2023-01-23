@@ -19,12 +19,19 @@
 
 <p>Restores from the selected point in time</p>
 
+<style>
+.updated { font-weight: bold }
+.same td { opacity: .6 }
+</style>
+
 
 <table class='admin'>
-<tr><th>Rel <th>pred <th>value
-[% FOREACH arc IN node.arc_list(undef,undef,args) %]
-<tr>
-<td> [% arc.wu_jump(label=arc.id) %] 
+	<tr><th>Rel <th>Updated  <th>pred <th>value
+[% FOREACH arc IN node.arc_list(undef,undef,args).sorted([{on='updated', dir='desc'}]) %]
+[% SET diff = arc.updated - time %]
+<tr class="[% IF diff.is_positive; 'updated'; ELSE; 'same'; END %]">
+<td> [% arc.wu_jump(label=arc.id) %]
+<td> [% arc.updated.plain %]
 <td> [% arc.pred.wu_jump(label=arc.pred.label) %]
 <td> [% IF arc.objtype %]
         [% jump(arc.obj.sysdesig(args), 'update.tt', id=arc.obj.id) %]
@@ -37,10 +44,12 @@
 </table>
 
 <table class='admin'>
-<tr><th>Rev <th>Node <th>Pred
-[% FOREACH arc IN node.revarc_list(undef,undef,args) %]
-<tr>
+	<tr><th>Rev <th>Updated <th>Node <th>Pred
+[% FOREACH arc IN node.revarc_list(undef,undef,args).sorted([{on='updated', dir='desc'}]) %]
+[% SET diff = arc.updated - time %]
+<tr class="[% IF diff.is_positive; 'updated'; ELSE; 'same'; END %]">
 <td> [% arc.wu_jump(label=arc.id) %] 
+<td> [% arc.updated.plain %]
 <td> [% jump(arc.subj.sysdesig(args), 'update.tt', id=arc.subj.id) %]
 <td valign="top">[% arc.pred.wu_jump(label=arc.pred.label) %]
 [% END %]
